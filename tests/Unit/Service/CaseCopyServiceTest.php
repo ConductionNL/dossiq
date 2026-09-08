@@ -218,6 +218,27 @@ class CaseCopyServiceTest extends TestCase {
 	}//end testCopyNeverCarriesTheSourcesLegalFacts()
 
 	/**
+	 * The two lists stay disjoint as the carried list grows.
+	 *
+	 * The ban is a rule about the CONSTANTS, not a filter run at copy time: an
+	 * allow-list and a deny-list that are provably disjoint make any runtime
+	 * guard between them dead code. So the rule is asserted here, where adding
+	 * a banned field to `CARRIED` fails loudly.
+	 *
+	 * @return void
+	 */
+	public function testTheCarriedAndBannedListsAreDisjoint(): void {
+		$reflection = new \ReflectionClass(CaseCopyService::class);
+		$carried = $reflection->getConstant('CARRIED');
+
+		$this->assertSame(
+			[],
+			array_values(array_intersect($carried, CaseCopyService::NEVER_COPIED)),
+			'a field cannot be both carried and banned'
+		);
+	}//end testTheCarriedAndBannedListsAreDisjoint()
+
+	/**
 	 * The status is left to the case type's prefill rather than written here.
 	 *
 	 * @return void

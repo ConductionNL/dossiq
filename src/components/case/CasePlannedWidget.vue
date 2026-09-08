@@ -147,6 +147,7 @@ export default {
 			 * Reload when the tab is bound to a different case.
 			 *
 			 * @return {void} Nothing.
+			 * @spec openspec/specs/workflow-definition-engine/spec.md
 			 */
 			handler() {
 				this.load()

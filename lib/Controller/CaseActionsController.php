@@ -157,17 +157,13 @@ class CaseActionsController extends Controller {
 		return $this->guarded(
 			caseId: $caseId,
 			write: true,
-			run: function () use ($caseId, $caseType, $date, $title): array {
-				$user = $this->userSession->getUser();
-
-				return $this->flowActions->plan(
-					caseId: $caseId,
-					caseTypeId: $caseType,
-					date: $date,
-					title: $title,
-					uid: ($user === null ? '' : $user->getUID())
-				);
-			},
+			run: fn (): array => $this->flowActions->plan(
+				caseId: $caseId,
+				caseTypeId: $caseType,
+				date: $date,
+				title: $title,
+				uid: $this->currentUid()
+			),
 		);
 	}//end plan()
 
@@ -188,6 +184,24 @@ class CaseActionsController extends Controller {
 			run: fn (): array => $this->flowActions->planned(caseId: $caseId),
 		);
 	}//end planned()
+
+	/**
+	 * The signed-in user's uid.
+	 *
+	 * Always called from inside {@see self::guarded()}, which has already
+	 * refused a request with no session, so the empty string is unreachable
+	 * rather than a fallback anything relies on.
+	 *
+	 * @return string The uid.
+	 */
+	private function currentUid(): string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return '';
+		}
+
+		return $user->getUID();
+	}//end currentUid()
 
 	/**
 	 * Read a request flag that may arrive as a JSON boolean or a query string.

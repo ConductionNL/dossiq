@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Flow;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Service\Flow\PlannedFollowUpDocument;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -40,6 +41,7 @@ use RuntimeException;
  * The flow a planned follow-up is written as.
  *
  * @covers \OCA\Dossiq\Service\Flow\CaseFlowActions
+ * @covers \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
  */
 class CaseFlowActionsTest extends TestCase {
 
@@ -63,6 +65,7 @@ class CaseFlowActionsTest extends TestCase {
 		return new CaseFlowActions(
 			$container,
 			$this->createMock(SettingsService::class),
+			new PlannedFollowUpDocument(),
 			$this->createMock(LoggerInterface::class),
 		);
 	}//end service()
@@ -73,7 +76,7 @@ class CaseFlowActionsTest extends TestCase {
 	 * @return array<string, mixed> The flow document.
 	 */
 	private function document(): array {
-		return $this->service()->planDocument(
+		return (new PlannedFollowUpDocument())->build(
 			caseId: 'case-1',
 			caseTypeId: 'type-controle',
 			due: new DateTimeImmutable('2026-10-15'),
@@ -123,7 +126,7 @@ class CaseFlowActionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testRunAsIsThePersonWhoPlannedIt(): void {
-		$document = $this->service()->planDocument(
+		$document = (new PlannedFollowUpDocument())->build(
 			caseId: 'case-1',
 			caseTypeId: 'type-controle',
 			due: new DateTimeImmutable('2026-10-15'),
@@ -219,7 +222,7 @@ class CaseFlowActionsTest extends TestCase {
 	public function testThePlannedFlowIsMarkedAsOne(): void {
 		$document = $this->document();
 
-		$this->assertSame(CaseFlowActions::PLANNED_SLUG, $document['applicationSlug']);
+		$this->assertSame(PlannedFollowUpDocument::PLANNED_SLUG, $document['applicationSlug']);
 		$this->assertSame('dossiq', $document['app']);
 	}//end testThePlannedFlowIsMarkedAsOne()
 

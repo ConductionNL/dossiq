@@ -107,5 +107,17 @@ criteria under a task are plain bullets.
     before the service. "A run appears on the case": running a flow needs an
     ADOPTED, published and enabled flow, and a fresh install deliberately has
     none, so arranging one would make it a test of the adoption path.
-- [ ] 4.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 4.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
+  - The composer legs were run INDIVIDUALLY: `check:strict` as one command
+    exceeds the 300s budget, and phpmd was swept per directory because
+    printing nothing is its OOM signature, not a pass.
+  - Exit codes: php lint 0, phpcs 0, phpmd 0 (21 directories swept, both
+    rulesets, 0 findings), psalm 0, phpstan 0, phpunit 0 (3220 tests, 56
+    skipped), lint 0, vitest 0 (705 tests), check:manifest 0, test:l10n 0,
+    check:l10n-js 0, check:schema-l10n 0, format 0, hydra gates 0 (82 of 82
+    applicable).
+  - PHPStan caught a real one: `CARRIED` and `NEVER_COPIED` are provably
+    disjoint, so the runtime strip between them was dead code. The ban is now
+    a rule about the constants, asserted by the unit test both against the
+    written payload and as a disjointness check.

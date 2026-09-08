@@ -134,12 +134,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The case this dialog acts on. */
+		/**
+		 * @return {string} The case this dialog acts on.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
-		/** @return {string} The chosen date as YYYY-MM-DD, or the empty string. */
+		/**
+		 * @return {string} The chosen date as YYYY-MM-DD, or the empty string.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
 		isoDate() {
 			if (!this.date) {
 				return ''
@@ -151,7 +157,10 @@ export default {
 			return picked.toISOString().slice(0, 10)
 		},
 
-		/** @return {boolean} Whether the plan may be sent. */
+		/**
+		 * @return {boolean} Whether the plan may be sent.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
 		canConfirm() {
 			return (
 				this.busy === false

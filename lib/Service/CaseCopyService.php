@@ -70,11 +70,14 @@ class CaseCopyService {
 	];
 
 	/**
-	 * The properties a copy must NEVER carry, asserted rather than assumed.
+	 * The properties a copy must NEVER carry.
 	 *
-	 * Read by {@see self::copy()} to strip them after the carried list is
-	 * built, so the two lists cannot drift into overlapping, and named here so
-	 * the unit test can assert the ban rather than restate it.
+	 * This is NOT a filter. An allow-list and a deny-list that are provably
+	 * disjoint make any runtime guard between them dead code, and PHPStan says
+	 * so. It is the ban itself, written down where a reader of `CARRIED` will
+	 * see it, and {@see \OCA\Dossiq\Tests\Unit\Service\CaseCopyServiceTest}
+	 * enforces it twice: against the payload that is actually written, and by
+	 * asserting the two lists stay disjoint as `CARRIED` grows.
 	 *
 	 * @var array<int, string>
 	 */
@@ -109,7 +112,10 @@ class CaseCopyService {
 	 *
 	 * @return array<string, mixed> The new case.
 	 *
-	 * @throws RuntimeException `storage_unavailable` when OpenRegister is absent or unconfigured, `case_not_found` when the source does not resolve, `copy_failed` when the write is refused.
+	 * @throws RuntimeException `storage_unavailable` when OpenRegister is absent
+	 *                          or unconfigured, `case_not_found` when the source
+	 *                          does not resolve, `copy_failed` when the write is
+	 *                          refused.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
@@ -187,10 +193,6 @@ class CaseCopyService {
 			if (array_key_exists($field, $source) === true && $source[$field] !== null) {
 				$payload[$field] = $source[$field];
 			}
-		}
-
-		foreach (self::NEVER_COPIED as $field) {
-			unset($payload[$field]);
 		}
 
 		$payload['title'] = $this->titleFor(source: $source, options: $options);
@@ -273,7 +275,14 @@ class CaseCopyService {
 		}
 
 		$linked = 0;
-		foreach ($this->documentsOf($objectService, $register, $schema, $sourceId) as $link) {
+		$links = $this->documentsOf(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			caseId: $sourceId
+		);
+
+		foreach ($links as $link) {
 			$document = (string)($link['document'] ?? '');
 			if ($document === '') {
 				continue;

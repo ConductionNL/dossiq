@@ -120,12 +120,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The case this dialog acts on. */
+		/**
+		 * @return {string} The case this dialog acts on.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
-		/** @return {boolean} Whether the copy may be sent. */
+		/**
+		 * @return {boolean} Whether the copy may be sent.
+		 * @spec openspec/specs/case-management/spec.md
+		 */
 		canConfirm() {
 			return this.busy === false && this.title.trim().length > 0
 		},

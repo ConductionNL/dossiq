@@ -40,7 +40,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
@@ -77,18 +76,6 @@ class CaseFlowActions {
 	private const FLOW_VERSION_SERVICE = 'OCA\\OpenRegister\\Service\\Flow\\FlowVersionService';
 
 	/**
-	 * The `applicationSlug` every planned follow-up flow carries.
-	 *
-	 * It is the marker that separates the flows this service writes from the
-	 * flows dossiq SHIPS (which carry none), and `FlowMapper::findAllFlows()`
-	 * filters on it server-side. Recognising a planned flow by its NAME instead
-	 * would break the moment somebody renamed one in the flow editor.
-	 *
-	 * @var string
-	 */
-	public const PLANNED_SLUG = 'dossiq-planned-follow-up';
-
-	/**
 	 * Flows read per page.
 	 *
 	 * @var integer
@@ -96,22 +83,17 @@ class CaseFlowActions {
 	private const PAGE = 200;
 
 	/**
-	 * The hour a planned follow-up is created on its date.
-	 *
-	 * @var integer
-	 */
-	private const PLANNED_HOUR = 6;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's services by name.
 	 * @param SettingsService $settingsService Bridge to OpenRegister's object service.
+	 * @param PlannedFollowUpDocument $document Builds and reads a planned follow-up's flow.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settingsService,
+		private readonly PlannedFollowUpDocument $document,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -186,14 +168,14 @@ class CaseFlowActions {
 	 * @spec openspec/specs/workflow-definition-engine/spec.md
 	 */
 	public function plan(string $caseId, string $caseTypeId, string $date, string $title, string $uid): array {
-		$due = $this->dueDate(date: $date);
+		$due = $this->document->dueDate(date: $date);
 
 		$service = $this->optional(name: self::FLOW_SERVICE);
 		if ($service === null) {
 			throw new RuntimeException('flows_unavailable');
 		}
 
-		$document = $this->planDocument(
+		$document = $this->document->build(
 			caseId: $caseId,
 			caseTypeId: $caseTypeId,
 			due: $due,
@@ -243,7 +225,7 @@ class CaseFlowActions {
 				continue;
 			}
 
-			$marker = $this->markerOf(flow: $flow);
+			$marker = $this->document->markerOf(nodes: (array)($flow->getNodes() ?? []));
 			if ($marker === null || $marker['case'] !== $caseId) {
 				continue;
 			}
@@ -302,103 +284,6 @@ class CaseFlowActions {
 	}//end retireFired()
 
 	/**
-	 * The flow document a planned follow-up is written from.
-	 *
-	 * @param string $caseId The case the follow-up belongs to.
-	 * @param string $caseTypeId The planned case's type.
-	 * @param DateTimeImmutable $due The date it is due.
-	 * @param string $title The planned case's title.
-	 * @param string $uid The user the run acts as.
-	 *
-	 * @return array<string, mixed> The flow document.
-	 *
-	 * @spec openspec/specs/workflow-definition-engine/spec.md
-	 */
-	public function planDocument(
-		string $caseId,
-		string $caseTypeId,
-		DateTimeImmutable $due,
-		string $title,
-		string $uid,
-	): array {
-		return [
-			'name' => 'Planned follow-up: ' . $title,
-			'description' => sprintf(
-				'Creates a case of type %s on %s, related to case %s. Planned by %s.',
-				$caseTypeId,
-				$due->format('Y-m-d'),
-				$caseId,
-				$uid
-			),
-			'app' => Application::APP_ID,
-			'applicationSlug' => self::PLANNED_SLUG,
-			'trigger' => 'schedule',
-			'cron' => $this->cronFor(due: $due),
-			'executionMode' => 'async',
-			'enabled' => false,
-			'nodes' => [
-				[
-					'id' => 'when',
-					'type' => 'openregister.trigger-schedule',
-					'config' => [
-						'cron' => $this->cronFor(due: $due),
-						'runAs' => $uid,
-					],
-				],
-				[
-					'id' => 'create',
-					'type' => 'dossiq.createSubCase',
-					'config' => [
-						'caseType' => $caseTypeId,
-						'title' => $title,
-						'relatedCases' => [$caseId],
-					],
-				],
-				['id' => 'done', 'type' => 'openregister.end', 'config' => []],
-			],
-			'edges' => [
-				['id' => 'e-create', 'from' => 'when', 'to' => 'create'],
-				['id' => 'e-done', 'from' => 'create', 'to' => 'done'],
-			],
-			'limits' => ['maxTransitions' => 10],
-		];
-	}//end planDocument()
-
-	/**
-	 * The cron expression for one date.
-	 *
-	 * Minute, hour, day and month are all pinned; only the weekday field is
-	 * open, because pinning it too would AND two calendar constraints that
-	 * disagree in most years. See {@see self::retireFired()} for why the year
-	 * cannot be pinned and what stands in for it.
-	 *
-	 * @param DateTimeImmutable $due The date.
-	 *
-	 * @return string The five-field expression.
-	 */
-	private function cronFor(DateTimeImmutable $due): string {
-		return sprintf('0 %d %d %d *', self::PLANNED_HOUR, (int)$due->format('j'), (int)$due->format('n'));
-	}//end cronFor()
-
-	/**
-	 * Validate and parse the requested date.
-	 *
-	 * @param string $date The date as `Y-m-d`.
-	 *
-	 * @return DateTimeImmutable The parsed date.
-	 *
-	 * @throws RuntimeException `invalid_date` when it is absent or unparseable.
-	 */
-	private function dueDate(string $date): DateTimeImmutable {
-		$parsed = DateTimeImmutable::createFromFormat('!Y-m-d', trim($date));
-		if ($parsed === false) {
-			throw new RuntimeException('invalid_date');
-		}
-
-		return $parsed;
-	}//end dueDate()
-
-	/**
 	 * The flow uuids the case's type marks as startable.
 	 *
 	 * @param string $caseId The case UUID.
@@ -417,32 +302,59 @@ class CaseFlowActions {
 			throw new RuntimeException('case_not_found');
 		}
 
-		$case = $this->fetch($objectService, $register, $caseSchema, $caseId);
+		$case = $this->fetch(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			id: $caseId
+		);
 		if ($case === null) {
 			throw new RuntimeException('case_not_found');
 		}
 
 		$caseTypeId = (string)($case['caseType'] ?? '');
-		$caseType = $this->fetch($objectService, $register, $typeSchema, $caseTypeId);
+		$caseType = $this->fetch(
+			objectService: $objectService,
+			register: $register,
+			schema: $typeSchema,
+			id: $caseTypeId
+		);
 		if ($caseType === null) {
 			return [];
 		}
 
-		$declared = ($caseType['startableFlows'] ?? []);
+		return $this->flowIdsOf(declared: ($caseType['startableFlows'] ?? []));
+	}//end startableFlowIds()
+
+	/**
+	 * The flow uuids in a case type's `startableFlows`.
+	 *
+	 * @param mixed $declared The property as stored.
+	 *
+	 * @return array<int, string> The uuids.
+	 */
+	private function flowIdsOf(mixed $declared): array {
 		if (is_array($declared) === false) {
 			return [];
 		}
 
 		$uuids = [];
 		foreach ($declared as $entry) {
-			$uuid = trim((string)(is_array($entry) === true ? ($entry['id'] ?? '') : $entry));
+			// An entry is a plain uuid, but a hand-edited case type may carry the
+			// object shape an OpenRegister picker writes, so both are read.
+			$uuid = $entry;
+			if (is_array($entry) === true) {
+				$uuid = ($entry['id'] ?? '');
+			}
+
+			$uuid = trim((string)$uuid);
 			if ($uuid !== '') {
 				$uuids[] = $uuid;
 			}
 		}
 
 		return $uuids;
-	}//end startableFlowIds()
+	}//end flowIdsOf()
 
 	/**
 	 * Every planned-follow-up flow this app owns.
@@ -458,7 +370,7 @@ class CaseFlowActions {
 		try {
 			return (array)$mapper->findAllFlows(
 				app: Application::APP_ID,
-				applicationSlug: self::PLANNED_SLUG,
+				applicationSlug: PlannedFollowUpDocument::PLANNED_SLUG,
 				limit: self::PAGE
 			);
 		} catch (Throwable $e) {
@@ -470,79 +382,6 @@ class CaseFlowActions {
 			return [];
 		}
 	}//end plannedFlows()
-
-	/**
-	 * What one planned flow says it will create, read off its own graph.
-	 *
-	 * The graph is the record: a name can be edited, the node config is what
-	 * actually runs. The date comes from the schedule node's cron rather than
-	 * the description for the same reason.
-	 *
-	 * @param object $flow The flow row.
-	 *
-	 * @return array{case: string, caseType: string, title: string, date: string}|null The marker, or null when the graph is not one of ours.
-	 */
-	private function markerOf(object $flow): ?array {
-		$nodes = (array)($flow->getNodes() ?? []);
-		$create = null;
-		$cron = '';
-		foreach ($nodes as $node) {
-			$type = (string)(is_array($node) === true ? ($node['type'] ?? '') : '');
-			$config = (array)(is_array($node) === true ? ($node['config'] ?? []) : []);
-			if ($type === 'dossiq.createSubCase') {
-				$create = $config;
-			}
-
-			if ($type === 'openregister.trigger-schedule') {
-				$cron = (string)($config['cron'] ?? '');
-			}
-		}
-
-		if ($create === null) {
-			return null;
-		}
-
-		$related = (array)($create['relatedCases'] ?? []);
-		$caseId = trim((string)($related[0] ?? ''));
-		if ($caseId === '') {
-			return null;
-		}
-
-		return [
-			'case' => $caseId,
-			'caseType' => (string)($create['caseType'] ?? ''),
-			'title' => (string)($create['title'] ?? ''),
-			'date' => $this->dateOfCron(cron: $cron),
-		];
-	}//end markerOf()
-
-	/**
-	 * The next calendar date a pinned cron expression names.
-	 *
-	 * @param string $cron The five-field expression.
-	 *
-	 * @return string The date as `Y-m-d`, or an empty string when it cannot be read.
-	 */
-	private function dateOfCron(string $cron): string {
-		$fields = preg_split('/\s+/', trim($cron));
-		if (is_array($fields) === false || count($fields) !== 5) {
-			return '';
-		}
-
-		$day = (int)$fields[2];
-		$month = (int)$fields[3];
-		if ($day < 1 || $month < 1) {
-			return '';
-		}
-
-		$year = (int)date('Y');
-		$candidate = sprintf('%04d-%02d-%02d', $year, $month, $day);
-		if ($candidate >= date('Y-m-d')) {
-			return $candidate;
-		}
-
-		return sprintf('%04d-%02d-%02d', ($year + 1), $month, $day);
-	}//end dateOfCron()
 
 	/**
 	 * Publish the flow so a schedule may run it.

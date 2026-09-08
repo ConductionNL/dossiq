@@ -129,12 +129,18 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The case this dialog acts on. */
+		/**
+		 * @return {string} The case this dialog acts on.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
 		},
 
-		/** @return {boolean} Whether a flow may be run. */
+		/**
+		 * @return {boolean} Whether a flow may be run.
+		 * @spec openspec/specs/workflow-definition-engine/spec.md
+		 */
 		canRun() {
 			return this.busy === false && this.chosen !== ''
 		},
