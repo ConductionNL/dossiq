@@ -253,6 +253,22 @@ export default {
 		 *
 		 * @return {Array<object>} The crumbs, root first, current location last.
 		 */
+		/**
+		 * The query the crumb back to the list carries.
+		 *
+		 * The Cases lenses are chip state today, not a query parameter, so
+		 * there is nothing on the URL to carry back and this is usually empty.
+		 * It is passed through anyway: the moment a lens (or a search, or a
+		 * page number) becomes a query parameter, the trip out to a case and
+		 * back keeps it, rather than dropping the reader on a reset list.
+		 *
+		 * @return {object} The route query to hand the list.
+		 */
+		listQuery() {
+			const query = this.$route?.query
+			return query && typeof query === 'object' ? { ...query } : {}
+		},
+
 		crumbs() {
 			const declared = this.widget?.props?.breadcrumbs
 			if (!Array.isArray(declared)) {
@@ -268,7 +284,7 @@ export default {
 						label,
 						...(crumb.icon ? { icon: crumb.icon } : {}),
 						...(crumb.route && !isLast
-							? { to: { name: crumb.route } }
+							? { to: { name: crumb.route, query: this.listQuery } }
 							: {}),
 					}
 				})

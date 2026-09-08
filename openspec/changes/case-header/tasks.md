@@ -83,13 +83,13 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
   placement section 3 row A33] Add `visibleIf: { count: "> 0" }` (or the
   shape that lands) to Sub-cases, Locations, Appointments and Decisions;
   until then they stay last and this task stays open.
-- [ ] 4.3 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the Time
+- [x] 4.3 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the Time
   left tile is gone, the tab list assertion reads the new order. Grep
   `tests/e2e` for `Time left`, `Notes`, `Files` and `Related cases` first.
 
 ## 5. Verification
 
-- [ ] 5.1 `tests/e2e/case-header.spec.ts`: seeds one case with identifier
+- [x] 5.1 `tests/e2e/case-header.spec.ts`: seeds one case with identifier
   2026-0015, status In behandeling, a deadline 26 days back and three
   tasks, plus one case without status or deadline; asserts the subtitle,
   `case-header-status`, `case-header-countdown` with class `is-danger`, the

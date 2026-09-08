@@ -101,11 +101,11 @@ function dateOffset(days) {
  * @param {object} caseObject The case the page hands the slot.
  * @return {Promise<object>} The mounted wrapper, after its lookups settle.
  */
-async function mountRow(caseObject) {
+async function mountRow(caseObject, query = {}) {
 	const wrapper = mount(CaseHeaderRow, {
 		props: { widget: WIDGET, object: caseObject, objectId: 'case-1' },
 		global: {
-			mocks: { $route: { params: { id: 'case-1' } } },
+			mocks: { $route: { params: { id: 'case-1' }, query } },
 		},
 	})
 	await flushPromises()
@@ -216,7 +216,21 @@ describe('CaseHeaderRow', () => {
 		expect(crumbs[0].text()).toBe('Cases')
 		expect(crumbs[1].text()).toBe('Aanbouw Beethovenlaan 8')
 		expect(crumbs[1].attributes('aria-current')).toBe('page')
-		expect(wrapper.vm.crumbs[0].to).toEqual({ name: 'Cases' })
+		expect(wrapper.vm.crumbs[0].to).toEqual({ name: 'Cases', query: {} })
 		expect(wrapper.vm.crumbs[1].to).toBeUndefined()
+	})
+
+	it('carries the query the case route had back to the list', async () => {
+		// The Cases lenses are chip state, not a query parameter, so today
+		// there is usually nothing to carry. This is what stops the crumb
+		// dropping a search or a page number the day one lands on the URL.
+		const wrapper = await mountRow(
+			{ title: 'Aanbouw Beethovenlaan 8', status: 'status-1' },
+			{ lens: 'mine', page: '3' },
+		)
+		expect(wrapper.vm.crumbs[0].to).toEqual({
+			name: 'Cases',
+			query: { lens: 'mine', page: '3' },
+		})
 	})
 })
