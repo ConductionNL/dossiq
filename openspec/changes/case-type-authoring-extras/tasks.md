@@ -101,9 +101,17 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 3. Folders and shared attributes
 
-- [ ] 3.1 `lib/Settings/dossiq_register.json`: `caseType.category` (string,
+- [x] 3.1 `lib/Settings/dossiq_register.json`: `caseType.category` (string,
   facet); `propertyDefinition.caseType` out of `required`.
   - `@spec openspec/specs/property-definition-management/spec.md`
+  - `caseType` 1.3.0 -> 1.4.0, `propertyDefinition` 1.1.0 -> 1.2.0.
+  - The facet comes from `facetable: true` and nothing else;
+    `x-openregister-facet` is read by nothing.
+  - ⚠️ `case.caseType` carries an `x-openregister-extends-form` block that
+    pulls the type's attributes onto the case form with
+    `filter: {caseType: "$value"}`. That filter cannot also say "or no case
+    type", so a SHARED attribute reaches the Properties tab (which reads the
+    resolver) but not the case form. Filed with the picker limitation in 2.3.
 - [ ] 3.2 `src/manifest.json` page `CaseTypes`: `folderSidebar` on
   `category`; page `CaseTypeDetail`: the Properties tab lists own rows and
   shared rows per design D3.

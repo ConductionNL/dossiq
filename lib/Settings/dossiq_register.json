@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -44,6 +44,13 @@
                         "type": "string",
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The folder this case type sits in on the Case types index, a free word rather than a fixed list: an organisation's own grouping (Vergunningen, Sociaal domein, Handhaving) is the one it recognises. Types with no category are listed under All case types with everything else.",
+                        "title": "Category",
+                        "facetable": true
                     },
                     "purpose": {
                         "type": "string",
@@ -489,15 +496,14 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
                 "description": "Custom field definition for a case type",
                 "type": "object",
                 "required": [
-                    "name",
-                    "caseType"
+                    "name"
                 ],
                 "properties": {
                     "name": {
@@ -520,7 +526,7 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "caseType",
-                        "description": "Reference to the parent case type",
+                        "description": "The case type this attribute belongs to. Leave it empty and the attribute is SHARED: it is listed on every case type's Properties tab under Shared attributes, so one Kenteken is authored once rather than copied per type.",
                         "title": "Case Type"
                     },
                     "propertyType": {
