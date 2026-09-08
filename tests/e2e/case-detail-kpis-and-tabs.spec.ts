@@ -9,6 +9,8 @@
  *
  *  - the countdown reads a DATE off the loaded record and turns it into words;
  *  - the case-type tile resolves a uuid to the referenced object's title;
+ *  - the third KPI cell is the case's STEP, and the milestone endpoint the
+ *    retired Completed tile called is no longer asked at all;
  *  - the tabs widget renders one panel per configured tab and mounts only the
  *    open one;
  *  - the hoisted Actions menu sits beside the strip rather than inside it.
@@ -110,7 +112,8 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	// is not ours to remove, so there is nothing to tear down — and nothing is
 	// left dangling either, which is the point.
 
-	test('the KPI row headlines time left, case type and completion', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-progress-tile-is-gone
+	test('the KPI row headlines time left, case type and the case step', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
@@ -191,29 +194,22 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
-		// Completion comes from the milestone endpoint. 0% is the honest answer
-		// for a case type with no milestones, so asserting the NUMBER would prove
-		// nothing: a failed fetch renders 0% too. The request itself is asserted
-		// below, which is the part that can actually break.
-		await expect(kpis.filter({ hasText: /Completed|Afgerond/ })).toContainText(
-			/%/,
-			{
-				timeout: 20_000,
-			},
-		)
-
-		// The milestone request must actually succeed. It used to fire twice: once
-		// with an empty `@object.caseType` path segment before the record loaded
-		// (404), then correctly. The tile showed 0% throughout, so only the
-		// request tells the two apart.
+		// The Completed tile is GONE (case-lifecycle-on-the-page, REQ-CDV-13).
+		// It read milestone progress, milestones are configured on almost no
+		// case type, and it therefore showed 0% on every case — an honest number
+		// that told a handler nothing. The stepper over the case type's statuses
+		// took its cell; the milestone endpoint stays for its other readers.
+		//
+		// Both halves are asserted, because either alone passes for the wrong
+		// reason: a tile can be removed from the layout while its widget still
+		// fires the request, and a request can stop while the tile still renders
+		// from cache.
+		await expect(kpis.filter({ hasText: /Completed|Afgerond/ })).toHaveCount(0)
+		await expect(page.getByTestId('case-steps')).toBeVisible({ timeout: 20_000 })
 		expect(
-			milestoneCalls.length,
-			`milestone requests: ${milestoneCalls.join(', ')}`,
-		).toBeGreaterThan(0)
-		expect(
-			milestoneCalls.every((c) => Number(c.split(' ')[0]) < 400),
-			`milestone requests: ${milestoneCalls.join(', ')}`,
-		).toBe(true)
+			milestoneCalls,
+			'the case page no longer asks for milestone progress',
+		).toEqual([])
 
 		// Assert on the RESPONSES, not on the console text.
 		//
