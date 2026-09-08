@@ -29,6 +29,7 @@ import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
+import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { routerBase } from './utils/routerBase.js'
@@ -222,6 +223,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
+const cellWidgetsProp = { ...cellWidgets }
 
 const app = createApp({
 	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
@@ -255,6 +257,7 @@ const app = createApp({
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
+			cellWidgets: cellWidgetsProp,
 		})
 	},
 })

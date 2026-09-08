@@ -10,9 +10,12 @@
 import { describe, expect, it } from 'vitest'
 import {
 	buildExecutePayload,
+	buildLifecycleExecutePayload,
+	buildLifecyclePreviewPayload,
 	buildPreviewPayload,
 	clearSelection,
 	emptySelection,
+	isLifecycleGesture,
 	isSelected,
 	summarizeResults,
 	toggleSelection,
@@ -191,5 +194,110 @@ describe('summarizeResults', () => {
 			counts: {},
 			failed: [],
 		})
+	})
+})
+
+describe('isLifecycleGesture', () => {
+	it('names the three gestures that move the clock, not the status', () => {
+		expect(isLifecycleGesture('suspend')).toBe(true)
+		expect(isLifecycleGesture('resume')).toBe(true)
+		expect(isLifecycleGesture('extend')).toBe(true)
+	})
+
+	it('does not claim a transition', () => {
+		// A transition moves `case.status`, whose only write path is the
+		// status engine. Reading it as a lifecycle gesture here would send it
+		// down the wrong half of the endpoint.
+		expect(isLifecycleGesture('transition')).toBe(false)
+		expect(isLifecycleGesture('')).toBe(false)
+		expect(isLifecycleGesture(undefined)).toBe(false)
+	})
+})
+
+describe('buildLifecyclePreviewPayload', () => {
+	it('carries the ids and the gesture, and no transition id', () => {
+		expect(
+			buildLifecyclePreviewPayload({ caseIds: ['a', 'b'] }, 'suspend'),
+		).toEqual({ caseIds: ['a', 'b'], gesture: 'suspend' })
+	})
+
+	it('copies the ids rather than aliasing the selection', () => {
+		const selection = { columnId: 'col-1', caseIds: ['a'] }
+		const payload = buildLifecyclePreviewPayload(selection, 'resume')
+
+		payload.caseIds.push('b')
+
+		expect(selection.caseIds).toEqual(['a'])
+	})
+
+	it('survives a malformed selection', () => {
+		expect(buildLifecyclePreviewPayload(null, 'resume')).toEqual({
+			caseIds: [],
+			gesture: 'resume',
+		})
+	})
+})
+
+describe('buildLifecycleExecutePayload', () => {
+	it('sends the trimmed reason for every gesture', () => {
+		expect(
+			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'resume', {
+				reason: '  Documents received  ',
+			}),
+		).toEqual({
+			caseIds: ['a'],
+			gesture: 'resume',
+			reason: 'Documents received',
+		})
+	})
+
+	it('sends days only for suspend', () => {
+		const suspend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
+			reason: 'Awaiting documents',
+			days: '21',
+			newEndDate: '2026-12-01',
+		})
+
+		expect(suspend).toEqual({
+			caseIds: ['a'],
+			gesture: 'suspend',
+			reason: 'Awaiting documents',
+			days: 21,
+		})
+		expect(suspend.newEndDate).toBeUndefined()
+	})
+
+	it('sends the new end date only for extend', () => {
+		const extend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'extend', {
+			reason: 'Complex case',
+			days: '21',
+			newEndDate: '2026-12-01',
+		})
+
+		expect(extend).toEqual({
+			caseIds: ['a'],
+			gesture: 'extend',
+			reason: 'Complex case',
+			newEndDate: '2026-12-01',
+		})
+		expect(extend.days).toBeUndefined()
+	})
+
+	it('reads an unreadable day count as zero, which the server defaults', () => {
+		expect(
+			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
+				reason: 'Awaiting documents',
+				days: 'soon',
+			}).days,
+		).toBe(0)
+	})
+
+	it('sends an empty reason rather than dropping the key', () => {
+		// The server has to be the one that refuses: dropping the key would
+		// make an empty reason indistinguishable from an older client that
+		// never sent one, and the refusal is what the requirement rests on.
+		expect(
+			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {}).reason,
+		).toBe('')
 	})
 })

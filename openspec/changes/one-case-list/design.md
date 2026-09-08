@@ -27,9 +27,16 @@ ADR-100 page ratchet see no change. Unclaimed on Cases and the Queue base
 filter are the same two conditions (`assignee: "IS NULL"`,
 `isFinalStatus: false`), kept literally equal so the lists cannot drift.
 
-**Mine is default on both lists.** A default chip is applied before the
-first fetch, so the first paint is already narrowed; the e2e asserts the
-active chip and the rows on landing, not after a click.
+**All is default on both lists** (D-default, revised by Ruben; this
+decision read "Mine is default" and the reasoning below is why it no longer
+does). A default chip is applied before the first fetch, so the first paint
+is already narrowed — which is exactly the problem: `quickFilters` activates
+the chip marked `default`, and the first chip when none is marked, so a Mine
+default would narrow every reader's landing view to their own rows before
+they chose anything, and a person with no cases would land on an empty list
+that reads as an empty register. All is marked `default` and placed first;
+Mine is one click away. The e2e asserts the active chip and the rows on
+landing AND after clicking Mine.
 
 **One dialog, four modes.** `BulkTransitionDialog` gains a `mode` prop
 (`transition`, `suspend`, `resume`, `extend`) and a required `reason`

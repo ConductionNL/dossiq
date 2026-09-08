@@ -39,13 +39,22 @@ the columns, the sidebar filters and the bulk actions on the two index pages.
 
 ## What changes
 
-- **A07, A08: lenses on Cases.** `quickFilters` chips Mine (assignee `@me`,
-  `isFinalStatus` false, the default), Unclaimed (assignee `IS NULL`,
-  `isFinalStatus` false), All, Closed (`isFinalStatus` true) and Overdue
-  (`deadline` before `@today`, `isFinalStatus` false). The Queue page keeps
-  the same Unclaimed filter, so the two agree by construction.
-- **A36: lenses on Tasks.** The same Mine, Unclaimed and All chips over
-  `caseTask`, Mine default, `isTerminalStatus` false on Mine and Unclaimed.
+- **A07, A08: lenses on Cases.** `quickFilters` chips All (the default),
+  Mine (assignee `@me`, `isFinalStatus` false), Unclaimed (assignee
+  `IS NULL`, `isFinalStatus` false), Closed (`isFinalStatus` true) and
+  Overdue (`deadline` before `@today`, `isFinalStatus` false). The Queue
+  page keeps the same Unclaimed filter, so the two agree by construction.
+- **A36: lenses on Tasks.** The same All, Mine and Unclaimed chips over
+  `caseTask`, All default, `isTerminalStatus` false on Mine and Unclaimed.
+
+## Decision D-default, revised
+
+Ruben revised "Mine is the default chip" to "All is the default chip" on
+both indexes. A `quickFilters` list activates a chip on mount, so a Mine
+default silently narrows the first paint to the signed-in user and an empty
+result reads as an empty register. All keeps the landing view the one the
+page already shows and leaves Mine one click away. Recorded in the `my-work`
+delta.
 - **A22: the deadline you can read.** The Deadline column on `Cases` renders
   through the countdown cell: days left, red once past due. The sidebar gains
   a Deadline before filter.

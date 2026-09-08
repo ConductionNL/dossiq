@@ -300,15 +300,24 @@ class StatusTransitionController extends Controller {
 	}//end history()
 
 	/**
-	 * Preview a bulk transition across multiple cases: per case, is the
-	 * transition available and do its guards currently pass? Read-only — the
-	 * bulk service never invokes the engine's `execute()` here.
+	 * Preview a bulk gesture across multiple cases: per case, is it available
+	 * and does the case allow it right now? Read-only — nothing on this path
+	 * writes.
+	 *
+	 * Two gestures share the endpoint. Without a `gesture` (or with
+	 * `gesture: "transition"`) this previews a status transition through the
+	 * engine, unchanged. With `suspend`, `resume` or `extend` it previews the
+	 * matching lifecycle gesture through `CaseLifecycleService::state()`.
+	 * One endpoint rather than four because the PREVIEW, the per-case result
+	 * map and the partial-failure reporting are the part worth keeping equal
+	 * across all four bulk actions — which is also why one dialog serves them.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
 	 */
 	public function bulkPreview(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -318,8 +327,15 @@ class StatusTransitionController extends Controller {
 		$body = $this->readJsonBody();
 		$caseIds = $this->readCaseIds(body: $body);
 		$transitionId = (string)($body['transitionId'] ?? '');
+		$gesture = $this->readGesture(body: $body);
 
 		try {
+			if ($gesture !== self::GESTURE_TRANSITION) {
+				return new JSONResponse(
+					$this->bulkEngine->previewLifecycle(caseIds: $caseIds, gesture: $gesture),
+				);
+			}
+
 			$result = $this->bulkEngine->preview(caseIds: $caseIds, transitionId: $transitionId);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
@@ -338,15 +354,25 @@ class StatusTransitionController extends Controller {
 	}//end bulkPreview()
 
 	/**
-	 * Execute a bulk transition across multiple cases. Loops the engine's
-	 * `execute()` once per case (the engine's single write path); partial
+	 * Execute a bulk gesture across multiple cases. Loops the matching single
+	 * write path once per case — the status engine's `execute()` for a
+	 * transition, `CaseLifecycleService`'s `suspend()` / `resume()` /
+	 * `extend()` for the three lifecycle gestures — so every guard and every
+	 * automatic action a single case gets, a bulk case gets too. Partial
 	 * success is allowed and reported per case, never silently swallowed.
+	 *
+	 * A lifecycle gesture REQUIRES a reason and answers 400 without one.
+	 * Suspending, resuming and extending are statutory acts (Awb 4:5 and
+	 * 4:14) that someone has to justify later; doing twenty of them at once
+	 * is precisely when the justification is most likely to go unwritten, so
+	 * the endpoint refuses rather than recording twenty blank ones.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
 	 */
 	public function bulkExecute(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -356,12 +382,30 @@ class StatusTransitionController extends Controller {
 		$body = $this->readJsonBody();
 		$caseIds = $this->readCaseIds(body: $body);
 		$transitionId = (string)($body['transitionId'] ?? '');
+		$gesture = $this->readGesture(body: $body);
 		$comment = null;
 		if (isset($body['comment']) === true) {
 			$comment = (string)$body['comment'];
 		}
 
 		try {
+			if ($gesture !== self::GESTURE_TRANSITION) {
+				$reason = trim((string)($body['reason'] ?? ''));
+				if ($reason === '') {
+					return new JSONResponse(['error' => 'A reason is required'], Http::STATUS_BAD_REQUEST);
+				}
+
+				return new JSONResponse(
+					$this->bulkEngine->executeLifecycle(
+						caseIds: $caseIds,
+						gesture: $gesture,
+						reason: $reason,
+						days: (int)($body['days'] ?? 0),
+						newEndDate: (string)($body['newEndDate'] ?? ''),
+					),
+				);
+			}
+
 			$result = $this->bulkEngine->execute(caseIds: $caseIds, transitionId: $transitionId, comment: $comment);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
@@ -378,6 +422,38 @@ class StatusTransitionController extends Controller {
 			);
 		}
 	}//end bulkExecute()
+
+	/**
+	 * The gesture a bulk body asks for when it names none: a status
+	 * transition, which is what both endpoints did before the three
+	 * lifecycle gestures joined them.
+	 */
+	private const GESTURE_TRANSITION = 'transition';
+
+	/**
+	 * The gestures a bulk body may name.
+	 */
+	private const GESTURES = [self::GESTURE_TRANSITION, 'suspend', 'resume', 'extend'];
+
+	/**
+	 * Read the requested gesture from a decoded request body.
+	 *
+	 * An absent or unrecognised gesture reads as `transition`, which keeps
+	 * every existing caller — the workflow board's dialog, which sends no
+	 * `gesture` at all — on exactly the path it was on.
+	 *
+	 * @param array<string, mixed> $body Decoded request body
+	 *
+	 * @return string One of the GESTURES
+	 */
+	private function readGesture(array $body): string {
+		$gesture = (string)($body['gesture'] ?? self::GESTURE_TRANSITION);
+		if (in_array($gesture, self::GESTURES, true) === false) {
+			return self::GESTURE_TRANSITION;
+		}
+
+		return $gesture;
+	}//end readGesture()
 
 	/**
 	 * Read and normalise the `caseIds` array from a decoded request body.

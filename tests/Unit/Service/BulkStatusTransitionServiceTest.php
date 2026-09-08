@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BulkStatusTransitionService;
+use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -50,6 +51,11 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 	private StatusTransitionService $engine;
 
 	/**
+	 * @var CaseLifecycleService&MockObject
+	 */
+	private CaseLifecycleService $lifecycle;
+
+	/**
 	 * @var LoggerInterface&MockObject
 	 */
 	private LoggerInterface $logger;
@@ -68,8 +74,13 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->engine = $this->createMock(StatusTransitionService::class);
+		$this->lifecycle = $this->createMock(CaseLifecycleService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
-		$this->service = new BulkStatusTransitionService($this->engine, $this->logger);
+		$this->service = new BulkStatusTransitionService(
+			$this->engine,
+			$this->lifecycle,
+			$this->logger,
+		);
 	}//end setUp()
 
 	/**
@@ -323,4 +334,199 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 
 		$this->service->execute(['case-1'], '', null);
 	}//end testExecuteRejectsEmptyTransitionId()
+
+	/**
+	 * A `state()`-shaped payload.
+	 *
+	 * @param bool $canSuspend Whether the case may be suspended
+	 * @param bool $suspended Whether it is suspended now
+	 * @param bool $isFinal Whether its status is final
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function lifecycleState(bool $canSuspend, bool $suspended = false, bool $isFinal = false): array {
+		return [
+			'suspended' => $suspended,
+			'canSuspend' => $canSuspend,
+			'canResume' => $suspended,
+			'canExtend' => ($isFinal === false),
+			'canReopen' => $isFinal,
+			'isFinalStatus' => $isFinal,
+			'extensionCount' => 0,
+			'deadline' => '2026-10-01',
+			'statusName' => 'In behandeling',
+		];
+	}//end lifecycleState()
+
+	/**
+	 * previewLifecycle() reports per case whether the gesture is allowed, and
+	 * writes nothing while doing it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testPreviewLifecycleReportsPerCaseWithoutWriting(): void {
+		$this->lifecycle->expects($this->never())->method('suspend');
+		$this->lifecycle->method('state')->willReturnCallback(
+			fn (string $caseId): array => $this->lifecycleState(canSuspend: $caseId === 'case-1')
+		);
+
+		$result = $this->service->previewLifecycle(['case-1', 'case-2'], 'suspend');
+
+		$this->assertSame('ready', $result['results']['case-1']['status']);
+		$this->assertSame('blocked', $result['results']['case-2']['status']);
+		$this->assertSame('suspension_not_allowed', $result['results']['case-2']['reasons'][0]['message']);
+		$this->assertSame(['total' => 2, 'ready' => 1, 'blocked' => 1, 'error' => 0], $result['summary']);
+	}//end testPreviewLifecycleReportsPerCaseWithoutWriting()
+
+	/**
+	 * previewLifecycle() names the case's own state as the refusal, not the
+	 * case type's rule, when the case is already suspended.
+	 *
+	 * @return void
+	 */
+	public function testPreviewLifecycleNamesTheAlreadySuspendedCase(): void {
+		$this->lifecycle->method('state')->willReturn(
+			$this->lifecycleState(canSuspend: false, suspended: true)
+		);
+
+		$result = $this->service->previewLifecycle(['case-1'], 'suspend');
+
+		$this->assertSame('already_suspended', $result['results']['case-1']['reasons'][0]['message']);
+	}//end testPreviewLifecycleNamesTheAlreadySuspendedCase()
+
+	/**
+	 * executeLifecycle() suspends every case through the single-case gesture,
+	 * carrying the reason and the days.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExecuteLifecycleSuspendsWithTheReason(): void {
+		$seen = [];
+		$this->lifecycle->method('suspend')->willReturnCallback(
+			function (string $caseId, string $reason, int $days) use (&$seen): array {
+				$seen[] = [$caseId, $reason, $days];
+				return $this->lifecycleState(canSuspend: false, suspended: true);
+			}
+		);
+
+		$result = $this->service->executeLifecycle(['case-1', 'case-2'], 'suspend', 'Awaiting documents', 21);
+
+		$this->assertSame(
+			[['case-1', 'Awaiting documents', 21], ['case-2', 'Awaiting documents', 21]],
+			$seen,
+		);
+		$this->assertSame(['total' => 2, 'succeeded' => 2, 'failed' => 0, 'error' => 0], $result['summary']);
+	}//end testExecuteLifecycleSuspendsWithTheReason()
+
+	/**
+	 * executeLifecycle() resumes through the single-case gesture.
+	 *
+	 * @return void
+	 */
+	public function testExecuteLifecycleResumesWithTheReason(): void {
+		$this->lifecycle->expects($this->once())
+			->method('resume')
+			->with('case-1', 'Documents received')
+			->willReturn($this->lifecycleState(canSuspend: true));
+
+		$result = $this->service->executeLifecycle(['case-1'], 'resume', 'Documents received');
+
+		$this->assertSame('succeeded', $result['results']['case-1']['status']);
+	}//end testExecuteLifecycleResumesWithTheReason()
+
+	/**
+	 * executeLifecycle() passes the named new end date through to extend().
+	 *
+	 * @return void
+	 */
+	public function testExecuteLifecycleExtendsToTheNamedDate(): void {
+		$this->lifecycle->expects($this->once())
+			->method('extend')
+			->with('case-1', 'Complex case', '2026-12-01')
+			->willReturn($this->lifecycleState(canSuspend: true));
+
+		$result = $this->service->executeLifecycle(['case-1'], 'extend', 'Complex case', 0, '2026-12-01');
+
+		$this->assertSame('succeeded', $result['results']['case-1']['status']);
+	}//end testExecuteLifecycleExtendsToTheNamedDate()
+
+	/**
+	 * A case the gesture refuses is reported per case and never aborts the
+	 * batch — the partial failure the spec requires can never read as success.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExecuteLifecycleReportsARefusalPerCase(): void {
+		$this->lifecycle->method('suspend')->willReturnCallback(
+			function (string $caseId): array {
+				if ($caseId === 'case-1') {
+					throw new RuntimeException('already_suspended');
+				}
+				return $this->lifecycleState(canSuspend: false, suspended: true);
+			}
+		);
+
+		$result = $this->service->executeLifecycle(['case-1', 'case-2'], 'suspend', 'Awaiting documents');
+
+		$this->assertSame('failed', $result['results']['case-1']['status']);
+		$this->assertSame('already_suspended', $result['results']['case-1']['reasons'][0]['message']);
+		$this->assertSame('succeeded', $result['results']['case-2']['status']);
+		$this->assertSame(['total' => 2, 'succeeded' => 1, 'failed' => 1, 'error' => 0], $result['summary']);
+	}//end testExecuteLifecycleReportsARefusalPerCase()
+
+	/**
+	 * executeLifecycle() refuses a batch with no reason, before writing
+	 * anything: a statutory act nobody justified is the one thing a bulk
+	 * gesture must not record twenty times.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExecuteLifecycleRejectsAnEmptyReason(): void {
+		$this->lifecycle->expects($this->never())->method('suspend');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('reason_required');
+
+		$this->service->executeLifecycle(['case-1'], 'suspend', '   ');
+	}//end testExecuteLifecycleRejectsAnEmptyReason()
+
+	/**
+	 * A gesture the service does not know is refused outright rather than
+	 * falling through to one it does.
+	 *
+	 * @return void
+	 */
+	public function testLifecycleRejectsAnUnknownGesture(): void {
+		$this->lifecycle->expects($this->never())->method('state');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('unknown_gesture');
+
+		$this->service->previewLifecycle(['case-1'], 'reopen');
+	}//end testLifecycleRejectsAnUnknownGesture()
+
+	/**
+	 * The id-count validation guards the lifecycle path too.
+	 *
+	 * @return void
+	 */
+	public function testLifecycleRejectsOversizedCaseIds(): void {
+		$this->lifecycle->expects($this->never())->method('state');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('too_many_case_ids');
+
+		$this->service->previewLifecycle(
+			array_map(static fn (int $i): string => "case-$i", range(1, 101)),
+			'suspend',
+		);
+	}//end testLifecycleRejectsOversizedCaseIds()
 }//end class
