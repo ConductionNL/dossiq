@@ -350,6 +350,17 @@ $extra = [
     ['name' => 'statusTransition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
     ['name' => 'statusTransition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
 
+        // The gestures that change a case without changing its status:
+        // opschorten (Awb 4:5), hervatten, verlengen (Awb 4:14) and heropenen.
+        // They sit beside the transition engine because they share its subject
+        // and its guards, and the `lifecycle` read is what tells the case page
+        // which of them are honest to offer on this case.
+    ['name' => 'caseLifecycle#state',   'url' => '/api/case/{caseId}/lifecycle', 'verb' => 'GET'],
+    ['name' => 'caseLifecycle#suspend', 'url' => '/api/case/{caseId}/suspend',   'verb' => 'POST'],
+    ['name' => 'caseLifecycle#resume',  'url' => '/api/case/{caseId}/resume',    'verb' => 'POST'],
+    ['name' => 'caseLifecycle#extend',  'url' => '/api/case/{caseId}/extend',    'verb' => 'POST'],
+    ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
+
         // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
         // prefix with literal `bulk-transition` segments, distinct from the
         // singular `/api/case/{caseId}/...` engine routes above and from every

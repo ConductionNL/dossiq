@@ -1170,6 +1170,21 @@
 						"type": "handler"
 					}
 				],
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
+				"extend": ["assignedGroup"],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Mine",
+						"filter": {
+							"assignee": "@me"
+						}
+					}
+				],
 				"columns": [
 					"identifier",
 					"title",
@@ -1188,6 +1203,11 @@
 						"formatter": "statusTypeName"
 					},
 					"assignee",
+					{
+						"key": "assignedGroup.roleName",
+						"label": "Team",
+						"sortable": false
+					},
 					"deadline",
 					{
 						"key": "id",
@@ -1220,7 +1240,7 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history stays the single sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
@@ -1238,6 +1258,7 @@
 								"caseType",
 								"status",
 								"assignee",
+								"assignedGroup",
 								"requester",
 								"priority",
 								"confidentiality",
@@ -1378,6 +1399,44 @@
 						}
 					},
 					{
+						"id": "case-roles",
+						"type": "object-list",
+						"title": "Parties",
+						"icon": "AccountKeyOutline",
+						"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are — whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
+						"content": {
+							"register": "dossiq",
+							"schema": "role",
+							"filter": {
+								"case": "@objectId"
+							},
+							"sort": {
+								"field": "roleType",
+								"dir": "asc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "roleType",
+									"label": "Role"
+								},
+								{
+									"key": "participant",
+									"label": "Participant"
+								},
+								{
+									"key": "delegate",
+									"label": "Delegate"
+								},
+								{
+									"key": "delegateUntil",
+									"label": "Delegate until"
+								}
+							],
+							"emptyText": "No parties on this case yet"
+						}
+					},
+					{
 						"id": "case-locaties",
 						"type": "object-list",
 						"title": "Locations",
@@ -1433,13 +1492,6 @@
 						"icon": "NoteTextOutline"
 					},
 					{
-						"id": "case-contacts",
-						"type": "integration",
-						"integrationId": "contacts",
-						"title": "Connected contacts",
-						"icon": "AccountGroup"
-					},
-					{
 						"id": "case-calendar",
 						"type": "integration",
 						"integrationId": "calendar",
@@ -1466,6 +1518,13 @@
 							"rowRoute": "FlowDetail",
 							"emptyText": "No flow is running for this case"
 						}
+					},
+					{
+						"id": "case-transitions",
+						"type": "custom",
+						"title": "Case status",
+						"icon": "SwapHorizontal",
+						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
 					},
 					{
 						"id": "case-kpi-time-left",
@@ -1504,23 +1563,11 @@
 						}
 					},
 					{
-						"id": "case-kpi-progress",
-						"type": "stat",
-						"title": "Completed",
-						"icon": "PercentOutline",
-						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach. The endpoint resolves the case's type SERVER-SIDE: the two-segment form needed `@object.caseType`, which is empty on the first render because the record has not loaded, so every page load fired a 404 before the corrected request followed.",
-						"content": {
-							"label": "Completed",
-							"icon": "PercentOutline",
-							"format": {
-								"style": "percent",
-								"decimals": 0
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/milestones/progress"
-							},
-							"valueField": "percentage"
-						}
+						"id": "case-steps",
+						"type": "custom",
+						"title": "Steps",
+						"icon": "Timeline",
+						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
 						"id": "case-email",
@@ -1628,8 +1675,8 @@
 									"label": "Decisions"
 								},
 								{
-									"widgetId": "case-contacts",
-									"label": "Contacts"
+									"widgetId": "case-roles",
+									"label": "Parties"
 								},
 								{
 									"widgetId": "case-locaties",
@@ -1641,10 +1688,19 @@
 				],
 				"layout": [
 					{
+						"id": "10",
+						"widgetId": "case-transitions",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
 						"id": "1",
 						"widgetId": "case-kpi-time-left",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1653,16 +1709,16 @@
 						"id": "2",
 						"widgetId": "case-kpi-casetype",
 						"gridX": 4,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "3",
-						"widgetId": "case-kpi-progress",
+						"widgetId": "case-steps",
 						"gridX": 8,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1671,7 +1727,7 @@
 						"id": "4",
 						"widgetId": "case-core",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": false
@@ -1680,7 +1736,7 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 8,
+						"gridY": 10,
 						"gridWidth": 8,
 						"gridHeight": 8,
 						"showTitle": false
@@ -1689,7 +1745,7 @@
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1698,7 +1754,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 5,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1707,14 +1763,11 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 9,
 						"gridWidth": 4,
 						"gridHeight": 4
 					}
 				],
-				"lifecycleActions": {
-					"field": "status"
-				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true,
@@ -1762,6 +1815,31 @@
 					]
 				},
 				"headerActions": [
+					{
+						"id": "add-party",
+						"type": "open-form",
+						"label": "Add party",
+						"icon": "AccountPlusOutline",
+						"register": "dossiq",
+						"schema": "role",
+						"includeFields": [
+							"name",
+							"roleType",
+							"participant",
+							"delegate",
+							"delegateUntil",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Party added to the case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
 					{
 						"id": "log-contact",
 						"type": "open-form",
@@ -1817,10 +1895,72 @@
 						"visibleWhen": {
 							"appInstalled": "humaniq"
 						}
+					},
+					{
+						"id": "case-suspend",
+						"type": "open-modal",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "suspend"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-resume",
+						"type": "open-modal",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "resume"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-extend",
+						"type": "open-modal",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "extend"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-reopen",
+						"type": "open-modal",
+						"label": "Reopen",
+						"icon": "LockOpenVariantOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "reopen"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "eq",
+							"value": true
+						}
 					}
 				]
 			},
 			"slots": {
+				"widget-case-transitions": "CaseTransitionsWidget",
+				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection"
 			}
 		},
@@ -2243,11 +2383,16 @@
 					}
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
-				"extend": ["case"],
+				"extend": ["case", "assigneeGroup"],
+				"quickFilters": [
+					{ "label": "All", "filter": {}, "default": true },
+					{ "label": "Mine", "filter": { "assignee": "@me" } }
+				],
 				"columns": [
 					"title",
 					{ "key": "case.title", "label": "Case", "sortable": false },
 					"assignee",
+					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
 					"status",
 					"dueDate"
 				],

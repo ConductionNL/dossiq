@@ -139,6 +139,14 @@ class StatusTransitionController extends Controller {
 			$comment = (string)$body['comment'];
 		}
 
+		// REQ-STE-12: the result the case closes with, when the target status
+		// is final. The engine decides whether it is needed; the controller
+		// only carries it.
+		$resultTypeId = null;
+		if (isset($body['resultTypeId']) === true) {
+			$resultTypeId = (string)$body['resultTypeId'];
+		}
+
 		if ($transitionId === '') {
 			return new JSONResponse(
 				['error' => 'transitionId is required'],
@@ -151,6 +159,7 @@ class StatusTransitionController extends Controller {
 				caseId: $caseId,
 				transitionId: $transitionId,
 				comment: $comment,
+				resultTypeId: $resultTypeId,
 			);
 			return new JSONResponse($result);
 		} catch (GuardFailedException $e) {
@@ -163,8 +172,19 @@ class StatusTransitionController extends Controller {
 			$status = match ($code) {
 				'case_not_found', 'transition_not_found' => Http::STATUS_NOT_FOUND,
 				'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
+				'result_type_required' => Http::STATUS_UNPROCESSABLE_ENTITY,
 				default => Http::STATUS_BAD_REQUEST,
 			};
+
+			// The one refusal the caller can act on: pick a result and retry.
+			// Every other code stays behind the static message, per this
+			// controller's contract.
+			if ($code === 'result_type_required') {
+				return new JSONResponse(
+					['error' => 'A result is required to close this case', 'code' => $code],
+					$status,
+				);
+			}
 
 			$this->logger->info('StatusTransitionController: execute rejected', ['code' => $code]);
 			return new JSONResponse(['error' => 'Could not execute transition'], $status);

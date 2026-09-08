@@ -82,9 +82,16 @@ export const FIXTURE_SCHEMAS = [
 	'informatieobjecttype',
 	'consultation',
 	'objectionProceeding',
+	// A role points at a case AND at a role type, so it goes before both.
+	'role',
 	'case',
+	'roleType',
+	// The team a case or a task names. After `case` and `caseTask` for the
+	// same reason `caseType` is: they reference it.
+	'organisatieRol',
 	'workflowTemplate',
 	'statusType',
+	'resultType',
 	'caseType',
 	'propertyDefinition',
 ] as const

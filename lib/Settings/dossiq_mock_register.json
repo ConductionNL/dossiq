@@ -2354,7 +2354,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.9.0",
+        "version": "1.10.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2784,6 +2784,14 @@
             "referenceType": "nextcloud-user",
             "description": "Nextcloud user ID of the primary handler",
             "title": "Assignee",
+            "facetable": true
+          },
+          "assignedGroup": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "organisatieRol",
+            "description": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+            "title": "Team",
             "facetable": true
           },
           "intakeChannel": {
@@ -13139,7 +13147,7 @@
           }
         },
         "icon": "CheckboxMarkedCircleOutline",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:Action",
         "x-zgw-equivalent": "Taak",
         "title": "Task",
@@ -13197,6 +13205,14 @@
             "type": "string",
             "description": "Nextcloud user ID of the assigned user",
             "title": "Assignee",
+            "facetable": true
+          },
+          "assigneeGroup": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "organisatieRol",
+            "description": "The team this task belongs to. Setting it never clears the personal assignee.",
+            "title": "Team",
             "facetable": true
           },
           "dueDate": {

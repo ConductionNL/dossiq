@@ -35,7 +35,7 @@
  * imported on the instance under test.
  */
 
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
@@ -71,6 +71,7 @@ const CASES_URL = `/apps/${REGISTER}/cases`
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
+let caseTypeName: string
 
 /** Ids of the party rows this run created, for teardown. */
 const createdParties: Array<[string, string]> = []
@@ -125,6 +126,7 @@ test.describe('The requester on the case', () => {
 
 		const caseType = await ensureCaseType(api, token)
 		caseTypeId = caseType.id
+		caseTypeName = caseType.name
 
 		protectedPersonId = await ensureParty(
 			'brpPerson',
@@ -258,6 +260,37 @@ test.describe('The requester on the case', () => {
 		await api.dispose()
 	})
 
+	/**
+	 * Choose this run's case type in the New case picker.
+	 *
+	 * Ported from case-create-form.spec.ts, gotchas and all. The click has to
+	 * land on the combobox rather than the `[data-cn-field]` wrapper, or
+	 * NcSelect never opens and the failure surfaces later as a missing option.
+	 * The option is matched by TEXT, because vue-select splits a label across
+	 * adjacent spans and the accessible name joins those with a space. Typing
+	 * happens only when the preloaded page does not already hold the answer:
+	 * a search term REPLACES the preloaded options with whatever the server
+	 * returns, so typing unconditionally can empty a list that had it.
+	 *
+	 * @param page   The Playwright page.
+	 * @param dialog The dialog root.
+	 */
+	async function chooseCaseType(page: Page, dialog: Locator): Promise<void> {
+		const combo = dialog.getByRole('combobox', { name: /Case type|Zaaktype/ })
+		await combo.click()
+
+		const option = page.getByRole('option').filter({ hasText: caseTypeName })
+		if (
+			!(await option
+				.first()
+				.isVisible()
+				.catch(() => false))
+		) {
+			await combo.pressSequentially(caseTypeName, { delay: 30 })
+		}
+		await option.first().click()
+	}
+
 	// @e2e openspec/specs/initiator-selection/spec.md
 	test('the New case form asks for a requester, and the field is enabled', async ({
 		page,
@@ -281,9 +314,26 @@ test.describe('The requester on the case', () => {
 		await expect(requester).not.toContainText(/provides Requester|Install /i)
 
 		// Choosing a requester stays optional: Create is reachable without one.
-		await expect(
-			dialog.getByRole('button', { name: /^(Create|Aanmaken)$/ }),
-		).toBeEnabled()
+		//
+		// "Without one" is only a claim about the requester once the form's
+		// OTHER required fields are answered. The `case` schema requires
+		// `title` and `caseType`, so a freshly opened dialog has Create
+		// disabled for reasons that have nothing to do with this field, and
+		// asserting on that dialog would report "the requester blocks Create"
+		// on every run — which is what it did. Answer the two required fields,
+		// leave the requester empty, and the button then says what it is being
+		// asked to say.
+		const create = dialog.getByRole('button', { name: /^(Create|Aanmaken)$/ })
+		await expect(create).toBeDisabled()
+
+		await chooseCaseType(page, dialog)
+		await dialog
+			.locator('[data-cn-field="title"]')
+			.getByRole('textbox')
+			.fill(`${RUN_PREFIX} Zonder aanvrager`)
+
+		await expect(control, 'the requester is still empty').toHaveValue('')
+		await expect(create).toBeEnabled()
 
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
 	})
@@ -429,7 +479,21 @@ test.describe('The requester on the case', () => {
 			'the list has a Requester column',
 		).toBeVisible()
 
-		const row = page.getByRole('row').filter({ hasText: `${RUN_PREFIX} Gewone` })
+		// The list paginates at 20 and orders oldest first, so this run's case
+		// is the newest of however many the instance holds and renders on a
+		// later page. `getByRole('row')` only ever sees the page on screen, so
+		// the old assertion was really asking "is this run's case among the 20
+		// oldest cases here", which is false on any instance with seed data.
+		// The list reads its filters from the query string, so ask for the one
+		// case by its title — an independent field — and assert the Requester
+		// cell of the row that comes back.
+		await page.goto(
+			`${CASES_URL}?title=${encodeURIComponent(`${RUN_PREFIX} Gewone aanvrager`)}`,
+		)
+		const row = page
+			.getByRole('row')
+			.filter({ hasText: `${RUN_PREFIX} Gewone aanvrager` })
+		await expect(row).toHaveCount(1, { timeout: 30_000 })
 		await expect(row.first()).toContainText(PLAIN.name, { timeout: 30_000 })
 	})
 
