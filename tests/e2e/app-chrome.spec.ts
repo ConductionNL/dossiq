@@ -160,6 +160,8 @@ test.describe('app chrome (ADR-114)', () => {
 		)
 	})
 
+	// @e2e openspec/specs/features-roadmap/spec.md#areas-summarise-before-they-expand
+	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
 	test('the FeaturesRoadmap page compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -184,6 +186,10 @@ test.describe('app chrome (ADR-114)', () => {
 		// alone, so a rewrite that DROPS one fails here.
 		await expect(comparison).toContainText('open source software we could')
 		await expect(comparison).toContainText('already out of date')
+		// The year of the reading date, interpolated into that same sentence.
+		// Asserting the year rather than the formatted date keeps this off
+		// Intl's month spelling while still failing if the date goes missing.
+		await expect(comparison).toContainText('2026')
 		await expect(comparison).toContainText('is not proof')
 
 		// Thirteen areas, collapsed. The rows live behind the disclosure so

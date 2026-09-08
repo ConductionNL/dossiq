@@ -30,7 +30,7 @@ list dossiq provides through initial state (`features_roadmap_features`, from
 `docs/features.json`, ADR-018). Adding the comparison SHALL NOT remove or
 replace the features tab or the roadmap tab.
 
-#### Scenario: Features page renders heading and its action controls
+#### Scenario: Features page renders controls
 
 - **GIVEN** a user opens `/features-roadmap`
 - **WHEN** the page loads
@@ -83,6 +83,8 @@ SHALL therefore be guarded by assertions: the row count, unique ids, every row
 filed under a declared area, every rating drawn from the known set, and the
 per-system totals the audit published.
 
+@e2e exclude Guarded by assertions over the committed data file in tests/vitest/capabilityComparison.spec.js, which no browser can reach: the failure mode is an edited JSON row, not a rendered screen.
+
 #### Scenario: An edited row changes a total and fails
 
 - **GIVEN** a capability row is edited by hand
@@ -96,6 +98,8 @@ one (`name_nl` beside `name`), the shape `docs/features.json` already uses. The
 page SHALL render the Dutch variant for a Dutch locale and fall back to English
 when a Dutch variant is absent or blank. Page chrome SHALL be translated
 through `t('dossiq', …)` and `l10n/nl.json`.
+
+@e2e exclude The e2e instance runs one locale, so a Dutch render cannot be driven there. The locale selection is asserted directly in tests/vitest/capabilityComparison.spec.js (groupByArea with nl).
 
 #### Scenario: A Dutch reader gets a Dutch table
 
