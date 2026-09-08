@@ -27,6 +27,7 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // over the case type's statuses, and the reason dialog the Actions menu opens.
 // @spec openspec/specs/status-transition-engine/spec.md
 // @spec openspec/specs/case-dashboard-view/spec.md
+import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
 import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
@@ -250,6 +251,23 @@ const registry = {
 		kind: 'modal',
 		component: CaseStartFlowDialog,
 		_note: "CaseDetail Actions menu: the flows this case's TYPE lists in startableFlows, and Run. The run is posted straight to OpenRegister's /api/flows/{id}/run with the case as `{uuid, register, schema}` — the three keys FlowRunRow reads — so it lands in the Flow runs widget beside it and dossiq stores no copy of a run (ADR-022). The Start entry is hidden by the case's materialised `hasStartableFlows`; the dialog still says so when the list comes back empty, because the gate is a save-time value and a case type edited since the last case save has not been recomputed yet.",
+	},
+
+	// --- The Related cases tab, with the follow-ups still to come
+	//     (case-actions-menu, row A26). ---
+	//
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the reason
+	// `case-task-pane` and `dossier-tab` are: this is a child of the
+	// `case-panels` tabs widget, and a tab child has no layout grid item and
+	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
+	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
+	// key answers.
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	'case-related-planned': {
+		// @custom-widget-ratchet exclude a planned follow-up is a SCHEDULED FLOW and not a case, so the `related` widget cannot list it: it reads related OBJECTS. The widget wraps the library's own CnRelatedObjectsWidget and only adds an extraSections group, so the built-in related content is unchanged. Deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)
+		kind: 'widget',
+		component: CasePlannedWidget,
+		_note: "CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.",
 	},
 
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---

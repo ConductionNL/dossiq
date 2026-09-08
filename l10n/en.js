@@ -3647,7 +3647,8 @@ OC.L10N.register(
         "Title of the follow-up": "Title of the follow-up",
         "Pick a date for the follow-up.": "Pick a date for the follow-up.",
         "The follow-up could not be planned.": "The follow-up could not be planned.",
-        "planned for {date}": "planned for {date}"
+        "planned for {date}": "planned for {date}",
+        "Planned cases": "Planned cases"
     },
     "nplurals=2; plural=(n != 1);"
 )

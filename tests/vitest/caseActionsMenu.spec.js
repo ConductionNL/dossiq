@@ -171,6 +171,63 @@ describe('Plan a follow-up', () => {
 	})
 })
 
+describe('The Related cases tab', () => {
+	/** The CaseDetail widget definitions. @return {Array} The widgets. */
+	function widgets() {
+		return caseDetail().config.widgets
+	}
+
+	it('is rendered by a widget whose TYPE the registry answers to', () => {
+		const widget = widgets().find((w) => w.id === 'case-related')
+		expect(widget.type).toBe('case-related-planned')
+		expect(registryDeclares('case-related-planned', 'widget')).toBe(true)
+	})
+
+	it('is not type custom, which resolves to nothing inside a tab panel', () => {
+		const tabs = widgets().find((w) => w.id === 'case-panels').content.tabs
+		const children = tabs.map((tab) => tab.widgetId)
+		const byId = Object.fromEntries(widgets().map((w) => [w.id, w]))
+		for (const id of children) {
+			expect(
+				byId[id],
+				`tab child "${id}" has no widget definition`,
+			).toBeTruthy()
+			expect(byId[id].type, `tab child "${id}" is type custom`).not.toBe(
+				'custom',
+			)
+		}
+	})
+
+	it('keeps its tab entry, its id and its label', () => {
+		const tabs = widgets().find((w) => w.id === 'case-panels').content.tabs
+		expect(tabs).toContainEqual({
+			widgetId: 'case-related',
+			label: 'Related cases',
+		})
+	})
+
+	it('stays out of the layout, which would render it twice', () => {
+		const placed = caseDetail().config.layout.map((item) => item.widgetId)
+		expect(placed).not.toContain('case-related')
+	})
+
+	it('shares no layout cell with another widget', () => {
+		const seen = new Map()
+		for (const item of caseDetail().config.layout) {
+			for (let x = item.gridX; x < item.gridX + item.gridWidth; x++) {
+				for (let y = item.gridY; y < item.gridY + item.gridHeight; y++) {
+					const cell = `${x},${y}`
+					expect(
+						seen.has(cell),
+						`${item.widgetId} and ${seen.get(cell)} share cell ${cell}`,
+					).toBe(false)
+					seen.set(cell, item.widgetId)
+				}
+			}
+		}
+	})
+})
+
 describe('proposedCopyTitle', () => {
 	it('proposes "Copy of <title>"', () => {
 		expect(proposedCopyTitle('Dakkapel Kerkstraat 12')).toBe(

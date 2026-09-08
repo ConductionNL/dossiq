@@ -77,9 +77,21 @@ criteria under a task are plain bullets.
     published would be armed and unrunnable.
   - The earliest date is tomorrow. A follow-up planned for today would fire in
     a few hours or not until next year depending on the clock.
-- [ ] 3.2 Add `src/components/case/CasePlannedWidget.vue` as `custom` widget
-  `case-planned` under the Related cases tab, listing unfired planned flows
-  for this case; header action `plan-follow-up` on `CaseDetail`.
+- [x] 3.2 Add `src/components/case/CasePlannedWidget.vue` as a widget under
+  the Related cases tab, listing unfired planned flows for this case; header
+  action `plan-follow-up` on `CaseDetail`.
+  - NOT a `custom` widget, and not a separate `case-planned` tab child. A
+    `type: "custom"` widget resolves through the page's `widget-<id>` slot,
+    which CnDetailPage renders per LAYOUT grid item only; a tab child has no
+    grid item, and CnTabsWidget resolves a child through
+    `cnRegistry[widget.type]` and renders NOTHING, silently, when no key
+    answers. And a tab entry names ONE widgetId, so "under the same tab" is
+    not something two widgets can be.
+  - So the existing `case-related` widget is RETYPED to
+    `case-related-planned` and rendered by CasePlannedWidget, which wraps the
+    library's own CnRelatedObjectsWidget and hands it the planned rows as an
+    `extraSections` group. The id, the title, the icon and the tab entry are
+    unchanged, and the built-in related content is untouched.
 - [ ] 3.3 [blocked: openregister the `related` widget listing scheduled flows
   by subject] Delete `CasePlannedWidget.vue`; 3.2 is the interim.
 

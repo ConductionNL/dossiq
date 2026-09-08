@@ -1304,9 +1304,10 @@
 					},
 					{
 						"id": "case-related",
-						"type": "related",
+						"type": "case-related-planned",
 						"title": "Case type, parent & related cases",
-						"icon": "LinkVariant"
+						"icon": "LinkVariant",
+						"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
 					},
 					{
 						"id": "initiator",
