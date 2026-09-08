@@ -397,6 +397,7 @@
 						"includeFields": [
 							"caseType",
 							"title",
+							"requester",
 							"description",
 							"assignee",
 							"priority",
@@ -408,6 +409,10 @@
 						"fieldOverrides": {
 							"description": {
 								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
 							}
 						},
 						"icon": "Plus",
@@ -1184,6 +1189,10 @@
 					"identifier",
 					"title",
 					{
+						"key": "initiatorDisplayName",
+						"label": "Requester"
+					},
+					{
 						"key": "caseType",
 						"label": "Case type",
 						"formatter": "caseTypeName"
@@ -1260,6 +1269,10 @@
 							"overrides": {
 								"status": {
 									"editable": false
+								},
+								"requester": {
+									"widget": "InitiatorPicker",
+									"label": "Requester"
 								}
 							}
 						}
@@ -1711,10 +1724,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "9",
+						"widgetId": "initiator",
+						"gridX": 8,
+						"gridY": 2,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 2,
+						"gridY": 5,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1723,18 +1745,9 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 4,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4
-					},
-					{
-						"id": "9",
-						"widgetId": "initiator",
-						"gridX": 0,
-						"gridY": 16,
-						"gridWidth": 12,
-						"gridHeight": 3,
-						"showTitle": true
 					}
 				],
 				"lifecycleActions": {

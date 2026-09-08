@@ -8,7 +8,7 @@
  * of the case schema's properties, unordered, `qualityScore` and
  * `casePlanState` among them. Two things changed. The schema now says which
  * properties a person deals with and which are engine plumbing, and the New
- * case action narrows itself to the nine a handler fills. On top of that,
+ * case action narrows itself to the ten a handler fills. On top of that,
  * `case.caseType` declares `x-openregister-extends-form`, so choosing a case
  * type adds that type's own questions to the form and the answers land in
  * `caseProperty` rows.
@@ -33,10 +33,11 @@ import {
 
 const DASHBOARD_URL = '/apps/dossiq/'
 
-/** The nine fields the New case action declares in the manifest. */
+/** The ten fields the New case action declares in the manifest. */
 const CREATE_FIELDS = [
 	'caseType',
 	'title',
+	'requester',
 	'description',
 	'assignee',
 	'priority',
@@ -244,8 +245,8 @@ test.describe('New case dialog', () => {
 				`the create form should ask for ${key}`,
 			).toHaveCount(1)
 		}
-		// The 44 the button does not ask for, sampled at the ones that made the
-		// old dialog unreadable.
+		// The rest the button does not ask for, sampled at the ones that made
+		// the old dialog unreadable.
 		for (const key of [
 			...HIDDEN_FIELDS,
 			'archiveNomination',

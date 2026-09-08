@@ -147,10 +147,15 @@ async function openPartiesTab(page: Page, id: string) {
 	await expect(strip).toBeVisible({ timeout: 30_000 })
 	await strip.getByRole('tab', { name: /Parties|Betrokkenen/ }).click()
 
-	// The widget id, not its heading: CnDetailPage gives every widget
-	// `role="group"` with `aria-label` set to the manifest widget id, so this
-	// identifies the panel without depending on any visible text.
-	const widget = page.locator('[aria-label="case-roles"]')
+	// The open panel INSIDE the tabs widget, not a widget id: CnDetailPage sets
+	// `aria-label` to the manifest widget id only on the top-level widgets it
+	// lays out, so a widget rendered as a tab child carries no such label and
+	// `[aria-label="case-roles"]` matches nothing (#1905, which cost the
+	// sibling Communication spec four of its five tests against a tab that
+	// rendered correctly). Scope to the strip as well: the sidebar's own panels
+	// also carry `role="tabpanel"` and hide with `aria-hidden` rather than
+	// `hidden`, so an unscoped query is ambiguous.
+	const widget = strip.locator('[role="tabpanel"]:not([hidden])')
 	await expect(widget).toBeVisible({ timeout: 20_000 })
 	return widget
 }
