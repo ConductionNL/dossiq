@@ -68,7 +68,7 @@ criteria under a task are plain bullets.
 
 ## 5. Seed and verification
 
-- [ ] 5.1 `lib/Settings/register.d/46-demo-cases-english.json`: three case
+- [x] 5.1 `lib/Settings/register.d/46-demo-cases-english.json`: three case
   objects per design Seed Data, one building shared by two cases and one
   vehicle, each with `case` set.
 - [ ] 5.2 Add `tests/e2e/case-objects.spec.ts` covering every scenario of
