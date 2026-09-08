@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
@@ -92,6 +93,7 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$this->logger,
+			new CaseResultWriter($this->settingsService),
 		);
 
 	}//end setUp()

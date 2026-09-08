@@ -44,6 +44,7 @@ import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
+import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
 import CalendarTextOutline from 'vue-material-design-icons/CalendarTextOutline.vue'
 import CameraOutline from 'vue-material-design-icons/CameraOutline.vue'
 import Cash from 'vue-material-design-icons/Cash.vue'
@@ -124,6 +125,7 @@ import Lightbulb from 'vue-material-design-icons/Lightbulb.vue'
 import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import ListBoxOutline from 'vue-material-design-icons/ListBoxOutline.vue'
 import ListStatus from 'vue-material-design-icons/ListStatus.vue'
+import LockOpenVariantOutline from 'vue-material-design-icons/LockOpenVariantOutline.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
@@ -136,11 +138,13 @@ import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
+import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
+import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
@@ -208,6 +212,7 @@ export default {
 	BriefcaseVariantOutline,
 	Calculator,
 	Calendar,
+	CalendarPlus,
 	CalendarTextOutline,
 	CameraOutline,
 	Cash,
@@ -288,6 +293,7 @@ export default {
 	LinkVariant,
 	ListBoxOutline,
 	ListStatus,
+	LockOpenVariantOutline,
 	MapMarker,
 	MapMarkerOutline,
 	MapMarkerPath,
@@ -300,11 +306,13 @@ export default {
 	OfficeBuilding,
 	OfficeBuildingOutline,
 	PaperclipCheck,
+	PauseCircleOutline,
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
 	PhonePlusOutline,
 	PhoneReturn,
+	PlayCircleOutline,
 	Plus,
 	ProgressClock,
 	Receipt,

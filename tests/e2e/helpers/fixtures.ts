@@ -86,6 +86,7 @@ export const FIXTURE_SCHEMAS = [
 	'organisatieRol',
 	'workflowTemplate',
 	'statusType',
+	'resultType',
 	'caseType',
 	'propertyDefinition',
 ] as const
