@@ -45,9 +45,12 @@ import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
+import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
+import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
 import CalendarTextOutline from 'vue-material-design-icons/CalendarTextOutline.vue'
 import CameraOutline from 'vue-material-design-icons/CameraOutline.vue'
+import CardAccountDetailsOutline from 'vue-material-design-icons/CardAccountDetailsOutline.vue'
 import Cash from 'vue-material-design-icons/Cash.vue'
 import CashMultiple from 'vue-material-design-icons/CashMultiple.vue'
 import CashRefund from 'vue-material-design-icons/CashRefund.vue'
@@ -78,6 +81,7 @@ import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
 import CommentQuestionOutline from 'vue-material-design-icons/CommentQuestionOutline.vue'
 import CommentTextOutline from 'vue-material-design-icons/CommentTextOutline.vue'
 import Connection from 'vue-material-design-icons/Connection.vue'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
@@ -109,6 +113,7 @@ import FlagOutline from 'vue-material-design-icons/FlagOutline.vue'
 import FolderAccountOutline from 'vue-material-design-icons/FolderAccountOutline.vue'
 import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
+import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
@@ -145,10 +150,12 @@ import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
+import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
 import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import Publish from 'vue-material-design-icons/Publish.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
@@ -221,10 +228,13 @@ export default {
 	BriefcaseVariantOutline,
 	Calculator,
 	Calendar,
+	CalendarClock,
+	CalendarClockOutline,
 	CalendarPlus,
 	CalendarTextOutline,
 	CameraOutline,
 	Cash,
+	CardAccountDetailsOutline,
 	CashMultiple,
 	CashRefund,
 	CashRegister,
@@ -254,6 +264,7 @@ export default {
 	CommentQuestionOutline,
 	CommentTextOutline,
 	Connection,
+	ContentCopy,
 	ContentDuplicate,
 	Creation,
 	CubeOutline,
@@ -285,6 +296,7 @@ export default {
 	FolderAccountOutline,
 	FolderCogOutline,
 	FolderOutline,
+	FolderPlusOutline,
 	FolderTextOutline,
 	FormatListBulletedType,
 	FormatListChecks,
@@ -321,10 +333,12 @@ export default {
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
+	PhoneLogOutline,
 	PhonePlusOutline,
 	PhoneReturn,
 	PlayCircleOutline,
 	Plus,
+	PowerPlugOutline,
 	ProgressClock,
 	Publish,
 	Receipt,

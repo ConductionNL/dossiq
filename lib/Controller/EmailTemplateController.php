@@ -347,6 +347,10 @@ class EmailTemplateController extends Controller {
 		$host = $this->appConfig->getValueString(Application::APP_ID, 'email_imap_host', '');
 		$port = (int)$this->appConfig->getValueString(Application::APP_ID, 'email_imap_port', '993');
 		if ($host === '') {
+			$this->templateService->recordMailboxStatus(
+				status: 'unconfigured',
+				message: 'Not checked yet'
+			);
 			return new JSONResponse(['ok' => false, 'error' => 'imap_not_configured']);
 		}
 
@@ -360,10 +364,20 @@ class EmailTemplateController extends Controller {
 			}
 		);
 		if ($handle === false) {
+			$failure = 'connection_failed';
+			if ($errstr !== '') {
+				$failure = $errstr;
+			}
+
+			$this->templateService->recordMailboxStatus(status: 'error', message: $failure);
 			return new JSONResponse(['ok' => false, 'error' => 'connection_failed', 'detail' => $errstr]);
 		}
 
 		fclose($handle);
+		$this->templateService->recordMailboxStatus(
+			status: 'configured',
+			message: 'Connected to ' . $host . ':' . $port
+		);
 		return new JSONResponse(['ok' => true]);
 	}//end testImap()
 

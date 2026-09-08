@@ -368,6 +368,19 @@ $extra = [
     ['name' => 'caseLifecycle#extend',  'url' => '/api/case/{caseId}/extend',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
 
+        // The Actions menu's three non-lifecycle gestures (case-actions-menu):
+        // copy this case, start a flow its type allows, and plan a follow-up
+        // case for a later date. `startable-flows` and `planned` are the two
+        // reads the case page needs to offer the other two honestly, so a
+        // handler is never shown a Start list the type does not allow or a
+        // planned row that has already become an ordinary case. All four are
+        // literal segments after `{caseId}`, so none collides with the
+        // lifecycle or transition routes above.
+    ['name' => 'caseActions#copy',           'url' => '/api/case/{caseId}/copy',            'verb' => 'POST'],
+    ['name' => 'caseActions#startableFlows', 'url' => '/api/case/{caseId}/startable-flows', 'verb' => 'GET'],
+    ['name' => 'caseActions#plan',           'url' => '/api/case/{caseId}/plan',            'verb' => 'POST'],
+    ['name' => 'caseActions#planned',        'url' => '/api/case/{caseId}/planned',         'verb' => 'GET'],
+
         // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
         // prefix with literal `bulk-transition` segments, distinct from the
         // singular `/api/case/{caseId}/...` engine routes above and from every

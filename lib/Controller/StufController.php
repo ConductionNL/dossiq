@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\Stuf\CircuitOpenException;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufException;
@@ -79,6 +80,7 @@ class StufController extends Controller {
 	 * @param StufEnvelopeInspector $inspector The raw-envelope inspector.
 	 * @param IL10N $l10n The localization service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param IntegrationStatusService $integrationStatus Records the StUF card's health.
 	 */
 	public function __construct(
 		string $appName,
@@ -88,6 +90,7 @@ class StufController extends Controller {
 		private readonly StufEnvelopeInspector $inspector,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly IntegrationStatusService $integrationStatus,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -357,8 +360,61 @@ class StufController extends Controller {
 			},
 			array: $items
 		);
+
+		$this->recordStufHealth(endpoints: $items);
+
 		return new JSONResponse(['items' => $items, 'total' => count(value: $items)]);
 	}//end endpoints()
+
+	/**
+	 * Write what the endpoint list learned onto the StUF integration card.
+	 *
+	 * The circuit breaker's per-endpoint state is the only StUF health this app
+	 * has, and it is computed here and nowhere else — so this is where the
+	 * Integrations page can learn it. An open breaker on any endpoint is an
+	 * error for the connection as a whole: one broker that will not answer is
+	 * the thing an admin needs to see, not an average.
+	 *
+	 * @param array<int, array<string, mixed>> $endpoints The enriched endpoint rows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	private function recordStufHealth(array $endpoints): void {
+		if ($endpoints === []) {
+			$this->integrationStatus->record(
+				key: 'stuf',
+				status: 'unconfigured',
+				message: 'Not checked yet'
+			);
+			return;
+		}
+
+		$open = [];
+		foreach ($endpoints as $endpoint) {
+			$state = (string)($endpoint['health']['state'] ?? '');
+			if ($state === 'open') {
+				$open[] = (string)($endpoint['name'] ?? ($endpoint['id'] ?? 'endpoint'));
+			}
+		}
+
+		if ($open !== []) {
+			$this->integrationStatus->record(
+				key: 'stuf',
+				status: 'error',
+				message: 'Circuit open on ' . implode(', ', $open)
+			);
+			return;
+		}
+
+		$first = (string)($endpoints[0]['name'] ?? ($endpoints[0]['id'] ?? 'endpoint'));
+		$this->integrationStatus->record(
+			key: 'stuf',
+			status: 'configured',
+			message: 'Healthy: ' . $first
+		);
+	}//end recordStufHealth()
 
 	/**
 	 * Query the StufMessage audit log (admin REST).

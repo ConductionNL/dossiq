@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -70,12 +71,14 @@ class ConfiguredRegistryService {
 	 *
 	 * @param SettingsService $settingsService Settings (config + ObjectService).
 	 * @param LoggerInterface $logger Logger.
+	 * @param IntegrationStatusService $integrationStatus Records the Store card's status.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly IntegrationStatusService $integrationStatus,
 	) {
 	}//end __construct()
 
@@ -209,6 +212,40 @@ class ConfiguredRegistryService {
 			schema: $context['schema']
 		);
 	}//end delete()
+
+	/**
+	 * Record what the saved registry means for the Store card.
+	 *
+	 * The Store's own settings do not go through the generic settings save, so
+	 * the Integrations page would never hear about them. This lives here rather
+	 * than in the controller because the question it answers — is a registry
+	 * configured — is this service's question, and because the controller is at
+	 * the coupling ceiling: one more collaborator there is a PHPMD failure, and
+	 * a `@SuppressWarnings` would buy the same code a worse home.
+	 *
+	 * A registry with no address resolves nothing, whatever else is filled in,
+	 * so the URL is the whole requirement.
+	 *
+	 * @param string $registryUrl The saved registry URL.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function recordStoreStatus(string $registryUrl): void {
+		$status = 'unconfigured';
+		$message = 'Not checked yet';
+		if (trim($registryUrl) !== '') {
+			$status = 'configured';
+			$message = 'Registry at ' . trim($registryUrl);
+		}
+
+		$this->integrationStatus->record(
+			key: 'store',
+			status: $status,
+			message: $message
+		);
+	}//end recordStoreStatus()
 
 	/**
 	 * Resolve the ObjectService, register and schema for a config key.
