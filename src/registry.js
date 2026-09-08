@@ -29,6 +29,9 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
 import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
+// The case type's effective blueprint: what it offers, and what it inherited.
+// @spec openspec/specs/case-types/spec.md
+import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
@@ -222,6 +225,14 @@ const registry = {
 		kind: 'widget',
 		component: CaseStepsWidget,
 		_note: "CaseDetail: which step the case is in, over its case type's statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.",
+	},
+	// --- The case type's effective blueprint (case-type-authoring-extras). ---
+	// @spec openspec/specs/case-types/spec.md
+	CaseTypeBlueprintWidget: {
+		// @custom-widget-ratchet exclude the merged statuses/results/attributes of a type and its parent exist only in CaseTypeResolver; an object-list can ask OpenRegister for `caseType = @objectId` and nothing else, so a child type would render three empty tables
+		kind: 'widget',
+		component: CaseTypeBlueprintWidget,
+		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
 	},
 	// @spec openspec/specs/status-transition-engine/spec.md
 	CaseLifecycleActionDialog: {

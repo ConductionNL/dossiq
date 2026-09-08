@@ -96,8 +96,22 @@ implementation task; the criteria under a task are plain bullets.
     on a new case of a child type offers only the child's own statuses.
     `effectiveCaseType()` inherits `initialStatus` so every PHP reader is
     right; the picker is filed as an OpenRegister request.
-- [ ] 2.4 `src/manifest.json` page `CaseTypeDetail`: widget
+- [x] 2.4 `src/manifest.json` page `CaseTypeDetail`: widget
   `case-type-parent` and the Inherited badge per design D2.
+  - `parentCaseType` is a field on the `case-type-core` `data` widget rather
+    than a widget of its own: a single reference field does not earn a card.
+  - The Inherited badge needed a CUSTOM widget, `case-type-blueprint`. The
+    design put the badge on an `object-list` column `origin`, and an
+    object-list fetches OpenRegister itself: the only question it can ask is
+    `statusType where caseType = @objectId`, the type's OWN rows. A child
+    that inherits its lifecycle has none, so a declared list would render an
+    empty table about a type with four statuses. The merge exists only in
+    `CaseTypeResolver`; `GET /api/case-types/{id}/blueprint` is how a page
+    reads it, and it marks each row own / inherited / shared.
+  - It is a LAYOUT cell, not a tab child: a `type: "custom"` widget named as
+    a tab child resolves by registry TYPE, finds nothing and renders an
+    empty panel without logging. A vitest asserts no tab strip on this page
+    ever names it.
 
 ## 3. Folders and shared attributes
 

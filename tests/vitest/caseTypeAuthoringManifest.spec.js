@@ -35,6 +35,7 @@ const register = JSON.parse(
 	),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const cellWidgetsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
 	'utf8',
@@ -168,6 +169,73 @@ describe('the Cases index', () => {
 
 	it('keeps the name formatter as the widget’s fallback label', () => {
 		expect(casesColumn('status').formatter).toBe('statusTypeName')
+	})
+})
+
+describe('the CaseTypeDetail page', () => {
+	/**
+	 * One widget of the page.
+	 *
+	 * @param {string} id The widget id.
+	 * @return {object|undefined} The widget entry.
+	 */
+	const widget = (id) =>
+		page('CaseTypeDetail').config.widgets.find((entry) => entry.id === id)
+
+	/**
+	 * The layout cells that place one widget.
+	 *
+	 * @param {string} id The widget id.
+	 * @return {Array<object>} The cells.
+	 */
+	const cells = (id) =>
+		page('CaseTypeDetail').config.layout.filter((cell) => cell.widgetId === id)
+
+	it('shows the parent and the category on the core widget', () => {
+		expect(widget('case-type-core').content.include).toContain('parentCaseType')
+		expect(widget('case-type-core').content.include).toContain('category')
+	})
+
+	it('places every declared widget in exactly one layout cell', () => {
+		// A widget with no cell is declared and never drawn; two cells draw it
+		// twice. Both are green on the manifest validator.
+		for (const entry of page('CaseTypeDetail').config.widgets) {
+			expect(cells(entry.id), `a cell for ${entry.id}`).toHaveLength(1)
+		}
+	})
+
+	it('places no cell that names a widget the page does not declare', () => {
+		const declared = page('CaseTypeDetail').config.widgets.map((w) => w.id)
+		for (const cell of page('CaseTypeDetail').config.layout) {
+			expect(declared).toContain(cell.widgetId)
+		}
+	})
+
+	it('resolves the custom widget through a slot to a registry entry', () => {
+		// Three declarations no build step compares: the widget, its layout
+		// cell, and the `widget-<id>` slot naming a registry key. Miss the
+		// slot and the cell renders empty.
+		const blueprint = widget('case-type-blueprint')
+		expect(blueprint.type).toBe('custom')
+		expect(page('CaseTypeDetail').slots['widget-case-type-blueprint']).toBe(
+			'CaseTypeBlueprintWidget',
+		)
+		expect(registrySource).toContain('CaseTypeBlueprintWidget: {')
+	})
+
+	it('keeps the custom widget OUT of any tab strip', () => {
+		// A `type: "custom"` widget named as a tab CHILD resolves by registry
+		// TYPE, finds nothing, and renders an empty panel without logging.
+		const tabs = page('CaseTypeDetail').config.widgets.filter(
+			(entry) => entry.type === 'tabs',
+		)
+		for (const strip of tabs) {
+			const named = (strip.content?.tabs || []).map((tab) => tab.widgetId)
+			for (const id of named) {
+				const child = widget(id)
+				expect(child?.type, `${id} is a tab child`).not.toBe('custom')
+			}
+		}
 	})
 })
 

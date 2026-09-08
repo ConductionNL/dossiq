@@ -4203,13 +4203,96 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
+				"widgets": [
+					{
+						"id": "case-type-core",
+						"type": "data",
+						"title": "Case type",
+						"icon": "FolderCogOutline",
+						"content": {
+							"title": "Case type",
+							"columns": 2,
+							"include": [
+								"title",
+								"identifier",
+								"description",
+								"category",
+								"parentCaseType",
+								"purpose",
+								"trigger",
+								"handlingModel",
+								"confidentiality",
+								"isDraft"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-terms",
+						"type": "data",
+						"title": "Terms",
+						"icon": "CalendarTextOutline",
+						"content": {
+							"title": "Terms",
+							"columns": 2,
+							"include": [
+								"processingDeadline",
+								"suspensionAllowed",
+								"extensionAllowed",
+								"extensionPeriod",
+								"validFrom",
+								"validUntil"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-blueprint",
+						"type": "custom",
+						"title": "Statuses, results and attributes",
+						"icon": "FormatListBulletedType",
+						"_note": "The one widget on this page that a declared type cannot be. An object-list fetches OpenRegister itself, so the only question it can ask is `statusType where caseType = @objectId` -- the type's OWN rows. A type that derives its lifecycle from a parent has none of those, so three declared lists would render three empty tables about a case type that plainly has four statuses, and nothing would say so. The merge exists only in CaseTypeResolver, and /api/case-types/{id}/blueprint is how a page reads it. It sits in the LAYOUT and not inside a tab strip on purpose: a `type: \"custom\"` widget named as a tab CHILD resolves by registry TYPE, finds nothing, and renders an empty panel without logging anything."
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "case-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 6,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "case-type-blueprint",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "3",
+						"widgetId": "case-type-terms",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
-			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
+			"slots": {
+				"widget-case-type-blueprint": "CaseTypeBlueprintWidget"
+			},
+			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},
 		{
 			"id": "Store",
