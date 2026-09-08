@@ -188,3 +188,47 @@ SHALL show that reason on the transition button.
 - **WHEN** the transition is posted to the API
 - **THEN** the engine SHALL refuse it with the `statusChecklist` guard failed
 - **AND** the case SHALL still be in Intake
+
+### Requirement: Closing a case settles its end date and its archival future (REQ-STE-13)
+
+A closing transition SHALL write the case's `endDate` and, when a result type was
+chosen, its `archiveNomination` and `archiveActionDate`, in the SAME save as the
+status. The archival pair SHALL be derived by
+`Service\Archival\ArchivalNominationDeriver`, which is also what the ZGW API
+closing path calls, so a case closed at the desk and the same case closed over
+the API end in the same archival state. Reopening SHALL withdraw all three.
+
+Dossiq does not destroy anything and does not schedule a destruction. Retention
+and destruction are OpenRegister's, declared as `x-openregister-archival` on the
+case schema (ADR-022). This requirement is about the case being NOMINATED
+correctly and carrying the right date, which is what a ZGW consumer reads off
+the zaak and what an archivist works from.
+
+**Feature tier**: MVP
+
+#### Scenario: A case closed at the desk carries the same archival future as one closed over the API
+@e2e exclude The derivation has no browser surface: no widget renders archiveNomination or archiveActionDate, so a Playwright assertion would have to read the case object back over the API, which is what ArchivalNominationDeriverTest and StatusTransitionServiceResultTest already assert directly.
+
+- **GIVEN** a case whose result type nominates for vernietigen after P5Y from afgehandeld
+- **WHEN** the case is closed through the in-app transition
+- **THEN** the case SHALL carry `endDate` of today
+- **AND** `archiveNomination` vernietigen
+- **AND** `archiveActionDate` five years after the end date
+- **AND** the same case closed over the ZGW API SHALL come out with the same three values
+
+#### Scenario: A case type with no result types still closes and still gets an end date
+@e2e exclude Same absent surface; asserted by StatusTransitionServiceResultTest.
+
+- **GIVEN** a case whose case type declares no result types
+- **WHEN** the case is closed
+- **THEN** the transition SHALL succeed
+- **AND** the case SHALL carry an `endDate`
+- **AND** the case SHALL carry no archival nomination, because there is no result to derive one from
+
+#### Scenario: Reopening withdraws the archival claim
+@e2e exclude Same absent surface; asserted by CaseLifecycleServiceTest.
+
+- **GIVEN** a closed case nominated for vernietigen with an archiefactiedatum
+- **WHEN** the case is reopened
+- **THEN** its `endDate`, `archiveNomination` and `archiveActionDate` SHALL all be cleared
+- **AND** the case SHALL NOT appear in an archivist's due list while it is being worked

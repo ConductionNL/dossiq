@@ -318,6 +318,14 @@ class SettingsService {
 		// PDOK Locatieserver cache TTL (seconds) + endpoint override.
 		'pdok_locatieserver_cache_ttl',
 		'pdok_locatieserver_url',
+		// The two adapter seams an integrator may substitute WITHOUT editing
+		// dossiq. Each names a class implementing the seam's interface; empty
+		// means the built-in mock, which the Integrations page then reports as
+		// Simulated rather than letting it pass for a working channel. Neither
+		// transport ships here: both are per-customer contracts and belong in
+		// integriq (ADR-041, and the dossiq-delivers-nothing ruling).
+		'berichtenbox_adapter',
+		'beschikking_template_adapter',
 	];
 
 	/**

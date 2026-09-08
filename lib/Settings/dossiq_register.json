@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts.",
-        "version": "0.15.0"
+        "version": "0.16.0"
     },
     "x-openregister": {
         "type": "application",
@@ -9441,7 +9441,7 @@
             "dossiqIntegration": {
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Integration",
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
                 "type": "object",
@@ -9465,7 +9465,9 @@
                             "financial",
                             "brp",
                             "kvk",
-                            "pdok"
+                            "pdok",
+                            "berichtenbox",
+                            "templates"
                         ]
                     },
                     "title": {
@@ -9487,12 +9489,14 @@
                             "configured",
                             "unconfigured",
                             "unavailable",
+                            "simulated",
                             "error"
                         ],
                         "x-enum-labels": {
                             "configured": "Configured",
                             "unconfigured": "Not configured",
                             "unavailable": "Not available",
+                            "simulated": "Simulated",
                             "error": "Error"
                         },
                         "facetable": true

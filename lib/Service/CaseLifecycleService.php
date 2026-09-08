@@ -301,6 +301,13 @@ class CaseLifecycleService {
 
 		$case['status'] = $initial;
 		$case['endDate'] = '';
+		// Zrc-008: reopening withdraws the archival claim as well as the end
+		// date. A case that is open again is not nominated for anything and has
+		// no destruction date; leaving either standing would hand an archivist a
+		// due date for a case still being worked, which is the shape of mistake
+		// that gets a record destroyed early.
+		$case['archiveNomination'] = null;
+		$case['archiveActionDate'] = null;
 		$this->journal(case: $case, entry: ['type' => 'reopen', 'reason' => $reason]);
 
 		$this->store->writeStatusRecord(

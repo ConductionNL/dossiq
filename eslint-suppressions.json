@@ -437,11 +437,8 @@
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
     },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 6
-    },
     "vue/custom-event-name-casing": {
-      "count": 2
+      "count": 1
     }
   },
   "src/views/cases/components/EmailThread.vue": {

@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
-use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -50,6 +49,7 @@ class BerichtenboxService {
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger.
 	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
+	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
@@ -57,6 +57,7 @@ class BerichtenboxService {
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 		private readonly OwningCaseResolver $owningCase,
+		private readonly BerichtenboxAdapterInterface $adapter,
 	) {
 	}//end __construct()
 
@@ -101,9 +102,11 @@ class BerichtenboxService {
 			// Placeholder -- actual file reading via IRootFolder.
 		}
 
-		// Send via adapter.
-		$adapter = $this->getAdapter();
-		$result = $adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent);
+		// Send via whichever adapter this instance has. On an instance with no
+		// `berichtenbox_adapter` configured that is the mock, which succeeds and
+		// sends nothing: the Integrations page carries the Simulated row that
+		// says so, and the log carries the warning the registrar wrote at boot.
+		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent);
 
 		// Store message record.
 		$register = $this->settingsService->getConfigValue('register');
@@ -239,8 +242,7 @@ class BerichtenboxService {
 			return $data;
 		}
 
-		$adapter = $this->getAdapter();
-		$status = $adapter->getReadStatus($data['externalMessageId']);
+		$status = $this->adapter->getReadStatus($data['externalMessageId']);
 
 		$data['readPolledAt'] = (new DateTime())->format('c');
 
@@ -323,16 +325,6 @@ class BerichtenboxService {
 
 		return $errors;
 	}//end validateMessage()
-
-	/**
-	 * Get the configured Berichtenbox adapter.
-	 *
-	 * @return BerichtenboxAdapterInterface The adapter instance.
-	 */
-	private function getAdapter(): BerichtenboxAdapterInterface {
-		// For MVP, always use mock adapter.
-		return new MockAdapter(logger: $this->logger);
-	}//end getAdapter()
 
 	/**
 	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.

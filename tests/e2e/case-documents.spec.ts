@@ -614,9 +614,20 @@ test.describe('Case detail — the Documents tab', () => {
 	}) => {
 		// A second write to the SAME file is what makes a version: Nextcloud
 		// keeps the previous content, so the panel has one entry to list. The
-		// path is the storage convention ZgwDocumentService owns
-		// (dossiq/documenten/<uuid>/<fileName>), and the upload endpoint is
+		// path is the storage convention ZgwDocumentService owns — the
+		// informatieobject's OpenRegister object folder, `Open
+		// Registers/<register>/<uuid>/<fileName>` — and the upload endpoint is
 		// what put version one there.
+		//
+		// This spec CANNOT see the defect that convention exists to fix. It
+		// signs in as `admin`, which is the account the documents used to be
+		// filed under, so writer and reader were the same person and the tab
+		// looked correct. The coverage for the OWNER is
+		// `tests/Unit/Service/ZgwDocumentStorageOwnerTest.php`, and the
+		// coverage for the version buttons actually DOING something is
+		// `tests/vitest/dossierTab.spec.js` — the assertion below is about the
+		// restore GUARD, and a button that does nothing satisfies it just as
+		// well as one that is correctly disabled.
 		const panel = await openDocumentsTab(page, versionCaseId)
 
 		const row = panel
