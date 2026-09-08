@@ -64,6 +64,12 @@ implementation task; the criteria under it are plain bullets.
   table and has zero readers and zero writers, and the library seam
   (`@workspace.<key>` resolved by `useSelfFetchList`) already exists. See
   proposal decision D3.
+- [ ] 5.3 nextcloud-vue: a facet option shows its count and its label. Two one-
+  line defects found while checking whether the Team facet covers the gap. The
+  store reads `b.count` where OpenRegister's bucket carries `results`, so every
+  count is 0; and it drops `b.label`, so a `$ref` facet lists uuids. Filed for
+  the platform queue, not fixed here: the blast radius is every index page in
+  21 apps.
 - [ ] 5.2 Shared saved views by department or role (row 9.4). Owned by
   nextcloud-vue's `saved-views-shared-by-role`, which has a merged spec and no
   implementation.

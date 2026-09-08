@@ -70,9 +70,28 @@ there: `useSelfFetchList` injects `cnWorkspaceContext` and resolves
 provides the caller's `organisatieRol` ids under that key makes the chip a
 one-line manifest entry.
 
-Until then the Team FACET in the sidebar is the honest interim, and it already
-ships on both pages: `assignedGroup` and `assigneeGroup` are both `facetable`,
-and both indexes carry the Team column that reads the expanded `roleName`.
+The Team FACET in the sidebar is NOT the interim the plan and the manifest both
+claimed it was, and this change was written believing it was until the code was
+read. Two defects in nextcloud-vue, both one line, both outside dossiq:
+
+1. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`.
+   OpenRegister's bucket carries `results`, not `count` (`MagicFacetHandler`
+   emits `'results' => $bucket['count']` at the output layer). So every option's
+   count resolves to 0, and `CnIndexSidebar` renders it, because 0 is not
+   undefined.
+2. The same normalisation drops `b.label`, and `CnIndexSidebar.getFilterOptions`
+   renders `String(v.value)`. A `$ref` facet therefore lists uuids, even on the
+   fields where OpenRegister does resolve a name.
+
+Together the Team facet reads as `<uuid> (0)` per team, on both indexes, and
+every faceted select on every index page in every fleet app shows a count of
+zero. That is a platform finding, not a dossiq one, and it is filed here rather
+than fixed here because the blast radius is 21 apps and nextcloud-vue's
+`development` needs its own spec and an admin merge.
+
+The Team COLUMN is correct and is the real interim: `extend` expands the
+reference and the column reads `roleName`. The manifest note that cited the
+facet as coverage is corrected in this change.
 
 ## What this does not close
 
