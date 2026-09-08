@@ -446,7 +446,11 @@ describe('the Versions list', () => {
 			'version',
 			'lifecycleStatus',
 			'description',
-			'updated',
+			// `@self.updated`, not `updated`: the timestamp lives on
+			// OpenRegister's metadata envelope, and a column bound to a
+			// property the schema does not declare renders a dash in every row
+			// and says nothing.
+			'@self.updated',
 		])
 	})
 })

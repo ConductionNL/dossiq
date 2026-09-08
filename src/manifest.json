@@ -4303,8 +4303,9 @@
 									"label": "Change note"
 								},
 								{
-									"key": "updated",
-									"label": "Updated"
+									"key": "@self.updated",
+									"label": "Updated",
+									"_note": "`updated` is NOT a workflowTemplate property: the timestamp lives on OpenRegister's metadata envelope, and a column bound to a property the schema does not declare renders a dash in every row without saying so. `WorkflowDefinitions` spells it the same way. Caught by ManifestColumnBindingTest, which is exactly what that test exists for."
 								}
 							],
 							"rowRoute": "WorkflowDefinitionDetail",
