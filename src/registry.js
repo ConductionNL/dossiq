@@ -28,6 +28,7 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // @spec openspec/specs/status-transition-engine/spec.md
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseHeaderRow from './components/case/CaseHeaderRow.vue'
+import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
 import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
@@ -61,7 +62,13 @@ import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
+// The Actions menu's non-lifecycle gestures: copy this case, start a flow
+// its type allows, and plan a follow-up case for a later date.
+// @spec openspec/specs/case-management/spec.md
+import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
+import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
 // change note, and a route to the copy (case-type-authoring-extras D5).
 // @spec openspec/specs/workflow-import-export/spec.md
@@ -272,6 +279,47 @@ const registry = {
 		kind: 'modal',
 		component: CaseLifecycleActionDialog,
 		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+	},
+
+	// --- Copy a case, from its own page (case-actions-menu, row A24). ---
+	// @spec openspec/specs/case-management/spec.md
+	CaseCopyDialog: {
+		kind: 'modal',
+		component: CaseCopyDialog,
+		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- Start a sub-process for the case (case-actions-menu, row A25). ---
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	CaseStartFlowDialog: {
+		kind: 'modal',
+		component: CaseStartFlowDialog,
+		_note: "CaseDetail Actions menu: the flows this case's TYPE lists in startableFlows, and Run. The run is posted straight to OpenRegister's /api/flows/{id}/run with the case as `{uuid, register, schema}` — the three keys FlowRunRow reads — so it lands in the Flow runs widget beside it and dossiq stores no copy of a run (ADR-022). The Start entry is hidden by the case's materialised `hasStartableFlows`; the dialog still says so when the list comes back empty, because the gate is a save-time value and a case type edited since the last case save has not been recomputed yet.",
+	},
+
+	// --- The Related cases tab, with the follow-ups still to come
+	//     (case-actions-menu, row A26). ---
+	//
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the reason
+	// `case-task-pane` and `dossier-tab` are: this is a child of the
+	// `case-panels` tabs widget, and a tab child has no layout grid item and
+	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
+	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
+	// key answers.
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	'case-related-planned': {
+		// @custom-widget-ratchet exclude a planned follow-up is a SCHEDULED FLOW and not a case, so the `related` widget cannot list it: it reads related OBJECTS. The widget wraps the library's own CnRelatedObjectsWidget and only adds an extraSections group, so the built-in related content is unchanged. Deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)
+		kind: 'widget',
+		component: CasePlannedWidget,
+		_note: 'CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.',
+	},
+
+	// --- Plan a follow-up case (case-actions-menu, row A26). ---
+	// @spec openspec/specs/workflow-definition-engine/spec.md
+	CasePlanFollowUpDialog: {
+		kind: 'modal',
+		component: CasePlanFollowUpDialog,
+		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once".',
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---

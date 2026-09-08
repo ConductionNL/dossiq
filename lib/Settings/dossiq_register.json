@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.5.0",
+                "version": "1.6.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -301,6 +301,15 @@
                         "type": "string",
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
                         "title": "IV3 Task Field"
+                    },
+                    "startableFlows": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Startable flows",
+                        "description": "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.",
+                        "x-notes": "Flow ids as plain strings, and NOT a $ref: a flow is a row in oc_openregister_flows read through FlowService, not an object in a register, so there is no flow schema for a $ref to name. The Start entry in the case Actions menu lists these and nothing else. A userStartable flag on the flow itself would replace this list (openspec/changes/case-actions-menu tasks 2.3)."
                     }
                 }
             },
@@ -836,7 +845,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.18.0",
+                "version": "1.19.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1043,6 +1052,19 @@
                                         "prop": "@ref.statusType.isFinal"
                                     },
                                     true
+                                ]
+                            }
+                        },
+                        "hasStartableFlows": {
+                            "type": "boolean",
+                            "materialise": true,
+                            "description": "True when this case's TYPE lists at least one flow a handler may start. It exists so the Start entry in the Actions menu can be hidden on a case type that allows none: an action's local visibleWhen dot-paths into the loaded CASE, startableFlows lives on the case TYPE, and OpenRegister ignores an id filter on an object list, so a source predicate on the type would compare a different case type's list and be wrong without saying so. The expression is a NE against null rather than a count, because the calculation engine has no array operators at all: an empty array compares loosely equal to null and a filled one does not, which is exactly the question being asked. Materialised for the reason isFinalStatus is: cross-object @ref lookups resolve in the save-time listener and nowhere else. A case type whose startableFlows changes later needs occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "ne": [
+                                    {
+                                        "prop": "@ref.caseType.startableFlows"
+                                    },
+                                    null
                                 ]
                             }
                         },
@@ -1595,6 +1617,16 @@
                         "default": false,
                         "description": "Whether the case sits at a terminal status. Computed declaratively by OpenRegister from the linked statusType's isFinal flag (x-openregister-calculations.isFinalStatus); filter isFinalStatus=false for open cases.",
                         "title": "Is Final Status",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "hasStartableFlows": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "default": false,
+                        "description": "Whether this case's type lists a flow a handler may start.",
+                        "x-notes": "Computed declaratively from caseType.startableFlows (x-openregister-calculations.hasStartableFlows) and read by the Start header action's visibleWhen. Carries visible false for the reason isFinalStatus does: it is a gate, not a field anybody fills in, and a data widget that rendered it would put a machine answer in front of a handler.",
+                        "title": "Has startable flows",
                         "facetable": true,
                         "visible": false
                     },

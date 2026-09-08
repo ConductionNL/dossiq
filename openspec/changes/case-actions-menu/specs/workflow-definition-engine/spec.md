@@ -20,7 +20,7 @@ case's flow runs.
 - **AND** SHALL NOT show flows the type does not list
 
 #### Scenario: A run appears on the case
-@e2e tests/e2e/case-actions-menu.spec.ts
+@e2e exclude running a flow needs an ADOPTED, published and enabled flow, and a fresh install deliberately has none: OpenRegister stores a shipped flow ownerless and disabled, and adoption is an administrator's separate act, so arranging one would make this a test of the adoption path instead
 
 - **GIVEN** the same case
 - **WHEN** the handler runs Create sub-case
