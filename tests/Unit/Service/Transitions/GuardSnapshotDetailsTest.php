@@ -25,7 +25,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\MandaatGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
@@ -196,6 +198,75 @@ class GuardSnapshotDetailsTest extends TestCase {
 			);
 		}
 	}//end testNoSnapshotEntryCarriesAnEmptyDetailsObject()
+
+	/**
+	 * A registered evaluator answers for its own type, details and all.
+	 *
+	 * `registerEvaluator()` is how a caller extends the set without editing
+	 * this class, and an evaluator reached that way has to travel the same
+	 * path as a built-in one: its verdict, its message and its details land on
+	 * the snapshot unchanged.
+	 *
+	 * @return void
+	 */
+	public function testARegisteredEvaluatorAnswersForItsOwnType(): void {
+		$evaluator = $this->createMock(GuardEvaluatorInterface::class);
+		$evaluator->method('evaluate')->willReturn(
+			new GuardResult(
+				passed: false,
+				failureMessage: 'Nope',
+				details: ['because' => 'testing'],
+			)
+		);
+
+		$registry = $this->registry();
+		$registry->registerEvaluator(type: 'e2e_custom', evaluator: $evaluator);
+
+		$results = $registry->evaluateAll(
+			guards: [['type' => 'e2e_custom']],
+			case: [],
+			userId: 'admin',
+		);
+
+		self::assertCount(1, $results);
+		self::assertFalse($results[0]['passed']);
+		self::assertSame('Nope', $results[0]['failureMessage']);
+		self::assertSame(['because' => 'testing'], $results[0]['details']);
+	}//end testARegisteredEvaluatorAnswersForItsOwnType()
+
+	/**
+	 * `allPassed()` reads the snapshot this class produces.
+	 *
+	 * It is the question the transition engine actually asks of a snapshot, so
+	 * it is tested against real `evaluateAll()` output rather than a
+	 * hand-built array: an array literal would still answer correctly if the
+	 * snapshot's shape moved underneath it.
+	 *
+	 * @return void
+	 */
+	public function testAllPassedReadsTheSnapshot(): void {
+		$registry = $this->registry();
+
+		$satisfied = $registry->evaluateAll(
+			guards: [['type' => 'requiredField', 'field' => 'title']],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+		self::assertTrue($registry->allPassed(results: $satisfied));
+
+		$refused = $registry->evaluateAll(
+			guards: [
+				['type' => 'requiredField', 'field' => 'title'],
+				['type' => 'requiredField', 'field' => 'absent'],
+			],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+		self::assertFalse($registry->allPassed(results: $refused));
+
+		// A transition declaring no guards is not a transition that failed.
+		self::assertTrue($registry->allPassed(results: []));
+	}//end testAllPassedReadsTheSnapshot()
 
 	/**
 	 * A registry wired with the real evaluators.
