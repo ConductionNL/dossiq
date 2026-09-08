@@ -201,10 +201,28 @@ class ZaakdossierService {
 		// `fileId` is absent, which renders "No previous versions" rather than
 		// an error. The Versions action therefore looked correct on every
 		// document in the dossier while never asking the versions API anything.
+		//
+		// 🔴 THE WHOLE OBJECT, NOT JUST THE FIELD. `saveObject()` REPLACES the
+		// stored object with what it is handed; there is no merge or patch
+		// mode. Passing `['fileId' => $fileId]` with a uuid therefore threw
+		// every other property away, and the informatieobject schema requires
+		// four of them, so OpenRegister refused the write with:
+		//
+		//     The required properties (title, fileName,
+		//     vertrouwelijkheidaanduiding, informatieobjecttype) are missing.
+		//
+		// That exception is caught by `DossierUploadHandler::uploadOne()`, so
+		// the document upload reported `success: false` per file while the
+		// controller still answered 201 Created. Nothing on the Documents tab
+		// ever appeared, and the case dossier came back
+		// `{"total":0,"groups":[],"informatieobjecten":[]}` with no error
+		// anywhere a user could see. It took the same path down with it:
+		// MergeTemplateHandler generates a document through this method too.
 		$fileId = $this->resolveFileId(infoId: $infoId, fileName: $fileName);
 		if ($fileId > 0) {
+			$informatieobject['fileId'] = $fileId;
 			$objectService->saveObject(
-				object: ['fileId' => $fileId],
+				object: $informatieobject,
 				register: $register,
 				schema: $infoSchema,
 				uuid: $infoId

@@ -185,6 +185,68 @@ class ZaakdossierControllerContractTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * An upload where every file failed does not answer 201.
+	 *
+	 * The per-file result list is the right shape when one of five fails. But
+	 * answering 201 Created when NOTHING was created makes the failure
+	 * invisible: the browser reads the status, sees success, and shows nothing
+	 * at all. That is exactly how a total upload failure sat on `development`
+	 * looking like a working feature, with the reason unread inside the body
+	 * of a 201.
+	 *
+	 * @return void
+	 */
+	public function testAnUploadWhereEveryFileFailedDoesNotAnswer201(): void {
+		$this->signIn();
+		$this->withRequestParams(['metadata' => '{}']);
+		$this->request->method('getUploadedFile')->willReturn(['name' => 'a.pdf']);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturn(true);
+		$this->uploadHandler->method('decodeMetadata')->willReturn([]);
+		$this->uploadHandler->method('normaliseUploadedFiles')->willReturn([['name' => 'a.pdf']]);
+		$this->uploadHandler->method('uploadOne')->willReturn(
+			['name' => 'a.pdf', 'success' => false, 'error' => 'the schema refused it']
+		);
+
+		$response = $this->controller->uploadDocument('case-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame(
+			'the schema refused it',
+			$response->getData()['results'][0]['error'],
+			'the reason still travels, it is the STATUS that was lying'
+		);
+	}//end testAnUploadWhereEveryFileFailedDoesNotAnswer201()
+
+	/**
+	 * A partial success is still 201, and still says which file failed.
+	 *
+	 * The control. Something WAS created, so the status is right and the list
+	 * carries the rest. Turning every partial upload into an error would be
+	 * the opposite defect.
+	 *
+	 * @return void
+	 */
+	public function testAPartialUploadIsStill201(): void {
+		$this->signIn();
+		$this->withRequestParams(['metadata' => '{}']);
+		$this->request->method('getUploadedFile')->willReturn([['name' => 'a.pdf'], ['name' => 'b.pdf']]);
+		$this->uploadHandler->method('hasCaseUploadAccess')->willReturn(true);
+		$this->uploadHandler->method('decodeMetadata')->willReturn([]);
+		$this->uploadHandler->method('normaliseUploadedFiles')->willReturn(
+			[['name' => 'a.pdf'], ['name' => 'b.pdf']]
+		);
+		$this->uploadHandler->method('uploadOne')->willReturnOnConsecutiveCalls(
+			['name' => 'a.pdf', 'success' => true, 'informatieobject' => ['id' => 'inf-1']],
+			['name' => 'b.pdf', 'success' => false, 'error' => 'nope'],
+		);
+
+		$response = $this->controller->uploadDocument('case-1');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(2, $response->getData()['results']);
+	}//end testAPartialUploadIsStill201()
+
 	public function testLinkExistingReturnsTheClearanceRefusalAndLinksNothing(): void {
 		$user = $this->signIn();
 		$refusal = new JSONResponse(data: ['error' => 'Insufficient clearance'], statusCode: Http::STATUS_FORBIDDEN);
