@@ -1457,7 +1457,7 @@
 						"type": "object-list",
 						"title": "Objects",
 						"icon": "CubeOutline",
-						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose \u2014 a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
 						"content": {
 							"register": "dossiq",
 							"schema": "caseObject",
@@ -2463,7 +2463,7 @@
 				"allowSavedViews": true,
 				"showViewAction": false,
 				"_caseColumnNote": "The `case` column reads the raw $ref through the `caseTitle` FORMATTER and NOT through `extend`, which is how the Tasks index renders the same reference. `extend` replaces `row.case` with the expanded case object, and the View case action below resolves its `{case}` token with a FLAT row lookup: it would hand vue-router an object instead of a uuid and open nothing, silently. The formatter leaves the uuid in place for the action and resolves the title for the reader, out of the case collection the object store already holds.",
-				"_viewCaseNote": "The row action opens the ROW'S CASE, not the row. `params` is merged OVER the default `{ id: row[rowKey] }`, and `{case}` runs the `{field}` row-token grammar against the flat row \u2014 so the case uuid wins over the case object's own uuid. A case object has no detail page of its own, which is why `showViewAction` is false and this is the only action.",
+				"_viewCaseNote": "The row action opens the ROW'S CASE, not the row. `params` is merged OVER the default `{ id: row[rowKey] }`, and `{case}` runs the `{field}` row-token grammar against the flat row, so the case uuid wins over the case object's own uuid. A case object has no detail page of its own, which is why `showViewAction` is false and this is the only action.",
 				"actions": [
 					{
 						"id": "view-case",
@@ -2497,7 +2497,7 @@
 						"sortable": false
 					}
 				],
-				"_folderSidebarNote": "`source: \"field\"` groups the loaded rows by the distinct values of `objectType` and filters on the same key when one is picked; `allLabel` brings every row back. The change's design wrote `source: \"facet\"`, which CnFolderSidebar's validator rejects (it takes `custom`, `field` or `files`) \u2014 that would have rendered no sidebar and warned only in the console. The related facet FILTER in the metadata sidebar comes from `facetable: true` on `caseObject.objectType`; `x-openregister-facet`, which the design also named, is read by nothing.",
+				"_folderSidebarNote": "`source: \"field\"` groups the loaded rows by the distinct values of `objectType` and filters on the same key when one is picked; `allLabel` brings every row back. The change's design wrote `source: \"facet\"`, which CnFolderSidebar's validator rejects (it takes `custom`, `field` or `files`): that would have rendered no sidebar and warned only in the console. The related facet FILTER in the metadata sidebar comes from `facetable: true` on `caseObject.objectType`; `x-openregister-facet`, which the design also named, is read by nothing.",
 				"folderSidebar": {
 					"source": "field",
 					"field": "objectType",

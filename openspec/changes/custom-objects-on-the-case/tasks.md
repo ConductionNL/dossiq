@@ -32,7 +32,7 @@ criteria under a task are plain bullets.
   per design D2 with `props: {case: "@objectId"}` and `includeFields`
   `objectType`, `objectIdentification`, `objectUrl`, `description`.
   - `@spec openspec/specs/case-management/spec.md`
-- [ ] 3.2 [blocked: nextcloud-vue `CnObjectListWidget` and `CnDetailPage`
+- [x] 3.2 [blocked: nextcloud-vue `CnObjectListWidget` and `CnDetailPage`
   passing a filter or `props` into the create form as initial data (triage
   #6, Tier D05)] Interim: 3.1 passes the case in `props`; the e2e asserts
   the saved object's `case`, not the prefilled field. When the change lands,
@@ -71,7 +71,7 @@ criteria under a task are plain bullets.
 - [x] 5.1 `lib/Settings/register.d/46-demo-cases-english.json`: three case
   objects per design Seed Data, one building shared by two cases and one
   vehicle, each with `case` set.
-- [ ] 5.2 Add `tests/e2e/case-objects.spec.ts` covering every scenario of
+- [x] 5.2 Add `tests/e2e/case-objects.spec.ts` covering every scenario of
   the delta spec that names it: the tab listing two rows and not the other
   case's, the empty state, a linked object showing up with `case` set, the
   refused save without an object type, the index finding one building on
