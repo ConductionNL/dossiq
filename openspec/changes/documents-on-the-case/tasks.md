@@ -98,7 +98,7 @@ criteria under a task are plain bullets.
 
 ## 5. Verification
 
-- [ ] 5.1 Add `tests/e2e/case-documents.spec.ts` covering every scenario of
+- [x] 5.1 Add `tests/e2e/case-documents.spec.ts` covering every scenario of
   the three delta specs that names it: the Documents tab with seeded rows
   and six columns, the empty tab, drop a file through the metadata dialog,
   Versions on a row, keywords on upload and the keyword filter, direction
@@ -107,7 +107,7 @@ criteria under a task are plain bullets.
   type, so 2.2 and 3.3 do not rewrite the spec. Seed through `seedCase`
   and `createObject` from `tests/e2e/helpers/fixtures.ts`; clean up with
   `cleanupRunObjects`.
-- [ ] 5.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
+- [x] 5.2 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: the tab
   strip holds Documents before Files.
 - [ ] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.

@@ -195,6 +195,22 @@ class ZaakdossierService {
 		// Persist the binary content under the informatieobject UUID folder.
 		$this->documentService->storeRaw(uuid: $infoId, fileName: $fileName, content: $content);
 
+		// Stamp the Nextcloud file id onto the record. The schema has always
+		// declared `fileId` and nothing ever wrote it, so every uploaded
+		// document carried none — and VersionHistoryPanel returns EARLY when
+		// `fileId` is absent, which renders "No previous versions" rather than
+		// an error. The Versions action therefore looked correct on every
+		// document in the dossier while never asking the versions API anything.
+		$fileId = $this->resolveFileId(infoId: $infoId, fileName: $fileName);
+		if ($fileId > 0) {
+			$objectService->saveObject(
+				object: ['fileId' => $fileId],
+				register: $register,
+				schema: $infoSchema,
+				uuid: $infoId
+			);
+		}
+
 		// Create the case <-> document join.
 		$this->createJoin(caseId: $caseId, infoObjectId: $infoId);
 
@@ -541,6 +557,34 @@ class ZaakdossierService {
 
 		return 'intern';
 	}//end resolveDefaultClassification()
+
+	/**
+	 * The Nextcloud file id backing a just-stored document.
+	 *
+	 * A store that succeeded and an id that cannot be read back are different
+	 * failures, and neither is worth losing the upload over: the document and
+	 * its file are already there, and only the version history depends on the
+	 * id, so an unreadable id is logged and the upload stands.
+	 *
+	 * @param string $infoId The informatieobject UUID.
+	 * @param string $fileName The stored filename.
+	 *
+	 * @return int The file id, or 0 when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	private function resolveFileId(string $infoId, string $fileName): int {
+		try {
+			return $this->documentService->getFileId(uuid: $infoId, fileName: $fileName);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq dossier: stored ' . $fileName . ' but could not read its file id',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
+			);
+
+			return 0;
+		}
+	}//end resolveFileId()
 
 	/**
 	 * Create a zaakinformatieobject join object.

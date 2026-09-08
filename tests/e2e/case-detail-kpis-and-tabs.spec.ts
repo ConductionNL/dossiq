@@ -39,6 +39,7 @@ import { trackDossiqErrors } from './helpers/nav.ts'
  */
 const TAB_LABELS = [
 	/Notes|Notities/,
+	/Documents|Documenten/,
 	/Files|Bestanden/,
 	/Related cases|Gerelateerde zaken/,
 	/Sub-cases|Deelzaken/,
@@ -329,6 +330,28 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 				timeout: 15_000,
 			})
 		}
+	})
+
+	test('Documents sits before Files in the strip', async ({ page }) => {
+		// Two tabs about the same case, and the order says which one is the
+		// case file: the ZGW dossier first, loose attachments after it. The
+		// Files tab stays (design D5) — dropping it would take the share and
+		// comment surface of the files leaf with it.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+
+		const labels = await strip.getByRole('tab').allInnerTexts()
+		const documents = labels.findIndex((l) => /Documents|Documenten/.test(l))
+		const files = labels.findIndex((l) => /Files|Bestanden/.test(l))
+
+		expect(documents, `tabs: ${labels.join(' | ')}`).toBeGreaterThanOrEqual(0)
+		expect(files).toBeGreaterThanOrEqual(0)
+		expect(documents).toBeLessThan(files)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({

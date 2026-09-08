@@ -643,6 +643,70 @@ class ZaakdossierServiceTest extends TestCase {
 	}//end testUpdateMetadataCarriesKeywordsAndDirection()
 
 	/**
+	 * The upload stamps the Nextcloud file id onto the informatieobject.
+	 *
+	 * VersionHistoryPanel returns EARLY when `fileId` is absent and renders
+	 * "No previous versions", so a document with no id has a Versions action
+	 * that looks correct and asks the versions API nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheUploadStampsTheFileIdOntoTheDocument(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+		$this->documents->method('getFileId')->willReturn(4711);
+
+		$writes = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$writes) {
+				$writes[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$this->service->uploadDocument('case-1', 'a.pdf', 'PDF', ['informatieobjecttype' => 'iot-1']);
+
+		$stamp = array_values(
+			array_filter($writes, static fn (array $w): bool => $w['uuid'] === 'inf-1')
+		);
+		$this->assertCount(1, $stamp, 'the upload must write the file id back');
+		$this->assertSame(['fileId' => 4711], $stamp[0]['object']);
+
+	}//end testTheUploadStampsTheFileIdOntoTheDocument()
+
+	/**
+	 * A file id that cannot be read back does not lose the upload.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableFileIdStillLeavesTheDocumentFiled(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+		$this->documents->method('getFileId')->willThrowException(new \RuntimeException('gone'));
+
+		$schemas = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$schemas) {
+				$schemas[] = $schema;
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$result = $this->service->uploadDocument(
+			'case-1',
+			'a.pdf',
+			'PDF',
+			['informatieobjecttype' => 'iot-1']
+		);
+
+		$this->assertSame('inf-1', $result['id']);
+		$this->assertContains('zaakinformatieobject', $schemas, 'the join is still written');
+
+	}//end testAnUnreadableFileIdStillLeavesTheDocumentFiled()
+
+	/**
 	 * The direction vocabulary matches the enum the register fragment ships.
 	 *
 	 * @return void
