@@ -426,13 +426,35 @@ function nextFixtureSuffix(): string {
  * pointing at a type that is gone — which reddens unrelated specs. Making every
  * caller seed its own type would reintroduce exactly that.
  *
+ * 🔴 PUBLISHED ONLY, AND THIS HALF IS NOT OPTIONAL. Since #1918
+ * `case.caseType` carries `x-relation-filter: {isDraft: false}`, and the
+ * caseType schema DEFAULTS `isDraft` to true. A case seeded against a draft
+ * type therefore has no usable type: the list comes back empty and reads as
+ * "there is nothing here" rather than as a bad fixture. #1944 fixed the
+ * fixtures that CREATE a type; the six specs that ADOPT one were not covered.
+ *
+ * Measured on the dev instance rather than assumed: of 21 live case types
+ * 13 are drafts, so blind `[0]` adoption picks one more often than not, and
+ * the register import itself ships 6 of its 14 with the field ABSENT.
+ *
+ * The two filters compose in a way that matters under parallel workers.
+ * Another worker's seeded type is `isDraft: false` and would have been a
+ * perfectly valid adoption; the FIXTURE_PREFIX filter excludes it and would
+ * otherwise push these specs onto a DRAFT shipped type instead — making the
+ * multi-worker case worse than the serial one it was meant to enable.
+ *
+ * `=== false` and not `!== true`: absent must count as a draft, because that
+ * is what the schema default makes it.
+ *
  * @param api Authenticated request context.
- * @return Case types no fixture run owns, newest-first as the server returns them.
+ * @return Published case types no fixture run owns, in server order.
  */
 export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]> {
 	const rows = await listObjects(api, 'caseType')
 	return rows.filter(
-		(row: any) => JSON.stringify(row).includes(FIXTURE_PREFIX) === false,
+		(row: any) =>
+			row.isDraft === false
+			&& JSON.stringify(row).includes(FIXTURE_PREFIX) === false,
 	)
 }
 

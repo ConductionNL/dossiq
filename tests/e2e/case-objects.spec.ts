@@ -189,7 +189,7 @@ test.describe('Case objects', () => {
 		const caseTypes = await adoptableCaseTypes(api)
 		expect(
 			caseTypes.length,
-			'the instance must ship at least one case type',
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(caseTypes[0])
 

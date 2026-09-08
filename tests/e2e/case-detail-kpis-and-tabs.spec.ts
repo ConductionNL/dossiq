@@ -138,7 +138,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const caseTypes = await adoptableCaseTypes(api)
 		const withDeadline = caseTypes.filter((ct: any) => ct.processingDeadline)
 		const chosen = withDeadline[0] ?? caseTypes[0]
-		expect(chosen, 'the instance must ship at least one case type').toBeTruthy()
+		expect(
+			chosen,
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
+		).toBeTruthy()
 		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
 
 		const seeded = await seedCase(api, token, {
