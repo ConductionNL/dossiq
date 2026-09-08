@@ -244,7 +244,7 @@
 
 <script>
 import { CnFeaturesAndRoadmapPage } from '@conduction/nextcloud-vue'
-import { translate as t } from '@nextcloud/l10n'
+import { getLanguage, translate as t } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import comparison from '../data/capabilityComparison.json'
 import {
@@ -253,7 +253,6 @@ import {
 	overallTallies,
 	RATINGS,
 } from '../utils/capabilityComparison.js'
-import { getUserLocale } from '../utils/i18nResolver.js'
 
 export default {
 	name: 'FeaturesRoadmapView',
@@ -294,7 +293,13 @@ export default {
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-every-user-visible-string-must-exist-in-dutch
 		 */
 		locale() {
-			return getUserLocale()
+			// `getLanguage()` and not `getUserLocale()` from i18nResolver.js.
+			// Both read the user's language, but i18nResolver falls back to
+			// `nl` when the Nextcloud runtime is absent while `t()` falls back
+			// to its English source string. Mixing those two produces Dutch
+			// capability names inside English chrome, which is the one thing
+			// the voice rules say never to ship. One source, one language.
+			return getLanguage() || 'en'
 		},
 
 		/**
