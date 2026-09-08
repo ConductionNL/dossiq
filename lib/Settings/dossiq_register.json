@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts.",
-        "version": "0.16.0"
+        "version": "0.17.0"
     },
     "x-openregister": {
         "type": "application",
@@ -850,24 +850,7 @@
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
                     "retention": {
-                        "default": "P10Y",
-                        "rules": [
-                            {
-                                "condition": "caseType == \"omgevingsvergunning-regulier\"",
-                                "retention": "P5Y",
-                                "reason": "VNG selectielijst 2020 — 4.3.1 (verleende vergunningen), bewaartermijn 5 jaar"
-                            },
-                            {
-                                "condition": "caseType == \"wmo-melding\"",
-                                "retention": "P10Y",
-                                "reason": "VNG selectielijst 2020 — 5.2.1 (WMO-besluiten), bewaartermijn 10 jaar"
-                            },
-                            {
-                                "condition": "caseType == \"subsidie-verlening\"",
-                                "retention": "P20Y",
-                                "reason": "VNG selectielijst 2020 — 7.1.1 (subsidiebeschikkingen), blijvend te bewaren; overbrenging na de wettelijke overbrengingstermijn van 20 jaar"
-                            }
-                        ]
+                        "default": "P10Y"
                     }
                 },
                 "x-openregister-quality": {
@@ -9441,7 +9424,7 @@
             "dossiqIntegration": {
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "title": "Integration",
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
                 "type": "object",
@@ -9467,7 +9450,8 @@
                             "kvk",
                             "pdok",
                             "berichtenbox",
-                            "templates"
+                            "templates",
+                            "signing"
                         ]
                     },
                     "title": {

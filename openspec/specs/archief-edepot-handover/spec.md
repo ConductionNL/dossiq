@@ -77,3 +77,65 @@ proof-of-transfer records are OR-side deltas (OR-AD-1..3).
 - **THEN** status, attempts, and audit trail MUST be readable from OpenRegister's surface
 - **AND** dossiq MUST NOT persist `overdrachtTrigger`/`overdrachtTransactie`/`overdrachtAuditLog` records
 
+
+### Requirement: One date decides when a case is destroyed, and it is the ZGW one
+
+Three mechanisms currently compute a retention answer for the same case, and only
+one of them is legally correct. This requirement names which, and records what the
+other two are for.
+
+**The authoritative answer is `case.archiveActionDate` and `case.archiveNomination`,**
+derived from the case's RESULT TYPE by zrc-021
+(`Service\Archival\ArchivalNominationDeriver`), from the brondatum the
+`brondatumArchiefprocedure` names, which for an ordinary zaak is the einddatum.
+That is what the Archiefwet requires, what a ZGW consumer reads off the zaak, and
+the only one of the three that varies with the OUTCOME of the case. A granted
+permit and a withdrawn one are not kept for the same term.
+
+**`x-openregister-archival` on the case schema is NOT a second answer and SHALL NOT
+be made into one.** It is retained for the delete gates it earns, and its
+`retention.default` SHALL be the only key it carries. Dossiq SHALL NOT declare
+per-case-type retention rules there. Two OpenRegister properties make it unable to
+express a zaak's bewaartermijn, and neither is dossiq's to change:
+
+- it counts from the row's `_created` timestamp, with no override. A duration from
+  creation is a different number from the same duration after afhandeling.
+- its hourly sweep (`ArchivalRetentionTask`) does not check legal holds. It passes
+  `_retentionSweep: true`, which is the one flag that skips the immutability gate
+  every other destruction path honours, and dossiq's bezwaar and beroep handling
+  depends on that gate.
+
+**`BeschikkingService::archive()` computes a third date** and it is app-local
+arithmetic: a hardcoded `P15Y` at the call site, added to the mandate approval date,
+for every beschikking of every case type. Its adapter's own docblock claims the
+term is governed declaratively by `x-openregister-archival`; nothing reads that
+annotation. The claim SHALL be corrected or the computation SHALL be moved onto the
+authoritative date.
+
+#### Scenario: The annotation carries no rule that contradicts the result type
+@e2e exclude A schema annotation has no browser surface; asserted by tests/vitest/caseRetentionAnnotation.spec.js, which also refuses a rule naming a case type nothing seeds.
+
+- **GIVEN** the case schema's `x-openregister-archival`
+- **WHEN** it is read
+- **THEN** `retention` SHALL carry `default` and no `rules`
+- **AND** no schema other than `case` SHALL carry the annotation
+
+#### Scenario: A rule naming an absent case type is refused
+@e2e exclude Same absent surface; asserted by the same vitest guard.
+
+- **GIVEN** a retention rule whose condition names a case type slug
+- **WHEN** nothing in the seed declares a case type with that slug
+- **THEN** the guard SHALL fail, because a rule that can never match is a
+  destruction policy the app appears to have and does not
+
+#### Scenario: Three shipped rules could never fire
+@e2e exclude Historical record of the defect this requirement closes; the guard above is what keeps it closed.
+
+- **GIVEN** the rules that shipped, naming `omgevingsvergunning-regulier`,
+  `wmo-melding` and `subsidie-verlening`
+- **WHEN** each is matched against the fourteen case types the app seeds
+- **THEN** none of the three slugs SHALL exist
+- **AND** every case SHALL therefore have fallen through to the flat ten-year
+  default, including the cases the rules were written to give five and twenty
+- **AND** the `reason` strings SHALL NOT have claimed VNG selectielijst compliance
+  the app does not have

@@ -2,7 +2,7 @@
     "_meta": {
         "spdx-license": "EUPL-1.2",
         "spdx-copyright": "2026 Conduction B.V.",
-        "description": "The twelve connections Dossiq has to systems outside it, seeded for the Integrations page (pluggable-integration-registry). The status a row carries is the status the app can back on a fresh instance: eight are unconfigured because nothing has been saved or probed yet, and BRP and KvK are unavailable because they are specified and not built. NO ROW IS SEEDED configured — only a save or a probe may write that, which is what makes the page worth reading. The order follows row A34 of the round-2 placement matrix. settingsUrl points at the anchor its section carries in AdminRoot.vue. THREE rows carry none: BRP and KvK because they are not built, and PDOK because it has no admin section at all — its pdok_* app-config keys are read by the map components and written by nothing an admin can open. The change's design counted eight anchors; AdminRoot.vue has seven sections to anchor, and inventing a link into a section that does not exist is the one thing this page is here to stop. TWO ROWS ARE SEEDED `simulated`, and that is a claim the app CAN back on a fresh instance: Berichtenbox and the beschikking template engine both resolve to a mock adapter unless an integrator names a real one in the `berichtenbox_adapter` or `beschikking_template_adapter` app-config key, so `simulated` is what is true before anybody configures anything. Saving a real adapter class flips the row to `configured`; clearing it flips the row back. Neither row carries a settingsUrl, for the same reason PDOK does not: no admin section writes those keys yet, and inventing a link into a section that does not exist is the one thing this page is here to stop. The row's own message names the key instead, so an integrator can set it with `occ config:app:set`. Neither ships a transport, and neither should: both are per-customer contracts and belong in integriq."
+        "description": "The thirteen connections Dossiq has to systems outside it, seeded for the Integrations page (pluggable-integration-registry). The status a row carries is the status the app can back on a fresh instance: eight are unconfigured because nothing has been saved or probed yet, and BRP and KvK are unavailable because they are specified and not built. NO ROW IS SEEDED configured — only a save or a probe may write that, which is what makes the page worth reading. The order follows row A34 of the round-2 placement matrix. settingsUrl points at the anchor its section carries in AdminRoot.vue. THREE rows carry none: BRP and KvK because they are not built, and PDOK because it has no admin section at all — its pdok_* app-config keys are read by the map components and written by nothing an admin can open. The change's design counted eight anchors; AdminRoot.vue has seven sections to anchor, and inventing a link into a section that does not exist is the one thing this page is here to stop. THREE ROWS ARE SEEDED `simulated`, and that is a claim the app CAN back on a fresh instance: Berichtenbox and the beschikking template engine both resolve to a mock adapter unless an integrator names a real one in the `berichtenbox_adapter` or `beschikking_template_adapter` app-config key, so `simulated` is what is true before anybody configures anything. Saving a real adapter class flips the row to `configured`; clearing it flips the row back. Neither row carries a settingsUrl, for the same reason PDOK does not: no admin section writes those keys yet, and inventing a link into a section that does not exist is the one thing this page is here to stop. The row's own message names the key instead, so an integrator can set it with `occ config:app:set`. SIGNING IS THE ONE THAT IS NOT CONFIG-DRIVEN: dossiq ships a real LibreSign adapter, so its row is decided by an APP PROBE rather than a setting, resolved through FleetAppId because filinq and its siblings taught us that a literal app id returns false on half the fleet and takes the integration dark without erroring. `IntegrationStatusService::recordAdapterSeams()` writes it, and like every other row on this page it says what the last probe found, not what is true this second: install LibreSign and the row moves at the next settings save or upgrade. Neither ships a transport, and neither should: both are per-customer contracts and belong in integriq."
     },
     "components": {
         "objects": [
@@ -173,6 +173,20 @@
                 "statusMessage": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.",
                 "settingsUrl": "",
                 "order": 120
+            },
+            {
+                "@self": {
+                    "register": "dossiq",
+                    "schema": "dossiqIntegration",
+                    "slug": "integration-signing"
+                },
+                "key": "signing",
+                "title": "Digital signing",
+                "description": "Signing a besluit with an eIDAS-aligned signature, which LibreSign does.",
+                "status": "simulated",
+                "statusMessage": "A mock adapter answers here. Nothing is really signed. Install and enable LibreSign.",
+                "settingsUrl": "",
+                "order": 130
             }
         ]
     }
