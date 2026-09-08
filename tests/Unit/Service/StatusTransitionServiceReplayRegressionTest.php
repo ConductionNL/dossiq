@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -90,12 +92,12 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			$this->createMock(WorkflowTemplateLoader::class),
 			$this->createMock(GuardRegistry::class),
 			$this->createMock(SideEffectDispatcher::class),
-			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService), $this->logger),
+			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
 			new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$this->logger,
-			new CaseResultWriter($this->settingsService),
+			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))),
 			$this->createMock(StatusChecklist::class),
 		);
 

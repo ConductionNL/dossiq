@@ -88,7 +88,13 @@ describe('Cases index lenses', () => {
 		const defaults = chips('Cases').filter((entry) => entry.default === true)
 		expect(defaults).toHaveLength(1)
 		expect(defaults[0].label).toBe('All')
-		expect(defaults[0].filter).toEqual({})
+		// All was literally `{}` until `case-type-authoring-extras` gave a
+		// status a `hiddenInLists` flag: a status marked hidden keeps its
+		// cases off every lens but Closed, and All is the lens the index
+		// opens on. The ONE condition is still the whole filter — no
+		// assignee, no case type, nothing that narrows to a person's own
+		// work — which is what this test has always been guarding.
+		expect(defaults[0].filter).toEqual({ statusHiddenInLists: false })
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {

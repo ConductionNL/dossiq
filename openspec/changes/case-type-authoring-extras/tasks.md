@@ -68,9 +68,34 @@ implementation task; the criteria under a task are plain bullets.
     `false` is an answer, and inheriting it would turn every child of a type
     that allows suspension into one that allows it too.
   - `@spec openspec/specs/case-types/spec.md`
-- [ ] 2.3 Move every reader of `statusType`, `resultType` and
+- [x] 2.3 Move every reader of `statusType`, `resultType` and
   `propertyDefinition` by `caseType` to the resolver; list them first with
   `grep -rn "'caseType'" lib/Service` and record the list here.
+  - MOVED. `Transitions/StatusTypeLookup::statusRowsFor()` — the one that
+    matters, because `idForName`, `idForRole` and `statusesOf` all run
+    through it, and so does every transition. `Transitions/CaseResultWriter::
+    listResultTypeIds()` — a child that inherits its results closed with no
+    result at all otherwise, which is the exact hole that class exists to
+    close. `src/components/case/CaseStepsWidget.vue` — the stepper, now over
+    `GET /api/case-types/{id}/blueprint` (new, `CaseTypeController`), which
+    is also what gives a page the `origin` marker per row.
+  - NOT MOVED, on purpose. `ZgwZtcRulesService` (two readers): the ZGW
+    catalogue mirrors what is DECLARED, which is what a ZGW client asked
+    for, and its constructor is `ZgwRulesBase`'s, shared by every
+    `Zgw*RulesService`. The publish validation it also carries is the one
+    place that mattered, and `CaseTypePublishService` answers that through
+    the resolver instead. `CaseTypeCopyService`, `CaseDefinitionExportService`,
+    `TemplateLibraryService`, `SeedDataService`, `VTHTemplateService`,
+    `BesluitvormingTemplateService` and the `Repair/` seeders all WRITE
+    declared rows; resolving there would copy a parent's statuses into the
+    child as new rows, which is the opposite of inheriting them.
+  - ⚠️ NOT MOVABLE. `case.status` carries `x-relation-filter: {caseType:
+    "@object.caseType"}` and `case.caseType` an `x-openregister-prefill`
+    (`status <- initialStatus`). Both are OpenRegister's, both read the
+    child's OWN rows, and neither can express a chain. So the status PICKER
+    on a new case of a child type offers only the child's own statuses.
+    `effectiveCaseType()` inherits `initialStatus` so every PHP reader is
+    right; the picker is filed as an OpenRegister request.
 - [ ] 2.4 `src/manifest.json` page `CaseTypeDetail`: widget
   `case-type-parent` and the Inherited badge per design D2.
 

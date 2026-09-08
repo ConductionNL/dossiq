@@ -85,6 +85,7 @@ class CaseTypeResolver {
 	 * @var array<int, string>
 	 */
 	private const INHERITED_FIELDS = [
+		'initialStatus',
 		'processingDeadline',
 		'extensionPeriod',
 		'suspensionAllowed',
