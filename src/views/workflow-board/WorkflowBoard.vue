@@ -120,6 +120,7 @@ import {
 	emptySelection,
 	toggleSelection,
 } from '../../utils/bulkTransitionHelpers.js'
+import { mergeColumnColour } from '../../utils/statusColour.js'
 
 export default {
 	name: 'WorkflowBoard',
@@ -375,8 +376,20 @@ export default {
 					const existing = colByName.get(name)
 					if (existing) {
 						existing.order = Math.min(existing.order, order)
+						// Two case types can colour the same status name
+						// differently and the merged column can only be one
+						// of them; mergeColumnColour says which.
+						existing.colour = mergeColumnColour(
+							existing.colour,
+							st.colour,
+						)
 					} else {
-						colByName.set(name, { id: name, name, order })
+						colByName.set(name, {
+							id: name,
+							name,
+							order,
+							colour: mergeColumnColour(null, st.colour),
+						})
 					}
 				}
 				this.columns = [...colByName.values()].sort(

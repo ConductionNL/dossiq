@@ -153,12 +153,12 @@ class CaseActionsSchemaTest extends TestCase {
 	 */
 	public function testBothSchemasMovedTheirVersion(): void {
 		$this->assertTrue(
-			version_compare((string)$this->schemas['caseType']['version'], '1.3.0', '>='),
-			'caseType must be at least 1.3.0, the version that introduced startableFlows'
+			version_compare((string)$this->schemas['caseType']['version'], '1.6.0', '>='),
+			'caseType must be at least 1.6.0, the version that introduced startableFlows'
 		);
 		$this->assertTrue(
-			version_compare((string)$this->schemas['case']['version'], '1.18.0', '>='),
-			'case must be at least 1.18.0, the version that introduced hasStartableFlows'
+			version_compare((string)$this->schemas['case']['version'], '1.19.0', '>='),
+			'case must be at least 1.19.0, the version that introduced hasStartableFlows'
 		);
 	}//end testBothSchemasMovedTheirVersion()
 }//end class

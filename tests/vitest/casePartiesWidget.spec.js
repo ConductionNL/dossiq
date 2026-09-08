@@ -271,8 +271,16 @@ describe('the Team column and the Mine chip', () => {
 		// on mount. Without an all-rows chip marked default, the index would
 		// silently open showing only the signed-in handler's own work —
 		// a filter nobody asked for and no empty state explains.
+		//
+		// `statusHiddenInLists` is the one condition allowed through, added by
+		// `case-type-authoring-extras`: a status its author marked hidden
+		// keeps its cases off every lens but Closed. It is a property of the
+		// STATUS, not of the reader, so it does not narrow the index to
+		// anyone's own work — which is the thing this test guards.
 		const initial = chips.find((chip) => chip.default === true) || chips[0]
-		expect(initial.filter, 'the index must open unfiltered').toEqual({})
+		const scoping = { ...initial.filter }
+		delete scoping.statusHiddenInLists
+		expect(scoping, 'the index must open unfiltered').toEqual({})
 	})
 })
 

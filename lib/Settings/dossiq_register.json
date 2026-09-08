@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.3.0",
+                "version": "1.6.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -44,6 +44,13 @@
                         "type": "string",
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The folder this case type sits in on the Case types index, a free word rather than a fixed list: an organisation's own grouping (Vergunningen, Sociaal domein, Handhaving) is the one it recognises. Types with no category are listed under All case types with everything else.",
+                        "title": "Category",
+                        "facetable": true
                     },
                     "purpose": {
                         "type": "string",
@@ -186,6 +193,14 @@
                         "description": "Responsible person or department",
                         "title": "Responsible"
                     },
+                    "parentCaseType": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseType",
+                        "description": "The case type this one derives from. A child inherits the parent's statuses, results, properties and deadlines, and declares only what differs: a row the child gives the same name replaces the parent's. Leave it empty for a type that stands on its own. A chain that returns to itself is refused on save, and the chain is at most three deep.",
+                        "title": "Parent case type",
+                        "facetable": true
+                    },
                     "relatedCaseTypes": {
                         "type": "string",
                         "description": "Related case types (JSON-encoded array)",
@@ -233,6 +248,55 @@
                         "description": "Subscribed wmsLayer UUIDs visible on this case type's maps. An empty array shows only the default layers.",
                         "title": "Layer IDs"
                     },
+                    "processesPersonalData": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases of this type process personal data. Answer it on the type rather than per case: it is a property of the process, and a case handler is not the person who decides it.",
+                        "title": "Processes personal data",
+                        "facetable": true
+                    },
+                    "personalDataCategories": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "naw",
+                                "bsn",
+                                "contact",
+                                "financieel",
+                                "gezondheid",
+                                "strafrechtelijk",
+                                "biometrisch",
+                                "etniciteit",
+                                "religie",
+                                "politiek",
+                                "seksueel"
+                            ]
+                        },
+                        "description": "Which categories of personal data cases of this type process. The last seven are AVG article 9 special categories: naming one here is the record that says the extra safeguards apply.",
+                        "title": "Personal data categories"
+                    },
+                    "legalBasis": {
+                        "type": "string",
+                        "enum": [
+                            "consent",
+                            "contract",
+                            "legal_obligation",
+                            "vital_interests",
+                            "public_task",
+                            "legitimate_interest"
+                        ],
+                        "description": "The AVG article 6 basis on which cases of this type process personal data. OpenRegister's own vocabulary verbatim, in English: its Verwerkingsactiviteit mapper refuses anything else, and this value is what pairs a case type with the activity in the verwerkingsregister.",
+                        "title": "Legal basis",
+                        "facetable": true
+                    },
+                    "verwerkingsactiviteit": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The code of the activity in OpenRegister's verwerkingsregister that cases of this type are logged under, as SeedVerwerkingsactiviteiten upserts them (zaakafhandeling, behandelen-omgevingsvergunning, behandelen-bezwaarschrift, behandelen-woo-verzoek, behandelen-klacht, klantcontact-registratie, zaak-archivering). A string rather than a $ref until OpenRegister exposes the verwerkingsregister as a referenceable schema.",
+                        "title": "Processing activity",
+                        "facetable": true
+                    },
                     "iv3TaskField": {
                         "type": "string",
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
@@ -252,7 +316,7 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
@@ -308,6 +372,34 @@
                         ],
                         "description": "What this status MEANS in a process, independent of what it is called. A shipped flow moves a case by role, so it works on a case type that calls its working phase Beoordeling or Onderzoek rather than In behandeling. Leave it empty for a status no flow needs to address.",
                         "title": "Role"
+                    },
+                    "colour": {
+                        "type": "string",
+                        "enum": [
+                            "blue",
+                            "blue-light",
+                            "green",
+                            "green-light",
+                            "orange",
+                            "orange-light",
+                            "red",
+                            "red-light",
+                            "purple",
+                            "purple-light",
+                            "grey",
+                            "grey-light"
+                        ],
+                        "default": "grey",
+                        "description": "The hue this status is drawn in, on the status badge and as the Workflow board column header. A name from the NL Design System palette rather than a hex value, so a themed install repoints the token and every badge follows. Leave it empty and the status renders grey.",
+                        "title": "Colour",
+                        "facetable": true
+                    },
+                    "hiddenInLists": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases in this status stay out of the Cases index. A closed status fills the list with work nobody is doing; marking it hidden keeps it off every lens except Closed. The case carries the flag as the calculated statusHiddenInLists so the list filters it server-side.",
+                        "title": "Hidden in lists",
+                        "facetable": true
                     },
                     "checklist": {
                         "type": "array",
@@ -462,15 +554,14 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
                 "description": "Custom field definition for a case type",
                 "type": "object",
                 "required": [
-                    "name",
-                    "caseType"
+                    "name"
                 ],
                 "properties": {
                     "name": {
@@ -493,7 +584,7 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "caseType",
-                        "description": "Reference to the parent case type",
+                        "description": "The case type this attribute belongs to. Leave it empty and the attribute is SHARED: it is listed on every case type's Properties tab under Shared attributes, so one Kenteken is authored once rather than copied per type.",
                         "title": "Case Type"
                     },
                     "propertyType": {
@@ -754,7 +845,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.18.0",
+                "version": "1.19.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -974,6 +1065,19 @@
                                         "prop": "@ref.caseType.startableFlows"
                                     },
                                     null
+                                ]
+                            }
+                        },
+                        "statusHiddenInLists": {
+                            "type": "boolean",
+                            "materialise": true,
+                            "description": "True when the linked statusType is marked hidden in lists (statusType.hiddenInLists). Materialised for the same reason isFinalStatus is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener, and the Cases index has to narrow on it server-side. A client-side filter over server-paged rows drops what it never fetched. After editing a statusType's hiddenInLists flag, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "eq": [
+                                    {
+                                        "prop": "@ref.statusType.hiddenInLists"
+                                    },
+                                    true
                                 ]
                             }
                         },
@@ -1523,6 +1627,15 @@
                         "description": "Whether this case's type lists a flow a handler may start.",
                         "x-notes": "Computed declaratively from caseType.startableFlows (x-openregister-calculations.hasStartableFlows) and read by the Start header action's visibleWhen. Carries visible false for the reason isFinalStatus does: it is a gate, not a field anybody fills in, and a data widget that rendered it would put a machine answer in front of a handler.",
                         "title": "Has startable flows",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "statusHiddenInLists": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "default": false,
+                        "description": "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.",
+                        "title": "Status hidden in lists",
                         "facetable": true,
                         "visible": false
                     },
@@ -9584,7 +9697,8 @@
                 "description": "Aanvraag is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9597,7 +9711,8 @@
                 "description": "Aanvraag wordt inhoudelijk getoetst",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9610,7 +9725,8 @@
                 "description": "Besluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
-                "role": "review"
+                "role": "review",
+                "colour": "purple"
             },
             {
                 "@self": {
@@ -9623,7 +9739,9 @@
                 "description": "Zaak is afgehandeld en gearchiveerd",
                 "order": 4,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9636,7 +9754,8 @@
                 "description": "Subsidieaanvraag is ontvangen",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9649,7 +9768,8 @@
                 "description": "Aanvraag wordt getoetst aan subsidiekader",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9662,7 +9782,8 @@
                 "description": "Subsidiebesluit wordt voorbereid en genomen",
                 "order": 3,
                 "isFinal": false,
-                "role": "review"
+                "role": "review",
+                "colour": "purple"
             },
             {
                 "@self": {
@@ -9675,7 +9796,9 @@
                 "description": "Subsidie is verleend, geweigerd of ingetrokken",
                 "order": 4,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9688,7 +9811,8 @@
                 "description": "Klacht is ontvangen en geregistreerd",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9701,7 +9825,8 @@
                 "description": "Klacht wordt onderzocht (hoor en wederhoor)",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9714,7 +9839,9 @@
                 "description": "Klacht is afgehandeld met formeel antwoord",
                 "order": 3,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {
@@ -9727,7 +9854,8 @@
                 "description": "Melding is ontvangen en doorgezet",
                 "order": 1,
                 "isFinal": false,
-                "role": "intake"
+                "role": "intake",
+                "colour": "blue"
             },
             {
                 "@self": {
@@ -9740,7 +9868,8 @@
                 "description": "Melding wordt afgehandeld door beheerdienst",
                 "order": 2,
                 "isFinal": false,
-                "role": "in-progress"
+                "role": "in-progress",
+                "colour": "orange"
             },
             {
                 "@self": {
@@ -9753,7 +9882,9 @@
                 "description": "Melding is opgelost en afgesloten",
                 "order": 3,
                 "isFinal": true,
-                "role": "closed"
+                "role": "closed",
+                "colour": "green",
+                "hiddenInLists": true
             },
             {
                 "@self": {

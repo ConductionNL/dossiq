@@ -126,6 +126,13 @@ $extra = [
 
         // Case type duplicate (zaaktype-copy) + draft-only guarded delete.
     ['name' => 'caseDefinition#copy',   'url' => '/api/case-definitions/{id}/copy', 'verb' => 'POST'],
+        // The effective blueprint of a case type (its own rows merged with its
+        // parent's) and the validate-then-publish gesture. Keyed on the case
+        // type rather than on a definition package, so they sit under
+        // /api/case-types and on their own controller.
+    ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
+    ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
+    ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────

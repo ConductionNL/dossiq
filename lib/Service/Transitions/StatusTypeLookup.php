@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use Throwable;
 
@@ -48,10 +49,13 @@ class StatusTypeLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Resolves the object service and configured schemas.
+	 * @param SettingsService  $settingsService   Resolves the object service and configured schemas.
+	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
+	 *                                            inherited statuses are found too.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseTypeResolver $caseTypeResolver,
 	) {
 	}//end __construct()
 
@@ -220,80 +224,28 @@ class StatusTypeLookup {
 	}//end statusesOf()
 
 	/**
-	 * The raw statusType rows belonging to one case type.
+	 * The statusType rows a case of this type can be in.
 	 *
-	 * Filtered SERVER-side on the back-reference. Fetching every status type and
-	 * filtering here would drop rows the first page did not contain, and would
-	 * match a same-named status belonging to another case type.
+	 * 🔴 THROUGH THE RESOLVER, NOT STRAIGHT AT THE STORE. This asked the store
+	 * for `statusType where caseType = X`, which is the CHILD's own rows. A
+	 * case type that derives from a parent and declares no statuses of its own
+	 * therefore had none: `idForName()` returned '' for every name, and
+	 * `SetStatusHandler` refused every move on a case of that type. Not an
+	 * error anywhere — an empty list is a valid answer to the question that
+	 * was asked, it was simply the wrong question. The resolver still filters
+	 * server-side per ancestor, so the reason the old code gave for going to
+	 * the store directly (never fetch-then-filter in PHP) still holds.
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
-	 * @return array<int, array<string, mixed>> The rows.
+	 * @return array<int, array<string, mixed>> The rows, inherited ones included.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function statusRowsFor(string $caseTypeId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if ($register === '' || $statusTypeSchema === '') {
-			return [];
-		}
-
-		try {
-			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $statusTypeSchema],
-					'caseType' => $caseTypeId,
-					'_limit' => 200,
-				]
-			);
-		} catch (Throwable $e) {
-			return [];
-		}
-
-		return $this->asRows(value: $found);
+		return $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
 	}//end statusRowsFor()
 
-	/**
-	 * Normalise whatever the object store returned into plain rows.
-	 *
-	 * The store answers with either a bare list or a paged envelope, and each
-	 * row as an array or an entity. Reading only one of those shapes is how a
-	 * lookup silently finds nothing on an instance that answers the other way.
-	 *
-	 * @param mixed $value The search result.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
-	 */
-	private function asRows(mixed $value): array {
-		if (is_array($value) === true && isset($value['results']) === true) {
-			$value = $value['results'];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end asRows()
 
 	/**
 	 * Read one object from a configured schema.

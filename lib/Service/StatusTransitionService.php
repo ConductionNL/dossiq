@@ -134,7 +134,11 @@ class StatusTransitionService {
 
 		$result = [
 			'transitions' => [],
-			'current' => ['statusId' => $currentId, 'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId)],
+			'current' => [
+				'statusId' => $currentId,
+				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
+				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+			],
 		];
 
 		if ($template === null) {
