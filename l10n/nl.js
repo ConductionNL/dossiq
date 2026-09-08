@@ -608,6 +608,7 @@ OC.L10N.register(
         "Checklist complete": "Checklist compleet",
         "Checklist deleted": "Checklist verwijderd",
         "Checklist item": "Checklistitem",
+        "Checklist item not done: %s": "Checklistitem nog niet afgerond: %s",
         "Checklist items": "Checklistitems",
         "Checklist name": "Checklistnaam",
         "Checklist name is required": "Checklistnaam is verplicht",
@@ -3623,7 +3624,17 @@ OC.L10N.register(
         "Payment indication": "Betaalindicatie",
         "Last payment date": "Datum laatste betaling",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "Het wetsartikel waaronder deze zaak wordt behandeld (bijvoorbeeld Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "De behandeltermijn van het zaaktype van deze zaak, als ISO 8601-duur. Overgenomen uit caseType.processingDeadline door x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "De behandeltermijn van het zaaktype van deze zaak, als ISO 8601-duur. Overgenomen uit caseType.processingDeadline door x-openregister-calculations.statutoryTerm.",
+        "Objects": "Objecten",
+        "Link object": "Object koppelen",
+        "Object type": "Objecttype",
+        "Identification": "Identificatie",
+        "No objects linked to this case yet": "Nog geen objecten aan deze zaak gekoppeld",
+        "Object linked to this case.": "Object aan deze zaak gekoppeld.",
+        "All objects": "Alle objecten",
+        "What has to be done. This is the title of the task that is created.": "Wat er moet gebeuren. Dit is de titel van de taak die wordt aangemaakt.",
+        "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.": "Wat deze status vraagt. Elk item wordt een taak op de zaak zodra de zaak deze status bereikt, één keer per status hoe vaak de zaak ook terugkomt. Een item dat verplicht is houdt de zaak in deze status tot de taak is afgerond, en de overgangsknop vertelt welk item nog openstaat.",
+        "Whether the case may leave this status before this item's task is completed.": "Of de zaak deze status mag verlaten voordat de taak van dit item is afgerond."
     },
     "nplurals=2; plural=(n != 1);"
 )
