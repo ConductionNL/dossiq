@@ -548,6 +548,7 @@ test.describe('Dashboard tiles', () => {
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
 	// @e2e dashboard::view-all-keeps-the-tiles-filter
 	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
 	}) => {
@@ -588,9 +589,12 @@ test.describe('Dashboard tiles', () => {
 		expect(query.get('isFinalStatus')).toBe('false')
 
 		// The query arriving is not the same as the LIST honouring it, and it
-		// is the list the reader sees. `case-list-lenses` used to assert this
-		// separately, on a dashboard whose tile could not offer the control in
-		// the first place; it belongs here, where the fixture owns the window.
+		// is the list the reader sees. `case-list-lenses` and `pages` both used
+		// to assert this control separately, against a tile that could not
+		// offer it because neither of them filled its window. Three copies of
+		// one scenario, all red for the same reason. It belongs here, in the
+		// one spec whose fixture owns the window, and their annotations came
+		// with it.
 		//
 		// Absence is what catches a dropped filter, so the list is required to
 		// have rendered a row FIRST: two `toHaveCount(0)` against an empty
