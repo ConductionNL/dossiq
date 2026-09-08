@@ -23,8 +23,8 @@ import {
 	formToStatusType,
 	isStatusRole,
 	pruneChecklist,
-	statusTypeToForm,
 	STATUS_ROLES,
+	statusTypeToForm,
 } from '../../src/utils/statusTypeForm.js'
 
 describe('the roles', () => {
@@ -71,9 +71,9 @@ describe('emptyStatusTypeForm', () => {
 
 describe('pruneChecklist', () => {
 	it('drops an item with no title, because that would be a task with no title', () => {
-		expect(pruneChecklist([checklistItem(''), checklistItem('Check id')])).toEqual([
-			{ title: 'Check id', required: false },
-		])
+		expect(
+			pruneChecklist([checklistItem(''), checklistItem('Check id')]),
+		).toEqual([{ title: 'Check id', required: false }])
 	})
 
 	it('drops an item that is only whitespace', () => {
@@ -88,7 +88,9 @@ describe('pruneChecklist', () => {
 		expect(pruneChecklist([{ title: 'a', required: 'true' }])[0].required).toBe(
 			false,
 		)
-		expect(pruneChecklist([{ title: 'a', required: true }])[0].required).toBe(true)
+		expect(pruneChecklist([{ title: 'a', required: true }])[0].required).toBe(
+			true,
+		)
 	})
 
 	it.each([

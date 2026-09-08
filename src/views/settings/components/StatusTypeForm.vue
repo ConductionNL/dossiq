@@ -165,7 +165,12 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import { STATUS_COLOURS, statusColourStyle } from '../../../utils/statusColour.js'

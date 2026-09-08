@@ -48,9 +48,9 @@ describe('isCurrentCaseTypeVersion', () => {
 	})
 
 	it('says no once a successor is named', () => {
-		expect(
-			isCurrentCaseTypeVersion({ ...current, supersededBy: 'ct-3' }),
-		).toBe(false)
+		expect(isCurrentCaseTypeVersion({ ...current, supersededBy: 'ct-3' })).toBe(
+			false,
+		)
 	})
 
 	it('reads a successor stored as an expanded object', () => {
@@ -85,7 +85,9 @@ describe('isCaseTypeUsable', () => {
 	})
 
 	it('still honours the validity window', () => {
-		expect(isCaseTypeUsable({ ...current, validUntil: '2020-01-01' })).toBe(false)
+		expect(isCaseTypeUsable({ ...current, validUntil: '2020-01-01' })).toBe(
+			false,
+		)
 	})
 })
 

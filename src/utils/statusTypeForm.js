@@ -100,7 +100,9 @@ export function pruneChecklist(checklist) {
 	}
 
 	return checklist
-		.filter((item) => typeof item?.title === 'string' && item.title.trim() !== '')
+		.filter(
+			(item) => typeof item?.title === 'string' && item.title.trim() !== '',
+		)
 		.map((item) => checklistItem(item.title.trim(), item.required === true))
 }
 
