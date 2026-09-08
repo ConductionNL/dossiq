@@ -414,6 +414,11 @@ export async function ensureCaseType(
 		title: name,
 		identifier: `${RUN_PREFIX.toLowerCase()}-casetype`,
 		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
+		// PUBLISHED, NOT DRAFT. `case.caseType` carries
+		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
+		// `isDraft` to TRUE, so a type seeded without this is a draft and never
+		// appears in the New case picker.
+		isDraft: false,
 	})
 	return { id: objectId(ct), name, seeded: true }
 }

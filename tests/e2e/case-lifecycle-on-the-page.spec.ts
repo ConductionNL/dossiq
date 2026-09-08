@@ -325,25 +325,35 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(page.getByTestId(`case-transition-${T.start}`)).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/status-transition-engine/spec.md#a-failed-guard-keeps-the-case-where-it-is
-	test('a failed guard is shown in the dialog and the case does not move', async ({
+	// @e2e openspec/specs/status-transition-engine/spec.md#required-document-guard-evaluation
+	test('a failed guard disables the button and names what is missing', async ({
 		page,
 		request,
 	}) => {
+		// 🔴 THE REFUSAL MOVED AHEAD OF THE POST, AND THE SPEC ALWAYS ASKED FOR
+		// THAT. `Scenario: Required document guard evaluation` reads "the
+		// transition button SHALL be disabled" and "SHALL display: Vereist
+		// document ontbreekt: Besluit". This test used to click the button,
+		// confirm the dialog and read the error out of the failed response,
+		// which is the behaviour the spec did NOT describe.
+		//
+		// It also anchored at `#a-failed-guard-keeps-the-case-where-it-is`,
+		// which matches no scenario in that spec, so the anchor pointed at
+		// nothing while looking like coverage.
 		await openCase(page, 'guard')
-		await page.getByTestId(`case-transition-${T.needsDoc}`).click()
 
-		const dialog = page.getByTestId('case-transition-dialog')
-		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await page.getByTestId('case-transition-confirm').click()
+		const button = page.getByTestId(`case-transition-${T.needsDoc}`)
+		await expect(button).toBeVisible({ timeout: 15_000 })
+		await expect(button).toBeDisabled()
 
-		// The reason stays beside the gesture: the dialog stays open and names
-		// the document the guard wanted.
-		const error = page.getByTestId('case-transition-error')
-		await expect(error).toBeVisible({ timeout: 20_000 })
-		await expect(error).toContainText(REQUIRED_DOC)
-		await expect(dialog).toBeVisible()
+		// The reason stays beside the gesture, which is the point of moving it.
+		const reason = page.getByTestId(`case-transition-reason-${T.needsDoc}`)
+		await expect(reason).toBeVisible({ timeout: 15_000 })
+		await expect(reason).toContainText(REQUIRED_DOC)
 
+		// And the case has not moved, which is what the refusal is FOR. A
+		// disabled button that still transitioned would pass every assertion
+		// above.
 		const unmoved = await showObject(request, 'case', cases.guard)
 		expect(unmoved.status).toBe(statusReceived)
 	})
