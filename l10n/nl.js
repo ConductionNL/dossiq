@@ -1575,7 +1575,6 @@ OC.L10N.register(
         "level {n}": "niveau {n}",
         "Leveranciersportaal": "Leveranciersportaal",
         "LHS recommendations": "LHS-aanbevelingen",
-        "LibreSign is not installed or enabled. Digital signing falls back to the built-in stub adapter — install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is niet geïnstalleerd of ingeschakeld. Digitaal ondertekenen valt terug op de ingebouwde stub-adapter — installeer en schakel de LibreSign-app in om beschikkingen te ondertekenen met een echte eIDAS-conforme handtekening.",
         "Limit to case type": "Beperken tot zaaktype",
         "Limit to case type (optional)": "Beperken tot zaaktype (optioneel)",
         "Limited public": "Beperkt openbaar",
@@ -3774,7 +3773,12 @@ OC.L10N.register(
         "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.": "De adapterklasse bij %1$s kan niet worden gebruikt: %2$s ontbreekt of implementeert de koppeling niet. Er draait nu een testadapter.",
         "The adapter class named in %1$s could not be built. A mock adapter is running in its place.": "De adapterklasse bij %1$s kon niet worden opgebouwd. Er draait nu een testadapter.",
         "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "Hier antwoordt een testadapter. Er komt geen bericht aan bij MijnOverheid. Vul bij berichtenbox_adapter een echte adapterklasse in.",
-        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "Hier antwoordt een testadapter. Er komt geen sjabloon aan bij Filinq. Vul bij beschikking_template_adapter een echte adapterklasse in."
+        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "Hier antwoordt een testadapter. Er komt geen sjabloon aan bij Filinq. Vul bij beschikking_template_adapter een echte adapterklasse in.",
+        "LibreSign is not installed or enabled, so nothing is really signed. Install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is niet geïnstalleerd of ingeschakeld, dus er wordt niets echt ondertekend. Installeer en schakel de LibreSign-app in om beschikkingen te ondertekenen met een echte eIDAS-conforme handtekening.",
+        "Digital signing": "Digitaal ondertekenen",
+        "Signing a besluit with an eIDAS-aligned signature, which LibreSign does.": "Een besluit ondertekenen met een eIDAS-conforme handtekening. LibreSign doet dat.",
+        "A mock adapter answers here. Nothing is really signed. Install and enable LibreSign.": "Hier antwoordt een testadapter. Er wordt niets echt ondertekend. Installeer en schakel LibreSign in.",
+        "LibreSign is installed, so a besluit is really signed.": "LibreSign is geïnstalleerd, dus een besluit wordt echt ondertekend."
     },
     "nplurals=2; plural=(n != 1);"
 )

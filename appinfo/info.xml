@@ -505,6 +505,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 LAST, AND A REPORT RATHER THAN AN ACTION — see the identical
                 entry in the <install> block below for why it cannot adopt.
             -->
+            <!--
+                AFTER THE REGISTER IMPORT, BECAUSE IT UPDATES A ROW THE IMPORT
+                SEEDS. Signing is the one Integrations row no setting and no
+                admin-run probe can decide: it depends on whether the LibreSign
+                app is enabled, which an admin does in Nextcloud's own app
+                management and never in dossiq. Without this step the row would
+                say Simulated forever on an instance that signs perfectly well.
+                Idempotent, and it never throws.
+            -->
+            <step>OCA\Dossiq\Repair\ProbeAdapterSeams</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </post-migration>
         <!--
@@ -650,6 +660,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 uid and an upgrade runs as nobody); it names what is outstanding
                 and the command that completes it. It never throws.
             -->
+            <!--
+                AFTER THE REGISTER IMPORT, BECAUSE IT UPDATES A ROW THE IMPORT
+                SEEDS. Signing is the one Integrations row no setting and no
+                admin-run probe can decide: it depends on whether the LibreSign
+                app is enabled, which an admin does in Nextcloud's own app
+                management and never in dossiq. Without this step the row would
+                say Simulated forever on an instance that signs perfectly well.
+                Idempotent, and it never throws.
+            -->
+            <step>OCA\Dossiq\Repair\ProbeAdapterSeams</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </install>
     </repair-steps>

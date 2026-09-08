@@ -45,6 +45,7 @@ const SEEDED_KEYS = [
 	'pdok',
 	'berichtenbox',
 	'templates',
+	'signing',
 ]
 
 /** The two connections that are specified and not built. */
@@ -59,7 +60,7 @@ const UNAVAILABLE_KEYS = ['brp', 'kvk']
  * available would be the same lie the page was built to remove, one layer
  * down, so the invariant asserted below is that they read as neither.
  */
-const SIMULATED_KEYS = ['berichtenbox', 'templates']
+const SIMULATED_KEYS = ['berichtenbox', 'templates', 'signing']
 
 /** The ordinary user `ci-seed.sh` creates. */
 const PLAIN_USER = process.env.E2E_USER_NAME || 'e2euser'
@@ -112,7 +113,7 @@ test.describe('Integrations', () => {
 		await api.dispose()
 	})
 
-	test('lists the twelve connections in the seeded order', async ({ page }) => {
+	test('lists the thirteen connections in the seeded order', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
 		expect(Object.keys(byKey).sort()).toEqual([...SEEDED_KEYS].sort())
 
@@ -179,7 +180,12 @@ test.describe('Integrations', () => {
 				continue
 			}
 			if (SIMULATED_KEYS.includes(key)) {
-				expect(row.status).toBe('simulated')
+				// Signing is probed against an APP, not a setting, so an
+				// instance with LibreSign installed legitimately reads
+				// Configured. The invariant either way is that it never reads
+				// Not configured, which would understate a mock that signs
+				// nothing.
+				expect(['simulated', 'configured']).toContain(row.status)
 				continue
 			}
 			expect(row.status).toBe('unconfigured')
@@ -275,6 +281,11 @@ test.describe('Integrations', () => {
 		for (const key of SIMULATED_KEYS) {
 			const row = byKey[key]
 			expect(row, `no seeded row for ${key}`).toBeTruthy()
+			if (row.status === 'configured') {
+				// Signing on an instance that really has LibreSign. Nothing to
+				// assert about a mock, because there is not one.
+				continue
+			}
 			// The claim, not the rendering. A Simulated row whose message says
 			// nothing would render perfectly and tell the reader nothing, which
 			// is the failure mode this whole page exists to catch.

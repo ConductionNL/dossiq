@@ -32,6 +32,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Dossiq\Support\FleetAppId;
+use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -64,6 +66,7 @@ class IntegrationStatusService {
 		'pdok',
 		'berichtenbox',
 		'templates',
+		'signing',
 	];
 
 	/**
@@ -121,6 +124,34 @@ class IntegrationStatusService {
 	 *
 	 * @var array<string, array{0: string, 1: string}>
 	 */
+	/**
+	 * Seams whose reality is decided by an APP being present, not a setting.
+	 *
+	 * Signing is the odd one out among the three adapter seams, and it is odd
+	 * in the honest direction: dossiq ships a REAL LibreSign adapter, so there
+	 * is nothing for an integrator to name. Either the app is there and the
+	 * signature is real, or it is not and `MockSigningAdapter` runs, which
+	 * returns a signature nobody can verify.
+	 *
+	 * 🔴 THE CANONICAL NAME, NOT A LITERAL ID. Resolution goes through
+	 * {@see FleetAppId} for the same reason the filinq probe does: half the
+	 * fleet answers to the old id, `isEnabledForUser()` against the wrong one
+	 * returns FALSE rather than erroring, and the row would then say Simulated
+	 * on an instance that signs perfectly well. LibreSign is not a fleet app
+	 * and has not renamed, so the resolver is a no-op for it today; going
+	 * through it anyway is what keeps the next probe added here from being the
+	 * one that hardcodes an id.
+	 *
+	 * @var array<string, array{app: string, configured: string, simulated: string}>
+	 */
+	public const APP_BACKED_SEAMS = [
+		'signing' => [
+			'app' => 'libresign',
+			'configured' => 'LibreSign is installed, so a besluit is really signed.',
+			'simulated' => 'A mock adapter answers here. Nothing is really signed. Install and enable LibreSign.',
+		],
+	];
+
 	public const SAVE_UNFILLED_STATE = [
 		'berichtenbox' => ['simulated', 'A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.'],
 		'templates' => ['simulated', 'A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.'],
@@ -132,11 +163,13 @@ class IntegrationStatusService {
 	 * @param SettingsService $settingsService Resolves OpenRegister + config.
 	 * @param IAppConfig $appConfig Reads the saved section values.
 	 * @param LoggerInterface $logger Records what could not be written.
+	 * @param IAppManager $appManager Probes whether an app-backed seam is real.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
+		private readonly IAppManager $appManager,
 	) {
 	}//end __construct()
 
@@ -236,6 +269,11 @@ class IntegrationStatusService {
 	 * connection's row alone — saving the KCC form must not restate what the
 	 * ZGW card says.
 	 *
+	 * {@see recordAdapterSeams()} is deliberately NOT folded in here, even
+	 * though both run on a save. It answers a different question, and folding
+	 * it in would make this method's return say a save touched a row the save
+	 * knows nothing about. The caller runs both; each says what it found.
+	 *
 	 * @param array<string, mixed> $saved The payload the settings save carried.
 	 *
 	 * @return array<string, string> The statuses written, keyed by connection.
@@ -263,6 +301,43 @@ class IntegrationStatusService {
 
 		return $written;
 	}//end recordFromSave()
+
+	/**
+	 * Probe every app-backed adapter seam and write what it found.
+	 *
+	 * Runs on a settings save and at `occ upgrade`, which is the same contract
+	 * every other row on the page keeps (REQ-ADMIN-020): a card shows what the
+	 * last probe found, not what is true this second. An admin who installs
+	 * LibreSign and never opens the settings again sees the row move at the
+	 * next upgrade. Saying that plainly beats a card that refreshes itself and
+	 * a page that has no endpoint to refresh from.
+	 *
+	 * @return array<string, string> The statuses written, keyed by connection.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function recordAdapterSeams(): array {
+		$written = [];
+		foreach (self::APP_BACKED_SEAMS as $key => $seam) {
+			$present = FleetAppId::isEnabledForUser(
+				appManager: $this->appManager,
+				canonical: $seam['app'],
+			);
+
+			$status = 'simulated';
+			$message = $seam['simulated'];
+			if ($present === true) {
+				$status = 'configured';
+				$message = $seam['configured'];
+			}
+
+			if ($this->record(key: $key, status: $status, message: $message) === true) {
+				$written[$key] = $status;
+			}
+		}
+
+		return $written;
+	}//end recordAdapterSeams()
 
 	/**
 	 * Whether every named app-config key holds a non-empty value.

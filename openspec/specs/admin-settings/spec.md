@@ -780,9 +780,29 @@ making.
 
 - **GIVEN** an instance with no `berichtenbox_adapter` and no `beschikking_template_adapter` configured
 - **WHEN** the admin opens the Integrations page
-- **THEN** the Berichtenbox and Document templates cards SHALL read Simulated
+- **THEN** the Berichtenbox, Document templates and Digital signing cards SHALL read Simulated
 - **AND** each message SHALL name the mock, on the row itself, without the reader opening a settings page
 - **AND** neither SHALL read Configured or Not available
+
+#### Scenario: Installing LibreSign flips the signing card
+@e2e exclude Installing a Nextcloud app mid-run is not something a browser test may do to a shared instance; AdapterHonestyTest asserts the probe and its two outcomes.
+
+- **GIVEN** an instance where LibreSign is not enabled
+- **WHEN** the adapter-seam probe runs, at a settings save or at `occ upgrade`
+- **THEN** the Digital signing card SHALL read Simulated
+- **AND** with LibreSign enabled the same probe SHALL write Configured
+- **AND** the probe SHALL resolve the app through `FleetAppId`, never a literal id,
+  because a lookup against the wrong id returns false rather than erroring and the
+  card would then say Simulated on an instance that signs perfectly well
+
+#### Scenario: Signing is the one seam no setting decides
+@e2e exclude Same reason; asserted by AdapterHonestyTest.
+
+- **GIVEN** the three adapter seams
+- **WHEN** an integrator looks for what to change
+- **THEN** Berichtenbox and Document templates SHALL name an app-config key
+- **AND** Digital signing SHALL name the app to install, because dossiq ships a real
+  LibreSign adapter and there is nothing to substitute
 
 #### Scenario: Naming a real adapter class flips the card
 @e2e exclude Substituting an adapter means installing a class this repo does not ship, which no browser flow can do; AdapterHonestyTest asserts the resolution and IntegrationProbesRecordTest the save-to-card seam.

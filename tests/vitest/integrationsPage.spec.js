@@ -153,8 +153,8 @@ describe('the dossiqIntegration schema', () => {
 })
 
 describe('the seeded connections', () => {
-	it('are the ten of row A34 plus the two adapter seams, in placement order', () => {
-		expect(rows).toHaveLength(12)
+	it('are the ten of row A34 plus the three adapter seams, in placement order', () => {
+		expect(rows).toHaveLength(13)
 		expect(rows.map((r) => r.key)).toEqual([
 			'zgw',
 			'stuf',
@@ -168,6 +168,7 @@ describe('the seeded connections', () => {
 			'pdok',
 			'berichtenbox',
 			'templates',
+			'signing',
 		])
 		const orders = rows.map((r) => r.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)
@@ -194,7 +195,11 @@ describe('the seeded connections', () => {
 	// say the word mock in a sentence a reader sees on the row itself.
 	it('say Simulated where a mock adapter is what answers', () => {
 		const simulated = rows.filter((r) => r.status === 'simulated')
-		expect(simulated.map((r) => r.key)).toEqual(['berichtenbox', 'templates'])
+		expect(simulated.map((r) => r.key)).toEqual([
+			'berichtenbox',
+			'templates',
+			'signing',
+		])
 		for (const row of simulated) {
 			expect(row.statusMessage).toMatch(/mock/i)
 			expect(row.settingsUrl).toBe('')

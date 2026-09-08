@@ -1575,7 +1575,6 @@ OC.L10N.register(
         "level {n}": "level {n}",
         "Leveranciersportaal": "Leveranciersportaal",
         "LHS recommendations": "LHS recommendations",
-        "LibreSign is not installed or enabled. Digital signing falls back to the built-in stub adapter — install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is not installed or enabled. Digital signing falls back to the built-in stub adapter — install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.",
         "Limit to case type": "Limit to case type",
         "Limit to case type (optional)": "Limit to case type (optional)",
         "Limited public": "Limited public",
@@ -3774,7 +3773,12 @@ OC.L10N.register(
         "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.": "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.",
         "The adapter class named in %1$s could not be built. A mock adapter is running in its place.": "The adapter class named in %1$s could not be built. A mock adapter is running in its place.",
         "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.",
-        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class."
+        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.",
+        "LibreSign is not installed or enabled, so nothing is really signed. Install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is not installed or enabled, so nothing is really signed. Install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.",
+        "Digital signing": "Digital signing",
+        "Signing a besluit with an eIDAS-aligned signature, which LibreSign does.": "Signing a besluit with an eIDAS-aligned signature, which LibreSign does.",
+        "A mock adapter answers here. Nothing is really signed. Install and enable LibreSign.": "A mock adapter answers here. Nothing is really signed. Install and enable LibreSign.",
+        "LibreSign is installed, so a besluit is really signed.": "LibreSign is installed, so a besluit is really signed."
     },
     "nplurals=2; plural=(n != 1);"
 )

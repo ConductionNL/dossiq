@@ -223,7 +223,14 @@ class SettingsController extends Controller {
 			return;
 		}
 
-		$this->container->get(self::INTEGRATION_STATUS_SERVICE)->recordFromSave(saved: $saved);
+		$recorder = $this->container->get(self::INTEGRATION_STATUS_SERVICE);
+		$recorder->recordFromSave(saved: $saved);
+
+		// And re-probe the seams no setting decides. Signing depends on whether
+		// the LibreSign app is enabled, which an admin does in Nextcloud's own
+		// app management and never here, so a save is one of only two moments
+		// dossiq is allowed to look. The other is `occ upgrade`.
+		$recorder->recordAdapterSeams();
 	}//end recordIntegrationSaves()
 
 	/**

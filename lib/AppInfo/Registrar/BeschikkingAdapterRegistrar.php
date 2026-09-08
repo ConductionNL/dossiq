@@ -98,9 +98,9 @@ class BeschikkingAdapterRegistrar {
 
 				$c->get('Psr\\Log\\LoggerInterface')->warning(
 					$c->get('OCP\\IL10N')->t(
-						'LibreSign is not installed or enabled. Digital signing falls back to '
-						. 'the built-in stub adapter — install and enable the LibreSign app to '
-						. 'sign beschikkingen with a real eIDAS-aligned signature.'
+						'LibreSign is not installed or enabled, so nothing is really signed. '
+						. 'Install and enable the LibreSign app to sign beschikkingen with a real '
+						. 'eIDAS-aligned signature.'
 					),
 					['app' => Application::APP_ID]
 				);

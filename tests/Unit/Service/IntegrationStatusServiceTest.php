@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\IntegrationStatusService;
+use OCP\App\IAppManager;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -175,6 +176,7 @@ class IntegrationStatusServiceTest extends TestCase {
 			settingsService: $this->settings,
 			appConfig: $this->appConfig,
 			logger: $this->logger,
+			appManager: $this->createMock(IAppManager::class),
 		);
 	}//end service()
 

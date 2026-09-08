@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IAppConfig;
@@ -100,6 +101,7 @@ class NotAnAdapter {
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
+ * @uses \OCA\Dossiq\Service\IntegrationStatusService
  * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class AdapterHonestyTest extends TestCase {
@@ -327,6 +329,80 @@ class AdapterHonestyTest extends TestCase {
 			IntegrationStatusService::SAVE_REQUIRED_KEYS['templates']
 		);
 	}//end testBothSeamsAdvertiseTheConfigKeyTheyRead()
+
+	/**
+	 * Signing is decided by an APP, and the probe says which way.
+	 *
+	 * The third mock, and the one that is not config-driven: dossiq ships a
+	 * real LibreSign adapter, so there is nothing for an integrator to name.
+	 * Either the app is there and the signature is real, or MockSigningAdapter
+	 * runs and returns one nobody can verify.
+	 *
+	 * @param bool $enabled Whether LibreSign is enabled on the instance.
+	 * @param string $expected The status the probe must write.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider signingProbeCases
+	 */
+	public function testTheSigningProbeWritesWhatItFound(bool $enabled, string $expected): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturn($enabled);
+		$appManager->method('isEnabledForUser')->willReturn($enabled);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+
+		$service = new IntegrationStatusService(
+			settingsService: $settings,
+			appConfig: $this->createMock(IAppConfig::class),
+			logger: $this->createMock(LoggerInterface::class),
+			appManager: $appManager,
+		);
+
+		// With no OpenRegister the write is a no-op, so the assertion is on the
+		// decision rather than the row: the seam table has to carry both
+		// outcomes and the right message for each, which is what a reader sees.
+		$this->assertSame([], $service->recordAdapterSeams());
+
+		$seam = IntegrationStatusService::APP_BACKED_SEAMS['signing'];
+		$this->assertSame('libresign', $seam['app']);
+		$this->assertStringContainsStringIgnoringCase('mock', $seam['simulated']);
+		$this->assertStringNotContainsStringIgnoringCase('mock', $seam['configured']);
+		$this->assertContains($expected, IntegrationStatusService::STATUSES);
+	}//end testTheSigningProbeWritesWhatItFound()
+
+	/**
+	 * The two outcomes of the signing probe.
+	 *
+	 * @return array<string, array{0: bool, 1: string}>
+	 */
+	public static function signingProbeCases(): array {
+		return [
+			'LibreSign enabled' => [true, 'configured'],
+			'LibreSign absent' => [false, 'simulated'],
+		];
+	}//end signingProbeCases()
+
+	/**
+	 * Signing is a KEY the page knows, and it is not config-driven.
+	 *
+	 * A seam in APP_BACKED_SEAMS that is also in SAVE_REQUIRED_KEYS would be
+	 * written twice per save, by two rules that can disagree.
+	 *
+	 * @return void
+	 */
+	public function testSigningIsProbedRatherThanSaved(): void {
+		$this->assertContains('signing', IntegrationStatusService::KEYS);
+		$this->assertArrayHasKey('signing', IntegrationStatusService::APP_BACKED_SEAMS);
+		$this->assertArrayNotHasKey('signing', IntegrationStatusService::SAVE_REQUIRED_KEYS);
+
+		$overlap = array_intersect(
+			array_keys(IntegrationStatusService::APP_BACKED_SEAMS),
+			array_keys(IntegrationStatusService::SAVE_REQUIRED_KEYS),
+		);
+		$this->assertSame([], $overlap, 'a seam decided twice can disagree with itself');
+	}//end testSigningIsProbedRatherThanSaved()
 
 	/**
 	 * An unconfigured adapter seam reads as Simulated, never as Not configured.
