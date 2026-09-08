@@ -217,16 +217,43 @@ no menu entry changes.
 
 ## 5. Verification
 
-- [ ] 5.1 `tests/e2e/case-list-lenses.spec.ts`: seeds cases (mine open,
-  other user's open, unassigned open, closed, overdue open, closed overdue,
-  due in 3 and 30 days) and tasks (mine open, other's open, unassigned
-  open, completed); covers every `@e2e` scenario in the five deltas: chips
-  on landing and after a click, Unclaimed equals Queue, Deadline before,
-  days left and overdue class, Overdue tile View all, Transition with
-  reason, Execute disabled on empty reason, Suspend then Resume, Extend
-  term. Assert ids and `data-testid`, not English labels alone.
-- [ ] 5.2 Run `npm run check:manifest`, `npm run test:unit`,
-  `composer check:strict`, the hydra gates locally (read the gate count and
-  the ADR-100 ratchet: no page added), and `openspec validate one-case-list
-  --strict`; then the e2e spec against the dev instance before opening the
-  PR with `--base development`.
+- [x] 5.1 `tests/e2e/case-list-lenses.spec.ts`, 19 tests over the seeded
+  cases and tasks the task lists. Chips on landing and after a click,
+  Unclaimed matching the Queue page, exactly one chip active after a switch,
+  a closed case leaving Mine, Closed showing it, days left, the overdue text
+  AND the `is-overdue` class, Overdue showing only the open overdue case, the
+  Overdue tile's View all, the three Tasks chips, the five bulk actions on a
+  selection, Transition with a reason, Execute disabled on an empty reason,
+  Suspend then Resume read back off the case journal, and Extend term.
+  - Rows are addressed by their RUN_PREFIX, never by position or count: the
+    Cases index is a shared list and another session's fixtures land in it
+    mid-run. Chips are addressed by `role="tab"` with a bilingual name and
+    their state by `aria-selected`, which is language-free — an English-only
+    assertion fails on a correct Dutch instance. Every navigation goes
+    through a `visit()` that dismisses the support dialog and the setup
+    wizard, whose modal mask swallows every click.
+  - `case.deadline` is not writable, so a case is seeded with the
+    `startDate` that PUTS its computed deadline where the scenario needs it,
+    and `beforeAll` reads the value back and asserts it landed. Without that
+    read-back, a countdown assertion on an instance where the calculation did
+    not run would fail pointing at the cell rather than at the cause.
+  - Two scenarios carry `@e2e exclude` reasons instead: the Deadline before
+    sidebar filter (no control exists to drive, 2.2) and the guard-refused
+    case (needs a seeded status-type guard that fails for one case and passes
+    for another; the per-case reporting is covered by the vitest on
+    `summarizeResults` and by the PHPUnit on `executeLifecycle`). The
+    narrowing the sidebar filter would do IS asserted, through the query the
+    control would send.
+- [ ] 5.2 Run the checks and then the e2e against a dev instance.
+  - Run here, all by exit code: `npm run lint` 0, `npx vitest run` 0 (559
+    tests), `npm run check:manifest` 0, `node tests/l10n/check-l10n.js` 0,
+    `npm run format` 0, `composer lint/phpcs/psalm/phpstan` 0, `phpunit` 0
+    (3124 tests), phpmd swept per directory (a bare `composer phpmd` prints
+    nothing when it is OOM-killed, which reads exactly like a pass), and the
+    hydra gates 0 with COVERAGE 80 of 90 declared (10 not applicable, 80 of
+    80 applicable ran). The ADR-100 page ratchet is unmoved: no page added,
+    gate-107 reports 5 of 5.
+  - **[blocked: playwright was not run here]** `tests/e2e/case-list-lenses.spec.ts`
+    collects (19 tests listed) but has not been executed against a live
+    instance in this session, so it is written and unproven. It needs a run
+    against a dev instance before this is ticked.

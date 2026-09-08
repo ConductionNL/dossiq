@@ -49,23 +49,19 @@ import { deadlineCountdown } from '../../utils/deadlineCountdown.js'
 export default {
 	name: 'DeadlineCountdownCell',
 
+	// CnCellRenderer hands every cell widget `{ value, row, property,
+	// formatted }`. This one needs `value` alone, and the other three are
+	// left in `$attrs` rather than declared: an undeclared object prop falls
+	// through onto the root element, so every row would carry
+	// `property="[object Object]"` in its DOM. `inheritAttrs: false` drops
+	// them instead of rendering them.
+	inheritAttrs: false,
+
 	props: {
 		/** The row's `deadline` value — a date string, or empty. */
 		value: {
 			type: [String, Number, Date],
 			default: null,
-		},
-
-		/** The whole case row (unused here; part of the cell-widget contract). */
-		row: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		/** The schema property (unused here; part of the cell-widget contract). */
-		property: {
-			type: Object,
-			default: () => ({}),
 		},
 	},
 
@@ -74,6 +70,8 @@ export default {
 		 * The cell content, or null when the row carries no readable deadline.
 		 *
 		 * @return {{days: number, overdue: boolean, text: string}|null}
+		 *
+		 * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 		 */
 		countdown() {
 			return deadlineCountdown(this.value)
@@ -85,6 +83,8 @@ export default {
 		 * count.
 		 *
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 		 */
 		title() {
 			return this.value ? String(this.value) : ''

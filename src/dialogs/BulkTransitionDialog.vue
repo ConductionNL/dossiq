@@ -270,6 +270,8 @@ export default {
 		 * cannot explain afterwards.
 		 *
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
 		 */
 		title() {
 			const count = this.caseIds.length
@@ -299,6 +301,8 @@ export default {
 		 * moved for no recorded reason is the failure this prevents.
 		 *
 		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
 		 */
 		canExecute() {
 			if (this.executing || !this.previewSummary) return false
@@ -318,6 +322,15 @@ export default {
 		},
 	},
 
+	/**
+	 * Load what the mode needs before the reader can act: the available
+	 * transitions for a transition, the per-case readiness preview for a
+	 * lifecycle gesture, which has nothing to pick.
+	 *
+	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 */
 	async mounted() {
 		if (this.isTransition) {
 			await this.loadTransitions()

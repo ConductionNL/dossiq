@@ -119,6 +119,8 @@ export const LIFECYCLE_GESTURES = ['suspend', 'resume', 'extend']
  *
  * @param {string} mode The dialog mode.
  * @return {boolean} True for suspend / resume / extend.
+ *
+ * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
  */
 export function isLifecycleGesture(mode) {
 	return LIFECYCLE_GESTURES.includes(mode)
