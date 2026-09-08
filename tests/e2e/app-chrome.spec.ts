@@ -162,7 +162,7 @@ test.describe('app chrome (ADR-114)', () => {
 
 	// @e2e openspec/specs/features-roadmap/spec.md#areas-summarise-before-they-expand
 	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
-	test('the FeaturesRoadmap page compares dossiq and states the comparison limits', async ({
+	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
 		// The comparison lives on the same page as the feature list, in the
