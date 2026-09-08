@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### REQ-005: A library template is offered on the case
+### Requirement: REQ-005: A library template is offered on the case
 
 You pick a template where you need it. The template picker of the Generate
 document action on `CaseDetail` SHALL list the templates that
