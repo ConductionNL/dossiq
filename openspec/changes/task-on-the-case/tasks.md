@@ -132,9 +132,19 @@ criteria under a task are plain bullets.
     before any browser opens.
   - `caseTask`, `case` and `caseType` are already in `tests/e2e/ci-seed.sh`'s
     required-schema list, so the seed needs no change.
-- [ ] 3.2 Run `npm run lint`, `npm run test:unit` and the e2e spec locally;
+- [x] 3.2 Run `npm run lint`, `npm run test:unit` and the e2e spec locally;
   read the exit codes, not the summary lines; say in the PR which checks
   ran locally only.
+  - by exit code: `npm run lint` 0, `npx vitest run` 0 (53 files, 482 tests),
+    `npm run check:manifest` 0, `node tests/l10n/check-l10n.js` 0,
+    `npm run format` 0, hydra gates 0 with no FAIL line and COVERAGE 79 of 79
+    applicable gates. `composer check:strict` was not run: no PHP changed.
+  - PLAYWRIGHT WAS NOT RUN. The e2e spec is unproven until the development
+    push, and the PR says so. What was proved locally is that the config CI
+    reads collects it: `--list` names all four tests under `[chromium]`.
+  - gate 52's ratchet half does not compute under the local runner, so the
+    helper was run directly: `base=2 head=4 delta=+2 (2 ratchet-excluded)`,
+    `findings=0`, exit 0.
 
 ## 4. Follow-up
 
