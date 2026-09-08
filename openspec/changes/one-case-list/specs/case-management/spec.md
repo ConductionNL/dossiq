@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### REQ-CM-24: Open work by default, closed work on request
+### Requirement: REQ-CM-24 Open work by default, closed work on request
 
 Your work list shows open cases only unless you ask for closed ones. On the
 `Cases` page the chips Mine and Unclaimed MUST carry `isFinalStatus = false`
@@ -23,7 +23,7 @@ derived filter is needed.
 - **WHEN** you choose the chip Closed
 - **THEN** the list SHALL show the closed case and SHALL NOT show the open one
 
-### REQ-CM-25: Deadline before in the sidebar
+### Requirement: REQ-CM-25 Deadline before in the sidebar
 
 You narrow the case list on a deadline. The `Cases` page sidebar MUST offer
 a filter Deadline before, a date input that adds `deadline lt <date>` to the
