@@ -38,14 +38,23 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 /**
- * A guard that reports nothing must snapshot `details` as null, not `{}`.
+ * A guard that reports nothing must OMIT `details`, not send an empty one.
  *
  * `evaluateAll()` output is persisted verbatim as `statusRecord.evaluatedGuards`,
- * whose `details` is declared `type: object` in `dossiq_register.json`.
- * OpenRegister rejects an empty object and says exactly what it wants:
+ * whose `details` is declared `type: object` in `dossiq_register.json` and is
+ * not required. Every shape was posted to a running register and read back
+ * before this test was written, because the earlier version of this file
+ * asserted a shape the register refuses and passed anyway:
  *
- *     Property 'evaluatedGuards.0.details' expects object but got empty ({}).
- *     For non-required object properties, set this to null to clear the field.
+ *     omitted   accepted
+ *     {"x": 1}  accepted
+ *     {}        refused, "expects object but got empty ({})"
+ *     []        refused, the same message
+ *     null      refused, "should be type 'object' but is 'null'"
+ *
+ * The refusal of `{}` advises null: "For non-required object properties, set
+ * this to null to clear the field." That advice is wrong, #1941 followed it,
+ * and every status transition answered 500 from that merge until the fix.
  *
  * `GuardResult::$details` defaults to `[]` and a guard that simply passes has
  * nothing to report, so the empty case is the COMMON one. It went unnoticed
@@ -77,11 +86,11 @@ use Psr\Log\NullLogger;
  */
 class GuardSnapshotDetailsTest extends TestCase {
 	/**
-	 * A guard with nothing to report snapshots null, never an empty object.
+	 * A guard with nothing to report carries no `details` key at all.
 	 *
 	 * @return void
 	 */
-	public function testAGuardWithNothingToReportSnapshotsNullDetails(): void {
+	public function testAGuardWithNothingToReportOmitsDetails(): void {
 		// `checklist` is the guard that produces the empty case in
 		// production: every one of its early returns, and its PASSING verdict,
 		// construct a GuardResult without details.
@@ -92,11 +101,12 @@ class GuardSnapshotDetailsTest extends TestCase {
 		);
 
 		self::assertCount(1, $results);
-		self::assertNull(
-			$results[0]['details'],
-			'An empty details array is persisted as {} and OpenRegister refuses it.',
+		self::assertArrayNotHasKey(
+			'details',
+			$results[0],
+			'Omission is the only empty shape the register accepts: {}, [] and null are all refused.',
 		);
-	}//end testAGuardWithNothingToReportSnapshotsNullDetails()
+	}//end testAGuardWithNothingToReportOmitsDetails()
 
 	/**
 	 * A guard that DOES report details keeps them untouched.
@@ -123,6 +133,8 @@ class GuardSnapshotDetailsTest extends TestCase {
 	 *
 	 * This is the invariant the schema actually cares about, stated once so a
 	 * new guard cannot reintroduce the defect by defaulting `details` again.
+	 * An entry either omits the key or carries a non-empty object; the three
+	 * shapes in between are the ones the register refuses.
 	 *
 	 * @return void
 	 */
@@ -140,6 +152,11 @@ class GuardSnapshotDetailsTest extends TestCase {
 
 		self::assertCount(4, $results);
 		foreach ($results as $index => $entry) {
+			if (array_key_exists('details', $entry) === false) {
+				continue;
+			}
+
+			self::assertIsArray(actual: $entry['details']);
 			self::assertNotSame(
 				[],
 				$entry['details'],
