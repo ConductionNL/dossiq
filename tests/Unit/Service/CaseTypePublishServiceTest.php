@@ -427,6 +427,116 @@ class CaseTypePublishServiceTest extends TestCase {
 	}//end testAFailedWriteIsNotReportedAsPublished()
 
 	/**
+	 * 🔴 Publishing a new version closes the version it replaces.
+	 *
+	 * This is the moment a case type version stops being offered, and the only
+	 * one. Miss it and two versions of one case type are both published, both
+	 * current, and both offered in the picker under the same title, with no
+	 * error anywhere: the person filing a case picks one at random.
+	 */
+	public function testPublishingClosesThePreviousVersion(): void {
+		$service = $this->service(
+			[
+				'ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'version' => 2, 'previousVersion' => 'ct-v1'],
+				'ct-v1' => ['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'order' => 1, 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Afgehandeld', 'order' => 2, 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		$result = $service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie');
+
+		self::assertTrue($result['published']);
+
+		$writes = array_values(
+			array_filter(
+				$this->objectService->saved,
+				static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+			)
+		);
+		self::assertCount(2, $writes, 'both the new version and the one it replaces are written');
+
+		// The version being replaced keeps isDraft false: its cases are still
+		// running on it and still resolve their statuses through it. It is
+		// closed to NEW cases, not retired.
+		$previous = $writes[1]['object'];
+		self::assertSame('ct-v1', $previous['id']);
+		self::assertSame('ct', $previous['supersededBy']);
+		self::assertFalse($previous['isDraft']);
+	}//end testPublishingClosesThePreviousVersion()
+
+	/**
+	 * The first version of a case type closes nothing.
+	 */
+	public function testPublishingAFirstVersionClosesNothing(): void {
+		$service = $this->publishableService();
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie')['published']);
+
+		$writes = array_filter(
+			$this->objectService->saved,
+			static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+		);
+		self::assertCount(1, $writes);
+	}//end testPublishingAFirstVersionClosesNothing()
+
+	/**
+	 * A case type published without a version number becomes version one.
+	 */
+	public function testPublishingStampsVersionOneWhenThereIsNone(): void {
+		$service = $this->publishableService();
+
+		$service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		self::assertSame(1, $this->savedFor('case_type_schema')['version']);
+	}//end testPublishingStampsVersionOneWhenThereIsNone()
+
+	/**
+	 * A previous version that no longer resolves does not stop the publish.
+	 *
+	 * The new version is already written by then, and refusing after that write
+	 * would leave the two halves disagreeing with nothing to say which ran.
+	 */
+	public function testAnUnreadablePreviousVersionDoesNotStopThePublish(): void {
+		$caseType = ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'initialStatus' => 's1', 'previousVersion' => 'gone'];
+		$service = $this->service(
+			['ct' => $caseType],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => 'Ontvangen', 'caseType' => 'ct'],
+					['id' => 's2', 'name' => 'Klaar', 'isFinal' => true, 'caseType' => 'ct'],
+				],
+			]
+		);
+
+		self::assertTrue($service->publish(caseTypeId: 'ct', changeNote: 'Tweede versie')['published']);
+	}//end testAnUnreadablePreviousVersionDoesNotStopThePublish()
+
+	/**
+	 * A chain that points at itself closes nothing.
+	 *
+	 * Writing `supersededBy` onto the version being published would close the
+	 * version that was just opened, and every case type would be superseded the
+	 * moment it went live.
+	 */
+	public function testAVersionThatPointsAtItselfClosesNothing(): void {
+		$service = $this->publishableService(['previousVersion' => 'ct']);
+
+		$service->publish(caseTypeId: 'ct', changeNote: 'Eerste versie');
+
+		$writes = array_filter(
+			$this->objectService->saved,
+			static fn (array $write): bool => ($write['schema'] === 'case_type_schema')
+		);
+		self::assertCount(1, $writes);
+		self::assertArrayNotHasKey('supersededBy', $this->savedFor('case_type_schema'));
+	}//end testAVersionThatPointsAtItselfClosesNothing()
+
+	/**
 	 * The object last written to one schema.
 	 *
 	 * @param string $schema The schema key.

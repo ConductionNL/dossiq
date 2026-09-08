@@ -167,6 +167,9 @@ class CaseTypePublishService {
 
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 		$caseType['isDraft'] = false;
+		if ((int)($caseType['version'] ?? 0) < 1) {
+			$caseType['version'] = 1;
+		}
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
 			return [
@@ -176,10 +179,63 @@ class CaseTypePublishService {
 			];
 		}
 
+		$this->retire(caseType: $caseType, caseTypeId: $caseTypeId);
+
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 
 		return ['published' => true, 'findings' => [], 'version' => $version];
 	}//end publish()
+
+	/**
+	 * Close the version this one replaces.
+	 *
+	 * 🔴 THIS IS THE MOMENT A CASE TYPE VERSION STOPS BEING OFFERED, AND THE
+	 * ONLY ONE. Publishing is the single write dossiq owns on a case type (the
+	 * page writes everything else straight to OpenRegister), so the forward
+	 * link has to be written here or nowhere. Written anywhere else it would be
+	 * a rule with two implementations, and the failure mode is silent: two
+	 * versions of one case type both offered in the picker, under the same
+	 * name, and no way for the person choosing to tell them apart.
+	 *
+	 * The previous version keeps `isDraft: false` on purpose. Its cases are
+	 * still running on it and still resolve their statuses, results and
+	 * deadlines through it. It is closed to NEW cases, not retired.
+	 *
+	 * A failure here is logged and not fatal. The new version is already
+	 * published, and refusing after that write would leave the two halves
+	 * disagreeing with nothing to say which one ran.
+	 *
+	 * @param array<string, mixed> $caseType   The version just published.
+	 * @param string               $caseTypeId Its id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	private function retire(array $caseType, string $caseTypeId): void {
+		$previousId = $this->store->referenceId(value: ($caseType['previousVersion'] ?? ''));
+		if ($previousId === '' || $previousId === $caseTypeId) {
+			return;
+		}
+
+		$previous = $this->store->readCaseType(caseTypeId: $previousId);
+		if ($previous === []) {
+			$this->logger->warning(
+				'Case type publish: the previous version could not be read, so it was not closed',
+				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
+			);
+			return;
+		}
+
+		$previous['supersededBy'] = $caseTypeId;
+
+		if ($this->save(schemaKey: 'case_type_schema', object: $previous) === false) {
+			$this->logger->warning(
+				'Case type publish: the previous version stays open for new cases',
+				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
+			);
+		}
+	}//end retire()
 
 	/**
 	 * Mark the case type's active workflow template published, with the note.
