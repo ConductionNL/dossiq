@@ -35,6 +35,7 @@ use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -72,12 +73,41 @@ class ZaakdossierService {
 	public const STATUS_TRANSITIONS = InformatieobjectStatusLifecycle::STATUS_TRANSITIONS;
 
 	/**
+	 * The values `informatieobject.direction` accepts.
+	 *
+	 * Canonically owned by {@see InformatieobjectMetadataNormaliser}; aliased
+	 * here so a caller reading the dossier service finds the vocabulary it
+	 * writes.
+	 *
+	 * @var string[]
+	 */
+	public const DIRECTIONS = InformatieobjectMetadataNormaliser::DIRECTIONS;
+
+	/**
+	 * The direction a document carries when nobody chose one.
+	 *
+	 * @var string
+	 */
+	public const DEFAULT_DIRECTION = InformatieobjectMetadataNormaliser::DEFAULT_DIRECTION;
+
+	/**
+	 * The longest a single keyword may be, per the schema's items.maxLength.
+	 *
+	 * @var int
+	 */
+	public const KEYWORD_MAX_LENGTH = InformatieobjectMetadataNormaliser::KEYWORD_MAX_LENGTH;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param ZgwDocumentService $documentService Binary file storage service.
 	 * @param InformatieobjectAccessGuard $accessGuard Classification access guard.
 	 * @param InformatieobjectStatusLifecycle $statusLifecycle Per-document status state machine.
+	 * @param InformatieobjectMetadataNormaliser $normaliser Coerces the freely
+	 *                                                       typed keywords and
+	 *                                                       direction onto the
+	 *                                                       schema.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -85,6 +115,7 @@ class ZaakdossierService {
 		private readonly ZgwDocumentService $documentService,
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly InformatieobjectStatusLifecycle $statusLifecycle,
+		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -145,6 +176,8 @@ class ZaakdossierService {
 			'auteur' => (string)($metadata['auteur'] ?? ''),
 			'status' => 'draft',
 			'informatieobjecttype' => $type,
+			'direction' => $this->normaliser->direction(value: ($metadata['direction'] ?? null)),
+			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
 			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
 			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
 			'taal' => (string)($metadata['taal'] ?? 'nld'),
@@ -177,6 +210,8 @@ class ZaakdossierService {
 			'status' => 'draft',
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
+			'direction' => $informatieobject['direction'],
+			'keywords' => $informatieobject['keywords'],
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
@@ -421,12 +456,25 @@ class ZaakdossierService {
 			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
 		}
 
-		$allowed = ['title', 'description', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
+		$allowed = [
+			'title',
+			'description',
+			'informatieobjecttype',
+			'vertrouwelijkheidaanduiding',
+			'direction',
+			'keywords',
+		];
 		$updateData = [];
 		foreach ($allowed as $field) {
-			if (array_key_exists($field, $metadata) === true) {
-				$updateData[$field] = $metadata[$field];
+			if (array_key_exists($field, $metadata) === false) {
+				continue;
 			}
+
+			$updateData[$field] = match ($field) {
+				'direction' => $this->normaliser->direction(value: $metadata[$field]),
+				'keywords' => $this->normaliser->keywords(value: $metadata[$field]),
+				default => $metadata[$field],
+			};
 		}
 
 		if (empty($updateData) === true) {

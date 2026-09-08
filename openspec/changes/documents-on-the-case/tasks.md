@@ -46,7 +46,7 @@ criteria under a task are plain bullets.
   - vitest in `src/views/cases/components/DossierTab.spec.js`: six column
     headers, empty state, keyword filter narrows the rendered rows
   - `@spec openspec/specs/document-zaakdossier/spec.md`
-- [ ] 2.4 `src/modals/DocumentMetadataDialog.vue`: a tags input for
+- [x] 2.4 `src/modals/DocumentMetadataDialog.vue`: a tags input for
   `keywords` under the title and a select for `direction` beside the type,
   both sent with the upload metadata.
   - vitest in `src/modals/DocumentMetadataDialog.spec.js`: the emitted

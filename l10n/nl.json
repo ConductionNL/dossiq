@@ -3547,6 +3547,7 @@
         "Clear filter": "Filter wissen",
         "Clear the keyword filter to see the whole dossier.": "Wis het trefwoordfilter om het hele dossier te zien.",
         "Filter by keyword": "Filter op trefwoord",
-        "No documents match this keyword": "Geen documenten met dit trefwoord"
+        "No documents match this keyword": "Geen documenten met dit trefwoord",
+        "Type a keyword and press enter": "Typ een trefwoord en druk op enter"
     }
 }

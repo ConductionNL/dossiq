@@ -3547,7 +3547,8 @@
         "Clear filter": "Clear filter",
         "Clear the keyword filter to see the whole dossier.": "Clear the keyword filter to see the whole dossier.",
         "Filter by keyword": "Filter by keyword",
-        "No documents match this keyword": "No documents match this keyword"
+        "No documents match this keyword": "No documents match this keyword",
+        "Type a keyword and press enter": "Type a keyword and press enter"
     },
     "plurals": ""
 }

@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -101,6 +102,7 @@ interface DossierObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
+ * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  */
@@ -170,6 +172,9 @@ class ZaakdossierServiceTest extends TestCase {
 				settingsService: $this->settings,
 				logger: $this->createMock(LoggerInterface::class),
 			),
+			// A REAL normaliser, so the keyword/direction assertions below
+			// exercise the production coercion rather than a mock's answers.
+			normaliser: new InformatieobjectMetadataNormaliser(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -504,4 +509,159 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->assertSame('zaakvertrouwelijk', $this->service->resolveDefaultClassification('iot-1'));
 
 	}//end testResolveDefaultClassification()
+
+	/**
+	 * Capture the informatieobject one upload writes.
+	 *
+	 * @param array<string, mixed> $metadata The upload metadata.
+	 *
+	 * @return array<string, mixed> The written informatieobject.
+	 */
+	private function uploadAndCapture(array $metadata): array {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+
+		$captured = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+				$captured[$schema] = $object;
+
+				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
+			}
+		);
+
+		$this->service->uploadDocument(
+			'case-1',
+			'a.pdf',
+			'PDF',
+			array_merge(['informatieobjecttype' => 'iot-1'], $metadata)
+		);
+
+		return $captured['informatieobject'];
+	}//end uploadAndCapture()
+
+	/**
+	 * REQ-ZAK-012: the keywords typed on upload reach the informatieobject.
+	 *
+	 * @return void
+	 */
+	public function testUploadStoresTheKeywords(): void {
+		$written = $this->uploadAndCapture(['keywords' => ['bezwaar', 'bouwtekening']]);
+
+		$this->assertSame(['bezwaar', 'bouwtekening'], $written['keywords']);
+
+	}//end testUploadStoresTheKeywords()
+
+	/**
+	 * A keyword list is trimmed, deduplicated and capped at the schema length.
+	 *
+	 * A single over-long keyword would otherwise fail the whole save, and the
+	 * person who typed it would see a failed upload rather than a short tag.
+	 *
+	 * @return void
+	 */
+	public function testUploadNormalisesTheKeywords(): void {
+		$long = str_repeat('a', 80);
+		$written = $this->uploadAndCapture([
+			'keywords' => [' bezwaar ', 'bezwaar', '', '   ', null, ['x'], $long],
+		]);
+
+		$this->assertSame(['bezwaar', str_repeat('a', 64)], $written['keywords']);
+
+	}//end testUploadNormalisesTheKeywords()
+
+	/**
+	 * REQ-ZAK-013: the chosen direction reaches the informatieobject.
+	 *
+	 * @return void
+	 */
+	public function testUploadStoresTheChosenDirection(): void {
+		$written = $this->uploadAndCapture(['direction' => 'incoming']);
+
+		$this->assertSame('incoming', $written['direction']);
+
+	}//end testUploadStoresTheChosenDirection()
+
+	/**
+	 * An upload naming no direction, or one outside the enum, reads as internal.
+	 *
+	 * @return void
+	 */
+	public function testUploadDefaultsTheDirectionToInternal(): void {
+		$written = $this->uploadAndCapture([]);
+
+		$this->assertSame('internal', $written['direction']);
+		$this->assertSame([], $written['keywords']);
+
+	}//end testUploadDefaultsTheDirectionToInternal()
+
+	/**
+	 * A direction outside the enum reads as internal rather than failing the
+	 * upload: the direction is a label, and refusing the save would throw the
+	 * uploaded file away with it.
+	 *
+	 * @return void
+	 */
+	public function testUploadCoercesAnUnknownDirection(): void {
+		$this->assertSame(
+			'internal',
+			$this->uploadAndCapture(['direction' => 'sideways'])['direction']
+		);
+
+	}//end testUploadCoercesAnUnknownDirection()
+
+	/**
+	 * updateMetadata carries the two new fields, normalised like an upload.
+	 *
+	 * The allowlist is the whole guard here: a field missing from it is
+	 * silently dropped, and the edit reads as a successful no-op.
+	 *
+	 * @return void
+	 */
+	public function testUpdateMetadataCarriesKeywordsAndDirection(): void {
+		$os = $this->createMock(DossierObjectServiceStub::class);
+		$this->settings->method('getObjectService')->willReturn($os);
+		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'draft']);
+
+		$captured = [];
+		$os->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+				$captured = $object;
+
+				return $this->savedObject('inf-1');
+			}
+		);
+
+		$this->service->updateMetadata(
+			'inf-1',
+			['keywords' => [' bezwaar ', 'bezwaar'], 'direction' => 'outgoing']
+		);
+
+		$this->assertSame(['bezwaar'], $captured['keywords']);
+		$this->assertSame('outgoing', $captured['direction']);
+
+	}//end testUpdateMetadataCarriesKeywordsAndDirection()
+
+	/**
+	 * The direction vocabulary matches the enum the register fragment ships.
+	 *
+	 * @return void
+	 */
+	public function testTheDirectionVocabularyMatchesTheRegisterFragment(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(
+				__DIR__ . '/../../../lib/Settings/register.d/70-document-zaakdossier.json'
+			),
+			true
+		);
+		$declared = $fragment['components']['schemas']['informatieobject']['properties']['direction'];
+
+		$this->assertSame($declared['enum'], ZaakdossierService::DIRECTIONS);
+		$this->assertSame($declared['default'], ZaakdossierService::DEFAULT_DIRECTION);
+		$this->assertSame(
+			$fragment['components']['schemas']['informatieobject']['properties']['keywords']['items']['maxLength'],
+			ZaakdossierService::KEYWORD_MAX_LENGTH
+		);
+
+	}//end testTheDirectionVocabularyMatchesTheRegisterFragment()
 }//end class
