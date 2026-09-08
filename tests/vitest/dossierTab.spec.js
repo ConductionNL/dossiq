@@ -421,8 +421,10 @@ describe('DossierTab, the share action that shared nothing', () => {
 			.findAll('.dossier-document-row .NcActionButton')
 			.map((button) => button.text())
 
-		expect(actions.length, 'the row must still offer its other actions')
-			.toBeGreaterThan(0)
+		expect(
+			actions.length,
+			'the row must still offer its other actions',
+		).toBeGreaterThan(0)
 		expect(actions).not.toContain('Share')
 	})
 
