@@ -49,7 +49,7 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
 
 ## 3. The breadcrumb
 
-- [ ] 3.1 `src/manifest.json` page `CaseDetail`: add `breadcrumbs:
+- [x] 3.1 `src/manifest.json` page `CaseDetail`: add `breadcrumbs:
   [{ label: "Cases", route: "Cases" }, { field: "title" }]`. If the 2.40.0
   page schema rejects `breadcrumbs`, render `CnBreadcrumbs` at the top of
   `CaseHeaderRow.vue` instead and note the block in the widget `_note`.

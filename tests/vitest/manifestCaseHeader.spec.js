@@ -136,3 +136,30 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 		})
 	})
 })
+
+describe('CaseDetail — the breadcrumb back to Cases (task 3.1)', () => {
+	it('declares two crumbs, Cases first and the case title last', () => {
+		const crumbs = caseDetail().config.breadcrumbs
+		expect(crumbs).toHaveLength(2)
+		expect(crumbs[0].route).toBe('Cases')
+		// The last crumb IS the current page, so it carries no target:
+		// CnBreadcrumbs renders it unlinked with aria-current either way.
+		expect(crumbs[1].route).toBeUndefined()
+		expect(crumbs[1].field).toBe('title')
+	})
+
+	it('routes the first crumb at a page the manifest actually declares', () => {
+		const routes = new Set(manifest.pages.map((page) => page.id))
+		expect(routes).toContain(caseDetail().config.breadcrumbs[0].route)
+	})
+
+	it('hands the widget the same trail the page declares', () => {
+		// Two declarations of one trail is a drift machine. CnDetailPage 2.41.0
+		// reads no `breadcrumbs` key, so the widget renders it; the page key is
+		// the shape the host will read. This is what keeps them equal until the
+		// day the widget's copy can be deleted.
+		expect(widget('case-header').props.breadcrumbs).toEqual(
+			caseDetail().config.breadcrumbs,
+		)
+	})
+})
