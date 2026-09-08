@@ -292,14 +292,23 @@ export function trackDossiqErrors(page: Page): string[] {
 	// this app's problem. What this admits is exactly one thing: a row whose
 	// reference points at something that has been deleted.
 	//
-	// ⚠️ AND IT IS NOT A CLEAN BILL. The suite MAKES those dangling
-	// references. `case` is archival, so a user-driven DELETE is refused with
-	// 403, and a spec that seeds a case against a throwaway caseType and then
-	// deletes the type leaves the case pointing at nothing FOREVER. Four
-	// workers only made it visible sooner, by rendering a dashboard while a
-	// sibling spec's teardown ran. Filtering stops the test failing; it does
-	// not stop the residue accumulating, and every run adds more. The fixture
-	// change that would is not written yet.
+	// ⚠️ IT IS A RACE, NOT RESIDUE, and the difference decides whether
+	// filtering is the right treatment. Four things were checked before this
+	// was written this way:
+	//
+	//   - `FIXTURE_SCHEMAS` is already child-first — `case` 19th, `statusType`
+	//     25th, `caseType` 27th — so one spec's own teardown never leaves its
+	//     case pointing at a type it removed.
+	//   - an archival case IS removed: `purgeObject` falls back through the
+	//     trash DELETE to `occPurge`, and the 403 is what that fallback is for.
+	//   - the run that produced these 404s left nothing behind: no
+	//     "e2e teardown left objects behind" anywhere in its log.
+	//   - the CI instance is installed fresh per run, so nothing carries over
+	//     to accumulate.
+	//
+	// So the dashboard listed cases at one moment and resolved their types at
+	// a later one, by which time a SIBLING spec's teardown had removed both.
+	// Transient by construction, and invisible on one worker.
 	let dangling = 0
 	page.on('response', (r) => {
 		if (
