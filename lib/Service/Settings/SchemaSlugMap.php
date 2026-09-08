@@ -182,6 +182,9 @@ class SchemaSlugMap {
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
 		'caseModel' => 'case_model_schema',
+		// The connections Dossiq has to systems outside it
+		// (pluggable-integration-registry).
+		'dossiqIntegration' => 'dossiq_integration_schema',
 	];
 
 	/**
