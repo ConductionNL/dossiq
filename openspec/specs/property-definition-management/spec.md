@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides admin tabs for managing the property definitions, document types, and decision types attached to a case type, completing the seven-tab case-type detail view. Property definitions declare domain-specific required fields with format validation, document types define a required-document checklist with direction and confidentiality classification, and decision types define the formal decision categories that can be recorded on cases.
+
 ## Requirements
+
 ### Requirement: Property Definition Management Tab
 The system SHALL provide an admin tab for managing custom property definitions on a
 case type. Property definitions specify domain-specific required fields with format
@@ -96,3 +98,33 @@ and functional.
   Decisions) MUST render without console errors
 - AND switching to any sub-entity tab MUST fetch the correct sub-entities scoped to the case type
 
+### Requirement: You group case types in folders (REQ-PDM-01)
+
+You group case types in folders. The `caseType` schema SHALL carry
+`category`, a free word. The Case types index SHALL show a folder sidebar
+over the categories in use, with All case types on top.
+
+**Feature tier**: MVP
+
+#### Scenario: A folder narrows the index
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** two types in the category Vergunningen and five in others
+- **WHEN** you pick Vergunningen in the folder sidebar
+- **THEN** the index SHALL list the two only
+
+### Requirement: You reuse one attribute across case types (REQ-PDM-02)
+
+You reuse one attribute across case types. A `propertyDefinition` SHALL be
+valid without a `caseType`; such a row is shared. The Properties tab of a
+case type SHALL list the type's own attributes first and the shared ones
+under Shared attributes.
+
+**Feature tier**: MVP
+
+#### Scenario: A shared attribute appears on every type
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** an attribute Kenteken saved without a case type
+- **WHEN** you open the Properties tab of any case type
+- **THEN** Kenteken SHALL be listed under Shared attributes

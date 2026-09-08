@@ -135,7 +135,6 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-01a: Create a case type
 
 - GIVEN an admin on the Dossiq settings page
@@ -191,7 +190,6 @@ The system MUST support a draft/published lifecycle for case types. Draft case t
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-02a: New case type defaults to draft
 
 - GIVEN an admin creating a new case type
@@ -245,7 +243,6 @@ The system MUST support validity windows on case types. Cases can only be create
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-03a: Case type within validity window
 
 - GIVEN a case type "Omgevingsvergunning" with `validFrom = "2026-01-01"` and `validUntil = "2027-12-31"`
@@ -288,7 +285,6 @@ The system MUST support validity windows on case types. Cases can only be create
 The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
 
 **Feature tier**: MVP
-
 
 #### Scenario CT-04a: Add status types to a case type
 
@@ -370,7 +366,6 @@ The system MUST support configuring a processing deadline on each case type. The
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-05a: Set processing deadline
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -405,7 +400,6 @@ The system MUST support configuring a processing deadline on each case type. The
 The system MUST support configuring extension and suspension rules on case types.
 
 **Feature tier**: MVP (extension), V1 (suspension)
-
 
 #### Scenario CT-06a: Enable extension with period
 
@@ -446,7 +440,6 @@ The system MUST support configuring extension and suspension rules on case types
 The system SHALL support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: V1
-
 
 #### Scenario CT-07a: Add result types to a case type
 
@@ -492,7 +485,6 @@ The system SHALL support defining allowed role types for each case type. See wir
 
 **Feature tier**: V1
 
-
 #### Scenario CT-08a: Add role types to a case type
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -537,7 +529,6 @@ The system SHALL support defining allowed role types for each case type. See wir
 The system SHALL support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: V1
-
 
 #### Scenario CT-09a: Add property definitions
 
@@ -592,7 +583,6 @@ The system SHALL support defining required document types for each case type. Se
 
 **Feature tier**: V1
 
-
 #### Scenario CT-10a: Add document types
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -640,7 +630,6 @@ The system SHALL support defining decision types for each case type.
 
 **Feature tier**: V1
 
-
 #### Scenario CT-11a: Add decision types
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -672,7 +661,6 @@ The system SHALL support confidentiality defaults on case types. Cases inherit t
 
 **Feature tier**: V1
 
-
 #### Scenario CT-12a: Set confidentiality default
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -702,7 +690,6 @@ The system MUST support selecting a default case type in admin settings. The def
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-13a: Set default case type
 
 - GIVEN case types "Omgevingsvergunning" (published), "Subsidieaanvraag" (published), "Klacht" (published)
@@ -731,7 +718,6 @@ The system MUST support selecting a default case type in admin settings. The def
 The system MUST enforce validation rules when creating or modifying case types.
 
 **Feature tier**: MVP
-
 
 #### Scenario CT-14a: Title is required
 
@@ -784,7 +770,6 @@ The system MUST enforce validation rules when creating or modifying case types.
 The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: MVP (General, Statuses), V1 (Results, Roles, Properties, Docs)
-
 
 #### Scenario CT-15a: Tab layout
 
@@ -841,7 +826,6 @@ The case type edit page MUST be organized into tabs for managing the type and it
 The system MUST handle error scenarios gracefully for case type operations.
 
 **Feature tier**: MVP
-
 
 #### Scenario CT-16a: Publish incomplete case type
 
@@ -932,6 +916,65 @@ Each case type SHALL include its associated:
 
 ---
 
+### Requirement: You give each status a colour and a list visibility (REQ-CT-19)
+
+You give each status a colour and choose whether it shows in lists. The
+`statusType` schema SHALL carry `colour`, one of the NL Design System hue
+names, and `hiddenInLists`, a boolean. The status badge on the case and the
+Workflow board column SHALL render in that colour. The Cases index SHALL
+leave cases in a hidden status out unless you ask for closed cases.
+
+**Feature tier**: MVP
+
+#### Scenario: A coloured status shows on the board
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status In behandeling of a type has the colour orange
+- **WHEN** you open the Workflow board for that type
+- **THEN** the In behandeling column header SHALL render in the orange token
+
+#### Scenario: A hidden status keeps its cases out of the list
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status Afgehandeld is marked hidden in lists
+- **AND** three cases sit in Afgehandeld
+- **WHEN** you open the Cases index
+- **THEN** none of the three SHALL be listed
+- **AND** the Closed chip SHALL list them
+
+### Requirement: You derive a case type from a parent (REQ-CT-20)
+
+You derive a case type from a parent and change only what differs. The
+`caseType` schema SHALL carry `parentCaseType`, a reference to another case
+type. A child SHALL inherit the parent's statuses, results, properties and
+deadlines, and a row the child declares with the same name SHALL replace the
+parent's. A chain that returns to itself SHALL be refused on save.
+
+**Feature tier**: MVP
+
+#### Scenario: A child shows its parent's statuses
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the type Bezwaar has four statuses
+- **AND** the type Bezwaar (verkort) names Bezwaar as its parent and declares none
+- **WHEN** you open Bezwaar (verkort)
+- **THEN** its Statuses tab SHALL list the four statuses marked Inherited
+
+#### Scenario: A child overrides one deadline
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (verkort) sets its own deadline to 6 weeks
+- **WHEN** you file a case of Bezwaar (verkort)
+- **THEN** the case's deadline SHALL be 6 weeks after its start date
+
+#### Scenario: A cycle is refused
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
+- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
+- **THEN** the save SHALL fail with a message naming the cycle
+
 ## UI References
 
 - **Case Type List**: See wireframe 3.6 in DESIGN-REFERENCES.md (admin settings, case type cards with status/deadline/validity)
@@ -998,5 +1041,3 @@ This is a comprehensive, highly detailed spec that is implementation-ready for b
 1. Should editing a published case type require unpublishing first, or can it be edited in-place with a warning?
 2. How should the system handle changes to a case type that affect existing cases (e.g., removing a status type that cases are currently at)?
 3. Should the `subCaseTypes` field enforce a tree structure (no cycles) and how is this validated?
-
-
