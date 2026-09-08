@@ -91,6 +91,8 @@ class NotAnAdapter {
  * The seam resolves what the admin named, and says so when it cannot.
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ *
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  */
 class AdapterHonestyTest extends TestCase {
 

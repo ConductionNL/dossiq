@@ -131,9 +131,7 @@ describe('the dossiqIntegration schema', () => {
 	// understates a channel that succeeds and delivers nothing, or under
 	// `configured`, which is the lie this page was built to remove.
 	it('gives Simulated a label, because an unlabelled enum renders raw', () => {
-		expect(schema.properties.status['x-enum-labels'].simulated).toBe(
-			'Simulated',
-		)
+		expect(schema.properties.status['x-enum-labels'].simulated).toBe('Simulated')
 	})
 
 	it('is listed on the register, so the import creates it', () => {
