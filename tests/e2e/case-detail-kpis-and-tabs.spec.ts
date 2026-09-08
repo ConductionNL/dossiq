@@ -440,10 +440,24 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			const panel = strip.locator(
 				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 			)
+			const section = panel.locator(`[data-testid="${testid}"]`)
 			await expect(
-				panel.locator(`[data-testid="${testid}"]`),
+				section,
 				`${testid} did not render inside ${tabLabel}`,
 			).toBeVisible({ timeout: 30_000 })
+
+			// The section WRAPPER is not the evidence. `case-sections` renders
+			// the heading and the host element whether or not the child
+			// resolved, and CnDetailWidgetHost renders NOTHING for a type it
+			// cannot resolve, so a broken registration leaves a headed, empty
+			// block and the visibility check above passes on it. Assert the
+			// host has content: a widget that resolved renders its rows or its
+			// empty state, and one that did not renders an empty div.
+			const host = section.locator('> *:not(h3)')
+			await expect(
+				host,
+				`${testid} rendered its heading and nothing under it, which is what a widget type the registry cannot resolve looks like`,
+			).not.toBeEmpty({ timeout: 30_000 })
 		}
 	})
 
