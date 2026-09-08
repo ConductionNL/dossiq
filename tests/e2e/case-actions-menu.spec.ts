@@ -18,8 +18,12 @@
  * locales for the same reason.
  *
  * THE TAB PANELS ARE LAZY and the sidebar has tabpanels of its own, so the
- * Related cases assertions address the OPEN PANEL inside the strip,
- * `[role="tabpanel"]:not([hidden])`, and never a page-wide locator.
+ * Related cases assertions address the OPEN PANEL inside the strip, and never
+ * a page-wide locator. They take `.cn-tabs__content`'s DIRECT children rather
+ * than descending: the related-objects widget renders a
+ * `<section role="tabpanel">` of its own inside the panel, so a descendant
+ * query matches two elements and every assertion on it fails as a strict mode
+ * violation rather than as anything about the tab.
  */
 
 import { expect, test } from '@playwright/test'
@@ -344,7 +348,9 @@ test.describe('The case Actions menu', () => {
 			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/ })
 			.click()
 
-		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
+		const panel = strip.locator(
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+		)
 		await expect(panel).toContainText(plannedTitle, { timeout: 30_000 })
 		await expect(panel).toContainText(due, { timeout: 30_000 })
 
