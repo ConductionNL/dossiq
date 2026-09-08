@@ -607,6 +607,7 @@
         "Checklist complete": "Checklist complete",
         "Checklist deleted": "Checklist deleted",
         "Checklist item": "Checklist item",
+        "Checklist item not done: %s": "Checklist item not done: %s",
         "Checklist items": "Checklist items",
         "Checklist name": "Checklist name",
         "Checklist name is required": "Checklist name is required",

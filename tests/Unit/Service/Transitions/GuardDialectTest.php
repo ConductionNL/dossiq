@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\Transitions\MandaatGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
+use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -192,6 +193,7 @@ class GuardDialectTest extends TestCase {
 			new RequiredDocumentGuard(),
 			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
 			new MandaatGuard($this->createMock(MandaatValidationService::class)),
+			$this->createMock(StatusChecklistGuard::class),
 			$logger,
 		);
 	}//end buildRegistry()

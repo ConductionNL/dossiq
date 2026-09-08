@@ -93,6 +93,11 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 	private StatusChecklist $statusChecklist;
 
 	/**
+	 * @var GuardRegistry&MockObject
+	 */
+	private GuardRegistry $guardRegistry;
+
+	/**
 	 * The group manager the admin gate reads.
 	 *
 	 * @var IGroupManager&MockObject
@@ -148,12 +153,13 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		);
 
 		$this->dispatcher = $this->createMock(SideEffectDispatcher::class);
+		$this->guardRegistry = $this->createMock(GuardRegistry::class);
 		$this->statusChecklist = $this->createMock(StatusChecklist::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 
 		$this->service = new StatusTransitionService(
 			$this->templateLoader,
-			$this->createMock(GuardRegistry::class),
+			$this->guardRegistry,
 			$this->dispatcher,
 			new CaseStatusStore($this->settingsService, $logger),
 			new TransitionAuthorizer($this->groupManager, $logger),
@@ -294,4 +300,44 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		self::assertSame('createTask', $dispatched[0]['type']);
 		self::assertSame([['type' => 'createTask', 'succeeded' => true]], $result['dispatchedActions']);
 	}//end testFreeFormDispatchesTheChecklistOfTheStatusItMovesTo()
+
+	/**
+	 * Every transition is checked against the status checklist, declared or not.
+	 *
+	 * A guard a template has to remember is a guard the next case type forgets,
+	 * and a required item that holds only one road out of a phase holds
+	 * nothing at all. The transition below declares no guards whatsoever.
+	 *
+	 * @return void
+	 */
+	public function testEveryTransitionIsCheckedAgainstTheStatusChecklist(): void {
+		$this->templateLoader->method('getTemplateForCase')->willReturn(
+			[
+				'id' => 'spoed-1',
+				'transitions' => [
+					[
+						'id' => 'spoed-t1',
+						'label' => 'Start behandeling',
+						'fromStatus' => 'st-constatering',
+						'toStatus' => 'st-behandeling',
+					],
+				],
+			]
+		);
+
+		$seen = [];
+		$this->guardRegistry->method('evaluateAll')->willReturnCallback(
+			function (array $guards) use (&$seen): array {
+				$seen = $guards;
+				return [];
+			}
+		);
+
+		$this->service->getAvailableTransitions(caseId: 'case-1', userId: 'alice');
+
+		self::assertSame(
+			['statusChecklist'],
+			array_map(static fn (array $guard): string => (string)$guard['type'], $seen)
+		);
+	}//end testEveryTransitionIsCheckedAgainstTheStatusChecklist()
 }//end class

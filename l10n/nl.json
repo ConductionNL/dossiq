@@ -607,6 +607,7 @@
         "Checklist complete": "Checklist compleet",
         "Checklist deleted": "Checklist verwijderd",
         "Checklist item": "Checklistitem",
+        "Checklist item not done: %s": "Checklistitem nog niet afgerond: %s",
         "Checklist items": "Checklistitems",
         "Checklist name": "Checklistnaam",
         "Checklist name is required": "Checklistnaam is verplicht",

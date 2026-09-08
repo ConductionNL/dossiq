@@ -36,7 +36,7 @@ criteria under a task are plain bullets.
 
 ## 3. Required items hold the case
 
-- [ ] 3.1 `lib/Service/Transitions/StatusChecklistGuard.php` (new) per
+- [x] 3.1 `lib/Service/Transitions/StatusChecklistGuard.php` (new) per
   design D4, registered in `GuardRegistry` as `statusChecklist` and
   evaluated on every transition by `StatusTransitionService::evaluateGuards`
   regardless of the template's guard list.
@@ -44,7 +44,7 @@ criteria under a task are plain bullets.
   - `tests/Unit/Service/Transitions/StatusChecklistGuardTest.php` (new): a
     required item with an open task fails and names it; with a completed
     task passes; with no task fails; an optional item never fails
-- [ ] 3.2 `l10n/en.json` and `l10n/nl.json`: Checklist, "Checklist item not
+- [x] 3.2 `l10n/en.json` and `l10n/nl.json`: Checklist, "Checklist item not
   done: %s".
 
 ## 4. Verification

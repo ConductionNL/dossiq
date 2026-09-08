@@ -147,8 +147,11 @@ class StatusTransitionService {
 				continue;
 			}
 
-			$guards = $this->specReader->extractGuards(transition: $transition);
-			$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+			$eval = $this->guardRegistry->evaluateAll(
+				guards: $this->evaluateGuards(transition: $transition),
+				case: $case,
+				userId: $userId,
+			);
 
 			// Drop transitions whose role guard hides them silently.
 			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
@@ -435,8 +438,11 @@ class StatusTransitionService {
 		}
 
 		// Defence in depth — re-evaluate guards on the server side.
-		$guards = $this->specReader->extractGuards(transition: $transition);
-		$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+		$eval = $this->guardRegistry->evaluateAll(
+			guards: $this->evaluateGuards(transition: $transition),
+			case: $case,
+			userId: $userId,
+		);
 		$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
 		// @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
 		if (count($failed) > 0) {
@@ -618,6 +624,31 @@ class StatusTransitionService {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * The guards a transition is subject to: its own, plus the implicit one.
+	 *
+	 * The status checklist is appended to EVERY transition rather than left to
+	 * the template, because the list it enforces is authored on the status. A
+	 * guard a template has to remember is a guard the next case type forgets,
+	 * and a required item that only holds one road out of a phase holds
+	 * nothing at all.
+	 *
+	 * It goes LAST, so a role guard still hides a transition before the
+	 * checklist has anything to say about it.
+	 *
+	 * @param array<string, mixed> $transition The transition definition
+	 *
+	 * @return array<int, array<string, mixed>> The guards to evaluate
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function evaluateGuards(array $transition): array {
+		$guards = $this->specReader->extractGuards(transition: $transition);
+		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
+
+		return $guards;
+	}//end evaluateGuards()
 
 	/**
 	 * Resolve a user UID either from the explicit parameter or IUserSession.
