@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -61,8 +63,11 @@ interface RouteSeamObjectServiceStub {
  * The engine resolves the workflow through the case.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseResultWriter
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 
@@ -166,12 +171,12 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			$this->templateLoader,
 			$this->guardRegistry,
 			$this->dispatcher,
-			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService), $logger),
+			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $logger),
 			new TransitionAuthorizer($this->groupManager, $logger),
 			new TransitionSpecReader(),
 			$this->createMock(IUserSession::class),
 			$logger,
-			new CaseResultWriter($this->settingsService),
+			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))),
 			$this->statusChecklist,
 		);
 	}//end setUp()

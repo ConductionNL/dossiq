@@ -198,8 +198,8 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'caseTask', 'complaint',
-                'role', 'roleType', 'organisatieRol'],
+    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate', 'caseTask',
+                'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
 }[kind]
 with open(path) as fh:
     raw = fh.read()

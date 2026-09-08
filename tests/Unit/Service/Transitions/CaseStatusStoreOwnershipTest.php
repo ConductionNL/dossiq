@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
@@ -38,6 +40,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 class CaseStatusStoreOwnershipTest extends TestCase {
 	/**
@@ -149,6 +152,6 @@ class CaseStatusStoreOwnershipTest extends TestCase {
 			][$key] ?? '')
 		);
 
-		return new CaseStatusStore($settings, new StatusTypeLookup($settings), new NullLogger());
+		return new CaseStatusStore($settings, new StatusTypeLookup($settings, new CaseTypeResolver(new CaseTypeStore($settings))), new NullLogger());
 	}//end store()
 }//end class
