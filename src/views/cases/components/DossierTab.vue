@@ -115,7 +115,6 @@
 				:sortDirection="sortDirection"
 				@toggleSelect="toggleSelect"
 				@open="openInFiles"
-				@share="shareDocument"
 				@versionHistory="showVersions"
 				@delete="deleteDocument" />
 		</div>
@@ -137,7 +136,9 @@
 		<VersionHistoryPanel
 			v-if="versionDocument"
 			:document="versionDocument"
-			:userId="userId" />
+			:userId="userId"
+			@downloadVersion="downloadVersion"
+			@restoreVersion="restoreVersion" />
 	</div>
 </template>
 
@@ -310,7 +311,7 @@ export default {
 				this.groups = data.groups || []
 				this.total = data.total || 0
 				this.$emit('count-changed', this.total)
-			} catch (error) {
+			} catch {
 				this.groups = []
 				this.total = 0
 			} finally {
@@ -331,7 +332,7 @@ export default {
 				)
 				const { data } = await axios.get(url)
 				this.types = data.results || data.objects || data || []
-			} catch (error) {
+			} catch {
 				this.types = []
 			}
 		},
@@ -450,7 +451,7 @@ export default {
 					})
 					this.uploadProgress[index] = 100
 					anySuccess = true
-				} catch (error) {
+				} catch {
 					this.uploadErrors[index] = true
 				}
 			}
@@ -539,7 +540,7 @@ export default {
 				const { data } = await axios.post(generateUrl(path), payload)
 				this.bulkResults = data.results || []
 				this.fetchDossier()
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'Bulk action failed'))
 			} finally {
 				this.bulkBusy = false
@@ -569,7 +570,7 @@ export default {
 				link.download = `dossier-${this.caseId}.zip`
 				link.click()
 				window.URL.revokeObjectURL(objectUrl)
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'ZIP export failed'))
 			} finally {
 				this.bulkBusy = false
@@ -589,21 +590,6 @@ export default {
 		},
 
 		/**
-		 * Trigger a public share for the document.
-		 *
-		 * @param {object} document The document.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
-		 */
-		shareDocument(document) {
-			this.$emit('count-changed', this.total)
-			showSuccess(
-				this.t('dossiq', 'Share requested for {name}', {
-					name: document.title,
-				}),
-			)
-		},
-
-		/**
 		 * Show the version-history panel for a document.
 		 *
 		 * @param {object} document The document.
@@ -611,6 +597,55 @@ export default {
 		 */
 		showVersions(document) {
 			this.versionDocument = document
+		},
+
+		/**
+		 * Download one previous version of the open document.
+		 *
+		 * `version.id` is the DAV href PROPFIND returned, which is already the
+		 * download URL for that version. It is opened rather than fetched
+		 * because the browser must own the save dialog.
+		 *
+		 * @param {object} version The version to download.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		downloadVersion(version) {
+			if (!version || !version.id) {
+				return
+			}
+			window.open(version.id, '_blank')
+		},
+
+		/**
+		 * Restore the open document to one of its previous versions.
+		 *
+		 * Nextcloud restores a version by MOVEing its DAV node onto the
+		 * `restore/target` endpoint. The dossier is refetched afterwards
+		 * because the size and the modification date on the row both change.
+		 *
+		 * @param {object} version The version to restore.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async restoreVersion(version) {
+			if (!version || !version.id || !this.userId) {
+				return
+			}
+			try {
+				await axios.request({
+					method: 'MOVE',
+					url: version.id,
+					headers: {
+						Destination: generateUrl(
+							`/remote.php/dav/versions/${this.userId}/restore/target`,
+						),
+					},
+				})
+				showSuccess(this.t('dossiq', 'Version restored'))
+				this.fetchDossier()
+			} catch {
+				showError(this.t('dossiq', 'Could not restore this version'))
+			}
 		},
 
 		/**
@@ -627,7 +662,7 @@ export default {
 				)
 				await axios.delete(url)
 				this.fetchDossier()
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'Could not remove document'))
 			}
 		},
