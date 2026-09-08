@@ -142,7 +142,7 @@ decision object.
 
 The publish and withdraw endpoints MUST enforce per-case mutation authorization
 that fails closed. The previous wording required rejection only for a non-member
-of the `procest-gebruikers` group **"(when that group exists)"** — which
+of the `procest-gebruikers` group **"(when that group exists)"**, which
 specified a fail-open control: the group never existed, so the guard
 short-circuited and every authenticated user was authorized. Group existence
 MUST play no part in the authorization decision.
