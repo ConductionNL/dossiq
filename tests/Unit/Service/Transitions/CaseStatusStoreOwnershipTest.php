@@ -41,6 +41,8 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  */
 class CaseStatusStoreOwnershipTest extends TestCase {
 	/**

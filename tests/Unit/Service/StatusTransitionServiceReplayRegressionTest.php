@@ -61,6 +61,8 @@ interface ReplayObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
 
