@@ -85,14 +85,36 @@ export default defineConfig({
 	globalSetup: path.resolve(__dirname, 'global-setup.ts'),
 	timeout: 60_000,
 	expect: { timeout: 15_000 },
+	// Files run in parallel, the tests inside one file stay in order. Several
+	// specs seed in `beforeAll` and assert across tests in sequence, so
+	// `fullyParallel: true` would break them; file-level parallelism is what the
+	// `workers` setting below actually buys.
 	fullyParallel: false,
-	// One worker on purpose. `helpers/fixtures.ts#ensureCaseType` reuses
-	// `listObjects('caseType')[0]` — whatever caseType happens to exist — and
-	// `cleanupRunObjects` deletes by run prefix afterwards. With two workers,
-	// worker B can adopt worker A's throwaway caseType and then have it deleted
-	// out from under it mid-test. Serial execution removes that whole class of
-	// cross-worker flake.
-	workers: 1,
+	// WHY THIS IS NO LONGER 1.
+	//
+	// It used to be, and the reason recorded here was that
+	// `helpers/fixtures.ts#ensureCaseType` adopted `listObjects('caseType')[0]`
+	// — whatever caseType happened to exist — so worker B could adopt worker A's
+	// throwaway and have it deleted out from under it mid-test.
+	//
+	// That defect was real, and it was in more places than this comment knew:
+	// SIX spec files inlined the same `listObjects(api, 'caseType')[0]`
+	// adoption. It is now fixed at the source. `adoptableCaseTypes()` excludes
+	// every row carrying `FIXTURE_PREFIX`, so a worker can only adopt a caseType
+	// that no fixture teardown will ever remove, and all seven sites go through
+	// it.
+	//
+	// Note what the fix deliberately does NOT do: make every caller seed its own
+	// caseType. `case` is an ARCHIVAL schema, so a seeded case cannot be deleted
+	// in teardown; a caseType that IS deleted therefore strands permanent cases
+	// pointing at a type that is gone. The six inline sites each carry a comment
+	// saying so. Filtering the adoption keeps that property and removes the
+	// cross-worker hazard at the same time.
+	//
+	// The suite shares ONE Nextcloud and ONE OpenRegister database across
+	// workers, which is why this is a modest number rather than the CPU count.
+	// Override with `E2E_WORKERS` when measuring.
+	workers: Number(process.env.E2E_WORKERS ?? 4),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//

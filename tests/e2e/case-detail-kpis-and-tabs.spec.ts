@@ -29,8 +29,8 @@
 
 import { expect, test } from '@playwright/test'
 import {
+	adoptableCaseTypes,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	seedCase,
@@ -135,7 +135,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// `processingDeadline` is what makes the countdown testable: `case.deadline`
 		// is COMPUTED by OpenRegister from the type's duration, so a type without
 		// one yields no deadline and the tile correctly shows a dash.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		const withDeadline = caseTypes.filter((ct: any) => ct.processingDeadline)
 		const chosen = withDeadline[0] ?? caseTypes[0]
 		expect(chosen, 'the instance must ship at least one case type').toBeTruthy()

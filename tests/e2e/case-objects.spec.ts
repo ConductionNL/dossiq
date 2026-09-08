@@ -32,6 +32,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
@@ -185,7 +186,7 @@ test.describe('Case objects', () => {
 		// cannot be deleted by a user; creating a case type here and deleting
 		// it in teardown would leave every case pointing at a type that is
 		// gone, which reddens unrelated specs.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		expect(
 			caseTypes.length,
 			'the instance must ship at least one case type',
