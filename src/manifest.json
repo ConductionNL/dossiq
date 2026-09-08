@@ -222,6 +222,13 @@
 			"order": 20
 		},
 		{
+			"id": "Contacts",
+			"label": "Contacts",
+			"icon": "AccountGroupOutline",
+			"route": "Contacts",
+			"order": 25
+		},
+		{
 			"id": "Cases",
 			"label": "All cases",
 			"icon": "FolderAccountOutline",
@@ -4662,6 +4669,488 @@
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			}
+		},
+		{
+			"id": "Contacts",
+			"route": "/contacts",
+			"type": "index",
+			"title": "Contacts",
+			"config": {
+				"register": "dossiq",
+				"schema": "brpPerson",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"_folderSidebarNote": "THE FOLDER SIDEBAR IS ABSENT, AND THAT IS THE HONEST STATE. Design D1 asks for a `custom` sidebar with a People folder over `brpPerson` and an Organisations folder naming `kvkCompany` as its schema, the second marked `hidden: true` until nextcloud-vue reads a folder's `schema` (the B10 seam). Two things measured against the installed dist stop that shipping. FIRST, there is no `hidden`: CnFolderTree renders every entry of `folders[]`, so the Organisations folder would appear, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list — the opposite of what REQ-ID-4's scenario asks. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. That would have emptied the list on the FIRST click of the only folder shipped. The block to add when the seam lands, unchanged from the design: `folderSidebar: {source: \"custom\", filterField: \"@self.schema\", allLabel: \"All contacts\", folders: [{id: \"brpPerson\", name: \"People\", schema: \"brpPerson\"}, {id: \"kvkCompany\", name: \"Organisations\", schema: \"kvkCompany\"}]}`. Until then the page lists people, the index search box covers name and number, and an organisation is reached from its case through the initiator card.",
+				"columns": [
+					{
+						"key": "displayName",
+						"label": "Name"
+					},
+					{
+						"key": "citizenServiceNumber",
+						"label": "Number"
+					},
+					{
+						"key": "residence.city",
+						"label": "Residence",
+						"sortable": false
+					},
+					{
+						"key": "description",
+						"label": "Description",
+						"sortable": false
+					}
+				],
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "ContactDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose \u2014 the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
+		},
+		{
+			"id": "ContactDetail",
+			"route": "/contacts/:id",
+			"type": "detail",
+			"title": "Contact",
+			"config": {
+				"register": "dossiq",
+				"schema": "brpPerson",
+				"documentationUrl": "https://procest.conduction.nl",
+				"headerActions": [
+					{
+						"id": "new-case-for-contact",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "FolderPlusOutline",
+						"size": "large",
+						"columns": 2,
+						"register": "dossiq",
+						"schema": "case",
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"description",
+							"assignee",
+							"priority",
+							"confidentiality",
+							"intakeChannel",
+							"startDate",
+							"plannedEndDate"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							}
+						},
+						"successMessage": "Case filed for this contact.",
+						"props": {
+							"requester": "@objectId"
+						}
+					},
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhoneLogOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"nature",
+							"summary",
+							"relatedCases"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact moment logged.",
+						"props": {
+							"contact": "@objectId"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "contact-card",
+						"type": "data",
+						"title": "Contact",
+						"icon": "CardAccountDetailsOutline",
+						"content": {
+							"title": "Contact",
+							"columns": 2,
+							"editable": false,
+							"include": [
+								"displayName",
+								"citizenServiceNumber",
+								"name",
+								"birth",
+								"residence",
+								"description"
+							]
+						}
+					},
+					{
+						"id": "contact-cases",
+						"type": "object-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "identifier",
+									"label": "Number"
+								},
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": "Cases",
+							"viewAllQuery": {
+								"requester": "@objectId"
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-moments",
+						"type": "object-list",
+						"title": "Contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Start time"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary",
+									"sortable": false
+								}
+							],
+							"emptyText": "No contact moments yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "contact-card",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "2",
+						"widgetId": "contact-cases",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "contact-moments",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						}
+					]
+				}
+			},
+			"_note": "One person, what they have with us, and the two things you do next. The card is read only: `brpPerson` is read from its source and editing it here would write a fourth version of a citizen's data. The cases list filters `case.requester` on this row's uuid exactly, so a case whose requester is a Nextcloud contact rather than a register row does not appear — the gap requester-on-the-case D1 accepts. No menu entry: a detail page spends no navigation budget."
+		},
+		{
+			"id": "OrganisationDetail",
+			"route": "/organisations/:id",
+			"type": "detail",
+			"title": "Organisation",
+			"config": {
+				"register": "dossiq",
+				"schema": "kvkCompany",
+				"documentationUrl": "https://procest.conduction.nl",
+				"headerActions": [
+					{
+						"id": "new-case-for-contact",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "FolderPlusOutline",
+						"size": "large",
+						"columns": 2,
+						"register": "dossiq",
+						"schema": "case",
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"description",
+							"assignee",
+							"priority",
+							"confidentiality",
+							"intakeChannel",
+							"startDate",
+							"plannedEndDate"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							}
+						},
+						"successMessage": "Case filed for this contact.",
+						"props": {
+							"requester": "@objectId"
+						}
+					},
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhoneLogOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"nature",
+							"summary",
+							"relatedCases"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact moment logged.",
+						"props": {
+							"contact": "@objectId"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "contact-card",
+						"type": "data",
+						"title": "Organisation",
+						"icon": "CardAccountDetailsOutline",
+						"content": {
+							"title": "Organisation",
+							"columns": 2,
+							"editable": false,
+							"include": [
+								"tradeName",
+								"kvkNumber",
+								"legalForm",
+								"address",
+								"description"
+							]
+						}
+					},
+					{
+						"id": "contact-cases",
+						"type": "object-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "identifier",
+									"label": "Number"
+								},
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": "Cases",
+							"viewAllQuery": {
+								"requester": "@objectId"
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-moments",
+						"type": "object-list",
+						"title": "Contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Start time"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary",
+									"sortable": false
+								}
+							],
+							"emptyText": "No contact moments yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "contact-card",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "2",
+						"widgetId": "contact-cases",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "contact-moments",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						}
+					]
+				}
+			},
+			"_note": "The same anatomy as ContactDetail over `kvkCompany`, because a detail page takes one schema and an organisation is not a person. Reached from a case's initiator card, not from the Contacts index: the index lists people until a folder can swap the index's schema (the Contacts page's own note has the measurement). Widget ids repeat ContactDetail's on purpose; they are page-scoped, and `npm run check:manifest` is what says so."
 		}
 	],
 	"observability": {

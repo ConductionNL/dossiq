@@ -966,6 +966,184 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 <!-- BEGIN retrofit-2026-05-24-case-management -->
 
+### Requirement: Every new case gets a number (REQ-CM-25)
+
+Every new case gets a number like 2026-0042 without you typing it. The `case`
+schema SHALL declare `identifier` as a generated value: the year of the start
+date, a hyphen and a four-digit sequence that restarts every year. The field
+SHALL be read-only on every form and SHALL NOT appear on the New case form. A
+case that already holds an identifier SHALL keep it.
+
+**Feature tier**: MVP
+
+#### Scenario: A case filed from the form gets the next number
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** the last case of this year is numbered 2026-0041
+- **WHEN** you file a case from New case on the Dashboard
+- **THEN** the case page SHALL show the number 2026-0042
+- **AND** the New case form SHALL NOT have offered a number field
+
+#### Scenario: A case posted to the API gets a number too
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case posted to the case endpoint without an identifier
+- **WHEN** the answer arrives
+- **THEN** its identifier SHALL match `YYYY-NNNN`
+- **AND** the year SHALL be the year of its start date
+
+#### Scenario: An existing number stays
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case that holds the identifier BZW-2025-17
+- **WHEN** you edit and save its title
+- **THEN** its identifier SHALL still be BZW-2025-17
+
+### Requirement: You tag a case and filter on tags (REQ-CM-26)
+
+You tag a case and filter the list on tags. The `case` schema SHALL carry
+`tags`, a list of free words. `CaseDetail` SHALL show the tags in a sidebar
+tab where you add and remove them. The Cases index SHALL offer a Tags filter
+that lists cases carrying the chosen tag.
+
+**Feature tier**: MVP
+
+#### Scenario: You add a tag on the case
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case without tags
+- **WHEN** you open the Tags tab and add spoed
+- **THEN** the tag SHALL show on the case after a reload
+
+#### Scenario: You filter the list on a tag
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** two cases tagged wijk-noord and ten without
+- **WHEN** you filter the Cases index on wijk-noord
+- **THEN** the list SHALL hold the two tagged cases only
+
+### Requirement: The case shows its lead time, archive and payment data (REQ-CM-27)
+
+You read the case's legal lead time, archive nomination and destruction date
+on the case. `CaseDetail` SHALL show a Terms and archive block with the type's
+processing deadline, the case's legal basis, archive nomination, archive
+action date, archive status, payment indication and last payment date. The
+`case` schema SHALL carry `legalBasis` as text.
+
+**Feature tier**: MVP
+
+#### Scenario: The block reads the type and the case
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case of a type with a processing deadline of 8 weeks
+- **AND** the case carries archive nomination blijvend bewaren and legal basis Awb 4:13
+- **WHEN** you open the case page
+- **THEN** Terms and archive SHALL show 8 weeks as the statutory lead time
+- **AND** SHALL show blijvend bewaren and Awb 4:13
+
+#### Scenario: Empty fields stay visible
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case with no archive action date
+- **WHEN** you open the case page
+- **THEN** the Terms and archive block SHALL show the archive action date row as empty, not hide it
+
+### Requirement: The case page lists its objects (REQ-CM-28)
+
+You see what the case is about on the case. `CaseDetail` SHALL show an
+Objects tab in `case-panels` that lists the `caseObject` records whose
+`case` is the open case, with the columns object type, identification,
+description and link. A case without objects SHALL show the tab with an
+empty state, not hide it. The rows SHALL NOT open a detail page: a case
+object is a link row, not a record of its own.
+
+**Feature tier**: MVP
+
+#### Scenario: The tab lists the case's objects
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case with a building object and a vehicle object
+- **AND** another case with one object of its own
+- **WHEN** you open the first case's Objects tab
+- **THEN** the list SHALL show two rows with their object type, identification, description and link
+- **AND** SHALL NOT show the other case's object
+
+#### Scenario: An empty case shows the tab
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case without objects
+- **WHEN** you open its page
+- **THEN** the Objects tab SHALL be present
+- **AND** SHALL read No objects linked to this case yet
+
+### Requirement: You link an object from the case (REQ-CM-29)
+
+You link a building, a vehicle or any other object without leaving the
+case. `CaseDetail` SHALL offer a header action Link object that opens a form
+over `caseObject` asking for the object type, the identification, the link
+and a description, with the open case passed as the value of `case`. After
+saving, the new object SHALL appear in the Objects tab.
+
+**Feature tier**: MVP
+
+#### Scenario: A linked object shows up in the tab
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case with no objects
+- **WHEN** you choose Link object, enter object type building, identification 0363100012345678, description The shed at the back and save
+- **THEN** the Objects tab SHALL show one row with that object type, identification and description
+- **AND** the saved object SHALL hold the case's id in `case`
+
+#### Scenario: A link without an object type is refused
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** the Link object form is open
+- **WHEN** you fill the identification and leave the object type empty and try to save
+- **THEN** the form SHALL not save
+- **AND** SHALL mark the object type as required
+
+#### Scenario: The case is prefilled once nextcloud-vue passes initial data
+@e2e exclude The prefill waits on nextcloud-vue create-with-initial-data (placement.md, triage #6); until then the saved object is asserted, not the field.
+
+- **GIVEN** the Link object form opened from a case
+- **WHEN** the form renders
+- **THEN** the `case` field SHALL already hold the open case
+
+### Requirement: You find every case on an object (REQ-CM-30)
+
+You start from the object and find its cases. The app SHALL offer an
+Objects index over `caseObject`, reached from the Cases menu group, whose
+sidebar groups the rows by object type and whose search matches the
+identification. Each row SHALL name its case and SHALL offer a View case
+action that opens that case. `caseObject.objectType` SHALL be a facet so the
+sidebar can group on it.
+
+**Feature tier**: MVP
+
+#### Scenario: One building, two cases
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** two cases that each link the building 0363100012345678
+- **AND** a third case that links a vehicle
+- **WHEN** you open the Objects index and search for 0363100012345678
+- **THEN** the list SHALL show two rows, one per case
+- **AND** SHALL NOT show the vehicle
+
+#### Scenario: A row opens its case
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** the Objects index showing a row on a case
+- **WHEN** you choose View case on that row
+- **THEN** the case page of that case SHALL open
+
+#### Scenario: The sidebar groups by object type
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** objects of type building and of type vehicle
+- **WHEN** you pick building in the sidebar
+- **THEN** the list SHALL show only the building rows
+- **AND** All objects SHALL bring every row back
+
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
 ### REQ-101: Dossiq SHALL expose case-sharing endpoints via CaseSharingController
@@ -1214,7 +1392,6 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-01a: Create a case with case type selection
 
 - GIVEN a user with case management access
@@ -1281,7 +1458,6 @@ The system MUST support updating case properties. Changes MUST be recorded in th
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-02a: Update case description
 
 - GIVEN an existing case "Bouwvergunning Keizersgracht 100" with identifier "2026-042"
@@ -1326,7 +1502,6 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-03a: Delete a case in initial status
 
 - GIVEN a case "Testmelding" with status "Ontvangen" and no linked tasks, decisions, or sub-cases
@@ -1355,7 +1530,6 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-04a: Default case list
 
@@ -1425,7 +1599,6 @@ The system MUST support changing a case's status directly from the case list vie
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-05a: Quick status change via dropdown
 
 - GIVEN a case "Bouwvergunning Keizersgracht 100" with status "Ontvangen" in the case list
@@ -1465,7 +1638,6 @@ The system MUST support changing a case's status directly from the case list vie
 The system MUST provide a comprehensive detail view for each case. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-06a: Case info panel
 
@@ -1519,7 +1691,6 @@ The case detail view MUST display a visual status timeline showing all statuses 
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-07a: Status timeline with current status
 
 - GIVEN a case of type "Omgevingsvergunning" with ordered statuses ["Ontvangen", "In behandeling", "Besluitvorming", "Afgehandeld"]
@@ -1560,7 +1731,6 @@ The case detail view MUST display assigned participants with their roles.
 
 **Feature tier**: MVP (handler assignment), V1 (full role types)
 
-
 #### Scenario CM-08a: Display participants
 
 - GIVEN a case with roles: Handler = "Jan de Vries", Initiator = "Petra Jansen (Acme Corp)", Advisor = "Dr. K. Bakker"
@@ -1591,7 +1761,6 @@ The case detail view MUST display custom properties defined by the case type.
 
 **Feature tier**: V1
 
-
 #### Scenario CM-09a: Display custom properties
 
 - GIVEN a case of type "Omgevingsvergunning" with property definitions ["Kadastraal nummer" (text), "Bouwkosten" (number), "Oppervlakte" (number), "Bouwlagen" (number)]
@@ -1621,7 +1790,6 @@ The case detail view MUST display custom properties defined by the case type.
 The case detail view MUST display a checklist of required documents defined by the case type, showing which are present and which are missing.
 
 **Feature tier**: V1
-
 
 #### Scenario CM-10a: Document checklist with mixed completion
 
@@ -1667,7 +1835,6 @@ The case detail view MUST display tasks linked to the case.
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-11a: Display tasks with completion count
 
 - GIVEN a case with 5 tasks: 2 completed, 1 active, 2 available
@@ -1699,7 +1866,6 @@ The case detail view MUST display decisions linked to the case.
 
 **Feature tier**: V1
 
-
 #### Scenario CM-12a: Display decisions
 
 - GIVEN a case with 1 decision: "Vergunning verleend" decided on Feb 20 by "Jan de Vries"
@@ -1728,7 +1894,6 @@ The case detail view MUST display decisions linked to the case.
 The case detail view MUST display an activity timeline showing all events related to the case in chronological order (newest first).
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-13a: Activity timeline entries
 
@@ -1764,7 +1929,6 @@ The case detail view MUST display an activity timeline showing all events relate
 The system MUST support changing a case's status. Status changes MUST respect case type constraints: only statuses defined by the case type are allowed, required properties MUST be satisfied, and required documents MUST be present.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-14a: Valid status change
 
@@ -1824,7 +1988,6 @@ The system MUST support recording a result when closing a case.
 
 **Feature tier**: MVP (basic result), V1 (result types from case type)
 
-
 #### Scenario CM-15a: Record result from case type's allowed results (V1)
 
 - GIVEN a case of type "Omgevingsvergunning" with result types ["Vergunning verleend", "Vergunning geweigerd", "Ingetrokken"]
@@ -1854,7 +2017,6 @@ The system MUST support recording a result when closing a case.
 The system MUST support extending a case's deadline when the case type allows it.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-16a: Extend deadline when allowed
 
@@ -1886,7 +2048,6 @@ The system MUST support extending a case's deadline when the case type allows it
 The system SHALL support suspending a case when the case type allows it. Suspension pauses the deadline countdown.
 
 **Feature tier**: V1
-
 
 #### Scenario CM-17a: Suspend a case
 
@@ -1926,7 +2087,6 @@ The system SHALL support parent/child case hierarchies. A sub-case is a full cas
 
 **Feature tier**: V1
 
-
 #### Scenario CM-18a: Create a sub-case
 
 - GIVEN an existing case "Bouwproject Centrum" (identifier "2026-042")
@@ -1963,7 +2123,6 @@ The system SHALL support confidentiality levels on cases, defaulting from the ca
 
 **Feature tier**: V1
 
-
 #### Scenario CM-19a: Inherit confidentiality from case type
 
 - GIVEN a case type "Omgevingsvergunning" with `confidentiality = "internal"`
@@ -1991,7 +2150,6 @@ The system SHALL support confidentiality levels on cases, defaulting from the ca
 The system MUST enforce validation rules when creating or modifying cases.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-20a: Title is required
 
@@ -2031,7 +2189,6 @@ The system MUST display deadline countdowns on cases across all views (list, det
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-21a: Days remaining display
 
 - GIVEN a case with `deadline = "2026-03-15"` and today is "2026-02-25"
@@ -2067,7 +2224,6 @@ The system MUST display deadline countdowns on cases across all views (list, det
 The system MUST maintain a complete audit trail for all case modifications. The audit trail is published via Nextcloud's Activity system (`OCP\Activity\IManager`).
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-22a: Status change audit entry
 
@@ -2107,7 +2263,6 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 The system MUST provide full-text search across cases matching against title, description, identifier, and custom property values.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-23a: Search by identifier
 
