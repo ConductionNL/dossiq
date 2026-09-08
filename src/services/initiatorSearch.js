@@ -193,6 +193,27 @@ export function isCurrentRequester(value, result) {
 }
 
 /**
+ * Mask an identifying number to five dots plus its last four digits.
+ *
+ * The last four are kept on purpose: a handler has to be able to tell two
+ * cases apart, and a fully hidden number makes the card useless without
+ * revealing it. The number itself is still on the case object — this is a
+ * display rule, not storage masking, which needs OpenRegister to mask a
+ * field on read.
+ *
+ * @param {string} value The number to mask.
+ * @return {string} The masked number, or '' for an empty value.
+ * @spec openspec/specs/initiator-display/spec.md
+ */
+export function maskNumber(value) {
+	const text = String(value || '')
+	if (text === '') {
+		return ''
+	}
+	return `•••••${text.slice(-4)}`
+}
+
+/**
  * Search Nextcloud contacts through the core contactsmenu endpoint.
  * Degrades to [] on any failure (Contacts absent, endpoint disabled) —
  * the picker shows an explicit empty state, never an error toast.

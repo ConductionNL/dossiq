@@ -43,13 +43,13 @@ criteria under a task are plain bullets.
 
 ## 3. The card
 
-- [ ] 3.1 `src/components/initiator/InitiatorSection.vue`: render the person
+- [x] 3.1 `src/components/initiator/InitiatorSection.vue`: render the person
   card (name, type, identifying number, address, link to the source record);
   resolve the source row for the address and `indicatieGeheim`; fill the
   projection from `requester` when it is set and the projection is empty.
   - vitest in `src/components/initiator/InitiatorSection.spec.js`
   - `@spec openspec/specs/initiator-display/spec.md`
-- [ ] 3.2 `InitiatorSection.vue`: the Protected marker; the BSN masked to
+- [x] 3.2 `InitiatorSection.vue`: the Protected marker; the BSN masked to
   its last four digits when `indicatieGeheim` is true; a Reveal button that
   fetches the `brpPerson` row through the object store with
   `_reason: "bsn-reveal"` and then shows the full number.
