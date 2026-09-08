@@ -130,11 +130,35 @@ class GuardRegistry {
 			}
 
 			$result = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $case, userId: $userId);
+
+			$details = $result->details;
+			if ($details === []) {
+				$details = null;
+			}
+
 			$results[] = [
 				'type' => $type,
 				'passed' => $result->passed,
 				'failureMessage' => $result->failureMessage,
-				'details' => $result->details,
+				// EMPTY DETAILS MUST BE NULL, NOT AN EMPTY OBJECT. This
+				// snapshot is persisted as `statusRecord.evaluatedGuards`,
+				// whose `details` is declared `type: object`. OpenRegister
+				// refuses an empty one and says so precisely: "Property
+				// 'evaluatedGuards.0.details' expects object but got empty
+				// ({}). For non-required object properties, set this to null
+				// to clear the field."
+				//
+				// `GuardResult::$details` defaults to `[]`, and a guard that
+				// simply PASSES has nothing to report, so the common case is
+				// the empty one. That went unnoticed until the status
+				// checklist guard was appended to every transition: before
+				// that, a transition with no declared guards produced no
+				// snapshot entries at all, so there was nothing to reject.
+				// Afterwards every transition had at least entry 0, and
+				// `StatusTransitionController::execute()` catches Throwable
+				// and answers 500, so the failure surfaced as a dialog that
+				// never closes rather than as a validation message.
+				'details' => $details,
 			];
 		}//end foreach
 
