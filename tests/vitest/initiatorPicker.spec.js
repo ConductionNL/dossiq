@@ -52,9 +52,8 @@ vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => storeStub,
 }))
 
-const { default: InitiatorPicker } = await import(
-	'../../src/components/initiator/InitiatorPicker.vue'
-)
+const { default: InitiatorPicker } =
+	await import('../../src/components/initiator/InitiatorPicker.vue')
 
 const PERSON_ROW = {
 	id: 'uuid-person-1',
@@ -177,9 +176,11 @@ describe('InitiatorPicker — one write path for the requester', () => {
 	})
 
 	it('resolves a bare requester uuid to the row it names', async () => {
-		const fetchObject = vi.fn().mockImplementation(async (schema) =>
-			schema === 'brpPerson' ? PERSON_ROW : null,
-		)
+		const fetchObject = vi
+			.fn()
+			.mockImplementation(async (schema) =>
+				schema === 'brpPerson' ? PERSON_ROW : null,
+			)
 		const wrapper = mountPicker({ value: 'uuid-person-1', fetchObject })
 
 		await wrapper.vm.resolveValue()
@@ -192,9 +193,11 @@ describe('InitiatorPicker — one write path for the requester', () => {
 	})
 
 	it('falls back to the company set for a uuid the person set does not hold', async () => {
-		const fetchObject = vi.fn().mockImplementation(async (schema) =>
-			schema === 'kvkCompany' ? COMPANY_ROW : null,
-		)
+		const fetchObject = vi
+			.fn()
+			.mockImplementation(async (schema) =>
+				schema === 'kvkCompany' ? COMPANY_ROW : null,
+			)
 		const wrapper = mountPicker({ value: 'uuid-company-1', fetchObject })
 
 		await wrapper.vm.resolveValue()

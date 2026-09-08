@@ -167,7 +167,11 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		currentChoice() {
-			if (this.value && typeof this.value === 'object' && this.value.initiatorType) {
+			if (
+				this.value
+				&& typeof this.value === 'object'
+				&& this.value.initiatorType
+			) {
 				return {
 					type: this.value.initiatorType,
 					sourceId: this.value.initiatorSourceId || '',

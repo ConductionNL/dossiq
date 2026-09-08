@@ -47,9 +47,8 @@ vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => storeStub,
 }))
 
-const { default: InitiatorSection } = await import(
-	'../../src/components/initiator/InitiatorSection.vue'
-)
+const { default: InitiatorSection } =
+	await import('../../src/components/initiator/InitiatorSection.vue')
 
 const PERSON_ROW = {
 	id: 'uuid-person-1',
@@ -97,9 +96,11 @@ async function mountCard({
 	storeStub = {
 		fetchObject:
 			fetchObject
-			|| vi.fn().mockImplementation(async (type) =>
-				type === 'case' ? caseObject : null,
-			),
+			|| vi
+				.fn()
+				.mockImplementation(async (type) =>
+					type === 'case' ? caseObject : null,
+				),
 		fetchCollection: vi.fn().mockImplementation(async (type, params) => {
 			calls.push([type, params])
 			return rows
@@ -277,9 +278,7 @@ describe('InitiatorSection — the requester on the case', () => {
 		})
 		// The reveal is spent: the button goes away rather than logging a
 		// second read for a number already on screen.
-		expect(wrapper.find('[data-testid="initiator-reveal"]').exists()).toBe(
-			false,
-		)
+		expect(wrapper.find('[data-testid="initiator-reveal"]').exists()).toBe(false)
 	})
 
 	it('leaves an unprotected person unmasked and unmarked', async () => {
@@ -296,8 +295,6 @@ describe('InitiatorSection — the requester on the case', () => {
 		expect(wrapper.get('[data-testid="initiator-source-link"]').text()).toBe(
 			'999990627',
 		)
-		expect(wrapper.find('[data-testid="initiator-reveal"]').exists()).toBe(
-			false,
-		)
+		expect(wrapper.find('[data-testid="initiator-reveal"]').exists()).toBe(false)
 	})
 })

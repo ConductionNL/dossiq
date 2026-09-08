@@ -35,12 +35,12 @@
 					:is="typeIcon"
 					:size="20"
 					class="initiator-section__icon" />
-				<span
-					class="initiator-section__name"
-					data-testid="initiator-name">{{ caseObject.initiatorDisplayName }}</span>
-				<span
-					class="initiator-section__type"
-					data-testid="initiator-type">{{ typeLabel }}</span>
+				<span class="initiator-section__name" data-testid="initiator-name">{{
+					caseObject.initiatorDisplayName
+				}}</span>
+				<span class="initiator-section__type" data-testid="initiator-type">{{
+					typeLabel
+				}}</span>
 				<span
 					v-if="isProtected"
 					class="initiator-section__protected"
@@ -246,10 +246,7 @@ export default {
 			if (!block) {
 				return ''
 			}
-			const street = [
-				block.street || block.streetName,
-				block.houseNumber,
-			]
+			const street = [block.street || block.streetName, block.houseNumber]
 				.filter((part) => part !== undefined && part !== null && part !== '')
 				.join(' ')
 			return [street, block.postcode, block.city || block.place]
@@ -389,7 +386,10 @@ export default {
 				} catch (err) {
 					// The card still renders what it resolved; the projection
 					// is written again on the next render.
-					console.error('[InitiatorSection] projection back-fill failed', err)
+					console.error(
+						'[InitiatorSection] projection back-fill failed',
+						err,
+					)
 				}
 				return
 			}
@@ -428,10 +428,13 @@ export default {
 				return
 			}
 			try {
-				const rows = await this.objectStore.fetchCollection(this.typeSchema, {
-					...this.sourceFilter(),
-					_limit: 1,
-				})
+				const rows = await this.objectStore.fetchCollection(
+					this.typeSchema,
+					{
+						...this.sourceFilter(),
+						_limit: 1,
+					},
+				)
 				const match = (rows || [])[0]
 				this.sourceRow = match || null
 				this.sourceObjectId = match?.id || match?.['@self']?.id || null

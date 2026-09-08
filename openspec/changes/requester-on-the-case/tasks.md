@@ -70,13 +70,13 @@ criteria under a task are plain bullets.
 
 ## 5. Verification
 
-- [ ] 5.1 Add `tests/e2e/case-requester.spec.ts` covering every scenario of
+- [x] 5.1 Add `tests/e2e/case-requester.spec.ts` covering every scenario of
   the three delta specs that names it: the picker on the New case form, the
   picker on the edit form, the uuid and projection on the saved case, the
   card, the empty card, the Requester column and filter, the masked BSN, the
   reveal, the unprotected person. Seed through `seedCase`, `createObject` and
   `ensureCaseType` from `tests/e2e/helpers/fixtures.ts`.
-- [ ] 5.2 Update `tests/e2e/case-create-form.spec.ts`: `CREATE_FIELDS` grows
+- [x] 5.2 Update `tests/e2e/case-create-form.spec.ts`: `CREATE_FIELDS` grows
   to ten with `requester`.
 - [ ] 5.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates, vitest and the unit suite locally; read the exit codes, not the

@@ -181,7 +181,8 @@ export function isCurrentRequester(value, result) {
 	if (value.initiatorType) {
 		return (
 			value.initiatorType === result.type
-			&& String(value.initiatorSourceId || '') === String(result.sourceId || '')
+			&& String(value.initiatorSourceId || '')
+				=== String(result.sourceId || '')
 		)
 	}
 	// A bare unified result (the shape the picker emitted before the
