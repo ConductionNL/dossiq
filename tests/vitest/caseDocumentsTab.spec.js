@@ -32,7 +32,10 @@ const tabs = panels.content.tabs
 
 describe('CaseDetail Documents tab', () => {
 	it('declares a case-documents widget', () => {
-		expect(documents, 'CaseDetail must declare the case-documents widget').toBeTruthy()
+		expect(
+			documents,
+			'CaseDetail must declare the case-documents widget',
+		).toBeTruthy()
 		expect(documents.title).toBe('Documents')
 	})
 
