@@ -240,7 +240,23 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 6. Verification
 
-- [ ] 6.1 Add `tests/e2e/case-type-authoring-extras.spec.ts` covering every
-  scenario of the deltas that names it.
+- [x] 6.1 Add `tests/e2e/case-type-authoring-extras.spec.ts` covering every
+  scenario of the deltas that names it. 13 tests: every `@e2e`-tagged
+  scenario across the five deltas, plus the status badge on the case page,
+  which is the other half of REQ-CT-01 and the surface a handler actually
+  reads a colour on.
+  - The colour is asserted as the `data-colour` NAME, not as a painted pixel.
+    The badge resolves `var(--nl-color-orange, #e17000)` and which of the two
+    a browser paints depends on whether the instance carries the NL Design
+    System theme: asserting the computed colour would make the spec pass or
+    fail on theming rather than on this change. The name says which colour
+    the code CHOSE, and choosing grey for everything is what was broken.
+  - `tests/e2e/ci-seed.sh` gains `resultType` and `propertyDefinition` in its
+    required-schema list. That list is what proves the register imported; a
+    schema the suite writes to but the list omits fails at the first POST
+    with a message about the object, not about the import.
+  - Two scenarios stay `@e2e exclude` as the deltas wrote them: the import
+    needs an OS file dialog, and a verwerkingsactiviteit code cannot be
+    refused until OpenRegister exposes the register (task 4.3).
 - [ ] 6.2 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
