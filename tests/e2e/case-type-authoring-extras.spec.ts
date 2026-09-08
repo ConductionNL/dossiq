@@ -427,14 +427,25 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
+		// The precondition is checked through the API, not off page one of the
+		// index. The Case types index is bounded and instance-wide: it holds
+		// every type every spec in the run has seeded, and under four workers
+		// this run's four are not reliably on the first page. Asserting them
+		// there tests the page size, and fails on a page that is working.
+		const listed = await listObjects(api, 'caseType')
+		const titles = listed.map((row: any) => String(row.title ?? ''))
+		for (const title of [
+			`${RUN_PREFIX} Onaf concept`,
+			`${RUN_PREFIX} Bezwaar`,
+			`${RUN_PREFIX} Bezwaar (verkort)`,
+		]) {
+			expect(
+				titles,
+				`${title} should exist before the folder narrows`,
+			).toContain(title)
+		}
+
 		await openCaseTypes(page)
-
-		// Before: this run's four types are all listed, two of them in the
-		// category and two outside it.
-		await expect(
-			page.getByText(`${RUN_PREFIX} Onaf concept`, { exact: true }),
-		).toBeVisible({ timeout: 30_000 })
-
 		await page.getByRole('button', { name: CATEGORY }).click()
 
 		await expect(
