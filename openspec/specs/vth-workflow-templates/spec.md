@@ -8,7 +8,7 @@ retrofit_extensions:
 
 @e2e exclude Workflow template is a JSON data file imported via backend; no dedicated Playwright UI test surface.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Omgevingsvergunning workflow template
 
@@ -239,7 +239,6 @@ The step SHALL additionally:
 #### Notes
 - The 9 private helpers (`processCatalogFile`, `resolveCaseTypeId`, `isAlreadySeeded`, `buildStatusMap`, `resolveSteps`, `resolveTransitions`, `deterministicId`, `extractFirstId`, `normalizeRow`) are not separately observable — they support the single `run()` contract above. Splitting them into separate REQs would inflate the spec without adding testable surface.
 - `crossLink` is reserved for templates that reference an unresolved caseType; the seeder logs the reference and counts it but does not block the run.
-## Requirements
 ### Requirement: VTH workflow template activation service
 
 The system SHALL provide a `VTHWorkflowService` that loads and activates the three VTH workflow templates declared by the config-foundation member, creating each template's statuses and roles, and SHALL be idempotent on re-activation.
@@ -260,4 +259,5 @@ The system SHALL provide a `VTHWorkflowService` that loads and activates the thr
 
 - **WHEN** a template that has already been activated is activated again
 - **THEN** the service SHALL NOT create duplicate statuses or roles
+
 

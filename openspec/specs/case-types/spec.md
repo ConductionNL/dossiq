@@ -868,6 +868,68 @@ The system MUST handle error scenarios gracefully for case type operations.
 - THEN the system MUST warn: "This case type is referenced by 5 closed cases. Deleting it will remove the type reference from those cases."
 - AND if confirmed, the deletion SHOULD proceed
 
+### Requirement: Case Type Pre-Seeded Data
+
+@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
+
+The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
+
+**Feature tier**: V1
+
+The repair step SHALL import the following new case types alongside existing ones:
+
+| Case Type | Processing Deadline | Extension | Suspension | Origin |
+|-----------|-------------------|-----------|------------|--------|
+| Bezwaar | P6W | P6W | Yes | external |
+| Beroep | P26W | No | Yes | external |
+
+Each case type SHALL include its associated:
+- Status types (see bezwaar-lifecycle and beroep-escalation specs)
+- Role types (see bezwaar-lifecycle spec)
+- Workflow template (see workflow-definition-model spec)
+
+#### Scenario: Bezwaar and Beroep case types are available after installation
+
+- **WHEN** the Dossiq app repair step runs for the first time or after an update
+- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
+- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
+- **AND** existing case types SHALL NOT be affected by the addition
+
+#### Scenario: Pre-seeded case types are not duplicated on re-run
+
+- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
+- **THEN** the system SHALL NOT create duplicate case types
+- **AND** existing customizations to the case types SHALL be preserved
+
+<!-- BEGIN retrofit-2026-05-24-case-types -->
+
+### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
+
+@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
+
+`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
+
+#### Scenario: Export a published case type
+- **GIVEN** a published case type with workflow templates + roles
+- **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
+- **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
+
+### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
+
+@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
+
+`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
+
+`CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
+
+`CaseDefinitionController::validate()` SHALL expose validation-only HTTP access (`POST /api/case-definitions/import?dryRun=true`) so admins can review a package before committing.
+
+#### Scenario: Dry-run validates without persisting
+- **WHEN** an admin calls `POST /api/case-definitions/import?dryRun=true` with a ZIP body
+- **THEN** the response SHALL include the structured validation report and no objects SHALL be created
+
+<!-- END retrofit-2026-05-24-case-types -->
+
 ---
 
 ## UI References
@@ -924,39 +986,6 @@ This is a comprehensive, highly detailed spec that is implementation-ready for b
 
 **Strengths:** Exhaustive data model tables with type/required/mapping columns. 16 requirements with detailed scenarios. Clear feature tier separation. Validation rules explicitly specified.
 
-### Requirement: Case Type Pre-Seeded Data
-
-@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
-
-The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
-
-**Feature tier**: V1
-
-The repair step SHALL import the following new case types alongside existing ones:
-
-| Case Type | Processing Deadline | Extension | Suspension | Origin |
-|-----------|-------------------|-----------|------------|--------|
-| Bezwaar | P6W | P6W | Yes | external |
-| Beroep | P26W | No | Yes | external |
-
-Each case type SHALL include its associated:
-- Status types (see bezwaar-lifecycle and beroep-escalation specs)
-- Role types (see bezwaar-lifecycle spec)
-- Workflow template (see workflow-definition-model spec)
-
-#### Scenario: Bezwaar and Beroep case types are available after installation
-
-- **WHEN** the Dossiq app repair step runs for the first time or after an update
-- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
-- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
-- **AND** existing case types SHALL NOT be affected by the addition
-
-#### Scenario: Pre-seeded case types are not duplicated on re-run
-
-- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
-- **THEN** the system SHALL NOT create duplicate case types
-- **AND** existing customizations to the case types SHALL be preserved
-
 ---
 
 **Missing/Ambiguous:**
@@ -970,31 +999,4 @@ Each case type SHALL include its associated:
 2. How should the system handle changes to a case type that affect existing cases (e.g., removing a status type that cases are currently at)?
 3. Should the `subCaseTypes` field enforce a tree structure (no cycles) and how is this validated?
 
-<!-- BEGIN retrofit-2026-05-24-case-types -->
 
-### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
-
-@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
-
-`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
-
-#### Scenario: Export a published case type
-- **GIVEN** a published case type with workflow templates + roles
-- **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
-- **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
-
-### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
-
-@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
-
-`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
-
-`CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
-
-`CaseDefinitionController::validate()` SHALL expose validation-only HTTP access (`POST /api/case-definitions/import?dryRun=true`) so admins can review a package before committing.
-
-#### Scenario: Dry-run validates without persisting
-- **WHEN** an admin calls `POST /api/case-definitions/import?dryRun=true` with a ZIP body
-- **THEN** the response SHALL include the structured validation report and no objects SHALL be created
-
-<!-- END retrofit-2026-05-24-case-types -->
