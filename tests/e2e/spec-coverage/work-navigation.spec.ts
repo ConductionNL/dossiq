@@ -75,6 +75,28 @@ test.describe('Work navigation', () => {
 		).toHaveCount(0)
 	})
 
+	// @e2e openspec/specs/nav-dedup-and-grouping/spec.md
+	test('Contacts is a top-level domain, not a sixth work surface', async ({
+		page,
+	}) => {
+		// The work group gathers the five surfaces a handler WORKS from. A
+		// contact is not one of them: it is a thing you look up, and
+		// contacts-domain spends one of ADR-097's top-level slots saying so.
+		// Landing inside the group instead would be invisible on screen — the
+		// group renders the entry either way — and would quietly make the
+		// group six, which is the decision this asserts.
+		await page.goto('/apps/dossiq/')
+
+		const nav = page.locator('#app-navigation-vue, .app-navigation').first()
+		await expect(nav).toBeVisible({ timeout: 60_000 })
+
+		const contacts = nav.locator('a[href$="/contacts"]')
+		await expect(contacts, 'Contacts must be in the navigation').toHaveCount(1)
+		// Visible WITHOUT expanding the group: a leaf inside "My work" is
+		// `display:none` until the group is opened.
+		await expect(contacts).toBeVisible({ timeout: 30_000 })
+	})
+
 	// @e2e openspec/specs/my-work/spec.md
 	test('the cases page stays reachable by direct link', async ({ page }) => {
 		// Relabelling and relocating a menu entry must not move its ROUTE.

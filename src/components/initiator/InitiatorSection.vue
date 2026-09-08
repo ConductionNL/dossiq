@@ -54,9 +54,7 @@
 				<a
 					v-if="sourceLink"
 					:href="sourceLink"
-					data-testid="initiator-source-link"
-					target="_blank"
-					rel="noopener noreferrer">
+					data-testid="initiator-source-link">
 					{{ shownSourceId }}
 				</a>
 				<span v-else data-testid="initiator-source-id">{{
@@ -254,14 +252,55 @@ export default {
 				.join(', ')
 		},
 
-		/** @spec openspec/specs/initiator-display/spec.md */
+		/**
+		 * The in-app contact page for this initiator.
+		 *
+		 * It used to deep-link into OpenRegister's own object viewer. That
+		 * showed the raw register row: every field of the register set, none
+		 * of the person's cases, and a way out of the app the reader did not
+		 * ask for. `contacts-domain` gives a person and an organisation a page
+		 * of their own, and the number on this card is the way to it.
+		 *
+		 * Built with `generateUrl` rather than `$router.resolve`: the router
+		 * base is `generateUrl('/apps/dossiq')`, which is `/index.php/apps/
+		 * dossiq` only where Nextcloud's front-controller URLs are in play, so
+		 * a hard-coded prefix falls outside the base on a pretty-URL instance
+		 * and the router's catch-all quietly redirects to the Dashboard.
+		 *
+		 * @return {string|null} The contact page URL, or null for a contact
+		 *   with no register row behind it.
+		 *
+		 * @spec openspec/specs/initiator-display/spec.md
+		 */
 		sourceLink() {
-			if (!this.typeSchema || !this.sourceObjectId) {
+			if (!this.contactRouteBase || !this.sourceObjectId) {
 				return null
 			}
 			return generateUrl(
-				`/apps/openregister/#/objects/dossiq/${this.typeSchema}/${this.sourceObjectId}`,
+				`/apps/dossiq/${this.contactRouteBase}/${this.sourceObjectId}`,
 			)
+		},
+
+		/**
+		 * Which contact page an initiator of this type belongs on.
+		 *
+		 * A detail page takes one schema, so a person and an organisation have
+		 * separate pages; `contact` has neither, because a Nextcloud contact is
+		 * not a register row.
+		 *
+		 * @return {string|null} The route segment, or null when there is none.
+		 *
+		 * @spec openspec/specs/initiator-display/spec.md
+		 */
+		contactRouteBase() {
+			switch (this.caseObject.initiatorType) {
+				case 'person':
+					return 'contacts'
+				case 'company':
+					return 'organisations'
+				default:
+					return null
+			}
 		},
 
 		/** @spec openspec/specs/semantic-case-intake/spec.md */
