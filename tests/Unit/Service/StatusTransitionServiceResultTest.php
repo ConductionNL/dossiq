@@ -188,6 +188,85 @@ class StatusTransitionServiceResultTest extends TestCase {
 	}//end testFinalTransitionWritesTheResultOntoTheCase()
 
 	/**
+	 * The defect this pair of tests exists for.
+	 *
+	 * Closing over the ZGW API set the case's end date (zrc-007a) and derived
+	 * its archival nomination and action date (zrc-021). Closing at the desk
+	 * did neither, so the same case closed two ways ended in two different
+	 * records-management states, and nothing afterwards said which route it
+	 * had taken. Both now happen in the SAME save as the status, from the same
+	 * derivation the API path calls.
+	 *
+	 * @return void
+	 */
+	public function testClosingSetsTheEndDateAndTheArchivalFuture(): void {
+		$this->resultWriter->method('isFinalStatus')->willReturn(true);
+		$this->resultWriter->method('resolveClosingResult')->willReturn('result-9');
+		$this->resultWriter->expects($this->once())
+			->method('archivalFuture')
+			->with(
+				$this->anything(),
+				'rt-granted',
+				date('Y-m-d'),
+			)
+			->willReturn(
+				[
+					'archiveNomination' => 'vernietigen',
+					'archiveActionDate' => '2031-09-08',
+				]
+			);
+
+		$saved = [];
+		$this->store->expects($this->once())
+			->method('saveCase')
+			->willReturnCallback(
+				function (array $case) use (&$saved): array {
+					$saved = $case;
+					return $case;
+				}
+			);
+
+		$this->service->execute(
+			caseId: 'case-1',
+			transitionId: 't2',
+			comment: null,
+			resultTypeId: 'rt-granted',
+		);
+
+		$this->assertSame(date('Y-m-d'), $saved['endDate'], 'a closed case carries an end date');
+		$this->assertSame('vernietigen', $saved['archiveNomination']);
+		$this->assertSame('2031-09-08', $saved['archiveActionDate']);
+	}//end testClosingSetsTheEndDateAndTheArchivalFuture()
+
+	/**
+	 * A case type with no result types still closes, and still gets an end
+	 * date: there is no result to derive an archival future FROM, but "when
+	 * did this close" is answerable either way.
+	 *
+	 * @return void
+	 */
+	public function testClosingWithoutAResultTypeStillSetsTheEndDate(): void {
+		$this->resultWriter->method('isFinalStatus')->willReturn(true);
+		$this->resultWriter->method('resolveClosingResult')->willReturn(null);
+		$this->resultWriter->expects($this->never())->method('archivalFuture');
+
+		$saved = [];
+		$this->store->expects($this->once())
+			->method('saveCase')
+			->willReturnCallback(
+				function (array $case) use (&$saved): array {
+					$saved = $case;
+					return $case;
+				}
+			);
+
+		$this->service->execute(caseId: 'case-1', transitionId: 't2', comment: null);
+
+		$this->assertSame(date('Y-m-d'), $saved['endDate']);
+		$this->assertArrayNotHasKey('archiveNomination', $saved);
+	}//end testClosingWithoutAResultTypeStillSetsTheEndDate()
+
+	/**
 	 * A case type with no result types has nothing to ask for, so the
 	 * transition passes and no result row is written.
 	 *
@@ -227,5 +306,7 @@ class StatusTransitionServiceResultTest extends TestCase {
 		$this->service->execute(caseId: 'case-1', transitionId: 't2', comment: null);
 
 		$this->assertArrayNotHasKey('result', $saved);
+		$this->assertArrayNotHasKey('endDate', $saved, 'an open case has no end date');
+		$this->assertArrayNotHasKey('archiveNomination', $saved);
 	}//end testNonFinalTransitionWritesNoResult()
 }//end class

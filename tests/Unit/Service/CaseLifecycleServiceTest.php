@@ -389,6 +389,30 @@ class CaseLifecycleServiceTest extends TestCase {
 	}//end testReopenReturnsTheCaseToItsInitialStatus()
 
 	/**
+	 * Reopening withdraws the archival claim, not just the end date.
+	 *
+	 * Closing now derives a nomination and a destruction date (zrc-021), so
+	 * reopening has to take them back (zrc-008). A reopened case that kept its
+	 * archiefactiedatum would sit in an archivist's due list while it is being
+	 * worked, which is the shape of mistake that destroys a record early.
+	 *
+	 * @return void
+	 */
+	public function testReopenWithdrawsTheArchivalClaim(): void {
+		$this->case['status'] = 'st-done';
+		$this->case['endDate'] = '2026-09-08';
+		$this->case['archiveNomination'] = 'vernietigen';
+		$this->case['archiveActionDate'] = '2031-09-08';
+		$this->store->method('writeStatusRecord')->willReturn(['id' => 'rec-1']);
+
+		$this->service->reopen(caseId: 'case-1', reason: 'Nieuw feit');
+
+		$this->assertSame('', $this->case['endDate']);
+		$this->assertNull($this->case['archiveNomination']);
+		$this->assertNull($this->case['archiveActionDate']);
+	}//end testReopenWithdrawsTheArchivalClaim()
+
+	/**
 	 * A closed case offers Reopen and nothing else.
 	 *
 	 * @return void
