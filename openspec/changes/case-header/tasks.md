@@ -66,8 +66,9 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
 - [x] 4.1 `src/manifest.json` page `CaseDetail` `case-panels.content.tabs`:
   order Data (`case-core`, moved into the strip and out of `layout`),
   Documents (`case-documents`), Parties (`case-roles`), Tasks
-  (`case-tasks`), Communication (`case-communication`), Timeline
-  (`case-timeline`), then Files, Notes, Mail, Related cases and Contacts
+  (`case-tasks`), Communication (`case-communication`), and NO Timeline
+  entry (the timeline is `case-timeline`'s sidebar History tab, amended in
+  by that change's task 4.1), then Files, Notes, Mail, Related cases
   while their folding changes are open, then Sub-cases (`case-sub-cases`),
   Locations (`case-locaties`), Appointments (`case-calendar`), Decisions
   (`case-decidesk-decisions`). Leave out any entry whose widget id is not on
@@ -94,8 +95,8 @@ criteria under a task are plain bullets. Depends on `documents-on-the-case`
   tasks, plus one case without status or deadline; asserts the subtitle,
   `case-header-status`, `case-header-countdown` with class `is-danger`, the
   breadcrumb (`aria-current="page"` on the last crumb, Cases navigates and
-  keeps `?lens=`), the tab order by `data-testid` of the tab buttons, and at
-  viewport 1024x768 that the first six tab buttons share one `offsetTop`
+  keeps the route query), the tab order by the tab buttons, and at
+  viewport 1024x768 that the first five tab buttons share one `offsetTop`
   and the strip's `getBoundingClientRect().top` is under 768. Assert ids
   and testids, not labels, because the instance may run in Dutch.
   - the spec must appear in `tests/e2e/playwright.config.ts`'s project, the

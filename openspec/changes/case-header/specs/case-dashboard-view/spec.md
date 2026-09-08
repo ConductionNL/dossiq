@@ -74,22 +74,24 @@ title. The last crumb SHALL be the current page and SHALL not be a link.
 You reach documents, parties and tasks in one row of tabs. The
 `case-panels` widget on `CaseDetail` SHALL list its tabs in the order Data
 (`case-core`), Documents (`case-documents`), Parties (`case-roles`), Tasks
-(`case-tasks`), Communication (`case-communication`), Timeline
-(`case-timeline`), and only then Sub-cases (`case-sub-cases`), Locations
-(`case-locaties`), Appointments (`case-calendar`) and Decisions
-(`case-decidesk-decisions`). A tab whose sibling change has not landed yet
-SHALL be absent from the strip, not present and empty. The first six tabs
-SHALL fit on one line at 1024 pixels wide. Sub-cases, Locations,
+(`case-tasks`) and Communication (`case-communication`), and only then
+Sub-cases (`case-sub-cases`), Locations (`case-locaties`), Appointments
+(`case-calendar`) and Decisions (`case-decidesk-decisions`). The strip
+SHALL carry no Timeline tab: the case timeline is the sidebar History tab
+(REQ-CDV-17), and a body panel over the same log would put one history in
+two places. A tab whose sibling change has not landed yet SHALL be absent
+from the strip, not present and empty. The first five tabs SHALL fit on one
+line at 1024 pixels wide. Sub-cases, Locations,
 Appointments and Decisions SHALL show only when they hold at least one
 row; that needs `visibleIf` on a tab entry, which `CnTabsWidget` does not
 read yet, so until it lands the four stay last in the strip.
 
-#### Scenario: The six work tabs come first, in order
+#### Scenario: The five work tabs come first, in order
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL start with Data, Documents, Parties, Tasks, Communication, Timeline in that order
+- **THEN** the tab strip SHALL start with Data, Documents, Parties, Tasks, Communication in that order
 - **AND** Sub-cases, Locations, Appointments and Decisions SHALL come after them
 
 #### Scenario: The work tabs fit a laptop screen
@@ -97,7 +99,7 @@ read yet, so until it lands the four stay last in the strip.
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
-- **THEN** the first six tabs SHALL share one line
+- **THEN** the first five tabs SHALL share one line
 - **AND** the tab strip SHALL sit above the fold
 
 #### Scenario: A tab with nothing in it is absent
@@ -105,4 +107,4 @@ read yet, so until it lands the four stay last in the strip.
 
 - **GIVEN** a case with no sub-cases, no locations, no appointments and no decisions
 - **WHEN** the handler opens the case page
-- **THEN** the strip SHALL show Data, Documents, Parties, Tasks, Communication, Timeline and nothing else
+- **THEN** the strip SHALL show Data, Documents, Parties, Tasks, Communication and nothing else
