@@ -11,7 +11,7 @@ criteria under a task are plain bullets.
   - SPDX header; `@spec openspec/specs/case-management/spec.md`
   - unit test `tests/Unit/Service/CaseCopyServiceTest.php` asserting the
     fields that are never copied stay empty
-- [ ] 1.2 Add `lib/Controller/CaseActionsController.php` with `copy`,
+- [x] 1.2 Add `lib/Controller/CaseActionsController.php` with `copy`,
   `startableFlows` and `plan`; register `POST /api/case/{caseId}/copy`,
   `GET /api/case/{caseId}/startable-flows` and `POST /api/case/{caseId}/plan`
   in `appinfo/routes.php`.
