@@ -74,13 +74,19 @@ criteria under a task are plain bullets.
 
 ## 2. The way back
 
-- [ ] 2.1 `src/components/tasks/TaskCaseLink.vue`: prop `objectId` (the
+- [x] 2.1 `src/components/tasks/TaskCaseLink.vue`: prop `objectId` (the
   task); reads `caseTask.case`, fetches the case title, renders a
   `router-link` to `CaseDetail` for that case; renders nothing when `case`
-  is empty.
-  - unit test in `tests/unit/components/TaskCaseLink.spec.js`: link text
-    is the case title and the route carries the case id; empty `case`
-    renders no element
+  is empty. It also accepts `objectData`, which the page slot binds
+  alongside `objectId`, and skips the task read when the surface already
+  holds the task. `caseIdFrom` in `src/utils/flowTaskHelpers.js` was made
+  public rather than copied: a second reader of the same `$ref` shapes is
+  the copy that drifts.
+  - unit test in `tests/vitest/taskCaseLink.spec.js`: link text is the case
+    title and the route carries the CASE id (not the task id, which renders
+    an identically plausible link), an expanded `$ref` is read too, an
+    unreadable title still links, an empty `case` renders no element at all,
+    and an unreadable task renders none either
   - `@spec openspec/changes/task-on-the-case/specs/task-management/spec.md`
 - [ ] 2.2 `src/registry.js`: register `TaskCaseLink` for the page slot
   `widget-task-case-link` with a ratchet note (a cross-object link by
