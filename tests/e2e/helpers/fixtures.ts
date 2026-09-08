@@ -387,6 +387,78 @@ export async function tryDeleteObject(
 }
 
 /**
+ * Monotonic counter making every seeded identifier unique WITHIN a worker.
+ *
+ * `RUN_PREFIX` is already unique per PROCESS, and a Playwright worker is a
+ * process, so it separates workers on its own. What it does not separate is two
+ * calls in the SAME worker: a `caseType.identifier` derived from `RUN_PREFIX`
+ * alone is the same string on the second call, and the second create then
+ * collides on a field the schema expects to be distinct.
+ */
+let fixtureSeq = 0
+
+/**
+ * A suffix unique to this call, on this worker, on this run.
+ *
+ * @return Short suffix safe to append to an identifier or a title.
+ */
+function nextFixtureSuffix(): string {
+	fixtureSeq += 1
+	return String(fixtureSeq)
+}
+
+/**
+ * Case types this suite is allowed to ADOPT: every one on the instance that
+ * some fixture run does not already own.
+ *
+ * Adopting `[0]` unfiltered is what pinned the whole suite to `workers: 1`.
+ * Worker A seeds a throwaway caseType, worker B adopts it as if it were
+ * instance data (`seeded: false`, so B never cleans it up), and A's teardown
+ * then deletes it out from under B mid-test. Excluding rows that carry
+ * `FIXTURE_PREFIX` removes that whole class: a worker can only ever adopt a
+ * caseType no teardown will remove.
+ *
+ * Filtering rather than always-seeding is deliberate. Five specs
+ * (case-communication, case-documents, case-parties, case-task-pane,
+ * case-detail-kpis-and-tabs) each record the same reason for adopting instead
+ * of seeding: `case` is an ARCHIVAL schema, so a seeded case cannot be deleted
+ * in teardown, and a caseType that IS deleted therefore leaves permanent cases
+ * pointing at a type that is gone — which reddens unrelated specs. Making every
+ * caller seed its own type would reintroduce exactly that.
+ *
+ * 🔴 PUBLISHED ONLY, AND THIS HALF IS NOT OPTIONAL. Since #1918
+ * `case.caseType` carries `x-relation-filter: {isDraft: false}`, and the
+ * caseType schema DEFAULTS `isDraft` to true. A case seeded against a draft
+ * type therefore has no usable type: the list comes back empty and reads as
+ * "there is nothing here" rather than as a bad fixture. #1944 fixed the
+ * fixtures that CREATE a type; the six specs that ADOPT one were not covered.
+ *
+ * Measured on the dev instance rather than assumed: of 21 live case types
+ * 13 are drafts, so blind `[0]` adoption picks one more often than not, and
+ * the register import itself ships 6 of its 14 with the field ABSENT.
+ *
+ * The two filters compose in a way that matters under parallel workers.
+ * Another worker's seeded type is `isDraft: false` and would have been a
+ * perfectly valid adoption; the FIXTURE_PREFIX filter excludes it and would
+ * otherwise push these specs onto a DRAFT shipped type instead — making the
+ * multi-worker case worse than the serial one it was meant to enable.
+ *
+ * `=== false` and not `!== true`: absent must count as a draft, because that
+ * is what the schema default makes it.
+ *
+ * @param api Authenticated request context.
+ * @return Published case types no fixture run owns, in server order.
+ */
+export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]> {
+	const rows = await listObjects(api, 'caseType')
+	return rows.filter(
+		(row: any) =>
+			row.isDraft === false
+			&& JSON.stringify(row).includes(FIXTURE_PREFIX) === false,
+	)
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
@@ -399,7 +471,7 @@ export async function ensureCaseType(
 	api: APIRequestContext,
 	token: string,
 ): Promise<{ id: string; name: string; seeded: boolean }> {
-	const existing = await listObjects(api, 'caseType')
+	const existing = await adoptableCaseTypes(api)
 	if (existing.length > 0) {
 		const ct = existing[0]
 		return {
@@ -409,10 +481,11 @@ export async function ensureCaseType(
 		}
 	}
 	// Live caseType schema requires `title` (+ identifier), not `name`.
-	const name = `${RUN_PREFIX} CaseType`
+	const suffix = nextFixtureSuffix()
+	const name = `${RUN_PREFIX} CaseType ${suffix}`
 	const ct = await createObject(api, token, 'caseType', {
 		title: name,
-		identifier: `${RUN_PREFIX.toLowerCase()}-casetype`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`,
 		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
 		// PUBLISHED, NOT DRAFT. `case.caseType` carries
 		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
@@ -487,10 +560,17 @@ export async function seedStateMachine(
 		return id
 	}
 
+	// The suffix is what lets one worker seed more than one state machine:
+	// `RUN_PREFIX` is per-process, so without it the second call reuses the
+	// first call's identifier.
+	const machineSuffix = nextFixtureSuffix()
 	const caseType = await createObject(api, token, 'caseType', {
-		title: `${RUN_PREFIX} Vergunning`,
-		identifier: `${RUN_PREFIX.toLowerCase()}-verg`,
+		title: `${RUN_PREFIX} Vergunning ${machineSuffix}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-verg-${machineSuffix}`,
 		description: 'Throwaway caseType for the dossiq state-machine e2e layer.',
+		// See `ensureCaseType`: the schema defaults this to true and
+		// `case.caseType` filters the picker on `isDraft: false`.
+		isDraft: false,
 	})
 	const caseTypeId = add('caseType', caseType)
 

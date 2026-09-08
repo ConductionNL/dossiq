@@ -1,0 +1,2156 @@
+{
+	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor round 2 audit (private repo concurrentie-analyse, procest/_round2/compare/M1-functionality.md). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands, and bump comparedOn.",
+	"comparedOn": "2026-09-07",
+	"dossiqRevision": "add765a06",
+	"systems": [
+		{
+			"key": "dossiq",
+			"name": "Dossiq",
+			"isSelf": true
+		},
+		{
+			"key": "opencase",
+			"name": "OpenCase",
+			"vendor": "Lamotech"
+		},
+		{
+			"key": "gzac",
+			"name": "Valtimo/GZAC",
+			"vendor": "Ritense"
+		},
+		{
+			"key": "zaaksysteem",
+			"name": "xxllnc Zaken",
+			"vendor": "xxllnc"
+		}
+	],
+	"areas": [
+		{
+			"key": "intake",
+			"name": "Intake",
+			"name_nl": "Intake"
+		},
+		{
+			"key": "case-core",
+			"name": "Case core",
+			"name_nl": "Zaakbeheer"
+		},
+		{
+			"key": "tasks-and-phases",
+			"name": "Tasks and phases",
+			"name_nl": "Taken en fasen"
+		},
+		{
+			"key": "documents",
+			"name": "Documents",
+			"name_nl": "Documenten"
+		},
+		{
+			"key": "parties-and-contacts",
+			"name": "Parties and contacts",
+			"name_nl": "Partijen en contacten"
+		},
+		{
+			"key": "communication",
+			"name": "Communication",
+			"name_nl": "Communicatie"
+		},
+		{
+			"key": "decisions",
+			"name": "Decisions",
+			"name_nl": "Besluiten"
+		},
+		{
+			"key": "deadlines",
+			"name": "Deadlines",
+			"name_nl": "Termijnen"
+		},
+		{
+			"key": "search",
+			"name": "Search",
+			"name_nl": "Zoeken"
+		},
+		{
+			"key": "reporting",
+			"name": "Reporting",
+			"name_nl": "Rapportage"
+		},
+		{
+			"key": "configuration",
+			"name": "Configuration",
+			"name_nl": "Inrichting"
+		},
+		{
+			"key": "integrations",
+			"name": "Integrations",
+			"name_nl": "Koppelingen"
+		},
+		{
+			"key": "access-and-privacy",
+			"name": "Access and privacy",
+			"name_nl": "Toegang en privacy"
+		}
+	],
+	"capabilities": [
+		{
+			"id": "1.1",
+			"area": "intake",
+			"name": "Citizen web form per case type",
+			"name_nl": "Webformulier voor burgers per zaaktype",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "1.2",
+			"area": "intake",
+			"name": "Internal case registration dialog (case type, requestor, fields)",
+			"name_nl": "Interne zaakregistratie (zaaktype, aanvrager, velden)",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.3",
+			"area": "intake",
+			"name": "Create case from a contact or citizen record",
+			"name_nl": "Zaak starten vanuit een contact of persoonsgegeven",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.4",
+			"area": "intake",
+			"name": "Document intake queue (assign to case, reject)",
+			"name_nl": "Postbak voor binnenkomende documenten (koppelen of afwijzen)",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.5",
+			"area": "intake",
+			"name": "E-mail intake from a mailbox",
+			"name_nl": "Intake van e-mail uit een mailbox",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "1.6",
+			"area": "intake",
+			"name": "Watched folder or scan import with separator sheets",
+			"name_nl": "Import uit een bewaakte map of scanstraat met scheidingsvellen",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "1.7",
+			"area": "intake",
+			"name": "API case creation for external systems",
+			"name_nl": "Zaak aanmaken via de API door externe systemen",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.8",
+			"area": "intake",
+			"name": "Scheduled or recurring planned cases",
+			"name_nl": "Geplande of terugkerende zaken",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.9",
+			"area": "intake",
+			"name": "Create case from MS Office, Teams or Outlook",
+			"name_nl": "Zaak starten vanuit MS Office, Teams of Outlook",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.10",
+			"area": "intake",
+			"name": "Save any platform file or chat to a case",
+			"name_nl": "Elk bestand of gesprek uit het platform bij een zaak opslaan",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "1.11",
+			"area": "intake",
+			"name": "Online payment during intake",
+			"name_nl": "Online betalen tijdens de intake",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.12",
+			"area": "intake",
+			"name": "Intake routing to department or role",
+			"name_nl": "Intake routeren naar een afdeling of rol",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "1.13",
+			"area": "intake",
+			"name": "Start case from a dashboard action",
+			"name_nl": "Zaak starten vanaf een dashboardactie",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.1",
+			"area": "case-core",
+			"name": "Case number from a mask or sequence",
+			"name_nl": "Zaaknummer uit een masker of reeks",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.2",
+			"area": "case-core",
+			"name": "Typed case data schema per case type",
+			"name_nl": "Getypeerd zaakgegevensmodel per zaaktype",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.3",
+			"area": "case-core",
+			"name": "Case type versioning with draft, publish, activate",
+			"name_nl": "Versiebeheer van zaaktypen met concept, publiceren en activeren",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.4",
+			"area": "case-core",
+			"name": "Assign case to a user, claim, unassign",
+			"name_nl": "Zaak toewijzen, oppakken en vrijgeven",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.5",
+			"area": "case-core",
+			"name": "Assign case to a team or department plus role",
+			"name_nl": "Zaak toewijzen aan een team of afdeling plus rol",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.6",
+			"area": "case-core",
+			"name": "Bulk actions on a case list",
+			"name_nl": "Bulkacties op een zakenlijst",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.7",
+			"area": "case-core",
+			"name": "Configurable status vocabulary with colour and order",
+			"name_nl": "Instelbare statussen met kleur en volgorde",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "2.8",
+			"area": "case-core",
+			"name": "Case tags or labels",
+			"name_nl": "Labels of tags op een zaak",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "2.9",
+			"area": "case-core",
+			"name": "Copy case",
+			"name_nl": "Zaak kopiëren",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.10",
+			"area": "case-core",
+			"name": "Sub-cases, related cases, hierarchy",
+			"name_nl": "Deelzaken, gerelateerde zaken en hiërarchie",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.11",
+			"area": "case-core",
+			"name": "Suspend and resume with reason or term",
+			"name_nl": "Opschorten en hervatten met reden of termijn",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.12",
+			"area": "case-core",
+			"name": "Reopen a closed case",
+			"name_nl": "Afgesloten zaak heropenen",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.13",
+			"area": "case-core",
+			"name": "Change case type or version of a running case",
+			"name_nl": "Zaaktype of versie van een lopende zaak wijzigen",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.14",
+			"area": "case-core",
+			"name": "Case location (address, geo) with map",
+			"name_nl": "Zaaklocatie (adres, geo) met kaart",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.15",
+			"area": "case-core",
+			"name": "Custom objects linked to cases",
+			"name_nl": "Eigen objecten koppelen aan zaken",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.16",
+			"area": "case-core",
+			"name": "Case data version history or snapshots",
+			"name_nl": "Versiehistorie of momentopnamen van zaakgegevens",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "2.17",
+			"area": "case-core",
+			"name": "Delete case with guard",
+			"name_nl": "Zaak verwijderen met controle vooraf",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.18",
+			"area": "case-core",
+			"name": "Confidentiality level on the case",
+			"name_nl": "Vertrouwelijkheidsniveau op de zaak",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.19",
+			"area": "case-core",
+			"name": "Favourites and recent items",
+			"name_nl": "Favorieten en recent geopend",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "2.20",
+			"area": "case-core",
+			"name": "Live updates on the case page",
+			"name_nl": "Live bijwerken van de zaakpagina",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "2.21",
+			"area": "case-core",
+			"name": "Change proposals from colleagues or citizens queued for acceptance",
+			"name_nl": "Wijzigingsvoorstellen van collega’s of burgers ter acceptatie",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "2.22",
+			"area": "case-core",
+			"name": "Raw case inspection for admins (data, variables, logs)",
+			"name_nl": "Ruwe zaakinspectie voor beheerders (data, variabelen, logs)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "3.1",
+			"area": "tasks-and-phases",
+			"name": "BPMN process engine",
+			"name_nl": "BPMN-procesmotor",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "3.2",
+			"area": "tasks-and-phases",
+			"name": "Linear phases per case type",
+			"name_nl": "Lineaire fasen per zaaktype",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.3",
+			"area": "tasks-and-phases",
+			"name": "Checklist items per phase",
+			"name_nl": "Checklistpunten per fase",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.4",
+			"area": "tasks-and-phases",
+			"name": "User tasks with a form",
+			"name_nl": "Gebruikerstaken met een formulier",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.5",
+			"area": "tasks-and-phases",
+			"name": "Task list with My, Unassigned, Team, All views",
+			"name_nl": "Takenlijst met weergaven Mijn, Niet toegewezen, Team en Alle",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.6",
+			"area": "tasks-and-phases",
+			"name": "Task due date",
+			"name_nl": "Streefdatum op een taak",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.7",
+			"area": "tasks-and-phases",
+			"name": "Task assign, claim, unassign, assign to team",
+			"name_nl": "Taak toewijzen, oppakken, vrijgeven of aan een team geven",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.8",
+			"area": "tasks-and-phases",
+			"name": "Auto-assign tasks to the case handler",
+			"name_nl": "Taken automatisch bij de zaakbehandelaar leggen",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.9",
+			"area": "tasks-and-phases",
+			"name": "Actions executed automatically on phase or process transition (templates, mails, related cases)",
+			"name_nl": "Acties die automatisch draaien bij een fase- of procesovergang (sjablonen, mails, gerelateerde zaken)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.10",
+			"area": "tasks-and-phases",
+			"name": "Sub-processes or building blocks startable from the case",
+			"name_nl": "Deelprocessen of bouwstenen die vanaf de zaak te starten zijn",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.11",
+			"area": "tasks-and-phases",
+			"name": "Rules engine (conditions to field or action outcomes)",
+			"name_nl": "Regelmotor (voorwaarden naar velduitkomsten of acties)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.12",
+			"area": "tasks-and-phases",
+			"name": "Multi-step form flows with conditional steps",
+			"name_nl": "Formulierstromen met meerdere stappen en voorwaardelijke stappen",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.13",
+			"area": "tasks-and-phases",
+			"name": "Document review or approval workflow",
+			"name_nl": "Beoordelings- of akkoordstroom voor documenten",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.14",
+			"area": "tasks-and-phases",
+			"name": "Intermediate save of task forms",
+			"name_nl": "Tussentijds opslaan van taakformulieren",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "3.15",
+			"area": "tasks-and-phases",
+			"name": "Progress or phase widget on the case page",
+			"name_nl": "Voortgangs- of fasewidget op de zaakpagina",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.16",
+			"area": "tasks-and-phases",
+			"name": "Process or case migration between definition versions",
+			"name_nl": "Migratie van proces of zaak tussen definitieversies",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.17",
+			"area": "tasks-and-phases",
+			"name": "Formula-based field fill and date calculation",
+			"name_nl": "Velden vullen en datums rekenen met formules",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.18",
+			"area": "tasks-and-phases",
+			"name": "Task panel beside the case tabs",
+			"name_nl": "Takenpaneel naast de zaaktabbladen",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.19",
+			"area": "tasks-and-phases",
+			"name": "External (supply chain partner) task assignment",
+			"name_nl": "Taken toewijzen aan ketenpartners",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.1",
+			"area": "documents",
+			"name": "Document as a metadata record holding files",
+			"name_nl": "Document als metadatarecord met bestanden",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.2",
+			"area": "documents",
+			"name": "Folder structure inside a case",
+			"name_nl": "Mappenstructuur binnen een zaak",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.3",
+			"area": "documents",
+			"name": "File versions with view, download, restore",
+			"name_nl": "Bestandsversies bekijken, downloaden en terugzetten",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.4",
+			"area": "documents",
+			"name": "Generate document from a template with merge fields",
+			"name_nl": "Document genereren uit een sjabloon met samenvoegvelden",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.5",
+			"area": "documents",
+			"name": "In-browser office editing (Collabora, WOPI)",
+			"name_nl": "Office bewerken in de browser (Collabora, WOPI)",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.6",
+			"area": "documents",
+			"name": "MS Office add-ins or Teams integration",
+			"name_nl": "MS Office-invoegtoepassingen of Teams-koppeling",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.7",
+			"area": "documents",
+			"name": "Document metadata (type, status, confidentiality, direction, dates)",
+			"name_nl": "Documentmetadata (type, status, vertrouwelijkheid, richting, datums)",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.8",
+			"area": "documents",
+			"name": "Configurable document list columns",
+			"name_nl": "Instelbare kolommen in de documentenlijst",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "4.9",
+			"area": "documents",
+			"name": "Document labels or tags",
+			"name_nl": "Labels of tags op documenten",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.10",
+			"area": "documents",
+			"name": "Per-file share to a user with read/write and expiry",
+			"name_nl": "Bestand delen met een gebruiker, met lees- of schrijfrecht en vervaldatum",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "4.11",
+			"area": "documents",
+			"name": "Document locking for shared editing",
+			"name_nl": "Documenten vergrendelen bij gedeeld bewerken",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.12",
+			"area": "documents",
+			"name": "E-signing",
+			"name_nl": "Digitaal ondertekenen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "4.13",
+			"area": "documents",
+			"name": "Anonymise or redact documents",
+			"name_nl": "Documenten anonimiseren of lakken",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "4.14",
+			"area": "documents",
+			"name": "Merge to PDF, copy to another case",
+			"name_nl": "Samenvoegen tot pdf, kopiëren naar een andere zaak",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.15",
+			"area": "documents",
+			"name": "Trash and restore for documents",
+			"name_nl": "Prullenbak en terugzetten voor documenten",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.16",
+			"area": "documents",
+			"name": "Document preview",
+			"name_nl": "Documentvoorbeeld",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.17",
+			"area": "documents",
+			"name": "Full-text indexing of file content",
+			"name_nl": "Volledige tekstindexering van bestandsinhoud",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.18",
+			"area": "documents",
+			"name": "Notes or annotations on a document",
+			"name_nl": "Notities of annotaties bij een document",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.19",
+			"area": "documents",
+			"name": "Virus scan and integrity check",
+			"name_nl": "Viruscontrole en integriteitscontrole",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.20",
+			"area": "documents",
+			"name": "Archive export of closed cases (XML, SIP, TMLO/MDTO)",
+			"name_nl": "Archiefexport van afgesloten zaken (XML, SIP, TMLO/MDTO)",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.21",
+			"area": "documents",
+			"name": "Publish document to citizen portal or website",
+			"name_nl": "Document publiceren naar een burgerportaal of website",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.22",
+			"area": "documents",
+			"name": "Upload with drag and drop",
+			"name_nl": "Uploaden met slepen en neerzetten",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "4.23",
+			"area": "documents",
+			"name": "Case files visible in the platform file manager",
+			"name_nl": "Zaakbestanden zichtbaar in de bestandsbeheerder van het platform",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "5.1",
+			"area": "parties-and-contacts",
+			"name": "Parties on a case with roles",
+			"name_nl": "Partijen op een zaak met rollen",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.2",
+			"area": "parties-and-contacts",
+			"name": "Person and organisation contact registry",
+			"name_nl": "Contactenregister voor personen en organisaties",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.3",
+			"area": "parties-and-contacts",
+			"name": "National registry lookup (CPR/BRP, CVR/KvK)",
+			"name_nl": "Bevraging van landelijke registers (BRP, KvK)",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "5.4",
+			"area": "parties-and-contacts",
+			"name": "Contact 360 view (cases, documents, communication)",
+			"name_nl": "Contactoverzicht 360 graden (zaken, documenten, communicatie)",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.5",
+			"area": "parties-and-contacts",
+			"name": "Address protection or secrecy indication",
+			"name_nl": "Adresbescherming of geheimhoudingsindicatie",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.6",
+			"area": "parties-and-contacts",
+			"name": "Sensitive personal data behind an extra permission",
+			"name_nl": "Bijzondere persoonsgegevens achter een extra recht",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.7",
+			"area": "parties-and-contacts",
+			"name": "Internal organisation tree and employee directory",
+			"name_nl": "Interne organisatieboom en medewerkersgids",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.8",
+			"area": "parties-and-contacts",
+			"name": "Authorised representative (gemachtigde) on a case",
+			"name_nl": "Gemachtigde op een zaak",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.9",
+			"area": "parties-and-contacts",
+			"name": "Person card or primary party in the case header",
+			"name_nl": "Persoonskaart of hoofdpartij in de zaakkop",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.10",
+			"area": "parties-and-contacts",
+			"name": "Property or address object as a party (BAG, BBR)",
+			"name_nl": "Pand of adres als partij (BAG)",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.11",
+			"area": "parties-and-contacts",
+			"name": "Contact import and change subscriptions from registries",
+			"name_nl": "Contacten importeren en abonneren op wijzigingen uit registers",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.12",
+			"area": "parties-and-contacts",
+			"name": "Document senders and recipients",
+			"name_nl": "Afzenders en ontvangers van documenten",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "5.13",
+			"area": "parties-and-contacts",
+			"name": "External register views embedded in the app",
+			"name_nl": "Externe registerweergaven in de app zelf",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "6.1",
+			"area": "communication",
+			"name": "Journal notes on a case",
+			"name_nl": "Journaalnotities op een zaak",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.2",
+			"area": "communication",
+			"name": "Contact moments with channel and direction",
+			"name_nl": "Contactmomenten met kanaal en richting",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.3",
+			"area": "communication",
+			"name": "Send e-mail from the case with templates and case attachments",
+			"name_nl": "E-mail versturen vanuit de zaak met sjablonen en zaakbijlagen",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.4",
+			"area": "communication",
+			"name": "Unified communication timeline per case (notes, mail, messages)",
+			"name_nl": "Eén communicatietijdlijn per zaak (notities, mail, berichten)",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.5",
+			"area": "communication",
+			"name": "Organisation-wide message inbox with assign to case",
+			"name_nl": "Organisatiebrede berichtenbak met koppelen aan een zaak",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.6",
+			"area": "communication",
+			"name": "Digital post to citizens (Digital Post, Berichtenbox, Postex)",
+			"name_nl": "Digitale post aan burgers (Berichtenbox, Postex)",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "6.7",
+			"area": "communication",
+			"name": "Messaging with citizens through a portal",
+			"name_nl": "Berichten met burgers via een portaal",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.8",
+			"area": "communication",
+			"name": "In-app notifications (bell)",
+			"name_nl": "Meldingen in de app (bel)",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.9",
+			"area": "communication",
+			"name": "Scheduled or planned e-mails",
+			"name_nl": "Geplande e-mails",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.10",
+			"area": "communication",
+			"name": "Import .msg or .eml into a case",
+			"name_nl": ".msg- of .eml-bestanden importeren in een zaak",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.11",
+			"area": "communication",
+			"name": "Event outbox or webhooks on case events",
+			"name_nl": "Uitgaande gebeurtenissen of webhooks bij zaakgebeurtenissen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "6.12",
+			"area": "communication",
+			"name": "Chat capture into the case",
+			"name_nl": "Chatgesprekken vastleggen in de zaak",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "6.13",
+			"area": "communication",
+			"name": "Telephony (KCC) panel",
+			"name_nl": "Telefoniepaneel (KCC)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "6.14",
+			"area": "communication",
+			"name": "Notes synced to an external case register",
+			"name_nl": "Notities synchroniseren met een extern zaakregister",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "7.1",
+			"area": "decisions",
+			"name": "Result or outcome from a configured list per case type",
+			"name_nl": "Resultaat uit een ingestelde lijst per zaaktype",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "7.2",
+			"area": "decisions",
+			"name": "Decision tables (DMN)",
+			"name_nl": "Beslistabellen (DMN)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "7.3",
+			"area": "decisions",
+			"name": "Formal decision record (besluit)",
+			"name_nl": "Formeel besluit vastleggen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "7.4",
+			"area": "decisions",
+			"name": "Decision letter generated as a workflow step",
+			"name_nl": "Besluitbrief genereren als processtap",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "7.5",
+			"area": "decisions",
+			"name": "FOI or Woo request with per-document assessment and redaction",
+			"name_nl": "Woo-verzoek met beoordeling en lakken per document",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "7.6",
+			"area": "decisions",
+			"name": "Objection handling surface",
+			"name_nl": "Werkomgeving voor bezwaarbehandeling",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "7.7",
+			"area": "decisions",
+			"name": "Result drives archival nomination and retention",
+			"name_nl": "Resultaat bepaalt archiefnominatie en bewaartermijn",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.1",
+			"area": "deadlines",
+			"name": "Legal and service lead time per case type with target date",
+			"name_nl": "Wettelijke en servicetermijn per zaaktype met streefdatum",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.2",
+			"area": "deadlines",
+			"name": "Overdue or urgency indicator on case and list",
+			"name_nl": "Indicator voor te laat of urgent op zaak en lijst",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.3",
+			"area": "deadlines",
+			"name": "Task due dates",
+			"name_nl": "Streefdatums op taken",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.4",
+			"area": "deadlines",
+			"name": "Reminders on a case with a responsible user",
+			"name_nl": "Herinneringen op een zaak met een verantwoordelijke",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "8.5",
+			"area": "deadlines",
+			"name": "Extend or change the term with a reason",
+			"name_nl": "Termijn verlengen of wijzigen met een reden",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.6",
+			"area": "deadlines",
+			"name": "Deadline notifications by e-mail",
+			"name_nl": "Termijnmeldingen per e-mail",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.7",
+			"area": "deadlines",
+			"name": "Retention period, destruction date and automatic deletion",
+			"name_nl": "Bewaartermijn, vernietigingsdatum en automatisch verwijderen",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "8.8",
+			"area": "deadlines",
+			"name": "Milestones with planned intervals",
+			"name_nl": "Mijlpalen met geplande tussenpozen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "8.9",
+			"area": "deadlines",
+			"name": "Timer events in the process",
+			"name_nl": "Tijdgebeurtenissen in het proces",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "8.10",
+			"area": "deadlines",
+			"name": "Suspension term with automatic resume",
+			"name_nl": "Opschortingstermijn met automatisch hervatten",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.1",
+			"area": "search",
+			"name": "Global quick search",
+			"name_nl": "Globaal snelzoeken",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.2",
+			"area": "search",
+			"name": "Advanced search with per-case-type fields",
+			"name_nl": "Uitgebreid zoeken op velden per zaaktype",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.3",
+			"area": "search",
+			"name": "Personal saved searches",
+			"name_nl": "Persoonlijke opgeslagen zoekopdrachten",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.4",
+			"area": "search",
+			"name": "Shared saved searches with department or role permissions",
+			"name_nl": "Gedeelde zoekopdrachten met rechten per afdeling of rol",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.5",
+			"area": "search",
+			"name": "User column chooser on lists",
+			"name_nl": "Kolomkiezer voor de gebruiker op lijsten",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.6",
+			"area": "search",
+			"name": "Full-text search over document content",
+			"name_nl": "Zoeken in de inhoud van documenten",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.7",
+			"area": "search",
+			"name": "Search results filtered by access rights",
+			"name_nl": "Zoekresultaten gefilterd op toegangsrechten",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.8",
+			"area": "search",
+			"name": "Map view of search results",
+			"name_nl": "Kaartweergave van zoekresultaten",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.9",
+			"area": "search",
+			"name": "Search over contacts and persons",
+			"name_nl": "Zoeken in contacten en personen",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.10",
+			"area": "search",
+			"name": "Search over custom objects",
+			"name_nl": "Zoeken in eigen objecten",
+			"dossiq": "no",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "9.11",
+			"area": "search",
+			"name": "Task search fields",
+			"name_nl": "Zoekvelden voor taken",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "9.12",
+			"area": "search",
+			"name": "Platform-level unified search integration",
+			"name_nl": "Koppeling met het zoeken van het platform zelf",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "10.1",
+			"area": "reporting",
+			"name": "Configurable KPI dashboards (count, gauge, chart)",
+			"name_nl": "Instelbare KPI-dashboards (telling, meter, grafiek)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "10.2",
+			"area": "reporting",
+			"name": "Personal dashboard with user-chosen widgets",
+			"name_nl": "Persoonlijk dashboard met zelfgekozen widgets",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.3",
+			"area": "reporting",
+			"name": "Export list results to CSV or XLSX",
+			"name_nl": "Lijstresultaten exporteren naar CSV of XLSX",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.4",
+			"area": "reporting",
+			"name": "Process analytics (heatmap, durations)",
+			"name_nl": "Procesanalyse (heatmap, doorlooptijden)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "10.5",
+			"area": "reporting",
+			"name": "Audit or event log viewer with filters and export",
+			"name_nl": "Logboek bekijken met filters en export",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.6",
+			"area": "reporting",
+			"name": "Statistics or reporting API",
+			"name_nl": "Statistiek- of rapportage-API",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "10.7",
+			"area": "reporting",
+			"name": "Export files area with expiry and download counts",
+			"name_nl": "Exportmap met vervaldatum en downloadtellingen",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.8",
+			"area": "reporting",
+			"name": "Timeline export per case or contact",
+			"name_nl": "Tijdlijnexport per zaak of contact",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.9",
+			"area": "reporting",
+			"name": "Case audit timeline on the case page",
+			"name_nl": "Audittijdlijn op de zaakpagina",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.10",
+			"area": "reporting",
+			"name": "Widgets driven by a saved search",
+			"name_nl": "Widgets gevoed door een opgeslagen zoekopdracht",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.1",
+			"area": "configuration",
+			"name": "Case type editor in the UI",
+			"name_nl": "Zaaktypebeheer in de gebruikersinterface",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.2",
+			"area": "configuration",
+			"name": "Config as code, import and export of case types",
+			"name_nl": "Inrichting als code, zaaktypen im- en exporteren",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "11.3",
+			"area": "configuration",
+			"name": "Custom fields per case type",
+			"name_nl": "Eigen velden per zaaktype",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.4",
+			"area": "configuration",
+			"name": "Form builder in the UI",
+			"name_nl": "Formulierbouwer in de gebruikersinterface",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "11.5",
+			"area": "configuration",
+			"name": "BPMN modeller in the UI",
+			"name_nl": "BPMN-modelleerder in de gebruikersinterface",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.6",
+			"area": "configuration",
+			"name": "Configurable case detail tabs per case type",
+			"name_nl": "Instelbare tabbladen op de zaakpagina per zaaktype",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.7",
+			"area": "configuration",
+			"name": "Configurable widgets on the case page (fields, table, collection, formio, highlight, image, map, metroline, person-card, text, divider, custom)",
+			"name_nl": "Instelbare widgets op de zaakpagina (velden, tabel, collectie, formio, uitgelicht, afbeelding, kaart, metroline, persoonskaart, tekst, scheiding, eigen)",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.8",
+			"area": "configuration",
+			"name": "Configurable case header per case type",
+			"name_nl": "Instelbare zaakkop per zaaktype",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.9",
+			"area": "configuration",
+			"name": "Configurable list columns per case type",
+			"name_nl": "Instelbare lijstkolommen per zaaktype",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "11.10",
+			"area": "configuration",
+			"name": "Code lists or choice fields",
+			"name_nl": "Waardelijsten of keuzevelden",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.11",
+			"area": "configuration",
+			"name": "Document template library",
+			"name_nl": "Bibliotheek met documentsjablonen",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.12",
+			"area": "configuration",
+			"name": "E-mail template library",
+			"name_nl": "Bibliotheek met e-mailsjablonen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.13",
+			"area": "configuration",
+			"name": "Translation management in the UI",
+			"name_nl": "Vertalingen beheren in de gebruikersinterface",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.14",
+			"area": "configuration",
+			"name": "Branding and theming",
+			"name_nl": "Huisstijl en themabeheer",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.15",
+			"area": "configuration",
+			"name": "Feature toggles",
+			"name_nl": "Functieschakelaars",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.16",
+			"area": "configuration",
+			"name": "Integration or plugin configuration UI with secrets",
+			"name_nl": "Beheerscherm voor koppelingen en plug-ins, inclusief geheimen",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "11.17",
+			"area": "configuration",
+			"name": "Custom object type management",
+			"name_nl": "Beheer van eigen objecttypen",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.18",
+			"area": "configuration",
+			"name": "Configuration issue detection",
+			"name_nl": "Signalering van inrichtingsfouten",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "11.19",
+			"area": "configuration",
+			"name": "User, role and department administration in the app",
+			"name_nl": "Beheer van gebruikers, rollen en afdelingen in de app",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "11.20",
+			"area": "configuration",
+			"name": "Rules per case type (conditions and actions)",
+			"name_nl": "Regels per zaaktype (voorwaarden en acties)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.21",
+			"area": "configuration",
+			"name": "Mother and child case types (inheritance)",
+			"name_nl": "Moeder- en dochterzaaktypen (overerving)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.22",
+			"area": "configuration",
+			"name": "GDPR register fields per case type",
+			"name_nl": "AVG-registervelden per zaaktype",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.23",
+			"area": "configuration",
+			"name": "Catalog with folders for case types, attributes, templates",
+			"name_nl": "Catalogus met mappen voor zaaktypen, kenmerken en sjablonen",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.24",
+			"area": "configuration",
+			"name": "Instance configuration UI (notification texts, portal texts, CORS)",
+			"name_nl": "Beheerscherm voor de omgeving (meldingsteksten, portaalteksten, CORS)",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.1",
+			"area": "integrations",
+			"name": "ZGW APIs (Zaken, Documenten, Catalogi, Besluiten)",
+			"name_nl": "ZGW-API’s (Zaken, Documenten, Catalogi, Besluiten)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "12.2",
+			"area": "integrations",
+			"name": "Notificaties API",
+			"name_nl": "Notificaties-API",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "12.3",
+			"area": "integrations",
+			"name": "Objecten and Objecttypen API",
+			"name_nl": "Objecten- en Objecttypen-API",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "12.4",
+			"area": "integrations",
+			"name": "StUF (BG, ZKN, DCR)",
+			"name_nl": "StUF (BG, ZKN, DCR)",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.5",
+			"area": "integrations",
+			"name": "DSO or Omgevingswet",
+			"name_nl": "DSO of Omgevingswet",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.6",
+			"area": "integrations",
+			"name": "National person and company registries",
+			"name_nl": "Landelijke personen- en bedrijvenregisters",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.7",
+			"area": "integrations",
+			"name": "Staff SSO (SAML or OIDC)",
+			"name_nl": "Eenmalig aanmelden voor medewerkers (SAML of OIDC)",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.8",
+			"area": "integrations",
+			"name": "Citizen authentication (DigiD, eHerkenning, eIDAS)",
+			"name_nl": "Authenticatie van burgers (DigiD, eHerkenning, eIDAS)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.9",
+			"area": "integrations",
+			"name": "Digital post or berichtenbox",
+			"name_nl": "Digitale post of berichtenbox",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.10",
+			"area": "integrations",
+			"name": "E-signing",
+			"name_nl": "Digitaal ondertekenen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.11",
+			"area": "integrations",
+			"name": "External document generation service (SmartDocuments, Xential)",
+			"name_nl": "Externe documentgeneratiedienst (SmartDocuments, Xential)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.12",
+			"area": "integrations",
+			"name": "Payments",
+			"name_nl": "Betalingen",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.13",
+			"area": "integrations",
+			"name": "Appointment booking",
+			"name_nl": "Afspraken inplannen",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.14",
+			"area": "integrations",
+			"name": "Message broker or event streaming",
+			"name_nl": "Berichtenmakelaar of gebeurtenisstromen",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "12.15",
+			"area": "integrations",
+			"name": "Search engine (Elasticsearch, OpenSearch, Tika)",
+			"name_nl": "Zoekmachine (Elasticsearch, OpenSearch, Tika)",
+			"dossiq": "no",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.16",
+			"area": "integrations",
+			"name": "Map and geo services (PDOK, BAG, ArcGIS)",
+			"name_nl": "Kaart- en geodiensten (PDOK, BAG, ArcGIS)",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.17",
+			"area": "integrations",
+			"name": "Generic plugin or connector framework",
+			"name_nl": "Generiek plug-in- of connectorraamwerk",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.18",
+			"area": "integrations",
+			"name": "OpenAPI documentation",
+			"name_nl": "OpenAPI-documentatie",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.19",
+			"area": "integrations",
+			"name": "Public data API with certificates or API keys",
+			"name_nl": "Publieke data-API met certificaten of API-sleutels",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.20",
+			"area": "integrations",
+			"name": "Object storage (S3)",
+			"name_nl": "Objectopslag (S3)",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.21",
+			"area": "integrations",
+			"name": "Office online (WOPI) or platform office",
+			"name_nl": "Office online (WOPI) of office van het platform",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "12.22",
+			"area": "integrations",
+			"name": "Cloud events inbound",
+			"name_nl": "Inkomende cloud events",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "12.23",
+			"area": "integrations",
+			"name": "AI assistant with executable actions",
+			"name_nl": "AI-assistent die acties kan uitvoeren",
+			"dossiq": "yes",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "13.1",
+			"area": "access-and-privacy",
+			"name": "Application roles",
+			"name_nl": "Applicatierollen",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.2",
+			"area": "access-and-privacy",
+			"name": "Policy or attribute based access on data (conditions)",
+			"name_nl": "Toegang op data via beleid of kenmerken (voorwaarden)",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "13.3",
+			"area": "access-and-privacy",
+			"name": "Per-case ACL editable on the case",
+			"name_nl": "Rechten per zaak, aanpasbaar op de zaak zelf",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.4",
+			"area": "access-and-privacy",
+			"name": "Time-limited access grants",
+			"name_nl": "Toegang die na een periode vervalt",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "13.5",
+			"area": "access-and-privacy",
+			"name": "Per-document access override",
+			"name_nl": "Afwijkende rechten per document",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.6",
+			"area": "access-and-privacy",
+			"name": "Team or department based visibility",
+			"name_nl": "Zichtbaarheid op basis van team of afdeling",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.7",
+			"area": "access-and-privacy",
+			"name": "Case confidentiality classification",
+			"name_nl": "Vertrouwelijkheidsclassificatie van een zaak",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.8",
+			"area": "access-and-privacy",
+			"name": "Field-level permissions",
+			"name_nl": "Rechten op veldniveau",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.9",
+			"area": "access-and-privacy",
+			"name": "Audit trail including reads and views",
+			"name_nl": "Audittrail inclusief inzage en weergaven",
+			"dossiq": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.10",
+			"area": "access-and-privacy",
+			"name": "Retention and automatic deletion",
+			"name_nl": "Bewaartermijn en automatisch verwijderen",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "yes",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.11",
+			"area": "access-and-privacy",
+			"name": "GDPR register per case type",
+			"name_nl": "AVG-register per zaaktype",
+			"dossiq": "partial",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.12",
+			"area": "access-and-privacy",
+			"name": "Delegation, mandates, substitutes",
+			"name_nl": "Delegatie, mandaten en vervanging",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no"
+		},
+		{
+			"id": "13.13",
+			"area": "access-and-privacy",
+			"name": "Citizen portal access rights per case",
+			"name_nl": "Rechten van burgers op het portaal per zaak",
+			"dossiq": "yes",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.14",
+			"area": "access-and-privacy",
+			"name": "Locked rows for restricted cases in lists",
+			"name_nl": "Vergrendelde regels voor afgeschermde zaken in lijsten",
+			"dossiq": "no",
+			"opencase": "no",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		},
+		{
+			"id": "13.15",
+			"area": "access-and-privacy",
+			"name": "Two-factor authentication and login history",
+			"name_nl": "Tweefactorauthenticatie en inloghistorie",
+			"dossiq": "partial",
+			"opencase": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "yes"
+		},
+		{
+			"id": "13.16",
+			"area": "access-and-privacy",
+			"name": "Access-control admin UI",
+			"name_nl": "Beheerscherm voor toegangsrechten",
+			"dossiq": "partial",
+			"opencase": "yes",
+			"gzac": "yes",
+			"zaaksysteem": "partial"
+		}
+	]
+}
