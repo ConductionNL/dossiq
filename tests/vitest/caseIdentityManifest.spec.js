@@ -114,3 +114,58 @@ describe('CaseDetail: tags', () => {
 		expect(cases.config.sidebar.enabled).toBe(true)
 	})
 })
+
+describe('CaseDetail: terms and archive', () => {
+	it('shows the lead time, the legal basis, the archive and the payment data', () => {
+		const terms = widget('case-terms')
+		expect(terms.type).toBe('data')
+		expect(terms.content.include).toEqual([
+			'statutoryTerm',
+			'legalBasis',
+			'archiveNomination',
+			'archiveActionDate',
+			'archiveStatus',
+			'paymentIndication',
+			'lastPaymentDate',
+		])
+	})
+
+	it('keeps an empty row visible instead of hiding it', () => {
+		// An absent destruction date is exactly what a records officer is
+		// looking for, so the row has to be there and empty. `hideEmpty` is
+		// off by default; it is written out so a later edit has to mean it.
+		expect(widget('case-terms').content.hideEmpty).toBe(false)
+	})
+
+	it('re-admits the generated lead time and keeps it un-typeable', () => {
+		const overrides = widget('case-terms').content.overrides
+		expect(overrides.statutoryTerm.readOnly).toBe(false)
+		expect(overrides.statutoryTerm.editable).toBe(false)
+		expect(overrides.archiveActionDate.editable).toBe(false)
+	})
+
+	it('reads properties the case actually has, not a path through its type', () => {
+		// A dotted include (`caseType.processingDeadline`) matches no entry of
+		// `schema.properties`, so the row never renders and nothing says so.
+		for (const key of widget('case-terms').content.include) {
+			expect(key).not.toContain('.')
+			expect(Object.keys(caseSchema.properties)).toContain(key)
+		}
+	})
+
+	it('registers its icon, and takes a cell of its own', () => {
+		expect(iconIsRegistered(widget('case-terms').icon)).toBe(true)
+
+		const cell = caseDetail().config.layout.find(
+			(entry) => entry.widgetId === 'case-terms',
+		)
+		expect(cell).toBeTruthy()
+		expect(cell.gridX + cell.gridWidth).toBeLessThanOrEqual(12)
+	})
+
+	it('renders every statutory field, because none is hidden schema-side', () => {
+		for (const key of widget('case-terms').content.include) {
+			expect(caseSchema.properties[key].visible).not.toBe(false)
+		}
+	})
+})

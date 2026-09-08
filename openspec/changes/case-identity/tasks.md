@@ -88,12 +88,29 @@ criteria under a task are plain bullets.
     processing deadline; see 3.2 for why the design's dotted include path
     could not work.
   - `case` goes 1.15.0 → 1.16.0.
-- [ ] 3.2 `src/manifest.json` page `CaseDetail`: widget `case-terms` per
+- [x] 3.2 `src/manifest.json` page `CaseDetail`: widget `case-terms` per
   design D3, with `extend: ["caseType"]` and the include path
   `caseType.processingDeadline`; add its layout cell without a reserved void.
   - verify the dotted include renders; if `data` cannot read an extended
     path, show `processingDeadline` on the existing `case-kpi-casetype` stat
     caption and record it here
+  - RECORDED: the dotted include cannot render, and neither can the fallback.
+    `fieldsFromSchema` filters `Object.entries(schema.properties)`, so an
+    include entry that is not itself a property key matches nothing and the
+    row is simply absent. The stat caption is no better: `resolvedCaption`
+    interpolates its tokens from the ENDPOINT payload only, which is null in
+    `objectField` mode, so every token would resolve to the empty string.
+  - So the lead time is a real property. `statutoryTerm` copies
+    `@ref.caseType.processingDeadline` onto the case through the same
+    materialised mechanism `deadline` already uses, and the widget includes a
+    property that exists. It renders the type's ISO 8601 duration (`P8W`);
+    turning that into the words "8 weeks" needs a duration formatter that
+    neither the calculation engine nor the data widget has, and inventing one
+    here would be a second numbering-style feature hiding inside a config
+    change.
+  - The cell is gridX 8, gridY 13, 4 wide and 5 tall: the right column below
+    `case-flow-runs`, ending level with `case-panels` at y 18. The design's
+    "right of case-core" cell is `initiator`'s and was not free.
 
 ## 4. Seed and verification
 
