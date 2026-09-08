@@ -277,6 +277,64 @@ describe('an attribute without a case type is shared', () => {
 	})
 })
 
+describe('the personal data block', () => {
+	it('shows the four AVG fields the schema carries', () => {
+		const widget = page('CaseTypeDetail').config.widgets.find(
+			(entry) => entry.id === 'case-type-privacy',
+		)
+		expect(widget.content.include).toEqual([
+			'processesPersonalData',
+			'personalDataCategories',
+			'legalBasis',
+			'verwerkingsactiviteit',
+		])
+	})
+
+	it('keeps an unanswered field visible, because the gap IS the finding', () => {
+		const widget = page('CaseTypeDetail').config.widgets.find(
+			(entry) => entry.id === 'case-type-privacy',
+		)
+		expect(widget.content.hideEmpty).toBe(false)
+	})
+
+	it('declares every AVG field on the schema, readable and writable', () => {
+		for (const name of [
+			'processesPersonalData',
+			'personalDataCategories',
+			'legalBasis',
+			'verwerkingsactiviteit',
+		]) {
+			const property = schema('caseType').properties[name]
+			expect(property, name).toBeTruthy()
+			// `visible: false` hides a property on every surface at once, and
+			// a schema `readOnly` is dropped by the form builder before any
+			// override is read.
+			expect(property.visible).toBeUndefined()
+			expect(property.readOnly).toBeUndefined()
+		}
+	})
+
+	it('enumerates the eleven AVG categories', () => {
+		expect(
+			schema('caseType').properties.personalDataCategories.items.enum,
+		).toHaveLength(11)
+	})
+
+	it('carries OpenRegister’s article 6 vocabulary verbatim', () => {
+		// OR's VerwerkingsactiviteitMapper refuses anything else; the Dutch
+		// spellings this fleet used before failed all seven rows on every
+		// fresh install. The enum is not dossiq's to translate.
+		expect(schema('caseType').properties.legalBasis.enum).toEqual([
+			'consent',
+			'contract',
+			'legal_obligation',
+			'vital_interests',
+			'public_task',
+			'legitimate_interest',
+		])
+	})
+})
+
 describe('every icon this change names is registered', () => {
 	it('registers each icon the touched pages name', () => {
 		// gate-60: an icon that is not in src/icons.js renders NO icon at all.

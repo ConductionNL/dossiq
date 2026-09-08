@@ -156,8 +156,14 @@ implementation task; the criteria under a task are plain bullets.
   - The seven codes `verwerkingsactiviteit` accepts are the seven
     `SeedVerwerkingsactiviteiten` upserts, named in the property description
     so an author can read them without opening the seed.
-- [ ] 4.2 `src/manifest.json` page `CaseTypeDetail`: widget
-  `case-type-privacy`.
+- [x] 4.2 `src/manifest.json` page `CaseTypeDetail`: widget
+  `case-type-privacy`. Icon `ShieldAccountOutline` (the design's
+  `ShieldAccount` is a real icon but the fleet spells the outline variants;
+  either way it is registered in `src/icons.js`, without which gate-60 fails
+  and the widget renders NO icon rather than a fallback glyph).
+  - `hideEmpty: false`, deliberately: an unanswered legal basis is exactly
+    what a data protection officer is looking for, so the empty row IS the
+    finding.
 - [x] 4.3 [blocked: openregister the verwerkingsregister as a referenceable
   schema] `verwerkingsactiviteit` becomes a `$ref`; until then a string
   with a datalist of seeded codes.
