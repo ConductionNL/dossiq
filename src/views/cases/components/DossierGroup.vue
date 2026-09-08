@@ -22,7 +22,6 @@
 				:selected="selectedIds.includes(doc.id)"
 				@toggleSelect="$emit('toggle-select', $event)"
 				@open="$emit('open', $event)"
-				@share="$emit('share', $event)"
 				@versionHistory="$emit('version-history', $event)"
 				@delete="$emit('delete', $event)" />
 		</div>
@@ -75,7 +74,7 @@ export default {
 		},
 	},
 
-	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
+	emits: ['toggle-select', 'open', 'version-history', 'delete'],
 	data() {
 		return {
 			expanded: true,
