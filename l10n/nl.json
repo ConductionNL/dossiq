@@ -607,6 +607,7 @@
         "Checklist complete": "Checklist compleet",
         "Checklist deleted": "Checklist verwijderd",
         "Checklist item": "Checklistitem",
+        "Checklist item not done: %s": "Checklistitem nog niet afgerond: %s",
         "Checklist items": "Checklistitems",
         "Checklist name": "Checklistnaam",
         "Checklist name is required": "Checklistnaam is verplicht",
@@ -3611,6 +3612,17 @@
         "New deadline": "Nieuwe deadline",
         "Reason (applied to every case)": "Reden (geldt voor elke zaak)",
         "Resume {count} cases": "{count} zaken hervatten",
-        "Suspend {count} cases": "{count} zaken opschorten"
+        "Suspend {count} cases": "{count} zaken opschorten",
+        "Tags": "Labels",
+        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Vrije woorden die deze zaak over zaaktypen heen groeperen (bijvoorbeeld spoed, wijk-noord)",
+        "Terms and archive": "Termijnen en archief",
+        "Statutory lead time": "Wettelijke behandeltermijn",
+        "Archive nomination": "Archiefnominatie",
+        "Archive action date": "Datum archiefactie",
+        "Archive status": "Archiefstatus",
+        "Payment indication": "Betaalindicatie",
+        "Last payment date": "Datum laatste betaling",
+        "The statutory article this case is handled under (e.g. Awb 4:13)": "Het wetsartikel waaronder deze zaak wordt behandeld (bijvoorbeeld Awb 4:13)",
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "De behandeltermijn van het zaaktype van deze zaak, als ISO 8601-duur. Overgenomen uit caseType.processingDeadline door x-openregister-calculations.statutoryTerm."
     }
 }

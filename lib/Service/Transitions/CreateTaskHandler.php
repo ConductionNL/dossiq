@@ -3,7 +3,8 @@
 /**
  * Dossiq createTask action handler.
  *
- * Action config shape: `{type: 'createTask', title?, assignee?, dueIn?: '<duration>'}`.
+ * Action config shape:
+ * `{type: 'createTask', title?, assignee?, dueIn?: '<duration>', workflowStepId?}`.
  * Creates a task linked to the case via OpenRegister ObjectService.
  *
  * @category Service
@@ -80,6 +81,15 @@ class CreateTaskHandler implements ActionHandlerInterface {
 				'status' => 'available',
 				'assignee' => (string)($actionConfig['assignee'] ?? ''),
 			];
+
+			// Which status asked for this task. Written only when the action
+			// names one, because an empty string is a value the task lists and
+			// the checklist reader would both have to special-case: a task
+			// tagged with "no status" is not the same as an untagged task.
+			$workflowStepId = trim((string)($actionConfig['workflowStepId'] ?? ''));
+			if ($workflowStepId !== '') {
+				$task['workflowStepId'] = $workflowStepId;
+			}
 
 			// On the flow path the engine's RegistryStepDispatcher already runs
 			// this handler inside `ObjectService::runAs()` as the run's acting
