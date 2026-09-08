@@ -14,7 +14,7 @@ criteria under a task are plain bullets.
     schemas implement the URI, `indicatieGeheim` is optional, exactly one
     seed is protected
   - `@spec openspec/specs/brp-register/spec.md`
-- [ ] 1.2 `lib/Settings/dossiq_register.json` and
+- [x] 1.2 `lib/Settings/dossiq_register.json` and
   `lib/Settings/dossiq_mock_register.json`: reword the `case.requester`
   description so it no longer says the field is set only by an integration.
 - [ ] 1.3 `lib/Service/External/Brp/HaalCentraalBrpAdapter.php` and
