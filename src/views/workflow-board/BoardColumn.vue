@@ -21,6 +21,12 @@
 		@dragleave="dragOver = false"
 		@drop="onDrop">
 		<div class="board-column__header">
+			<span
+				class="board-column__swatch"
+				:style="colourStyle"
+				:data-colour="colour"
+				data-testid="board-column-colour"
+				aria-hidden="true" />
 			<span class="board-column__name">{{ statusType.name }}</span>
 			<span class="board-column__count">{{ cases.length }}</span>
 		</div>
@@ -59,6 +65,10 @@
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
 import CaseCard from './CaseCard.vue'
+import {
+	normaliseStatusColour,
+	statusColourToken,
+} from '../../utils/statusColour.js'
 
 export default {
 	name: 'BoardColumn',
@@ -94,6 +104,37 @@ export default {
 		return {
 			dragOver: false,
 		}
+	},
+
+	computed: {
+		/**
+		 * The colour name this column is drawn in.
+		 *
+		 * The board merges every non-final status sharing a NAME into one
+		 * column, so the colour arrives on the merged column rather than on a
+		 * single status type; `mergeColumnColour` decided which one won.
+		 *
+		 * @return {string} A name from the palette; grey when none is set.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		colour() {
+			return normaliseStatusColour(this.statusType.colour)
+		},
+
+		/**
+		 * The header swatch's colour.
+		 *
+		 * A swatch beside the name rather than a tinted header bar: the name
+		 * has to stay readable at every hue, and a full-bleed background in
+		 * the darker hues would leave it at a contrast ratio the palette
+		 * cannot guarantee (WCAG 2.2 SC 1.4.3). The swatch is decorative and
+		 * marked aria-hidden — the column already says its status in words.
+		 *
+		 * @return {object} A style object.
+		 */
+		colourStyle() {
+			return { backgroundColor: statusColourToken(this.colour) }
+		},
 	},
 
 	methods: {
@@ -153,7 +194,18 @@ export default {
 	margin-bottom: 8px;
 }
 
+.board-column__swatch {
+	flex: 0 0 auto;
+	width: 10px;
+	height: 10px;
+	margin-right: 8px;
+	border-radius: 50%;
+}
+
 .board-column__name {
+	/* The header is a space-between row; without this the name would float
+	   to the centre once the swatch joined it and the count stayed right. */
+	flex: 1;
 	font-weight: 600;
 	font-size: 14px;
 	color: var(--color-main-text);

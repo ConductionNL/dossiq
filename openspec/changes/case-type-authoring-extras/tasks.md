@@ -19,9 +19,26 @@ implementation task; the criteria under a task are plain bullets.
     `hiddenInLists` follows it exactly: `case.statusHiddenInLists`, `case`
     1.17.0 -> 1.18.0. Same caveat as `isFinalStatus`: after editing a
     statusType flag, run `occ openregister:rematerialise-calculations`.
-- [ ] 1.2 `src/manifest.json`: page `WorkflowBoard` column header and the
+- [x] 1.2 `src/manifest.json`: page `WorkflowBoard` column header and the
   status badge on `CaseDetail` read `colour`; page `Cases` gains the default
   filter `status.hiddenInLists: false`.
+  - Only the Cases half is manifest. `WorkflowBoard` is a `type: custom`
+    page and the badge on `CaseDetail` is the `case-transitions` custom
+    widget, so neither reads a manifest key: the board merges statuses into
+    columns in `WorkflowBoard.vue` (`mergeColumnColour`, because two case
+    types can colour one status name differently and the merged column can
+    only be one of them), and the strip takes `statusColour` off the
+    `/available-transitions` answer it already fetches.
+  - `CnStatusBadge` was the obvious component and is the wrong one: it takes
+    one of six fixed semantic variants, and a colour here is one of twelve
+    hue names. Mapping twelve onto six would render two deliberately
+    different statuses identically. `StatusBadgeCell.vue` instead, a cell
+    widget, because a `formatter` returns a string and a string carries no
+    colour.
+  - The filter key is `statusHiddenInLists`, not `status.hiddenInLists`
+    (see 1.1), and it goes on the `All` chip alone: `All` is the chip marked
+    `default`, and `Unclaimed` must stay literally equal to Queue's base
+    filter, which a manifest vitest asserts.
 - [ ] 1.3 `lib/Settings/register.d/*status*.json`: seed colours per role and
   `hiddenInLists: true` on final statuses per design.
 

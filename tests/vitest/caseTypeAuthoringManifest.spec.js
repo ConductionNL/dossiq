@@ -1,0 +1,198 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * What case-type-authoring-extras declares across four files that no build
+ * step compares: the register schema, the manifest, the icon registry and the
+ * cell-widget registry.
+ *
+ * Each of these has a failure mode that is green on every gate and invisible
+ * in the browser. A cell `widget` naming an id that is not in
+ * `src/services/cellWidgets.js` renders the raw value. An `icon` that is not
+ * in `src/icons.js` renders NO icon rather than a fallback glyph (gate-60). A
+ * `filter` key that is not a property of the schema is dropped by
+ * OpenRegister, so a default filter silently lists everything. A widget with
+ * no layout cell is declared and never placed, and a tab naming a widget id
+ * that does not exist renders a panel saying so.
+ *
+ * @spec openspec/specs/case-types/spec.md
+ * @spec openspec/specs/property-definition-management/spec.md
+ * @spec openspec/specs/avg-verwerkingenlogging/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+import fs from 'fs'
+import path from 'path'
+import { describe, expect, it } from 'vitest'
+
+const ROOT = path.resolve(__dirname, '../..')
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
+const register = JSON.parse(
+	fs.readFileSync(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+		'utf8',
+	),
+)
+const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
+const cellWidgetsSource = fs.readFileSync(
+	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
+	'utf8',
+)
+
+/**
+ * One page of the manifest.
+ *
+ * @param {string} id The page id.
+ * @return {object} The page.
+ */
+const page = (id) => manifest.pages.find((entry) => entry.id === id)
+
+/**
+ * One schema of the dossiq register.
+ *
+ * @param {string} slug The schema slug.
+ * @return {object} The schema.
+ */
+const schema = (slug) => register.components.schemas[slug]
+
+/**
+ * The Cases index column for a key.
+ *
+ * @param {string} key The column key.
+ * @return {object|undefined} The column entry.
+ */
+function casesColumn(key) {
+	return page('Cases').config.columns.find(
+		(column) => typeof column === 'object' && column.key === key,
+	)
+}
+
+/**
+ * A quick-filter chip of the Cases index.
+ *
+ * @param {string} label The chip's label.
+ * @return {object|undefined} The chip.
+ */
+function chip(label) {
+	return page('Cases').config.quickFilters.find((entry) => entry.label === label)
+}
+
+describe('statusType carries a colour and a list visibility', () => {
+	it('enumerates twelve colours rather than accepting a hex value', () => {
+		const colour = schema('statusType').properties.colour
+		expect(colour.type).toBe('string')
+		expect(colour.enum).toHaveLength(12)
+		for (const value of colour.enum) {
+			expect(value).not.toMatch(/^#/)
+		}
+	})
+
+	it('declares hiddenInLists as a boolean defaulting to false', () => {
+		const hidden = schema('statusType').properties.hiddenInLists
+		expect(hidden.type).toBe('boolean')
+		expect(hidden.default).toBe(false)
+	})
+
+	it('leaves both properties readable and editable', () => {
+		// `visible: false` hides a property on EVERY surface, and a schema
+		// `readOnly` is dropped by the form builder before any override is
+		// read. Either would ship a property an author cannot set.
+		for (const name of ['colour', 'hiddenInLists']) {
+			const property = schema('statusType').properties[name]
+			expect(property.visible).toBeUndefined()
+			expect(property.readOnly).toBeUndefined()
+		}
+	})
+
+	it('moves the schema version, or OpenRegister fast-skips the import', () => {
+		// A property added to a register JSON is inert until the register is
+		// re-imported, and OpenRegister skips a schema whose version did not
+		// change. 1.1.0 was the version that shipped the checklist.
+		expect(schema('statusType').version).toBe('1.2.0')
+	})
+})
+
+describe('the case mirrors the hidden flag so the list can filter on it', () => {
+	it('calculates statusHiddenInLists off the linked statusType', () => {
+		const calc =
+			schema('case').configuration['x-openregister-calculations']
+				.statusHiddenInLists
+		expect(calc.materialise).toBe(true)
+		expect(JSON.stringify(calc.expression)).toContain(
+			'@ref.statusType.hiddenInLists',
+		)
+	})
+
+	it('declares the mirrored property, and makes it facetable', () => {
+		// Materialised and facetable is what lets the index narrow on it
+		// SERVER-side; a client-side filter over server-paged rows drops the
+		// rows it never fetched.
+		const property = schema('case').properties.statusHiddenInLists
+		expect(property.type).toBe('boolean')
+		expect(property.facetable).toBe(true)
+	})
+
+	it('moves the case schema version too', () => {
+		expect(schema('case').version).toBe('1.18.0')
+	})
+})
+
+describe('the Cases index', () => {
+	it('leaves hidden statuses out on its DEFAULT chip', () => {
+		const all = chip('All')
+		expect(all.default).toBe(true)
+		expect(all.filter.statusHiddenInLists).toBe(false)
+	})
+
+	it('filters on the case property, never on a path into the $ref', () => {
+		// `status` is a $ref, so a filter key `status.hiddenInLists` dot-paths
+		// into a referenced object. OpenRegister answers no such filter and
+		// drops it — a default filter that silently lists everything.
+		for (const entry of page('Cases').config.quickFilters) {
+			for (const key of Object.keys(entry.filter || {})) {
+				expect(key).not.toContain('.')
+			}
+		}
+	})
+
+	it('lets the Closed chip list them again', () => {
+		expect(chip('Closed').filter.statusHiddenInLists).toBeUndefined()
+		expect(chip('Closed').filter.isFinalStatus).toBe(true)
+	})
+
+	it('draws the Status column through a registered cell widget', () => {
+		expect(casesColumn('status').widget).toBe('statusBadge')
+		expect(cellWidgetsSource).toContain('statusBadge:')
+	})
+
+	it('keeps the name formatter as the widget’s fallback label', () => {
+		expect(casesColumn('status').formatter).toBe('statusTypeName')
+	})
+})
+
+describe('every icon this change names is registered', () => {
+	it('registers each icon the touched pages name', () => {
+		// gate-60: an icon that is not in src/icons.js renders NO icon at all.
+		const named = new Set()
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+				return
+			}
+			if (node === null || typeof node !== 'object') return
+			if (typeof node.icon === 'string' && node.icon !== '') {
+				named.add(node.icon)
+			}
+			Object.values(node).forEach(walk)
+		}
+		for (const id of ['Cases', 'CaseTypes', 'CaseTypeDetail']) {
+			walk(page(id))
+		}
+		for (const icon of named) {
+			expect(iconsSource, `${icon} in src/icons.js`).toContain(
+				`vue-material-design-icons/${icon}.vue`,
+			)
+		}
+	})
+})
