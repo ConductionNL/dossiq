@@ -49,7 +49,7 @@ criteria under a task are plain bullets.
 
 ## 4. Verification
 
-- [ ] 4.1 Add `tests/e2e/checklist-per-status.spec.ts` covering every
+- [x] 4.1 Add `tests/e2e/checklist-per-status.spec.ts` covering every
   scenario of the delta spec that names it: the tasks arriving on a
   transition and on a free-form move, one set after a round trip, the
   disabled button with its reason, completing the task freeing the case,
