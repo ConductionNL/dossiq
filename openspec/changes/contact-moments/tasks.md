@@ -10,13 +10,13 @@ criteria under a task are plain bullets.
   1.2.0.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`
   - `tests/schemas` round-trips the new property
-- [ ] 1.2 `lib/Service/ContactMomentService.php`, `create`: copy `case`
+- [x] 1.2 `lib/Service/ContactMomentService.php`, `create`: copy `case`
   through and seed `relatedCases` with it when that list is empty; leave a
   filled list alone.
   - extend `tests/Unit/Service/ContactMomentServiceTest.php` (new if
     absent): `case` set and list empty seeds the list; list filled stays;
     no `case` writes none
-- [ ] 1.3 `lib/Service/ContactMomentService.php`, `create`: default
+- [x] 1.3 `lib/Service/ContactMomentService.php`, `create`: default
   `kccEmployeeId` to the session user and `identificationMethod` to
   `non_geidentificeerd` and `nature` to `informatieverzoek` when the form
   path leaves them out, so a contact logged from the case passes the
