@@ -46,7 +46,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, tickCheckbox } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
 const CASES_URL = `${APP_URL}cases`
@@ -602,7 +602,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await listSettled(page, keys[0])
 
 		for (const key of keys) {
-			await row(page, key).first().getByRole('checkbox').check()
+			await tickCheckbox(row(page, key).first().getByRole('checkbox'))
 		}
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
@@ -754,7 +754,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await chip(page, CHIPS.mine).click()
 		await listSettled(page, 'mine-far')
-		await row(page, 'mine-far').first().getByRole('checkbox').check()
+		await tickCheckbox(row(page, 'mine-far').first().getByRole('checkbox'))
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
 		await expect(strip).toBeVisible({ timeout: 15_000 })
