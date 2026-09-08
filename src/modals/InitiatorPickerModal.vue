@@ -4,9 +4,11 @@
 
   Initiator picker modal for the case create flow (StartCaseWidget):
   optional selection — the case remains creatable without an initiator
-  ("Skip"). Confirming emits the unified initiator result; the caller maps
-  it onto the case projection fields (initiatorProjection()). Modal
-  isolation per ADR-004: lives in src/modals/.
+  ("Skip"). Confirming emits the same payload the picker emits: the
+  canonical `requester` uuid plus the `initiatorType` /
+  `initiatorSourceId` / `initiatorDisplayName` projection, ready to write
+  onto the case in one save. Modal isolation per ADR-004: lives in
+  src/modals/.
 
   @spec openspec/specs/initiator-selection/spec.md
 -->
@@ -32,10 +34,13 @@
 
 			<InitiatorPicker :value="selection" @select="selection = $event" />
 
-			<div v-if="selection" class="initiator-picker-modal__selection">
+			<div
+				v-if="selection"
+				class="initiator-picker-modal__selection"
+				data-testid="initiator-picker-selection">
 				{{ t('dossiq', 'Selected:') }}
-				<strong>{{ selection.displayName }}</strong> ({{
-					selection.sourceId
+				<strong>{{ selection.initiatorDisplayName }}</strong> ({{
+					selection.initiatorSourceId
 				}})
 			</div>
 

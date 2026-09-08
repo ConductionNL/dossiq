@@ -47,7 +47,6 @@ import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
-import { initiatorProjection } from '../../services/initiatorSearch.js'
 import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
@@ -132,16 +131,18 @@ export default {
 		},
 
 		/**
-		 * Create the case carrying the picked initiator projection.
+		 * Create the case carrying the picked requester.
 		 *
-		 * @param {object} initiator The unified initiator result
+		 * @param {object} initiator The requester payload (uuid + projection)
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		async onInitiatorConfirmed(initiator) {
 			const caseType = this.pendingCaseType
 			this.pendingCaseType = null
-			await this.createCase(caseType, initiatorProjection(initiator))
+			// The modal already emits the four fields the case carries, so
+			// there is nothing to map here: one write path, one shape.
+			await this.createCase(caseType, initiator || {})
 		},
 
 		/**
@@ -160,7 +161,7 @@ export default {
 		 * Create a new case of the given type and navigate to it.
 		 *
 		 * @param {object} caseType The case type to start
-		 * @param {object} extraFields Additional case fields (initiator projection)
+		 * @param {object} extraFields Additional case fields (the requester payload)
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */

@@ -59,6 +59,12 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 	 * `bsn_length_check` boolean. The `context.correlationId` is
 	 * tenant-scoped + does not contain person data.
 	 *
+	 * This adapter never produces a person envelope, so it has nothing to
+	 * map: `persoon` is empty by contract and a secrecy indication is
+	 * UNKNOWN here, not false. It names the mapping a bound adapter owes in
+	 * `extras.deferredFields` instead, so the contract sits where the
+	 * binding is made rather than in a mapping call that can never run.
+	 *
 	 * @param string $bsn 9-digit Burgerservicenummer
 	 *                    — never logged.
 	 * @param array<string,mixed> $context Lookup context.
@@ -85,7 +91,10 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 				'reason' => 'no-outbound-connector-bound',
 				'note' => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
 					. '+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
-					. 'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
+					. 'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values. '
+					. 'A bound adapter MUST map `geheimhoudingPersoonsgegevens` onto the boolean `indicatieGeheim` the '
+					. 'brpPerson schema carries (anything but 0 is true, absent is false), the way HaalCentraalBrpAdapter does.',
+				'deferredFields' => ['name', 'birth', 'residence', 'indicatieGeheim'],
 			],
 		);
 	}//end lookup()
