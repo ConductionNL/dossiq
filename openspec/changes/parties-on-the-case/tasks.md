@@ -49,7 +49,7 @@ criteria under a task are plain bullets.
     both properties present, optional, `$ref` to `organisatieRol`, and the
     mock register carries the same two
   - `@spec openspec/specs/role-routing-via-or-rbac/spec.md`
-- [ ] 3.2 `lib/Settings/register.d/61-mandaat-matrix.json`: seed two
+- [x] 3.2 `lib/Settings/register.d/61-mandaat-matrix.json`: seed two
   `organisatieRol` rows (Team Vergunningen and Team Handhaving, department
   Ruimte); `lib/Settings/register.d/46-demo-cases-english.json`: set
   `assignedGroup` on two demo cases.
