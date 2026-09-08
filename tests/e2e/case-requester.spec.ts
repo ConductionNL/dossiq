@@ -280,7 +280,12 @@ test.describe('The requester on the case', () => {
 		await combo.click()
 
 		const option = page.getByRole('option').filter({ hasText: caseTypeName })
-		if (!(await option.first().isVisible().catch(() => false))) {
+		if (
+			!(await option
+				.first()
+				.isVisible()
+				.catch(() => false))
+		) {
 			await combo.pressSequentially(caseTypeName, { delay: 30 })
 		}
 		await option.first().click()
