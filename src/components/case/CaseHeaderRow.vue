@@ -133,7 +133,11 @@ export default {
 	},
 
 	computed: {
-		/** The case this row describes, from the page or from our own fetch. */
+		/**
+		 * The case this row describes, from the page or from our own fetch.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		caseObject() {
 			return this.object || this.fetched || {}
 		},
@@ -142,17 +146,27 @@ export default {
 		 * The case id, from the page's own binding or the route.
 		 *
 		 * @return {string} The id, or the empty string.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
 		},
 
-		/** @return {string} The case number. */
+		/**
+		 * @return {string} The case number.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		identifier() {
 			return String(this.caseObject.identifier ?? '')
 		},
 
-		/** @return {string} The Nextcloud user id of the primary handler. */
+		/**
+		 * @return {string} The Nextcloud user id of the primary handler.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		assignee() {
 			return String(this.caseObject.assignee ?? '')
 		},
@@ -165,6 +179,8 @@ export default {
 		 * a fact about the database.
 		 *
 		 * @return {string} The case type title, or the empty string.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		caseTypeName() {
 			if (!this.caseTypeRow) {
@@ -188,13 +204,19 @@ export default {
 		 * or the badge shows raw JSON.
 		 *
 		 * @return {string} The status name, or Unknown.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		statusLabel() {
 			const name = this.statusRow ? resolveText(this.statusRow, 'name') : ''
 			return name || t('dossiq', 'Unknown')
 		},
 
-		/** @return {string} `success` on a final status, `info` otherwise. */
+		/**
+		 * @return {string} `success` on a final status, `info` otherwise.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		statusVariant() {
 			if (!this.statusRow) {
 				return 'default'
@@ -202,7 +224,11 @@ export default {
 			return this.statusRow.isFinal === true ? 'success' : 'info'
 		},
 
-		/** @return {{warn: number, danger: number}} The countdown bands. */
+		/**
+		 * @return {{warn: number, danger: number}} The countdown bands.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		thresholds() {
 			const declared = this.widget?.props?.thresholds
 			return {
@@ -219,12 +245,18 @@ export default {
 		 * cases due today, which is a different claim entirely.
 		 *
 		 * @return {{days: number, overdue: boolean, text: string}|null}
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		countdown() {
 			return deadlineCountdown(this.caseObject.deadline ?? null)
 		},
 
-		/** @return {string} The band class the countdown paints in. */
+		/**
+		 * @return {string} The band class the countdown paints in.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
 		countdownClass() {
 			if (!this.countdown) {
 				return ''
@@ -263,12 +295,15 @@ export default {
 		 * back keeps it, rather than dropping the reader on a reset list.
 		 *
 		 * @return {object} The route query to hand the list.
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		listQuery() {
 			const query = this.$route?.query
 			return query && typeof query === 'object' ? { ...query } : {}
 		},
 
+		/** @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md */
 		crumbs() {
 			const declared = this.widget?.props?.breadcrumbs
 			if (!Array.isArray(declared)) {
@@ -295,6 +330,12 @@ export default {
 	watch: {
 		caseObject: {
 			immediate: true,
+			/**
+			 * Re-resolve the status type and the case type whenever the page
+			 * hands over a different case.
+			 *
+			 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+			 */
 			handler() {
 				this.resolveReferences()
 			},
@@ -305,6 +346,8 @@ export default {
 	 * Read the case when the page did not hand one over.
 	 *
 	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 	 */
 	async mounted() {
 		await initializeStores()
@@ -331,6 +374,8 @@ export default {
 		 * carries, so the row shows two names rather than two uuids.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		async resolveReferences() {
 			const statusId = String(this.caseObject.status ?? '')
@@ -360,6 +405,8 @@ export default {
 		 * @param {string} id The uuid the case carries, possibly empty.
 		 * @param {string} key The data key to fill.
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
 		async resolveOne(store, schema, id, key) {
 			if (!id) {
