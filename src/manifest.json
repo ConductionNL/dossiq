@@ -1248,6 +1248,7 @@
 						"type": "data",
 						"title": "Core case data",
 						"icon": "FileDocument",
+						"_note": "`identifier` carries `readOnly: true` in the schema because OpenRegister generates it, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it. So the case number sat in this include list and rendered nowhere at all — the very field five of the seven demo cases were reported as missing. The `identifier` override re-admits the field with `readOnly: false` and then keeps it un-editable with `editable: false`, which is the state the requirement asks for: shown, never typed.",
 						"content": {
 							"title": "Core case data",
 							"columns": 2,
@@ -1268,6 +1269,10 @@
 							],
 							"overrides": {
 								"status": {
+									"editable": false
+								},
+								"identifier": {
+									"readOnly": false,
 									"editable": false
 								},
 								"requester": {

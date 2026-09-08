@@ -17,8 +17,14 @@ criteria under a task are plain bullets.
     10,500-line file without a word. `tests/Unit/Settings/CaseIdentitySchemaTest.php`
     now reads the shipped register and asserts the expression, so the
     declaration this whole change rests on cannot quietly disappear.
-- [ ] 1.2 `src/manifest.json`: `identifier` out of `new-case`'s form on page
+- [x] 1.2 `src/manifest.json`: `identifier` out of `new-case`'s form on page
   `Dashboard` and read-only in `case-core` on page `CaseDetail`.
+  - `new-case` already omitted it. `case-core` listed it and rendered it
+    nowhere: `fieldsFromSchema` drops a `readOnly` property before any
+    override is read, so the number was invisible on the case page rather
+    than read-only on it. The override is `readOnly: false` (re-admit the
+    field) plus `editable: false` (keep it un-typeable); either half alone is
+    wrong in a different direction.
 - [ ] 1.3 [blocked: openregister a `sequence()` function in
   `x-openregister-calculations` scoped per year] Until it ships, 1.1 is
   declared but inert and 1.2 waits; the field stays free text.
