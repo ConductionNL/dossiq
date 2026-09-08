@@ -58,14 +58,15 @@ const TAB_LABELS = [
 	/Sub-cases|Deelzaken/,
 	/Locations|Locaties/,
 	/Appointments|Afspraken/,
-	// Decisions is decidiq's widget, not dossiq's own list — dossiq no longer
+	// Decisions is decidiq's widget, not dossiq's own list; dossiq no longer
 	// renders its `decision` schema at all.
 	/Decisions|Besluiten|Besluitvorming/,
+	/Objects|Objecten/,
 ]
 
 /**
  * The order placement row A33 asks for: the work a handler does first, the
- * folding tabs behind it, the four conditional ones last.
+ * folding tabs behind it, the collections that may be empty last.
  *
  * Timeline is deliberately NOT here. The case timeline is the sidebar
  * History tab (change case-timeline); a body panel over the same audit log
@@ -407,12 +408,23 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// And the conditional four are the LAST four, in any order among
 		// themselves — `visibleIf` on a tab entry is what would hide them, and
 		// CnTabsWidget does not read it yet (case-header task 4.2).
-		const tail = labels.slice(-CONDITIONAL_TABS.length)
+		// The conditional tabs close the strip. Asserted as "after every work
+		// tab" rather than "the last four", because `custom-objects-on-the-case`
+		// added an Objects tab of the same kind after REQ-CDV-16 was written,
+		// and a slice of a fixed length would fail on a correct strip.
+		const lastWork = Math.max(
+			...WORK_TABS.map((pattern) => labels.findIndex((l) => pattern.test(l))),
+		)
 		for (const pattern of CONDITIONAL_TABS) {
+			const at = labels.findIndex((label) => pattern.test(label))
 			expect(
-				tail.some((label) => pattern.test(label)),
-				`${pattern} is not in the last four: ${labels.join(' | ')}`,
-			).toBe(true)
+				at,
+				`${pattern} is absent: ${labels.join(' | ')}`,
+			).toBeGreaterThan(-1)
+			expect(
+				at,
+				`${pattern} sits among the work tabs: ${labels.join(' | ')}`,
+			).toBeGreaterThan(lastWork)
 		}
 	})
 

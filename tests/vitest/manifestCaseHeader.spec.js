@@ -54,7 +54,7 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 	it('leaves the menu and the page count alone', () => {
 		// The subtitle is one key on one page. A change that moves the page
 		// count or the menu has done something else as well.
-		expect(manifest.pages).toHaveLength(43)
+		expect(manifest.pages).toHaveLength(44)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
@@ -188,19 +188,36 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		).toEqual(lead)
 	})
 
-	it('puts the four conditional tabs last', () => {
-		const conditional = [
+	it('closes the strip with the collections that may be empty', () => {
+		// REQ-CDV-16 names four. `custom-objects-on-the-case` landed after it
+		// was written and added a fifth of the same kind, so the assertion is
+		// that the four keep their stated relative order and that every one of
+		// the five comes after every work tab.
+		const ids = tabs().map((tab) => tab.widgetId)
+		const named = [
 			'case-sub-cases',
 			'case-locaties',
 			'case-calendar',
 			'case-decidesk-decisions',
 		]
-		expect(
-			tabs()
-				.slice(-4)
-				.map((tab) => tab.widgetId)
-				.sort(),
-		).toEqual([...conditional].sort())
+		const positions = named.map((id) => ids.indexOf(id))
+		expect(positions.every((p) => p >= 0)).toBe(true)
+		expect([...positions].sort((a, b) => a - b)).toEqual(positions)
+
+		const work = [
+			'case-core',
+			'case-documents',
+			'case-roles',
+			'case-tasks',
+			'case-communication',
+		]
+		const lastWork = Math.max(...work.map((id) => ids.indexOf(id)))
+		for (const id of [...named, 'case-objects']) {
+			expect(
+				ids.indexOf(id),
+				`${id} must follow every work tab`,
+			).toBeGreaterThan(lastWork)
+		}
 	})
 
 	it('names a declared widget in every tab', () => {
