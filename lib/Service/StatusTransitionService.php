@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -80,6 +81,7 @@ class StatusTransitionService {
 	 * @param TransitionSpecReader $specReader Guard/action shape reader
 	 * @param IUserSession $userSession Current session
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -90,6 +92,7 @@ class StatusTransitionService {
 		private readonly TransitionSpecReader $specReader,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseResultWriter $resultWriter,
 	) {
 	}//end __construct()
 
@@ -170,15 +173,23 @@ class StatusTransitionService {
 	 * @param string $transitionId Transition id from the workflow the case runs on
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
+	 * @param string|null $resultTypeId ResultType chosen for a closing transition
 	 *
 	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
 	 *
 	 * @throws GuardFailedException When server-side re-evaluation fails any guard
-	 * @throws RuntimeException When case/transition/template are not found
+	 * @throws RuntimeException When case/transition/template are not found, or a
+	 *                          closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId = null): array {
+	public function execute(
+		string $caseId,
+		string $transitionId,
+		?string $comment,
+		?string $userId = null,
+		?string $resultTypeId = null,
+	): array {
 		$userId = $this->resolveUserId(explicit: $userId);
 		$case = $this->store->loadCase(caseId: $caseId);
 		if ($case === null) {
@@ -218,6 +229,21 @@ class StatusTransitionService {
 			currentId: $currentId,
 		);
 
+		// A closing transition carries its result, or it does not happen.
+		//
+		// REQ-STE-12: the question "what came of this case" is asked at the
+		// moment the case closes, not afterwards, and the answer is written in
+		// the SAME save as the status. Refusing here rather than after the
+		// status write is what keeps a closed case from ever existing without
+		// a result: the refusal happens before the mutation, so the case is
+		// untouched.
+		$caseAtSave = $this->applyClosingResult(
+			case: $caseAtSave,
+			caseId: $caseId,
+			toStatus: $toStatus,
+			resultTypeId: $resultTypeId,
+		);
+
 		// Status mutation BEFORE side-effects per REQ-STE-5-002.
 		// Include @self.version so the store can detect a concurrent modification.
 		$caseAtSave['status'] = $toStatus;
@@ -232,14 +258,62 @@ class StatusTransitionService {
 		// Alias for the remainder of the method.
 		$case = $savedCase;
 
+		[$record, $dispatched] = $this->recordAndDispatch(
+			case: $case,
+			transition: $transition,
+			caseId: $caseId,
+			currentId: $currentId,
+			comment: $comment,
+			userId: $userId,
+			evaluatedGuards: $eval,
+		);
+
+		return [
+			'status' => 'ok',
+			'statusRecord' => $record,
+			'dispatchedActions' => $dispatched,
+			'version' => $savedVersion,
+		];
+	}//end execute()
+
+	/**
+	 * Write the statusRecord for a transition and run its side effects.
+	 *
+	 * Both halves live here because the record's id is the correlation key the
+	 * dispatched actions are written back onto: splitting them would mean
+	 * passing that id back and forth for no gain.
+	 *
+	 * @param array<string, mixed> $case The SAVED case (side effects read the new status)
+	 * @param array<string, mixed> $transition The transition definition
+	 * @param string $caseId Case UUID
+	 * @param string $currentId The status the case moved out of
+	 * @param string|null $comment Free-form comment
+	 * @param string $userId The acting user UID
+	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<int, array<string, mixed>>}
+	 *         The statusRecord and the dispatched-action results
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordAndDispatch(
+		array $case,
+		array $transition,
+		string $caseId,
+		string $currentId,
+		?string $comment,
+		string $userId,
+		array $evaluatedGuards,
+	): array {
 		$label = (string)($transition['label'] ?? '');
+		$toStatus = (string)($transition['toStatus'] ?? '');
 		$record = $this->store->writeStatusRecord(
 			caseId: $caseId,
 			toStatus: $toStatus,
 			fromStatus: $currentId,
 			label: $label,
 			comment: $comment,
-			evaluatedGuards: $eval,
+			evaluatedGuards: $evaluatedGuards,
 			noWorkflowTemplate: false,
 		);
 
@@ -262,13 +336,51 @@ class StatusTransitionService {
 			statusRecordId: $statusRecordId,
 		);
 
-		return [
-			'status' => 'ok',
-			'statusRecord' => $record,
-			'dispatchedActions' => $dispatched,
-			'version' => $savedVersion,
-		];
-	}//end execute()
+		return [$record, $dispatched];
+	}//end recordAndDispatch()
+
+	/**
+	 * Write the result a closing transition records, onto the case payload.
+	 *
+	 * Returns the case unchanged when the target status is not final. When it
+	 * is, a result type is REQUIRED: a case that closes with no result answers
+	 * none of the questions an archivist, a citizen or a WOO request will ask
+	 * of it later.
+	 *
+	 * @param array<string, mixed> $case The case payload about to be saved
+	 * @param string $caseId Case UUID
+	 * @param string $toStatus The target statusType UUID
+	 * @param string|null $resultTypeId The chosen resultType UUID, or null
+	 *
+	 * @return array<string, mixed> The case payload, with `result` set when closing
+	 *
+	 * @throws RuntimeException When a closing transition carries no result type
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function applyClosingResult(
+		array $case,
+		string $caseId,
+		string $toStatus,
+		?string $resultTypeId,
+	): array {
+		if ($this->resultWriter->isFinalStatus(statusTypeId: $toStatus) === false) {
+			return $case;
+		}
+
+		$resultId = $this->resultWriter->resolveClosingResult(
+			caseId: $caseId,
+			caseTypeId: (string)($case['caseType'] ?? ''),
+			resultTypeId: $resultTypeId,
+		);
+		if ($resultId === null) {
+			return $case;
+		}
+
+		$case['result'] = $resultId;
+
+		return $case;
+	}//end applyClosingResult()
 
 	/**
 	 * Re-evaluate every server-side precondition for a transition.
