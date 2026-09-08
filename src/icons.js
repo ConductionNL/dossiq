@@ -139,6 +139,7 @@ import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
+import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
@@ -302,6 +303,7 @@ export default {
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
+	PhonePlusOutline,
 	PhoneReturn,
 	Plus,
 	ProgressClock,

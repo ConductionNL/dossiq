@@ -74,6 +74,7 @@ export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
 	'caseTask',
+	'contactmoment',
 	'consultation',
 	'objectionProceeding',
 	'case',
