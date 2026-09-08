@@ -3654,7 +3654,13 @@ OC.L10N.register(
         "When the status was last written by a probe or a save.": "Wanneer de status voor het laatst door een controle of een opslagactie is geschreven.",
         "Where the connection is configured. Empty when there is nothing to configure yet.": "Waar de koppeling wordt ingericht. Leeg zolang er nog niets in te richten valt.",
         "Where the connection sits in the list.": "Waar de koppeling in de lijst staat.",
-        "Connection": "Verbinding"
+        "Connection": "Verbinding",
+        "No cases for this contact yet": "Nog geen zaken voor dit contact",
+        "No contact moments yet": "Nog geen contactmomenten",
+        "Organisation": "Organisatie",
+        "Residence": "Woonplaats",
+        "Start time": "Starttijd",
+        "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both.": "De persoon of organisatie waar dit moment over gaat, als regel in de brpPerson- of kvkCompany-registerset. Dezelfde vorm en hetzelfde semantische type als case.requester, zodat één kiezer beide bedient."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -48,6 +48,7 @@ import Calendar from 'vue-material-design-icons/Calendar.vue'
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
 import CalendarTextOutline from 'vue-material-design-icons/CalendarTextOutline.vue'
 import CameraOutline from 'vue-material-design-icons/CameraOutline.vue'
+import CardAccountDetailsOutline from 'vue-material-design-icons/CardAccountDetailsOutline.vue'
 import Cash from 'vue-material-design-icons/Cash.vue'
 import CashMultiple from 'vue-material-design-icons/CashMultiple.vue'
 import CashRefund from 'vue-material-design-icons/CashRefund.vue'
@@ -108,6 +109,7 @@ import FlagOutline from 'vue-material-design-icons/FlagOutline.vue'
 import FolderAccountOutline from 'vue-material-design-icons/FolderAccountOutline.vue'
 import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
+import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
@@ -144,6 +146,7 @@ import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
+import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
 import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
@@ -221,6 +224,7 @@ export default {
 	CalendarTextOutline,
 	CameraOutline,
 	Cash,
+	CardAccountDetailsOutline,
 	CashMultiple,
 	CashRefund,
 	CashRegister,
@@ -280,6 +284,7 @@ export default {
 	FolderAccountOutline,
 	FolderCogOutline,
 	FolderOutline,
+	FolderPlusOutline,
 	FolderTextOutline,
 	FormatListBulletedType,
 	FormatListChecks,
@@ -316,6 +321,7 @@ export default {
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
+	PhoneLogOutline,
 	PhonePlusOutline,
 	PhoneReturn,
 	PlayCircleOutline,

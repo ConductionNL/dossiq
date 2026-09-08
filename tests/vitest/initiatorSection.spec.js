@@ -138,9 +138,19 @@ describe('InitiatorSection — the requester on the case', () => {
 		expect(wrapper.get('[data-testid="initiator-source-link"]').text()).toBe(
 			'999990627',
 		)
+		// The number links to the person's CONTACT PAGE, not to OpenRegister's
+		// raw object viewer. contacts-domain gives a person a page of their own
+		// with their cases on it; the old deep link showed every field of the
+		// register set, none of their cases, and left the app to do it.
 		expect(
 			wrapper.get('[data-testid="initiator-source-link"]').attributes('href'),
-		).toContain('/objects/dossiq/brpPerson/uuid-person-1')
+		).toContain('/apps/dossiq/contacts/uuid-person-1')
+		// And it opens in this tab: an in-app route is not somewhere else.
+		expect(
+			wrapper
+				.get('[data-testid="initiator-source-link"]')
+				.attributes('target'),
+		).toBeUndefined()
 		expect(wrapper.get('[data-testid="initiator-address"]').text()).toBe(
 			"Mandelaplein 2, 2572HT, 's-Gravenhage",
 		)
@@ -175,6 +185,32 @@ describe('InitiatorSection — the requester on the case', () => {
 		expect(wrapper.get('[data-testid="initiator-type"]').text()).toBe('Company')
 		expect(wrapper.get('[data-testid="initiator-address"]').text()).toBe(
 			'Hoofdstraat 1, 1234AB, Utrecht',
+		)
+		// A company goes to OrganisationDetail, not to ContactDetail. A detail
+		// page takes one schema, so the two contact pages are separate, and a
+		// company sent to /contacts/:id would render a person page over a
+		// kvkCompany row: every field empty, and nothing raised.
+		expect(
+			wrapper.get('[data-testid="initiator-source-link"]').attributes('href'),
+		).toContain('/apps/dossiq/organisations/uuid-company-1')
+	})
+
+	it('offers no contact link for a Nextcloud contact, which has no register row', async () => {
+		const wrapper = await mountCard({
+			caseObject: {
+				id: 'case-1',
+				initiatorType: 'contact',
+				initiatorSourceId: 'nc-contact-1',
+				initiatorDisplayName: 'Ada Lovelace',
+			},
+			rows: [],
+		})
+
+		expect(wrapper.find('[data-testid="initiator-source-link"]').exists()).toBe(
+			false,
+		)
+		expect(wrapper.get('[data-testid="initiator-source-id"]').text()).toBe(
+			'nc-contact-1',
 		)
 	})
 

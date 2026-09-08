@@ -3654,7 +3654,13 @@ OC.L10N.register(
         "When the status was last written by a probe or a save.": "When the status was last written by a probe or a save.",
         "Where the connection is configured. Empty when there is nothing to configure yet.": "Where the connection is configured. Empty when there is nothing to configure yet.",
         "Where the connection sits in the list.": "Where the connection sits in the list.",
-        "Connection": "Connection"
+        "Connection": "Connection",
+        "No cases for this contact yet": "No cases for this contact yet",
+        "No contact moments yet": "No contact moments yet",
+        "Organisation": "Organisation",
+        "Residence": "Residence",
+        "Start time": "Start time",
+        "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both.": "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both."
     },
     "nplurals=2; plural=(n != 1);"
 )
