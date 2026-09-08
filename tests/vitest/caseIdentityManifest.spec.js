@@ -32,8 +32,15 @@ const register = JSON.parse(
 )
 const caseSchema = register.components.schemas.case
 
+/** The CaseDetail page as the manifest declares it. @return {object} The page. */
+function caseDetail() {
+	return manifest.pages.find((page) => page.id === 'CaseDetail')
+}
+
 /** Every sidebar tab of the CaseDetail page. @return {Array} The tabs. */
-const sidebarTabs = () => caseDetail().config.sidebar.tabs
+function sidebarTabs() {
+	return caseDetail().config.sidebar.tabs
+}
 
 /**
  * Whether an icon name is registered, and so will actually render.
@@ -41,12 +48,13 @@ const sidebarTabs = () => caseDetail().config.sidebar.tabs
  * @param {string} name The PascalCase icon name.
  * @return {boolean} True when both the import and the export are present.
  */
-const iconIsRegistered = (name) =>
-	iconsSource.includes(`import ${name} from 'vue-material-design-icons/${name}.vue'`)
-	&& new RegExp(`^\\t${name},$`, 'm').test(iconsSource)
-
-/** The CaseDetail page as the manifest declares it. @return {object} The page. */
-const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
+function iconIsRegistered(name) {
+	return (
+		iconsSource.includes(
+			`import ${name} from 'vue-material-design-icons/${name}.vue'`,
+		) && new RegExp(`^\\t${name},$`, 'm').test(iconsSource)
+	)
+}
 
 /**
  * One widget of the CaseDetail page.
@@ -54,8 +62,9 @@ const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
  * @param {string} id The widget id.
  * @return {object|undefined} The widget entry.
  */
-const widget = (id) =>
-	caseDetail().config.widgets.find((entry) => entry.id === id)
+function widget(id) {
+	return caseDetail().config.widgets.find((entry) => entry.id === id)
+}
 
 describe('CaseDetail: the case number', () => {
 	it('shows the number and refuses to let anyone type it', () => {
@@ -173,7 +182,13 @@ describe('CaseDetail: terms and archive', () => {
 describe('the English demo seed', () => {
 	const seed = JSON.parse(
 		fs.readFileSync(
-			path.join(ROOT, 'lib', 'Settings', 'register.d', '46-demo-cases-english.json'),
+			path.join(
+				ROOT,
+				'lib',
+				'Settings',
+				'register.d',
+				'46-demo-cases-english.json',
+			),
 			'utf8',
 		),
 	)
@@ -196,7 +211,9 @@ describe('the English demo seed', () => {
 	})
 
 	it('leaves exactly two cases carrying wijk-noord, so filtering means something', () => {
-		const tagged = demoCases.filter((demo) => (demo.tags ?? []).includes('wijk-noord'))
+		const tagged = demoCases.filter((demo) =>
+			(demo.tags ?? []).includes('wijk-noord'),
+		)
 		expect(tagged).toHaveLength(2)
 		expect(demoCases.filter((demo) => !demo.tags).length).toBeGreaterThan(2)
 	})
@@ -215,6 +232,8 @@ describe('the English demo seed', () => {
 	it('leaves an archive action date empty on a case that shows the block', () => {
 		const withNomination = demoCases.filter((demo) => demo.archiveNomination)
 		expect(withNomination.length).toBeGreaterThan(0)
-		expect(withNomination.some((demo) => demo.archiveActionDate === undefined)).toBe(true)
+		expect(
+			withNomination.some((demo) => demo.archiveActionDate === undefined),
+		).toBe(true)
 	})
 })

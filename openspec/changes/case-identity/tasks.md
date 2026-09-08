@@ -146,5 +146,18 @@ criteria under a task are plain bullets.
     read tells them apart.
   - The filter scenario narrows on a run-scoped tag and seeds three untagged
     cases of the same type, so a filter that does nothing cannot pass it.
-- [ ] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
+- [x] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
+  - Exit codes, every one read from `$?`: `npm run lint` 0, `npx vitest run` 0
+    (56 files, 550 tests), `npm run check:manifest` 0,
+    `node tests/l10n/check-l10n.js` 0, `npm run check:schema-l10n` 0,
+    `npm run format` 0, `composer lint` 0, `phpcs` 0, `psalm` 0, `phpstan` 0,
+    `phpunit` 0 (3126 tests, 18218 assertions, 56 skipped).
+  - `phpmd` was swept PER DIRECTORY under `lib/`, both rule sets, rather than
+    over all of `lib` at once: the whole-tree run is OOM-killed on this box
+    and an OOM kill reads as a pass. Every directory exited 0.
+  - Hydra gates with `HYDRA_GATE_BASE_REF=origin/development`: exit 0,
+    COVERAGE 82 of 90 declared gates reported a result, 82 of 82 applicable
+    ran. The one advisory gate (gate-53, 7 WARN) is entirely pre-existing:
+    the humaniq cross-app register and six menu-layout removals.
+  - Playwright was NOT run.
