@@ -19,6 +19,8 @@ import {
 	refusalMessage,
 	rowId,
 	toStages,
+	transitionBlockReason,
+	transitionIsBlocked,
 } from '../../src/utils/caseLifecycleHelpers.js'
 
 describe('rowId', () => {
@@ -322,5 +324,63 @@ describe('refusalMessage', () => {
 		expect(refusalMessage({ code: 'reason_required' }, null)).toBe(
 			'Give a reason first.',
 		)
+	})
+})
+
+describe('transitionIsBlocked / transitionBlockReason', () => {
+	const held = {
+		id: 't1',
+		label: 'Start behandeling',
+		guardsPassed: false,
+		failedGuards: [
+			{
+				type: 'statusChecklist',
+				failureMessage:
+					'Checklist item not done: Check the objection is on time',
+			},
+			{ type: 'requiredDocument', failureMessage: 'Besluit ontbreekt' },
+		],
+	}
+
+	it('names the first failed guard on a held-back transition', () => {
+		expect(transitionIsBlocked(held)).toBe(true)
+		expect(transitionBlockReason(held)).toBe(
+			'Checklist item not done: Check the objection is on time',
+		)
+	})
+
+	it('says nothing about a transition whose guards passed', () => {
+		const free = { id: 't1', guardsPassed: true, failedGuards: [] }
+		expect(transitionIsBlocked(free)).toBe(false)
+		expect(transitionBlockReason(free)).toBe('')
+	})
+
+	it('leaves an answer that predates guardsPassed alone', () => {
+		// The field is only read when it is explicitly false: an older engine
+		// answer, or a bare transition, must not disable every button.
+		expect(transitionIsBlocked({ id: 't1' })).toBe(false)
+		expect(transitionBlockReason({ id: 't1' })).toBe('')
+	})
+
+	it('blocks on a guard that failed without a sentence of its own', () => {
+		// A button that stayed enabled because nobody wrote a message would
+		// send the handler into a refusal instead of warning them first.
+		const nameless = { id: 't1', guardsPassed: false, failedGuards: [{}] }
+		expect(transitionIsBlocked(nameless)).toBe(true)
+		expect(transitionBlockReason(nameless)).toBe('')
+	})
+
+	it('falls back to the guard type when it carries no message', () => {
+		const typed = {
+			id: 't1',
+			guardsPassed: false,
+			failedGuards: [{ type: 'statusChecklist' }],
+		}
+		expect(transitionBlockReason(typed)).toBe('statusChecklist')
+	})
+
+	it('survives a transition that is not an object', () => {
+		expect(transitionIsBlocked(null)).toBe(false)
+		expect(transitionBlockReason(null)).toBe('')
 	})
 })

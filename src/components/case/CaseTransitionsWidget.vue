@@ -45,14 +45,25 @@
 			</div>
 
 			<div class="case-transitions__buttons">
-				<NcButton
+				<div
 					v-for="transition in transitions"
 					:key="transition.id"
-					:data-testid="`case-transition-${transition.id}`"
-					variant="primary"
-					@click="openConfirm(transition)">
-					{{ transition.label }}
-				</NcButton>
+					class="case-transitions__offer">
+					<NcButton
+						:data-testid="`case-transition-${transition.id}`"
+						:disabled="blocked(transition)"
+						:title="reasonFor(transition)"
+						variant="primary"
+						@click="openConfirm(transition)">
+						{{ transition.label }}
+					</NcButton>
+					<span
+						v-if="reasonFor(transition)"
+						class="case-transitions__reason"
+						:data-testid="`case-transition-reason-${transition.id}`">
+						{{ reasonFor(transition) }}
+					</span>
+				</div>
 
 				<NcButton
 					v-if="lifecycleActions.includes('resume')"
@@ -95,6 +106,8 @@ import {
 	isClosingTransition,
 	offeredLifecycleActions,
 	rowId,
+	transitionBlockReason,
+	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -167,6 +180,32 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Whether a guard is holding this transition.
+		 *
+		 * The engine offers a held-back transition rather than hiding it, so
+		 * the handler learns what the case still needs instead of wondering
+		 * where the button went.
+		 *
+		 * @param {object} transition One offered transition.
+		 * @return {boolean} True when it cannot be taken yet.
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
+		blocked(transition) {
+			return transitionIsBlocked(transition)
+		},
+
+		/**
+		 * The reason a transition cannot be taken yet.
+		 *
+		 * @param {object} transition One offered transition.
+		 * @return {string} The reason, or the empty string.
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
+		reasonFor(transition) {
+			return transitionBlockReason(transition)
+		},
 
 		/**
 		 * Load the transitions this user may take, the case's lifecycle state,
@@ -324,6 +363,17 @@ export default {
 </script>
 
 <style scoped>
+.case-transitions__offer {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.case-transitions__reason {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.85em;
+}
+
 .case-transitions {
 	display: flex;
 	flex-direction: column;

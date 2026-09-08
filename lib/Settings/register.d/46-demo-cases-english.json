@@ -24,8 +24,8 @@
 				"internalOrExternal": "extern",
 				"initialStatus": "bp-received"
 			},
-			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-received" }, "name": "Received", "description": "Case received and registered.", "caseType": "building-permit-type", "order": 1, "isFinal": false },
-			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-inprogress" }, "name": "In progress", "description": "Case is being processed.", "caseType": "building-permit-type", "order": 2, "isFinal": false },
+			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-received" }, "name": "Received", "description": "Case received and registered.", "caseType": "building-permit-type", "order": 1, "isFinal": false, "checklist": [{ "title": "Check the objection is on time", "required": true }, { "title": "Confirm receipt to the objector", "required": false }] },
+			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-inprogress" }, "name": "In progress", "description": "Case is being processed.", "caseType": "building-permit-type", "order": 2, "isFinal": false, "checklist": [{ "title": "Assemble the case file", "required": true }] },
 			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-decision" }, "name": "Decision", "description": "Decision being prepared.", "caseType": "building-permit-type", "order": 3, "isFinal": false },
 			{ "@self": { "register": "dossiq", "schema": "statusType", "slug": "bp-completed" }, "name": "Completed", "description": "Case completed and archived.", "caseType": "building-permit-type", "order": 4, "isFinal": true },
 
