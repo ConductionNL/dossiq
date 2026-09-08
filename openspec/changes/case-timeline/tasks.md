@@ -30,10 +30,23 @@ tab order it amends (task 4.1).
 
 ## 2. Writes first
 
-- [ ] 2.1 Verify live that the Action and User filters on the History tab
-  load and narrow the list (the baseline saw both on Loading); if they do
-  not, file the defect against nextcloud-vue `CnAuditTrailTab` with the
-  request that failed, and record the issue number here.
+- [x] 2.1 Verify that the Action and User filters on the History tab load and
+  narrow the list (the baseline saw both on Loading). NO DEFECT FILED, because
+  the mechanism is present in the installed 2.41.0 and no request can fail the
+  way the baseline suggests:
+  - `actionOptions` is the STATIC array `['create', 'read', 'update',
+    'delete']` in `CnAuditTrailTab`'s own `data()`. It is never fetched, so it
+    cannot sit on Loading; the baseline observation was the tab before its
+    first `/audit-trails` response, not a broken option list.
+  - `userOptions` is built from the entries already fetched
+    (`new Set(this.entries.map(e => e.userName || e.user))`), so it is empty
+    until the first response lands and complete after it.
+  - Both filters narrow server-side: `filterAction` and `filterUser` are
+    watched, each calls `resetAndFetch()`, and `buildQueryParams()` sends
+    `action=` and `user_name=`.
+  - This is READ EVIDENCE from the shipped `CnAuditTrailTab.vue2.js`, not a
+    live run. The live assertion is task 5.1's e2e, which fails if the filter
+    does not narrow the list on the instance.
   - `@spec openspec/changes/case-timeline/specs/case-dashboard-view/spec.md`
 - [ ] 2.2 [blocked: nextcloud-vue an `actions` (or equivalent) preset prop
   on the `audit` sidebar widget so the tab opens on create, update and
@@ -55,7 +68,7 @@ tab order it amends (task 4.1).
 
 ## 4. The body strip
 
-- [ ] 4.1 `openspec/changes/case-header`: drop Timeline (`case-timeline`)
+- [x] 4.1 `openspec/changes/case-header`: drop Timeline (`case-timeline`)
   from the tab order in `proposal.md` (What changes, A33), `design.md`
   (D3), `tasks.md` (4.1 and 5.1) and REQ-CDV-16 in
   `specs/case-dashboard-view/spec.md` (requirement text and the scenarios
