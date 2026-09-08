@@ -720,7 +720,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.14.0",
+                "version": "1.15.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1360,6 +1360,15 @@
                         "readOnly": true,
                         "description": "Auto-generated case identifier (e.g. 2026-0042). Filled declaratively by OpenRegister (x-openregister-calculations.identifier).",
                         "title": "Identifier"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Free words that group this case across case types (e.g. spoed, wijk-noord)",
+                        "title": "Tags",
+                        "facetable": true
                     },
                     "caseType": {
                         "type": "string",

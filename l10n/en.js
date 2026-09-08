@@ -3585,7 +3585,9 @@ OC.L10N.register(
         "No open tasks on this case": "No open tasks on this case",
         "Other open tasks": "Other open tasks",
         "No due date": "No due date",
-        "Task {title} finished": "Task {title} finished"
+        "Task {title} finished": "Task {title} finished",
+        "Tags": "Tags",
+        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Free words that group this case across case types (e.g. spoed, wijk-noord)"
     },
     "nplurals=2; plural=(n != 1);"
 )

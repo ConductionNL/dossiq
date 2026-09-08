@@ -95,4 +95,41 @@ class CaseIdentitySchemaTest extends TestCase {
 			'the number is the start year, a hyphen and a four-digit yearly sequence'
 		);
 	}//end testIdentifierIsAGeneratedYearlySequence()
+
+	/**
+	 * Tags are free words, and the index can filter on them.
+	 *
+	 * `facetable: true` is the load-bearing half. `filtersFromSchema` builds the
+	 * index sidebar from exactly that key, so without it the property exists,
+	 * the sidebar tab renders, and the Cases index offers no Tags filter at all
+	 * — a half-feature that looks finished from the case page.
+	 *
+	 * @return void
+	 */
+	public function testTagsAreFreeWordsTheIndexCanFilterOn(): void {
+		$tags = $this->caseSchema['properties']['tags'];
+
+		$this->assertSame('array', $tags['type']);
+		$this->assertSame('string', $tags['items']['type']);
+		$this->assertTrue($tags['facetable'], 'the Cases index filter is built from facetable');
+	}//end testTagsAreFreeWordsTheIndexCanFilterOn()
+
+	/**
+	 * The schema version moves whenever the schema does.
+	 *
+	 * OpenRegister fast-skips a schema whose version has not changed, so a new
+	 * property on an unchanged version lands on a fresh install and on nothing
+	 * else. The assertion is deliberately "past 1.14.0", the version this
+	 * change found: pinning the exact number would turn every later edit into a
+	 * failing test that says nothing about correctness.
+	 *
+	 * @return void
+	 */
+	public function testTheSchemaVersionMovedWithTheSchema(): void {
+		$this->assertGreaterThan(
+			0,
+			version_compare($this->caseSchema['version'], '1.14.0'),
+			'a new property on an unbumped version never reaches an existing install'
+		);
+	}//end testTheSchemaVersionMovedWithTheSchema()
 }//end class

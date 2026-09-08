@@ -44,8 +44,16 @@ criteria under a task are plain bullets.
 
 ## 2. Tags
 
-- [ ] 2.1 `lib/Settings/dossiq_register.json`, schema `case`: property `tags`
+- [x] 2.1 `lib/Settings/dossiq_register.json`, schema `case`: property `tags`
   (array of strings, facet) per design D2.
+  - The facet key is `facetable: true`, not the design's
+    `x-openregister-facet: true`. `filtersFromSchema` reads `facetable` and
+    nothing else, and every other faceted property on this schema already
+    spells it that way; the design's spelling would have declared a facet no
+    sidebar reads.
+  - `case` goes 1.14.0 → 1.15.0. OpenRegister fast-skips a schema whose
+    version has not moved, so on an install that already holds `case` the new
+    property would never land.
 - [ ] 2.2 `src/manifest.json` page `CaseDetail`: sidebar tab `tags` with a
   `data` widget over `tags` using the tags form widget; page `Cases`: a Tags
   filter in the sidebar.

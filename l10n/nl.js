@@ -3585,7 +3585,9 @@ OC.L10N.register(
         "No open tasks on this case": "Geen open taken op deze zaak",
         "Other open tasks": "Andere open taken",
         "No due date": "Geen einddatum",
-        "Task {title} finished": "Taak {title} afgerond"
+        "Task {title} finished": "Taak {title} afgerond",
+        "Tags": "Labels",
+        "Free words that group this case across case types (e.g. spoed, wijk-noord)": "Vrije woorden die deze zaak over zaaktypen heen groeperen (bijvoorbeeld spoed, wijk-noord)"
     },
     "nplurals=2; plural=(n != 1);"
 )
