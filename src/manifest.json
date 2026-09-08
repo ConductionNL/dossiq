@@ -1796,7 +1796,7 @@
 						"gridY": 13,
 						"gridWidth": 4,
 						"gridHeight": 5,
-						"showTitle": true
+						"showTitle": false
 					}
 				],
 				"sidebar": {

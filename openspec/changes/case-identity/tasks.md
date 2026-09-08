@@ -132,9 +132,19 @@ criteria under a task are plain bullets.
     these seeded rows already occupy numbers in the hundreds, so a generated
     number can eventually collide with a seeded one. The dossiq backfill of
     1.3 cannot collide (it is max + 1); the register's own sequence can.
-- [ ] 4.2 Add `tests/e2e/case-identity.spec.ts` covering every scenario of
+- [x] 4.2 Add `tests/e2e/case-identity.spec.ts` covering every scenario of
   the delta spec that names it (a number on a new case from the form and
   from the API, a kept number on an existing case, tags on the sidebar and
   as a filter, the Terms and archive block).
+  - Seven tests, one per scenario. No literal number is asserted anywhere:
+    the register's `sequence` is a counter nobody in a test chooses, so the
+    form scenario asserts the new number is higher than every number of that
+    year the list already held, and the API scenario asserts the shape and
+    the year.
+  - `statutoryTerm` is asserted over the API before it is asserted on screen.
+    A blank cell could be the widget or an empty register, and only the API
+    read tells them apart.
+  - The filter scenario narrows on a run-scoped tag and seeds three untagged
+    cases of the same type, so a filter that does nothing cannot pass it.
 - [ ] 4.3 Run `composer check:strict`, `npm run check:manifest`, the hydra
   gates and the unit suite locally; read the exit codes, not the summaries.
