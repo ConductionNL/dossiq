@@ -156,7 +156,13 @@ export default defineConfig({
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where three workers seeding and tearing down at once is both
 	// slower and ruder than one.
-	workers: process.env.CI ? 3 : 1,
+	//
+	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
+	// code change. That idea is from the parallel four-worker experiment on
+	// `exp/e2e-four-workers`; it is worth keeping whatever that run concludes,
+	// because the next person to question this number should not have to edit a
+	// config to answer it.
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 3 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
