@@ -180,10 +180,26 @@ implementation task; the criteria under a task are plain bullets.
 
 ## 5. Export, import, duplicate, publish
 
-- [ ] 5.1 `lib/Controller/CaseDefinitionController.php`: method `publish`
+- [x] 5.1 `lib/Controller/CaseDefinitionController.php`: method `publish`
   per design D5, routed in `appinfo/routes.php` with `#[NoAdminRequired]`
   and an admin guard in the body; unit test in
   `tests/Unit/Controller/CaseDefinitionControllerTest.php`.
+  - It went on a NEW `CaseTypeController` instead. Adding it to
+    `CaseDefinitionController` took that class to fourteen collaborators and
+    a ten-parameter constructor, which phpmd refuses (CouplingBetweenObjects,
+    ExcessiveParameterList). The split is also the honest one: that
+    controller owns the portable ZIP package, and these are keyed on a case
+    type. Tests are `tests/Unit/Controller/CaseTypeControllerTest.php` and
+    `tests/Unit/Service/CaseTypePublishServiceTest.php`.
+  - `validate` could NOT be reused: `CaseDefinitionController::validate()`
+    validates an uploaded PACKAGE, not a case type, and
+    `ZgwZtcRulesService::validatePublish()` reads the type's OWN statuses, so
+    a child that inherits its lifecycle would be refused with "give it a
+    status" while its page showed four. `CaseTypePublishService` validates
+    through the resolver instead.
+  - Three routes, not one: `GET /publish/validate` answers the findings
+    without publishing, because a person about to be refused should be told
+    before being made to write the change note.
   - `@spec openspec/specs/zaaktype-versioning/spec.md`
 - [ ] 5.2 `src/manifest.json` page `CaseTypeDetail`: the four header
   actions and the widget `case-type-versions` per design D5.
