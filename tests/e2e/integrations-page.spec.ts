@@ -122,9 +122,20 @@ test.describe('Integrations', () => {
 		const link = page.locator('a[href="/settings/admin/dossiq#section-stuf"]')
 		await expect(link).toBeVisible({ timeout: 30_000 })
 
-		await link.click()
-		await expect(page).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
-		await expect(page.locator('#section-stuf')).toBeVisible({ timeout: 30_000 })
+		// The cell renderer sets `target="_blank"`, so the settings page opens
+		// in a NEW TAB and this one never navigates. Asserting on `page` after
+		// the click therefore waits out the whole budget while the link works
+		// perfectly. Take the popup instead, which is also what the reader
+		// gets: the list they were reading stays where it was.
+		const [settings] = await Promise.all([
+			page.waitForEvent('popup'),
+			link.click(),
+		])
+		await expect(settings).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
+		await expect(settings.locator('#section-stuf')).toBeVisible({
+			timeout: 30_000,
+		})
+		await settings.close()
 	})
 
 	test('offers no settings link where the connection is not built', async ({
@@ -134,7 +145,11 @@ test.describe('Integrations', () => {
 		for (const key of UNAVAILABLE_KEYS) {
 			expect(byKey[key].status).toBe('unavailable')
 			expect(byKey[key].statusMessage).toBe('Specified, not built yet')
-			expect(byKey[key].settingsUrl).toBe('')
+			// The seed writes `""` and the register does not store an empty
+			// string, so the row reads back with no such key at all. Both
+			// spellings say the same thing, and the assertion that matters is
+			// the one below: the affordance is absent from the page.
+			expect(byKey[key].settingsUrl || '').toBe('')
 		}
 
 		await openIntegrations(page)

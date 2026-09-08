@@ -157,18 +157,31 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
-			const base = window.OC?.currentUser?.permissions ?? []
-			// CnAppNav's permission filter is an array-includes check; Nextcloud
-			// does not put the boolean admin flag into the permissions array, so
-			// we inject it here for manifest entries gated on permission: "admin"
-			// (the platform-admin tenant management pages). isUserAdmin() returns
-			// true for users in the Nextcloud admin group, matching the backend
-			// TenantService::isPlatformAdmin() check.
+			// CnAppNav's permission filter is an array-includes check, and it
+			// treats an EMPTY array as "the app did not say", so every item
+			// renders regardless of what it declares:
+			//
+			//     if (!item.permission) return true
+			//     if (!this.permissions || this.permissions.length === 0) return true
+			//     return this.permissions.includes(item.permission)
+			//
+			// This used to answer `[]` for anyone who is not an admin, because
+			// its only other source was `OC.currentUser.permissions` and
+			// `OC.currentUser` is the uid STRING, so that read has always been
+			// undefined. An ordinary handler therefore saw every entry gated on
+			// `permission: "admin"`, including Integrations and the tenant
+			// management pages. It looked right to whoever checked, because an
+			// admin gets `['admin']`, which is non-empty and filters correctly.
+			//
+			// So the list is never empty. `user` is what everyone holds and no
+			// manifest entry asks for; `admin` is the only value any entry
+			// declares, and it is added for the admin group, matching the
+			// backend `TenantService::isPlatformAdmin()` check.
 			const isAdmin =
 				typeof window.OC?.isUserAdmin === 'function'
 					? window.OC.isUserAdmin()
 					: false
-			return isAdmin ? [...base, 'admin'] : base
+			return isAdmin ? ['user', 'admin'] : ['user']
 		},
 	},
 
