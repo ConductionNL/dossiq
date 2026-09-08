@@ -280,6 +280,16 @@ implementation task; the criteria under a task are plain bullets.
       write dossiq owns: a case type is saved straight to OpenRegister's
       object API by the page, so "refused on save" can be met nowhere else.
     - gate-16 spec-coverage: 34 changed frontend methods with no `@spec`.
+  - 🔴 AND ONE THE LOCAL RUN COULD NOT SEE. All six CI PHPUnit cells were
+    red while `./vendor/bin/phpunit` exited 0 here. The summary said "OK, but
+    there were issues! Tests: 3262 ... Risky: 8" and the process exited 1:
+    `phpunit.xml` sets `beStrictAboutCoverageMetadata` and `failOnRisky`, and
+    the eight tests whose collaborators moved to `CaseTypeResolver` and
+    `CaseTypeStore` executed two classes their coverage metadata did not
+    list. The check only fires WITH a coverage driver, and this machine has
+    none, so the local run could not reproduce it whatever it was told to do.
+    Read the exit code, not the summary line: "OK" was printed on a run that
+    failed. Fixed by listing both classes on the four test files.
   - `ManifestColumnBindingTest` caught a fifth: the Versions list bound its
     Updated column to `updated`, which `workflowTemplate` does not declare --
     a column that renders a dash in every row and says nothing. It is
