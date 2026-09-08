@@ -135,7 +135,15 @@ describe('the case mirrors the hidden flag so the list can filter on it', () => 
 	})
 
 	it('moves the case schema version too', () => {
-		expect(schema('case').version).toBe('1.18.0')
+		// AT LEAST, not exactly. OpenRegister fast-skips a schema whose version
+		// did not move, so what this guards is that the version went UP when
+		// `statusHiddenInLists` landed. Pinning the literal made it fail on the
+		// next change that legitimately bumps the same schema, which turns a
+		// real guard into a merge conflict nobody learns anything from.
+		const [major, minor] = schema('case')
+			.version.split('.')
+			.map((part) => Number(part))
+		expect(major > 1 || (major === 1 && minor >= 18)).toBe(true)
 	})
 })
 
