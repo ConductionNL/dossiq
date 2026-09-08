@@ -75,6 +75,10 @@ export const FIXTURE_SCHEMAS = [
 	'caseProperty',
 	'caseTask',
 	'contactmoment',
+	// The things a case is about. Before `case` for the same reason every
+	// other child is: `case` is on a CASCADE, so a case removed first takes
+	// its objects with it and the sweep then reports rows it cannot find.
+	'caseObject',
 	// The dossier, child-first: the join names both the case and the document,
 	// and the document names its type.
 	'zaakinformatieobject',

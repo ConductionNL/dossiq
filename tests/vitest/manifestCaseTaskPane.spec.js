@@ -35,13 +35,17 @@ const registrySource = () => fs.readFileSync(REGISTRY_PATH, 'utf8')
 const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 
 /**
- * The page count on `origin/development`, before this change. The pane adds
- * no page and retypes none, so a difference here means the ADR-100 ratchet
- * moved and the change did something it said it would not.
+ * Pages of `type: "custom"` on `origin/development`, before this change. The
+ * pane adds no page and retypes none, so a difference here means the ADR-100
+ * ratchet moved and the change did something it said it would not.
+ *
+ * The TOTAL page count used to be pinned here too, at 43. It is not any more:
+ * a full-tree count is moved by every later change that adds a page for its
+ * own reasons (`CaseObjects` was the first), which turns this guard into a
+ * tripwire for unrelated work while saying nothing about the task pane. The
+ * ratchet ADR-100 actually sets is on CUSTOM pages, and that stays exact; the
+ * assertion below states the rest of the intent directly instead.
  */
-const PAGE_COUNT_BEFORE = 43
-
-/** Pages of `type: "custom"` before this change. */
 const CUSTOM_PAGE_COUNT_BEFORE = 10
 
 /**
@@ -148,10 +152,22 @@ describe('the case-tasks widget after the retype', () => {
 
 	it('adds no page and retypes none', () => {
 		const pages = manifest().pages
-		expect(pages).toHaveLength(PAGE_COUNT_BEFORE)
 		expect(pages.filter((entry) => entry.type === 'custom')).toHaveLength(
 			CUSTOM_PAGE_COUNT_BEFORE,
 		)
+		// The pane is a WIDGET on the case page. The retype it could have been
+		// given instead is a page of its own, which is the thing this asserts:
+		// no page renders the case's tasks, and the two pages over `caseTask`
+		// are the index and the task detail that existed before.
+		expect(pages.some((entry) => entry.id === 'CaseTasks')).toBe(false)
+		expect(
+			pages
+				.filter(
+					(entry) => entry.config && entry.config.schema === 'caseTask',
+				)
+				.map((entry) => entry.id)
+				.sort(),
+		).toEqual(['TaskDetail', 'Tasks'])
 	})
 
 	it('names an icon src/icons.js registers', () => {

@@ -3630,7 +3630,17 @@
         "Payment indication": "Payment indication",
         "Last payment date": "Last payment date",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "The statutory article this case is handled under (e.g. Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.",
+        "Objects": "Objects",
+        "Link object": "Link object",
+        "Object type": "Object type",
+        "Identification": "Identification",
+        "No objects linked to this case yet": "No objects linked to this case yet",
+        "Object linked to this case.": "Object linked to this case.",
+        "All objects": "All objects",
+        "What has to be done. This is the title of the task that is created.": "What has to be done. This is the title of the task that is created.",
+        "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.": "What this status asks for. Every item becomes a task on the case the moment the case enters this status, created once per status however often the case comes back. An item marked required holds the case in this status until its task is completed, and the transition button says which item is still open.",
+        "Whether the case may leave this status before this item's task is completed.": "Whether the case may leave this status before this item's task is completed."
     },
     "plurals": ""
 }

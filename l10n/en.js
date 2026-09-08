@@ -3631,7 +3631,14 @@ OC.L10N.register(
         "Payment indication": "Payment indication",
         "Last payment date": "Last payment date",
         "The statutory article this case is handled under (e.g. Awb 4:13)": "The statutory article this case is handled under (e.g. Awb 4:13)",
-        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm."
+        "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.": "The processing deadline of this case's type, as an ISO 8601 duration. Copied from caseType.processingDeadline by x-openregister-calculations.statutoryTerm.",
+        "Objects": "Objects",
+        "Link object": "Link object",
+        "Object type": "Object type",
+        "Identification": "Identification",
+        "No objects linked to this case yet": "No objects linked to this case yet",
+        "Object linked to this case.": "Object linked to this case.",
+        "All objects": "All objects"
     },
     "nplurals=2; plural=(n != 1);"
 )

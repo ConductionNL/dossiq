@@ -263,12 +263,23 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 			expect(labels[index], `tabs: ${labels.join(' | ')}`).toMatch(pattern)
 		}
 
-		const tail = labels.slice(-CONDITIONAL_TABS.length)
+		// The conditional tabs close the strip. Asserted as "after every work
+		// tab" rather than "the last four", because `custom-objects-on-the-case`
+		// added an Objects tab of the same kind after REQ-CDV-16 was written,
+		// and a slice of a fixed length would fail on a correct strip.
+		const lastWork = Math.max(
+			...WORK_TABS.map((pattern) => labels.findIndex((l) => pattern.test(l))),
+		)
 		for (const pattern of CONDITIONAL_TABS) {
+			const at = labels.findIndex((label) => pattern.test(label))
 			expect(
-				tail.some((label) => pattern.test(label)),
-				`${pattern} is not in the last four: ${labels.join(' | ')}`,
-			).toBe(true)
+				at,
+				`${pattern} is absent: ${labels.join(' | ')}`,
+			).toBeGreaterThan(-1)
+			expect(
+				at,
+				`${pattern} sits among the work tabs: ${labels.join(' | ')}`,
+			).toBeGreaterThan(lastWork)
 		}
 	})
 
