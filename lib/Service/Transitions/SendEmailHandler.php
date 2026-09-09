@@ -3,9 +3,15 @@
 /**
  * Dossiq sendEmail action handler.
  *
- * Action config shape: `{type: 'sendEmail', to: '<address-or-userId>', template?: '<id>', subject?, body?}`.
- * Delegates to NotificatieService::sendEmail (where available). Failures are
- * logged with full context but returned as static error messages.
+ * Action config shape: `{type: 'sendEmail', to: '<address>', template?: '<id>', subject?, body?}`.
+ * Delegates to CaseEmailService, which is the app's only outbound mail path:
+ * it owns the IMailer message, the from-address, the recipient policy and the
+ * record of the sent mail on the case.
+ *
+ * REQ-STE-5-002 says a failed side effect never rolls back the status change.
+ * It does not say a failed side effect reports success. A send that did not
+ * happen returns `succeeded: false`, and SideEffectDispatcher records that row
+ * without touching the transition.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Transitions
@@ -26,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\NotificatieService;
+use OCA\Dossiq\Service\CaseEmailService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -38,11 +44,11 @@ class SendEmailHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param NotificatieService $notificationService Notification dispatcher
+	 * @param CaseEmailService $emailService Case-scoped outbound mail
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly NotificatieService $notificationService,
+		private readonly CaseEmailService $emailService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -59,35 +65,49 @@ class SendEmailHandler implements ActionHandlerInterface {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		$recipient = (string)($actionConfig['to'] ?? '');
+		if ($recipient === '') {
+			return new ActionResult(succeeded: false, error: 'send_email_missing_recipient');
+		}
+
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+		if ($caseId === '') {
+			// CaseEmailService needs the case to resolve the from-address, the
+			// template variables and the recipient policy. Without an id there
+			// is nothing to send from.
+			return new ActionResult(succeeded: false, error: 'send_email_missing_case');
+		}
+
+		$template = (string)($actionConfig['template'] ?? '');
+
 		try {
-			$recipient = (string)($actionConfig['to'] ?? '');
-			if ($recipient === '') {
-				return new ActionResult(succeeded: false, error: 'send_email_missing_recipient');
+			if ($template !== '') {
+				$this->emailService->sendFromTemplate(
+					caseId: $caseId,
+					templateId: $template,
+					to: $recipient,
+				);
+
+				return new ActionResult(
+					succeeded: true,
+					data: ['to' => $recipient, 'template' => $template],
+				);
 			}
 
-			$payload = [
-				'caseId' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
-				'subject' => (string)($actionConfig['subject'] ?? ($transitionContext['transitionLabel'] ?? '')),
-				'body' => (string)($actionConfig['body'] ?? ''),
-				'template' => (string)($actionConfig['template'] ?? ''),
-				'transition' => $transitionContext,
-			];
+			$this->emailService->sendEmail(
+				caseId: $caseId,
+				to: $recipient,
+				subject: (string)($actionConfig['subject'] ?? ($transitionContext['transitionLabel'] ?? '')),
+				body: (string)($actionConfig['body'] ?? ''),
+			);
 
-			if (method_exists($this->notificationService, 'sendEmail') === true) {
-				$this->notificationService->sendEmail($recipient, $payload);
-				return new ActionResult(succeeded: true, data: ['to' => $recipient]);
-			}
-
-			// No mail delivery available — record as success since notification
-			// dispatch is best-effort per spec REQ-STE-5-002 (failures do not
-			// block transitions). Log a warning so the gap is visible.
-			$this->logger->warning('SendEmailHandler: NotificatieService::sendEmail missing — skipping');
-			return new ActionResult(succeeded: true, data: ['to' => $recipient, 'skipped' => true]);
+			return new ActionResult(succeeded: true, data: ['to' => $recipient]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'SendEmailHandler failed',
 				['exception' => $e->getMessage(), 'context' => $transitionContext],
 			);
+
 			return new ActionResult(succeeded: false, error: 'send_email_failed');
 		}//end try
 	}//end handle()
