@@ -82,3 +82,10 @@ design decision D4 for that source only.
 - [x] 5.8 Every new guard mutation-checked: the opt-in guard, the prefix
   stripping and the assignee resolution were each removed, the right assertions
   watched to fail, and the file restored and diffed against a backup.
+
+## Re-verified 2026-09-09
+
+Still phase 5 only. `CaseEmailMatchService.php` and `CaseEmailMatchJob.php` do not exist and
+never have: `git log --all` on both paths is empty, so this is unbuilt rather than removed.
+Nothing under `lib/Service/Email/` or `lib/BackgroundJob/` matches. The design holds and the
+work is unstarted; this is backlog, not in flight.

@@ -119,11 +119,11 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 
 for (const { name, route, addBtn } of SETTINGS_PAGES) {
 	test.describe(`Settings · ${name}`, () => {
-		// @e2e exclude No scenario governs "a settings index route resolves to its own
-		// view and offers its create control". The three pages this loop drives (LHS
-		// recommendations, Map layers, Organisations) belong to three capabilities, and
-		// admin-settings' in-app settings scenario describes the /settings page that
-		// page-topology-cleanup retired.
+		// @e2e exclude No canonical spec covers the shell contract this loop
+		// asserts. admin-settings has a list scenario per entity (status
+		// types, result types, role types, property definitions), but none of
+		// them says every settings page renders its OWN create control, which
+		// is the thing that catches one page rendering another's list.
 		test(`${name} settings page renders its own "${addBtn}" control`, async ({
 			page,
 		}) => {

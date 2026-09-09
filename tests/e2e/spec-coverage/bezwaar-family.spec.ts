@@ -22,7 +22,12 @@ import { expect, test } from '@playwright/test'
 import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
-	// @e2e openspec/specs/objections-appeals-nav-group/spec.md#scenario-deep-links-to-grouped-pages-still-resolve
+	// @e2e exclude No capability describes the objection advisory
+	// committees settings page. bezwaar-advisory-committee specifies the
+	// report schema and the committee composition, not the page that
+	// administers them, and page-topology-cleanup D2.2 plans to retire
+	// this page onto decidiq. This test pins the shell until one of the
+	// two lands.
 	test('bezwaar committees page renders its own create control', async ({
 		page,
 	}) => {

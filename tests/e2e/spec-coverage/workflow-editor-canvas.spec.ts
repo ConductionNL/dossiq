@@ -105,7 +105,6 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 	})
 
 	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-keyboard-node-selection
-	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-visible-action-names
 	test('a status node on the canvas is keyboard-focusable and exposes a keyboard-operable actions menu', async ({
 		page,
 	}) => {

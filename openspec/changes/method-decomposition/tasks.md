@@ -176,3 +176,13 @@ The one task that **was** statically-verifiable end-to-end — `TASK-DECOMP-036`
 tests + the removal of a real PHPMD suppression. That sets the pattern for
 each follow-up extraction once the live env is online.
 
+
+## Re-measured 2026-09-09
+
+The premise moved. The proposal counts 152 PHPMD suppressions across 12 files; the tree on
+`development` carries **277 across 110 files**. Its Priority 1 grouping — "95 in the files with
+5+ suppressions each" — was a map of a tree that no longer exists, so working the task list
+top-down would decompose methods chosen by a year-old ranking.
+
+62 of the 65 tasks are open. Re-rank against a fresh count before touching any of them, or the
+first thing this change buys is churn in the wrong twelve files.

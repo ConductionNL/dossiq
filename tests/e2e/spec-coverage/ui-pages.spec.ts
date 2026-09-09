@@ -51,7 +51,9 @@ test.describe('Dashboard page render', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-dashboard-page-renders-heading-and-widget-grid
+	// @e2e exclude No scenario requires the dashboard to mount without
+	// dossiq console errors. REQ-DASH-UI-01 covers the grid, and the
+	// sibling test above cites it; the console-error leg has no home.
 	test('dashboard mounts without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		await navTo(page, 'Dashboard')

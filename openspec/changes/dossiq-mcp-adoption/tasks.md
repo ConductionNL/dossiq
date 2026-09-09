@@ -25,3 +25,13 @@
 - [ ] 4.2 `tools/list` for `dossiq`: exactly 22 tools, all read-only; `dossiq.listProcesses` and `dossiq.getProcessDetails` are GONE (a surviving hand-written tool would shadow its derived twin permanently); `dossiq.case.search` and `dossiq.statusRecord.search` are present.
 - [ ] 4.3 As a non-privileged user, invoke `dossiq.case.search` and confirm the result set equals what that user can already read in the UI — the provider's assignee/role ACL is gone and OpenRegister RBAC is now the only gate (REQ-MCP-105). If register RBAC is not configured, fix that before shipping.
 - [ ] 4.4 Confirm `dossiq.case.search` rejects `initiatorSourceId` as an undeclared filter (no BSN lookup surface) and that `dossiq.complaint.search` does not exist.
+
+## Re-verified 2026-09-09
+
+Unstarted, and the defect it names is live. `lib/Mcp/DossiqToolProvider.php` is still present
+and still registered at `AppHostRegistrar.php:134`; `x-openregister-mcp` has zero hits under
+`lib/`. While the hand-written provider exists it permanently shadows any derived twin, so the
+declarative route cannot be tried side by side with it.
+
+Keep as backlog: ADR-063 directive, worked design, and it validates. Triage it together with
+`hermiq-ai-tooling`, whose own gate T0 blocks on this change.

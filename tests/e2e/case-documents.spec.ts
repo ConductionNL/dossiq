@@ -377,7 +377,8 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude No canonical scenario covers the Documents tab and its six columns.
 	// REQ-ZAK-011 "Documents visible on the case" governs it and lives in the open
 	// change documents-on-the-case; canonical REQ-ZAK-004a describes the older
-	// grouped dossier view, which is a different surface.
+	// grouped dossier view, which is a different surface. Citable once that change
+	// archives; blocked until then by ConductionNL/.github#730.
 	test('the tab lists this case documents with all six columns', async ({
 		page,
 	}) => {
