@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Milestone;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
  * Reports the cases that have run past their earliest unreached milestone.
@@ -70,10 +71,12 @@ class StalledCaseDetector {
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param MilestoneRepository $repository Milestone definitions/records reader.
+	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly MilestoneRepository $repository,
+		private readonly WorkingDayCalculator $workingDays,
 	) {
 	}//end __construct()
 
@@ -276,11 +279,22 @@ class StalledCaseDetector {
 	}//end isClosedStatus()
 
 	/**
-	 * Add a number of working days (Mon-Fri) to a start date.
+	 * Add a number of working days to a start date.
 	 *
-	 * Weekends are skipped. Dutch public holidays are not subtracted here; the
-	 * milestone layer's deadlines are advisory (per the proposal's out-of-scope
-	 * note on contractual SLA enforcement).
+	 * This used to skip weekends only, on the stated grounds that the milestone
+	 * layer's deadlines are advisory "per the proposal's out-of-scope note on
+	 * contractual SLA enforcement". That reading was wrong. The out-of-scope
+	 * note rules out *enforcing* a milestone deadline as a contractual SLA; it
+	 * says nothing about how a working day is counted. The same change's
+	 * design.md is explicit in the other direction: "Working days exclude
+	 * weekends and Dutch holidays (via WorkingDayCalculator helper)". The
+	 * helper it names was never built, so five callers each grew their own
+	 * rule and this one lost the holidays.
+	 *
+	 * Counting holidays moves each projected deadline later, so the detector
+	 * now flags strictly fewer cases as stalled. That is the safe direction for
+	 * an advisory signal: it removes cases that were only "overdue" because the
+	 * projection spent the deadline on Tweede Paasdag.
 	 *
 	 * @param DateTimeImmutable $start The start date.
 	 * @param int $workingDays Working days to add (>= 0).
@@ -288,20 +302,6 @@ class StalledCaseDetector {
 	 * @return DateTimeImmutable The resulting deadline date.
 	 */
 	private function addWorkingDays(DateTimeImmutable $start, int $workingDays): DateTimeImmutable {
-		if ($workingDays <= 0) {
-			return $start;
-		}
-
-		$date = $start;
-		$added = 0;
-		while ($added < $workingDays) {
-			$date = $date->modify('+1 day');
-			$dow = (int)$date->format('N');
-			if ($dow < 6) {
-				$added++;
-			}
-		}
-
-		return $date;
+		return $this->workingDays->addWorkingDays(start: $start, days: $workingDays);
 	}//end addWorkingDays()
 }//end class

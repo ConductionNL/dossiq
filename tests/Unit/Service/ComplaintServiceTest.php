@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -83,6 +84,7 @@ interface ComplaintObjectServiceStub {
  * Unit tests for ComplaintService.
  *
  * @covers \OCA\Dossiq\Service\ComplaintService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class ComplaintServiceTest extends TestCase {
 
@@ -113,6 +115,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->service = new ComplaintService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
+			workingDays: new WorkingDayCalculator(),
 		);
 	}//end setUp()
 

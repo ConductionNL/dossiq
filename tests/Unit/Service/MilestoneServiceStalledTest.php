@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\MilestoneService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -36,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\MilestoneService
  * @covers \OCA\Dossiq\Service\Milestone\StalledCaseDetector
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class MilestoneServiceStalledTest extends TestCase {
 
@@ -82,6 +84,7 @@ class MilestoneServiceStalledTest extends TestCase {
 			stalledDetector: new StalledCaseDetector(
 				settingsService: $this->settingsService,
 				repository: $repository,
+				workingDays: new WorkingDayCalculator(),
 			),
 			logger: $this->logger,
 		);
