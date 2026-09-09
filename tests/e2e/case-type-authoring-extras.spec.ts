@@ -491,32 +491,29 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A folder narrows the index
-	// FIXME(dossiq#2204): this cannot pass on a shared instance, and no
-	// test-side change fixes it. The folder button never renders, so the
-	// filter it would exercise is never reached.
+	// 🔴 PARKED ON OpenRegister#3560. The cause is a stale facet, NOT the page
+	// size, and not anything in this app or in the library.
 	//
-	// `folderSidebar.source` here is `field`, which CnIndexPage defines as the
-	// distinct values of the CURRENTLY LOADED ROWS, not a facet query over the
-	// collection. The Case types index is instance-wide and bounded, so under
-	// four workers this run's types sit behind other runs' and its `category`
-	// never enters the distinct set.
+	// `FacetHandler::getFacetsForObjects()` caches the whole facet response for
+	// an hour and no object write invalidates it. CnFolderSidebar builds the
+	// folder pane from that facet, so a category created today gets no folder
+	// today. On CI an earlier worker warmed the facet and deleted its rows in
+	// teardown; the retry worker seeded its own category, opened the page inside
+	// the hour, and was handed the dead category instead of its own.
 	//
-	// Every lever that would bring this run's rows onto the page was checked
-	// and none exists:
-	//   - no search box: `CnActionsBar` renders one only behind `showSearch`,
-	//     and that key is not exposed through the manifest schema at all.
-	//   - no date column to sort on: the page's `columns` are title, category,
-	//     identifier, handlingModel, processingDeadline, confidentiality,
-	//     isDraft, validFrom, validUntil.
-	//   - no deep link: `_order` is WRITTEN to the route and never read back,
-	//     despite CnIndexPage's docblock claiming a shared link restores the
-	//     sort, and `selectedFolderId` is component state with no route
-	//     round-trip either.
+	// ⚠️ I first wrote the page-size explanation here, and it was wrong. The
+	// manifest's own `_folderSidebarNote` says `field` derives the folders from
+	// the distinct values of the loaded rows. That stopped being true at
+	// nextcloud-vue 2.42.0 (#1036), which prefers the facet with pagination
+	// stripped. A docblock outlived its truth and sent me, and two sessions
+	// before me, back to the same wrong theory.
 	//
-	// Unblocking it needs one of: `folderSidebar` gaining a facet source,
-	// `showSearch` reaching the manifest schema, or this page gaining a
-	// sortable `created` column. Marked rather than deleted so the requirement
-	// stays visible and the day a lever lands this is one line to restore.
+	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
+	// `DELETE /api/settings/cache?type=facet` is an admin action a page reader
+	// cannot take, so a test that arranges it asserts the arrangement.
+	//
+	// dossiq#2278 carries the full measurement and the manifest-note correction.
+	// Restore this by deleting the `fixme` once OpenRegister#3560 lands.
 	test.fixme('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
