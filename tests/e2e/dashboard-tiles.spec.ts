@@ -52,7 +52,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dateTokenPattern, dismissSupportDialog } from './helpers/nav.ts'
 
 /** A day in milliseconds. */
 const DAY = 24 * 60 * 60 * 1000
@@ -647,12 +647,10 @@ test.describe('Dashboard tiles', () => {
 		// about is the KEY: a tile that counts one set of cases and a View all
 		// that lands on another is the dropped filter they exist to catch.
 		//
-		// #2007 introduces a shared `dateTokenPattern` helper for exactly this
-		// and applies it to the sibling assertions. This should adopt it once
-		// that lands, rather than keep its own copy.
-		expect(query.get('deadline[lte]')).toMatch(
-			/^(@today\+3d|\d{4}-\d{2}-\d{2})$/,
-		)
+		// `dateTokenPattern` is the shared helper for exactly this, adopted
+		// here rather than kept as a local copy, so the two spellings are
+		// spelled out in one place.
+		expect(query.get('deadline[lte]')).toMatch(dateTokenPattern('@today+3d'))
 		expect(query.get('isFinalStatus')).toBe('false')
 
 		// The query arriving is not the same as the LIST honouring it, and it

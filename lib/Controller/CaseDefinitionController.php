@@ -245,6 +245,39 @@ class CaseDefinitionController extends Controller {
 	}//end copy()
 
 	/**
+	 * Start the next version of a case type.
+	 *
+	 * @param string $id The case type id to make the next version of.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function newVersion(string $id): JSONResponse {
+		try {
+			$version = $this->copyService->newVersion($id);
+
+			if ($version === null) {
+				return new JSONResponse(
+					['error' => 'Case type not found'],
+					Http::STATUS_NOT_FOUND
+				);
+			}
+
+			return new JSONResponse($version);
+		} catch (\Throwable $e) {
+			$this->logger->error('Case type new version failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'New version failed: ' . $e->getMessage()],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+	}//end newVersion()
+
+	/**
 	 * Delete a case type, but only when it is a draft.
 	 *
 	 * @param string $id The case type id to delete.

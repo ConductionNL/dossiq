@@ -48,6 +48,7 @@ import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { isCaseTypeUsable } from '../../utils/caseValidation.js'
 
 export default {
 	name: 'StartCaseWidget',
@@ -106,7 +107,13 @@ export default {
 					_limit: 50,
 					isDraft: false,
 				})
-				this.caseTypes = results || []
+				// The draft filter is the store's; whether a case type may
+				// start a case is `isCaseTypeUsable`, and asking it here rather
+				// than repeating half of it keeps one answer to that question.
+				// A version that has been superseded is published and still
+				// wrong to offer: its cases run on, new ones go on its
+				// successor.
+				this.caseTypes = (results || []).filter(isCaseTypeUsable)
 			} catch (err) {
 				console.error('[StartCaseWidget] Failed to fetch case types:', err)
 				this.caseTypes = []

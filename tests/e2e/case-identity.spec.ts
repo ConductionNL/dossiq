@@ -39,6 +39,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -300,9 +301,11 @@ test.describe('Case identity', () => {
 
 		// And it is on the page, in the core widget, which is the half that was
 		// broken: `identifier` is schema-readOnly, and a data widget drops a
-		// readOnly property unless an override re-admits it.
+		// readOnly property unless an override re-admits it. The widget is the
+		// `Data` tab of the case strip now, not a laid-out widget, so it
+		// carries no `aria-label` of its own.
 		await expect(
-			page.locator('[aria-label="case-core"]'),
+			await openCasePanel(page, 'data'),
 			'the case page shows the number it was given',
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})

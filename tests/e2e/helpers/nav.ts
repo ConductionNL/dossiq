@@ -347,6 +347,36 @@ export function trackDossiqErrors(page: Page): string[] {
 }
 
 /**
+ * What a route query may carry for a manifest date token.
+ *
+ * A widget's `viewAllRoute` or a tile's `route` declares its window as a token
+ * — `@today`, `@today+3d` — and the host resolves that token to a date before
+ * it navigates. Both forms name the same day, so a test that pins the literal
+ * fails on an implementation that resolved it and vice versa, while neither
+ * outcome says anything about the filter the reader lands on.
+ *
+ * The KEY is what these assertions are about: a table that counts one set of
+ * cases and a View all that lands on another is the dropped filter they exist
+ * to catch. So match either spelling of the value, and keep the key exact.
+ *
+ * @param token The token as the manifest writes it, e.g. `@today+3d`.
+ *
+ * @return A pattern matching the token itself or the date it resolves to.
+ */
+export function dateTokenPattern(token: string): RegExp {
+	const offset = /^@today(?:\+(\d+)d)?$/.exec(token)
+	if (offset === null) {
+		throw new Error(`dateTokenPattern: ${token} is not a @today token.`)
+	}
+
+	const day = new Date()
+	day.setDate(day.getDate() + Number(offset[1] ?? 0))
+	const resolved = day.toISOString().slice(0, 10)
+
+	return new RegExp(`^(${token.replace('+', '\\+')}|${resolved})$`)
+}
+
+/**
  * Tick an `NcCheckboxRadioSwitch`, by clicking the control a person clicks.
  *
  * 🔴 `.check()` ON THE INPUT CANNOT WORK HERE, and it fails in a way that reads
