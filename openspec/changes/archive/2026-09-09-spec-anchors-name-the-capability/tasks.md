@@ -67,10 +67,39 @@
     still cited `006d` and `006e`. Gate 46 did not look, because they are `@e2e`.
     Repointed at the canonical `openspec/specs/dashboard/spec.md` per the rule
     this change writes down.
-- [ ] 5.3 The other 26 are pre-existing dossiq debt that the gate fix in section
-  4 would surface on the next PR touching those files. Not fixed here: each one
-  needs a judgement about which scenario it meant, which is the work, not the
-  sed.
+- [x] 5.3 The other 26 are done, and they were not 26 of the same thing. 16 were
+  dossiq's, and 10 were the gate's.
+  - **16 repointed or excluded, one judgement each.** Nine now name the scenario
+    they prove: three My Work tests at `Card and table view`, three workflow-editor
+    tests at `Keyboard node selection` / `Keyboard add status node` / `Open workflow
+    editor for a case type`, and three lifecycle tests at `A handler advances a
+    case`, `DASH-V1-006a` and `Successful transition with audit trail`. One case
+    detail test moved to `CM-06a Case info panel`. Six more, in the same file, only
+    ever named a change directory and now name the capability, which is the rule
+    this change writes down.
+  - **Five carry `@e2e exclude` with a reason.** The objection-committees settings
+    page, the settings-shell loop, the dashboard console-error leg, the
+    current-status-name API leg and the edit-the-title leg each prove something no
+    scenario states. Each names what is missing rather than the nearest plausible
+    capability, per requirement 4.
+  - Mutation-checked: four fragments were replaced with headings nobody wrote and
+    all four were reported, then restored. A repointed anchor that resolves is
+    evidence only if the resolver can still say no.
+- [x] 5.5 The last 10 are not dossiq debt at all. They are gate 46 refusing to look
+  where the requirement is.
+  - All 10 are in `tests/e2e/case-documents.spec.ts` and name REQ-ZAK-011, -012,
+    -013, template-library REQ-005 and beschikking-generatie REQ-BES-012. Every one
+    of those requirements exists, in the open `documents-on-the-case` change's
+    delta. The anchors are right.
+  - `resolve()` consults the capability index "LAST RESORT ONLY", so a tag whose
+    literal path exists is judged against that file and nothing else. These
+    capabilities all HAVE a canonical spec; what is pending is the requirement
+    inside it. So the file resolves, the fragment is looked for in the canonical
+    spec alone, and the open change's delta is never opened.
+  - That is the same widening this change's second requirement asks for, one level
+    down: resolution is by capability across the three homes, and a capability
+    whose canonical spec exists is not thereby finished. Filed as
+    ConductionNL/.github#730, beside 4.1 and 4.2, against the same helper.
 - [x] 5.4 Stop reimplementing the instrument. Every wrong number in this
   investigation came from a hand-rolled resolver; every correct one came from
   running `check_spec_anchors.py`. `@e2e` was measured by rewriting the tags to
@@ -83,3 +112,17 @@
   first: two PRs on this exact topic landed while this branch was being written,
   and the PR went out CONFLICTING with 4 of 49 checks passing, which is the shape
   a conflicting PR always has and reads green.
+
+## 7. What the convention does NOT claim
+
+- [x] 7.1 Measure the gap between the rule and the tree, so archiving this change
+  is not read as the tree conforming to it.
+  - 3,206 anchors name a path under `openspec/changes/`, against 3,039 naming
+    `openspec/specs/`. The largest single group is 419 naming
+    `retrofit-2026-05-24-case-management`, archived months ago. Every one of them
+    resolves today, through the archive index, which is the weaker guarantee
+    requirement 1 describes.
+  - This change writes the rule and fixes what was measurably broken. Repointing
+    3,206 resolving citations is a mechanical rewrite across `lib`, `src` and
+    `tests` and belongs in its own change, where the diff can be read. Smuggling
+    it into an archive PR is how a rewrite of that size stops being reviewable.

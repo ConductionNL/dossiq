@@ -157,3 +157,14 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   exceeds the 300s tool timeout and phpmd printing nothing inside it is its
   OOM signature rather than a pass, so the legs ran individually. Playwright
   was NOT run; `tests/e2e/contacts-domain.spec.ts` is new and unexecuted.
+
+## Archive-time hazard, recorded 2026-09-09
+
+This change's delta declares **REQ-ID-4 under ADDED** on `initiator-display`. So did
+`contacts-you-can-find`, which declared it under MODIFIED against a spec that did not yet hold
+it. Only that one archived, in #2057, so its block became the ADDED one and REQ-ID-4 now exists
+in `openspec/specs/initiator-display/spec.md`.
+
+Whoever archives this change has to turn its REQ-ID-4 block into MODIFIED first, or the archiver
+refuses the duplicate. Discovered by the 2026-09-09 triage, not by a failing run: nothing fails
+until the archive is attempted.

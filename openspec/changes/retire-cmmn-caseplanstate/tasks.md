@@ -35,3 +35,14 @@ Ordering matters: group 1 ships first (bridge), group 2 drains, groups 3 to 5 ar
 
 - [ ] 6.1 Analyzers green on the touched files: lint, phpcs, psalm, phpstan individually, phpmd per subdir; eslint and vitest for the frontend removals.
 - [ ] 6.2 Hydra gates with `--scope-to-diff` report 0 FAIL on the diff; gate-16 `@spec` tags on every changed method point at `openspec/specs/retire-cmmn-caseplanstate/spec.md`.
+
+## Re-verified 2026-09-09
+
+Unstarted, and correctly so. All nine classes are still in `lib/Service/Cmmn/`, and
+`casePlanState` is still declared in `lib/Settings/dossiq_register.json` and in
+`lib/Settings/register.d/70-cmmn-case-model.json`.
+
+Keep as backlog: it validates strictly, it has a design, and its openregister dependency is
+merged. Task 4.1 needs re-scoping before it is picked up — two of its deletion targets are
+already gone, so a reader working the list top-down will start by looking for files that do not
+exist.
