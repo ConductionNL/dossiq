@@ -3097,6 +3097,8 @@
 			"route": "/settings/tenants",
 			"type": "index",
 			"title": "Tenants",
+			"permission": "admin",
+			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -3245,6 +3247,7 @@
 			"route": "/settings/tenants/:id",
 			"type": "detail",
 			"title": "Tenant",
+			"permission": "admin",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -4381,6 +4384,7 @@
 			"route": "/substitution-admin",
 			"type": "custom",
 			"title": "Substitutions & reassignment",
+			"permission": "admin",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		},

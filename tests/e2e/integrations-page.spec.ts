@@ -28,6 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { login } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -266,37 +267,86 @@ test.describe('Integrations', () => {
 		expect(String(kcc.checkedAt || '')).not.toBe('')
 	})
 
+	/**
+	 * THE ONE TEST IN THIS FILE THAT IS NOT ABOUT THE PAGE'S CLAIMS.
+	 *
+	 * It was written with `browser.newContext({ httpCredentials })` and neither
+	 * half of that worked, in opposite directions:
+	 *
+	 *  1. Playwright's `browser` FIXTURE patches `newContext()` to merge the
+	 *     project's `use` options, so `use.storageState` — the ADMIN session
+	 *     written by global-setup — came along uninvited. The context reported
+	 *     `OC.getCurrentUser().uid === 'admin'` and `OC.isUserAdmin() === true`,
+	 *     and the failure screenshot said "Avatar of admin" in the header. The
+	 *     test asserted an admin cannot see an admin page, so it could only
+	 *     ever fail — and it never ran, because this project is skipped whole
+	 *     while its dependency is red.
+	 *  2. Clearing the storage state does not rescue basic auth: Nextcloud's
+	 *     web entry point does not authenticate an `Authorization: Basic`
+	 *     header, it redirects to `/login`. A context with credentials and no
+	 *     cookie lands on the login page as ANONYMOUS — where the nav has no
+	 *     entries and the route has no rows, so both assertions below pass for
+	 *     a reason that has nothing to do with permissions.
+	 *
+	 * So: a real session for a real ordinary account, through the same login
+	 * form a person uses, and the identity asserted BEFORE anything else. Those
+	 * two assertions are the ones that keep this test honest; without them
+	 * every other line here is satisfiable by an account that was never tested.
+	 */
 	test('is not reachable by a user who is not an admin', async ({
 		browser,
 		baseURL,
 	}) => {
+		// Clearing `storageState` is not the default — see (1) above. It has to
+		// be said, or this context is the admin.
 		const context = await browser.newContext({
 			baseURL,
-			httpCredentials: {
-				username: PLAIN_USER,
-				password: PLAIN_PASS,
-				// The dossiq API answers 401 without a WWW-Authenticate header,
-				// so Playwright would never send the credentials on the
-				// challenge. `always` sends them on the first request.
-				send: 'always',
-			},
+			storageState: undefined,
 		})
 		const page = await context.newPage()
+		await login(page, PLAIN_USER, PLAIN_PASS)
 
 		await page.goto('/apps/dossiq')
 		await dismissSupportDialog(page)
+
+		// WHO IS ACTUALLY DRIVING. Everything below is a claim about an
+		// ordinary account and means nothing until this holds.
+		const who = await page.evaluate(() => ({
+			uid: window.OC?.getCurrentUser?.()?.uid ?? null,
+			isAdmin:
+				typeof window.OC?.isUserAdmin === 'function'
+					? window.OC.isUserAdmin()
+					: null,
+		}))
+		expect(who.uid, 'the session under test is the ordinary account').toBe(
+			PLAIN_USER,
+		)
+		expect(who.isAdmin, 'the ordinary account is not an admin').toBe(false)
 
 		// The gear foldout does not carry the entry.
 		await expect(
 			page.locator('.app-navigation a[href$="/settings/integrations"]'),
 		).toHaveCount(0)
 
-		// And the route renders no rows even when typed in directly.
+		// And the route does not render the page even when typed in directly.
+		// This is the half nothing enforced: the manifest declares
+		// `permission: "admin"` on the PAGE, `CnAppNav` only ever read the
+		// declaration on the MENU entry, and the router built by `main.js`
+		// dropped the field — so this route answered an ordinary account with
+		// eleven integration rows and seven links into `/settings/admin/dossiq`.
 		await page.goto('/apps/dossiq/settings/integrations')
 		await dismissSupportDialog(page)
+		// The guard redirects to the dashboard, so assert the destination and
+		// not only the absence of a link: "no links" is also what a page that
+		// simply failed to load looks like.
+		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
 		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
 			0,
 		)
+		await expect(
+			page.getByRole('row', { name: /ZGW APIs/i }),
+			'no integration row survives the redirect',
+		).toHaveCount(0)
 
 		await context.close()
 	})

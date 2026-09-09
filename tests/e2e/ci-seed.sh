@@ -319,6 +319,20 @@ else
 	echo "[ci-seed] non-admin user ${E2E_USER_NAME:-e2euser} already exists (or could not be created); continuing."
 fi
 
+# The account has to be ordinary, and "already exists" above does not say so.
+# On a reused instance the uid may have been left in the admin group by an
+# earlier run or by hand, and then the whole point of the account is gone: the
+# permission spec would assert that an admin cannot see an admin page and fail
+# for a reason that has nothing to do with the guard it is testing. Reported
+# rather than repaired, because a test account that quietly acquired admin is
+# something to look at, not something to paper over.
+if ! php occ user:info "${E2E_USER_NAME:-e2euser}" --output=json 2>/dev/null \
+	| php -r 'exit(in_array("admin", json_decode(stream_get_contents(STDIN), true)["groups"] ?? [], true) ? 1 : 0);'; then
+	echo "::error::${E2E_USER_NAME:-e2euser} is in the admin group. integrations-page.spec.ts asserts that an ORDINARY account cannot reach the Integrations page, and against an admin that assertion cannot pass. Remove it: occ group:removeuser admin ${E2E_USER_NAME:-e2euser}"
+	exit 1
+fi
+echo "[ci-seed] ${E2E_USER_NAME:-e2euser} holds no admin group membership."
+
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the
