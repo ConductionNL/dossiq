@@ -3829,7 +3829,8 @@ OC.L10N.register(
         "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.": "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.",
         "We could not load the AI settings, so none are shown. Reload the page to try again.": "We could not load the AI settings, so none are shown. Reload the page to try again.",
         "You have a key stored. Type a new one to replace it.": "You have a key stored. Type a new one to replace it.",
-        "You have no key stored.": "You have no key stored."
+        "You have no key stored.": "You have no key stored.",
+        "Why the attempt failed, when action is failed": "Why the attempt failed, when action is failed"
     },
     "nplurals=2; plural=(n != 1);"
 )
