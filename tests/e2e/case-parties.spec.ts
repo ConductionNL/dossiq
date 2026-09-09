@@ -345,7 +345,7 @@ test.describe('Case detail — the Parties tab', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#parties-visible-on-the-case
+	// @e2e openspec/specs/roles-decisions/spec.md#parties-visible-on-the-case
 	// @e2e roles-decisions::parties-visible-on-the-case
 	test('the tab lists this case parties with their delegation, and not another case one', async ({
 		page,
@@ -379,7 +379,7 @@ test.describe('Case detail — the Parties tab', () => {
 		await expect(widget.getByText(OTHER_PARTICIPANT)).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#parties-visible-on-the-case
+	// @e2e openspec/specs/roles-decisions/spec.md#parties-visible-on-the-case
 	// @e2e roles-decisions::parties-visible-on-the-case
 	test('the Parties tab sits in the strip and the retired Contacts tab does not', async ({
 		page,
@@ -403,7 +403,7 @@ test.describe('Case detail — the Parties tab', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#a-case-without-parties-says-so
+	// @e2e openspec/specs/roles-decisions/spec.md#a-case-without-parties-says-so
 	// @e2e roles-decisions::a-case-without-parties-says-so
 	test('a case without parties shows the empty state and the Add party action', async ({
 		page,
@@ -439,7 +439,7 @@ test.describe('Case detail — the Parties tab', () => {
 		})
 	})
 
-	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
+	// @e2e openspec/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
 	// @e2e roles-decisions::add-a-party-with-the-case-prefilled
 	test('the Add party form asks for the party fields and never for the case', async ({
 		page,
@@ -469,7 +469,7 @@ test.describe('Case detail — the Parties tab', () => {
 		await expect(dialog.locator('[data-cn-field="case"]')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
+	// @e2e openspec/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
 	// @e2e roles-decisions::add-a-party-with-the-case-prefilled
 	test('a party added from the case carries that case and shows up in the tab', async ({
 		page,
@@ -538,7 +538,7 @@ test.describe('Case detail — the Parties tab', () => {
 	// `beforeAll` runs per describe, so a sibling block would start with no API
 	// context and no seeded rows at all.
 	test.describe('the team on a case and on a task', () => {
-		// @e2e openspec/changes/parties-on-the-case/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
+		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
 		test('the case page offers a Team field beside the assignee', async ({
 			page,
@@ -558,7 +558,7 @@ test.describe('Case detail — the Parties tab', () => {
 			await expect(core).toContainText('Team', { timeout: 15_000 })
 		})
 
-		// @e2e openspec/changes/parties-on-the-case/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
+		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
 		test('a case with a team shows it in the Team column and keeps its assignee', async ({
 			page,
@@ -591,7 +591,7 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeVisible()
 		})
 
-		// @e2e openspec/changes/parties-on-the-case/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
+		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
 		test('the Cases sidebar offers a Team facet', async ({ page }) => {
 			await openIndex(page, '/cases', { competentAuthority: MINE_MARKER })
@@ -613,7 +613,7 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeAttached({ timeout: 20_000 })
 		})
 
-		// @e2e openspec/changes/parties-on-the-case/specs/role-routing-via-or-rbac/spec.md#assign-a-task-to-a-team
+		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-task-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-task-to-a-team
 		test('a task with a team shows it on its row and keeps its assignee', async ({
 			page,
@@ -638,7 +638,7 @@ test.describe('Case detail — the Parties tab', () => {
 			await expect(row).toContainText(currentUser)
 		})
 
-		// @e2e openspec/changes/parties-on-the-case/specs/role-routing-via-or-rbac/spec.md#mine-shows-only-my-cases
+		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#mine-shows-only-my-cases
 		// @e2e role-routing-via-or-rbac::mine-shows-only-my-cases
 		test('the Mine chip narrows the list to my own cases', async ({ page }) => {
 			// Two cases, one mine and one a colleague's, both carrying the same

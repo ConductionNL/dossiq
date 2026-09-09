@@ -17,7 +17,7 @@ import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
 
 test.describe('Workflow Board page', () => {
-	// @e2e openspec/specs/dashboard/spec.md#REQ-DASH-V1-006
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
 	test('workflow board renders its heading and a status/empty surface', async ({
 		page,
 	}) => {
@@ -52,7 +52,7 @@ test.describe('Workflow Board page', () => {
 	// Doorlooptijd analytics view (caseType). store.js now falls back to the
 	// canonical schema slug ('caseType' / 'statusType') when the config id is
 	// empty, so the types are always registered and this contract holds.
-	// @e2e openspec/specs/dashboard/spec.md#REQ-DASH-V1-006
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
@@ -67,7 +67,7 @@ test.describe('Workflow Board page', () => {
 })
 
 test.describe('Case Map page', () => {
-	// @e2e openspec/specs/case-map-overview/spec.md#REQ-OVERVIEW-01
+	// @e2e openspec/specs/case-map-overview/spec.md#scenario-overview-01a-display-all-cases-on-map
 	test('case map renders its heading and an interactive map surface', async ({
 		page,
 	}) => {
@@ -101,10 +101,10 @@ test.describe('Subsidies intake page', () => {
 	// rather than any subsidy-specific create control, so there is no subsidy
 	// intake shell to assert. (/subsidieregelingen renders "Add
 	// Subsidieregeling" correctly and its test passes.)
-	// @e2e openspec/specs/subsidieverlening-keten/spec.md
-	// No requirement covers the subsidies intake index yet, so the anchor names
-	// the capability that would own one rather than a heading nobody wrote. That
-	// missing requirement is the same gap as the FIXME above (#719).
+	// @e2e exclude No canonical spec covers the subsidies index shell. The
+	// subsidie specs describe the keten (voorschot, termijnen, verplichting,
+	// vaststelling) and the settlement of case costs, none of them the page
+	// that lists the aanvragen. This test pins the shell until one is written.
 	test('subsidies index renders the subsidy intake list shell', async ({
 		page,
 	}) => {

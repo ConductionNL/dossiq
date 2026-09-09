@@ -109,7 +109,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		})
 	}
 
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaren-list-surface
+	// @e2e openspec/specs/bezwaar-beroep-workflow/spec.md#scenario-bezwaar-index-shows-only-bezwaar-cases-with-correct-columns
 	test('a seeded bezwaar appears in the list with its workflow status', async ({
 		page,
 	}) => {
@@ -128,7 +128,10 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		).toBeVisible()
 	})
 
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-status-types
+	// @e2e exclude No canonical spec covers a workflow status changed from the
+	// bezwaar UI and surviving a re-render. bezwaar-beroep-workflow specifies
+	// the transitions themselves, not the list re-rendering after one. This
+	// test pins the behaviour until a scenario exists.
 	test('changing the bezwaar workflow status persists and re-renders', async ({
 		page,
 	}) => {

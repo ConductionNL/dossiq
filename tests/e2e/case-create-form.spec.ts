@@ -229,7 +229,7 @@ test.describe('New case dialog', () => {
 		return dialog
 	}
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
 	test('opens the plain form, not the properties and JSON table', async ({
 		page,
 	}) => {
@@ -242,7 +242,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Create' })).toBeVisible()
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
 	test('asks only for the fields a handler fills', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -267,7 +267,7 @@ test.describe('New case dialog', () => {
 		}
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
 	test('adds the chosen case type own questions, and drops them again on a change', async ({
 		page,
 	}) => {
@@ -282,7 +282,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByText(AUDIENCE)).toBeVisible()
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
 	test('files a case with its case type answers', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Aanvraag`
@@ -357,7 +357,7 @@ test.describe('New case dialog', () => {
 			expect(String(ceilingRow.value)).toBe('50000')
 		}).toPass({ timeout: 30000 })
 	})
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
 	test('fills the title the chosen case type already answers', async ({
 		page,
 	}) => {
@@ -385,7 +385,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(CASE_TYPE_TITLE, { timeout: 15000 })
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
 	test('leaves a title the handler typed alone', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const typed = `${RUN_PREFIX} Mijn eigen titel`
@@ -403,7 +403,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(typed)
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
 	test('stores the case type starting status without asking for it', async ({
 		page,
 	}) => {
@@ -437,7 +437,7 @@ test.describe('New case dialog', () => {
 		}).toPass({ timeout: 30000 })
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
 	test('keeps Create disabled until a required case type question is answered', async ({
 		page,
 	}) => {
@@ -459,7 +459,7 @@ test.describe('New case dialog', () => {
 		await expect(create).toBeEnabled()
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
 	test('lays the fields out in two columns', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -494,7 +494,7 @@ test.describe('New case dialog', () => {
 		expect(widths.description).toBeGreaterThan(widths.title * 1.5)
 	})
 
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
 	test('labels a case type question in words, not as an identifier', async ({
 		page,
 	}) => {
@@ -509,7 +509,7 @@ test.describe('New case dialog', () => {
 			dialog.getByText(IDENTIFIER_LABEL, { exact: true }),
 		).toBeVisible()
 	})
-	// @e2e openspec/changes/friendly-case-create-form/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
 	test('keeps parent case off the create form and on the case itself', async ({
 		page,
 	}) => {
