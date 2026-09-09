@@ -48,6 +48,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
@@ -186,7 +187,9 @@ async function openTasksTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /^(Tasks|Taken)$/ }).click()
+	// Tasks is the first SECTION of the Work tab since the strip came down
+	// from fourteen tabs to six; Appointments is the second.
+	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
 
 	// See the header: the widget id is NOT on a tab child, so the open panel
 	// inside the strip is the handle.
@@ -225,10 +228,10 @@ test.describe('Case detail — the task pane', () => {
 		// cannot be deleted by a user; creating a case type here and removing
 		// it in teardown would leave every case pointing at a type that is
 		// gone, which reddens unrelated specs.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		expect(
 			caseTypes.length,
-			'the instance must ship at least one case type',
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(caseTypes[0])
 

@@ -264,9 +264,25 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`)
 		await dismissSupportDialog(page)
-		await expect(
-			page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15_000 })
+		// Wait for the PAGE, then read its title, rather than waiting for the
+		// title to become visible. Under four workers this failed with the
+		// heading present, carrying the right text, and hidden for the whole
+		// budget — so the readiness signal was a text node whose visibility
+		// depends on a container the assertion never named.
+		//
+		// Two explanations were checked against a running instance and are
+		// wrong: the tab strip does NOT take over this heading (it renders and
+		// is visible on a case page), and there is no second, hidden detail
+		// page kept alive behind the first (one `.cn-detail-page`, no hidden
+		// ancestor). The state itself did not reproduce locally, so the gate
+		// is corrected rather than the cause guessed at: if the container is
+		// hidden, the failure now names the container.
+		const detail = page.locator('.cn-detail-page')
+		await expect(detail).toBeVisible({ timeout: 15_000 })
+		await expect(detail.locator('.cn-detail-page__title')).toContainText(
+			`${RUN_PREFIX} Email parent`,
+			{ timeout: 15_000 },
+		)
 		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
 		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
 		// hosted tab strip mounts (it is not rendered while the aside is closed).
@@ -290,13 +306,22 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		await expect(page.locator('aside.app-sidebar')).toBeVisible({
 			timeout: 15_000,
 		})
-		const emailTab = page
-			.locator('[data-testid="cn-object-sidebar-tab-email"]')
-			.or(page.getByRole('tab', { name: 'Email' }))
-			.or(page.getByRole('button', { name: 'Email' }))
-			.first()
+		// `#tab-button-email`, which is what NcAppSidebarTab renders for the
+		// manifest tab id, and the same handle `case-identity` and
+		// `case-timeline` use for their sidebar tabs. The `.or()` chain it
+		// replaces put the tab PANEL first — `cn-object-sidebar-tab-email` is
+		// the panel's testid, not the button's — so `.first()` resolved to a
+		// panel, the click landed on a hidden panel instead of switching to
+		// it, `.catch(() => {})` swallowed the failure, and the assertion
+		// below then reported `.case-email-tab` as hidden. Measured on this
+		// run's own snapshot: the sidebar strip had History selected and the
+		// Email tab was never entered.
+		//
+		// The id is stable in every language; the label is not.
+		const sidebar = page.locator('aside.app-sidebar')
+		const emailTab = sidebar.locator('#tab-button-email')
 		await expect(emailTab).toBeVisible({ timeout: 15_000 })
-		await emailTab.click().catch(() => {})
+		await emailTab.click()
 		// CaseEmailTab itself renders inside the tab. On an instance without
 		// NC Mail it surfaces the "Email integration unavailable" empty state;
 		// otherwise it renders the compose surface. Either proves the manifest

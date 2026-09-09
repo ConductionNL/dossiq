@@ -48,7 +48,7 @@
 				{{
 					t(
 						'procest',
-						'{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.',
+						'{percent}% of recorded transitions revisit a status the case had already left. A high rework rate usually means guard conditions or handler routing need a closer look.',
 						{ percent: kpiSummary.overallReworkPercent },
 					)
 				}}

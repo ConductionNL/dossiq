@@ -6,7 +6,10 @@
  *
  * Covers the browser scenarios of five deltas: the chips on Cases and Tasks,
  * the countdown Deadline column, the Overdue tile's View all, and the four
- * bulk actions with their required reason.
+ * bulk actions with their required reason. `lists-that-answer` added the
+ * Closed, Overdue and Due this week chips on Tasks, the Due this week chip
+ * on Cases, and the priority column the task list was always specified to
+ * carry.
  *
  * THREE THINGS ABOUT THIS FILE CHANGE WHAT AN ASSERTION HERE CAN CLAIM.
  *
@@ -46,7 +49,11 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import {
+	dateTokenPattern,
+	dismissSupportDialog,
+	tickCheckbox,
+} from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
 const CASES_URL = `${APP_URL}cases`
@@ -153,6 +160,7 @@ const CHIPS = {
 	unclaimed: /^(Unclaimed|Niet toegewezen)$/,
 	closed: /^(Closed|Gesloten)$/,
 	overdue: /^(Overdue|Verlopen)$/,
+	dueThisWeek: /^(Due this week|Deze week te doen)$/,
 }
 
 /**
@@ -166,11 +174,19 @@ function row(page: Page, key: string): Locator {
 }
 
 /**
+ * The case type `seedStateMachine` creates for this run, by title.
+ *
+ * The index sidebar offers one filter button per case type, so this run's own
+ * type is a control that narrows the list to exactly the rows it seeded.
+ */
+const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
+
+/**
  * Narrow the Cases index to the rows this run seeded.
  *
  * 🔴 WITHOUT THIS THE LENS TESTS LOOK AT PAGE 1 OF 4. The index paginates at
- * 20 and the shared instance holds far more: the failing run's page snapshot
- * reads "Showing 20 of 62", "Page 1 of 4", ordered by identifier ascending, so
+ * 20 and the shared instance holds far more: a failing run's page snapshot
+ * read "Showing 20 of 62", "Page 1 of 4", ordered by identifier ascending, so
  * rows 2026-0001 upward. A case seeded seconds ago gets a HIGH number and
  * lands on the last page, and the assertion reads as "the lens does not show
  * my row" when the lens is fine and the row is three pages away.
@@ -179,21 +195,47 @@ function row(page: Page, key: string): Locator {
  * failed. Mine narrows to the signed-in user, which cuts 62 down to this run's
  * handful, and they fit on one page.
  *
- * The search facet is the right instrument rather than a bigger page size,
- * because it composes with the lens instead of racing the instance's growth.
- * CnIndexPage spreads a quick filter's own filter BEFORE the user's
- * activeFilters, so user facets narrow WITHIN the active tab, and changing
- * tabs re-fetches at page 1 with the facet still applied.
+ * ⚠️ THE FIRST ATTEMPT AT THIS USED A SEARCH BOX THAT DOES NOT EXIST HERE, and
+ * it is worth saying why so nobody reaches for it again. `CnActionsBar` renders
+ * an `<input type="search">` only behind its `showSearch` PROP, and this page
+ * does not set it; the "Search and columns" button beside it opens something
+ * else. `getByRole('searchbox')` therefore matched nothing and every one of
+ * these tests failed inside the helper rather than on its own assertion.
+ *
+ * The case-type facet is a control the page really renders, one button per
+ * type in the sidebar list, and this run seeds its own type. It composes with
+ * the lens by design: CnIndexPage spreads a quick filter's own filter BEFORE
+ * the user's `activeFilters`, so user facets narrow WITHIN the active tab, and
+ * changing tabs re-fetches at page 1 with the facet still applied. Both
+ * `/cases` and `/queue` declare a sidebar, so it works on either.
  *
  * @param page The page.
  */
 async function narrowToThisRun(page: Page): Promise<void> {
-	await page.getByRole('button', { name: /Search and columns/i }).click()
-	const search = page.getByRole('searchbox').first()
-	await expect(search).toBeVisible({ timeout: 15_000 })
-	await search.fill(RUN_PREFIX)
+	// 🔴 THE FACET'S ACCESSIBLE NAME CARRIES ITS COUNT. A sidebar entry with
+	// matches renders as "<case type> <n>", so the accessible name of this
+	// run's type is `E2EZAAK-… Vergunning 1`, not `E2EZAAK-… Vergunning`, and
+	// `exact: true` on the bare title matched nothing. The failure reads "the
+	// sidebar should offer a case-type filter named …" while the button is
+	// right there in the snapshot, one character group longer.
+	//
+	// A type with NO matches renders without the count, which is why the
+	// suffix is optional here rather than required. Anchored at both ends and
+	// including the run prefix, so it still cannot match another run's type or
+	// the `… Bare` type this same fixture seeds alongside it.
+	const facet = page.getByRole('button', {
+		name: new RegExp(
+			`^${RUN_CASE_TYPE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
+		),
+	})
+	await expect(
+		facet,
+		`the sidebar should offer a case-type filter named ${RUN_CASE_TYPE}`,
+	).toBeVisible({ timeout: 30_000 })
+	await facet.click()
+
 	// The list must have answered before a lens is touched, or the first
-	// assertion races the fetch this typing started.
+	// assertion races the fetch this click started.
 	await expect(
 		page.getByRole('row').filter({ hasText: RUN_PREFIX }).first(),
 	).toBeVisible({ timeout: 30_000 })
@@ -286,12 +328,42 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const overdue = await showObject(api, 'case', cases['mine-overdue'])
 		expect(String(overdue.deadline ?? '')).toBe(day(-2))
 
-		// Four tasks, for the Tasks index's three chips.
+		// The tasks the six chips on the Tasks index have to tell apart.
+		//
+		// The four dated ones carry a FULL ISO instant, not a bare date,
+		// because `caseTask.dueDate` is `format: date-time` while
+		// `case.deadline` is `format: date`, and the two windows are compared
+		// the same way. OpenRegister casts only numeric columns, so
+		// `dueDate[lt]=2026-09-08` is a string comparison, and
+		// `2026-09-08T09:00:00+00:00` sorts AFTER the bare `2026-09-08`. That
+		// is what makes a task due at nine this morning due TODAY rather than
+		// overdue, and `task-due-today` is here to hold that boundary rather
+		// than leave it to a reader to re-derive from the collation rules.
 		for (const [key, fields] of Object.entries({
 			'task-mine': { assignee: ME, status: 'active' },
 			'task-other': { assignee: OTHER, status: 'active' },
 			'task-unclaimed': { status: 'active' },
 			'task-done': { status: 'completed' },
+			'task-overdue': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(-2)}T09:00:00+00:00`,
+			},
+			'task-due-today': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(0)}T09:00:00+00:00`,
+			},
+			'task-this-week': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(2)}T09:00:00+00:00`,
+			},
+			'task-next-month': {
+				assignee: OTHER,
+				status: 'active',
+				dueDate: `${day(30)}T09:00:00+00:00`,
+			},
 		})) {
 			const created = await createObject(api, token, 'caseTask', {
 				title: `${RUN_PREFIX} ${key}`,
@@ -463,37 +535,23 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
-	test('the Deadlines table View all carries its filter to the list', async ({
+	// @e2e openspec/changes/lists-that-answer/specs/case-management/spec.md
+	test('Due this week shows the case due in three days and neither neighbour', async ({
 		page,
 	}) => {
-		await visit(page, APP_URL)
-
-		// `dashboard-tiles` merged the Overdue tile and the Deadline alerts
-		// tile into one `deadlines` table whose window is WIDER than the
-		// Overdue chip: past due AND due within three days. So this asserts
-		// the table's own filter surviving the trip, which is the defect
-		// triage item 4 named, not that it lands on the Overdue chip.
-		// Addressed by widget id, the way `pages.spec.ts` does: the id does
-		// not move when the title does.
-		const table = page.locator('[aria-label="deadlines"]')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
-		await expect(viewAll).toBeVisible({ timeout: 15_000 })
-		await viewAll.click()
-
+		await visit(page, CASES_URL)
 		await casesTable(page)
-		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
-		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toBe('@today+3d')
-		expect(query.get('isFinalStatus')).toBe('false')
+		await narrowToThisRun(page)
 
-		// The chip does NOT light up: CnIndexPage activates only the chip
-		// marked `default`, so the reader lands on All with the query
-		// applied, and naming a chip from a query is a nextcloud-vue change.
-		await listSettled(page, 'mine-overdue')
-		await expect(row(page, 'closed-overdue')).toHaveCount(0)
+		await chip(page, CHIPS.dueThisWeek).click()
+		await listSettled(page, 'mine-open')
+		// The window is half-open on both sides, and each neighbour proves
+		// one of them: `mine-far` is due in thirty days, past `@today+7d`,
+		// and `mine-overdue` was due two days ago, before `@today`. Assert
+		// both, because a chip carrying only the far edge would list every
+		// overdue case as well and still read as a plausible list.
 		await expect(row(page, 'mine-far')).toHaveCount(0)
+		await expect(row(page, 'mine-overdue')).toHaveCount(0)
 	})
 
 	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
@@ -512,7 +570,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
 		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lt]')).toBe('@today')
+		expect(query.get('deadline[lt]')).toMatch(dateTokenPattern('@today'))
 		expect(query.get('isFinalStatus')).toBe('false')
 
 		await listSettled(page, 'mine-overdue')
@@ -521,7 +579,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// ---------------------------------------------------------------------
-	// task-management — the same three chips on Tasks
+	// task-management — the same six chips on Tasks
 	// ---------------------------------------------------------------------
 
 	// @e2e openspec/changes/one-case-list/specs/task-management/spec.md
@@ -560,6 +618,116 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		})
 	})
 
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Closed on Tasks shows the completed task and not the open one', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.closed).click()
+		await listSettled(page, 'task-done')
+		await expect(row(page, 'task-mine')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Overdue on Tasks leaves out the task due later today', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.overdue).click()
+		await listSettled(page, 'task-overdue')
+		// The boundary, and the reason this file seeds a task due at nine
+		// this morning at all: `dueDate` is an instant and `@today` is a
+		// date, so a string comparison puts today's instants AFTER the date.
+		// A task due later today is not late yet, and if the comparison ever
+		// changes shape this is the assertion that says so.
+		await expect(row(page, 'task-due-today')).toHaveCount(0)
+		await expect(row(page, 'task-next-month')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('Due this week on Tasks holds both edges of the window', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		await chip(page, CHIPS.dueThisWeek).click()
+		await listSettled(page, 'task-this-week')
+		// Today is inside the window and two days ago is not, which is the
+		// same boundary the Overdue test reads from the other side.
+		await expect(row(page, 'task-due-today').first()).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(row(page, 'task-overdue')).toHaveCount(0)
+		await expect(row(page, 'task-next-month')).toHaveCount(0)
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('the task row shows the priority REQ-TASK-004 has always asked for', async ({
+		page,
+	}) => {
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+
+		// `caseTask.priority` is `facetable`, so it was always reachable
+		// through the sidebar and never present in the row a handler reads.
+		// The column header is the whole claim.
+		await expect(
+			page.getByRole('columnheader', { name: /^(Priority|Prioriteit)$/ }),
+		).toBeVisible({ timeout: 30_000 })
+	})
+
+	// @e2e openspec/changes/lists-that-answer/specs/task-management/spec.md
+	test('the task due windows narrow the collection, edges included', async () => {
+		// The browser scenarios above prove the chips are wired to these
+		// windows; this proves the windows themselves, against the API and
+		// without pagination in the way. `_limit` is 200 and the filter is
+		// narrow, so what comes back is this run's tasks and whatever else
+		// genuinely falls in the window.
+		const week = await listObjects(api, 'caseTask', {
+			assignee: OTHER,
+			isTerminalStatus: 'false',
+			'dueDate[gte]': day(0),
+			'dueDate[lt]': day(7),
+		})
+		const weekTitles = week.map((t: any) => String(t.title ?? ''))
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
+			'a task due later today is inside the week',
+		).toBe(true)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-this-week`)),
+			'a task due in two days is inside the week',
+		).toBe(true)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
+			'a task due two days ago is not',
+		).toBe(false)
+		expect(
+			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-next-month`)),
+			'a task due in thirty days is not',
+		).toBe(false)
+
+		const late = await listObjects(api, 'caseTask', {
+			assignee: OTHER,
+			isTerminalStatus: 'false',
+			'dueDate[lt]': day(0),
+		})
+		const lateTitles = late.map((t: any) => String(t.title ?? ''))
+		expect(
+			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
+			'a task due two days ago is overdue',
+		).toBe(true)
+		expect(
+			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
+			'a task due later today is not overdue',
+		).toBe(false)
+	})
+
 	// ---------------------------------------------------------------------
 	// case-bulk-status-transition — the four bulk actions
 	// ---------------------------------------------------------------------
@@ -583,7 +751,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await listSettled(page, keys[0])
 
 		for (const key of keys) {
-			await row(page, key).first().getByRole('checkbox').check()
+			await tickCheckbox(row(page, key).first().getByRole('checkbox'))
 		}
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
@@ -600,12 +768,21 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const dialog = await openBulkAction(page, ['bulk-a', 'bulk-b'], 'transition')
 
 		await dialog.getByRole('combobox').first().click()
+		// By TEXT, and accepting `.vs__dropdown-option` beside `role="option"`.
+		// The transition list renders and the option is plainly on screen —
+		// measured off this test's own failure screenshot, "Start behandeling"
+		// visible in an open dropdown — but `getByRole('option')` matched
+		// nothing for the whole budget, so the failure read as an engine that
+		// offered no transitions rather than as a name the a11y tree does not
+		// carry. The sibling pattern is `case-timeline.spec.ts`, which pairs
+		// the two selectors for exactly this reason.
 		await page
-			.getByRole('option', { name: /Start behandeling/ })
+			.locator('[role="option"], .vs__dropdown-option')
+			.filter({ hasText: /Start behandeling/ })
 			.first()
 			.click()
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Quarterly clean-up')
 
 		const execute = dialog.locator('[data-testid="bulk-execute"]')
@@ -635,7 +812,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeDisabled()
 
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeEnabled()
 	})
@@ -644,7 +821,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('Suspend then Resume, each with its reason', async ({ page }) => {
 		const suspend = await openBulkAction(page, ['suspend-me'], 'suspend')
 		await suspend
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await suspend.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -669,7 +846,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const resume = await openBulkAction(page, ['suspend-me'], 'resume')
 		await resume
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Documents received')
 		await resume.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -695,9 +872,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const dialog = await openBulkAction(page, ['extend-me'], 'extend-term')
 
 		await dialog.locator('[data-testid="bulk-new-deadline"]').fill(day(20))
-		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
-			.fill('Complex case')
+		await dialog.locator('[data-testid="bulk-reason"]').fill('Complex case')
 		await dialog.locator('[data-testid="bulk-execute"]').click()
 
 		await expect(
@@ -735,7 +910,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await chip(page, CHIPS.mine).click()
 		await listSettled(page, 'mine-far')
-		await row(page, 'mine-far').first().getByRole('checkbox').check()
+		await tickCheckbox(row(page, 'mine-far').first().getByRole('checkbox'))
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
 		await expect(strip).toBeVisible({ timeout: 15_000 })

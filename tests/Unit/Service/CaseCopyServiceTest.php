@@ -69,6 +69,7 @@ class CaseCopyServiceTest extends TestCase {
 					'register' => 'dossiq',
 					'case_schema' => 'case',
 					'case_document_schema' => 'caseDocument',
+					'case_type_schema' => 'caseType',
 					default => $default,
 				};
 			}
@@ -239,17 +240,73 @@ class CaseCopyServiceTest extends TestCase {
 	}//end testTheCarriedAndBannedListsAreDisjoint()
 
 	/**
-	 * The status is left to the case type's prefill rather than written here.
+	 * The copy opens at its type's initial status, and NOT at the source's.
+	 *
+	 * This test used to assert the opposite — that `status` was absent from
+	 * the write — on the grounds that `case.caseType` carries
+	 * `x-openregister-prefill` and that the prefill was the one write path.
+	 * It is not: that block fills a FORM when a picker resolves, and does not
+	 * run on a write. Measured against a running register, an API create
+	 * naming a type whose `initialStatus` is set and passing no status stores
+	 * `status: null`.
+	 *
+	 * So the old assertion described the implementation rather than the
+	 * outcome, and passed for as long as every copy landed with no status at
+	 * all — off every status-filtered lens, with no available transitions.
 	 *
 	 * @return void
 	 */
-	public function testCopyLeavesStatusToTheCaseTypesInitialStatus(): void {
+	public function testTheCopyOpensAtItsTypesInitialStatus(): void {
+		$service = $this->makeService(
+			[
+				'case-1' => $this->sourceCase(),
+				'type-1' => ['id' => 'type-1', 'initialStatus' => 'status-intake'],
+			]
+		);
+
+		$service->copy('case-1', []);
+
+		$written = $this->writes[0]['object'];
+		$this->assertSame('status-intake', ($written['status'] ?? null));
+		// And NOT where the source had got to: a copy starts at the beginning.
+		$this->assertNotSame('status-received', ($written['status'] ?? null));
+	}//end testTheCopyOpensAtItsTypesInitialStatus()
+
+	/**
+	 * A type with no initial status still yields a copy, without a status.
+	 *
+	 * Fail soft rather than refuse: that is the state a case of such a type
+	 * would be in however it was created, so a copy is no worse off than an
+	 * original.
+	 *
+	 * @return void
+	 */
+	public function testACopyIsStillWrittenWhenTheTypeHasNoInitialStatus(): void {
+		$service = $this->makeService(
+			[
+				'case-1' => $this->sourceCase(),
+				'type-1' => ['id' => 'type-1'],
+			]
+		);
+
+		$service->copy('case-1', []);
+
+		$this->assertArrayNotHasKey('status', $this->writes[0]['object']);
+	}//end testACopyIsStillWrittenWhenTheTypeHasNoInitialStatus()
+
+	/**
+	 * A case type that does not resolve at all is the same soft failure.
+	 *
+	 * @return void
+	 */
+	public function testACopyIsStillWrittenWhenTheTypeDoesNotResolve(): void {
+		// No `type-1` in the store: `fetch()` answers null.
 		$service = $this->makeService(['case-1' => $this->sourceCase()]);
 
 		$service->copy('case-1', []);
 
 		$this->assertArrayNotHasKey('status', $this->writes[0]['object']);
-	}//end testCopyLeavesStatusToTheCaseTypesInitialStatus()
+	}//end testACopyIsStillWrittenWhenTheTypeDoesNotResolve()
 
 	/**
 	 * The source is listed under the copy's related cases, in the encoded

@@ -4,7 +4,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.',
+					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail. They are not configured here.',
 				)
 			}}
 		</NcNoteCard>
@@ -120,9 +120,28 @@
 				placeholder="50" />
 		</div>
 
+		<div class="setting-row">
+			<NcSelect
+				v-model="fallbackCaseTypeOption"
+				:inputLabel="t('dossiq', 'Case type for mail nobody claims')"
+				:options="caseTypeOptions"
+				:loading="caseTypesLoading"
+				:disabled="!writable || loading"
+				:placeholder="t('dossiq', 'Leave it in the mailbox')"
+				data-testid="email-fallback-case-type" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.',
+					)
+				}}
+			</p>
+		</div>
+
 		<div class="email-settings__actions">
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!writable || saving || loading"
 				@click="save">
 				<template #icon>
@@ -130,13 +149,13 @@
 				</template>
 				{{
 					saving
-						? t('dossiq', 'Saving...')
+						? t('dossiq', 'Saving…')
 						: t('dossiq', 'Save mailbox settings')
 				}}
 			</NcButton>
 
 			<NcButton
-				type="secondary"
+				variant="secondary"
 				:disabled="testing || loading"
 				@click="testConnection">
 				<template #icon>
@@ -161,6 +180,7 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
+import { useObjectStore } from '../../store/modules/object.js'
 
 /**
  * Shared case-email mailbox admin settings.
@@ -191,7 +211,11 @@ export default {
 				email_transport: '',
 				email_poll_interval: '300',
 				email_poll_batch_size: '50',
+				email_fallback_case_type: '',
 			},
+
+			caseTypes: [],
+			caseTypesLoading: false,
 
 			encryptionOptions: [
 				{ id: 'ssl', label: 'SSL/TLS' },
@@ -217,6 +241,48 @@ export default {
 			},
 		},
 
+		/**
+		 * The case types a mail nobody claims can become.
+		 *
+		 * @return {Array<object>} The options, with an explicit empty one first.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		caseTypeOptions() {
+			return this.caseTypes.map((ct) => ({
+				id: String(ct.id),
+				label: ct.title || ct.identifier || String(ct.id),
+			}))
+		},
+
+		/**
+		 * The case type currently chosen, if the instance names one.
+		 *
+		 * @return {object|null} The option.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		fallbackCaseTypeOption: {
+			/**
+			 * @return {object|null} The chosen option.
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 */
+			get() {
+				return (
+					this.caseTypeOptions.find(
+						(o) => o.id === this.form.email_fallback_case_type,
+					) || null
+				)
+			},
+
+			/**
+			 * @param {object|null} option The chosen option.
+			 * @return {void}
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 */
+			set(option) {
+				this.form.email_fallback_case_type = option ? option.id : ''
+			},
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
@@ -225,8 +291,15 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the stored settings, then the case types the picker offers.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
 	async mounted() {
 		await this.load()
+		await this.loadCaseTypes()
 	},
 
 	methods: {
@@ -248,10 +321,35 @@ export default {
 						}
 					})
 				}
-			} catch (error) {
+			} catch {
 				// Non-fatal: defaults stay in place if the endpoint is unreachable.
 			} finally {
 				this.loading = false
+			}
+		},
+
+		/**
+		 * Read the published case types a fallback can be chosen from.
+		 *
+		 * Only published ones: filing mail into a draft case type would create
+		 * cases on a definition still being written.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async loadCaseTypes() {
+			this.caseTypesLoading = true
+			try {
+				const results = await useObjectStore().fetchCollection('caseType', {
+					_limit: 100,
+					isDraft: false,
+				})
+				this.caseTypes = results || []
+			} catch {
+				// Non-fatal: the picker stays empty and the setting keeps its
+				// stored value, which is safer than clearing it.
+			} finally {
+				this.caseTypesLoading = false
 			}
 		},
 

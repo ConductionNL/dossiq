@@ -116,13 +116,22 @@ describe('the Integrations menu entry', () => {
 })
 
 describe('the dossiqIntegration schema', () => {
-	it('declares the four states and nothing else', () => {
+	it('declares the five states and nothing else', () => {
 		expect(schema.properties.status.enum).toEqual([
 			'configured',
 			'unconfigured',
 			'unavailable',
+			'simulated',
 			'error',
 		])
+	})
+
+	// Simulated is the state that lets an adapter seam tell the truth. Without
+	// it the two mock-backed seams have to be filed under `unconfigured`, which
+	// understates a channel that succeeds and delivers nothing, or under
+	// `configured`, which is the lie this page was built to remove.
+	it('gives Simulated a label, because an unlabelled enum renders raw', () => {
+		expect(schema.properties.status['x-enum-labels'].simulated).toBe('Simulated')
 	})
 
 	it('is listed on the register, so the import creates it', () => {
@@ -144,8 +153,8 @@ describe('the dossiqIntegration schema', () => {
 })
 
 describe('the seeded connections', () => {
-	it('are the ten of row A34, in placement order', () => {
-		expect(rows).toHaveLength(10)
+	it('are the ten of row A34 plus the two adapter seams, in placement order', () => {
+		expect(rows).toHaveLength(12)
 		expect(rows.map((r) => r.key)).toEqual([
 			'zgw',
 			'stuf',
@@ -157,6 +166,8 @@ describe('the seeded connections', () => {
 			'brp',
 			'kvk',
 			'pdok',
+			'berichtenbox',
+			'templates',
 		])
 		const orders = rows.map((r) => r.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)
@@ -166,17 +177,58 @@ describe('the seeded connections', () => {
 		expect(rows.some((r) => r.status === 'configured')).toBe(false)
 	})
 
-	it('say Not available where the spec has no implementation', () => {
+	// BRP and KvK were both seeded Not available with "Specified, not built
+	// yet", and that sentence was false for both of them. Each ships a Log
+	// adapter, a real HTTP adapter, a DI registrar bound from
+	// ExternalRegisterRegistrar, and unit tests. What separates them is who
+	// calls them: ConflictOfInterestService injects the BRP adapter for the
+	// belangenconflict check, and nothing anywhere injects the KvK one.
+	it('say Not available only where nothing calls the adapter', () => {
 		const unavailable = rows.filter((r) => r.status === 'unavailable')
-		expect(unavailable.map((r) => r.key)).toEqual(['brp', 'kvk'])
+		expect(unavailable.map((r) => r.key)).toEqual(['kvk'])
 		for (const row of unavailable) {
-			expect(row.statusMessage).toBe('Specified, not built yet')
+			expect(row.statusMessage).not.toMatch(/not built/i)
+			expect(row.statusMessage).toMatch(/built and bound/i)
+			expect(row.settingsUrl).toBe('')
+		}
+	})
+
+	// The row that was wrong. BRP is built, bound and called, and it reaches
+	// nothing because its tier defaults to `log`. That is Not configured, and
+	// the message has to name the key an integrator sets, because no admin
+	// section writes it.
+	it('say Not configured for BRP, and name the key that wakes it', () => {
+		const brp = rows.find((r) => r.key === 'brp')
+		expect(brp.status).toBe('unconfigured')
+		expect(brp.statusMessage).not.toMatch(/not built/i)
+		expect(brp.statusMessage).toMatch(/integration\.brp\.mode/)
+		expect(brp.settingsUrl).toBe('')
+	})
+
+	// The row this change exists for. Berichtenbox and the template engine both
+	// resolve to a mock adapter until an integrator names a real one, and the
+	// mock WORKS: it returns a message id, it returns a rendered document, and
+	// nothing leaves the instance. `unconfigured` would understate that and
+	// `configured` would be the page's own lie, so both read Simulated and both
+	// say the word mock in a sentence a reader sees on the row itself.
+	it('say Simulated where a mock adapter is what answers', () => {
+		const simulated = rows.filter((r) => r.status === 'simulated')
+		expect(simulated.map((r) => r.key)).toEqual(['berichtenbox', 'templates'])
+		for (const row of simulated) {
+			expect(row.statusMessage).toMatch(/mock/i)
 			expect(row.settingsUrl).toBe('')
 		}
 	})
 
 	it('say Not checked yet everywhere else', () => {
-		for (const row of rows.filter((r) => r.status !== 'unavailable')) {
+		const rest = rows.filter(
+			(r) =>
+				r.status !== 'unavailable'
+				&& r.status !== 'simulated'
+				&& r.key !== 'brp',
+		)
+		expect(rest).toHaveLength(8)
+		for (const row of rest) {
 			expect(row.status).toBe('unconfigured')
 			expect(row.statusMessage).toBe('Not checked yet')
 		}

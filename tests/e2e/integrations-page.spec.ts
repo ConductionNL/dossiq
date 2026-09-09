@@ -43,10 +43,36 @@ const SEEDED_KEYS = [
 	'brp',
 	'kvk',
 	'pdok',
+	'berichtenbox',
+	'templates',
 ]
 
-/** The two connections that are specified and not built. */
-const UNAVAILABLE_KEYS = ['brp', 'kvk']
+/**
+ * The one connection nothing calls.
+ *
+ * BRP and KvK were both listed here with the message "Specified, not built
+ * yet", and that sentence was false for both. Each ships a dormant Log adapter,
+ * a real HTTP adapter and a DI registrar bound from ExternalRegisterRegistrar.
+ * The difference is the caller: ConflictOfInterestService injects the BRP
+ * adapter for the belangenconflict check, and nothing injects the KvK one, so
+ * configuring KvK changes nothing an admin can see. That, and not "not built",
+ * is what Not available means on this row.
+ */
+const UNAVAILABLE_KEYS = ['kvk']
+
+/** Built, called, and dormant until its tier key is set. */
+const DORMANT_KEYS = ['brp']
+
+/**
+ * The two seams that ship a mock adapter.
+ *
+ * These are the rows the page did not have and most needed. Both seams WORK:
+ * the compose dialog opens, the send succeeds, an id comes back. Neither
+ * reaches anything outside this instance. A row that read Configured or Not
+ * available would be the same lie the page was built to remove, one layer
+ * down, so the invariant asserted below is that they read as neither.
+ */
+const SIMULATED_KEYS = ['berichtenbox', 'templates']
 
 /** The ordinary user `ci-seed.sh` creates. */
 const PLAIN_USER = process.env.E2E_USER_NAME || 'e2euser'
@@ -99,7 +125,7 @@ test.describe('Integrations', () => {
 		await api.dispose()
 	})
 
-	test('lists the ten connections in the seeded order', async ({ page }) => {
+	test('lists the twelve connections in the seeded order', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
 		expect(Object.keys(byKey).sort()).toEqual([...SEEDED_KEYS].sort())
 
@@ -122,23 +148,37 @@ test.describe('Integrations', () => {
 		const link = page.locator('a[href="/settings/admin/dossiq#section-stuf"]')
 		await expect(link).toBeVisible({ timeout: 30_000 })
 
-		await link.click()
-		await expect(page).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
-		await expect(page.locator('#section-stuf')).toBeVisible({ timeout: 30_000 })
+		// The cell renderer sets `target="_blank"`, so the settings page opens
+		// in a NEW TAB and this one never navigates. Asserting on `page` after
+		// the click therefore waits out the whole budget while the link works
+		// perfectly. Take the popup instead, which is also what the reader
+		// gets: the list they were reading stays where it was.
+		const [settings] = await Promise.all([
+			page.waitForEvent('popup'),
+			link.click(),
+		])
+		await expect(settings).toHaveURL(/\/settings\/admin\/dossiq#section-stuf$/)
+		await expect(settings.locator('#section-stuf')).toBeVisible({
+			timeout: 30_000,
+		})
+		await settings.close()
 	})
 
-	test('offers no settings link where the connection is not built', async ({
+	test('offers no settings link where there is no section to open', async ({
 		page,
 	}) => {
 		const byKey = await integrationsByKey(api)
-		for (const key of UNAVAILABLE_KEYS) {
-			expect(byKey[key].status).toBe('unavailable')
-			expect(byKey[key].statusMessage).toBe('Specified, not built yet')
-			expect(byKey[key].settingsUrl).toBe('')
+		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
+			expect(byKey[key].statusMessage).not.toMatch(/not built/i)
+			// The seed writes `""` and the register does not store an empty
+			// string, so the row reads back with no such key at all. Both
+			// spellings say the same thing, and the assertion that matters is
+			// the one below: the affordance is absent from the page.
+			expect(byKey[key].settingsUrl || '').toBe('')
 		}
 
 		await openIntegrations(page)
-		for (const key of UNAVAILABLE_KEYS) {
+		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
 			const row = page.getByRole('row', {
 				name: new RegExp(byKey[key].title, 'i'),
 			})
@@ -163,6 +203,15 @@ test.describe('Integrations', () => {
 			}
 			if (UNAVAILABLE_KEYS.includes(key)) {
 				expect(row.status).toBe('unavailable')
+				continue
+			}
+			if (DORMANT_KEYS.includes(key)) {
+				expect(row.status).toBe('unconfigured')
+				expect(row.statusMessage).toMatch(/integration\.brp\.mode/)
+				continue
+			}
+			if (SIMULATED_KEYS.includes(key)) {
+				expect(row.status).toBe('simulated')
 				continue
 			}
 			expect(row.status).toBe('unconfigured')
@@ -250,6 +299,31 @@ test.describe('Integrations', () => {
 		)
 
 		await context.close()
+	})
+
+	test('says plainly that a mock adapter is running', async ({ page }) => {
+		const byKey = await integrationsByKey(api)
+
+		for (const key of SIMULATED_KEYS) {
+			const row = byKey[key]
+			expect(row, `no seeded row for ${key}`).toBeTruthy()
+			// The claim, not the rendering. A Simulated row whose message says
+			// nothing would render perfectly and tell the reader nothing, which
+			// is the failure mode this whole page exists to catch.
+			expect(row.status).toBe('simulated')
+			expect(String(row.statusMessage || '')).toMatch(/mock/i)
+		}
+
+		await openIntegrations(page)
+		for (const key of SIMULATED_KEYS) {
+			const row = page.getByRole('row', {
+				name: new RegExp(byKey[key].title, 'i'),
+			})
+			await expect(row).toBeVisible({ timeout: 30_000 })
+			// The reader must be able to see it WITHOUT opening a settings
+			// page: the row itself carries the sentence.
+			await expect(row).toContainText(/mock/i)
+		}
 	})
 
 	test.fixme('lists a missing required app', async () => {

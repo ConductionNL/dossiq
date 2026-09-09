@@ -192,11 +192,18 @@ class CaseTypeStore {
 	/**
 	 * Normalise one store answer into a plain row.
 	 *
+	 * Public because it is the app's ONE answer to "what shape did the store
+	 * just hand me". OpenRegister answers an object with `jsonSerialize()` on
+	 * some reads and a plain array on others, and every reader that keeps its
+	 * own version of this eventually keeps a slightly different one.
+	 *
 	 * @param mixed $value The answer.
 	 *
 	 * @return array<string, mixed> The row.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
 	 */
-	private function asRow(mixed $value): array {
+	public function asRow(mixed $value): array {
 		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
 			$value = $value->jsonSerialize();
 		}

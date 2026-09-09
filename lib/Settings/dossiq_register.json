@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts.",
-        "version": "0.15.0"
+        "version": "0.17.0"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.6.0",
+                "version": "1.7.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -310,6 +310,29 @@
                         "title": "Startable flows",
                         "description": "The flows a handler may start by hand on a case of this type. A type that lists none does not offer Start.",
                         "x-notes": "Flow ids as plain strings, and NOT a $ref: a flow is a row in oc_openregister_flows read through FlowService, not an object in a register, so there is no flow schema for a $ref to name. The Start entry in the case Actions menu lists these and nothing else. A userStartable flag on the flow itself would replace this list (openspec/changes/case-actions-menu tasks 2.3)."
+                    },
+                    "version": {
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1,
+                        "description": "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.",
+                        "title": "Version",
+                        "facetable": true
+                    },
+                    "previousVersion": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseType",
+                        "description": "The version this one was made from. Follow it back and you get the whole history of the case type, including the version any long-running case is still on.",
+                        "title": "Previous version"
+                    },
+                    "supersededBy": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseType",
+                        "description": "The version that replaced this one, written the moment that version is published. A version with this filled in keeps running its own cases and is no longer offered for new ones. Empty means this is the version in use.",
+                        "title": "Superseded by",
+                        "facetable": true
                     }
                 }
             },
@@ -9441,7 +9464,7 @@
             "dossiqIntegration": {
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Integration",
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
                 "type": "object",
@@ -9465,7 +9488,9 @@
                             "financial",
                             "brp",
                             "kvk",
-                            "pdok"
+                            "pdok",
+                            "berichtenbox",
+                            "templates"
                         ]
                     },
                     "title": {
@@ -9487,12 +9512,14 @@
                             "configured",
                             "unconfigured",
                             "unavailable",
+                            "simulated",
                             "error"
                         ],
                         "x-enum-labels": {
                             "configured": "Configured",
                             "unconfigured": "Not configured",
                             "unavailable": "Not available",
+                            "simulated": "Simulated",
                             "error": "Error"
                         },
                         "facetable": true

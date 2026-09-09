@@ -18,17 +18,23 @@ import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 
-// The four states an integration card may show. Keys are the stored enum
+// The five states an integration card may show. Keys are the stored enum
 // values; the values are the English SOURCE strings, translated on each call
 // rather than here — a module-level `t()` runs before the catalogue is
 // registered and would freeze every label in English on a Dutch instance.
 // Kept here rather than read from the schema's `x-enum-labels` because a
 // formatter is handed the VALUE and never the property, so the schema is not
 // reachable from this seat.
+//
+// `simulated` is the one this page needed and did not have. A seam bound to a
+// mock adapter is not `unavailable` — it answers, it succeeds, it returns an
+// id — and calling it `configured` is the exact claim this page exists to stop
+// the app from making. Simulated says what it is.
 const INTEGRATION_STATUS_LABELS = {
 	configured: 'Configured',
 	unconfigured: 'Not configured',
 	unavailable: 'Not available',
+	simulated: 'Simulated',
 	error: 'Error',
 }
 
@@ -114,12 +120,12 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
-	 * The four states an integration card may show, as the label a reader
+	 * The five states an integration card may show, as the label a reader
 	 * understands. An unknown value renders itself rather than an empty cell:
 	 * a status the app cannot name is still a status the admin should see.
 	 *
 	 * @param {string} value The `status` enum value.
-	 * @return {string} The label, or the raw value when it is not one of the four.
+	 * @return {string} The label, or the raw value when it is not one of the five.
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	integrationStatus: (value) => {
@@ -131,8 +137,9 @@ export default {
 	 * The text of the Open settings link on an integration row.
 	 *
 	 * Empty when the connection has no settings section, which is what makes
-	 * the cell fall through to plain text and offer nothing to click — a
-	 * connection that is specified and not built has nowhere to send a reader.
+	 * the cell fall through to plain text and offer nothing to click. A
+	 * connection configured by an app-config key rather than a form has nowhere
+	 * to send a reader, so its row names the key in its message instead.
 	 *
 	 * @param {string} value The row's `settingsUrl`.
 	 * @return {string} The link text, or '' when there is no destination.

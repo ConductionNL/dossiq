@@ -61,6 +61,7 @@ class ServiceRegistrar {
 		(new SaasServiceRegistrar())->register(context: $context);
 
 		(new BeschikkingAdapterRegistrar())->register(context: $context);
+		(new SubstitutableAdapterRegistrar())->register(context: $context);
 		(new AuthAdapterRegistrar())->register(context: $context);
 		(new ExternalRegisterRegistrar())->register(context: $context);
 	}//end register()

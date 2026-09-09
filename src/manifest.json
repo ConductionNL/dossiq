@@ -79,7 +79,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "Let's take a quick spin through case handling. We'll register a case together so you can see how the pieces fit, and you'll add the record yourself.",
+						"body": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -92,7 +92,7 @@
 						"id": "go-cases",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"body": "Cases are the heart of your work. Open Cases from the menu to see everything in progress.",
+						"body": "You work from this list: every case in the organisation, open and closed.",
 						"task": "Click Cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -226,7 +226,15 @@
 			"label": "Contacts",
 			"icon": "AccountGroupOutline",
 			"route": "Contacts",
-			"order": 25
+			"order": 25,
+			"open": true
+		},
+		{
+			"id": "OrganisationsMenu",
+			"label": "Organisations",
+			"icon": "OfficeBuildingOutline",
+			"route": "Organisations",
+			"order": 26
 		},
 		{
 			"id": "Cases",
@@ -1133,9 +1141,9 @@
 						"type": "handler"
 					}
 				],
-				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
 				"extend": ["assignedGroup"],
-				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time.",
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -1169,6 +1177,14 @@
 						"filter": {
 							"isFinalStatus": false,
 							"deadline[lt]": "@today"
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[gte]": "@today",
+							"deadline[lt]": "@today+7d"
 						}
 					}
 				],
@@ -1343,249 +1359,11 @@
 						}
 					},
 					{
-						"id": "case-related",
-						"type": "case-related-planned",
-						"title": "Case type, parent & related cases",
-						"icon": "LinkVariant",
-						"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
-					},
-					{
 						"id": "initiator",
 						"type": "custom",
 						"title": "Initiator",
 						"icon": "Account",
 						"_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set."
-					},
-					{
-						"id": "case-sub-cases",
-						"type": "object-list",
-						"title": "Sub-cases",
-						"icon": "FileTreeOutline",
-						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
-						"content": {
-							"register": "dossiq",
-							"schema": "case",
-							"filter": {
-								"parentCase": "@objectId"
-							},
-							"sort": {
-								"field": "deadline",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "deadline",
-									"label": "Deadline"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"emptyText": "No sub-cases yet"
-						}
-					},
-					{
-						"id": "case-tasks",
-						"type": "case-task-pane",
-						"title": "Tasks",
-						"icon": "ClipboardCheckOutline",
-						"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon, the tab entry and every content key are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column.",
-						"content": {
-							"register": "dossiq",
-							"schema": "caseTask",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "dueDate",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "dueDate",
-									"label": "Due"
-								},
-								{
-									"key": "priority",
-									"label": "Priority"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": "Tasks",
-							"viewAllQuery": {
-								"case": "@objectId"
-							},
-							"emptyText": "No tasks for this case yet"
-						}
-					},
-					{
-						"id": "case-roles",
-						"type": "object-list",
-						"title": "Parties",
-						"icon": "AccountKeyOutline",
-						"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are — whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
-						"content": {
-							"register": "dossiq",
-							"schema": "role",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "roleType",
-								"dir": "asc"
-							},
-							"limit": 50,
-							"columns": [
-								{
-									"key": "roleType",
-									"label": "Role"
-								},
-								{
-									"key": "participant",
-									"label": "Participant"
-								},
-								{
-									"key": "delegate",
-									"label": "Delegate"
-								},
-								{
-									"key": "delegateUntil",
-									"label": "Delegate until"
-								}
-							],
-							"emptyText": "No parties on this case yet"
-						}
-					},
-					{
-						"id": "case-locaties",
-						"type": "object-list",
-						"title": "Locations",
-						"icon": "Earth",
-						"content": {
-							"register": "dossiq",
-							"schema": "case-location",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "order",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "label",
-									"label": "Label"
-								},
-								{
-									"key": "formattedAddress",
-									"label": "Address"
-								},
-								{
-									"key": "addressDesignationId",
-									"label": "Nummeraanduiding id"
-								},
-								{
-									"key": "parcelId",
-									"label": "Parcel id"
-								},
-								{
-									"key": "source",
-									"label": "Source"
-								}
-							],
-							"emptyText": "No locations linked to this case yet"
-						}
-					},
-					{
-						"id": "case-objects",
-						"type": "object-list",
-						"title": "Objects",
-						"icon": "CubeOutline",
-						"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
-						"content": {
-							"register": "dossiq",
-							"schema": "caseObject",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "objectType",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "objectType",
-									"label": "Object type"
-								},
-								{
-									"key": "objectIdentification",
-									"label": "Identification"
-								},
-								{
-									"key": "description",
-									"label": "Description"
-								},
-								{
-									"key": "objectUrl",
-									"label": "Link"
-								}
-							],
-							"emptyText": "No objects linked to this case yet"
-						}
-					},
-					{
-						"id": "case-files",
-						"type": "integration",
-						"integrationId": "files",
-						"title": "Files & attachments",
-						"icon": "FolderOutline"
-					},
-					{
-						"id": "case-notes",
-						"type": "integration",
-						"integrationId": "notes",
-						"title": "Notes",
-						"icon": "NoteTextOutline"
-					},
-					{
-						"id": "case-calendar",
-						"type": "integration",
-						"integrationId": "calendar",
-						"title": "Appointments & hearings",
-						"icon": "Calendar"
-					},
-					{
-						"id": "case-decidesk-decisions",
-						"type": "integration",
-						"integrationId": "decidesk-decisions",
-						"title": "Besluitvorming",
-						"icon": "Gavel"
 					},
 					{
 						"id": "case-flow-runs",
@@ -1639,67 +1417,11 @@
 						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
-						"id": "case-email",
-						"type": "integration",
-						"integrationId": "email",
-						"title": "Mail & messages",
-						"icon": "EmailOutline",
-						"_note": "The mail leaf as a body widget so it can be a tab. The sidebar CaseEmailTab stays: the sidebar is for reading alongside the case, the tab is for working in it."
-					},
-					{
-						"id": "case-communication",
-						"type": "object-list",
-						"title": "Communication",
-						"icon": "PhoneInTalk",
-						"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail stay their own tabs until a tabs entry can render several widgets as stacked sections (design D4). The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
-						"content": {
-							"register": "dossiq",
-							"schema": "contactmoment",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "startTime",
-								"dir": "desc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "startTime",
-									"label": "Date"
-								},
-								{
-									"key": "notificationChannel",
-									"label": "Channel"
-								},
-								{
-									"key": "direction",
-									"label": "Direction"
-								},
-								{
-									"key": "summary",
-									"label": "Summary"
-								}
-							],
-							"emptyText": "No contact logged on this case yet"
-						}
-					},
-					{
-						"id": "case-documents",
-						"type": "dossier-tab",
-						"title": "Documents",
-						"icon": "FileDocumentMultipleOutline",
-						"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing — CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files tab stays beside it for loose attachments and Nextcloud shares.",
-						"content": {
-							"emptyText": "No documents yet"
-						}
-					},
-					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child stays in `widgets` and is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. Placement row A33 fixes the ORDER: Data, Documents, Parties, Tasks, Communication are the work a handler does, and they come first; Files, Notes, Mail and Related cases sit behind them until their folding changes land (Files into Documents, Notes and Mail into Communication); Sub-cases, Locations, Appointments, Decisions and Objects are the collections that may be empty, and they close the strip. REQ-CDV-16 names four of those five, because `custom-objects-on-the-case` landed after it was written; Objects is the same kind of tab and joins the same group, keeping the four in the relative order the requirement states. A tab whose sibling change has not landed is ABSENT rather than present and empty, which is why the strip carries no Timeline entry: the timeline is the sidebar History tab (change case-timeline), not a body panel. Hiding the conditional four on their row count needs `visibleIf` on a tab entry, which CnTabsWidget 2.41.0 does not read, so until it lands they simply stay last (case-header task 4.2). `case-core` moved IN from the layout grid: the case data is one of the panels describing the case, and reading it cost a scroll past the panels that answer the same question.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries SIX, which is what the placement work asked for. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
@@ -1708,56 +1430,381 @@
 									"label": "Data"
 								},
 								{
-									"widgetId": "case-documents",
+									"widgetId": "case-documents-panel",
 									"label": "Documents"
 								},
 								{
-									"widgetId": "case-roles",
-									"label": "Parties"
+									"widgetId": "case-people-panel",
+									"label": "People"
 								},
 								{
-									"widgetId": "case-tasks",
-									"label": "Tasks"
+									"widgetId": "case-work-panel",
+									"label": "Work"
 								},
 								{
-									"widgetId": "case-communication",
-									"label": "Communication"
+									"widgetId": "case-related-panel",
+									"label": "Related"
 								},
 								{
-									"widgetId": "case-files",
-									"label": "Files"
+									"widgetId": "case-objects-panel",
+									"label": "Objects and locations"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-documents-panel",
+						"type": "case-sections",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "The Documents tab. The registered documents of the case, and the case folder under them. Files is a SECTION here rather than a tab of its own, and it was not simply dropped: the files leaf carries the share and comment surface that the dossier list does not (design D5), and after DQ1 the two read different folders, so folding them is not the same claim as saying they hold the same files. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Documents",
+									"widget": {
+										"id": "case-documents",
+										"type": "dossier-tab",
+										"title": "Documents",
+										"icon": "FileDocumentMultipleOutline",
+										"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files SECTION sits under it in the same tab, for loose attachments and Nextcloud shares.",
+										"content": {
+											"emptyText": "No documents yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-notes",
-									"label": "Notes"
+									"label": "Files",
+									"widget": {
+										"id": "case-files",
+										"type": "integration",
+										"integrationId": "files",
+										"title": "Files & attachments",
+										"icon": "FolderOutline"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-people-panel",
+						"type": "case-sections",
+						"title": "People",
+						"icon": "AccountGroupOutline",
+						"_note": "The People tab. Who is involved in the case, and every contact with them. A contactmoment records a channel, a direction and a summary against a person, so it belongs beside the roles rather than in a tab of its own. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Parties",
+									"widget": {
+										"id": "case-roles",
+										"type": "object-list",
+										"title": "Parties",
+										"icon": "AccountKeyOutline",
+										"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are: whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
+										"content": {
+											"register": "dossiq",
+											"schema": "role",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "roleType",
+												"dir": "asc"
+											},
+											"limit": 50,
+											"columns": [
+												{
+													"key": "roleType",
+													"label": "Role"
+												},
+												{
+													"key": "participant",
+													"label": "Participant"
+												},
+												{
+													"key": "delegate",
+													"label": "Delegate"
+												},
+												{
+													"key": "delegateUntil",
+													"label": "Delegate until"
+												}
+											],
+											"emptyText": "No parties on this case yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-email",
-									"label": "Mail"
+									"label": "Communication",
+									"widget": {
+										"id": "case-communication",
+										"type": "object-list",
+										"title": "Communication",
+										"icon": "PhoneInTalk",
+										"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail stay their own tabs until a tabs entry can render several widgets as stacked sections (design D4). The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
+										"content": {
+											"register": "dossiq",
+											"schema": "contactmoment",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "startTime",
+												"dir": "desc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "startTime",
+													"label": "Date"
+												},
+												{
+													"key": "notificationChannel",
+													"label": "Channel"
+												},
+												{
+													"key": "direction",
+													"label": "Direction"
+												},
+												{
+													"key": "summary",
+													"label": "Summary"
+												}
+											],
+											"emptyText": "No contact logged on this case yet"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-work-panel",
+						"type": "case-sections",
+						"title": "Work",
+						"icon": "ClipboardCheckOutline",
+						"_note": "The Work tab. What is still to be done on this case, whether it is a task with a due date or an appointment with a time. The task pane stays in the strip rather than moving to the right column (plan item 3.18): that column already carries four cards, and a fifth would move the complexity rather than remove it. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Tasks",
+									"widget": {
+										"id": "case-tasks",
+										"type": "case-task-pane",
+										"title": "Tasks",
+										"icon": "ClipboardCheckOutline",
+										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon, the tab entry and every content key are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column.",
+										"content": {
+											"register": "dossiq",
+											"schema": "caseTask",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "dueDate",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "title",
+													"label": "Title"
+												},
+												{
+													"key": "status",
+													"label": "Status"
+												},
+												{
+													"key": "assignee",
+													"label": "Assignee"
+												},
+												{
+													"key": "dueDate",
+													"label": "Due"
+												},
+												{
+													"key": "priority",
+													"label": "Priority"
+												}
+											],
+											"rowRoute": "TaskDetail",
+											"viewAllRoute": "Tasks",
+											"viewAllQuery": {
+												"case": "@objectId"
+											},
+											"emptyText": "No tasks for this case yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-related",
-									"label": "Related cases"
+									"label": "Appointments",
+									"widget": {
+										"id": "case-calendar",
+										"type": "integration",
+										"integrationId": "calendar",
+										"title": "Appointments & hearings",
+										"icon": "Calendar"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-related-panel",
+						"type": "case-sections",
+						"title": "Related",
+						"icon": "LinkVariant",
+						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Related cases",
+									"widget": {
+										"id": "case-related",
+										"type": "case-related-planned",
+										"title": "Case type, parent & related cases",
+										"icon": "LinkVariant",
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
+									}
 								},
 								{
-									"widgetId": "case-sub-cases",
-									"label": "Sub-cases"
+									"label": "Sub-cases",
+									"widget": {
+										"id": "case-sub-cases",
+										"type": "object-list",
+										"title": "Sub-cases",
+										"icon": "FileTreeOutline",
+										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
+										"content": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"parentCase": "@objectId"
+											},
+											"sort": {
+												"field": "deadline",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "title",
+													"label": "Title"
+												},
+												{
+													"key": "status",
+													"label": "Status"
+												},
+												{
+													"key": "assignee",
+													"label": "Assignee"
+												},
+												{
+													"key": "deadline",
+													"label": "Deadline"
+												}
+											],
+											"rowRoute": "CaseDetail",
+											"emptyText": "No sub-cases yet"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-objects-panel",
+						"type": "case-sections",
+						"title": "Objects and locations",
+						"icon": "CubeOutline",
+						"_note": "The Objects and locations tab. What the case is about. Locations sits HERE and not under Related, which is where the tab count sketch put it: a case-location carries a nummeraanduiding id and a parcel id, so it is a registry object the case concerns, the same kind of thing as a caseObject, and Related is case to case. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Objects",
+									"widget": {
+										"id": "case-objects",
+										"type": "object-list",
+										"title": "Objects",
+										"icon": "CubeOutline",
+										"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+										"content": {
+											"register": "dossiq",
+											"schema": "caseObject",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "objectType",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "objectType",
+													"label": "Object type"
+												},
+												{
+													"key": "objectIdentification",
+													"label": "Identification"
+												},
+												{
+													"key": "description",
+													"label": "Description"
+												},
+												{
+													"key": "objectUrl",
+													"label": "Link"
+												}
+											],
+											"emptyText": "No objects linked to this case yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-locaties",
-									"label": "Locations"
-								},
-								{
-									"widgetId": "case-calendar",
-									"label": "Appointments"
-								},
-								{
-									"widgetId": "case-decidesk-decisions",
-									"label": "Decisions"
-								},
-								{
-									"widgetId": "case-objects",
-									"label": "Objects"
+									"label": "Locations",
+									"widget": {
+										"id": "case-locaties",
+										"type": "object-list",
+										"title": "Locations",
+										"icon": "Earth",
+										"content": {
+											"register": "dossiq",
+											"schema": "case-location",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "order",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "label",
+													"label": "Label"
+												},
+												{
+													"key": "formattedAddress",
+													"label": "Address"
+												},
+												{
+													"key": "addressDesignationId",
+													"label": "Nummeraanduiding id"
+												},
+												{
+													"key": "parcelId",
+													"label": "Parcel id"
+												},
+												{
+													"key": "source",
+													"label": "Source"
+												}
+											],
+											"emptyText": "No locations linked to this case yet"
+										}
+									}
 								}
 							]
 						}
@@ -2521,7 +2568,7 @@
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
 				"extend": ["case", "assigneeGroup"],
-				"_quickFiltersNote": "one-case-list: the same three lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases.",
+				"_quickFiltersNote": "one-case-list: the same lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases. lists-that-answer added Closed, Overdue and Due this week, which finishes the parallel: the six labels are now identical on both pages and only the field underneath differs, `dueDate` here against `deadline` there. `dueDate` is `format: date-time` while `deadline` is `format: date`, and the comparison is a plain string comparison on a string column (MagicSearchHandler casts only numeric columns), so `2026-09-08T09:00:00+00:00` sorts AFTER the prefix `2026-09-08`. That is the behaviour these windows need: a task due at nine this morning is due today, not overdue, and it belongs to Due this week. The boundary is asserted in tests/e2e/case-list-lenses.spec.ts rather than left to the reader to re-derive.",
 				"quickFilters": [
 					{ "label": "All", "filter": {}, "default": true },
 					{
@@ -2531,15 +2578,36 @@
 					{
 						"label": "Unclaimed",
 						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+					},
+					{
+						"label": "Closed",
+						"filter": { "isTerminalStatus": true }
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"isTerminalStatus": false,
+							"dueDate[lt]": "@today"
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"isTerminalStatus": false,
+							"dueDate[gte]": "@today",
+							"dueDate[lt]": "@today+7d"
+						}
 					}
 				],
+				"_priorityColumnNote": "REQ-TASK-004's first scenario has always required the task row to show priority, and the column was never declared. `caseTask.priority` is a `facetable` enum (low, normal, high, urgent) with a default of normal, so it was reachable through the sidebar facet and invisible in the row a handler actually reads. It sits after `dueDate` because the two answer the same question in order: when is this due, and does it jump the queue.",
 				"columns": [
 					"title",
 					{ "key": "case.title", "label": "Case", "sortable": false },
 					"assignee",
 					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
 					"status",
-					"dueDate"
+					"dueDate",
+					"priority"
 				],
 				"sidebar": {
 					"enabled": true,
@@ -4240,8 +4308,10 @@
 		{
 			"id": "FeaturesRoadmap",
 			"route": "/features-roadmap",
-			"type": "roadmap",
+			"type": "custom",
+			"component": "FeaturesRoadmapView",
 			"title": "Features & roadmap",
+			"_note": "Was type:\"roadmap\". The library's CnFeaturesAndRoadmapView renders exactly two tabs and declares zero slots (verified against the installed dist, @conduction/nextcloud-vue 2.41.0), so the capability comparison could not be added from the manifest. FeaturesRoadmapView renders that library page unchanged as its default section and adds the comparison as a second one. Revert to type:\"roadmap\" the day the library grows a slot or a comparison tab.",
 			"config": {
 				"documentationUrl": "https://procest.conduction.nl"
 			}
@@ -4680,7 +4750,7 @@
 				"schema": "brpPerson",
 				"allowSavedViews": true,
 				"showViewAction": false,
-				"_folderSidebarNote": "THE FOLDER SIDEBAR IS ABSENT, AND THAT IS THE HONEST STATE. Design D1 asks for a `custom` sidebar with a People folder over `brpPerson` and an Organisations folder naming `kvkCompany` as its schema, the second marked `hidden: true` until nextcloud-vue reads a folder's `schema` (the B10 seam). Two things measured against the installed dist stop that shipping. FIRST, there is no `hidden`: CnFolderTree renders every entry of `folders[]`, so the Organisations folder would appear, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list — the opposite of what REQ-ID-4's scenario asks. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. That would have emptied the list on the FIRST click of the only folder shipped. The block to add when the seam lands, unchanged from the design: `folderSidebar: {source: \"custom\", filterField: \"@self.schema\", allLabel: \"All contacts\", folders: [{id: \"brpPerson\", name: \"People\", schema: \"brpPerson\"}, {id: \"kvkCompany\", name: \"Organisations\", schema: \"kvkCompany\"}]}`. Until then the page lists people, the index search box covers name and number, and an organisation is reached from its case through the initiator card.",
+				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
 				"columns": [
 					{
 						"key": "displayName",
@@ -4718,6 +4788,58 @@
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose \u2014 the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
+		},
+		{
+			"id": "Organisations",
+			"route": "/organisations",
+			"type": "index",
+			"title": "Organisations",
+			"config": {
+				"register": "dossiq",
+				"schema": "kvkCompany",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"columns": [
+					{
+						"key": "tradeName",
+						"label": "Name"
+					},
+					{
+						"key": "kvkNumber",
+						"label": "KvK number"
+					},
+					{
+						"key": "legalForm",
+						"label": "Legal form"
+					},
+					{
+						"key": "address.place",
+						"label": "Place",
+						"sortable": false
+					},
+					{
+						"key": "description",
+						"label": "Description",
+						"sortable": false
+					}
+				],
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "OrganisationDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The organisations dossiq knows, and the other half of the Contacts domain. `contacts-domain` shipped `OrganisationDetail` with no way to reach it except the initiator card of a case that already named the company, so the ten seeded `kvkCompany` rows were listed nowhere. This page is that list. It spends NO top-level navigation slot: `src/menu-layout.json` relocates `OrganisationsMenu` under `Contacts`, and ADR-097 Decision 1 counts top-level entries only. `Contacts` carries `open: true` so the child is visible on mount rather than behind a chevron, because a nav entry you must first expand to discover is not the answer to a capability called contacts you can find. The `address.place` column is `sortable: false` for the same reason the Contacts page's residence column is: a dot-path resolves client-side for rendering, but a sort sends the key to OpenRegister as an `_order` field and no such column exists there."
 		},
 		{
 			"id": "ContactDetail",
@@ -5275,6 +5397,18 @@
 			"schemaSlug": "beroep",
 			"urlTemplate": "/apps/dossiq/beroepen/{uuid}",
 			"displayName": "Beroep"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "brpPerson",
+			"urlTemplate": "/apps/dossiq/contacts/{uuid}",
+			"displayName": "Contact"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "kvkCompany",
+			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
+			"displayName": "Organisation"
 		}
 	]
 }

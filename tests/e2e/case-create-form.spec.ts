@@ -20,6 +20,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -538,24 +539,17 @@ test.describe('New case dialog', () => {
 		// markup: it renders ZERO `data-cn-field` attributes, so a selector
 		// borrowed from the dialog finds nothing here.
 		//
-		// What IS stable is the widget's own id: CnDetailPage gives each widget
-		// `role="group"` with `aria-label` set to the manifest widget id, so
-		// `case-core` identifies it without depending on any visible text.
-		const coreWidget = page.locator('[aria-label="case-core"]')
-		await expect(
-			coreWidget,
-			'the case detail page should render the core data widget',
-		).toBeVisible({ timeout: 20000 })
-
-		// The widget's heading, which used to read "Data" for all 23 of the
-		// app's data widgets. CnObjectDataWidget is registered `ownsTitle`, so
-		// widgetTitleOf() reads ONLY `content.title` and ignores a top-level
-		// `title` — the manifest set the latter, so every heading fell back to
-		// the component default. Nothing asserted it, which is why it survived.
-		await expect(
-			coreWidget.locator('.cn-widget-wrapper__title'),
-			'the widget heading must be the manifest title, not the generic default',
-		).toHaveText('Core case data', { timeout: 15000 })
+		// `case-core` used to be addressable as `[aria-label="case-core"]`,
+		// because CnDetailPage labels every widget it lays out with the
+		// manifest id. It is no longer laid out: it moved into the
+		// `case-panels` strip as its first tab, so the attribute is gone and
+		// the panel is the way in.
+		//
+		// The heading assertion went with it. The strip takes over the title
+		// and its children render bare, so `Core case data` is no longer
+		// rendered anywhere and the tab's own label, `Data`, is what names the
+		// panel. Asserting that label is what opening the tab already does.
+		const coreWidget = await openCasePanel(page, 'data')
 
 		// Scoped to that widget, so this cannot pass on the words appearing
 		// somewhere else on a busy page.

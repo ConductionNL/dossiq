@@ -65,19 +65,30 @@ The system SHALL validate every outbound Berichtenbox message before dispatch: B
 
 The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `sendMessage(bsn, subject, body, typeCode, ?attachment): array` returning at minimum `{messageId, status}`, and `getReadStatus(messageId): array` returning at minimum `{read: bool, readAt: ?datetime}` — so that production Berichtenbox API adapters can be swapped in without touching `BerichtenboxService`.
 
-#### Scenario: Service resolves adapter via factory
+#### Scenario: The adapter is injected, not built inside the service
 
 - WHEN `BerichtenboxService::sendMessage` or `pollReadStatus` needs to talk to Berichtenbox
-- THEN it SHALL call the private `getAdapter()` factory which returns an implementation of `BerichtenboxAdapterInterface`
+- THEN it SHALL use the `BerichtenboxAdapterInterface` its constructor was given
+- AND the binding SHALL come from `SubstitutableAdapterRegistrar`, which reads the `berichtenbox_adapter` app-config key
+- AND an integrator SHALL be able to substitute a real adapter WITHOUT editing dossiq
 
-#### Scenario: MVP ships with mock adapter
+#### Scenario: No adapter configured falls back to the mock, out loud
 
-- WHEN no production adapter is configured (current state)
-- THEN `getAdapter()` SHALL return `MockAdapter` which generates a `mock-<hex>` message id, logs a redacted BSN, and reports messages as read 1h after send
+- WHEN `berichtenbox_adapter` is empty
+- THEN the seam SHALL bind `MockAdapter`, which generates a `mock-<hex>` message id, logs a redacted BSN, and reports messages as read 1h after send
+- AND the registrar SHALL log a translated warning saying messages are simulated and nothing reaches Mijn Overheid
+- AND the Integrations page SHALL carry a Berichtenbox card reading Simulated
+
+#### Scenario: A named class that cannot serve the seam is an error
+
+- WHEN `berichtenbox_adapter` names a class that is absent or does not implement `BerichtenboxAdapterInterface`
+- THEN the seam SHALL log an ERROR naming the setting and the class
+- AND it SHALL still bind the mock, because refusing to boot the app over one config value helps nobody
 
 #### Notes
 
-- The current factory unconditionally instantiates `MockAdapter` — settings-based adapter selection is observed-but-stubbed and remains a TODO.
+- Dossiq ships NO Berichtenbox transport and should not. The Berichtenbox is a per-customer contract with Logius, and outbound delivery is integriq's (ADR-041, `dossiq-delivers-nothing`). Dossiq owns composing the message and recording what happened to it.
+- The defect this requirement was rewritten to close was NOT the missing transport. `getAdapter()` built `MockAdapter` inline behind the comment "For MVP, always use mock adapter": no registration, no config switch, and everything around it real. A send returned a message id and nothing left the instance.
 - `MockAdapter::sendMessage` logs only the first 4 BSN digits, masking the rest with `*****` — PII handling pattern future production adapters should preserve.
 
 ### REQ-004: Read-status polling with 7-day unread-flagging

@@ -25,6 +25,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const REGISTRY_PATH = path.join(ROOT, 'src/registry.js')
@@ -45,8 +46,18 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * tripwire for unrelated work while saying nothing about the task pane. The
  * ratchet ADR-100 actually sets is on CUSTOM pages, and that stays exact; the
  * assertion below states the rest of the intent directly instead.
+ *
+ * Moved 10 -> 11 on 2026-09-08 by `FeaturesRoadmap`, which is the only page
+ * since the pane to spend a unit of the ratchet. It did not have a choice:
+ * the library's CnFeaturesAndRoadmapView declares zero slots (checked against
+ * the installed @conduction/nextcloud-vue 2.41.0 dist, not the docs), so
+ * `type: "roadmap"` cannot carry the capability comparison. The unit comes
+ * back the day the library grows a slot or a comparison tab and the page
+ * returns to `type: "roadmap"`; the manifest `_note` on that page says so
+ * too. Anything else that moves this number is a change that owes an
+ * explanation here.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 10
+const CUSTOM_PAGE_COUNT_BEFORE = 11
 
 /**
  * One page as the manifest declares it.
@@ -66,6 +77,11 @@ function page(id) {
  * @return {object|undefined} The widget entry.
  */
 function widget(pageId, widgetId) {
+	// CaseDetail goes through the shared helper: since the strip came down
+	// from fourteen tabs to six, ten of its panels are SECTIONS of a tab, so a
+	// top-level `find` returns undefined for them and every assertion reads as
+	// "the widget was deleted".
+	if (pageId === 'CaseDetail') return panels.caseWidget(widgetId)
 	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
 }
 
@@ -137,12 +153,18 @@ describe('the case-tasks widget after the retype', () => {
 		expect(typeof pane.content.emptyText).toBe('string')
 	})
 
-	it('stays a child of the tabs strip and out of the layout', () => {
+	it('stays inside the tabs strip and out of the layout', () => {
 		const detail = page('CaseDetail')
-		const strip = widget('CaseDetail', 'case-panels')
-		expect(strip.content.tabs.some((tab) => tab.widgetId === 'case-tasks')).toBe(
-			true,
-		)
+
+		// It leads the Work tab, with the appointments under it. Plan item 3.18
+		// asked for the pane to move OUT of the strip into the right column
+		// instead; it did not, because that column already carries four cards
+		// and a fifth moves the complexity rather than removing it.
+		const where = panels.caseTabOf('case-tasks')
+		expect(where, 'case-tasks is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('Work')
+		expect(where.label).toBe('Tasks')
+
 		// A tab child in `layout` renders twice: once in the grid and once in
 		// its panel. That is why the retype does not move it.
 		expect(

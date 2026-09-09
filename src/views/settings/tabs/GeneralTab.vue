@@ -175,7 +175,7 @@
 				{{
 					t(
 						'dossiq',
-						'Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized.',
+						'Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld. Such cases are reported as uncategorized.',
 					)
 				}}
 			</p>

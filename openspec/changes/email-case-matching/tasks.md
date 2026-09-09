@@ -47,3 +47,38 @@
       run and verify no duplicate.
 - [ ] `grep` the diff for forbidden debug helpers, `php -l` all touched files, run the hydra gates,
       and `openspec validate --strict` on this change.
+
+## Phase 5: The shared mailbox stops losing mail (REQ-ECM-009, REQ-ECM-010)
+
+Added after the change was written. Phases 1 to 4 describe the per-user NC Mail
+matcher and are untouched by this phase: they remain open. This phase is the
+shared functional mailbox, which `InboundEmailJob` already polls, and it revises
+design decision D4 for that source only.
+
+- [x] 5.1 `lib/Service/AssigneeResolver.php`: the `{{ case.assignee }}` plus
+  `assigneeFallback` rule, lifted out of `DossiqAskPersonNode` so it has one
+  implementation rather than three.
+  - the node keeps the refusal, which is genuinely its own
+  - unit test `tests/Unit/Service/AssigneeResolverTest.php`
+- [x] 5.2 `CreateTaskHandler` resolves through it, adds the case's own handler
+  as a third source, and carries the case's team into `assigneeGroup`.
+  - it creates and warns rather than refusing, because a transition side effect
+    that refuses aborts a status change
+- [x] 5.3 `StatusChecklist` names its assignee in the same spelling instead of
+  emitting an action that names nobody.
+- [x] 5.4 `InboundEmailJob`: resolve the subject tag to the bare identifier and
+  look it up through `CaseEmailRepository::findCaseIdByIdentifier()`. The tag
+  was previously passed on whole, so the matched path never matched.
+  - unit test `tests/Unit/BackgroundJob/InboundEmailJobTest.php`, the job's first
+- [x] 5.5 `lib/Service/Email/UnmatchedMailIntake.php`: an unmatched mail becomes
+  a case of the configured fallback type, and nothing at all when none is
+  configured.
+  - unit test `tests/Unit/Service/Email/UnmatchedMailIntakeTest.php`
+- [x] 5.6 The run reports what it could not place, at warning when a fallback
+  type is configured and at info when none is.
+- [x] 5.7 `email_fallback_case_type` in `EmailTemplateController::IMAP_KEYS` and
+  `EmailSettings::MANAGED_KEYS`, and a case type picker in
+  `src/views/settings/EmailSettings.vue` defaulting to leaving the mail alone.
+- [x] 5.8 Every new guard mutation-checked: the opt-in guard, the prefix
+  stripping and the assignee resolution were each removed, the right assertions
+  watched to fail, and the file restored and diffed against a backup.

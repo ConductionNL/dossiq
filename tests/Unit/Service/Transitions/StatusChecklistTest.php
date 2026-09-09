@@ -41,6 +41,13 @@ class StatusChecklistTest extends TestCase {
 	/**
 	 * The two items of a status become two createTask actions.
 	 *
+	 * 🔴 EACH ONE NAMES ITS ASSIGNEE. A checklist action used to name nobody,
+	 * and `CreateTaskHandler` wrote that nobody straight onto the task as an
+	 * empty string. The task schema addresses its `taskAssigned` notification
+	 * to that field, so every checklist task appeared with nobody told about
+	 * it. The spelling is the one the shipped flow declarations use, so both
+	 * paths ask `AssigneeResolver` the same question.
+	 *
 	 * @return void
 	 */
 	public function testTwoItemsYieldTwoActions(): void {
@@ -60,11 +67,13 @@ class StatusChecklistTest extends TestCase {
 					'type' => 'createTask',
 					'title' => 'Check the objection is on time',
 					'workflowStepId' => 'st-1',
+					'assignee' => '{{ case.assignee }}',
 				],
 				[
 					'type' => 'createTask',
 					'title' => 'Confirm receipt to the objector',
 					'workflowStepId' => 'st-1',
+					'assignee' => '{{ case.assignee }}',
 				],
 			],
 			$actions

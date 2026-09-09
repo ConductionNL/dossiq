@@ -437,11 +437,8 @@
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
     },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 6
-    },
     "vue/custom-event-name-casing": {
-      "count": 2
+      "count": 1
     }
   },
   "src/views/cases/components/EmailThread.vue": {
@@ -531,9 +528,6 @@
     }
   },
   "src/views/settings/CaseTypeDetail.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -541,17 +535,6 @@
   "src/views/settings/CaseTypeList.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 3
-    }
-  },
-  "src/views/settings/EmailSettings.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 1
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/views/settings/KccIntegrationSettings.vue": {
@@ -744,11 +727,6 @@
     }
   },
   "src/views/settings/tabs/RolesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    }
-  },
-  "src/views/settings/tabs/StatusesTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 5
     }

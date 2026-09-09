@@ -272,3 +272,38 @@ The Dossiq register SHALL define the `Beschikking`, `StateMachineLog`, `BezwaarT
 - **THEN** it SHALL include a `readOnlyFields` array or equivalent guard that lists `motivering`, `beslissing`, `geadresseerde`, etc.
 - **AND** these fields SHALL be immutable once `huidigeStatus ∈ {ondertekend, verzonden, ontvangen-bevestiging, gearchiveerd}`
 
+
+### Requirement: The template seam SHALL say whether a real renderer is behind it
+
+`TemplateEngineAdapterInterface` SHALL be bound from the `beschikking_template_adapter`
+app-config key, so an integrator can substitute filinq's renderer without editing
+dossiq. When no class is named the seam SHALL bind `MockTemplateEngineAdapter` and
+SHALL log a translated warning naming filinq, and the Integrations page SHALL carry a
+Document templates card reading Simulated.
+
+The binding used to be an unconditional alias onto the mock, twenty lines above a
+sibling seam that already probed for LibreSign and warned on its fallback. The seam
+worked, and it rendered nothing anybody could send. Following the sibling's pattern is
+the whole change; the renderer itself stays filinq's.
+
+The filinq probe SHALL resolve through `FleetAppId`, never a literal app id. Filinq
+renamed from docudesk, both names are in the field, and a hardcoded lookup against the
+wrong one returns false and takes the integration dark without erroring.
+
+**Feature tier**: MVP
+
+#### Scenario: Filinq absent, and the warning says to install it
+@e2e exclude The binding is a DI-time decision with no browser surface; AdapterHonestyTest asserts the resolution and the vitest seed guard asserts the card.
+
+- **GIVEN** an instance where filinq is not installed
+- **WHEN** the template seam resolves
+- **THEN** it SHALL bind the mock
+- **AND** the warning SHALL tell the reader to install filinq, then name its adapter class
+
+#### Scenario: Filinq present but no adapter named, and the warning says which
+@e2e exclude Same absent surface; asserted by AdapterHonestyTest.
+
+- **GIVEN** an instance where filinq is installed and `beschikking_template_adapter` is empty
+- **WHEN** the template seam resolves
+- **THEN** it SHALL bind the mock
+- **AND** the warning SHALL tell the reader to name filinq's adapter class, not to install filinq again

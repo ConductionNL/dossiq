@@ -14685,7 +14685,7 @@
       "dossiqIntegration": {
         "slug": "dossiqIntegration",
         "icon": "PowerPlugOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Integration",
         "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
         "type": "object",
@@ -14709,7 +14709,9 @@
               "financial",
               "brp",
               "kvk",
-              "pdok"
+              "pdok",
+              "berichtenbox",
+              "templates"
             ]
           },
           "title": {
@@ -14731,12 +14733,14 @@
               "configured",
               "unconfigured",
               "unavailable",
+              "simulated",
               "error"
             ],
             "x-enum-labels": {
               "configured": "Configured",
               "unconfigured": "Not configured",
               "unavailable": "Not available",
+              "simulated": "Simulated",
               "error": "Error"
             },
             "facetable": true
@@ -24485,8 +24489,8 @@
         "key": "brp",
         "title": "BRP",
         "description": "Demo connection 3.",
-        "status": "unavailable",
-        "statusMessage": "Specified, not built yet",
+        "status": "unconfigured",
+        "statusMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
         "checkedAt": "2026-09-03T09:03:00+00:00",
         "settingsUrl": "",
         "order": 80

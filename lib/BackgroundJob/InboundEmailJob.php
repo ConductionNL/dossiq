@@ -3,11 +3,25 @@
 /**
  * Dossiq Inbound Email Job
  *
- * Polls the configured SHARED/functional IMAP mailbox, auto-links unread
- * messages to cases via the subject-tag pattern `[ZAAK-YYYY-NNNNNN]`, and
- * triggers archival through {@see EmailArchivalService}. Per the ADR-002
- * exception (case-email-integration), this is the ONLY dossiq-side mail
- * dispatch — manual per-user mail is owned by NC Mail.
+ * Polls the configured SHARED/functional IMAP mailbox, links unread messages to
+ * cases via the subject-tag pattern `[ZAAK-YYYY-NNNNNN]`, and triggers archival
+ * through {@see EmailArchivalService}. Per the ADR-002 exception
+ * (case-email-integration), this is the ONLY dossiq-side mail dispatch: manual
+ * per-user mail is owned by NC Mail.
+ *
+ * 🔴 THE TAG WAS NEVER RESOLVED, SO THE MATCHED PATH WROTE NONSENSE. The
+ * pattern captures the WHOLE tag, prefix included (`ZAAK-2026-000142`), and the
+ * job handed that string to `archiveLinkedEmail()` as if it were a case id. A
+ * case id is a uuid, and the identifier the case actually carries is the bare
+ * `YYYY-NNNN` OpenRegister materialises. So the prefixed capture matched no
+ * case and could not have: every "linked" mail was archived against a case that
+ * does not exist. The tag is now stripped to its identifier and resolved
+ * through `CaseEmailRepository::findCaseIdByIdentifier()`, which was sitting
+ * unused one directory away.
+ *
+ * 🔴 AND AN UNMATCHED MAIL IS NO LONGER DROPPED. It used to `continue` with no
+ * log line at all. When an administrator names a fallback case type, it becomes
+ * a case. When none is named, it stays in the mailbox exactly as before.
  *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
@@ -31,6 +45,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
 use OCA\Dossiq\Service\EmailArchivalService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Support\SuppressesWarnings;
@@ -65,6 +81,18 @@ class InboundEmailJob extends TimedJob {
 	private const DEFAULT_BATCH_SIZE = 50;
 
 	/**
+	 * The case the last message was FILED as, if it was filed rather than matched.
+	 *
+	 * Held on the object rather than returned beside the id because the batch
+	 * loop reports the two outcomes separately and an id alone cannot tell them
+	 * apart: a case that already existed and a case created a moment ago are the
+	 * same shape.
+	 *
+	 * @var string|null
+	 */
+	private ?string $lastFiledCaseId = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Time factory.
@@ -72,6 +100,8 @@ class InboundEmailJob extends TimedJob {
 	 * @param IAppManager $appManager App manager.
 	 * @param SettingsService $settingsService Settings service.
 	 * @param EmailArchivalService $archivalService Archival service.
+	 * @param CaseEmailRepository $cases Resolves a case identifier to its id.
+	 * @param UnmatchedMailIntake $intake What an unmatched mail becomes.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -80,6 +110,8 @@ class InboundEmailJob extends TimedJob {
 		private readonly IAppManager $appManager,
 		private readonly SettingsService $settingsService,
 		private readonly EmailArchivalService $archivalService,
+		private readonly CaseEmailRepository $cases,
+		private readonly UnmatchedMailIntake $intake,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -123,28 +155,30 @@ class InboundEmailJob extends TimedJob {
 			}
 
 			$linkedCount = 0;
+			$filedCount = 0;
+			$droppedCount = 0;
 			foreach ($messages as $message) {
 				if ($this->isAlreadyLinked(messageId: (string)($message['mailMessageId'] ?? '')) === true) {
 					continue;
 				}
 
-				$caseId = $this->matchCaseFromSubject(subject: (string)($message['subject'] ?? ''));
+				$caseId = $this->caseForMessage(message: $message);
 				if ($caseId === null) {
-					// Unmatched — leave in the mailbox for manual linking via the leaf.
+					$droppedCount++;
 					continue;
 				}
 
 				$this->archivalService->archiveLinkedEmail(caseId: $caseId, metadata: $message);
 				$this->markProcessed(messageId: (string)($message['mailMessageId'] ?? ''));
+				if ($caseId === $this->lastFiledCaseId) {
+					$filedCount++;
+					continue;
+				}
+
 				$linkedCount++;
 			}//end foreach
 
-			if ($linkedCount > 0) {
-				$this->logger->info(
-					'InboundEmailJob: linked {count} messages',
-					['count' => $linkedCount, 'app' => Application::APP_ID]
-				);
-			}
+			$this->reportBatch(linked: $linkedCount, filed: $filedCount, dropped: $droppedCount);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'InboundEmailJob failed',
@@ -169,6 +203,116 @@ class InboundEmailJob extends TimedJob {
 
 		return null;
 	}//end matchCaseFromSubject()
+
+	/**
+	 * The case identifier inside a subject tag, without its prefix.
+	 *
+	 * 🔴 THE TAG IS NOT THE IDENTIFIER. `[ZAAK-2026-000142]` carries a prefix
+	 * the case does not: the identifier OpenRegister materialises is the bare
+	 * `2026-000142`. Comparing the whole tag against `identifier` is why the
+	 * matched path never matched anything.
+	 *
+	 * @param string $subject Subject header.
+	 *
+	 * @return string|null The bare identifier, or null when there is no tag.
+	 *
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
+	public function identifierFromSubject(string $subject): ?string {
+		$tag = $this->matchCaseFromSubject(subject: $subject);
+		if ($tag === null) {
+			return null;
+		}
+
+		if (preg_match('/(\d{4}-\d{4,6})$/', $tag, $matches) === 1) {
+			return $matches[1];
+		}
+
+		return $tag;
+	}//end identifierFromSubject()
+
+	/**
+	 * The case a message belongs on, matched or newly filed.
+	 *
+	 * Three outcomes, and only one of them used to exist. The subject names a
+	 * case that resolves: link it. The subject names none, or names one that no
+	 * longer exists: file it as a case of the configured fallback type. No
+	 * fallback type configured: leave it in the mailbox, which is exactly the
+	 * behaviour of every instance that does not opt in.
+	 *
+	 * @param array<string, mixed> $message The normalised message row.
+	 *
+	 * @return string|null The case id, or null when nothing takes the mail.
+	 *
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
+	private function caseForMessage(array $message): ?string {
+		$this->lastFiledCaseId = null;
+
+		$identifier = $this->identifierFromSubject(subject: (string)($message['subject'] ?? ''));
+		if ($identifier !== null) {
+			$caseId = $this->cases->findCaseIdByIdentifier($identifier);
+			if ($caseId !== null && $caseId !== '') {
+				return $caseId;
+			}
+
+			$this->logger->info(
+				'InboundEmailJob: the subject names case {identifier}, which does not resolve',
+				['identifier' => $identifier, 'app' => Application::APP_ID]
+			);
+		}
+
+		$filed = $this->intake->caseFor(message: $message);
+		if ($filed === null) {
+			return null;
+		}
+
+		$this->lastFiledCaseId = $filed;
+
+		return $filed;
+	}//end caseForMessage()
+
+	/**
+	 * Say what the batch did, including what it could not place.
+	 *
+	 * The dropped count is the point. A mail nobody can place used to leave no
+	 * trace at all, so an instance losing every inbound message looked exactly
+	 * like an instance receiving none.
+	 *
+	 * @param integer $linked  Messages linked to an existing case.
+	 * @param integer $filed   Messages filed as a new case.
+	 * @param integer $dropped Messages left in the mailbox.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
+	private function reportBatch(int $linked, int $filed, int $dropped): void {
+		if ($linked > 0 || $filed > 0) {
+			$this->logger->info(
+				'InboundEmailJob: linked {linked} messages and filed {filed} as new cases',
+				['linked' => $linked, 'filed' => $filed, 'app' => Application::APP_ID]
+			);
+		}
+
+		if ($dropped === 0) {
+			return;
+		}
+
+		if ($this->intake->isConfigured() === true) {
+			$this->logger->warning(
+				'InboundEmailJob: {dropped} messages could not be placed and no case was filed for them',
+				['dropped' => $dropped, 'app' => Application::APP_ID]
+			);
+			return;
+		}
+
+		$this->logger->info(
+			'InboundEmailJob: {dropped} messages matched no case and stay in the mailbox, '
+				. 'because no fallback case type is configured',
+			['dropped' => $dropped, 'app' => Application::APP_ID]
+		);
+	}//end reportBatch()
 
 	/**
 	 * Fetch a batch of unread messages from the shared mailbox.

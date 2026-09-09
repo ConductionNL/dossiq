@@ -27,7 +27,9 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
+	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
@@ -143,21 +145,16 @@ async function openPartiesTab(page: Page, id: string) {
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	const strip = page.locator('.cn-tabs-widget')
-	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /Parties|Betrokkenen/ }).click()
-
-	// The open panel INSIDE the tabs widget, not a widget id: CnDetailPage sets
-	// `aria-label` to the manifest widget id only on the top-level widgets it
-	// lays out, so a widget rendered as a tab child carries no such label and
-	// `[aria-label="case-roles"]` matches nothing (#1905, which cost the
-	// sibling Communication spec four of its five tests against a tab that
-	// rendered correctly). Scope to the strip as well: the sidebar's own panels
-	// also carry `role="tabpanel"` and hide with `aria-hidden` rather than
-	// `hidden`, so an unscoped query is ambiguous.
-	const widget = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(widget).toBeVisible({ timeout: 20_000 })
-	return widget
+	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// instead of fourteen, a tab carries two collections, so an assertion made
+	// against the panel root can be satisfied by the wrong half of it. The
+	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
+	// moves one table rather than every spec that opens a panel.
+	//
+	// It is a testid and not a widget id because CnDetailPage sets `aria-label`
+	// to the manifest widget id only on the top-level widgets it lays out, so a
+	// widget rendered inside a tab carries no such label.
+	return await openCasePanel(page, 'parties')
 }
 
 /**
@@ -223,10 +220,10 @@ test.describe('Case detail — the Parties tab', () => {
 		// cannot be deleted by a user; creating a case type here and deleting
 		// it in teardown would leave every case pointing at a type that is
 		// gone, which reddens unrelated specs.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		expect(
 			caseTypes.length,
-			'the instance must ship at least one case type',
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(caseTypes[0])
 
@@ -388,8 +385,9 @@ test.describe('Case detail — the Parties tab', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
+		// Parties is a section of the People tab now, not a tab.
 		await expect(
-			strip.getByRole('tab', { name: /Parties|Betrokkenen/ }),
+			strip.getByRole('tab', { name: 'People', exact: true }),
 		).toBeVisible({ timeout: 15_000 })
 		// The tab the Parties tab replaced: the Nextcloud contacts integration
 		// leaf, which showed the address book and never the people on this
@@ -544,8 +542,10 @@ test.describe('Case detail — the Parties tab', () => {
 		}) => {
 			await page.goto(`/apps/${REGISTER}/cases/${teamCaseId}`)
 			await dismissSupportDialog(page)
-			const core = page.locator('[aria-label="case-core"]')
-			await expect(core).toBeVisible({ timeout: 30_000 })
+			// `case-core` is the strip's `Data` tab, not a laid-out widget, so
+			// it carries no `aria-label` — the same trap `openPartiesTab`
+			// above documents for `case-roles`.
+			const core = await openCasePanel(page, 'data')
 
 			// `Team` is the same word in both languages (it is in
 			// tests/l10n/language-neutral-keys.json), so this is safe to assert

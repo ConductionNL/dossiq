@@ -16,6 +16,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -55,12 +56,14 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// The subtitle is one key on one page. A change that moves the page
 		// count or the menu has done something else as well.
 		//
-		// 48, not 44: `pluggable-integration-registry` adds Integrations, and
+		// 49, not 44: `pluggable-integration-registry` adds Integrations,
 		// `contacts-domain` adds Contacts, ContactDetail and
-		// OrganisationDetail. The number is what makes this assertion worth
-		// anything, so it is raised by exactly the pages that were added
-		// rather than loosened to a range.
-		expect(manifest.pages).toHaveLength(48)
+		// OrganisationDetail, and `contacts-you-can-find` adds Organisations —
+		// the index that makes OrganisationDetail reachable by something other
+		// than a case that already names the company. The number is what makes
+		// this assertion worth anything, so it is raised by exactly the pages
+		// that were added rather than loosened to a range.
+		expect(manifest.pages).toHaveLength(49)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
@@ -176,54 +179,50 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		return widget('case-panels').content.tabs
 	}
 
-	it('leads with the work a handler does, in order', () => {
-		// Timeline is deliberately absent: the timeline is the sidebar History
-		// tab (change case-timeline), and a body panel over the same log would
-		// be the duplication that change exists to retire.
-		const lead = [
+	it('is the work a handler does, in order, and nothing else', () => {
+		// Task 4.1 asked for the work tabs to LEAD the strip, because there
+		// were nine more behind them. There are none behind them now: the strip
+		// is six tabs and this is all of them, so what was a prefix assertion is
+		// an exact one. Timeline is deliberately absent: the timeline is the
+		// sidebar History tab (change case-timeline), and a body panel over the
+		// same log would be the duplication that change exists to retire.
+		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-core',
-			'case-documents',
-			'case-roles',
-			'case-tasks',
-			'case-communication',
-		]
-		expect(
-			tabs()
-				.slice(0, lead.length)
-				.map((tab) => tab.widgetId),
-		).toEqual(lead)
+			'case-documents-panel',
+			'case-people-panel',
+			'case-work-panel',
+			'case-related-panel',
+			'case-objects-panel',
+		])
 	})
 
-	it('closes the strip with the collections that may be empty', () => {
-		// REQ-CDV-16 names four. `custom-objects-on-the-case` landed after it
-		// was written and added a fifth of the same kind, so the assertion is
-		// that the four keep their stated relative order and that every one of
-		// the five comes after every work tab.
-		const ids = tabs().map((tab) => tab.widgetId)
-		const named = [
-			'case-sub-cases',
-			'case-locaties',
-			'case-calendar',
-			'case-decidesk-decisions',
-		]
-		const positions = named.map((id) => ids.indexOf(id))
-		expect(positions.every((p) => p >= 0)).toBe(true)
-		expect([...positions].sort((a, b) => a - b)).toEqual(positions)
-
-		const work = [
-			'case-core',
-			'case-documents',
-			'case-roles',
-			'case-tasks',
-			'case-communication',
-		]
-		const lastWork = Math.max(...work.map((id) => ids.indexOf(id)))
-		for (const id of [...named, 'case-objects']) {
-			expect(
-				ids.indexOf(id),
-				`${id} must follow every work tab`,
-			).toBeGreaterThan(lastWork)
+	it('still renders every collection that used to close the strip', () => {
+		// REQ-CDV-16 named four tabs that could be empty and asked for them to
+		// come last. Three of them are SECTIONS now and the fourth is gone from
+		// the body entirely, so "last" no longer describes anything. What the
+		// requirement was protecting is that they are still reachable, and that
+		// is what this asserts: a fold that dropped one instead of moving it
+		// would leave a shorter strip and a passing count.
+		const stillOnThePage = {
+			'case-sub-cases': 'Related',
+			'case-locaties': 'Objects and locations',
+			'case-calendar': 'Work',
+			'case-objects': 'Objects and locations',
 		}
+		for (const [id, tab] of Object.entries(stillOnThePage)) {
+			const where = panels.caseTabOf(id)
+			expect(where, `${id} is not reachable from the strip`).toBeTruthy()
+			expect(where.tab, `${id} is on the wrong tab`).toBe(tab)
+		}
+
+		// `case-decidesk-decisions` is the fourth, and it is the exception: it
+		// was REMOVED rather than folded, because it duplicated the
+		// Besluitvorming sidebar tab. Assert the sidebar half is still there,
+		// or the surface is simply gone.
+		expect(panels.caseWidget('case-decidesk-decisions')).toBeUndefined()
+		expect(caseDetail().config.sidebar.tabs.map((tab) => tab.id)).toContain(
+			'besluitvorming',
+		)
 	})
 
 	it('names a declared widget in every tab', () => {

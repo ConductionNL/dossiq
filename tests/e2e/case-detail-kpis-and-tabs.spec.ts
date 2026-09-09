@@ -28,74 +28,72 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
+	adoptableCaseTypes,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * Every title this spec matches, in either locale the instance may run.
+ * The SIX tabs the strip holds, in order.
  *
- * Nothing forces the language of the E2E instance, and the sibling
- * case-detail-flow-runs spec already guards its title the same way. An exact
- * English string here would pass or fail on the instance's locale rather than
- * on the feature, which is the least useful thing a test can assert.
+ * These are exact strings and not locale alternatives, unlike almost every
+ * other title this spec matches. A tab label is not translated: it is read
+ * verbatim out of `content.tabs[].label` in the manifest, with no `t()`
+ * anywhere on the path, so an instance running in Dutch shows these English
+ * words too. The `|Gegevens` half of the old patterns could never match, and
+ * a pattern that can only match one of its alternatives hides which one.
  */
 const TAB_LABELS = [
-	/Data|Gegevens/,
-	/Documents|Documenten/,
-	/Parties|Betrokkenen/,
-	/Tasks|Taken/,
-	/Communication|Communicatie/,
-	/Files|Bestanden/,
-	/Notes|Notities/,
-	/Mail/,
-	/Related cases|Gerelateerde zaken/,
-	/Sub-cases|Deelzaken/,
-	/Locations|Locaties/,
-	/Appointments|Afspraken/,
-	// Decisions is decidiq's widget, not dossiq's own list; dossiq no longer
-	// renders its `decision` schema at all.
-	/Decisions|Besluiten|Besluitvorming/,
-	/Objects|Objecten/,
+	'Data',
+	'Documents',
+	'People',
+	'Work',
+	'Related',
+	'Objects and locations',
 ]
 
 /**
- * The order placement row A33 asks for: the work a handler does first, the
- * folding tabs behind it, the collections that may be empty last.
+ * The panels that were folded INTO a tab, and the section each one is now.
  *
- * Timeline is deliberately NOT here. The case timeline is the sidebar
- * History tab (change case-timeline); a body panel over the same audit log
- * would be the duplication that change exists to retire.
+ * The count is the headline of this change, and a count is exactly the kind
+ * of assertion that can be satisfied by deleting things. These are what make
+ * the difference between six tabs and four missing features.
  */
-const WORK_TABS = [
-	/Data|Gegevens/,
-	/Documents|Documenten/,
-	/Parties|Betrokkenen/,
-	/Tasks|Taken/,
-	/Communication|Communicatie/,
-]
-
-/** The four tabs that show only when they hold something, once they can. */
-const CONDITIONAL_TABS = [
-	/Sub-cases|Deelzaken/,
-	/Locations|Locaties/,
-	/Appointments|Afspraken/,
-	/Decisions|Besluiten|Besluitvorming/,
+const FOLDED_SECTIONS: Array<[string, string]> = [
+	['Documents', 'case-section-case-documents'],
+	['Documents', 'case-section-case-files'],
+	['People', 'case-section-case-roles'],
+	['People', 'case-section-case-communication'],
+	['Work', 'case-section-case-tasks'],
+	['Work', 'case-section-case-calendar'],
+	['Related', 'case-section-case-related'],
+	['Related', 'case-section-case-sub-cases'],
+	['Objects and locations', 'case-section-case-objects'],
+	['Objects and locations', 'case-section-case-locaties'],
 ]
 
 /**
  * Tab labels the strip must NOT carry.
  *
  * A removed tab leaves no trace: the widget is simply gone from the manifest
- * and the strip renders one panel fewer, which no assertion above would
- * notice. This is the half that fails when the Contacts entry comes back.
+ * and the strip renders one panel fewer, which a count alone would notice but
+ * a name-based assertion would not. `Contacts` is the tab an earlier change
+ * retired. The other four are the tabs THIS change retired, three of them
+ * because a sidebar tab already carried the same thing, and re-adding one
+ * looks like adding a feature rather than restoring a duplicate.
  */
-const RETIRED_TAB_LABELS = [/^(Contacts|Contacten|Connected contacts)$/]
+const RETIRED_TAB_LABELS = [
+	/^(Contacts|Contacten|Connected contacts)$/,
+	/^(Notes|Notities)$/,
+	/^Mail$/,
+	/^(Decisions|Besluiten|Besluitvorming)$/,
+	/^(Files|Bestanden)$/,
+]
 
 /**
  * The right column, top to bottom.
@@ -135,10 +133,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// `processingDeadline` is what makes the countdown testable: `case.deadline`
 		// is COMPUTED by OpenRegister from the type's duration, so a type without
 		// one yields no deadline and the tile correctly shows a dash.
-		const caseTypes = await listObjects(api, 'caseType')
+		const caseTypes = await adoptableCaseTypes(api)
 		const withDeadline = caseTypes.filter((ct: any) => ct.processingDeadline)
 		const chosen = withDeadline[0] ?? caseTypes[0]
-		expect(chosen, 'the instance must ship at least one case type').toBeTruthy()
+		expect(
+			chosen,
+			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
+		).toBeTruthy()
 		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
 
 		const seeded = await seedCase(api, token, {
@@ -385,12 +386,14 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	})
 
 	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
-	test('the work tabs lead the strip and the conditional four close it', async ({
+	test('the strip holds exactly six tabs, in order, and no more', async ({
 		page,
 	}) => {
-		// Order is the whole feature of placement row A33: the ten-tab strip
-		// wrapped onto three lines at 1440 and dropped below the fold at 1024,
-		// with the tabs a handler actually works in scattered through it.
+		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
+		// over one programme while the app menu held at four, because the menu
+		// had a stated ceiling and the strip had nothing counting it. This is
+		// the thing that counts it, and it has to be an exact count: asserting
+		// that six named tabs are PRESENT would pass on a strip of nine.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -398,42 +401,33 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
-		const labels = await strip.getByRole('tab').allInnerTexts()
+		await expect(strip.getByRole('tab')).toHaveCount(TAB_LABELS.length)
 
-		// The work tabs are the FIRST n, in order.
-		for (const [index, label] of WORK_TABS.entries()) {
-			expect(labels[index], `tabs: ${labels.join(' | ')}`).toMatch(label)
-		}
-
-		// And the conditional four are the LAST four, in any order among
-		// themselves — `visibleIf` on a tab entry is what would hide them, and
-		// CnTabsWidget does not read it yet (case-header task 4.2).
-		// The conditional tabs close the strip. Asserted as "after every work
-		// tab" rather than "the last four", because `custom-objects-on-the-case`
-		// added an Objects tab of the same kind after REQ-CDV-16 was written,
-		// and a slice of a fixed length would fail on a correct strip.
-		const lastWork = Math.max(
-			...WORK_TABS.map((pattern) => labels.findIndex((l) => pattern.test(l))),
+		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
+			l.trim(),
 		)
-		for (const pattern of CONDITIONAL_TABS) {
-			const at = labels.findIndex((label) => pattern.test(label))
-			expect(
-				at,
-				`${pattern} is absent: ${labels.join(' | ')}`,
-			).toBeGreaterThan(-1)
-			expect(
-				at,
-				`${pattern} sits among the work tabs: ${labels.join(' | ')}`,
-			).toBeGreaterThan(lastWork)
+		expect(labels).toEqual(TAB_LABELS)
+
+		for (const label of RETIRED_TAB_LABELS) {
+			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
 		}
 	})
 
-	test('Documents sits before Files in the strip', async ({ page }) => {
-		// Two tabs about the same case, and the order says which one is the
-		// case file: the ZGW dossier first, loose attachments after it. The
-		// Files tab stays (design D5) — dropping it would take the share and
-		// comment surface of the files leaf with it.
+	test('every folded panel still renders, inside the tab it moved to', async ({
+		page,
+	}) => {
+		// The half of the fold that fails silently. `case-sections` renders its
+		// children through CnDetailWidgetHost, which renders NOTHING and logs
+		// nothing for a type it cannot resolve, and a section whose widget did
+		// not resolve leaves a tab that opens onto an empty panel. Four tabs
+		// that each dropped half their content would satisfy the count test
+		// above and look like a successful consolidation.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		// The support dialog and the first-run wizard each mount a modal mask
+		// that swallows every click behind it, and a swallowed click reports as
+		// a locator timeout, which reads here as a missing tab. Dismissed AFTER
+		// the navigation, because that is when they mount.
+		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -441,13 +435,69 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		const labels = await strip.getByRole('tab').allInnerTexts()
-		const documents = labels.findIndex((l) => /Documents|Documenten/.test(l))
-		const files = labels.findIndex((l) => /Files|Bestanden/.test(l))
+		for (const [tabLabel, testid] of FOLDED_SECTIONS) {
+			await strip.getByRole('tab', { name: tabLabel, exact: true }).click()
+			const panel = strip.locator(
+				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+			)
+			const section = panel.locator(`[data-testid="${testid}"]`)
+			await expect(
+				section,
+				`${testid} did not render inside ${tabLabel}`,
+			).toBeVisible({ timeout: 30_000 })
 
-		expect(documents, `tabs: ${labels.join(' | ')}`).toBeGreaterThanOrEqual(0)
-		expect(files).toBeGreaterThanOrEqual(0)
-		expect(documents).toBeLessThan(files)
+			// The section WRAPPER is not the evidence. `case-sections` renders
+			// the heading and the host element whether or not the child
+			// resolved, and CnDetailWidgetHost renders NOTHING for a type it
+			// cannot resolve, so a broken registration leaves a headed, empty
+			// block and the visibility check above passes on it. Assert the
+			// host has content: a widget that resolved renders its rows or its
+			// empty state, and one that did not renders an empty div.
+			const host = section.locator('> *:not(h3)')
+			await expect(
+				host,
+				`${testid} rendered its heading and nothing under it, which is what a widget type the registry cannot resolve looks like`,
+			).not.toBeEmpty({ timeout: 30_000 })
+		}
+	})
+
+	test('Files is a section of Documents, not a tab of its own', async ({
+		page,
+	}) => {
+		// Files did not leave the page, it left the STRIP. Dropping it would
+		// have taken the files leaf's share and comment surface with it, which
+		// design D5 was right to protect and which the dossier list does not
+		// have. The order inside the tab says which one is the case file: the
+		// registered documents first, loose attachments under them.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await expect(
+			strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }),
+		).toHaveCount(0)
+
+		await strip.getByRole('tab', { name: 'Documents', exact: true }).click()
+		const panel = strip.locator(
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+		)
+
+		const documents = panel.locator(
+			'[data-testid="case-section-case-documents"]',
+		)
+		const files = panel.locator('[data-testid="case-section-case-files"]')
+		await expect(documents).toBeVisible({ timeout: 30_000 })
+		await expect(files).toBeVisible({ timeout: 30_000 })
+
+		const documentsBox = await documents.boundingBox()
+		const filesBox = await files.boundingBox()
+		expect(documentsBox, 'the documents section has no box').toBeTruthy()
+		expect(filesBox, 'the files section has no box').toBeTruthy()
+		expect(documentsBox!.y).toBeLessThan(filesBox!.y)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({
@@ -474,6 +524,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// Six eager panels would fire six requests on load to answer five
 		// questions nobody asked. This is the assertion that keeps them lazy.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -481,21 +532,28 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
+		// The strip's OWN panels. A panel can contain another `role="tabpanel"`
+		// — the related-objects widget renders a `<section>` with that role
+		// inside its panel — and a descendant query counts that as a second
+		// mounted panel.
 		const mounted = () =>
 			strip
-				.locator('[role="tabpanel"]')
+				.locator('.cn-tabs__content > [role="tabpanel"]')
 				.evaluateAll(
 					(panels) => panels.filter((p) => p.children.length > 0).length,
 				)
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
-		await strip.getByRole('tab', { name: /Sub-cases|Deelzaken/ }).click()
+		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
-		// Switching back must not tear the first panel down, or every switch
-		// refetches.
-		await strip.getByRole('tab', { name: /Notes|Notities/ }).click()
+		// Switching BACK must not tear the first panel down, or every switch
+		// refetches. Back to the tab that was open on load, which is what this
+		// asserts: opening a THIRD tab would leave three panels mounted, since
+		// staying mounted is the property under test, and the count would be
+		// right while the scenario said nothing.
+		await strip.getByRole('tab', { name: 'Data', exact: true }).click()
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
@@ -513,11 +571,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			})
 		}
 
-		// Decisions and Locations MOVED into the tab strip. Asserting only that
-		// the column shows three things would still pass if they had stayed and
-		// the page simply grew, so assert they are gone from the body: their
-		// only remaining owner is a tab.
-		for (const gone of [/Decisions|Besluiten/, /Locations|Locaties/]) {
+		// Locations MOVED into the tab strip. Asserting only that the column
+		// shows three things would still pass if it had stayed and the page
+		// simply grew, so assert it is gone from the body: its only remaining
+		// owner is a section of the Objects and locations tab. Decisions is no
+		// longer checked here because it is no longer on the body at all: it
+		// duplicated the Besluitvorming sidebar tab and the body copy went.
+		for (const gone of [/Locations|Locaties/]) {
 			await expect(
 				page.locator('.cn-widget-wrapper').filter({ hasText: gone }),
 			).toHaveCount(0)
@@ -539,14 +599,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			timeout: 30_000,
 		})
 
-		// Locations moved into the tab strip, and tab panels are LAZY — the
-		// widget does not mount, so it does not query, until its tab is opened.
-		// Without this click the poll below times out on zero responses and
-		// reads as "the schema 404s again", which is the very thing this spec
-		// exists to tell apart from an empty state.
-		const strip = page.locator('.cn-tabs-widget')
-		await expect(strip).toBeVisible({ timeout: 30_000 })
-		await strip.getByRole('tab', { name: /Locations|Locaties/ }).click()
+		// Locations is a SECTION of the Objects and locations tab, and tab
+		// panels are LAZY: the widget does not mount, so it does not query,
+		// until its tab is opened. Without this the poll below times out on
+		// zero responses and reads as "the schema 404s again", which is the
+		// very thing this spec exists to tell apart from an empty state.
+		await openCasePanel(page, 'locations')
 
 		await expect
 			.poll(() => responses.length, { timeout: 20_000 })
@@ -562,6 +620,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})

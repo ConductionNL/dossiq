@@ -39,6 +39,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -300,9 +301,11 @@ test.describe('Case identity', () => {
 
 		// And it is on the page, in the core widget, which is the half that was
 		// broken: `identifier` is schema-readOnly, and a data widget drops a
-		// readOnly property unless an override re-admits it.
+		// readOnly property unless an override re-admits it. The widget is the
+		// `Data` tab of the case strip now, not a laid-out widget, so it
+		// carries no `aria-label` of its own.
 		await expect(
-			page.locator('[aria-label="case-core"]'),
+			await openCasePanel(page, 'data'),
 			'the case page shows the number it was given',
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})
@@ -333,6 +336,21 @@ test.describe('Case identity', () => {
 		// NcSelect in taggable mode: type the word, then Enter mints it.
 		await editor.getByRole('combobox').first().fill(TYPED_TAG)
 		await page.keyboard.press('Enter')
+
+		// Then CLOSE the dropdown, which minting the tag does not do. vue-select
+		// keeps its menu open after Enter and, the search term having matched
+		// nothing, renders `<li class="vs__no-options">No results</li>` in a
+		// floating list positioned over the editor's own buttons. Playwright
+		// reported the Confirm button as visible, enabled and stable and then
+		// spent the whole 15s budget being told `vs__no-options … intercepts
+		// pointer events` — a covered control, which reads exactly like a
+		// control that is not there.
+		await page.keyboard.press('Escape')
+		await expect(
+			page.locator('.vs__dropdown-menu'),
+			'the tag dropdown still covers the editor actions',
+		).toHaveCount(0, { timeout: 15_000 })
+
 		// Confirm the field, then save the widget: the field editor stages the
 		// value and the widget's own Save writes it.
 		await panel

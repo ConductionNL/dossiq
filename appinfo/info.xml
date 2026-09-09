@@ -6,20 +6,20 @@
     <name lang="nl">Dossiq</name>
     <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
     <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
-    <description lang="en"><![CDATA[Dossiq brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
+    <description lang="en"><![CDATA[Dossiq brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines and record formal decisions.
 
-**Key Features**
+**Key features**
 
-- **Configurable case types** — Define workflows with allowed statuses, deadlines, required documents, and custom properties
-- **Status lifecycle** — Visual status timeline with quick transitions and validation rules
-- **Automatic deadlines** — Deadlines calculated from case type durations with countdown tracking and overdue alerts
-- **Tasks and decisions** — Assign tasks to team members and record formal decisions with outcomes
-- **Participant roles** — Handler, advisor, decision-maker — assign the right people to the right roles
-- **Document checklists** — Track required documents at each stage with upload verification
-- **Sub-cases** — Break complex cases into parent-child hierarchies
-- **Confidentiality levels** — Eight levels from public to top secret, with defaults from case type
-- **My Work dashboard** — Personal overview of assigned cases and pending tasks
-- **Standards-aligned** — Built with CMMN 1.1 and ZGW API compatibility in mind
+- **Configurable case types**: set the statuses, deadlines, required documents and extra fields each type needs
+- **Status lifecycle**: a visual timeline with quick transitions and validation rules
+- **Automatic deadlines**: calculated from the case type, with a countdown and an overdue alert
+- **Tasks and decisions**: assign tasks to colleagues and record formal decisions with their outcome
+- **Participant roles**: give every case a handler, an advisor and a decision maker
+- **Document checklists**: track the documents each stage requires, with upload verification
+- **Sub-cases**: break a complex case into a parent and its children
+- **Confidentiality levels**: eight levels from public to top secret, defaulted from the case type
+- **My Work dashboard**: your assigned cases and open tasks in one place
+- **Standards-aligned**: modelled on CMMN 1.1 and the ZGW APIs
 
 **Requires:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (install from the [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
@@ -27,20 +27,20 @@ Free and open source under the EUPL-1.2 licence.
 
 **Support:** For support, contact support@conduction.nl. For a Service Level Agreement (SLA), contact sales@conduction.nl.
     ]]></description>
-    <description lang="nl"><![CDATA[Dossiq brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
+    <description lang="nl"><![CDATA[Dossiq brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast.
 
 **Belangrijkste functies**
 
-- **Configureerbare zaaktypen** — Definieer workflows met toegestane statussen, deadlines, verplichte documenten en aangepaste eigenschappen
-- **Statuslifecycle** — Visuele statustijdlijn met snelle overgangen en validatieregels
-- **Automatische deadlines** — Deadlines berekend vanuit zaaktypeduren met afteltelling en meldingen bij overschrijding
-- **Taken en besluiten** — Wijs taken toe aan teamleden en leg formele besluiten vast met uitkomsten
-- **Deelnemersrollen** — Behandelaar, adviseur, beslisser — wijs de juiste mensen toe aan de juiste rollen
-- **Documentchecklists** — Volg verplichte documenten per fase met uploadverificatie
-- **Subzaken** — Splits complexe zaken op in ouder-kind hiërarchieën
-- **Vertrouwelijkheidsniveaus** — Acht niveaus van openbaar tot staatsgeheim, met standaardwaarden vanuit het zaaktype
-- **Mijn Werk dashboard** — Persoonlijk overzicht van toegewezen zaken en openstaande taken
-- **Aansluitend op standaarden** — Gebouwd met CMMN 1.1 en ZGW API-compatibiliteit in gedachten
+- **Configureerbare zaaktypen**: bepaal per type de statussen, deadlines, verplichte documenten en extra velden
+- **Statuslifecycle**: een visuele statustijdlijn met snelle overgangen en validatieregels
+- **Automatische deadlines**: berekend vanuit het zaaktype, met afteltelling en melding bij overschrijding
+- **Taken en besluiten**: wijs taken toe aan collega's en leg formele besluiten met hun uitkomst vast
+- **Deelnemersrollen**: geef elke zaak een behandelaar, een adviseur en een beslisser
+- **Documentchecklists**: volg per fase welke documenten verplicht zijn, met uploadverificatie
+- **Subzaken**: splits een complexe zaak op in een ouderzaak en haar deelzaken
+- **Vertrouwelijkheidsniveaus**: acht niveaus van openbaar tot staatsgeheim, standaard vanuit het zaaktype
+- **Mijn Werk dashboard**: je toegewezen zaken en openstaande taken op één plek
+- **Aansluitend op standaarden**: gemodelleerd naar CMMN 1.1 en de ZGW API's
 
 **Vereist:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (installeer via de [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
@@ -77,8 +77,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
         That text said "openregister declares min-version=32"; measured against
         the canonical repo on 2026-08-08, ConductionNL/openregister@development
         declares <nextcloud min-version="32" max-version="34"/>. It was true when
-        written and was undone by openregister#2380. The openconnector#1173 rule
-        — min-version must be >= the max of every <app> dependency's floor — is
+        written and was undone by openregister#2380. The openconnector#1173 rule,
+        min-version must be >= the max of every <app> dependency's floor, is
         therefore satisfied by any value here, and imposes no constraint at all.
         Do not re-derive this floor from openregister's.
 
@@ -105,9 +105,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
              It moves SAFELY because the rename is a one-column UPDATE on one
              row. Measured, not assumed: an object is bound to its register by
-             NUMERIC id — every shard table's `_register` column holds the id,
+             NUMERIC id: every shard table's `_register` column holds the id,
              and the tables are named
-             `oc_openregister_table_<registerId>_<schemaId>` — so no object,
+             `oc_openregister_table_<registerId>_<schemaId>`, so no object,
              table, schema link or folder is addressed by the slug and none of
              them has to move. The one thing that must happen first is renaming
              the ROW, because OpenRegister resolves a register by slug and its
@@ -164,8 +164,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 RENAME AND MUST RUN FIRST IN BOTH BLOCKS.
 
                 Nextcloud namespaces both `oc_appconfig` and `oc_preferences` by
-                app id. There is no in-place app-id upgrade — the new id is
-                simply a different app — so the rename does not move the stored
+                app id. There is no in-place app-id upgrade. The new id is
+                simply a different app, so the rename does not move the stored
                 rows, it makes every previously stored value unreachable. Every
                 reader supplies a default, so nothing errors: the admin settings
                 revert to their defaults, the imported register/schema-id
@@ -181,7 +181,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
                 Both steps are idempotent, never overwrite a newer value, never
                 delete the old rows (so a rollback still finds its config), and
-                log-and-continue rather than throwing — see their class
+                log-and-continue rather than throwing. See their class
                 docblocks for why a throwing repair step is especially bad here.
             -->
             <step>OCA\Dossiq\Repair\MigrateAppConfigKeys</step>
@@ -204,7 +204,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 REGISTER by slug alone, a SCHEMA by the PAIR
                 (application, slug) via findByApplicationAndSlug(). This app
                 now passes `appId: Application::APP_ID` = `dossiq`, while every
-                schema it already owns still carries `application = procest` —
+                schema it already owns still carries `application = procest`,
                 so the pair matches nothing and the import's not-found branch
                 builds a SECOND, EMPTY schema set while every stored object
                 stays bound to the old rows. Measured before this step existed:
@@ -220,8 +220,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 The OTHER half of the same problem, on a different column.
                 MigrateRegisterSlug moves `openregister_registers.slug`; this
                 moves `openregister_schemas.application`, which nothing else
-                touches. Schemas are matched by findByApplicationAndSlug() — the
-                PAIR — and their `application` comes from the importing app's own
+                touches. Schemas are matched by findByApplicationAndSlug(), the
+                PAIR, and their `application` comes from the importing app's own
                 Application::APP_ID, so every schema on an instance that predates
                 the procest -> dossiq app rename still says `procest` and is
                 invisible to the lookup. The import then forks a second, empty
@@ -258,7 +258,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 MUST stay first among the SCHEMA steps. OpenRegister's import matches a schema to an
                 existing row by SLUG, so a renamed slug in the register JSON
                 renames nothing: the import finds no match, creates a SECOND
-                schema, and every stored object keeps pointing at the old one —
+                schema, and every stored object keeps pointing at the old one:
                 data stranded behind a schema nothing reads, which presents as
                 an app with no records rather than as an error. Renaming the
                 slug on the existing row first makes the import recognise it.
@@ -290,7 +290,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 and `ori` was a parallel Dutch-named duplicate of its Popolo
                 model). Dropping the declaration stops it being re-created; it
                 does nothing about the register already on an existing install,
-                which holds real objects — 115 on the reference instance.
+                which holds real objects, 115 on the reference instance.
 
                 So this step RETIRES the register only once it is empty, and
                 warns and keeps it otherwise. Removal never outruns migration.
@@ -359,7 +359,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 an id, and the seam it dispatches to resolves on
                 (sourceApp, externalReference) before writing, so even a lost
                 note costs one redundant dispatch rather than a duplicate body.
-                Skips cleanly when the decision app is not installed — it is an
+                Skips cleanly when the decision app is not installed. It is an
                 optional runtime dependency and an install without it keeps
                 working on its local committees.
             -->
@@ -367,7 +367,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell the rename case from the back-fill case. Matches BOTH the
-                dossiq and dossiq-default registers, which each hold live rows —
+                dossiq and dossiq-default registers, which each hold live rows,
                 which is why MigrateRegisterSlug renames both siblings and not
                 just the first: this step resolves them by slug PREFIX, and a
                 half-renamed pair would migrate half the install and say so as
@@ -414,7 +414,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 this one moves what is IN them, across every mapped property
                 rather than the single `direction` column
                 RenameDutchDirectionValues covers. Once the schema declares
-                `upheld`, a row still holding `gegrond` does not error — a filter
+                `upheld`, a row still holding `gegrond` does not error: a filter
                 on the new value returns null and the caller reads that as
                 "nothing to do".
 
@@ -439,8 +439,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 their own, so the vocabulary split down the middle: the
                 recommendation schema offered `government` while every cell
                 said `overheid`. A quarter of the national enforcement strategy
-                became unreachable, and it presented as "Geen LHS-cel gevonden"
-                — which reads like bad input rather than a broken axis.
+                became unreachable, and it presented as "Geen LHS-cel gevonden",
+                which reads like bad input rather than a broken axis.
 
                 The mapping is removed at source, so a fresh instance cannot
                 acquire this. This step is for the instances that already ran
@@ -459,13 +459,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 zaaksysteem synchronisation status. Every replacement was a value
                 the row's own schema REFUSES, so a case handler editing any demo
                 case was rejected on a field they had not touched, and
-                InformatieobjectAccessGuard — which fails closed on a level it
-                cannot rank — treated every `public` document as the most secret
+                InformatieobjectAccessGuard, which fails closed on a level it
+                cannot rank, treated every `public` document as the most secret
                 one the app holds.
 
                 Schema-scoped, unlike the rename: reversing by column would put
                 `sent` -> `verzonden` on schemas where `sent` is correct.
-                Idempotent — a repaired row no longer matches the filter.
+                Idempotent: a repaired row no longer matches the filter.
             -->
             <step>OCA\Dossiq\Repair\RealignStatutoryVocabulary</step>
             <!--
@@ -475,7 +475,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 every new decision travels, so old evidence takes the identical
                 path as new evidence and hermiq never reads dossiq's register.
                 Idempotent (stable externalRef per source entry) and non-fatal
-                (a missing hermiq logs and continues) — an upgrade must not fail
+                (a missing hermiq logs and continues): an upgrade must not fail
                 because an audit projection could not complete, and the local
                 copies remain to replay from. POST-MIGRATION only: a fresh
                 install has no history to move.
@@ -484,7 +484,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!--
                 bacAdviceRequest carried the objection id under the name of the
                 SCHEMA it $refs (`objectionProceeding`) instead of the property
-                the schema declares (`bezwaar`) — so a required property was
+                the schema declares (`bezwaar`), so a required property was
                 never written, and BezwaarDetail's advice-request widgets, which
                 filter on `bezwaar`, showed nothing at all. Idempotent (rows that
                 already have `bezwaar` are skipped) and non-fatal.
@@ -494,7 +494,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 One clock: arms an OpenRegister FlowTimer for every in-flight
                 TermijnInstance that does not carry one yet (engineTimerId),
                 suspending the timer for paused rows. Idempotent, skips
-                terminal rows, and never throws — an unreachable engine is a
+                terminal rows, and never throws: an unreachable engine is a
                 warning plus a failed count, not a broken upgrade. Catch-up
                 rung fires after migration are absorbed by the
                 notificatiesVerstuurd dedup in TermijnTimerFiredListener.
@@ -502,7 +502,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
             <!--
-                LAST, AND A REPORT RATHER THAN AN ACTION — see the identical
+                LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
             -->
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
@@ -512,7 +512,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             `Installer::installAppLastSteps()` guards both the pre-migration and
             post-migration blocks with `if ($previousVersion !== '')`, and only
             `repair-steps/install` runs unconditionally afterwards. Until this block
-            existed a brand-new Dossiq install ran NONE of the steps above — the
+            existed a brand-new Dossiq install ran NONE of the steps above: the
             register was never imported and not one of the twelve seed steps ran, so
             a fresh instance had no ZGW mappings, no bezwaar/beroep data, no LHS or
             VTH matrices and no workflow templates.
@@ -554,7 +554,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
                 THIS IS THE PATH THE RENAME ACTUALLY TAKES. Nextcloud discovers
                 `dossiq` as a DIFFERENT app from `procest`, so enabling it IS a
-                fresh install with an empty `installed_version` — the
+                fresh install with an empty `installed_version`: the
                 post-migration block above never fires, and the two Migrate*
                 steps would never run at all if they were declared only there.
                 Declared here they run, and on a genuine upgrade whichever block
@@ -570,7 +570,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 duplication: enabling `dossiq` is a FRESH install as far as
                 Nextcloud is concerned, so this is the block that actually runs.
                 The register row it renames was created by the previous app id
-                and is still there — the rename has to happen here or the import
+                and is still there, so the rename has to happen here or the import
                 below forks a second, empty register.
             -->
             <step>OCA\Dossiq\Repair\MigrateRegisterSlug</step>
@@ -580,7 +580,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 REGISTER by slug alone, a SCHEMA by the PAIR
                 (application, slug) via findByApplicationAndSlug(). This app
                 now passes `appId: Application::APP_ID` = `dossiq`, while every
-                schema it already owns still carries `application = procest` —
+                schema it already owns still carries `application = procest`,
                 so the pair matches nothing and the import's not-found branch
                 builds a SECOND, EMPTY schema set while every stored object
                 stays bound to the old rows. Measured before this step existed:
@@ -616,7 +616,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 BASELINE-CREATING, AND ONLY A FRESH INSTALL NEEDS IT MOST.
                 The shipped case flow assigns its behandelaar step to the
                 Nextcloud group `behandelaars`, and membership of a group that
-                does not exist is false for everyone — so the completion signal
+                does not exist is false for everyone, so the completion signal
                 is refused fail-closed and the shipped journey cannot be walked
                 at all. Declared post-migration only (dossiq#1729), it never ran
                 on the one path that had no group to begin with. Ahead of every
@@ -645,7 +645,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
                 ships are imported by OpenRegister while the register above is,
                 and they arrive `owner = NULL, enabled = false` by that engine's
-                design — so nothing runs, and the install says nothing about it.
+                design, so nothing runs, and the install says nothing about it.
                 This step cannot adopt them (adoption writes the CALLING user's
                 uid and an upgrade runs as nobody); it names what is outstanding
                 and the command that completes it. It never throws.
