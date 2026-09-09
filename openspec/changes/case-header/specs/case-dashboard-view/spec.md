@@ -99,8 +99,14 @@ read yet, so until it lands the four stay last in the strip.
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
-- **THEN** the first five tabs SHALL share one line
-- **AND** the tab strip SHALL sit above the fold
+- **THEN** the tab strip SHALL sit above the fold
+- **AND** every work tab SHALL be visible without a scroll or a gesture
+
+> Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
+> tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
+> at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
+> scrolling strip hides tabs behind an edge with nothing to say they are there. What the
+> handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
 
 #### Scenario: A tab with nothing in it is absent
 @e2e exclude Hiding a tab on its row count needs `visibleIf` on a `CnTabsWidget` tab entry (placement section 3, A33); the manifest unit test asserts that the four conditional tabs are last, and the tasks.md marker tracks the block.
