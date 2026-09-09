@@ -1,7 +1,8 @@
 {
-	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor round 2 audit (private repo concurrentie-analyse, procest/_round2/compare/M1-functionality.md). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands, and bump comparedOn. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every such correction is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
+	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor audit (private repo concurrentie-analyse). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands. `comparedOn` is the date the four COLUMNS were read and it moves only when all four are read again. `rowsAddedOn` is the date rows were last added to the LIST, which is a different event: a later round can ask a new question without re-reading the older products. A row added that way carries `addedOn` and rates the three competitors `unknown`, because a guess in someone else's column is worse than an empty cell. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every correction and every added row is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
 	"comparedOn": "2026-09-07",
-	"reratedOn": "2026-09-08",
+	"rowsAddedOn": "2026-09-09",
+	"reratedOn": "2026-09-09",
 	"dossiqRevision": "add765a06",
 	"_rerated": [
 		{
@@ -51,6 +52,158 @@
 			"to": "partial",
 			"cause": "built",
 			"reason": "Case types group into folders by category. Attributes and templates do not, so this is partial and not yes."
+		},
+		{
+			"id": "2.23",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Two reports of the same nuisance on two channels is routine front-office work. We relate cases, we never collapse them, and a late reply to the closed one reaches nobody."
+		},
+		{
+			"id": "2.24",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Nothing on our intake path looks for a case that already exists."
+		},
+		{
+			"id": "2.25",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row, narrowed. The proposal also asked whether the pause reason is stored, which row 2.11 already asks. What is left is the chasing, and nothing in the app re-asks."
+		},
+		{
+			"id": "2.26",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Round 3 row. CaseRelationService types a link as vervolg, subject or bijdrage and writes it on both cases, but the mirror carries the same name, so no link means blocks on one side and blocked by on the other."
+		},
+		{
+			"id": "2.27",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row, refiled from access-and-privacy to case-core: a lock is concurrency, not access control. Two handlers can overwrite each other on a case and neither is told."
+		},
+		{
+			"id": "3.20",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Round 3 row. Our bulk actions each do one thing, and none of them decides where the handler lands afterwards."
+		},
+		{
+			"id": "6.15",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. One flag per entry is what makes a single timeline safe to show an applicant. Row 6.4 is already no for the timeline, so the flag was never in question."
+		},
+		{
+			"id": "6.16",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row, refiled from integrations to communication. We score no and we are content with it: a municipality owes an applicant an outcome, not a rating request."
+		},
+		{
+			"id": "8.11",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Article 1 of the Algemene termijnenwet extends a term that ends on a Saturday, Sunday or recognised holiday. We add the days and stop."
+		},
+		{
+			"id": "8.12",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Round 3 row. Round 3 read five private calendars and rated us no. WorkingDayCalculator has since landed and all five callers use it, so the single source of truth exists. Nobody can edit a holiday without a release, so this is partial and not yes."
+		},
+		{
+			"id": "8.13",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Round 3 row, and one we lead on. DeadlinePauseService moves the end date out and pulls back the unused part when the applicant answers early, which is what Awb 4:15 asks for."
+		},
+		{
+			"id": "8.14",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Round 3 row. DeadlineEscalationService widens from handler to teamleader to manager at 14, 7, 2 and 0 days. The ladder is a constant in code and not yet administered, which is a refinement rather than a gap."
+		},
+		{
+			"id": "8.15",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Round 3 row. TermijnService stores both end dates as a date. A Dutch term expires at the close of a day, so storing a timestamp would be wrong here."
+		},
+		{
+			"id": "9.13",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Our threshold alerts sit on complaint analytics, not on a saved search."
+		},
+		{
+			"id": "10.11",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Round 3 row. Round 3 rated us no and missed the shipped Log hours action and the Hours booked tile. The hours live in humaniq and there is no rate or cost model, so this is partial and not yes."
+		},
+		{
+			"id": "11.25",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Round 3 row. We hide actions and widgets on a field value, and field permissions exist per role, but no rule combines the two and none of it makes a field mandatory."
+		},
+		{
+			"id": "11.26",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Answers reused across cases are most of what a contact centre does, and we have no place to keep them."
+		},
+		{
+			"id": "13.17",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. Row 13.12 covers mandates and deputies as a delegation of rights. This asks whether a case assigned to someone on leave shows up on anybody's list, and it does not."
+		},
+		{
+			"id": "13.18",
+			"on": "2026-09-09",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Round 3 row. A favourite is navigation and row 2.19 already asks about it. A watch is a subscription, and a jurist following a sensitive case has no way to ask for one."
 		}
 	],
 	"systems": [
@@ -494,6 +647,61 @@
 			"zaaksysteem": "no"
 		},
 		{
+			"id": "2.23",
+			"area": "case-core",
+			"name": "Merge two cases into one",
+			"name_nl": "Twee zaken samenvoegen tot één",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "2.24",
+			"area": "case-core",
+			"name": "Duplicate detection at intake",
+			"name_nl": "Duplicaatherkenning bij intake",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "2.25",
+			"area": "case-core",
+			"name": "Automatic chasing while a case waits on someone else",
+			"name_nl": "Automatisch rappelleren zolang een zaak op iemand wacht",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "2.26",
+			"area": "case-core",
+			"name": "Typed case links with a declared inverse",
+			"name_nl": "Getypeerde zaakrelaties met een vastgelegde tegenrichting",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "2.27",
+			"area": "case-core",
+			"name": "Edit lock on a case, with the holder named",
+			"name_nl": "Bewerkslot op een zaak, met de houder erbij",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
 			"id": "3.1",
 			"area": "tasks-and-phases",
 			"name": "BPMN process engine",
@@ -682,6 +890,17 @@
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes"
+		},
+		{
+			"id": "3.20",
+			"area": "tasks-and-phases",
+			"name": "Macro that makes several changes and sets what the handler sees next",
+			"name_nl": "Macro die meerdere wijzigingen doet en bepaalt wat de behandelaar daarna ziet",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "4.1",
@@ -1184,6 +1403,28 @@
 			"zaaksysteem": "no"
 		},
 		{
+			"id": "6.15",
+			"area": "communication",
+			"name": "Internal or public visibility per timeline entry",
+			"name_nl": "Interne of openbare zichtbaarheid per tijdlijnregel",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "6.16",
+			"area": "communication",
+			"name": "Satisfaction survey after a case closes",
+			"name_nl": "Tevredenheidsonderzoek na afsluiting van een zaak",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
 			"id": "7.1",
 			"area": "decisions",
 			"name": "Result or outcome from a configured list per case type",
@@ -1354,6 +1595,61 @@
 			"zaaksysteem": "yes"
 		},
 		{
+			"id": "8.11",
+			"area": "deadlines",
+			"name": "Term end date moved off a weekend or public holiday",
+			"name_nl": "Einddatum van een termijn die van een weekend of feestdag afschuift",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "8.12",
+			"area": "deadlines",
+			"name": "One working-day calendar, administered in one place",
+			"name_nl": "Één werkdagenkalender, op één plek beheerd",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "8.13",
+			"area": "deadlines",
+			"name": "Suspension gives the paused time back to the term",
+			"name_nl": "Opschorting geeft de gepauzeerde tijd terug aan de termijn",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "8.14",
+			"area": "deadlines",
+			"name": "Escalation ladder with more than one step when a term is breached",
+			"name_nl": "Escalatieladder met meer dan één stap bij overschrijding van een termijn",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "8.15",
+			"area": "deadlines",
+			"name": "A term ends on a day, not at a moment",
+			"name_nl": "Een termijn eindigt op een dag, niet op een moment",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
 			"id": "9.1",
 			"area": "search",
 			"name": "Global quick search",
@@ -1474,6 +1770,17 @@
 			"zaaksysteem": "no"
 		},
 		{
+			"id": "9.13",
+			"area": "search",
+			"name": "Alert when a saved search crosses a count threshold",
+			"name_nl": "Melding wanneer een opgeslagen zoekopdracht een aantalsgrens passeert",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
 			"id": "10.1",
 			"area": "reporting",
 			"name": "Configurable KPI dashboards (count, gauge, chart)",
@@ -1572,6 +1879,17 @@
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes"
+		},
+		{
+			"id": "10.11",
+			"area": "reporting",
+			"name": "Time booked against a case",
+			"name_nl": "Uren geboekt op een zaak",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "11.1",
@@ -1812,6 +2130,28 @@
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes"
+		},
+		{
+			"id": "11.25",
+			"area": "configuration",
+			"name": "Fields hidden, required or read only by role and case state",
+			"name_nl": "Velden verborgen, verplicht of alleen-lezen per rol en zaakstatus",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "11.26",
+			"area": "configuration",
+			"name": "Knowledge base with per-role visibility",
+			"name_nl": "Kennisbank met zichtbaarheid per rol",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "12.1",
@@ -2202,6 +2542,28 @@
 			"opencase": "yes",
 			"gzac": "yes",
 			"zaaksysteem": "partial"
+		},
+		{
+			"id": "13.17",
+			"area": "access-and-privacy",
+			"name": "Out of office with a stand-in who sees the work",
+			"name_nl": "Afwezigheid met een vervanger die het werk ziet",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "13.18",
+			"area": "access-and-privacy",
+			"name": "Watchers on a case, separate from the assignee",
+			"name_nl": "Volgers op een zaak, los van de behandelaar",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"addedOn": "2026-09-09"
 		}
 	]
 }

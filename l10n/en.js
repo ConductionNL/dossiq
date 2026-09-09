@@ -3797,6 +3797,8 @@ OC.L10N.register(
         "System": "System",
         "Totals over all {count} capabilities": "Totals over all {count} capabilities",
         "we did not find it": "we did not find it",
+        "we have not read that system on this row": "we have not read that system on this row",
+        "On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other three columns read Unknown, because we did not read those products again, and a guessed rating is worse than an empty cell.": "On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other three columns read Unknown, because we did not read those products again, and a guessed rating is worse than an empty cell.",
         "we found part of it, and part is missing": "we found part of it, and part is missing",
         "we found the whole capability": "we found the whole capability",
         "We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.": "We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.",

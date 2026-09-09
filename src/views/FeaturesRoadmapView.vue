@@ -120,6 +120,7 @@
 					}}
 				</p>
 				<p>{{ reratedText }}</p>
+				<p>{{ addedRowsText }}</p>
 				<p>
 					{{
 						t(
@@ -153,7 +154,10 @@
 							<th scope="col">
 								{{ t('dossiq', 'System') }}
 							</th>
-							<th v-for="rating in ratings" :key="rating" scope="col">
+							<th
+								v-for="rating in ratingColumns"
+								:key="rating"
+								scope="col">
 								{{ ratingLabel(rating) }}
 							</th>
 						</tr>
@@ -168,7 +172,7 @@
 							<th scope="row">
 								{{ system.name }}
 							</th>
-							<td v-for="rating in ratings" :key="rating">
+							<td v-for="rating in ratingColumns" :key="rating">
 								{{ totals[system.key][rating] }}
 							</td>
 						</tr>
@@ -179,7 +183,7 @@
 			<h3>{{ t('dossiq', 'Per area') }}</h3>
 			<p class="features-roadmap__legend">
 				<span
-					v-for="rating in ratings"
+					v-for="rating in ratingColumns"
 					:key="rating"
 					class="features-roadmap__legend-item">
 					<span
@@ -268,7 +272,7 @@ import {
 	formatComparedOn,
 	groupByArea,
 	overallTallies,
-	RATINGS,
+	RATING_COLUMNS,
 } from '../utils/capabilityComparison.js'
 
 export default {
@@ -299,7 +303,11 @@ export default {
 			// job is still "what does dossiq do", and the comparison is the
 			// context for that answer.
 			section: 'product',
-			ratings: RATINGS,
+			// Ratings PLUS `unknown`. The totals table and the legend both
+			// render this list, because an unrated cell is a claim about what
+			// we did, not a hole in the data, and a reader has to be able to
+			// see it.
+			ratingColumns: RATING_COLUMNS,
 			systems: comparison.systems,
 		}
 	},
@@ -401,6 +409,33 @@ export default {
 				},
 			)
 		},
+
+		/**
+		 * The sentence covering rows a later round added to the list.
+		 *
+		 * A round can ask a new question without re-reading the products an
+		 * earlier round rated. Those rows carry `addedOn`, we rate ourselves
+		 * on them, and the other three columns stay `unknown`. Saying so is
+		 * the point: without it a reader sees three systems scored over fewer
+		 * rows than us and has no way to learn why.
+		 *
+		 * @return {string} The sentence, empty when no row was added this way.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		addedRowsText() {
+			const added = comparison.capabilities.filter((row) => row.addedOn)
+			if (added.length === 0 || !comparison.rowsAddedOn) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other three columns read Unknown, because we did not read those products again, and a guessed rating is worse than an empty cell.',
+				{
+					count: added.length,
+					date: formatComparedOn(comparison.rowsAddedOn, this.locale),
+				},
+			)
+		},
 	},
 
 	methods: {
@@ -444,6 +479,9 @@ export default {
 			}
 			if (rating === 'partial') {
 				return t('dossiq', 'we found part of it, and part is missing')
+			}
+			if (rating === 'unknown') {
+				return t('dossiq', 'we have not read that system on this row')
 			}
 			return t('dossiq', 'we did not find it')
 		},
@@ -610,6 +648,14 @@ export default {
 
 .features-roadmap__chip--no {
 	background-color: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+}
+
+/* Unrated, and deliberately so. Dashed, because an empty cell and a cell we
+   looked at and could not answer are different claims. */
+.features-roadmap__chip--unknown {
+	background-color: transparent;
+	border-style: dashed;
 	color: var(--color-text-maxcontrast);
 }
 </style>

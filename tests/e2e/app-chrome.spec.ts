@@ -164,6 +164,7 @@ test.describe('app chrome (ADR-114)', () => {
 	// @e2e openspec/specs/features-roadmap/spec.md#areas-summarise-before-they-expand
 	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
+	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-accounts-for-rows-a-later-round-added
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -207,8 +208,17 @@ test.describe('app chrome (ADR-114)', () => {
 		// on its own.
 		await expect(comparison).toContainText('run your own evaluation')
 
+		// Round 3 added rows without re-reading the other three products, so
+		// their cells on those rows say Unknown. The panel has to account for
+		// that, or a reader sees three systems scored over a shorter list than
+		// ours and no reason why.
+		await expect(comparison).toContainText('capabilities to the list')
+		await expect(comparison).toContainText(
+			'a guessed rating is worse than an empty cell',
+		)
+
 		// Thirteen areas, collapsed. The rows live behind the disclosure so
-		// the landing view is readable; if a change flattens 206 rows onto the
+		// the landing view is readable; if a change flattens 225 rows onto the
 		// page, this count is what notices.
 		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(13)
 	})
