@@ -89,7 +89,7 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
+				'note' => 'Bind integriq source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
 					. '+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
 					. 'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values. '
 					. 'A bound adapter MUST map `geheimhoudingPersoonsgegevens` onto the boolean `indicatieGeheim` the '

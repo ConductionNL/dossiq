@@ -1,10 +1,18 @@
 /**
  * PDOK address lookup shim.
  *
- * Routes all PDOK Locatieserver access through the openconnector PDOK adapter
- * at /index.php/apps/openconnector/api/pdok/{suggest|lookup|free|reverse}.
+ * Routes all PDOK Locatieserver access through integriq's PDOK adapter at
+ * /index.php/apps/<integriq>/api/pdok/{suggest|lookup/{id}|free|reverse}.
  * Direct browser calls to api.pdok.nl are NOT permitted from this app — see
  * Hydra umbrella `shared-pdok-via-openconnector` (ADR-022).
+ *
+ * THE APP SEGMENT IS RESOLVED, NOT WRITTEN. Integriq is `openconnector`
+ * renamed, both ids are in the field, and Nextcloud mounts routes under the
+ * id an app actually registered. A literal in the URL is therefore a 404 on
+ * half the fleet, and a 404 here is invisible: the shim treats it as
+ * "integriq absent" and hands the caller an empty result, so the address
+ * field simply stops suggesting and nothing reports an error. This mirrors
+ * `lib/Support/FleetAppId.php` on the PHP side.
  *
  * Exports six functions with the same signatures as the original
  * pdokService.js so existing dossiq callers do not need to change:
@@ -12,10 +20,10 @@
  *   extractCoordinates(result), formatAddress(result).
  *
  * Degraded modes:
- *   - openconnector returns 503 (PDOK unavailable / circuit open): the calling
+ *   - integriq returns 503 (PDOK unavailable / circuit open): the calling
  *     function resolves with `null` and the response `message_key` is attached
  *     to the module's `lastWarning` for display by the caller.
- *   - openconnector not installed (HTTP 404): the shim sets a non-blocking
+ *   - integriq not installed (HTTP 404): the shim sets a non-blocking
  *     warning and resolves with an empty result — the form must remain submittable.
  *
  * @see hydra/openspec/changes/shared-pdok-via-openconnector/design.md
@@ -24,7 +32,45 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const BASE_URL = generateUrl('/apps/openconnector/api/pdok')
+/**
+ * Every id the PDOK-owning app answers to, NEWEST FIRST.
+ *
+ * Order is the contract, as it is in `FleetAppId::CANDIDATES`: the first id
+ * the instance actually has wins, so a migrated instance resolves to
+ * `integriq` and one still on an older release falls back to `openconnector`.
+ * Dropping the old entry re-breaks every instance that has not migrated yet.
+ *
+ * @type {string[]}
+ */
+const PDOK_APP_CANDIDATES = ['integriq', 'openconnector']
+
+/**
+ * The id the PDOK-owning app is installed under on THIS instance.
+ *
+ * `OC.appswebroots` is keyed by installed app id, so membership is the same
+ * duck-typed question `IAppManager::isInstalled()` answers on the server.
+ * Resolved per call rather than at module load: this module is imported by
+ * the webpack entry, and reading a global at import time is a race with
+ * whatever populated it.
+ *
+ * @return {string} The installed id, or the canonical name when neither is
+ *   present. A request that 404s is a better signal than one never sent.
+ */
+function resolveAppId() {
+	const roots =
+		(typeof window !== 'undefined' && window.OC && window.OC.appswebroots) || {}
+	const found = PDOK_APP_CANDIDATES.find((id) => Object.hasOwn(roots, id))
+	return found || PDOK_APP_CANDIDATES[0]
+}
+
+/**
+ * The PDOK shim base URL for the id this instance actually has.
+ *
+ * @return {string} e.g. `/index.php/apps/integriq/api/pdok`.
+ */
+function baseUrl() {
+	return generateUrl(`/apps/${resolveAppId()}/api/pdok`)
+}
 
 let debounceTimer = null
 
@@ -48,7 +94,7 @@ function clearWarning() {
 /**
  * Record a degraded-state warning that the caller can surface in the UI.
  *
- * @param {string} messageKey i18n key from the openconnector response body.
+ * @param {string} messageKey i18n key from the integriq response body.
  * @param {number} status     HTTP status that triggered the degraded path.
  */
 function recordWarning(messageKey, status) {
@@ -59,7 +105,7 @@ function recordWarning(messageKey, status) {
  * Handle a shim network error.
  *
  * 503: returns the wrapped null result with the message_key surfaced.
- * 404: records the openconnector-absent warning and returns an empty result.
+ * 404: records the integriq-absent warning and returns an empty result.
  * Other errors: rethrows so the caller can decide.
  *
  * @param {Error} error    The axios error.
@@ -75,7 +121,7 @@ function handleNetworkError(error, fallback) {
 		return null
 	}
 	if (status === 404) {
-		recordWarning('pdok.openconnector_missing', 404)
+		recordWarning('pdok.integriq_missing', 404)
 		return fallback
 	}
 	throw error
@@ -85,7 +131,7 @@ function handleNetworkError(error, fallback) {
  * Suggest addresses as the user types (autocomplete).
  *
  * Debounced at 200ms to avoid excessive API calls. Returns an array of
- * normalized suggestion objects from openconnector; on 503 returns null and
+ * normalized suggestion objects from integriq; on 503 returns null and
  * sets `lastWarning`; on 404 returns an empty array and sets `lastWarning`.
  *
  * @param {string} query Search query (min 3 characters).
@@ -101,7 +147,7 @@ export async function suggest(query) {
 		debounceTimer = setTimeout(async () => {
 			clearWarning()
 			try {
-				const response = await axios.get(`${BASE_URL}/suggest`, {
+				const response = await axios.get(`${baseUrl()}/suggest`, {
 					params: { q: query },
 				})
 				resolve(response.data?.docs || [])
@@ -117,7 +163,10 @@ export async function suggest(query) {
 }
 
 /**
- * Look up a specific result by its openconnector/PDOK id.
+ * Look up a specific result by its PDOK id.
+ *
+ * The id is a PATH segment, not a query parameter: integriq mounts this as
+ * `/api/pdok/lookup/{id}`, so `?id=` hits no route at all and 404s.
  *
  * @param {string} id The PDOK object id.
  * @return {Promise<object|null>} The full result object, or null when degraded.
@@ -129,7 +178,9 @@ export async function lookup(id) {
 	}
 	clearWarning()
 	try {
-		const response = await axios.get(`${BASE_URL}/lookup`, { params: { id } })
+		const response = await axios.get(
+			`${baseUrl()}/lookup/${encodeURIComponent(id)}`,
+		)
 		return response.data?.docs?.[0] || null
 	} catch (error) {
 		return handleNetworkError(error, null)
@@ -150,7 +201,7 @@ export async function free(query, rows = 10) {
 	}
 	clearWarning()
 	try {
-		const response = await axios.get(`${BASE_URL}/free`, {
+		const response = await axios.get(`${baseUrl()}/free`, {
 			params: { q: query, rows },
 		})
 		return response.data?.docs || []
@@ -170,7 +221,7 @@ export async function free(query, rows = 10) {
 export async function reverse(lat, lng) {
 	clearWarning()
 	try {
-		const response = await axios.get(`${BASE_URL}/reverse`, {
+		const response = await axios.get(`${baseUrl()}/reverse`, {
 			params: { lat, lng },
 		})
 		return response.data?.docs?.[0] || null

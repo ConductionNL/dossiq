@@ -40,7 +40,7 @@
 					{{
 						t(
 							'dossiq',
-							'Verzoek successfully forwarded to OpenConnector for DSO-LV transmission.',
+							'Verzoek successfully forwarded to Integriq for DSO-LV transmission.',
 						)
 					}}
 				</div>

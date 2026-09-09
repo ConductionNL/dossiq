@@ -13,7 +13,7 @@
 					{{
 						t(
 							'dossiq',
-							'Generate a beslissing document (beschikking) using the configured Docudesk template.',
+							'Generate a beslissing document (beschikking) using the configured Filinq template.',
 						)
 					}}
 				</p>

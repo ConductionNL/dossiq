@@ -652,7 +652,7 @@ OC.L10N.register(
         "Belplan overflow threshold: wachttijd (seconds)": "Belplan overflow threshold: wachttijd (seconds)",
         "Both": "Both",
         "Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.": "Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.",
-        "Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by OpenConnector and pipelinq respectively; only the Dossiq-side behaviour is configured here.": "Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by OpenConnector and pipelinq respectively; only the Dossiq-side behaviour is configured here.",
+        "Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.": "Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.",
         "Could not save KCC settings.": "Could not save KCC settings.",
         "Delete case": "Delete case",
         "Delete case with sub-cases": "Delete case with sub-cases",

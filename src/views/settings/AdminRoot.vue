@@ -75,7 +75,7 @@
 			:description="
 				t(
 					'dossiq',
-					'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.',
+					'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
 				)
 			"
 			:loading="!storesReady">
