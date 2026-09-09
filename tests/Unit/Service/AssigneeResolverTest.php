@@ -236,5 +236,36 @@ class AssigneeResolverTest extends TestCase {
 		self::assertSame('c1', $this->resolver->caseId(case: ['id' => 'c1']));
 		self::assertSame('c2', $this->resolver->caseId(case: ['uuid' => 'c2']));
 		self::assertSame('', $this->resolver->caseId(case: []));
+		self::assertSame('c3', $this->resolver->caseId(case: ['id' => ['id' => 'c3']]));
 	}//end testACaseIsIdentifiedByEitherKey()
+
+	/**
+	 * 🔴 A reference reads the same whether the store expanded it or not.
+	 *
+	 * This is the shape that bit: a `$ref` arrives as a uuid string on a plain
+	 * read and as the expanded object when the caller asked for it, and a
+	 * `(string)` cast on the expanded form yields the literal "Array" with a
+	 * warning this suite does not fail on.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceReadsTheSameExpandedOrNot(): void {
+		self::assertSame('rol-7', $this->resolver->referenceId(value: 'rol-7'));
+		self::assertSame('rol-7', $this->resolver->referenceId(value: ['id' => 'rol-7']));
+		self::assertSame('rol-7', $this->resolver->referenceId(value: ['uuid' => 'rol-7']));
+		self::assertSame('rol-7', $this->resolver->referenceId(value: '  rol-7  '));
+	}//end testAReferenceReadsTheSameExpandedOrNot()
+
+	/**
+	 * A reference that names nothing is empty, never the word "Array".
+	 *
+	 * @return void
+	 */
+	public function testAReferenceNamingNothingIsEmpty(): void {
+		foreach ([null, '', [], ['name' => 'Vergunningen'], false] as $value) {
+			$id = $this->resolver->referenceId(value: $value);
+			self::assertSame('', $id, 'a reference naming nothing must be empty');
+			self::assertNotSame('Array', $id);
+		}
+	}//end testAReferenceNamingNothingIsEmpty()
 }//end class

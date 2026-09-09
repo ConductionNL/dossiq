@@ -144,8 +144,41 @@ class AssigneeResolver {
 	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
 	 */
 	public function caseId(array $case): string {
-		return (string)($case['id'] ?? ($case['uuid'] ?? ''));
+		return $this->referenceId(value: ($case['id'] ?? ($case['uuid'] ?? '')));
 	}//end caseId()
+
+	/**
+	 * The id a reference holds, whether it is an id or an expanded object.
+	 *
+	 * 🔴 A `(string)` CAST IS NOT SAFE HERE AND FAILS LOUDLY IN THE WRONG PLACE.
+	 * A `$ref` reaches PHP as a uuid string on a plain read and as the expanded
+	 * object when the caller asked for it, and casting the expanded form yields
+	 * the literal `"Array"` plus a warning. `failOnWarning` is off in this
+	 * suite, so the warning is invisible and what survives is a task whose team
+	 * is the four characters A-r-r-a-y: a reference that resolves to nothing,
+	 * in a column a list has to render.
+	 *
+	 * @param mixed $value The stored reference.
+	 *
+	 * @return string The id, or '' when there is none.
+	 *
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
+	public function referenceId(mixed $value): string {
+		if (is_array($value) === true) {
+			return trim((string)($value['id'] ?? ($value['uuid'] ?? '')));
+		}
+
+		if (is_string($value) === true) {
+			return trim($value);
+		}
+
+		if (is_scalar($value) === true) {
+			return trim((string)$value);
+		}
+
+		return '';
+	}//end referenceId()
 
 	/**
 	 * The case, offered under both its own keys and a `case.` prefix.

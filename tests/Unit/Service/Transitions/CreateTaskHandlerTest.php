@@ -387,6 +387,51 @@ class CreateTaskHandlerTest extends TestCase {
 	}//end testTheCasesTeamIsCarriedOntoTheTask()
 
 	/**
+	 * 🔴 An EXPANDED team reference writes the uuid, not the word "Array".
+	 *
+	 * `case.assignedGroup` is a `$ref`, so OpenRegister answers it as a uuid
+	 * string on a plain read and as the expanded object when the caller asked
+	 * for it. A `(string)` cast on the expanded form yields the literal
+	 * "Array" and a PHP warning, and this suite runs with `failOnWarning`
+	 * false: the warning is invisible and what survives is a task whose team
+	 * is four characters that resolve to nothing, in a column the Tasks list
+	 * has to render.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedTeamReferenceWritesTheUuid(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+
+		$handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
+			case: ['id' => 'case-9', 'assignedGroup' => ['id' => 'rol-7', 'name' => 'Vergunningen']],
+			transitionContext: [],
+		);
+
+		self::assertSame('rol-7', $recorded['object']['assigneeGroup']);
+		self::assertNotSame('Array', $recorded['object']['assigneeGroup']);
+	}//end testAnExpandedTeamReferenceWritesTheUuid()
+
+	/**
+	 * An expanded personal assignee resolves to its id too.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedCaseAssigneeResolvesToItsId(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+
+		$handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
+			case: ['id' => 'case-9', 'assignee' => ['id' => 'alice']],
+			transitionContext: [],
+		);
+
+		self::assertSame('alice', $recorded['object']['assignee']);
+	}//end testAnExpandedCaseAssigneeResolvesToItsId()
+
+	/**
 	 * A case with no team writes no team, rather than an empty one.
 	 *
 	 * An empty `assigneeGroup` is a value the task lists would have to

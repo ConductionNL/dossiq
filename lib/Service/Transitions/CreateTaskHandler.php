@@ -102,7 +102,11 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// team, a personal assignee, or both, and the task schema has a
 			// field for each. Carrying the case's team over is what keeps a
 			// checklist task on somebody's queue when no person resolves.
-			$team = (string)($case['assignedGroup'] ?? '');
+			//
+			// Read through referenceId, never a (string) cast: `assignedGroup`
+			// is a $ref, so an expanded read casts to the literal "Array" and
+			// writes a team that resolves to nothing.
+			$team = $this->assignees->referenceId(value: ($case['assignedGroup'] ?? ''));
 			if ($team !== '') {
 				$task['assigneeGroup'] = $team;
 			}
@@ -172,12 +176,12 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return $assignee;
 		}
 
-		$own = trim((string)($case['assignee'] ?? ''));
+		$own = $this->assignees->referenceId(value: ($case['assignee'] ?? ''));
 		if ($own !== '') {
 			return $own;
 		}
 
-		if (trim((string)($case['assignedGroup'] ?? '')) === '') {
+		if ($this->assignees->referenceId(value: ($case['assignedGroup'] ?? '')) === '') {
 			$this->logger->warning(
 				'CreateTaskHandler: the task "{title}" names nobody and its case has no handler and no team, '
 					. 'so nobody is notified that it exists',

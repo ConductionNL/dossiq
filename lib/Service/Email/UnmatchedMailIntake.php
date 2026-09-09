@@ -246,7 +246,7 @@ class UnmatchedMailIntake {
 		$row = $this->normaliseObjectRow(row: $caseType);
 
 		return $this->assignees->resolve(
-			primary: (string)($row['defaultAssignee'] ?? ''),
+			primary: $this->assignees->referenceId(value: ($row['defaultAssignee'] ?? '')),
 			fallback: '',
 			case: []
 		);
