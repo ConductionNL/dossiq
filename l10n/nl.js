@@ -2026,6 +2026,8 @@ OC.L10N.register(
         "A case you handle changed status": "Een zaak van jou is van status veranderd",
         "A case you handle changed status: %s": "Een zaak van jou is van status veranderd: %s",
         "Open the case to see what changed.": "Open de zaak om te zien wat er is veranderd.",
+        "A case you handle needs your attention": "Een zaak van jou vraagt om aandacht",
+        "Open the case to see what to do next.": "Open de zaak om te zien wat er moet gebeuren.",
         "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.": "OpenCatalogi is niet geïnstalleerd op deze omgeving. Vraag een beheerder om de app in te schakelen om Woo-besluiten te kunnen publiceren.",
         "OpenRegister is available but the Dossiq register is not configured. Go to Administration Settings > Dossiq to import the configuration.": "OpenRegister is beschikbaar, maar het Dossiq-register is niet geconfigureerd. Ga naar Beheerinstellingen > Dossiq om de configuratie te importeren.",
         "OpenRegister is not available": "OpenRegister is niet beschikbaar",
