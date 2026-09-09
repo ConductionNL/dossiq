@@ -56,12 +56,9 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 	},
 }))
 
-const { default: data } = await import(
-	'../../src/data/capabilityComparison.json'
-)
-const { default: FeaturesRoadmapView } = await import(
-	'../../src/views/FeaturesRoadmapView.vue'
-)
+const { default: data } = await import('../../src/data/capabilityComparison.json')
+const { default: FeaturesRoadmapView } =
+	await import('../../src/views/FeaturesRoadmapView.vue')
 
 /**
  * Mount the view and switch it to the comparison section.

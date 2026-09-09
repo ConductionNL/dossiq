@@ -123,9 +123,7 @@ describe('capabilityComparison data', () => {
 		// We can always read our own code. An `unknown` in the dossiq column
 		// is not honesty about someone else's product, it is a row nobody
 		// finished, and it would understate our score for free.
-		const unrated = data.capabilities.filter(
-			(c) => !RATINGS.includes(c.dossiq),
-		)
+		const unrated = data.capabilities.filter((c) => !RATINGS.includes(c.dossiq))
 		expect(unrated.map((c) => c.id)).toEqual([])
 	})
 
