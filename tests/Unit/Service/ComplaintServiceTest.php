@@ -85,6 +85,7 @@ interface ComplaintObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class ComplaintServiceTest extends TestCase {
 
@@ -364,5 +365,144 @@ class ComplaintServiceTest extends TestCase {
 			'receiptDate' => '2026-03-01',
 		]);
 	}//end testCreateComplaintThrowsWhenOpenRegisterUnavailable()
+
+	/**
+	 * Build a fake object service that answers the slug search path with a
+	 * fixed list of complaint rows.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows to return.
+	 *
+	 * @return object The fake object service.
+	 */
+	private function fakeObjectService(array $rows): object {
+		return new class($rows) {
+			/**
+			 * @param array<int, array<string, mixed>> $rows The rows to return.
+			 */
+			public function __construct(private readonly array $rows) {
+			}//end __construct()
+
+			/**
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The query filters.
+			 *
+			 * @return array<int, array<string, mixed>> The scripted rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return $this->rows;
+			}//end searchObjectsBySlug()
+		};
+	}//end fakeObjectService()
+
+	/**
+	 * Point the settings mock at a configured register and complaint schema.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows the store returns.
+	 *
+	 * @return void
+	 */
+	private function withComplaints(array $rows): void {
+		$this->settingsService->method('getObjectService')
+			->willReturn($this->fakeObjectService(rows: $rows));
+		$this->settingsService->method('getConfigValue')
+			->willReturnCallback(
+				static function (string $key): string {
+					return ($key === 'register' ? 'dossiq-register' : 'complaint');
+				}
+			);
+	}//end withComplaints()
+
+	/**
+	 * listComplaints returns nothing when OpenRegister is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsEmptyWithoutObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+
+		$this->assertSame([], $this->service->listComplaints());
+	}//end testListComplaintsReturnsEmptyWithoutObjectService()
+
+	/**
+	 * listComplaints returns nothing when the register or schema is unset.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsEmptyWhenNotConfigured(): void {
+		$this->settingsService->method('getObjectService')
+			->willReturn($this->fakeObjectService(rows: [['id' => 'a']]));
+		$this->settingsService->method('getConfigValue')->willReturn('');
+
+		$this->assertSame([], $this->service->listComplaints());
+	}//end testListComplaintsReturnsEmptyWhenNotConfigured()
+
+	/**
+	 * listComplaints hands the store rows back as arrays.
+	 *
+	 * @return void
+	 */
+	public function testListComplaintsReturnsTheStoreRows(): void {
+		$this->withComplaints(rows: [['id' => 'a'], ['id' => 'b']]);
+
+		$this->assertSame([['id' => 'a'], ['id' => 'b']], $this->service->listComplaints());
+	}//end testListComplaintsReturnsTheStoreRows()
+
+	/**
+	 * getDeadlineAlerts splits complaints into overdue and warning.
+	 *
+	 * Dates are built relative to today so the test does not rot. A deadline in
+	 * the past is overdue; one inside the warning window is a warning; one well
+	 * beyond it is neither; one with no deadline at all is skipped rather than
+	 * reported.
+	 *
+	 * @return void
+	 */
+	public function testGetDeadlineAlertsGroupsOverdueAndWarning(): void {
+		$today = new \DateTimeImmutable('today');
+		$this->withComplaints(
+			rows: [
+				['id' => 'overdue', 'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d')],
+				['id' => 'due-today', 'afhandelDeadline' => $today->format('Y-m-d')],
+				['id' => 'warning', 'afhandelDeadline' => $today->modify('+2 days')->format('Y-m-d')],
+				// Exactly on the default 3-day window: included, so a <= that
+				// slips to < is caught here.
+				['id' => 'on-the-boundary', 'afhandelDeadline' => $today->modify('+3 days')->format('Y-m-d')],
+				// One day past it: excluded, so a <= that slips to <= +1 is
+				// caught too.
+				['id' => 'just-outside', 'afhandelDeadline' => $today->modify('+4 days')->format('Y-m-d')],
+				['id' => 'comfortable', 'afhandelDeadline' => $today->modify('+30 days')->format('Y-m-d')],
+				['id' => 'no-deadline'],
+			]
+		);
+
+		$alerts = $this->service->getDeadlineAlerts();
+
+		$this->assertSame(['overdue'], array_column($alerts['overdue'], 'id'));
+		$this->assertSame(
+			['due-today', 'warning', 'on-the-boundary'],
+			array_column($alerts['warning'], 'id')
+		);
+	}//end testGetDeadlineAlertsGroupsOverdueAndWarning()
+
+	/**
+	 * getDeadlineAlerts honours a widened warning window.
+	 *
+	 * @return void
+	 */
+	public function testGetDeadlineAlertsHonoursTheWarningWindow(): void {
+		$today = new \DateTimeImmutable('today');
+		$this->withComplaints(
+			rows: [
+				['id' => 'in-ten-days', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d')],
+			]
+		);
+
+		$this->assertSame([], $this->service->getDeadlineAlerts()['warning']);
+		$this->assertSame(
+			['in-ten-days'],
+			array_column($this->service->getDeadlineAlerts(warningDays: 14)['warning'], 'id')
+		);
+	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
 
 }//end class

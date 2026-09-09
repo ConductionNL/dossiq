@@ -339,7 +339,13 @@ class ComplaintService {
 	/**
 	 * Get complaints approaching or past their deadlines.
 	 *
-	 * @param int $warningDays Warn when deadline is within this many working days
+	 * The window is counted in CALENDAR days, which is what the body does. The
+	 * docblock used to say working days and the code never did; this corrects
+	 * the comment rather than the behaviour, because an advisory alert window
+	 * is not a statutory term.
+	 *
+	 * @param int $warningDays Warn when the deadline is within this many
+	 *                         calendar days
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> Grouped overdue/warning complaints
 	 *
