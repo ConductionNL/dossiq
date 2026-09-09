@@ -81,17 +81,13 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface {
 			// `ObjectService::runAs()` as the run's acting identity
 			// (openregister#3332); on the interactive path the ambient session
 			// user answers the permission checks. No local wrap needed.
+			// publish() reports failure by throwing: an InvalidArgumentException
+			// for an unsupported channel, a RuntimeException when OpenRegister
+			// is away or the case will not load. A returned array is the
+			// publication record, and it carries no verdict key to read.
 			$result = $this->publicationService->publish($caseId, ['channel' => 'website']);
-			if (($result['ok'] ?? false) === true) {
-				return new ActionResult(succeeded: true, data: $result);
-			}
 
-			// Failure does not block the transition; surface for manual retry.
-			return new ActionResult(
-				succeeded: false,
-				error: (string)($result['error'] ?? 'publication_failed'),
-				data: $result,
-			);
+			return new ActionResult(succeeded: true, data: $result);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BesluitvormingPublishHandler failed',

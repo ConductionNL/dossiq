@@ -45,12 +45,27 @@ use OCP\Notification\UnknownNotificationException;
 class Notifier implements INotifier {
 
 	/**
+	 * The subject key for an @mention in a note.
+	 */
+	public const SUBJECT_NOTE_MENTION = 'note_mention';
+
+	/**
+	 * The subject key a `notify` transition action dispatches.
+	 */
+	public const SUBJECT_CASE_STATUS_CHANGED = 'case_status_changed';
+
+	/**
 	 * Every subject key this notifier can render.
+	 *
+	 * A subject that is not on this list is refused in `prepare()`, and
+	 * Nextcloud then drops the notification before the recipient sees it. A
+	 * sender adding a subject key adds it here in the same change.
 	 *
 	 * @var array<int, string>
 	 */
 	private const KNOWN_SUBJECTS = [
-		'note_mention',
+		self::SUBJECT_NOTE_MENTION,
+		self::SUBJECT_CASE_STATUS_CHANGED,
 	];
 
 	/**
@@ -112,7 +127,10 @@ class Notifier implements INotifier {
 		$l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
 		$subjectRaw = $notification->getSubjectParameters();
 
-		[$subject, $message] = $this->noteMentionText(subjectRaw: $subjectRaw, l: $l);
+		[$subject, $message] = match ($subjectKey) {
+			self::SUBJECT_CASE_STATUS_CHANGED => $this->caseStatusChangedText(subjectRaw: $subjectRaw, l: $l),
+			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
+		};
 
 		$notification->setParsedSubject($subject);
 		$notification->setParsedMessage($message);
@@ -144,4 +162,35 @@ class Notifier implements INotifier {
 
 		return [$subject, $l->t('Open the record to see the full note.')];
 	}//end noteMentionText()
+
+	/**
+	 * The `case_status_changed` wording.
+	 *
+	 * The `message` parameter is written by whoever configured the `notify`
+	 * action on the transition, so it is shown as given. When they left it
+	 * empty the recipient still gets the one thing worth doing next.
+	 *
+	 * @param array<string,mixed> $subjectRaw The stored subject parameters
+	 *                                        (`caseId`, `transitionLabel`, `message`).
+	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function caseStatusChangedText(array $subjectRaw, \OCP\IL10N $l): array {
+		$transitionLabel = trim((string)($subjectRaw['transitionLabel'] ?? ''));
+
+		$subject = $l->t('A case you handle changed status');
+		if ($transitionLabel !== '') {
+			$subject = $l->t('A case you handle changed status: %s', [$transitionLabel]);
+		}
+
+		$message = trim((string)($subjectRaw['message'] ?? ''));
+		if ($message === '') {
+			$message = $l->t('Open the case to see what changed.');
+		}
+
+		return [$subject, $message];
+	}//end caseStatusChangedText()
 }//end class

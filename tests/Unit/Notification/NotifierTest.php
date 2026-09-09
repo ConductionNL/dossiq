@@ -194,4 +194,63 @@ class NotifierTest extends TestCase {
 
 		$this->notifier->prepare($notification, 'en');
 	}//end testPrepareFallsBackWhenActorNameMissing()
+
+	/**
+	 * The subject a `notify` transition action dispatches is rendered, and
+	 * rendered as itself rather than as mention wording.
+	 *
+	 * Without this the notification is refused in `prepare()` and dropped
+	 * before the recipient ever sees it, which is the same silent no-op one
+	 * layer along.
+	 *
+	 * @return void
+	 */
+	public function testPrepareRendersACaseStatusChange(): void {
+		$notification = $this->createMock(INotification::class);
+		$notification->method('getApp')->willReturn(Application::APP_ID);
+		$notification->method('getSubject')->willReturn(Notifier::SUBJECT_CASE_STATUS_CHANGED);
+		$notification->method('getSubjectParameters')->willReturn(
+			[
+				'caseId' => 'case-1',
+				'transitionLabel' => 'In behandeling',
+				'message' => 'Pak deze zaak op.',
+			]
+		);
+
+		$notification->expects($this->once())
+			->method('setParsedSubject')
+			->with('A case you handle changed status: In behandeling')
+			->willReturn($notification);
+		$notification->expects($this->once())
+			->method('setParsedMessage')
+			->with('Pak deze zaak op.')
+			->willReturn($notification);
+		$notification->method('setIcon')->willReturn($notification);
+
+		$this->notifier->prepare($notification, 'en');
+	}//end testPrepareRendersACaseStatusChange()
+
+	/**
+	 * Without a configured message the recipient still gets the next step.
+	 *
+	 * @return void
+	 */
+	public function testPrepareFallsBackWhenTheTransitionCarriesNoText(): void {
+		$notification = $this->createMock(INotification::class);
+		$notification->method('getApp')->willReturn(Application::APP_ID);
+		$notification->method('getSubject')->willReturn(Notifier::SUBJECT_CASE_STATUS_CHANGED);
+		$notification->method('getSubjectParameters')->willReturn(['caseId' => 'case-1']);
+
+		$notification->expects($this->once())
+			->method('setParsedSubject')
+			->with('A case you handle changed status')
+			->willReturn($notification);
+		$notification->expects($this->once())
+			->method('setParsedMessage')
+			->with('Open the case to see what changed.')
+			->willReturn($notification);
+		$notification->method('setIcon')->willReturn($notification);
+
+		$this->notifier->prepare($notification, 'en');
+	}//end testPrepareFallsBackWhenTheTransitionCarriesNoText()
 }//end class
