@@ -106,14 +106,17 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		// that SOME row says update would pass on a list in any order, and
 		// newest-first is half of what row A05 asks for.
 		//
-		// ⚠️ This needs openregister#3540. `CnAuditTrailTab` asks for
-		// `_sort[created]=DESC` and the mapper drops it: the loop that builds
-		// the ORDER BY assigns its `ASC` default over the value it is about to
-		// test, so every trail comes back oldest-first however it was asked
-		// for. Measured on a running instance, same object with and without
-		// the parameter, identical ascending output both times. Nothing here
-		// can pass until that lands, and nothing here should change to
-		// accommodate it: bottom-up is the wrong order for a reader.
+		// This assertion was red on a real defect until openregister#3540,
+		// which merged into openregister@development on 2026-09-08 and is the
+		// ref CI installs. `CnAuditTrailTab` asks for `_sort[created]=DESC`
+		// and the mapper dropped it: the loop that builds the ORDER BY
+		// assigned its `ASC` default over the value it was about to test, so
+		// every trail came back oldest-first however it was asked for.
+		// Measured on a running instance before the fix, same object with and
+		// without the parameter, identical ascending output both times.
+		// Deliberately left as written rather than relaxed to match the
+		// broken order: bottom-up is the wrong order for a reader, and this
+		// is the assertion that catches a regression of it.
 		await expect(rows.first()).toContainText(/update/i)
 		await expect(rows.first()).toContainText('admin')
 

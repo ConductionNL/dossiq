@@ -341,10 +341,11 @@ test.describe('The requester on the case', () => {
 	// @e2e openspec/specs/initiator-selection/spec.md
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
-		// The tab strip, not a KPI card: `.cn-kpi-card` was the dashboard's
-		// tile class and never appeared on this page, so the wait could only
-		// ever time out. The strip is on every case page and mounts last of
-		// the widgets, which is what makes it a load signal.
+		// The tab strip, not a KPI card. This is only a load signal, and
+		// `.cn-kpi-card` was a poor one: the page's single stats-block is
+		// `case-kpis-hours`, which renders nothing when no hours are booked,
+		// so the wait timed out on a page that had loaded perfectly. The
+		// strip is `case-panels`, which is on every case page unconditionally.
 		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -468,10 +469,11 @@ test.describe('The requester on the case', () => {
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a case without a requester shows no card', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
-		// The tab strip, not a KPI card: `.cn-kpi-card` was the dashboard's
-		// tile class and never appeared on this page, so the wait could only
-		// ever time out. The strip is on every case page and mounts last of
-		// the widgets, which is what makes it a load signal.
+		// The tab strip, not a KPI card. This is only a load signal, and
+		// `.cn-kpi-card` was a poor one: the page's single stats-block is
+		// `case-kpis-hours`, which renders nothing when no hours are booked,
+		// so the wait timed out on a page that had loaded perfectly. The
+		// strip is `case-panels`, which is on every case page unconditionally.
 		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})

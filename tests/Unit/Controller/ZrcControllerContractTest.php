@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ZrcController;
+use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
@@ -118,6 +119,7 @@ class ZrcControllerContractTest extends TestCase {
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,
 			caseRelationService: $this->caseRelationService,
+			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
 		);
 	}//end setUp()
 

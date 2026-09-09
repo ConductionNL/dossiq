@@ -1,7 +1,58 @@
 {
-	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor round 2 audit (private repo concurrentie-analyse, procest/_round2/compare/M1-functionality.md). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands, and bump comparedOn.",
+	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor round 2 audit (private repo concurrentie-analyse, procest/_round2/compare/M1-functionality.md). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands, and bump comparedOn. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every such correction is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
 	"comparedOn": "2026-09-07",
+	"reratedOn": "2026-09-08",
 	"dossiqRevision": "add765a06",
+	"_rerated": [
+		{
+			"id": "1.8",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "partial",
+			"cause": "built",
+			"reason": "Plan follow-up is a header action on the case page, swept by a background job. A repeating series still is not, so this is partial and not yes."
+		},
+		{
+			"id": "2.8",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "A case carries tags, edited in the Tags sidebar tab and filtered on the Cases list."
+		},
+		{
+			"id": "2.9",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "Copy case is a header action on the case page, backed by CaseCopyService."
+		},
+		{
+			"id": "4.9",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "A document carries keywords, shown as chips on its row and offered as a filter over the case file."
+		},
+		{
+			"id": "5.5",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "A protected person is marked as protected, their number is masked, and revealing it writes an audit row."
+		},
+		{
+			"id": "11.23",
+			"on": "2026-09-08",
+			"from": "no",
+			"to": "partial",
+			"cause": "built",
+			"reason": "Case types group into folders by category. Attributes and templates do not, so this is partial and not yes."
+		}
+	],
 	"systems": [
 		{
 			"key": "dossiq",
@@ -167,7 +218,7 @@
 			"area": "intake",
 			"name": "Scheduled or recurring planned cases",
 			"name_nl": "Geplande of terugkerende zaken",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes"
@@ -297,7 +348,7 @@
 			"area": "case-core",
 			"name": "Case tags or labels",
 			"name_nl": "Labels of tags op een zaak",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial"
@@ -307,7 +358,7 @@
 			"area": "case-core",
 			"name": "Copy case",
 			"name_nl": "Zaak kopiëren",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes"
@@ -717,7 +768,7 @@
 			"area": "documents",
 			"name": "Document labels or tags",
 			"name_nl": "Labels of tags op documenten",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes"
@@ -907,7 +958,7 @@
 			"area": "parties-and-contacts",
 			"name": "Address protection or secrecy indication",
 			"name_nl": "Adresbescherming of geheimhoudingsindicatie",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes"
@@ -1747,7 +1798,7 @@
 			"area": "configuration",
 			"name": "Catalog with folders for case types, attributes, templates",
 			"name_nl": "Catalogus met mappen voor zaaktypen, kenmerken en sjablonen",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes"

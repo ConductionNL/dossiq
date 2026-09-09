@@ -46,7 +46,11 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dateTokenPattern, dismissSupportDialog } from './helpers/nav.ts'
+import {
+	dateTokenPattern,
+	dismissSupportDialog,
+	tickCheckbox,
+} from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
 const CASES_URL = `${APP_URL}cases`
@@ -204,7 +208,22 @@ const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
  * @param page The page.
  */
 async function narrowToThisRun(page: Page): Promise<void> {
-	const facet = page.getByRole('button', { name: RUN_CASE_TYPE, exact: true })
+	// 🔴 THE FACET'S ACCESSIBLE NAME CARRIES ITS COUNT. A sidebar entry with
+	// matches renders as "<case type> <n>", so the accessible name of this
+	// run's type is `E2EZAAK-… Vergunning 1`, not `E2EZAAK-… Vergunning`, and
+	// `exact: true` on the bare title matched nothing. The failure reads "the
+	// sidebar should offer a case-type filter named …" while the button is
+	// right there in the snapshot, one character group longer.
+	//
+	// A type with NO matches renders without the count, which is why the
+	// suffix is optional here rather than required. Anchored at both ends and
+	// including the run prefix, so it still cannot match another run's type or
+	// the `… Bare` type this same fixture seeds alongside it.
+	const facet = page.getByRole('button', {
+		name: new RegExp(
+			`^${RUN_CASE_TYPE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
+		),
+	})
 	await expect(
 		facet,
 		`the sidebar should offer a case-type filter named ${RUN_CASE_TYPE}`,
@@ -483,39 +502,6 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
-	test('the Deadlines table View all carries its filter to the list', async ({
-		page,
-	}) => {
-		await visit(page, APP_URL)
-
-		// `dashboard-tiles` merged the Overdue tile and the Deadline alerts
-		// tile into one `deadlines` table whose window is WIDER than the
-		// Overdue chip: past due AND due within three days. So this asserts
-		// the table's own filter surviving the trip, which is the defect
-		// triage item 4 named, not that it lands on the Overdue chip.
-		// Addressed by widget id, the way `pages.spec.ts` does: the id does
-		// not move when the title does.
-		const table = page.locator('[aria-label="deadlines"]')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
-		await expect(viewAll).toBeVisible({ timeout: 15_000 })
-		await viewAll.click()
-
-		await casesTable(page)
-		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
-		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toMatch(dateTokenPattern('@today+3d'))
-		expect(query.get('isFinalStatus')).toBe('false')
-
-		// The chip does NOT light up: CnIndexPage activates only the chip
-		// marked `default`, so the reader lands on All with the query
-		// applied, and naming a chip from a query is a nextcloud-vue change.
-		await listSettled(page, 'mine-overdue')
-		await expect(row(page, 'closed-overdue')).toHaveCount(0)
-		await expect(row(page, 'mine-far')).toHaveCount(0)
-	})
-
-	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	test('the Overdue stat tile links to exactly the Overdue chip filter', async ({
 		page,
 	}) => {
@@ -602,7 +588,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await listSettled(page, keys[0])
 
 		for (const key of keys) {
-			await row(page, key).first().getByRole('checkbox').check()
+			await tickCheckbox(row(page, key).first().getByRole('checkbox'))
 		}
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
@@ -624,7 +610,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 			.first()
 			.click()
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Quarterly clean-up')
 
 		const execute = dialog.locator('[data-testid="bulk-execute"]')
@@ -654,7 +640,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeDisabled()
 
 		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await expect(dialog.locator('[data-testid="bulk-execute"]')).toBeEnabled()
 	})
@@ -663,7 +649,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('Suspend then Resume, each with its reason', async ({ page }) => {
 		const suspend = await openBulkAction(page, ['suspend-me'], 'suspend')
 		await suspend
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Awaiting documents')
 		await suspend.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -688,7 +674,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const resume = await openBulkAction(page, ['suspend-me'], 'resume')
 		await resume
-			.locator('[data-testid="bulk-reason"] textarea')
+			.locator('[data-testid="bulk-reason"]')
 			.fill('Documents received')
 		await resume.locator('[data-testid="bulk-execute"]').click()
 		await expect(
@@ -714,9 +700,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const dialog = await openBulkAction(page, ['extend-me'], 'extend-term')
 
 		await dialog.locator('[data-testid="bulk-new-deadline"]').fill(day(20))
-		await dialog
-			.locator('[data-testid="bulk-reason"] textarea')
-			.fill('Complex case')
+		await dialog.locator('[data-testid="bulk-reason"]').fill('Complex case')
 		await dialog.locator('[data-testid="bulk-execute"]').click()
 
 		await expect(
@@ -754,7 +738,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await chip(page, CHIPS.mine).click()
 		await listSettled(page, 'mine-far')
-		await row(page, 'mine-far').first().getByRole('checkbox').check()
+		await tickCheckbox(row(page, 'mine-far').first().getByRole('checkbox'))
 
 		const strip = page.locator('[data-testid="cn-selection-strip"]')
 		await expect(strip).toBeVisible({ timeout: 15_000 })

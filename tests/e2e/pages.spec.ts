@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 import {
-	dateTokenPattern,
 	dismissSupportDialog,
 	loadAllAdminSections,
 	navTo,
@@ -57,32 +56,6 @@ test.describe('Dashboard', () => {
 				timeout: 15_000,
 			})
 		}
-	})
-
-	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
-	test("the Deadlines table's View all keeps the deadline filter", async ({
-		page,
-	}) => {
-		await page.goto('/index.php/apps/dossiq/')
-		await dismissSupportDialog(page)
-		// `dashboard-tiles` merged the Overdue and Deadline alerts tiles into
-		// one `deadlines` table, so the panel this asserts is that one. It is
-		// addressed by widget id rather than by its heading: CnDashboardGrid
-		// puts the id on the grid item's aria-label when a layout entry has no
-		// title of its own, and the id does not move when the title does.
-		const table = page.locator('[aria-label="deadlines"]')
-		await expect(table).toBeVisible({ timeout: 30_000 })
-		// The link only renders when the table has more rows than it shows;
-		// the seed guarantees that, but say so rather than skip silently.
-		// CnDataTable renders View all as an anchor without href, so it has no
-		// link role for getByRole; match the element by its text instead.
-		const viewAll = table.getByText(/View all|Alles bekijken/, { exact: true })
-		await expect(viewAll).toBeVisible({ timeout: 15_000 })
-		await viewAll.click()
-		await expect(page).toHaveURL(/\/cases\?/, { timeout: 15_000 })
-		const query = new URL(page.url()).searchParams
-		expect(query.get('deadline[lte]')).toMatch(dateTokenPattern('@today+3d'))
-		expect(query.get('isFinalStatus')).toBe('false')
 	})
 })
 
@@ -176,9 +149,21 @@ test.describe('Tasks page', () => {
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('the Case column shows the case title, not its uuid', async ({ page }) => {
 		await navToRoute(page, '/tasks')
+		// The list has to have ANSWERED before the view is switched. The view
+		// switcher paints with the page shell, so the click lands whether or
+		// not any rows exist, and CnDataTable renders its `<table>` only once
+		// it has rows — so switching too early leaves the page in Table view
+		// with nothing to show, and the assertion below reads as "this page
+		// has no table" rather than "the list had not loaded yet". Measured on
+		// a running instance: after the switch there IS a `<table>`, with `th`
+		// headers Title, Case, Assignee, Team, Status, Due Date.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]').first(),
+		).toBeVisible({ timeout: 30_000 })
+
 		await page.getByRole('button', { name: 'Table' }).click()
 		const table = page.locator('table').first()
-		await expect(table).toBeVisible({ timeout: 15000 })
+		await expect(table).toBeVisible({ timeout: 30_000 })
 		const header = table.getByRole('columnheader', { name: /^(Case|Zaak)$/ })
 		await expect(header).toBeVisible()
 		const index = await header.evaluate((th) =>

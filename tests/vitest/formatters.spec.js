@@ -93,11 +93,25 @@ describe('the caseTitle formatter', () => {
  * @spec openspec/specs/admin-settings/spec.md
  */
 describe('the integration status formatter', () => {
-	it('names each of the four states', () => {
+	it('names each of the five states', () => {
 		expect(formatters.integrationStatus('configured')).toBe('Configured')
 		expect(formatters.integrationStatus('unconfigured')).toBe('Not configured')
 		expect(formatters.integrationStatus('unavailable')).toBe('Not available')
+		expect(formatters.integrationStatus('simulated')).toBe('Simulated')
 		expect(formatters.integrationStatus('error')).toBe('Error')
+	})
+
+	// Simulated is the state the page did not have and needed. A seam bound to
+	// a mock adapter answers, succeeds and returns an id, so it is neither
+	// unavailable nor configured, and rendering it as either is the claim this
+	// page exists to stop the app from making.
+	it('does not let a mock adapter read as a configured channel', () => {
+		expect(formatters.integrationStatus('simulated')).not.toBe(
+			formatters.integrationStatus('configured'),
+		)
+		expect(formatters.integrationStatus('simulated')).not.toBe(
+			formatters.integrationStatus('unavailable'),
+		)
 	})
 
 	it('renders an unknown value as itself, not as an empty cell', () => {
