@@ -24,7 +24,7 @@
 			{{
 				t(
 					'procest',
-					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions — your colleague only sees what they are already allowed to access.',
+					'Register a colleague to handle your cases and tasks while you are away. They will see your work in their My Work and receive your deadline signals for the period. Substitution does not grant any extra permissions. Your colleague only sees what they are already allowed to access.',
 				)
 			}}
 		</p>

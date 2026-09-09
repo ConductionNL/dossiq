@@ -23,6 +23,7 @@ import { generateUrl } from '@nextcloud/router'
 import { createApp, h, markRaw } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
+import { registerCaseSections } from './components/case/registerCaseSections.js'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import bundledManifest from './manifest.json'
@@ -65,6 +66,11 @@ registerIcons(appIcons)
 // once any detail page had been visited. Register the catalog explicitly, the
 // way doriath and hermiq do, before the first page renders.
 registerBuiltinDashboardWidgets()
+
+// The `case-sections` container type, which is what lets the case page's tab
+// strip hold six tabs instead of fourteen. See the module for why it goes in
+// the SHARED catalog and not in `registry.js`.
+registerCaseSections()
 try {
 	registerTranslations()
 } catch (e) {

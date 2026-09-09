@@ -4,7 +4,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.',
+					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail. They are not configured here.',
 				)
 			}}
 		</NcNoteCard>

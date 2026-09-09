@@ -747,7 +747,7 @@ widget id and the page SHALL NOT change, so no page is added.
 - **AND** the task SHALL stay in the pane in its current status
 
 #### Scenario: The pane adds no page
-@e2e exclude Manifest shape is checked by the unit test on src/manifest.json in tests/unit/manifest-case-task-pane.spec.js; a page count is not a browser observation.
+@e2e exclude Manifest shape is checked by the unit test on src/manifest.json in tests/vitest/manifestCaseTaskPane.spec.js; a page count is not a browser observation.
 
 - **GIVEN** the manifest before and after this change
 - **WHEN** the pages are counted

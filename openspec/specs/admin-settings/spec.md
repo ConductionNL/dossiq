@@ -745,10 +745,14 @@ NOT see the menu entry and SHALL NOT reach the route.
 
 A status is a claim the app can back. A card SHALL show one of five states:
 Configured, Not configured, Not available, Simulated and Error. A connection
-whose specification has no implementation SHALL be seeded Not available with the
-message "Specified, not built yet" and SHALL NOT offer Open settings for a
-section that does not exist. A seed SHALL NOT claim Configured: only a save
-or a probe may set it.
+that no code path calls SHALL be seeded Not available, and its message SHALL say
+why in words the reader can act on. No card SHALL claim a connection is not
+built when the adapter, its DI binding and its tests ship. A card SHALL NOT
+offer Open settings for a section that does not exist. A seed SHALL NOT claim
+Configured: only a save or a probe may set it.
+
+A connection that IS built and IS called, and that reaches nothing until a tier
+key is set, SHALL read Not configured and its message SHALL name the key.
 
 A connection served by a MOCK adapter SHALL read Simulated, and its message
 SHALL say so in words a reader understands without opening the code. Simulated
@@ -759,13 +763,26 @@ making.
 
 **Feature tier**: MVP
 
-#### Scenario: BRP and KvK read Not available
+#### Scenario: KvK reads Not available because nothing calls it
 @e2e tests/e2e/integrations-page.spec.ts
 
 - **GIVEN** the seeded Integrations page
-- **WHEN** the admin reads the BRP and KvK cards
-- **THEN** both SHALL show Not available with the message "Specified, not built yet"
-- **AND** neither SHALL offer Open settings
+- **WHEN** the admin reads the KvK card
+- **THEN** it SHALL show Not available
+- **AND** its message SHALL say the adapter is built and bound and that no caller exists
+- **AND** its message SHALL NOT say the connection is not built
+- **AND** it SHALL NOT offer Open settings
+
+#### Scenario: BRP reads Not configured and names the key that wakes it
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the seeded Integrations page
+- **AND** `integration.brp.mode` at its `log` default
+- **WHEN** the admin reads the BRP card
+- **THEN** it SHALL show Not configured
+- **AND** its message SHALL name `integration.brp.mode`
+- **AND** its message SHALL NOT say the connection is not built
+- **AND** it SHALL NOT offer Open settings, because no admin section writes that key
 
 #### Scenario: A fresh instance claims nothing
 @e2e tests/e2e/integrations-page.spec.ts
@@ -773,7 +790,7 @@ making.
 - **GIVEN** a fresh instance with the seed loaded and no section saved
 - **WHEN** the admin opens the Integrations page
 - **THEN** no card SHALL read Configured
-- **AND** every card that is neither Not available nor Simulated SHALL read Not configured with the message "Not checked yet"
+- **AND** every card that is neither Not available, Simulated nor BRP SHALL read Not configured with the message "Not checked yet"
 
 #### Scenario: A mock adapter reads Simulated, and says the word
 @e2e tests/e2e/integrations-page.spec.ts

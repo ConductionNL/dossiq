@@ -30,6 +30,7 @@ const register = JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8'))
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const iconsSource = fs.readFileSync(ICONS_PATH, 'utf8')
 const formattersSource = fs.readFileSync(FORMATTERS_PATH, 'utf8')
+const panels = require('./helpers/casePanels.js')
 
 /** The `caseObject` schema as the register declares it. @return {object} The schema. */
 const caseObject = () => register.components.schemas.caseObject
@@ -44,11 +45,17 @@ const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
  * @return {object|undefined} The widget entry.
  */
 function caseWidget(id) {
-	return caseDetail().config.widgets.find((entry) => entry.id === id)
+	// Through the shared helper, not `config.widgets`: since the strip came
+	// down from fourteen tabs to six this widget is a SECTION of the Objects
+	// and locations tab, and a top-level `find` returns undefined for it.
+	return panels.caseWidget(id)
 }
 
 /** The tab children of the `case-panels` strip. @return {Array<object>} The tabs. */
-const panelTabs = () => caseWidget('case-panels').content.tabs
+function panelTabs() {
+	return caseDetail().config.widgets.find((entry) => entry.id === 'case-panels')
+		.content.tabs
+}
 
 /** One header action of the CaseDetail page. @param {string} id The action id. @return {object|undefined} The action. */
 function headerAction(id) {
@@ -151,31 +158,24 @@ describe('the Objects tab on the case page', () => {
 		expect(caseWidget('case-objects').content.rowRoute).toBeUndefined()
 	})
 
-	it('joins the case-panels strip as Objects, with the other collections', () => {
+	it('shares the last tab of the strip with Locations', () => {
 		// It used to be pinned immediately after Locations, which was where it
-		// was appended rather than a claim about what it is. Placement row A33
-		// reordered the strip: the work a handler does leads it, and the
-		// collections that may be empty close it. Objects is one of those, so
-		// what is asserted now is the group it belongs to, and that it is last.
-		const labels = panelTabs().map((tab) => tab.label)
-		expect(labels).toContain('Objects')
-		expect(panelTabs().at(-1).widgetId).toBe('case-objects')
+		// was appended rather than a claim about what it is. It sits WITH
+		// Locations now, in the last tab of a six-tab strip, and that is a
+		// claim: a caseObject and a case-location are both registry objects the
+		// case is about, which is why the fold that brought the strip down from
+		// fourteen tabs put them together rather than putting Locations under
+		// Related.
+		const where = panels.caseTabOf('case-objects')
+		expect(where, 'case-objects is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('Objects and locations')
+		expect(where.label).toBe('Objects')
 
-		const collections = ['Sub-cases', 'Locations', 'Appointments', 'Decisions']
-		for (const label of collections) {
-			expect(labels.indexOf('Objects')).toBeGreaterThan(labels.indexOf(label))
-		}
-		// And behind every work tab, which is the half that fails if a later
-		// change quietly promotes it into the lead band.
-		for (const label of [
-			'Data',
-			'Documents',
-			'Parties',
-			'Tasks',
-			'Communication',
-		]) {
-			expect(labels.indexOf('Objects')).toBeGreaterThan(labels.indexOf(label))
-		}
+		expect(panels.caseTabOf('case-locaties').tab).toBe(where.tab)
+
+		// And still last, which is the half that fails if a later change
+		// quietly promotes it into the lead band.
+		expect(panelTabs().at(-1).label).toBe('Objects and locations')
 	})
 
 	it('stays out of layout, or the strip would render it twice', () => {

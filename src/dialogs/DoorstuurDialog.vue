@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('dossiq', 'Forward verzoek — Doorsturen')"
+		:name="t('dossiq', 'Forward verzoek: Doorsturen')"
 		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
