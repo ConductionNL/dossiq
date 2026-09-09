@@ -743,12 +743,19 @@ NOT see the menu entry and SHALL NOT reach the route.
 
 ### Requirement: A card tells the truth about its connection (REQ-ADMIN-019)
 
-A status is a claim the app can back. A card SHALL show one of four states:
-Configured, Not configured, Not available and Error. A connection whose
-specification has no implementation SHALL be seeded Not available with the
+A status is a claim the app can back. A card SHALL show one of five states:
+Configured, Not configured, Not available, Simulated and Error. A connection
+whose specification has no implementation SHALL be seeded Not available with the
 message "Specified, not built yet" and SHALL NOT offer Open settings for a
 section that does not exist. A seed SHALL NOT claim Configured: only a save
 or a probe may set it.
+
+A connection served by a MOCK adapter SHALL read Simulated, and its message
+SHALL say so in words a reader understands without opening the code. Simulated
+is not a softer Not configured. The seam works: it accepts, it succeeds and it
+returns an id, and nothing leaves the instance. Not configured understates
+that, and Configured is exactly the claim this page exists to stop the app from
+making.
 
 **Feature tier**: MVP
 
@@ -766,7 +773,24 @@ or a probe may set it.
 - **GIVEN** a fresh instance with the seed loaded and no section saved
 - **WHEN** the admin opens the Integrations page
 - **THEN** no card SHALL read Configured
-- **AND** every card that is not Not available SHALL read Not configured with the message "Not checked yet"
+- **AND** every card that is neither Not available nor Simulated SHALL read Not configured with the message "Not checked yet"
+
+#### Scenario: A mock adapter reads Simulated, and says the word
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** an instance with no `berichtenbox_adapter` and no `beschikking_template_adapter` configured
+- **WHEN** the admin opens the Integrations page
+- **THEN** the Berichtenbox and Document templates cards SHALL read Simulated
+- **AND** each message SHALL name the mock, on the row itself, without the reader opening a settings page
+- **AND** neither SHALL read Configured or Not available
+
+#### Scenario: Naming a real adapter class flips the card
+@e2e exclude Substituting an adapter means installing a class this repo does not ship, which no browser flow can do; AdapterHonestyTest asserts the resolution and IntegrationProbesRecordTest the save-to-card seam.
+
+- **GIVEN** an integrator who has installed a real Berichtenbox adapter class
+- **WHEN** they name it in the `berichtenbox_adapter` admin setting and save
+- **THEN** the Berichtenbox card SHALL read Configured
+- **AND** clearing the setting SHALL return the card to Simulated, never to Not configured
 
 ### Requirement: A probe or a save updates the card (REQ-ADMIN-020)
 

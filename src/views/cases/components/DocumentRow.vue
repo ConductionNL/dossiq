@@ -72,12 +72,6 @@
 				</template>
 				{{ t('dossiq', 'Version history') }}
 			</NcActionButton>
-			<NcActionButton :disabled="!canShare" @click="$emit('share', document)">
-				<template #icon>
-					<ShareVariant :size="20" />
-				</template>
-				{{ t('dossiq', 'Share') }}
-			</NcActionButton>
 			<NcActionButton
 				v-if="document.status === 'draft'"
 				@click="$emit('delete', document)">
@@ -96,9 +90,7 @@ import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
-import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
 import {
-	canShare as canShareLevel,
 	DEFAULT_DIRECTION,
 	documentKeywords,
 	formatSize as formatBytes,
@@ -107,8 +99,15 @@ import {
 /**
  * A single dossier document row: selection checkbox, preview thumbnail, title
  * and metadata, status and confidentiality badges, and an action menu. The
- * share action is disabled and the delete action hidden by the document's
- * confidentiality/status so the UI mirrors the server-side guards.
+ * delete action is hidden on a final document, so the UI mirrors the
+ * server-side guard.
+ *
+ * There is no Share action. One shipped, and it made no request at all: it
+ * emitted `count-changed` and raised a success toast, so a user was told a
+ * share had been created every time nothing happened. Sharing a case document
+ * is a real feature and it belongs to OpenRegister, which owns the folder the
+ * bytes now live in and decides who may read the object. It comes back as a
+ * route, not as a toast.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T06
  */
@@ -121,7 +120,6 @@ export default {
 		Delete,
 		History,
 		OpenInNew,
-		ShareVariant,
 	},
 
 	props: {
@@ -144,7 +142,7 @@ export default {
 		},
 	},
 
-	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
+	emits: ['toggle-select', 'open', 'version-history', 'delete'],
 	data() {
 		return {
 			thumbFailed: false,
@@ -233,16 +231,6 @@ export default {
 				labels[this.document.vertrouwelijkheidaanduiding]
 				|| this.document.vertrouwelijkheidaanduiding
 			)
-		},
-
-		/**
-		 * Whether the document may be publicly shared (mirrors server guard).
-		 *
-		 * @return {boolean} True when below the vertrouwelijk threshold.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
-		 */
-		canShare() {
-			return canShareLevel(this.document.vertrouwelijkheidaanduiding)
 		},
 	},
 

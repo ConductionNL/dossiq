@@ -32,8 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use DateInterval;
-use DateTime;
+use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
@@ -93,6 +92,8 @@ class ZrcController extends ZgwController {
 	 * @param ZgwService $zgwService The shared ZGW service
 	 * @param IL10N $l10n The localization service
 	 * @param CaseRelationService $caseRelationService Typed peer-relation service
+	 * @param ArchivalNominationDeriver $archivalDeriver The one zrc-021 derivation,
+	 *                                                   shared with the in-app closing path
 	 */
 	public function __construct(
 		string $appName,
@@ -100,6 +101,7 @@ class ZrcController extends ZgwController {
 		private readonly ZgwService $zgwService,
 		private readonly IL10N $l10n,
 		private readonly CaseRelationService $caseRelationService,
+		private readonly ArchivalNominationDeriver $archivalDeriver,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -1818,7 +1820,6 @@ class ZrcController extends ZgwController {
 				// Zrc-021: Derive archiefactiedatum from resultaat.resultaattype.brondatumArchiefprocedure.
 				$caseData = $this->deriveArchiveActionDate(
 					caseData: $caseData,
-					caseConfig: $caseConfig,
 					dateStatusGezet: $dateStatusGezet
 				);
 
@@ -1998,7 +1999,6 @@ class ZrcController extends ZgwController {
 
 			$caseData = $this->deriveArchiveActionDate(
 				caseData: $caseData,
-				caseConfig: $caseConfig,
 				dateStatusGezet: $endDate
 			);
 
@@ -2031,323 +2031,38 @@ class ZrcController extends ZgwController {
 	}//end handleResultaatCreated()
 
 	/**
-	 * Derive archiefactiedatum from resultaat's resultaattype brondatumArchiefprocedure (zrc-021).
+	 * Derive archiefnominatie and archiefactiedatum for a closing zaak (zrc-021).
+	 *
+	 * 🔴 THE RULE ITSELF IS NOT HERE, AND MUST NOT COME BACK. It used to be
+	 * four private methods on this controller, which made zrc-021 reachable
+	 * only from the ZGW API: a case closed in the app came out with no
+	 * archival nomination at all, and nothing afterwards showed which of the
+	 * two routes a case had taken. {@see ArchivalNominationDeriver} is the one
+	 * implementation both routes call.
 	 *
 	 * @param array $caseData The zaak data
-	 * @param array $caseConfig The zaak mapping config
 	 * @param string $dateStatusGezet The datumStatusGezet (einddatum)
 	 *
 	 * @return array The zaak data with derived archiving parameters
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	private function deriveArchiveActionDate(array $caseData, array $caseConfig, string $dateStatusGezet): array {
-		try {
-			// Find the zaak's resultaat to get the resultaattype.
-			$zaakUuid = $caseData['id'] ?? ($caseData['@self']['id'] ?? '');
-			if ($zaakUuid === '') {
-				return $caseData;
-			}
+	private function deriveArchiveActionDate(array $caseData, string $dateStatusGezet): array {
+		$zaakUuid = (string)($caseData['id'] ?? ($caseData['@self']['id'] ?? ''));
+		$resultTypeId = $this->archivalDeriver->resultTypeForCase(caseId: $zaakUuid);
+		if ($resultTypeId === null) {
+			return $caseData;
+		}
 
-			$resultConfig = $this->zgwService->getZgwMappingService()->getMapping('result');
-			if ($resultConfig === null) {
-				return $caseData;
-			}
-
-			// Search for resultaat linked to this zaak.
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['case' => $zaakUuid, '_limit' => 1],
-				register: $resultConfig['sourceRegister'],
-				schema: $resultConfig['sourceSchema']
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return $caseData;
-			}
-
-			$resultaat = $results[0];
-			$resultData = $this->objectToArray(row: $resultaat);
-
-			// Get the resultaattype to find brondatumArchiefprocedure.
-			$resultaattypeId = $resultData['resultType'] ?? ($resultData['resultaattype'] ?? '');
-			if (empty($resultaattypeId) === true) {
-				return $caseData;
-			}
-
-			$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-			if (preg_match($uuidPattern, (string)$resultaattypeId, $rtMatches) !== 1) {
-				return $caseData;
-			}
-
-			$rtConfig = $this->zgwService->getZgwMappingService()->getMapping('resultaattype');
-			if ($rtConfig === null) {
-				return $caseData;
-			}
-
-			$rtObj = $this->zgwService->getObjectService()->find(
-				$rtMatches[1],
-				register: $rtConfig['sourceRegister'],
-				schema: $rtConfig['sourceSchema']
-			);
-			if ($rtObj === null) {
-				return $caseData;
-			}
-
-			$rtData = $this->objectToArray(row: $rtObj);
-
-			// Get brondatumArchiefprocedure.
-			$brondatum = $rtData['sourceDateArchiveProcedure'] ?? ($rtData['brondatumArchiefprocedure'] ?? null);
-			if (is_string($brondatum) === true) {
-				$brondatum = json_decode($brondatum, true);
-			}
-
-			if ($brondatum === null || is_array($brondatum) === false) {
-				return $caseData;
-			}
-
-			$afleidingswijze = $brondatum['derivationMethod'] ?? ($brondatum['afleidingswijze'] ?? '');
-			// Archiefactietermijn lives on the ResultaatType, not inside brondatumArchiefprocedure.
-			$procestermijn = $rtData['archivalPeriod'] ?? ($rtData['archiefactietermijn'] ?? null);
-
-			// Determine the base date based on afleidingswijze.
-			$baseDate = $this->resolveArchiveBaseDate(
-				afleidingswijze: $afleidingswijze,
+		return array_merge(
+			$caseData,
+			$this->archivalDeriver->derive(
+				case: $caseData,
+				resultTypeId: $resultTypeId,
 				endDate: $dateStatusGezet,
-				caseData: $caseData,
-				caseConfig: $caseConfig,
-				brondatum: $brondatum
-			);
-
-			if ($baseDate === null) {
-				// Base date unresolvable — set archiefactiedatum to null but still derive archiefnominatie.
-				$caseData['archiveActionDate'] = null;
-
-				$nomination = $rtData['archivalAction'] ?? ($rtData['archiveNomination'] ?? ($rtData['archiefnominatie'] ?? ''));
-				if ($nomination !== '') {
-					$caseData['archiveNomination'] = $nomination;
-				}
-
-				return $caseData;
-			}
-
-			// Add procestermijn (ISO 8601 duration) to the base date.
-			$archiveActionDate = $baseDate;
-			if ($procestermijn !== null && $procestermijn !== '') {
-				try {
-					$dateObj = new DateTime($baseDate);
-					$interval = new DateInterval($procestermijn);
-					$dateObj->add($interval);
-					$archiveActionDate = $dateObj->format('Y-m-d');
-				} catch (\Throwable $e) {
-					$this->zgwService->getLogger()->debug(
-						'zrc-021: Invalid procestermijn: ' . $procestermijn
-					);
-				}
-			}
-
-			$caseData['archiveActionDate'] = $archiveActionDate;
-
-			// Zrc-021: Also set archiveNomination from the resultaattype.
-			$nomination = $rtData['archivalAction'] ?? ($rtData['archiveNomination'] ?? ($rtData['archiefnominatie'] ?? ''));
-			if ($nomination !== '') {
-				$caseData['archiveNomination'] = $nomination;
-			}
-
-			$this->zgwService->getLogger()->info(
-				'zrc-021: Derived archiefactiedatum=' . $archiveActionDate . ' (afleidingswijze=' . $afleidingswijze . ')'
-			);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'zrc-021: Failed to derive archiefactiedatum: ' . $e->getMessage()
-			);
-		}//end try
-
-		return $caseData;
-	}//end deriveArchiefactiedatum()
-
-	/**
-	 * Resolve the base date for archive action date derivation (zrc-021).
-	 *
-	 * @param string $afleidingswijze The derivation method
-	 * @param string $endDate The zaak end date
-	 * @param array $caseData The zaak data
-	 * @param array $caseConfig The zaak mapping config
-	 * @param array $brondatum The brondatumArchiefprocedure data
-	 *
-	 * @return string|null The base date, or null if not resolvable
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 */
-	private function resolveArchiveBaseDate(
-		string $afleidingswijze,
-		string $endDate,
-		array $caseData,
-		array $caseConfig,
-		array $brondatum,
-	): ?string {
-		switch ($afleidingswijze) {
-			case 'handled':
-			case 'termijn':
-				return $endDate;
-			case 'ander_datumkenmerk':
-				// Cannot be automatically determined — requires external datumkenmerk.
-				return null;
-			case 'hoofdzaak':
-				$mainCaseId = $caseData['parentCase'] ?? ($caseData['mainCase'] ?? ($caseData['hoofdzaak'] ?? ''));
-				if (empty($mainCaseId) === true) {
-					return $endDate;
-				}
-
-				$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-				if (preg_match($uuidPattern, (string)$mainCaseId, $matches) === 1) {
-					try {
-						$mainCase = $this->zgwService->getObjectService()->find(
-							$matches[1],
-							register: $caseConfig['sourceRegister'],
-							schema: $caseConfig['sourceSchema']
-						);
-						$mainData = $this->objectToArray(row: $mainCase);
-
-						$mainEnd = $mainData['endDate'] ?? null;
-						if ($mainEnd !== null && $mainEnd !== '') {
-							if (is_string($mainEnd) === true) {
-								return substr($mainEnd, 0, 10);
-							}
-
-							return $endDate;
-						}
-					} catch (\Throwable $e) {
-						// Fall through to einddatum.
-					}//end try
-				}//end if
-				return $endDate;
-			case 'eigenschap':
-				$datumkenmerk = $brondatum['objectAttribute'] ?? ($brondatum['datumkenmerk'] ?? '');
-				if ($datumkenmerk !== '' && $this->zgwService->getObjectService() !== null) {
-					return $this->resolveAttributeDate(caseData: $caseData, datumkenmerk: $datumkenmerk) ?? $endDate;
-				}
-				return $endDate;
-			case 'ingangsdatum_besluit':
-				return $this->resolveDecisionDate(
-					caseData: $caseData,
-					englishField: 'effectiveDate',
-					dutchField: 'effectiveDate'
-				) ?? $endDate;
-
-			case 'vervaldatum_besluit':
-				return $this->resolveDecisionDate(
-					caseData: $caseData,
-					englishField: 'expiryDate',
-					dutchField: 'vervaldatum'
-				) ?? $endDate;
-
-			default:
-				return null;
-		}//end switch
-	}//end resolveArchiveBaseDate()
-
-	/**
-	 * Resolve a zaakeigenschap date value for archive derivation (zrc-021 eigenschap).
-	 *
-	 * @param array $caseData The zaak data
-	 * @param string $datumkenmerk The eigenschap name/key to look up
-	 *
-	 * @return string|null The date value, or null if not found
-	 */
-	private function resolveAttributeDate(array $caseData, string $datumkenmerk): ?string {
-		$zaakUuid = $caseData['id'] ?? ($caseData['@self']['id'] ?? '');
-		if ($zaakUuid === '') {
-			return null;
-		}
-
-		$propConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakeigenschap');
-		if ($propConfig === null) {
-			return null;
-		}
-
-		try {
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['case' => $zaakUuid, 'name' => $datumkenmerk],
-				register: $propConfig['sourceRegister'],
-				schema: $propConfig['sourceSchema']
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === false) {
-				$propObj = $results[0];
-				$propData = $this->objectToArray(row: $propObj);
-
-				$value = $propData['value'] ?? '';
-				if ($value !== '' && strtotime($value) !== false) {
-					return substr($value, 0, 10);
-				}
-			}
-		} catch (\Throwable $e) {
-			// Not found — return null.
-		}//end try
-
-		return null;
-	}//end resolveEigenschapDate()
-
-	/**
-	 * Resolve a besluit date field for archive derivation (zrc-021 ingangsdatum/vervaldatum).
-	 *
-	 * @param array $caseData The zaak data
-	 * @param string $englishField The English field name
-	 * @param string $dutchField The Dutch field name (fallback)
-	 *
-	 * @return string|null The date value, or null if not found
-	 */
-	private function resolveDecisionDate(array $caseData, string $englishField, string $dutchField): ?string {
-		$zaakUuid = $caseData['id'] ?? ($caseData['@self']['id'] ?? '');
-		if ($zaakUuid === '') {
-			return null;
-		}
-
-		$decisionConfig = $this->zgwService->getZgwMappingService()->getMapping('decision');
-		if ($decisionConfig === null) {
-			return null;
-		}
-
-		try {
-			$query = $this->zgwService->getObjectService()->buildSearchQuery(
-				requestParams: ['case' => $zaakUuid, '_limit' => 100],
-				register: $decisionConfig['sourceRegister'],
-				schema: $decisionConfig['sourceSchema']
-			);
-			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			// Find the latest (maximum) date among all besluiten for this zaak.
-			$latestDate = null;
-			foreach ($results as $decisionObj) {
-				$decisionData = $this->objectToArray(row: $decisionObj);
-
-				$dateVal = $decisionData[$englishField] ?? ($decisionData[$dutchField] ?? '');
-				if ($dateVal !== '' && strtotime($dateVal) !== false) {
-					$dateStr = substr($dateVal, 0, 10);
-					if ($latestDate === null || $dateStr > $latestDate) {
-						$latestDate = $dateStr;
-					}
-				}
-			}
-
-			return $latestDate;
-		} catch (\Throwable $e) {
-			// Not found — return null.
-		}//end try
-
-		return null;
-	}//end resolveBesluitDate()
+			)
+		);
+	}//end deriveArchiveActionDate()
 
 	/**
 	 * Enrich a ZaakInformatieObject outbound-mapped array with aardRelatieWeergave and registratiedatum.
