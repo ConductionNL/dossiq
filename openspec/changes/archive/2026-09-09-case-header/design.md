@@ -28,10 +28,7 @@ placement section 3 and marked `[blocked]` in tasks.md.
 
 The tab order is pure config. Hiding an empty tab needs `visibleIf` on a
 tab entry; until it lands the four conditional tabs sit last, which keeps
-the six work tabs ahead of them at 1024 either way. They wrap onto more than
-one row there and that is by design: measured 2026-09-09, six tabs need 661px
-on a line and the strip's row has about 280, and `CnTabs` wraps rather than
-scrolls so no tab is hidden behind an edge. Tab ids follow the
+the six work tabs on one line at 1024 either way. Tab ids follow the
 sibling changes so the order needs no rename when they land:
 `case-documents`, `case-roles`, `case-communication`. No `case-timeline`
 entry: `case-timeline` (row A05) keeps the case's one history in the

@@ -82,7 +82,7 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 	// refused with 403 by design, and removing the case TYPE would leave the
 	// undeletable case pointing at nothing.
 
-	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#one-history-tab-in-the-sidebar
+	// @e2e openspec/specs/case-dashboard-view/spec.md#one-history-tab-in-the-sidebar
 	test('the sidebar offers History and no version history', async ({ page }) => {
 		const sidebar = await openSidebar(page, caseId)
 
@@ -94,7 +94,7 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		await expect(sidebar.locator('#tab-button-version-history')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#the-newest-write-reads-first-with-its-actor
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-newest-write-reads-first-with-its-actor
 	test('the newest write reads first, with its actor', async ({ page }) => {
 		const sidebar = await openSidebar(page, caseId)
 		await sidebar.locator('#tab-button-audit').click()
@@ -126,7 +126,7 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		await expect(rows.nth(1)).toContainText(/create|update/i)
 	})
 
-	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#the-action-filter-narrows-to-updates
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-action-filter-narrows-to-updates
 	test('the Action filter narrows the list and never sits on Loading', async ({
 		page,
 	}) => {

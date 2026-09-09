@@ -143,7 +143,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 	// reference. A fixture that cannot clean up after itself breaks its
 	// neighbours; this one leaves nothing dangling instead.
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
 	test('the case number, type, status and assignee read under the title', async ({
 		page,
 	}) => {
@@ -172,7 +172,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(headerBox!.y).toBeLessThan(stripBox!.y)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
+	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
 	test('the status badge and the overdue countdown sit in the row', async ({
 		page,
 	}) => {
@@ -204,7 +204,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.locator('.cn-countdown-widget')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
+	// @e2e openspec/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
 	test('a case with no status and no deadline still has a header', async ({
 		page,
 	}) => {
@@ -229,7 +229,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.getByTestId('case-header-countdown')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-current-crumb-is-not-a-link
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-current-crumb-is-not-a-link
 	test('the breadcrumb ends on the case, unlinked and marked current', async ({
 		page,
 	}) => {
@@ -249,7 +249,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(await current.getAttribute('href')).toBeNull()
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#cases-is-one-click-away
+	// @e2e openspec/specs/case-dashboard-view/spec.md#cases-is-one-click-away
 	test('the first crumb opens the case list, carrying the query it had', async ({
 		page,
 	}) => {
@@ -273,7 +273,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
@@ -293,7 +293,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(labels).toEqual(WORK_TABS)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-work-tabs-fit-a-laptop-screen
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-six-tabs-fit-a-laptop-screen
 	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {

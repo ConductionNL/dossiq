@@ -24,9 +24,8 @@ You reach every panel of the case from one row of six tabs. The `case-panels`
 widget on `CaseDetail` SHALL list exactly six tabs, in the order Data
 (`case-core`), Documents (`case-documents-panel`), People
 (`case-people-panel`), Work (`case-work-panel`), Related
-(`case-related-panel`) and Objects and locations (`case-objects-panel`). The
-strip SHALL sit above the fold at 1024 pixels wide, and all six SHALL be
-visible there without a scroll or a gesture.
+(`case-related-panel`) and Objects and locations (`case-objects-panel`). All
+six SHALL fit on one line at 1024 pixels wide, above the fold.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
 render stacked under their own headings. Documents SHALL hold the dossier list
@@ -61,14 +60,8 @@ the handler opened deliberately.
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the six tabs SHALL be visible without a scroll or a gesture
-
-> Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
-> tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
-> at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
-> scrolling strip hides tabs behind an edge with nothing to say they are there. What the
-> handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
+- **THEN** all six tabs SHALL share one line
+- **AND** the tab strip SHALL sit above the fold
 
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts

@@ -215,7 +215,7 @@ test.describe('Case identity', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('a case posted to the API is numbered in the year of its start date', async () => {
 		const filed = await createObject(api, token, 'case', {
 			title: `${RUN_PREFIX} api filed case`,
@@ -234,7 +234,7 @@ test.describe('Case identity', () => {
 		).toBe('2026')
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('an existing number survives an edit to the case', async () => {
 		await updateObject(api, token, 'case', legacyCaseId, {
 			title: `${RUN_PREFIX} legacy numbered case, retitled`,
@@ -244,7 +244,7 @@ test.describe('Case identity', () => {
 		expect(stored.identifier).toBe(LEGACY_IDENTIFIER)
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('the New case form asks for no number, and the case gets the next one', async ({
 		page,
 	}) => {
@@ -310,7 +310,7 @@ test.describe('Case identity', () => {
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('a tag added in the sidebar is on the case after a reload', async ({
 		page,
 	}) => {
@@ -374,7 +374,7 @@ test.describe('Case identity', () => {
 		).toContainText(TYPED_TAG, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('the Cases index filters on a tag, and offers the filter', async ({
 		page,
 	}) => {
@@ -423,7 +423,7 @@ test.describe('Case identity', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('the case shows its lead time, legal basis and archive nomination', async ({
 		page,
 	}) => {
@@ -445,7 +445,7 @@ test.describe('Case identity', () => {
 		await expect(terms).toContainText(/blijvend[ _]bewaren/i)
 	})
 
-	// @e2e openspec/changes/case-identity/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md
 	test('an empty archive action date is shown empty, not hidden', async ({
 		page,
 	}) => {

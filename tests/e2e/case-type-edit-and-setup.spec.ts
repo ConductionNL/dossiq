@@ -139,7 +139,7 @@ async function mainBundleSource(page: Page): Promise<string> {
 test.describe('Case types — the row action menu', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('every entry in the row menu has a visible label', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -159,7 +159,7 @@ test.describe('Case types — the row action menu', () => {
 		expect(labels.filter((l) => l === '')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('the menu offers View and Edit exactly once each', async ({ page }) => {
 		// The manifest used to hand-roll a `view` action next to the built-in
 		// one; both now resolve to the same detail route, so only one should
@@ -176,7 +176,7 @@ test.describe('Case types — the row action menu', () => {
 test.describe('Case types — Edit goes to the detail page, not a modal', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('Edit navigates to the case type detail route', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -188,7 +188,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 		})
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('Edit does not open a dialog over the index', async ({ page }) => {
 		// The decisive half. Navigating AND opening the modal would satisfy the
 		// test above while changing nothing about the defect.
@@ -210,7 +210,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 test.describe('Case type detail — the record can be edited there', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('the detail page offers an Edit button', async ({ page }) => {
 		// Without this the change above would simply have made every case type
 		// read-only — which is what "0 of 233 detail pages declared an edit
@@ -227,7 +227,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 		).toBeVisible({ timeout: 20000 })
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('the Edit button opens the record form', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -244,7 +244,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 test.describe('Setup — every step it offers is one it can finish', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('the server reports every actionable step, and reports the optional ones as outstanding', async ({
 		page,
 	}) => {
@@ -263,7 +263,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('a completed wizard does not keep the optional secret step outstanding', async ({
 		page,
 	}) => {
@@ -291,7 +291,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('a completed wizard stays closed on a fresh browser profile', async ({
 		page,
 	}) => {
@@ -357,7 +357,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('the wizard opens exactly when an optional step is outstanding', async ({
 		page,
 	}) => {
@@ -413,7 +413,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		await expect(page.locator('main')).toBeAttached()
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
@@ -477,7 +477,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('the tour a user actually gets includes the Case types and Flows stops', async ({
 		page,
 	}) => {
@@ -498,7 +498,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
 		page,
 	}) => {
@@ -568,7 +568,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		).not.toBe('')
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('neither new stop forces the user to create anything', async ({ page }) => {
 		// "Show where, do not force" is the whole point of both steps. A tour
 		// step that only advances on `object-created` would make looking at the
@@ -592,7 +592,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		}
 	})
 
-	// @e2e openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md
 	test('both new stops can actually anchor to their nav item', async ({
 		page,
 	}) => {

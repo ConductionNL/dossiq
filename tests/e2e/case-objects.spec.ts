@@ -258,7 +258,7 @@ test.describe('Case objects', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#the-tab-lists-the-cases-objects
+	// @e2e openspec/specs/case-management/spec.md#the-tab-lists-the-cases-objects
 	// @e2e case-management::the-tab-lists-the-cases-objects
 	test('the tab lists this case objects and not another case one', async ({
 		page,
@@ -286,7 +286,7 @@ test.describe('Case objects', () => {
 		await expect(widget.getByText(OTHER_ID)).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#an-empty-case-shows-the-tab
+	// @e2e openspec/specs/case-management/spec.md#an-empty-case-shows-the-tab
 	// @e2e case-management::an-empty-case-shows-the-tab
 	test('a case without objects shows the tab, its empty state and the way out', async ({
 		page,
@@ -329,7 +329,7 @@ test.describe('Case objects', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
+	// @e2e openspec/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
 	// @e2e case-management::a-linked-object-shows-up-in-the-tab
 	test('the Link object form asks for the object fields and never for the case', async ({
 		page,
@@ -361,7 +361,7 @@ test.describe('Case objects', () => {
 		await expect(dialog.locator('[data-cn-field="case"]')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
+	// @e2e openspec/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
 	// @e2e case-management::a-linked-object-shows-up-in-the-tab
 	test('an object linked from the case carries that case and shows up in the tab', async ({
 		page,
@@ -423,7 +423,7 @@ test.describe('Case objects', () => {
 		).toHaveCount(1, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#a-link-without-an-object-type-is-refused
+	// @e2e openspec/specs/case-management/spec.md#a-link-without-an-object-type-is-refused
 	// @e2e case-management::a-link-without-an-object-type-is-refused
 	test('a link without an object type cannot be saved and the field is marked', async ({
 		page,
@@ -486,7 +486,7 @@ test.describe('Case objects', () => {
 		).toHaveLength(0)
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#one-building-two-cases
+	// @e2e openspec/specs/case-management/spec.md#one-building-two-cases
 	// @e2e case-management::one-building-two-cases
 	test('the index finds one building on two cases and leaves the vehicle out', async ({
 		page,
@@ -512,7 +512,7 @@ test.describe('Case objects', () => {
 		await expect(page.getByText(OTHER_ID)).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#a-row-opens-its-case
+	// @e2e openspec/specs/case-management/spec.md#a-row-opens-its-case
 	// @e2e case-management::a-row-opens-its-case
 	test('View case on a row opens that row case, not the row', async ({ page }) => {
 		await openIndex(page, '/case-objects', {
@@ -546,7 +546,7 @@ test.describe('Case objects', () => {
 		)
 	})
 
-	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#the-sidebar-groups-by-object-type
+	// @e2e openspec/specs/case-management/spec.md#the-sidebar-groups-by-object-type
 	// @e2e case-management::the-sidebar-groups-by-object-type
 	test('the sidebar groups by object type and All objects brings every row back', async ({
 		page,

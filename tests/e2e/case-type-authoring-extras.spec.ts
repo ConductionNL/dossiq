@@ -321,7 +321,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-19: a status has a colour and a list visibility ─────────────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A coloured status shows on the board
 	test('a coloured status draws its board column in that colour', async ({
 		page,
@@ -342,7 +342,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toHaveAttribute('data-colour', 'orange')
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A hidden status keeps its cases out of the list
 	test('a hidden status keeps its cases off the list, and Closed brings them back', async ({
 		page,
@@ -374,7 +374,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// The badge half of the same requirement: the case page draws the status
 	// in its own colour, which is where a handler actually reads it.
 	test('the case page draws the current status in its status’s colour', async ({
@@ -397,7 +397,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-20: a type derives from a parent ────────────────────────────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A child shows its parent's statuses
 	test('a child that declares nothing shows its parent’s four statuses, marked Inherited', async ({
 		page,
@@ -421,7 +421,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		)
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A child overrides one deadline
 	test('a child’s own deadline beats its parent’s', async () => {
 		// Through the API rather than through the page: the deadline a case
@@ -449,7 +449,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/case-types/spec.md
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
 		// The refusal lives in CaseTypeResolver::assertNoCycle, which the
@@ -489,7 +489,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-PDM-01 / REQ-PDM-02: folders and shared attributes ─────────────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/property-definition-management/spec.md
+	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A folder narrows the index
 	test('picking a folder narrows the Case types index to that category', async ({
 		page,
@@ -528,7 +528,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/property-definition-management/spec.md
+	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A shared attribute appears on every type
 	test('an attribute saved without a case type is listed on every type, marked Shared', async ({
 		page,
@@ -550,7 +550,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-AVG-01: the personal data block ────────────────────────────────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/avg-verwerkingenlogging/spec.md
+	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md
 	// Scenario: The block reads back what you saved
 	test('the personal data block reads back the categories and the basis', async ({
 		page,
@@ -569,7 +569,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-WIE-01: export, import, duplicate ──────────────────────────────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/workflow-import-export/spec.md
+	// @e2e openspec/specs/workflow-import-export/spec.md
 	// Scenario: Export downloads the bundle
 	test('Export starts a download whose name carries the type’s identifier', async ({
 		page,
@@ -585,7 +585,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(file.suggestedFilename()).toMatch(/\.zip$/)
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/workflow-import-export/spec.md
+	// @e2e openspec/specs/workflow-import-export/spec.md
 	// Scenario: Duplicate opens the copy
 	test('Duplicate lands you on the copy, with the same statuses', async ({
 		page,
@@ -618,7 +618,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-ZV-01: publish with a validation check and a change note ───────
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/zaaktype-versioning/spec.md
+	// @e2e openspec/specs/zaaktype-versioning/spec.md
 	// Scenario: A draft with findings is not published
 	test('a draft with findings lists them and stays a draft', async ({ page }) => {
 		await openCaseType(page, incomplete.caseType)
@@ -640,7 +640,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(stored.isDraft).toBe(true)
 	})
 
-	// @e2e openspec/changes/case-type-authoring-extras/specs/zaaktype-versioning/spec.md
+	// @e2e openspec/specs/zaaktype-versioning/spec.md
 	// Scenario: A valid draft is published
 	test('a valid draft is published with its change note, and the version says so', async ({
 		page,
