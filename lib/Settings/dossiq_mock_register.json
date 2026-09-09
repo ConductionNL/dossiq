@@ -14685,7 +14685,7 @@
       "dossiqIntegration": {
         "slug": "dossiqIntegration",
         "icon": "PowerPlugOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Integration",
         "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
         "type": "object",
@@ -14709,7 +14709,9 @@
               "financial",
               "brp",
               "kvk",
-              "pdok"
+              "pdok",
+              "berichtenbox",
+              "templates"
             ]
           },
           "title": {
@@ -14731,12 +14733,14 @@
               "configured",
               "unconfigured",
               "unavailable",
+              "simulated",
               "error"
             ],
             "x-enum-labels": {
               "configured": "Configured",
               "unconfigured": "Not configured",
               "unavailable": "Not available",
+              "simulated": "Simulated",
               "error": "Error"
             },
             "facetable": true

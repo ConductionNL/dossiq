@@ -15,7 +15,9 @@
  * click the sidebar nav entry (client-side) to reach the target view.
  */
 
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+
+import { expect } from '@playwright/test'
 
 /**
  * The app's sidebar navigation container.
@@ -296,4 +298,43 @@ export function trackDossiqErrors(page: Page): string[] {
 		}
 	})
 	return errors
+}
+
+/**
+ * Tick an `NcCheckboxRadioSwitch`, by clicking the control a person clicks.
+ *
+ * 🔴 `.check()` ON THE INPUT CANNOT WORK HERE, and it fails in a way that reads
+ * as a hung page rather than as a wrong locator. The component renders a real
+ * `<input type="checkbox">` underneath a `<span class="checkbox-content …">`
+ * that carries the visible box and the label text. Playwright finds the input,
+ * confirms it is "visible, enabled and stable", then retries the click for the
+ * whole budget against:
+ *
+ *     <span … class="checkbox-content …"> intercepts pointer events
+ *
+ * So every actionability check passes and the click still never lands. That is
+ * not an overlay to wait out; it is the component's own label, by design.
+ *
+ * The span carries `id="<input id>-label"`, which is the component's contract
+ * and is what this uses. Clicking it is also what a user does, so the test
+ * exercises the real path rather than forcing an event onto a hidden input.
+ * `force: true` would also pass, and is rejected on purpose: it would silence a
+ * genuine overlay later, which is the failure this suite can least afford.
+ *
+ * @param checkbox The `getByRole('checkbox')` locator for the input itself.
+ *
+ * @return Resolves once the box is ticked.
+ */
+export async function tickCheckbox(checkbox: Locator): Promise<void> {
+	const id = await checkbox.getAttribute('id')
+	if (id === null || id === '') {
+		throw new Error(
+			'tickCheckbox: the checkbox has no id, so its label cannot be '
+				+ 'addressed. NcCheckboxRadioSwitch always sets one; if this '
+				+ 'fires, the control is not that component.',
+		)
+	}
+
+	await checkbox.page().locator(`#${id}-label`).click()
+	await expect(checkbox).toBeChecked({ timeout: 10_000 })
 }

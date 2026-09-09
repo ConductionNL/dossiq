@@ -372,12 +372,22 @@ class StatusTransitionService {
 	 * none of the questions an archivist, a citizen or a WOO request will ask
 	 * of it later.
 	 *
+	 * A closing transition also settles the case's END DATE and its ARCHIVAL
+	 * FUTURE, both in this same save. Neither used to happen here. `endDate`
+	 * was written only by the ZGW path (zrc-007a), so a case closed at the desk
+	 * read as still open to every consumer that asks the zaak whether it has an
+	 * einddatum; and the zrc-021 nomination was derived only over the API, so
+	 * the same case closed two ways ended in two different archival states.
+	 * Doing both here, rather than in a job afterwards, is what keeps them
+	 * true of every closed case rather than of most of them.
+	 *
 	 * @param array<string, mixed> $case The case payload about to be saved
 	 * @param string $caseId Case UUID
 	 * @param string $toStatus The target statusType UUID
 	 * @param string|null $resultTypeId The chosen resultType UUID, or null
 	 *
-	 * @return array<string, mixed> The case payload, with `result` set when closing
+	 * @return array<string, mixed> The case payload, with `result`, `endDate` and
+	 *                              the archival fields set when closing
 	 *
 	 * @throws RuntimeException When a closing transition carries no result type
 	 *
@@ -393,6 +403,15 @@ class StatusTransitionService {
 			return $case;
 		}
 
+		// An end date the case already carries is left alone: a handler who
+		// backdated the close meant it, and zrc-021 derives from that date.
+		$endDate = substr((string)($case['endDate'] ?? ''), 0, 10);
+		if ($endDate === '') {
+			$endDate = date('Y-m-d');
+		}
+
+		$case['endDate'] = $endDate;
+
 		$resultId = $this->resultWriter->resolveClosingResult(
 			caseId: $caseId,
 			caseTypeId: (string)($case['caseType'] ?? ''),
@@ -404,7 +423,14 @@ class StatusTransitionService {
 
 		$case['result'] = $resultId;
 
-		return $case;
+		return array_merge(
+			$case,
+			$this->resultWriter->archivalFuture(
+				case: $case,
+				resultTypeId: (string)$resultTypeId,
+				endDate: $endDate,
+			)
+		);
 	}//end applyClosingResult()
 
 	/**

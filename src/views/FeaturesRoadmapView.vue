@@ -119,6 +119,7 @@
 						)
 					}}
 				</p>
+				<p>{{ reratedText }}</p>
 			</NcNoteCard>
 
 			<h3>
@@ -348,6 +349,33 @@ export default {
 						.filter((s) => !s.isSelf)
 						.map((s) => s.name)
 						.join(', '),
+				},
+			)
+		},
+
+		/**
+		 * The sentence that says we correct our own column and nobody else's.
+		 *
+		 * A rating claiming we lack something we shipped is the one error on
+		 * this page a reader cannot check for themselves, so we fix ours
+		 * between rounds and say when. We do not touch the other three that
+		 * way: re-reading someone else's product without a new reading date
+		 * would be the same dishonesty pointed outward.
+		 *
+		 * @return {string} The correction sentence, empty when nothing was corrected.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		reratedText() {
+			const corrections = comparison._rerated ?? []
+			if (corrections.length === 0 || !comparison.reratedOn) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above.',
+				{
+					count: corrections.length,
+					date: formatComparedOn(comparison.reratedOn, this.locale),
 				},
 			)
 		},
