@@ -272,6 +272,14 @@ test.describe('Integrations', () => {
 	}) => {
 		const context = await browser.newContext({
 			baseURL,
+			// EMPTY, NOT OMITTED. `use.storageState` in the config is the ADMIN
+			// cookie jar global-setup writes after the admin login, and a
+			// context created here inherits it. Nextcloud answers from that
+			// session and never looks at the credentials below, so this test
+			// spent its life asserting what an ADMIN sees while its name said
+			// otherwise. Clearing the jar makes the credentials the only
+			// identity in the request.
+			storageState: { cookies: [], origins: [] },
 			httpCredentials: {
 				username: PLAIN_USER,
 				password: PLAIN_PASS,
@@ -307,6 +315,15 @@ test.describe('Integrations', () => {
 					? (window as any).OC.isUserAdmin()
 					: '(no OC.isUserAdmin)',
 		}))
+
+		// ASSERT THE IDENTITY FIRST. Without this the test still passes or
+		// fails on whatever user it happens to get, which is exactly how it came
+		// to assert the admin's view under a name that promised the opposite.
+		expect(
+			whoami,
+			'this test must act as the non-admin, not as whoever the shared '
+				+ 'storage state logged in',
+		).toEqual({ uid: PLAIN_USER, isAdmin: false })
 
 		// The gear foldout does not carry the entry.
 		await expect(
