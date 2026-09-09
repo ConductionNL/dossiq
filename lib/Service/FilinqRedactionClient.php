@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass Injected into WOORedactionService.
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 class FilinqRedactionClient {
 
@@ -105,7 +105,7 @@ class FilinqRedactionClient {
 	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver over the
 	 *      app-id and namespace rename map.
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
 	public function redact(string $caseId, array $document): array {
 		$service = FleetAppId::getService($this->container, 'filinq', self::ANONYMIZATION_SERVICE);

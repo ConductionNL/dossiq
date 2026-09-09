@@ -134,7 +134,7 @@ class WOORedactionService {
 	 *
 	 * @return array<string, mixed> Per-document redaction outcomes
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
 	private function redactViaFilinq(string $caseId, array $documents): array {
 		$redacted = [];
