@@ -57,35 +57,6 @@ class DsoCaseService {
 	use SearchesObjects;
 
 	/**
-	 * Fixed Dutch national holidays as [month, day] pairs.
-	 * Variable Easter-based holidays are computed dynamically in isWorkingDay().
-	 *
-	 * @var array<int, array{0: int, 1: int}>
-	 */
-	private const FIXED_HOLIDAYS = [
-		[1, 1],
-		// New Year.
-		[4, 27],
-		// King's Day.
-		[5, 5],
-		// Liberation Day.
-		[12, 25],
-		// Christmas Day 1.
-		[12, 26],
-		// Christmas Day 2.
-	];
-
-	/**
-	 * Day-offsets from Easter Sunday for variable Dutch national holidays.
-	 *
-	 * 0=Eerste Paasdag, 1=Tweede Paasdag, 39=Hemelvaartsdag,
-	 * 49=Eerste Pinksterdag, 50=Tweede Pinksterdag.
-	 *
-	 * @var array<int, int>
-	 */
-	private const EASTER_OFFSETS = [0, 1, 39, 49, 50];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The application config service
@@ -93,6 +64,8 @@ class DsoCaseService {
 	 * @param DsoStatusChangeNotifier $notifier Emits the VergunningStatusChanged domain event
 	 * @param LoggerInterface $logger The logger
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
+	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
+	 *                                          arithmetic for the statutory deadlines
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -100,6 +73,7 @@ class DsoCaseService {
 		private readonly DsoStatusChangeNotifier $notifier,
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
+		private readonly WorkingDayCalculator $workingDays,
 	) {
 	}//end __construct()
 
@@ -458,45 +432,15 @@ class DsoCaseService {
 	/**
 	 * Check whether a given date is a working day.
 	 *
-	 * A working day is neither a weekend day nor a Dutch national holiday.
-	 * Both fixed holidays (New Year, King's Day, Liberation Day, Christmas)
-	 * and Easter-based variable holidays (Eerste/Tweede Paasdag,
-	 * Hemelvaartsdag, Eerste/Tweede Pinksterdag) are excluded.
+	 * Delegates to WorkingDayCalculator, the app's single implementation of
+	 * the weekend and Dutch-holiday rules.
 	 *
 	 * @param \DateTimeImmutable $date The date to check
 	 *
 	 * @return bool True when the date is a working day
 	 */
 	private function isWorkingDay(\DateTimeImmutable $date): bool {
-		$dayOfWeek = (int)$date->format('N');
-		if ($dayOfWeek >= 6) {
-			return false;
-		}
-
-		$month = (int)$date->format('n');
-		$day = (int)$date->format('j');
-
-		foreach (self::FIXED_HOLIDAYS as $holiday) {
-			if ($holiday[0] === $month && $holiday[1] === $day) {
-				return false;
-			}
-		}
-
-		// Check Easter-based variable holidays using PHP's easter_date().
-		$year = (int)$date->format('Y');
-		$easterTs = easter_date($year);
-		$easterDay = (int)date('j', $easterTs);
-		$easterMon = (int)date('n', $easterTs);
-		$easterDate = (new DateTimeImmutable())->setDate($year, $easterMon, $easterDay);
-
-		foreach (self::EASTER_OFFSETS as $offset) {
-			$holiday = $easterDate->modify('+' . $offset . ' days');
-			if ((int)$holiday->format('n') === $month && (int)$holiday->format('j') === $day) {
-				return false;
-			}
-		}
-
-		return true;
+		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
 
 	/**

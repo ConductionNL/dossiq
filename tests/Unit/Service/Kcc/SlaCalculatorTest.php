@@ -23,12 +23,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 
 use OCA\Dossiq\Service\Kcc\SlaCalculator;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for SlaCalculator.
  *
  * @covers \OCA\Dossiq\Service\Kcc\SlaCalculator
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class SlaCalculatorTest extends TestCase {
 
@@ -38,7 +40,7 @@ class SlaCalculatorTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->calculator = new SlaCalculator();
+		$this->calculator = new SlaCalculator(workingDays: new WorkingDayCalculator());
 	}//end setUp()
 
 	/**

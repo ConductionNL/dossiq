@@ -3,9 +3,14 @@
 /**
  * Dossiq KCC SLA Calculator
  *
- * Pure working-day / SLA-deadline arithmetic for KlantContactCentrum
- * contact moments and callbacks. Respects Dutch public holidays and
- * weekends. Has no external dependencies so it is fully unit-testable.
+ * SLA-deadline arithmetic for KlantContactCentrum contact moments and
+ * callbacks: which channel gets how long, when that deadline falls, and when a
+ * failed callback should be retried.
+ *
+ * The weekend / Dutch-holiday / working-day questions underneath all of that
+ * are not answered here. They belong to WorkingDayCalculator, which is the
+ * app's single implementation of them; the four methods below are kept as
+ * pass-throughs because KCC callers already depend on this class's shape.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Kcc
@@ -31,7 +36,7 @@ namespace OCA\Dossiq\Service\Kcc;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
-use DateTimeZone;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
  * Deterministic SLA / working-day calculator for the KCC integration.
@@ -71,6 +76,19 @@ class SlaCalculator {
 	];
 
 	/**
+	 * Constructor.
+	 *
+	 * @param WorkingDayCalculator $workingDays The app's single source of truth
+	 *                                          for weekends, Dutch national
+	 *                                          holidays and working-day
+	 *                                          arithmetic.
+	 */
+	public function __construct(
+		private readonly WorkingDayCalculator $workingDays,
+	) {
+	}//end __construct()
+
+	/**
 	 * Determine whether a date is a weekend day.
 	 *
 	 * @param DateTimeInterface $date The date to inspect.
@@ -80,8 +98,7 @@ class SlaCalculator {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isWeekend(DateTimeInterface $date): bool {
-		$dow = (int)$date->format('N');
-		return ($dow === 6 || $dow === 7);
+		return $this->workingDays->isWeekend(date: $date);
 	}//end isWeekend()
 
 	/**
@@ -98,10 +115,7 @@ class SlaCalculator {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isDutchHoliday(DateTimeInterface $date): bool {
-		$year = (int)$date->format('Y');
-		$key = $date->format('Y-m-d');
-
-		return in_array($key, $this->dutchHolidays(year: $year), true);
+		return $this->workingDays->isHoliday(date: $date);
 	}//end isDutchHoliday()
 
 	/**
@@ -114,7 +128,7 @@ class SlaCalculator {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function isWorkingDay(DateTimeInterface $date): bool {
-		return ($this->isWeekend(date: $date) === false && $this->isDutchHoliday(date: $date) === false);
+		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
 
 	/**
@@ -130,17 +144,7 @@ class SlaCalculator {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function addWorkingDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
-		$result = $start;
-		$remaining = max(0, $days);
-
-		while ($remaining > 0) {
-			$result = $result->modify('+1 day');
-			if ($this->isWorkingDay(date: $result) === true) {
-				$remaining--;
-			}
-		}
-
-		return $result;
+		return $this->workingDays->addWorkingDays(start: $start, days: $days);
 	}//end addWorkingDays()
 
 	/**
@@ -154,24 +158,7 @@ class SlaCalculator {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-25
 	 */
 	public function countWorkingDays(DateTimeImmutable $start, DateTimeImmutable $end): int {
-		$startDay = $start->setTime(0, 0);
-		$endDay = $end->setTime(0, 0);
-
-		if ($endDay < $startDay) {
-			return 0;
-		}
-
-		$count = 0;
-		$cursor = $startDay;
-		while ($cursor <= $endDay) {
-			if ($this->isWorkingDay(date: $cursor) === true) {
-				$count++;
-			}
-
-			$cursor = $cursor->modify('+1 day');
-		}
-
-		return $count;
+		return $this->workingDays->countWorkingDays(start: $start, end: $end);
 	}//end countWorkingDays()
 
 	/**
@@ -230,76 +217,4 @@ class SlaCalculator {
 
 		return $from->add(new DateInterval('PT' . $minutes . 'M'));
 	}//end nextRetryAt()
-
-	/**
-	 * Compute the set of Dutch public holidays for a calendar year.
-	 *
-	 * @param int $year The calendar year.
-	 *
-	 * @return array<int, string> Holiday dates as 'Y-m-d' strings.
-	 */
-	private function dutchHolidays(int $year): array {
-		$fixed = [
-			$year . '-01-01',
-			$year . '-04-27',
-			$year . '-05-05',
-			$year . '-12-25',
-			$year . '-12-26',
-		];
-
-		// Easter Sunday (Western) via the well-known anonymous Gregorian
-		// algorithm; PHP's easter_date() depends on the calendar extension.
-		$easter = $this->easterDate(year: $year);
-
-		$goodFriday = $easter->modify('-2 days');
-		$easterMonday = $easter->modify('+1 day');
-		$ascension = $easter->modify('+39 days');
-		$pentecost = $easter->modify('+49 days');
-		$pentecostMon = $easter->modify('+50 days');
-
-		$movable = [
-			$goodFriday->format('Y-m-d'),
-			$easter->format('Y-m-d'),
-			$easterMonday->format('Y-m-d'),
-			$ascension->format('Y-m-d'),
-			$pentecost->format('Y-m-d'),
-			$pentecostMon->format('Y-m-d'),
-		];
-
-		return array_merge($fixed, $movable);
-	}//end dutchHolidays()
-
-	/**
-	 * Compute Western Easter Sunday for a year (anonymous Gregorian algorithm).
-	 *
-	 * The single-letter locals are the canonical names from the published
-	 * algorithm and are kept verbatim for verifiability.
-	 *
-	 * @param int $year The calendar year.
-	 *
-	 * @return DateTimeImmutable Easter Sunday at midnight UTC.
-	 *
-	 * @SuppressWarnings(PHPMD.ShortVariable)
-	 */
-	private function easterDate(int $year): DateTimeImmutable {
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv(($b - $f + 1), 3);
-		$h = (((19 * $a) + $b - $d - $g + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
-		$month = intdiv(($h + $l - (7 * $m) + 114), 31);
-		$day = ((($h + $l - (7 * $m) + 114) % 31) + 1);
-
-		return new DateTimeImmutable(
-			sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $day),
-			new DateTimeZone('UTC')
-		);
-	}//end easterDate()
 }//end class
