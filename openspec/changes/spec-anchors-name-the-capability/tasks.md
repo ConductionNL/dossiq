@@ -17,17 +17,17 @@
 
 ## 2. Fix what is actually broken
 
-- [x] 2.1 Repoint the six dangling `@e2e` anchors at capabilities that exist.
-  - `workflow-board` to `dashboard#REQ-DASH-V1-006` (2), `case-map` to
-    `case-map-overview#REQ-OVERVIEW-01`, `bezwaar-management` to
-    `bezwaar-lifecycle#bezwaren-list-surface` and `#bezwaar-status-types`,
-    `subsidy-intake` to `subsidieverlening-keten`.
-- [x] 2.2 Verify every candidate fragment resolves BEFORE writing it, not after.
-  - probed all six through `check_spec_anchors.py` in a scratch file first.
-- [x] 2.3 Re-run the whole-tree check and require zero.
-  - 6,244 anchors, zero unresolvable, and gate 46 reports zero findings.
-- [x] 2.4 Say in the subsidies test that no requirement covers its surface yet,
-  so the anchor names a capability rather than a heading nobody wrote.
+- [x] 2.1 The six dangling anchors are fixed. Not here: #2067 landed them first,
+  and better. This branch's own edits were dropped and the upstream version
+  taken whole on merge.
+  - #2067 anchors at the SCENARIO rather than the requirement, and uses
+    `@e2e exclude` with a reason for the two with no home. This branch had
+    pointed those two at the nearest plausible capability, which resolves and is
+    worse than not resolving: it claims coverage that does not exist.
+- [x] 2.2 Adopt #2067's rule into the convention rather than the one this branch
+  started with.
+  - requirement 4, "A test with no requirement to cite says so, rather than
+    citing a near-miss".
 
 ## 3. Write the convention down
 
@@ -36,11 +36,22 @@
 - [x] 3.2 Record why it is not a path rule, with the number that settles it: 107
   anchors name a capability whose only home is an open change, and a path rule
   breaks all 107 the day it lands.
+- [x] 3.3 Record why #2063's 55 repointed citations were right work even though
+  nothing was failing: a change directory names no capability, so the archive
+  index rescues it by change name, which is a weaker guarantee than the rule.
 
 ## 4. Raise upstream, not here
 
 - [ ] 4.1 Gate 46 reads only `@spec`. Its pattern is `@spec\s+(openspec/...)`,
-  so 286 `@e2e` anchors in this repo are checked by nothing. Belongs in
+  so 286 `@e2e` anchors in this repo are checked by nothing. This is why the six
+  were found by hand, twice, rather than by CI once. Belongs in
   `ConductionNL/.github`, `hydra-gates/scripts/lib/check_spec_anchors.py`.
-- [ ] 4.2 Gate 46 enumerates `lib src tests`. Two anchors live under `appinfo/`
-  and `scripts/` and are never opened. Same repo, same helper.
+- [ ] 4.2 Gate 46 enumerates `lib src tests`. Two anchors under `appinfo/` and
+  `scripts/` are never opened. Same helper.
+
+## 5. Process, recorded because it cost a branch
+
+- [x] 5.1 Search before building. `git log origin/development -5 -- <path>` comes
+  first: two PRs on this exact topic landed while this branch was being written,
+  and the PR went out CONFLICTING with 4 of 49 checks passing, which is the shape
+  a conflicting PR always has and reads green.

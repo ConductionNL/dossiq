@@ -65,3 +65,28 @@ capability that has never existed in any of the three homes.
 - **GIVEN** a test tagged `@e2e openspec/specs/<capability>/spec.md` for a capability with no home
 - **WHEN** anchors are checked
 - **THEN** the anchor SHALL be reported, exactly as the `@spec` spelling would be
+
+### Requirement: A test with no requirement to cite says so, rather than citing a near-miss
+
+When no scenario covers what a test proves, the test SHALL carry
+`@e2e exclude <reason>` naming what is missing. It SHALL NOT cite the nearest
+plausible capability instead.
+
+A citation that resolves while naming the wrong requirement is worse than one
+that does not resolve. It reads as verified coverage, it satisfies every
+mechanical check, and the gap it hides is invisible until somebody reads the
+cited spec and finds the scenario is not there.
+
+Where a scenario does exist, the anchor SHALL name that scenario rather than the
+requirement containing it, because a test proves a scenario.
+
+#### Scenario: No scenario covers the surface under test
+- **GIVEN** a test whose behaviour no scenario in any capability describes
+- **WHEN** its anchor is written
+- **THEN** it SHALL read `@e2e exclude` with a reason naming the missing scenario
+- **AND** it SHALL NOT name a capability that does not cover the behaviour
+
+#### Scenario: An anchor names the scenario, not just its requirement
+- **GIVEN** a requirement holding several scenarios
+- **WHEN** a test proves one of them
+- **THEN** its anchor SHALL name that scenario's heading
