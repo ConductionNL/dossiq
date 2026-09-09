@@ -2,19 +2,25 @@
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Unit tests for the PDOK-via-openconnector shim in src/services/pdokService.js.
+ * Unit tests for the PDOK-via-integriq shim in src/services/pdokService.js.
  *
  * These assert the consumer contract from the migrate-pdok-to-openconnector
  * change: every network-calling export delegates to
- * `/index.php/apps/openconnector/api/pdok/{suggest|lookup|free|reverse}`,
+ * `/index.php/apps/<integriq>/api/pdok/{suggest|lookup/{id}|free|reverse}`,
  * never to api.pdok.nl; the pure utility functions make no network call; and
  * the two degraded modes (503 / 404) are handled without throwing.
+ *
+ * The app segment is asserted BOTH ways. The shim resolves it from
+ * `OC.appswebroots` because integriq is `openconnector` renamed and both ids
+ * are live; a spec that only ever saw one name is how the stale id survived
+ * here in the first place, since a 404 from the wrong app looks exactly like
+ * an instance without the app.
  *
  * @spec openspec/changes/migrate-pdok-to-openconnector/specs/pdok-consumer/spec.md
  */
 
 import axios from '@nextcloud/axios'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
 	extractCoordinates,
 	formatAddress,
@@ -25,7 +31,8 @@ import {
 	suggest,
 } from '../../src/services/pdokService.js'
 
-const BASE = '/index.php/apps/openconnector/api/pdok'
+const BASE = '/index.php/apps/integriq/api/pdok'
+const LEGACY_BASE = '/index.php/apps/openconnector/api/pdok'
 
 /**
  * Build an axios-style success response.
@@ -55,7 +62,7 @@ describe('pdokService shim — endpoint routing', () => {
 		axios.get.mockReset()
 	})
 
-	it('suggest delegates to the openconnector suggest endpoint, never api.pdok.nl', async () => {
+	it('suggest delegates to the integriq suggest endpoint, never api.pdok.nl', async () => {
 		vi.useFakeTimers()
 		axios.get.mockResolvedValue(
 			ok({ docs: [{ id: 'adr-1', weergavenaam: 'Lauriergracht 116' }] }),
@@ -80,18 +87,22 @@ describe('pdokService shim — endpoint routing', () => {
 		expect(axios.get).not.toHaveBeenCalled()
 	})
 
-	it('lookup delegates to the openconnector lookup endpoint and unwraps the first doc', async () => {
+	it('lookup puts the id in the PATH, which is where integriq mounts it', async () => {
 		axios.get.mockResolvedValue(
 			ok({ docs: [{ id: 'adr-1', weergavenaam: 'Lauriergracht 116' }] }),
 		)
 		const result = await lookup('adr-1')
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/lookup`, {
-			params: { id: 'adr-1' },
-		})
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/lookup/adr-1`)
 		expect(result).toEqual({ id: 'adr-1', weergavenaam: 'Lauriergracht 116' })
 	})
 
-	it('free delegates to the openconnector free endpoint with rows', async () => {
+	it('lookup escapes an id that would otherwise change the path', async () => {
+		axios.get.mockResolvedValue(ok({ docs: [] }))
+		await lookup('adr/1 2')
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/lookup/adr%2F1%202`)
+	})
+
+	it('free delegates to the integriq free endpoint with rows', async () => {
 		axios.get.mockResolvedValue(ok({ docs: [{ id: 'x' }] }))
 		const result = await free('Tilburg', 5)
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/free`, {
@@ -100,13 +111,53 @@ describe('pdokService shim — endpoint routing', () => {
 		expect(result).toEqual([{ id: 'x' }])
 	})
 
-	it('reverse delegates to the openconnector reverse endpoint with lat/lng', async () => {
+	it('reverse delegates to the integriq reverse endpoint with lat/lng', async () => {
 		axios.get.mockResolvedValue(ok({ docs: [{ id: 'rev-1' }] }))
 		const result = await reverse(52.37025, 4.88525)
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/reverse`, {
 			params: { lat: 52.37025, lng: 4.88525 },
 		})
 		expect(result).toEqual({ id: 'rev-1' })
+	})
+})
+
+describe('pdokService shim — app-id resolution across the rename', () => {
+	beforeEach(() => {
+		axios.get.mockReset()
+		delete globalThis.window
+	})
+
+	afterEach(() => {
+		delete globalThis.window
+	})
+
+	it('uses the OLD id when that is the one the instance has installed', async () => {
+		globalThis.window = { OC: { appswebroots: { openconnector: '/apps' } } }
+		axios.get.mockResolvedValue(ok({ docs: [{ id: 'x' }] }))
+		await free('Tilburg')
+		expect(axios.get).toHaveBeenCalledWith(`${LEGACY_BASE}/free`, {
+			params: { q: 'Tilburg', rows: 10 },
+		})
+	})
+
+	it('prefers the NEW id when both are somehow present', async () => {
+		globalThis.window = {
+			OC: { appswebroots: { openconnector: '/apps', integriq: '/apps' } },
+		}
+		axios.get.mockResolvedValue(ok({ docs: [{ id: 'x' }] }))
+		await free('Tilburg')
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/free`, {
+			params: { q: 'Tilburg', rows: 10 },
+		})
+	})
+
+	it('falls back to the canonical id when neither is installed, so the 404 is honest', async () => {
+		globalThis.window = { OC: { appswebroots: { dossiq: '/apps' } } }
+		axios.get.mockResolvedValue(ok({ docs: [] }))
+		await free('Tilburg')
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/free`, {
+			params: { q: 'Tilburg', rows: 10 },
+		})
 	})
 })
 
@@ -140,22 +191,22 @@ describe('pdokService shim — graceful degradation', () => {
 		vi.useRealTimers()
 	})
 
-	it('404 (openconnector absent) on free returns the empty fallback and sets a non-blocking warning', async () => {
+	it('404 (integriq absent) on free returns the empty fallback and sets a non-blocking warning', async () => {
 		axios.get.mockRejectedValue(httpError(404))
 		const result = await free('Tilburg')
 		expect(result).toEqual([])
 		expect(lastWarning).toEqual({
-			messageKey: 'pdok.openconnector_missing',
+			messageKey: 'pdok.integriq_missing',
 			status: 404,
 		})
 	})
 
-	it('404 on lookup returns null and sets the openconnector-missing warning', async () => {
+	it('404 on lookup returns null and sets the integriq-missing warning', async () => {
 		axios.get.mockRejectedValue(httpError(404))
 		const result = await lookup('adr-1')
 		expect(result).toBeNull()
 		expect(lastWarning).toEqual({
-			messageKey: 'pdok.openconnector_missing',
+			messageKey: 'pdok.integriq_missing',
 			status: 404,
 		})
 	})

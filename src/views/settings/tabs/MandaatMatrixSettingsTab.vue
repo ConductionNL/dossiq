@@ -4,14 +4,14 @@
 			{{
 				t(
 					'dossiq',
-					'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidesk imports and waarnemer assignments.',
+					'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidiq imports and waarnemer assignments.',
 				)
 			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
 			<label for="mandaat_decidesk_connection">
-				{{ t('dossiq', 'Decidesk connection (openconnector)') }}
+				{{ t('dossiq', 'Decidiq connection (integriq)') }}
 			</label>
 			<NcInputField
 				id="mandaat_decidesk_connection"
@@ -22,7 +22,7 @@
 				{{
 					t(
 						'dossiq',
-						'Identifier of the openconnector connection used to fetch mandateringsbesluiten from Decidesk.',
+						'Identifier of the integriq connection used to fetch mandateringsbesluiten from Decidiq.',
 					)
 				}}
 			</p>
@@ -119,7 +119,7 @@ export default {
 	computed: {
 		/** @spec openspec/specs/mandaat-matrix/spec.md */
 		adminDocsUrl() {
-			return 'https://docs.procest.nl/user/mandate-matrix-admin'
+			return 'https://procest.conduction.nl/docs/user/mandate-matrix-admin'
 		},
 	},
 

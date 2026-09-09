@@ -3,32 +3,34 @@
 /**
  * Dossiq PDOK Service.
  *
- * Thin shim that fronts the openconnector PDOK source adapters
+ * Thin shim that fronts integriq's PDOK source adapters
  * (`PdokGeocodingClient`, `PdokWmsSourceAdapter`, `PdokWfsSourceAdapter`)
  * for dossiq backend callers. Per ADR-022 (apps-consume-OR-abstractions),
  * dossiq does NOT re-implement Locatieserver, BAG, WMS or WFS access
- * itself: every PDOK request is dispatched through the openconnector
- * HTTP shim at `/index.php/apps/openconnector/api/pdok/*`. The
- * `pdok.feature_flag` openconnector key gates the live binding; while
- * the flag is `0` openconnector returns synthetic deferred responses.
+ * itself. The `pdok.feature_flag` key on integriq gates the live binding;
+ * while the flag is `0` integriq returns synthetic deferred responses.
+ *
+ * INTEGRIQ IS `openconnector` RENAMED, and this file names the app through
+ * {@see FleetAppId} rather than by a literal id for that reason. Both ids are
+ * in the field at once, and every cross-app lookup here is duck-typed: a
+ * stale id does not error, it answers false and takes the integration dark.
  *
  * Capabilities exposed:
  *   - `searchAddress(query, ...)` — address autocomplete via
  *     {@see PdokLocatieserverService::suggest()}.
  *   - `lookupAddress(id)` — single-result lookup by Locatieserver id.
- *   - `searchParcel(criteria)` — kadastraal perceel search via the
- *     openconnector WFS adapter (BAG / Kadaster intersection).
+ *   - `searchParcel(criteria)` — reports that integriq publishes no parcel
+ *     endpoint. See the method for what closing that gap would take.
  *   - `getServiceStatus()` — health + flag introspection so the caller
  *     can render the dormant-vs-live mode.
  *
  * Error handling:
- *   - openconnector 503 (PDOK unavailable / circuit open): the shim
- *     returns an empty result and exposes the openconnector
- *     `message_key` via `lastWarning()` so the caller can surface the
- *     i18n string.
- *   - openconnector 404 (not installed): the shim records the
- *     missing-shim warning and resolves with an empty result so the
- *     containing case form stays submittable.
+ *   - upstream 503 (PDOK unavailable / circuit open): the shim returns an
+ *     empty result and exposes integriq's `message_key` via `lastWarning()`
+ *     so the caller can surface the i18n string.
+ *   - upstream 404 (not installed): the shim records the missing-shim
+ *     warning and resolves with an empty result so the containing case form
+ *     stays submittable.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -51,34 +53,37 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Pdok\PdokLocatieserverService;
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
-use OCP\Http\Client\IClient;
-use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
-use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Backend-side PDOK shim consuming the openconnector PDOK source adapters.
+ * Backend-side PDOK shim consuming integriq's PDOK source adapters.
  *
  * @spec openspec/specs/gis-integration/spec.md
  */
 class PdokService {
 	/**
-	 * Openconnector app id.
+	 * The PDOK-owning app, by its CANONICAL (current) name.
+	 *
+	 * Passed to {@see FleetAppId}, never to `IAppManager` directly. The app
+	 * renamed from `openconnector` to `integriq` and both ids are in the
+	 * field, so a literal here answers false on half the fleet and the
+	 * guard below then reports "not installed" about an app that is.
 	 */
-	public const OPENCONNECTOR_APP = 'openconnector';
+	public const INTEGRIQ_APP = 'integriq';
 
 	/**
-	 * Feature-flag key checked on the openconnector side.
+	 * Feature-flag key checked on the integriq side.
+	 *
+	 * Read under integriq's OWN app id, which is why it is resolved rather
+	 * than hardcoded: `IAppConfig` namespaces values by app id, so reading
+	 * `openconnector` on a renamed instance returns the default and the flag
+	 * reads permanently off.
 	 */
 	public const FEATURE_FLAG_KEY = 'pdok.feature_flag';
-
-	/**
-	 * Path template at openconnector for PDOK Locatieserver methods.
-	 */
-	private const SHIM_BASE_PATH = '/apps/openconnector/api/pdok';
 
 	/**
 	 * Last recorded degraded-mode warning, accessible to callers for UI
@@ -89,38 +94,25 @@ class PdokService {
 	private ?array $lastWarning = null;
 
 	/**
-	 * HTTP client created lazily.
-	 *
-	 * @var IClient
-	 */
-	private ?IClient $client = null;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param IClientService $clientService HTTP client factory.
-	 * @param IAppManager $appManager For openconnector
-	 *                                installed-check.
+	 * @param IAppManager $appManager Resolves integriq's installed id.
 	 * @param IAppConfig $appConfig App-config accessor.
-	 * @param IURLGenerator $urlGenerator Builds the absolute
-	 *                                    openconnector URL.
 	 * @param PdokLocatieserverService $locatieserver Existing in-app PDOK
 	 *                                                ingress (cache +
 	 *                                                outage tracking).
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly IClientService $clientService,
 		private readonly IAppManager $appManager,
 		private readonly IAppConfig $appConfig,
-		private readonly IURLGenerator $urlGenerator,
 		private readonly PdokLocatieserverService $locatieserver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Autocomplete an address query via the openconnector PDOK shim.
+	 * Autocomplete an address query via the integriq PDOK shim.
 	 *
 	 * @param string $query Free-text address fragment.
 	 * @param array<int, string> $filters Optional Solr-style filter queries.
@@ -183,68 +175,63 @@ class PdokService {
 	}//end lookupAddress()
 
 	/**
-	 * Search a kadastraal perceel via the openconnector WFS adapter.
+	 * Search a kadastraal perceel.
 	 *
-	 * Either `bbox` (minLng,minLat,maxLng,maxLat) or `perceelnummer` /
-	 * `kadastraleAanduiding` may be passed; passing both narrows the search.
+	 * THERE IS NO ENDPOINT BEHIND THIS, and saying so is the point of the
+	 * method. It used to call `linkToRoute('openconnector.pdok.parcel')`
+	 * behind an `isInstalled('openconnector')` guard. The guard is what kept
+	 * the crash off: on a current instance the old id resolves false, the
+	 * method returns early, and nobody reaches the route. Correcting only the
+	 * id would have turned a quiet empty list into an uncaught
+	 * RouteNotFoundException, because integriq publishes exactly four PDOK
+	 * routes and parcel is not among them:
 	 *
-	 * @param array<string,mixed> $criteria Search criteria.
+	 *   GET /api/pdok/suggest      GET /api/pdok/lookup/{id}
+	 *   GET /api/pdok/free         GET /api/pdok/reverse
 	 *
-	 * @return array<int, array<string,mixed>> Matching parcels (may be empty).
+	 * Integriq does ship `Sources\Pdok\PdokWfsSourceAdapter`, which can query
+	 * `kadastralekaart:perceel`, but it is not exposed over HTTP. Closing the
+	 * gap means integriq publishing a parcel route; until it does, this
+	 * reports the gap rather than pretending to search.
 	 *
-	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
-	 *       branch on a `string`-typed value; no behavioural or contractual change.
+	 * @param array<string,mixed> $criteria Search criteria, e.g. `bbox`,
+	 *                                      `perceelnummer` or
+	 *                                      `kadastraleAanduiding`.
+	 *
+	 * @return array<int, array<string,mixed>> Always empty: see above.
+	 *
+	 * @spec exclude reports a missing upstream endpoint; there is no dossiq
+	 *       requirement it can satisfy until integriq publishes one.
 	 */
 	public function searchParcel(array $criteria): array {
 		$this->lastWarning = null;
-		if ($this->appManager->isInstalled(self::OPENCONNECTOR_APP) === false) {
-			$this->recordWarning(messageKey: 'pdok.openconnector_missing', status: 404);
-			return [];
-		}
+		$this->recordWarning(messageKey: 'pdok.parcel.unsupported', status: 501);
+		$this->logger->info(
+			'Dossiq PdokService: parcel search is unavailable, integriq publishes no PDOK parcel endpoint',
+			['criteria' => array_keys($criteria)]
+		);
 
-		$route = $this->urlGenerator->linkToRoute('openconnector.pdok.parcel');
-		if ($route === '') {
-			$route = self::SHIM_BASE_PATH . '/parcel';
-		}
-
-		$url = $this->urlGenerator->getAbsoluteURL($route);
-
-		try {
-			$response = $this->getClient()->post(
-				$url,
-				[
-					'timeout' => 10,
-					'json' => $criteria,
-					'headers' => ['Accept' => 'application/json'],
-				]
-			);
-			$body = (string)$response->getBody();
-			$data = json_decode($body, true);
-			if (is_array($data) === false) {
-				return [];
-			}
-
-			return (array)($data['features'] ?? $data['parcels'] ?? []);
-		} catch (Throwable $e) {
-			$this->handleDegradedMode(error: $e, messageKey: 'pdok.parcel.unavailable');
-			return [];
-		}
+		return [];
 	}//end searchParcel()
 
 	/**
 	 * Report on the runtime status of the PDOK shim.
 	 *
 	 * @return array{
-	 *     openconnectorInstalled: bool,
+	 *     integriqInstalled: bool,
 	 *     featureFlagActive: bool,
 	 *     lastWarning: array{messageKey:string,status:int}|null,
 	 * }
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
+	 *      over the app-id rename map, and the answer it gives depends on the
+	 *      instance rather than on any state this service holds.
 	 *
 	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
 	 */
 	public function getServiceStatus(): array {
 		return [
-			'openconnectorInstalled' => $this->appManager->isInstalled(self::OPENCONNECTOR_APP),
+			'integriqInstalled' => FleetAppId::isInstalled($this->appManager, self::INTEGRIQ_APP),
 			'featureFlagActive' => $this->isFlagActive(),
 			'lastWarning' => $this->lastWarning,
 		];
@@ -263,14 +250,30 @@ class PdokService {
 	}//end lastWarning()
 
 	/**
-	 * Whether the openconnector `pdok.feature_flag` is on.
+	 * Whether integriq's `pdok.feature_flag` is on.
+	 *
+	 * Read under the id integriq is ACTUALLY installed as. `IAppConfig` keys
+	 * on the app id, and integriq's own `MigrateAppConfigKeys` repair step
+	 * copies this key from `openconnector` to `integriq`, so a reader pinned
+	 * to the old id sees a stale copy on a migrated instance and nothing at
+	 * all on a fresh one. Either way it reads the '0' default and the shim
+	 * reports permanently dormant.
 	 *
 	 * @return bool
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
+	 *      over the app-id rename map; injecting it would add a dependency to
+	 *      say the same thing.
 	 */
 	private function isFlagActive(): bool {
+		$appId = FleetAppId::resolve($this->appManager, self::INTEGRIQ_APP);
+		if ($appId === null) {
+			return false;
+		}
+
 		try {
 			$raw = $this->appConfig->getValueString(
-				self::OPENCONNECTOR_APP,
+				$appId,
 				self::FEATURE_FLAG_KEY,
 				'0'
 			);
@@ -282,19 +285,6 @@ class PdokService {
 	}//end isFlagActive()
 
 	/**
-	 * Build a lazily-created HTTP client.
-	 *
-	 * @return IClient
-	 */
-	private function getClient(): IClient {
-		if ($this->client === null) {
-			$this->client = $this->clientService->newClient();
-		}
-
-		return $this->client;
-	}//end getClient()
-
-	/**
 	 * Map a thrown exception into a degraded-mode warning + return value.
 	 *
 	 * @param Throwable $error The originating error.
@@ -303,7 +293,7 @@ class PdokService {
 	 * @return array<int, array<string,mixed>> Empty list for the caller.
 	 */
 	private function handleDegradedMode(Throwable $error, string $messageKey): array {
-		// Surface the openconnector status code when available so the caller
+		// Surface integriq's status code when available so the caller
 		// can distinguish 503 (PDOK outage) from 404 (shim absent) from a
 		// generic error.
 		$status = 0;
@@ -313,7 +303,7 @@ class PdokService {
 		}
 
 		$effectiveKey = match ($status) {
-			404 => 'pdok.openconnector_missing',
+			404 => 'pdok.integriq_missing',
 			503 => 'pdok.unavailable',
 			default => $messageKey,
 		};

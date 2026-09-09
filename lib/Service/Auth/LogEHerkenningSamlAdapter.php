@@ -88,14 +88,14 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 				'active' => $this->isActive(),
 				'response_len' => strlen($samlResponse),
 				'relay_state' => $relayState,
-				'activation' => 'configure openconnector eHerkenning broker + private key + cert; '
+				'activation' => 'configure integriq eHerkenning broker + private key + cert; '
 					. 'occ config:app:set dossiq eherkenning.feature_flag --value 1; '
 					. 'swap DI binding to the active SamlAdapter implementation.',
 			]
 		);
 
 		throw new RuntimeException(
-			'eHerkenning broker not configured — wire openconnector + flip eherkenning.feature_flag.'
+			'eHerkenning broker not configured — wire integriq + flip eherkenning.feature_flag.'
 		);
 	}//end decodeAssertion()
 

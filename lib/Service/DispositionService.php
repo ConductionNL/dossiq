@@ -309,7 +309,7 @@ class DispositionService {
 			'complaintId' => $complaintId,
 			'dispositionId' => $dispositionId,
 			'status' => 'queued',
-			'message' => 'Letter generation queued via Docudesk',
+			'message' => 'Letter generation queued via Filinq',
 		];
 	}//end generateResponseLetter()
 
