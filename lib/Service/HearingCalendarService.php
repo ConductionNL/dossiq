@@ -28,9 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
-use DateInterval;
 use DateTimeImmutable;
-use OCP\Calendar\ICalendar;
 use OCP\Calendar\ICalendarEventBuilder;
 use OCP\Calendar\ICalendarIsWritable;
 use OCP\Calendar\ICreateFromString;
@@ -54,10 +52,10 @@ class HearingCalendarService {
 	private const EVENT_SUMMARY_PREFIX = 'Hoorgesprek klacht ';
 
 	/**
-	 * How long the event runs. The hearing schema records no duration, so an
-	 * hour is a stated assumption rather than a guessed one.
+	 * How long the event runs, in seconds. The hearing schema records no
+	 * duration, so an hour is a stated assumption rather than a guessed one.
 	 */
-	private const EVENT_DURATION = 'PT1H';
+	private const EVENT_DURATION_SECONDS = 3600;
 
 	/**
 	 * Principal URI prefix for a Nextcloud account's own calendars.
@@ -106,67 +104,29 @@ class HearingCalendarService {
 			return '';
 		}
 
-		$date = (string)($data['date'] ?? '');
-		try {
-			$start = new DateTimeImmutable($date);
-		} catch (\Exception $e) {
-			$this->logger->warning(
-				'Hearing has no readable date, no calendar event written: ' . $date,
-				['app' => Application::APP_ID],
-			);
+		$start = $this->readStart(data: $data);
+		if ($start === null) {
 			return '';
 		}
 
-		$location = (string)($data['location'] ?? '');
 		$organiser = $this->userSession->getUser();
-
-		$builder = $this->calendarManager->createEventBuilder();
-		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
-		$builder->setStartDate($start);
-		$builder->setEndDate($start->add(new DateInterval(self::EVENT_DURATION)));
-		if ($location !== '') {
-			$builder->setLocation($location);
-		}
-
-		$builder->setDescription($this->describeHearing(data: $data, participants: $participants));
-
-		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
-			$builder->setOrganizer(
-				(string)$organiser->getEMailAddress(),
-				$organiser->getDisplayName()
-			);
-		}
-
 		$attendees = $this->resolveParticipants(participants: $participants);
-		foreach ($attendees as $attendee) {
-			$builder->addAttendee($attendee['email'], $attendee['name']);
-		}
 
-		$ics = $builder->toIcs();
-		$uid = '';
-		if (preg_match('/^UID:(.+)$/mi', $ics, $matches) === 1) {
-			$uid = trim($matches[1]);
-		}
+		$ics = $this->buildEvent(
+			data: $data,
+			start: $start,
+			participants: $participants,
+			organiser: $organiser,
+			attendees: $attendees
+		);
 
+		$uid = $this->readUid(ics: $ics);
 		if ($uid === '') {
-			$this->logger->warning(
-				'Calendar event for hearing carried no UID, nothing written',
-				['app' => Application::APP_ID],
-			);
 			return '';
-		}
-
-		$principals = [];
-		if ($organiser !== null) {
-			$principals[] = self::PRINCIPAL_PREFIX . $organiser->getUID();
-		}
-
-		foreach ($attendees as $attendee) {
-			$principals[] = self::PRINCIPAL_PREFIX . $attendee['uid'];
 		}
 
 		$written = 0;
-		foreach (array_unique($principals) as $principal) {
+		foreach ($this->principalsFor(organiser: $organiser, attendees: $attendees) as $principal) {
 			if ($this->writeToCalendar(principal: $principal, uid: $uid, ics: $ics) === true) {
 				$written++;
 			}
@@ -187,6 +147,126 @@ class HearingCalendarService {
 
 		return $uid;
 	}//end createEvent()
+
+	/**
+	 * Read the hearing's start moment, or nothing when the date is unreadable.
+	 *
+	 * An unreadable date must not become an event at "now": a hearing on the
+	 * wrong day in someone's calendar is worse than no hearing in it.
+	 *
+	 * @param array<string, mixed> $data Hearing data.
+	 *
+	 * @return DateTimeImmutable|null
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function readStart(array $data): ?DateTimeImmutable {
+		$date = (string)($data['date'] ?? '');
+		try {
+			return new DateTimeImmutable($date);
+		} catch (\Exception $e) {
+			$this->logger->warning(
+				'Hearing has no readable date, no calendar event written: ' . $date,
+				['app' => Application::APP_ID],
+			);
+			return null;
+		}
+	}//end readStart()
+
+	/**
+	 * Serialise the hearing as one VEVENT.
+	 *
+	 * @param array<string, mixed> $data Hearing data.
+	 * @param DateTimeImmutable $start When the hearing starts.
+	 * @param array<int, mixed> $participants Participants as stored.
+	 * @param IUser|null $organiser The account scheduling the hearing.
+	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 *
+	 * @return string The event as ICS.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function buildEvent(
+		array $data,
+		DateTimeImmutable $start,
+		array $participants,
+		?IUser $organiser,
+		array $attendees,
+	): string {
+		$builder = $this->calendarManager->createEventBuilder();
+		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
+		$builder->setStartDate($start);
+		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + self::EVENT_DURATION_SECONDS));
+		$builder->setDescription($this->describeHearing(data: $data, participants: $participants));
+
+		$location = (string)($data['location'] ?? '');
+		if ($location !== '') {
+			$builder->setLocation($location);
+		}
+
+		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
+			$builder->setOrganizer(
+				(string)$organiser->getEMailAddress(),
+				$organiser->getDisplayName()
+			);
+		}
+
+		foreach ($attendees as $attendee) {
+			$builder->addAttendee($attendee['email'], $attendee['name']);
+		}
+
+		return $builder->toIcs();
+	}//end buildEvent()
+
+	/**
+	 * Read the UID out of a serialised event.
+	 *
+	 * Every copy of the hearing has to carry the SAME UID, or a participant's
+	 * reply lands on an event nobody else holds. Taking it from the ICS rather
+	 * than from a second call is what guarantees that.
+	 *
+	 * @param string $ics The serialised event.
+	 *
+	 * @return string The UID, or an empty string when it carries none.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function readUid(string $ics): string {
+		$matches = [];
+		if (preg_match('/^UID:(.+)$/mi', $ics, $matches) === 1) {
+			return trim($matches[1]);
+		}
+
+		$this->logger->warning(
+			'Calendar event for hearing carried no UID, nothing written',
+			['app' => Application::APP_ID],
+		);
+
+		return '';
+	}//end readUid()
+
+	/**
+	 * The principals whose calendars this hearing belongs in.
+	 *
+	 * @param IUser|null $organiser The account scheduling the hearing.
+	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 *
+	 * @return array<int, string> Principal URIs, each one once.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function principalsFor(?IUser $organiser, array $attendees): array {
+		$principals = [];
+		if ($organiser !== null) {
+			$principals[] = self::PRINCIPAL_PREFIX . $organiser->getUID();
+		}
+
+		foreach ($attendees as $attendee) {
+			$principals[] = self::PRINCIPAL_PREFIX . $attendee['uid'];
+		}
+
+		return array_values(array_unique($principals));
+	}//end principalsFor()
 
 	/**
 	 * Turn the participant list into addressable attendees.
@@ -255,7 +335,9 @@ class HearingCalendarService {
 				continue;
 			}
 
-			if ($calendar instanceof ICalendar && $calendar->isDeleted() === true) {
+			// ICreateFromString extends ICalendar, so isDeleted() is always
+			// there: a calendar in the trash must not take a new hearing.
+			if ($calendar->isDeleted() === true) {
 				continue;
 			}
 
