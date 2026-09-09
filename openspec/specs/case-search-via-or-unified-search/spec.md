@@ -2,10 +2,29 @@
 
 ## Purpose
 TBD - created by archiving change case-search-via-or-unified-search. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Searchable schema opt-in
 
-The dossiq register definition SHALL flag exactly these schemas `searchable: true`: `case`, `task`, `bezwaar`, `voorstel`, `beroep`. Schemas without a standalone detail route SHALL NOT be flagged.
+A schema in the dossiq register is searchable unless it opts out.
+OpenRegister's `Schema` entity declares `protected bool $searchable = true`,
+so a definition that carries no `searchable` key imports as searchable and
+`ObjectsProvider` includes it. Measured on the running instance 2026-09-08:
+`brpPerson` and `kvkCompany` both report `searchable: true` with no flag
+anywhere in `lib/Settings/register.d/25-brp-kvk.json`, and a search for a
+seeded person returned that person.
+
+The dossiq register definition therefore SHALL NOT be read as the allow-list
+for unified search. It flags `case`, `caseTask`, `objectionProceeding` and
+`beroep` explicitly, which is a statement of intent and changes nothing at
+runtime; a schema SHALL only be flagged `searchable: false` when it should be
+kept OUT of search, and a schema SHALL NOT be flagged `true` merely to
+document that it is searchable, because the flag only lands on an instance
+behind a schema version bump and a re-import.
+
+What decides whether a result is USEFUL is the deep link, not the flag. See
+the next requirement.
 
 #### Scenario: Case findable in unified search
 
@@ -14,7 +33,7 @@ The dossiq register definition SHALL flag exactly these schemas `searchable: tru
 - **THEN** the case appears as a result under the OpenRegister objects provider
 - **AND** activating it navigates to `/apps/dossiq/cases/{uuid}`
 
-@e2e exclude Requires the OR ObjectsProvider pipeline and NC search UI; provider behaviour is covered by openregister's own unified-search-provider e2e suite — dossiq only supplies declarative flags, asserted by unit test on the register JSON.
+@e2e exclude Requires the OR ObjectsProvider pipeline and NC search UI; provider behaviour is covered by openregister's own unified-search-provider e2e suite.
 
 #### Scenario: Non-flagged schema absent from search
 
@@ -24,6 +43,14 @@ The dossiq register definition SHALL flag exactly these schemas `searchable: tru
 
 @e2e exclude Same rationale — declarative flag asserted by unit test on the register JSON.
 
+#### Scenario: A schema flagged out stays out
+
+- **GIVEN** a schema flagged `searchable: false` in the register definition
+- **WHEN** a user searches for the title of one of its objects
+- **THEN** it does not appear in unified search results
+
+@e2e exclude Declarative opt-out asserted by unit test on the register JSON; the provider's allow-list behaviour is openregister's.
+
 #### Scenario: RBAC-restricted case hidden
 
 - **GIVEN** a confidential case the user has no OR RBAC read access to
@@ -31,18 +58,6 @@ The dossiq register definition SHALL flag exactly these schemas `searchable: tru
 - **THEN** the case does not appear (OR provider delegates to `searchObjectsPaginated(_rbac: true)`)
 
 @e2e exclude Enforced and tested in openregister (provider security contract); dossiq adds no code path.
-
-### Requirement: Deep links for searchable schemas
-
-Every schema flagged `searchable: true` SHALL have a `deepLinks` entry in `src/manifest.json` mapping `(dossiq, <schemaSlug>)` to its detail route, so the OR provider can render result URLs and display names.
-
-#### Scenario: Deep links cover all searchable schemas
-
-- **GIVEN** the manifest and register definition at HEAD
-- **WHEN** the searchable schema slugs are compared against `deepLinks[].schemaSlug`
-- **THEN** `case`, `task`, `bezwaar`, `voorstel`, `beroep` each have an entry with url templates `/apps/dossiq/cases/{uuid}`, `/apps/dossiq/tasks/{uuid}`, `/apps/dossiq/bezwaren/{uuid}`, `/apps/dossiq/voorstellen/{uuid}`, `/apps/dossiq/beroepen/{uuid}`
-
-@e2e exclude Declarative cross-file consistency asserted by unit test (vitest) on the two JSON files.
 
 ### Requirement: Version-gated re-import
 
@@ -56,3 +71,41 @@ The change SHALL bump both the register `info.version` and the app version in `a
 
 @e2e exclude Repair-step import mechanics are owned and tested by openregister; the version bump is asserted by unit test comparing info.xml and register JSON versions advanced together.
 
+### Requirement: Deep links resolve to real pages
+
+Every dossiq schema that has a standalone detail page SHALL have a `deepLinks`
+entry in `src/manifest.json` mapping `(dossiq, <schemaSlug>)` to that route,
+and the entry's `urlTemplate` SHALL name a route the manifest carries.
+
+This is the requirement that bites. `ObjectSearchResultFormatter` asks
+`DeepLinkRegistryService::resolveUrl()` and, when no app has claimed the
+`(register, schema)` pair, falls back to `openregister.objects.show` — the
+JSON API endpoint. A search result with no deep link therefore looks correct
+and opens a JSON document; a search result whose template names a route the
+manifest does not carry looks correct and opens a 404. Neither failure is
+visible in the search itself.
+
+`brpPerson` maps to `/apps/dossiq/contacts/{uuid}` and `kvkCompany` to
+`/apps/dossiq/organisations/{uuid}`, the pages `contacts-domain` added.
+
+#### Scenario: A search hit on a person opens the contact page
+@e2e tests/e2e/contacts-domain.spec.ts
+
+- **GIVEN** a seeded `brpPerson` row
+- **WHEN** the OpenRegister objects provider is searched for its display name
+- **THEN** a result SHALL carry the resource url `/apps/dossiq/contacts/<id>` for that row
+
+#### Scenario: A search hit on an organisation opens the organisation page
+@e2e tests/e2e/contacts-domain.spec.ts
+
+- **GIVEN** a seeded `kvkCompany` row
+- **WHEN** the OpenRegister objects provider is searched for its trade name
+- **THEN** a result SHALL carry the resource url `/apps/dossiq/organisations/<id>` for that row
+
+#### Scenario: Every deep link names a real route
+
+- **GIVEN** the manifest at HEAD
+- **WHEN** each `deepLinks[].urlTemplate` is compared against `pages[].route`
+- **THEN** each SHALL correspond to a page route, with `{uuid}` standing where the route has `:id`
+
+@e2e exclude Declarative cross-file consistency asserted by unit test (vitest) on the manifest.

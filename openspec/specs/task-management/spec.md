@@ -778,6 +778,159 @@ case SHALL show no link and no empty box.
 - **WHEN** you open the task page
 - **THEN** no case link and no empty box SHALL render
 
+### Requirement: A completed task resumes its run through the guarded seam
+
+When a flow task transitions to completed, the system SHALL resume the run it
+names via `FlowRunSignalService::signalAs()`, handing the seam the session
+user as the actor and the task's node as the addressed node. The system SHALL
+NOT consult the assignee rule itself and SHALL NOT call the unguarded
+`FlowRunService::signal()` primitive.
+
+A `FlowSignalRefused` SHALL be obeyed: the task stays completed, the run is
+not advanced, nothing is retried. A NOT_ASSIGNEE refusal is recorded as a
+warning tying the engine's audit to the task; RUN_NOT_FOUND and NOT_SUSPENDED
+are recorded quietly, because a task naming a vanished or already-advanced
+run is completable and its completer did nothing wrong.
+
+#### Scenario: Completing a flow task resumes its run
+
+- **GIVEN** a suspended run awaiting a task
+- **WHEN** the task transitions to completed
+- **THEN** the run is signalled through `signalAs` with the completer as actor and the task's node addressed
+
+`@e2e case-flow-live-journeys.spec.ts` drives the live task-completion resume;
+the seam call shape is pinned by TaskCompletionResumeListenerTest.
+
+#### Scenario: A refusal from the seam withholds the resume
+
+- **GIVEN** a completed task whose completer is not the awaiting step's assignee
+- **WHEN** the seam refuses with NOT_ASSIGNEE
+- **THEN** the run is not advanced and the refusal is recorded as a warning
+
+`@e2e exclude` the guard itself is OpenRegister's, mutation-tested there; the
+listener's obedience is unit-pinned (TaskCompletionResumeListenerTest).
+
+#### Scenario: A task whose run has gone is still completable
+
+- **GIVEN** a completed task naming a run uuid the engine cannot resolve
+- **WHEN** the seam refuses with RUN_NOT_FOUND
+- **THEN** the completion stands and the refusal is recorded as information, not an error
+
+`@e2e exclude` requires deleting a run out from under a task mid-journey;
+unit-pinned (TaskCompletionResumeListenerTest).
+
+#### Scenario: A task without a run resumes nothing
+
+- **WHEN** a task recording no run is completed
+- **THEN** the task is completed normally
+- **AND** no run is resumed and no error is raised
+
+#### Scenario: Completing a task twice resumes once
+
+- **WHEN** an already-completed task is completed again
+- **THEN** the run is not resumed a second time
+- **AND** the run does not advance past the step twice
+
+### Requirement: A person can see what their task is holding up @e2e exclude read surface; covered by the case-flow e2e journey
+
+A task belonging to a flow run SHALL show the case it belongs to and that something is waiting on it. A person answering a question is entitled to know that work is blocked on their answer, and which work.
+
+#### Scenario: A flow task names its case
+- **WHEN** a person views a task created by a case flow
+- **THEN** the task names the case it belongs to
+- **AND** indicates that the case is waiting on this task
+
+### Requirement: REQ-TASK-017 The Tasks index MUST carry the same six lenses as Cases
+
+You narrow the task list to closed, late or this week's work without leaving
+it. The `Tasks` page (`src/manifest.json`, type `index` over `caseTask`) SHALL
+extend its `quickFilters` with Closed (`isTerminalStatus = true`), Overdue
+(`dueDate[lt] = "@today"`, `isTerminalStatus = false`) and Due this week
+(`dueDate[gte] = "@today"`, `dueDate[lt] = "@today+7d"`,
+`isTerminalStatus = false`), so both index pages declare the same six labels
+in the same order and only the underlying field differs.
+
+The far edge SHALL be `lt` rather than `lte`, so a task due on day seven
+belongs to next week's window and not to two windows at once.
+
+Each operator SHALL be spelled as a flat bracket key. The nested
+`{ dueDate: { lt } }` form is JSON-stringified by `buildQueryString` and
+reaches the API as a literal string that matches nothing, with no error.
+
+#### Scenario: Closed shows the completed task
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a completed task and an open task assigned to the signed-in user
+- **WHEN** you choose the chip Closed
+- **THEN** the list SHALL show the completed task and SHALL NOT show the open one
+
+#### Scenario: A task due later today is not overdue
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task due two days ago, an open task due at nine this morning and an open task due in thirty days
+- **WHEN** you choose the chip Overdue
+- **THEN** the list SHALL show the task due two days ago
+- **AND** the list SHALL NOT show the task due this morning, because a task due later today is not late yet
+- **AND** the list SHALL NOT show the task due in thirty days
+
+#### Scenario: Due this week holds both edges of the window
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task due two days ago, an open task due at nine this morning, an open task due in two days and an open task due in thirty days
+- **WHEN** you choose the chip Due this week
+- **THEN** the list SHALL show the task due this morning and the task due in two days
+- **AND** the list SHALL NOT show the task due two days ago or the task due in thirty days
+
+### Requirement: REQ-TASK-018 The task row MUST show its priority
+
+You see which task jumps the queue without opening it. The `Tasks` page SHALL
+declare `priority` as a column, after `dueDate`, because the two answer the
+same question in order: when is this due, and does it come first anyway.
+
+`caseTask.priority` is `facetable`, so before this it was reachable through the
+sidebar facet and absent from the row. REQ-TASK-004's first scenario has always
+required the row to show it.
+
+#### Scenario: The task list shows a priority column
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **WHEN** you open the Tasks page
+- **THEN** the table SHALL carry a Priority column header
+
+### Requirement: REQ-TASK-016 Task lenses MUST sit on the Tasks index
+
+You switch between your tasks, unclaimed tasks and all tasks on one list.
+The `Tasks` page (`src/manifest.json`, type `index` over `caseTask`) SHALL
+carry `quickFilters` chips All (no filter), Mine (`assignee = @me`,
+`isTerminalStatus = false`) and Unclaimed (`assignee = "IS NULL"`,
+`isTerminalStatus = false`), in that order, with All as the default
+(decision D-default, revised — see `my-work`). The chips SHALL use the
+same shape and the same behaviour as the chips on `Cases`, so a person who
+learned one list has learned the other. The page SHALL keep its
+saved views and its generic sidebar filters.
+
+#### Scenario: All is the default lens on tasks, Mine is one click away
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task assigned to the signed-in user and an open task assigned to another user
+- **WHEN** you open the Tasks page
+- **THEN** the chip All SHALL be active and the list SHALL show both tasks
+- **AND** choosing the chip Mine SHALL show your task and SHALL NOT show the other user's task
+
+#### Scenario: Unclaimed shows tasks nobody holds
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task with no assignee and a completed task with no assignee
+- **WHEN** you choose the chip Unclaimed
+- **THEN** the list SHALL show the open task and SHALL NOT show the completed one
+
+#### Scenario: All shows every task
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open task assigned to another user and a completed task
+- **WHEN** you choose the chip All
+- **THEN** the list SHALL show both tasks
+
 ## Accessibility
 
 All task management interfaces MUST comply with WCAG AA:

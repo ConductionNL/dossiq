@@ -2,70 +2,8 @@
 
 ## Purpose
 TBD - created by archiving change dossiq-delegate-contract-decision. Update Purpose after archive.
+
 ## Requirements
-### Requirement: REQ-PDCD-001 — Contract Decisions Are Raised As decidesk Decisions
-
-dossiq SHALL raise a **decidesk `Decision`** for any contract approval / renewal / sign-off via the
-OpenRegister integration registry (ADR-019), through a new `ContractDecisionDelegationService`.
-dossiq SHALL NOT advance a dossiq-local approval state machine for the decision after this change.
-
-#### Scenario: Renewal request raises a decidesk Decision
-
-- **GIVEN** a supplier contract within the 90-day renewal window and the `decidesk` integration leaf available
-- **WHEN** a contracts/admin user requests renewal via `ContractController::requestRenewal`
-- **THEN** dossiq SHALL still open the `leverancier-contractverlenging-verzoek` ZGW case
-- **AND** dossiq SHALL call `ContractDecisionDelegationService::raiseContractDecision(...)`, creating a decidesk `Decision`
-- **AND** the returned `decisionRef` SHALL be persisted on the case
-- **AND** no dossiq-local approval state machine SHALL advance the decision
-
-#### Scenario: Beslissing-op-bezwaar raises a decidesk Decision
-
-- **GIVEN** a bezwaar case and the `decidesk` integration leaf available
-- **WHEN** a behandelaar submits `BezwaarDecisionForm.vue`
-- **THEN** dossiq SHALL raise a decidesk `Decision` carrying the disposition, motivation and follows-advice values
-- **AND** dossiq SHALL NOT author the besluit through a dossiq-local besluit engine
-
----
-
-### Requirement: REQ-PDCD-002 — Delegation Fails Closed When decidesk Is Unavailable
-
-The `ContractDecisionDelegationService` SHALL **fail closed** when the `decidesk` integration leaf is
-unavailable: it SHALL surface a clear "decision service unavailable" error and SHALL NOT auto-approve
-or fall back to a dossiq-local approval. (Mirrors the `unsafe-auth-resolver` rule — an unavailable
-decision service is not "decision skipped".)
-
-#### Scenario: decidesk leaf unavailable blocks the decision
-
-- **GIVEN** the `decidesk` integration leaf is not registered or returns an error
-- **WHEN** dossiq attempts to raise a contract decision
-- **THEN** the call SHALL fail with a "decision service unavailable" error
-- **AND** no contract SHALL be marked approved/renewed
-- **AND** no dossiq-local approval state SHALL be set as a fallback
-
----
-
-### Requirement: REQ-PDCD-003 — The ZGW Besluit Is Materialised From The decidesk Outcome
-
-dossiq SHALL materialise the ZGW `Besluit` on the case **from the decidesk Decision outcome**, not
-from a dossiq-local besluit-authoring path. The materialised `Besluit` SHALL preserve the Besluiten-API
-shape: decidesk `result` → Besluit result, decidesk `decidedAt` → `Besluit.datum`, decidesk
-motivering/advice → `Besluit.toelichting`, decidesk signer/mandaathouder + method → recorded audit
-fields. ZGW compliance SHALL NOT regress.
-
-#### Scenario: Approved decidesk Decision materialises a ZGW Besluit
-
-- **GIVEN** a decidesk `Decision` for a contract reaches outcome `verleend` with a datum, motivering and mandaathouder
-- **WHEN** dossiq consumes the outcome via `ContractDecisionDelegationService::consumeOutcome(...)`
-- **THEN** dossiq SHALL write a ZGW `Besluit` on the case with result `verleend`, the decided datum, and the motivering as `toelichting`
-- **AND** the `Besluit` SHALL match the prior Besluiten-API schema shape (verified by a contract test)
-
-#### Scenario: Rejected decidesk Decision is recorded on the case file
-
-- **GIVEN** a decidesk `Decision` reaches outcome `geweigerd`
-- **WHEN** dossiq consumes the outcome
-- **THEN** dossiq SHALL record a `Besluit` with result `geweigerd` and the motivering on the case dossier
-
----
 
 ### Requirement: REQ-PDCD-004 — dossiq Keeps ZGW Case Management And The Expiry Scan
 
@@ -150,3 +88,82 @@ SHALL be dropped by the migration.
 - **THEN** the existing `Besluit` SHALL be retained as the authoritative historical record
 - **AND** no `Besluit` data SHALL be dropped or overwritten
 
+### Requirement: REQ-PDCD-001 — Contract Decisions Are Raised As decidesk Decisions Via Events
+
+dossiq SHALL raise a decidesk `Decision` for any contract / bezwaar / advice approval, renewal or
+sign-off by dispatching `OCA\Decidesk\Event\DecisionRequestedEvent` through
+`OCP\EventDispatcher\IEventDispatcher::dispatchTyped()`, and SHALL persist `getDecisionId()` as the
+decisionRef on the case. dossiq SHALL NOT call the `OCA\OpenRegister\Service\IntegrationService`
+registry, `getLeaf()`, or `createDecision(payload:...)`, and SHALL NOT advance a dossiq-local approval
+state machine for the decision.
+
+#### Scenario: Renewal request dispatches a DecisionRequestedEvent
+
+- **GIVEN** a supplier contract within the renewal window and decidesk installed
+- **WHEN** a contracts/admin user requests renewal via `ContractController::requestRenewal`
+- **THEN** dossiq SHALL still open the `leverancier-contractverlenging-verzoek` ZGW case
+- **AND** dossiq SHALL `dispatchTyped()` a `DecisionRequestedEvent` with `sourceApp` `dossiq`
+- **AND** the `getDecisionId()` returned on the handled event SHALL be persisted as the case `decisionRef`
+- **AND** no dossiq-local approval state machine SHALL advance the decision
+
+#### Scenario: Bezwaar and advice decisions dispatch the same event
+
+- **GIVEN** a bezwaar or advice request and decidesk installed
+- **WHEN** dossiq delegates the decision via `BezwaarDecisionDelegationService` or `AdviceDelegationService`
+- **THEN** dossiq SHALL dispatch a `DecisionRequestedEvent` (carrying the disposition / advice context in `payload`)
+- **AND** dossiq SHALL NOT resolve decidesk through `IntegrationService::getLeaf`
+
+---
+
+### Requirement: REQ-PDCD-002 — Delegation fails closed when decidesk does not answer the event
+
+dossiq SHALL fail closed when decidesk cannot handle the decision: if
+`class_exists(\OCA\Decidesk\Event\DecisionRequestedEvent::class)` is false (decidesk not installed), OR
+the dispatched event returns `isHandled() === false`, OR `getDecisionId()` is null, the delegation SHALL
+throw a "decision service unavailable" error and SHALL NOT auto-approve or fall back to a dossiq-local
+approval.
+
+#### Scenario: decidesk not installed blocks the decision
+
+- **GIVEN** decidesk is not installed (the `DecisionRequestedEvent` class does not exist)
+- **WHEN** dossiq attempts to raise a decision
+- **THEN** the call SHALL throw a "decision service unavailable" error
+- **AND** no contract SHALL be marked approved/renewed and no dossiq-local approval state SHALL be set
+
+#### Scenario: Unhandled event blocks the decision
+
+- **GIVEN** decidesk is installed but its listener does not handle the event (`isHandled()` false or `getDecisionId()` null)
+- **WHEN** dossiq dispatches the `DecisionRequestedEvent`
+- **THEN** the call SHALL throw a "decision service unavailable" error
+- **AND** no dossiq-local approval state SHALL be set as a fallback
+
+---
+
+### Requirement: REQ-PDCD-003 — The ZGW Besluit Is Materialised From The DecisionConcludedEvent
+
+dossiq SHALL register a listener for `OCA\Decidesk\Event\DecisionConcludedEvent` in
+`lib/AppInfo/Application.php`. The listener SHALL filter to `getSourceApp() === 'dossiq'`, build the
+normalised outcome from the event getters (`getStatus()` / `getOutcome()` → Besluit result,
+`getDecidedAt()` → `Besluit.datum`, the decision motivering/advice → `Besluit.toelichting`, signers /
+signing reference → recorded audit fields) and materialise the ZGW `Besluit` on the case via
+`BesluitMaterialisationService`. The Besluiten-API shape SHALL be preserved; ZGW compliance SHALL NOT
+regress. The old `consumeOutcome()` / `getDecisionOutcome()` poll path SHALL be removed.
+
+#### Scenario: Concluded decision materialises a ZGW Besluit
+
+- **GIVEN** decidesk dispatches a `DecisionConcludedEvent` with `getSourceApp()` `dossiq`, `getStatus()` `approved`, an outcome and a decidedAt
+- **WHEN** the `DecisionConcludedListener` handles the event
+- **THEN** dossiq SHALL write a ZGW `Besluit` on the matching case via `BesluitMaterialisationService`
+- **AND** the `Besluit` SHALL preserve the prior Besluiten-API schema shape
+
+#### Scenario: Event from another source app is ignored
+
+- **GIVEN** a `DecisionConcludedEvent` with `getSourceApp()` not equal to `dossiq`
+- **WHEN** the listener receives the event
+- **THEN** dossiq SHALL ignore it and SHALL NOT materialise a Besluit
+
+#### Scenario: No dossiq-local poll of decidesk remains
+
+- **GIVEN** this change has shipped
+- **WHEN** the source is searched for `consumeOutcome`, `getDecisionOutcome`, `getLeaf` and `OCA\OpenRegister\Service\IntegrationService`
+- **THEN** none SHALL remain in `lib/`
