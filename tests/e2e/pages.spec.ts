@@ -149,9 +149,21 @@ test.describe('Tasks page', () => {
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('the Case column shows the case title, not its uuid', async ({ page }) => {
 		await navToRoute(page, '/tasks')
+		// The list has to have ANSWERED before the view is switched. The view
+		// switcher paints with the page shell, so the click lands whether or
+		// not any rows exist, and CnDataTable renders its `<table>` only once
+		// it has rows — so switching too early leaves the page in Table view
+		// with nothing to show, and the assertion below reads as "this page
+		// has no table" rather than "the list had not loaded yet". Measured on
+		// a running instance: after the switch there IS a `<table>`, with `th`
+		// headers Title, Case, Assignee, Team, Status, Due Date.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]').first(),
+		).toBeVisible({ timeout: 30_000 })
+
 		await page.getByRole('button', { name: 'Table' }).click()
 		const table = page.locator('table').first()
-		await expect(table).toBeVisible({ timeout: 15000 })
+		await expect(table).toBeVisible({ timeout: 30_000 })
 		const header = table.getByRole('columnheader', { name: /^(Case|Zaak)$/ })
 		await expect(header).toBeVisible()
 		const index = await header.evaluate((th) =>

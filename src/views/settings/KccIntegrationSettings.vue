@@ -96,7 +96,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachttijd">{{
-				t('dossiq', 'Belplan overflow threshold — wachttijd (seconds)')
+				t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachttijd"
@@ -108,7 +108,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachtrij_lengte">{{
-				t('dossiq', 'Belplan overflow threshold — wachtrij lengte')
+				t('dossiq', 'Belplan overflow threshold: wachtrij lengte')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachtrij_lengte"

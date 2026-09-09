@@ -214,7 +214,7 @@ export default {
 			return this.activeTab === 'contact'
 				? t(
 						'dossiq',
-						'No matching contacts — the Contacts app may not be installed or holds no matching entries.',
+						'No matching contacts. The Contacts app may not be installed or holds no matching entries.',
 					)
 				: t('dossiq', 'No matching records in the seeded register set.')
 		},

@@ -207,7 +207,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 
 /**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
- * sections progressively — the lower ones (Case Email — Shared Mailbox,
+ * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.
@@ -284,10 +284,56 @@ const NON_DOSSIQ_URL_NOISE = [
  */
 export function trackDossiqErrors(page: Page): string[] {
 	const errors: string[] = []
+	// A single-object read that answers 404 is a DANGLING REFERENCE, not a
+	// defect in the page that followed it. The browser logs "Failed to load
+	// resource" for it with no url on the console message, so it has to be
+	// recognised from the response instead.
+	//
+	// ⚠️ SCOPED TO 404, AND ONLY ON THE OBJECT ROUTE. A 5xx on the same path
+	// still fails, and so does a 404 anywhere else, because either would be
+	// this app's problem. What this admits is exactly one thing: a row whose
+	// reference points at something that has been deleted.
+	//
+	// ⚠️ IT IS A RACE, NOT RESIDUE, and the difference decides whether
+	// filtering is the right treatment. Four things were checked before this
+	// was written this way:
+	//
+	//   - `FIXTURE_SCHEMAS` is already child-first — `case` 19th, `statusType`
+	//     25th, `caseType` 27th — so one spec's own teardown never leaves its
+	//     case pointing at a type it removed.
+	//   - an archival case IS removed: `purgeObject` falls back through the
+	//     trash DELETE to `occPurge`, and the 403 is what that fallback is for.
+	//   - the run that produced these 404s left nothing behind: no
+	//     "e2e teardown left objects behind" anywhere in its log.
+	//   - the CI instance is installed fresh per run, so nothing carries over
+	//     to accumulate.
+	//
+	// So the dashboard listed cases at one moment and resolved their types at
+	// a later one, by which time a SIBLING spec's teardown had removed both.
+	// Transient by construction, and invisible on one worker.
+	let dangling = 0
+	page.on('response', (r) => {
+		if (
+			r.status() === 404
+			&& r.url().includes('/apps/openregister/api/objects/')
+		) {
+			dangling += 1
+		}
+	})
+
 	page.on('console', (m) => {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_DOSSIQ_NOISE.some((n) => text.includes(n))) return
+		if (dangling > 0 && text.includes('404 (Not Found)')) {
+			// Paired one for one, and only downwards, so a second 404 with
+			// nothing to answer for it still fails. The pairing relies on the
+			// response event arriving before the console message it causes,
+			// which is the order the browser reports them in; if that ever
+			// inverts, this admits one error too few and the test says so.
+			dangling -= 1
+			return
+		}
 		const url = m.location()?.url ?? ''
 		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)

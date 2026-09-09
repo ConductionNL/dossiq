@@ -190,7 +190,7 @@ export default {
 		introText() {
 			return t(
 				'dossiq',
-				'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Dossiq never sends mail itself.',
+				'Per-case-type email templates with placeholder variables. Editing a template creates a new version. Old versions are retained. Templates prefill a Nextcloud Mail draft; Dossiq never sends mail itself.',
 			)
 		},
 

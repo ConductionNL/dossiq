@@ -47,8 +47,21 @@ const SEEDED_KEYS = [
 	'templates',
 ]
 
-/** The two connections that are specified and not built. */
-const UNAVAILABLE_KEYS = ['brp', 'kvk']
+/**
+ * The one connection nothing calls.
+ *
+ * BRP and KvK were both listed here with the message "Specified, not built
+ * yet", and that sentence was false for both. Each ships a dormant Log adapter,
+ * a real HTTP adapter and a DI registrar bound from ExternalRegisterRegistrar.
+ * The difference is the caller: ConflictOfInterestService injects the BRP
+ * adapter for the belangenconflict check, and nothing injects the KvK one, so
+ * configuring KvK changes nothing an admin can see. That, and not "not built",
+ * is what Not available means on this row.
+ */
+const UNAVAILABLE_KEYS = ['kvk']
+
+/** Built, called, and dormant until its tier key is set. */
+const DORMANT_KEYS = ['brp']
 
 /**
  * The two seams that ship a mock adapter.
@@ -151,13 +164,12 @@ test.describe('Integrations', () => {
 		await settings.close()
 	})
 
-	test('offers no settings link where the connection is not built', async ({
+	test('offers no settings link where there is no section to open', async ({
 		page,
 	}) => {
 		const byKey = await integrationsByKey(api)
-		for (const key of UNAVAILABLE_KEYS) {
-			expect(byKey[key].status).toBe('unavailable')
-			expect(byKey[key].statusMessage).toBe('Specified, not built yet')
+		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
+			expect(byKey[key].statusMessage).not.toMatch(/not built/i)
 			// The seed writes `""` and the register does not store an empty
 			// string, so the row reads back with no such key at all. Both
 			// spellings say the same thing, and the assertion that matters is
@@ -166,7 +178,7 @@ test.describe('Integrations', () => {
 		}
 
 		await openIntegrations(page)
-		for (const key of UNAVAILABLE_KEYS) {
+		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
 			const row = page.getByRole('row', {
 				name: new RegExp(byKey[key].title, 'i'),
 			})
@@ -191,6 +203,11 @@ test.describe('Integrations', () => {
 			}
 			if (UNAVAILABLE_KEYS.includes(key)) {
 				expect(row.status).toBe('unavailable')
+				continue
+			}
+			if (DORMANT_KEYS.includes(key)) {
+				expect(row.status).toBe('unconfigured')
+				expect(row.statusMessage).toMatch(/integration\.brp\.mode/)
 				continue
 			}
 			if (SIMULATED_KEYS.includes(key)) {

@@ -23,12 +23,15 @@ const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 const REGISTRY_PATH = path.resolve(__dirname, '../../src/registry.js')
 const ICONS_PATH = path.resolve(__dirname, '../../src/icons.js')
 
+const { caseTabOf, caseWidget } = require('./helpers/casePanels.js')
+
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
-const widgets = caseDetail.config.widgets
-const documents = widgets.find((widget) => widget.id === 'case-documents')
-const panels = widgets.find((widget) => widget.id === 'case-panels')
-const tabs = panels.content.tabs
+// Looked up through the shared helper rather than in `config.widgets`: since
+// the strip came down from fourteen tabs to six, this widget is a SECTION of
+// the Documents tab, so a top-level `find` returns undefined and every
+// assertion below would read as "the widget was deleted".
+const documents = caseWidget('case-documents')
 
 describe('CaseDetail Documents tab', () => {
 	it('declares a case-documents widget', () => {
@@ -39,16 +42,30 @@ describe('CaseDetail Documents tab', () => {
 		expect(documents.title).toBe('Documents')
 	})
 
-	it('sits in the tab strip before Files', () => {
-		const ids = tabs.map((tab) => tab.widgetId)
-		expect(ids).toContain('case-documents')
-		expect(ids.indexOf('case-documents')).toBeLessThan(ids.indexOf('case-files'))
+	it('is the first section of the Documents tab', () => {
+		const where = caseTabOf('case-documents')
+		expect(where, 'case-documents is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('Documents')
+		expect(where.label).toBe('Documents')
 	})
 
-	it('keeps the Files tab for loose attachments', () => {
-		const files = tabs.find((tab) => tab.widgetId === 'case-files')
+	it('keeps Files for loose attachments, under it in the same tab', () => {
+		// D5 said removing Files would drop the files leaf's share and comment
+		// surface, and it was right. Files did not leave the page when the strip
+		// came down to six tabs, it left the STRIP: it is the second section of
+		// this tab, below the dossier, which is the order that says which one is
+		// the case file.
+		const files = caseTabOf('case-files')
 		expect(files, 'D5: removing Files would drop the share surface').toBeTruthy()
+		expect(files.tab).toBe('Documents')
 		expect(files.label).toBe('Files')
+
+		const sections = caseWidget('case-documents-panel').content.sections.map(
+			(section) => section.widget.id,
+		)
+		expect(sections.indexOf('case-documents')).toBeLessThan(
+			sections.indexOf('case-files'),
+		)
 	})
 
 	it('stays out of layout, so the tabs widget renders it once', () => {

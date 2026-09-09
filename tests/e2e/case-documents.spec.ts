@@ -32,6 +32,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
@@ -130,13 +131,16 @@ async function openDocumentsTab(page, id: string) {
 	await page.goto(`/apps/${REGISTER}/cases/${id}`)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	const strip = page.locator('.cn-tabs-widget')
-	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /Documents|Documenten/ }).click()
-
-	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(panel.locator('.dossier-tab')).toBeVisible({ timeout: 20_000 })
-	return panel
+	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// instead of fourteen, a tab carries two collections, so an assertion made
+	// against the panel root can be satisfied by the wrong half of it. The
+	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
+	// moves one table rather than every spec that opens a panel.
+	//
+	// It is a testid and not a widget id because CnDetailPage sets `aria-label`
+	// to the manifest widget id only on the top-level widgets it lays out, so a
+	// widget rendered inside a tab carries no such label.
+	return await openCasePanel(page, 'documents')
 }
 
 /**
@@ -445,7 +449,7 @@ test.describe('Case detail — the Documents tab', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		const tab = strip.getByRole('tab', { name: /Documents|Documenten/ })
+		const tab = strip.getByRole('tab', { name: 'Documents', exact: true })
 		await tab.click()
 
 		const panelId = await tab.getAttribute('aria-controls')
@@ -459,10 +463,20 @@ test.describe('Case detail — the Documents tab', () => {
 			timeout: 20_000,
 		})
 
-		// The Files tab is a DIFFERENT panel and stays (design D5).
+		// Files is no longer a tab of its own: it is the SECOND SECTION of this
+		// same panel, which is how the strip came down from fourteen tabs to
+		// six without losing the files leaf's share and comment surface (design
+		// D5). Assert both sections are here, so a fold that quietly dropped one
+		// of them fails rather than reading as a successful consolidation.
 		await expect(
-			strip.getByRole('tab', { name: /Files|Bestanden/ }),
-		).toBeVisible()
+			strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }),
+		).toHaveCount(0)
+		await expect(
+			panel.locator('[data-testid="case-section-case-documents"]'),
+		).toBeVisible({ timeout: 20_000 })
+		await expect(
+			panel.locator('[data-testid="case-section-case-files"]'),
+		).toBeVisible({ timeout: 20_000 })
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
@@ -639,8 +653,27 @@ test.describe('Case detail — the Documents tab', () => {
 		// is an input, not a button), and the menu itself is appended to the
 		// body, so the entry is found on the page.
 		await row.getByRole('button').last().click()
+
+		// 🔴 THE ENTRY IS A `menuitem`, NOT A `button`. `NcActions` decides its
+		// own semantics from what it holds: every child here is an
+		// `NcActionButton`, so `actionsMenuSemanticType` resolves to `menu`, the
+		// component provides `isInSemanticMenu`, and `NcActionButton` puts
+		// `role="menuitem"` ON the `<button>` (its `<li>` takes
+		// `role="presentation"`). An explicit role REPLACES the implicit one, so
+		// `getByRole('button', …)` cannot match a menu entry at all — it waited
+		// the full budget and reported `locator.click: Timeout` on an entry that
+		// was on screen the whole time, which reads as a menu that never opened.
+		//
+		// The toggle on the line above keeps `role="button"` because it sits in
+		// the row rather than in the menu, which is why only the SECOND click
+		// failed and the first looked fine.
+		//
+		// Asserting the menu role is the accessible truth rather than a
+		// workaround: if an `NcActionInput` is ever added here the menu becomes a
+		// `dialog`, the entries go back to plain buttons, and this line should
+		// fail and be read again.
 		await page
-			.getByRole('button', { name: /Version history|Versiegeschiedenis/ })
+			.getByRole('menuitem', { name: /Version history|Versiegeschiedenis/ })
 			.click()
 
 		const versionPanel = panel.locator('.dossier-version-panel')
