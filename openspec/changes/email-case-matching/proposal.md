@@ -87,3 +87,40 @@ addresses.
   case creation.
 - With the instance toggle off, the user toggle off, or the register unconfigured, the job performs
   zero OpenRegister writes.
+
+---
+
+## Addendum: the shared mailbox, added 2026-09-08
+
+The change as written covers the per-user NC Mail matcher and explicitly scoped
+`InboundEmailJob` out. That was right about the matcher and wrong about one
+thing it left standing: the shared functional mailbox loses mail, and the
+change that owns email-to-case matching is where that belongs rather than in a
+second change with the same subject.
+
+Two defects, both silent:
+
+- **The matched path never matched.** `CASE_NUMBER_PATTERN` captures the whole
+  tag, prefix included, and the job handed that string on as a case id. A case
+  id is a uuid and the identifier a case carries is the bare `YYYY-NNNN`, so
+  every mail the job logged as linked was archived against a case that does not
+  exist. `CaseEmailRepository::findCaseIdByIdentifier()` was sitting unused one
+  directory away. Design decision D2 already noted the mismatch and flagged it
+  as somebody else's defect fix; it is fixed here.
+- **The unmatched path did nothing at all**, not even a debug line, so an
+  instance losing every inbound message looked exactly like an instance
+  receiving none.
+
+Design decision **D4 is revised for this source only**, with the reasoning
+recorded there: a per-user mailbox that creates nothing is right, a published
+functional mailbox that creates nothing is a hole. Creation is opt-in through
+`email_fallback_case_type`, empty by default.
+
+Also in this addendum: `AssigneeResolver`, because the same absence shows up in
+task creation. The `{{ case.assignee }}` plus `assigneeFallback` rule existed
+once, inline in `DossiqAskPersonNode`, while `CreateTaskHandler` copied the
+authored string onto the task verbatim and the status checklist named nobody.
+Three behaviours for one rule, which is how the archival defect above happened.
+
+**Phases 1 to 4 remain open.** Nothing in this addendum implements the per-user
+`CaseEmailMatchService` or `CaseEmailMatchJob`.

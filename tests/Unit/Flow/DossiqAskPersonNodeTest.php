@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
+use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
@@ -134,7 +135,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
+		return new DossiqAskPersonNode($settings, new AssigneeResolver(new NullLogger()), $l10n, new NullLogger());
 	}//end node()
 
 	/**
@@ -581,7 +582,7 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
+		return new DossiqAskPersonNode($settings, new AssigneeResolver(new NullLogger()), $l10n, new NullLogger());
 	}//end nodeReturning()
 
 	/**

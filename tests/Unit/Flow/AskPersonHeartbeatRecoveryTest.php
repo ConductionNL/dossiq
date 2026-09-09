@@ -48,6 +48,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
 
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
+use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\FlowClaim;
 use OCA\OpenRegister\Db\FlowDefinition;
@@ -317,7 +318,7 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, $l10n, new NullLogger());
+		return new DossiqAskPersonNode($settings, new AssigneeResolver(new NullLogger()), $l10n, new NullLogger());
 	}//end askPersonNode()
 
 	/**

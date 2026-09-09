@@ -82,11 +82,36 @@ this change does not promise IMAP round-trips per message. This limitation is ac
 documented in the settings UI help text; the shared-core extraction (D6) is the right place to give
 body retrieval a proper leaf-side home.
 
-### D4 — Strict no-auto-create
+### D4 — Strict no-auto-create, revised: opt-in auto-create for the shared mailbox
 
-`linkedTypes: ["mail"]` without `mailObjectTemplate` is the current, deliberate posture: mail can be
-attached to cases, mail cannot spawn cases. This change preserves it exactly (REQ-ECM-005). Anything
-else would let an inbound email create ZGW case records with no intake validation.
+**Originally:** `linkedTypes: ["mail"]` without `mailObjectTemplate` is the current, deliberate
+posture: mail can be attached to cases, mail cannot spawn cases (REQ-ECM-005). Anything else would
+let an inbound email create ZGW case records with no intake validation.
+
+**Revised, and the reason is the outcome the original did not price in.** The
+matcher this change describes runs over per-user NC Mail accounts, where "no
+match, no action" is right: those are personal mailboxes and most of what
+arrives has nothing to do with a case. The SHARED functional mailbox is a
+different object. It exists because a municipality publishes it as the way to
+write in, so a message that matches nothing there is not noise, it is somebody
+asking for something. `InboundEmailJob` dropped it with no case, no task, and
+no log line, which meant an instance losing every inbound message looked exactly
+like an instance receiving none.
+
+So the posture is now split by source:
+
+| source | unmatched mail |
+|---|---|
+| per-user NC Mail accounts (`CaseEmailMatchJob`) | no action, unchanged (REQ-ECM-005) |
+| the shared functional mailbox (`InboundEmailJob`) | becomes a case of the configured fallback type, or nothing when none is configured (REQ-ECM-009) |
+
+What makes the second safe is the same thing the original was protecting:
+nothing is created unless an administrator names a case type for it. The
+setting is empty by default, so an instance that does not opt in behaves
+exactly as it does today, and there is no default a deployment can inherit by
+accident. The intake validation concern stands and is answered by the choice
+of case type: the fallback type is where an organisation puts its own triage
+lifecycle, not a shortcut past one.
 
 ### D5 — Coexistence with InboundEmailJob
 

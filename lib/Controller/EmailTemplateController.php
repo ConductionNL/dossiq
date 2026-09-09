@@ -69,6 +69,10 @@ class EmailTemplateController extends Controller {
 		'email_poll_interval',
 		'email_poll_batch_size',
 		'email_max_attachment_size',
+		// The case type an unmatched mail becomes a case of. Empty means the
+		// mail stays in the mailbox, which is the default and the behaviour
+		// every instance had before this key existed.
+		'email_fallback_case_type',
 	];
 
 	/**
