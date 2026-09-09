@@ -6,6 +6,27 @@
  * Daily timed background job that polls Mijn Overheid Berichtenbox for the
  * read status of previously sent citizen messages.
  *
+ * 🔴 THIS JOB IS DELIBERATELY NOT REGISTERED, AND THAT IS WHY THIS PARAGRAPH
+ * EXISTS. It carries no `<job>` entry in `appinfo/info.xml`, so Nextcloud
+ * never schedules it and it has never run on any instance. Left undocumented
+ * that is its own small lie: an unregistered job and a job that runs daily and
+ * finds nothing produce exactly the same evidence, which is an empty log and a
+ * read status that never changes. Anyone auditing the Berichtenbox channel
+ * would have had to read `info.xml` to tell the two apart.
+ *
+ * It stays unregistered because there is nothing on the other end. Integriq
+ * ships only `BerichtenboxClientMock`; the live `BerichtenboxClientHttp` its
+ * own docblock names does not exist, and it waits on Logius BBK 1.7 OAuth
+ * credentials and a PKIoverheid Services-server certificate, which is a
+ * procurement item rather than a coding one. Scheduling this job today would
+ * poll a mock every 24 hours and write back a read status the mock invents an
+ * hour after send. A cron that appears to confirm citizens are reading their
+ * post, while no post has left the instance, is worse than no cron.
+ *
+ * Register it in the same change that binds a real Berichtenbox transport, not
+ * before. See `openspec/changes/dossiq-delivers-nothing/proposal.md`, delivery
+ * inventory item 5, where this is staged as phase 4.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
