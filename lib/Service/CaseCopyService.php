@@ -198,15 +198,68 @@ class CaseCopyService {
 		$payload['title'] = $this->titleFor(source: $source, options: $options);
 		$payload['startDate'] = date('Y-m-d');
 
-		// `status` is deliberately absent rather than set: `caseType` carries an
-		// x-openregister-prefill block (status <- initialStatus) and that is the
-		// one write path for a new case's status. Setting it here would be a
-		// second, and the two would disagree the day a case type's initial
-		// status moves.
+		// THE COPY OPENS AT ITS TYPE'S INITIAL STATUS, written here.
+		//
+		// This used to be left out on the grounds that `case.caseType` carries
+		// `x-openregister-prefill` (`status <- initialStatus`) and that this
+		// was the one write path for a new case's status. It is not. That
+		// block fills a FORM when a picker resolves; it does not run on a
+		// write. Measured against a running register: create a case through
+		// the API, naming a case type whose `initialStatus` is set, and pass
+		// no status — the stored case has `status: null`.
+		//
+		// So every copy landed with no status at all. A case with no status is
+		// off every status-filtered lens, has no available transitions, and
+		// reads as Unknown in the header — from an action whose whole promise
+		// is a case you can start work on.
+		//
+		// Read at copy time rather than carried from the source, which is the
+		// original reasoning and still right: a copy starts at the beginning,
+		// not wherever the case it was copied from had got to.
+		$initial = $this->initialStatusOf(caseType: (string)($source['caseType'] ?? ''));
+		if ($initial !== '') {
+			$payload['status'] = $initial;
+		}
+
 		$payload['relatedCases'] = $this->relationTo(caseId: $caseId);
 
 		return $payload;
 	}//end buildPayload()
+
+	/**
+	 * The initial status a case type opens its cases at.
+	 *
+	 * Fails soft: a type that does not resolve, or one with no initial status,
+	 * gives an empty string and the copy is written without a status rather
+	 * than refused. That is the state a case of such a type would be in
+	 * however it was created, so a copy is no worse off than an original.
+	 *
+	 * @param string $caseType The case type's id.
+	 *
+	 * @return string The status id, or '' when there is none.
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	private function initialStatusOf(string $caseType): string {
+		if ($caseType === '') {
+			return '';
+		}
+
+		$context = $this->context();
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if ($schema === '') {
+			return '';
+		}
+
+		$type = $this->fetch(
+			objectService: $context['objectService'],
+			register: $context['register'],
+			schema: $schema,
+			id: $caseType
+		);
+
+		return (string)($type['initialStatus'] ?? '');
+	}//end initialStatusOf()
 
 	/**
 	 * The copy's title.

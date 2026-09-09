@@ -1547,6 +1547,7 @@ OC.L10N.register(
         "Kon verordeningen niet laden": "Could not load ordinances",
         "KPI": "KPI",
         "KPI overzicht": "KPI overzicht",
+        "KvK number": "KvK number",
         "Kwijtgescholden": "Waived",
         "Laag": "Laag",
         "Label": "Label",
@@ -1563,6 +1564,7 @@ OC.L10N.register(
         "Layers": "Layers",
         "Leave": "Leave",
         "Legal basis": "Legal basis",
+        "Legal form": "Legal form",
         "Legal Grounds": "Legal Grounds",
         "Legal reasoning and grounds...": "Legal reasoning and grounds...",
         "Lege agenda": "Empty agenda",
@@ -2146,6 +2148,7 @@ OC.L10N.register(
         "Pick a tenant": "Pick a tenant",
         "Plaats": "Plaats",
         "Plaatsvervanger": "Plaatsvervanger",
+        "Place": "Place",
         "Plan appointment": "Plan appointment",
         "Planned": "Planned",
         "Please choose a valid category": "Please choose a valid category",
@@ -3775,7 +3778,8 @@ OC.L10N.register(
         "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.": "The adapter class named in %1$s cannot be used: %2$s is missing or does not implement the seam. A mock adapter is running in its place.",
         "The adapter class named in %1$s could not be built. A mock adapter is running in its place.": "The adapter class named in %1$s could not be built. A mock adapter is running in its place.",
         "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.",
-        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class."
+        "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.",
+        "We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above.": "We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above."
     },
     "nplurals=2; plural=(n != 1);"
 )

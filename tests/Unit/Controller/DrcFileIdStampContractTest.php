@@ -70,6 +70,19 @@ interface DrcStampObjectServiceStub {
  * absent and the write happened to occur anyway.
  *
  * @covers \OCA\Dossiq\Controller\DrcController
+ *
+ * DrcController extends ZgwController, which composes NormalisesObjectRows, so
+ * exercising it necessarily runs code declared on both. CI runs phpunit.xml
+ * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
+ * executed-but-unlisted code risky and fails the run.
+ *
+ * This is invisible on a developer box with no coverage driver: PHPUnit cannot
+ * see which classes a test executed, so it reports neither risky test and
+ * exits 0. CI is the only instrument that can fail this check, and it did:
+ * six PHPUnit legs, on `OCA\Dossiq\Support\NormalisesObjectRows`.
+ *
+ * @uses \OCA\Dossiq\Controller\ZgwController
+ * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class DrcFileIdStampContractTest extends TestCase {
 

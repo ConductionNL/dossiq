@@ -18,8 +18,12 @@
  * locales for the same reason.
  *
  * THE TAB PANELS ARE LAZY and the sidebar has tabpanels of its own, so the
- * Related cases assertions address the OPEN PANEL inside the strip,
- * `[role="tabpanel"]:not([hidden])`, and never a page-wide locator.
+ * Related cases assertions address the OPEN PANEL inside the strip, and never
+ * a page-wide locator. They take `.cn-tabs__content`'s DIRECT children rather
+ * than descending: the related-objects widget renders a
+ * `<section role="tabpanel">` of its own inside the panel, so a descendant
+ * query matches two elements and every assertion on it fails as a strict mode
+ * violation rather than as anything about the tab.
  */
 
 import { expect, test } from '@playwright/test'
@@ -35,7 +39,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import { tickCheckbox, trackDossiqErrors } from './helpers/nav.ts'
 
 /** The case types this suite seeds: one that allows a flow, one that does not. */
 let typeWithFlows = ''
@@ -181,7 +185,14 @@ test.describe('The case Actions menu', () => {
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
 		// The title is proposed, not blank: the button is enabled straight away.
-		const title = dialog.getByTestId('case-copy-title').locator('input')
+		//
+		// 🔴 NO `.locator('input')`. `NcTextField` sets `inheritAttrs: false` and
+		// merges `$attrs` onto the control, so `data-testid` lands ON the
+		// `<input>` itself. Asking for an input INSIDE it searches an element
+		// that has no children, matches nothing, and reports
+		// `element(s) not found` after the full timeout, which reads as a
+		// dialog that never opened rather than as a locator one level too deep.
+		const title = dialog.getByTestId('case-copy-title')
 		await expect(title).toHaveValue(/Copy of/, { timeout: 20_000 })
 
 		await page.getByTestId('case-copy-confirm').click()
@@ -235,7 +246,11 @@ test.describe('The case Actions menu', () => {
 		const dialog = page.getByTestId('case-copy-dialog')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await dialog.getByTestId('case-copy-documents').locator('input').check()
+		// The same two traps at once: the testid is on the input, and the input
+		// sits under a label span that swallows the click. `tickCheckbox`
+		// clicks the label, which is the control a person clicks, and then
+		// asserts the box really is ticked.
+		await tickCheckbox(dialog.getByTestId('case-copy-documents'))
 		await page.getByTestId('case-copy-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 30_000 })
 
@@ -333,7 +348,9 @@ test.describe('The case Actions menu', () => {
 			.getByRole('tab', { name: /Related cases|Gerelateerde zaken/ })
 			.click()
 
-		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
+		const panel = strip.locator(
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
+		)
 		await expect(panel).toContainText(plannedTitle, { timeout: 30_000 })
 		await expect(panel).toContainText(due, { timeout: 30_000 })
 
