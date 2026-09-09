@@ -125,19 +125,25 @@ class CaseEmailRepository {
 	}//end findTemplatesForCaseType()
 
 	/**
-	 * Load case data for template variable resolution.
+	 * Load the raw case object as OpenRegister serialises it.
 	 *
 	 * The case is loaded through OpenRegister with RBAC enabled, so a case the
 	 * caller may not read comes back as an empty array — which the caller
 	 * treats as 403.
 	 *
+	 * Callers that need the whole record — the recipient policy, which reads
+	 * whichever contact fields the case carries — MUST use this rather than
+	 * `loadCaseVariables()`, whose six-key projection drops every other field.
+	 * Feeding that projection to a contact reader is exactly how the recipient
+	 * allow-list came to be permanently empty (see `CaseContactDirectory`).
+	 *
 	 * @param string $caseId The case UUID
 	 *
-	 * @return array<string, mixed> Case data flattened for variable resolution
+	 * @return array<string, mixed> The raw case object, or [] when unreadable
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
-	public function loadCaseVariables(string $caseId): array {
+	public function loadCaseRecord(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -159,7 +165,27 @@ class CaseEmailRepository {
 			return [];
 		}
 
-		// Flatten for variable resolution.
+		return $caseObj;
+	}//end loadCaseRecord()
+
+	/**
+	 * Project a raw case object onto the template variable names.
+	 *
+	 * Pure: it reads the record it is handed and performs no OpenRegister call,
+	 * so a caller that already holds the record projects it without a second
+	 * read.
+	 *
+	 * @param array<string, mixed> $caseObj The raw case object
+	 *
+	 * @return array<string, mixed> Case data flattened for variable resolution
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function flattenCaseVariables(array $caseObj): array {
+		if ($caseObj === []) {
+			return [];
+		}
+
 		return [
 			'zaakNummer' => $caseObj['identifier'] ?? '',
 			'title' => $caseObj['title'] ?? '',
@@ -168,6 +194,21 @@ class CaseEmailRepository {
 			'status' => $caseObj['status'] ?? '',
 			'handler' => $caseObj['assignee'] ?? '',
 		];
+	}//end flattenCaseVariables()
+
+	/**
+	 * Load case data for template variable resolution.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return array<string, mixed> Case data flattened for variable resolution
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function loadCaseVariables(string $caseId): array {
+		return $this->flattenCaseVariables(
+			caseObj: $this->loadCaseRecord(caseId: $caseId)
+		);
 	}//end loadCaseVariables()
 
 	/**
