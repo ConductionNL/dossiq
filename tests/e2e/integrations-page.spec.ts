@@ -28,6 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -270,24 +271,29 @@ test.describe('Integrations', () => {
 		browser,
 		baseURL,
 	}) => {
+		// LOG IN, do not send credentials. Basic auth does not authenticate
+		// Nextcloud's HTML route here: with the admin jar cleared and
+		// `httpCredentials` set, the page came back with no session at all
+		// (`OC.getCurrentUser` absent). And with the jar NOT cleared it came back
+		// as `uid=admin isAdmin=true`, which is how this test spent its life
+		// asserting the admin's view under a name promising the opposite.
+		//
+		// `captureStorageState` is the sanctioned second session, the one
+		// `dashboard-tiles.spec.ts` uses for the same reason, and its own
+		// docblock carries the warning this test walked into: an OMITTED
+		// `storageState` in a spec silently becomes the admin's.
+		await ensureUser(api, token, PLAIN_USER, PLAIN_PASS)
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+
 		const context = await browser.newContext({
 			baseURL,
-			// EMPTY, NOT OMITTED. `use.storageState` in the config is the ADMIN
-			// cookie jar global-setup writes after the admin login, and a
-			// context created here inherits it. Nextcloud answers from that
-			// session and never looks at the credentials below, so this test
-			// spent its life asserting what an ADMIN sees while its name said
-			// otherwise. Clearing the jar makes the credentials the only
-			// identity in the request.
-			storageState: { cookies: [], origins: [] },
-			httpCredentials: {
-				username: PLAIN_USER,
-				password: PLAIN_PASS,
-				// The dossiq API answers 401 without a WWW-Authenticate header,
-				// so Playwright would never send the credentials on the
-				// challenge. `always` sends them on the first request.
-				send: 'always',
-			},
+			storageState: plainState,
 		})
 		const page = await context.newPage()
 
