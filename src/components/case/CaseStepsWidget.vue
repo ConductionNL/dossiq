@@ -20,12 +20,19 @@
 	<div class="case-steps" data-testid="case-steps">
 		<NcLoadingIcon v-if="loading" :size="24" />
 
+		<!-- Vertical. A status name is a phrase, not a word — "Melding wordt
+		     afgehandeld door beheerdienst" — and laid out left to right those
+		     phrases wrap into stacked columns of text with a track line running
+		     between them, which reads as a table rather than a sequence. Down
+		     the page each stage gets a full line and the track reads as one
+		     spine. The grid rows are content-sized, so the taller tile simply
+		     takes the height it needs. -->
 		<CnTimelineStages
 			v-else-if="stages.length > 0"
 			:stages="stages"
 			:currentStage="currentStage"
 			:ariaLabel="t('dossiq', 'Case progress')"
-			orientation="horizontal"
+			orientation="vertical"
 			size="small" />
 
 		<p v-else class="case-steps__empty">
