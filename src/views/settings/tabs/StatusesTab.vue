@@ -42,23 +42,37 @@
 							<span class="status-type-row__order">{{
 								st.order
 							}}</span>
+							<span
+								class="status-type-row__swatch"
+								:style="swatchStyle(st.colour)"
+								:title="t('dossiq', 'Status colour')" />
 							<span class="status-type-row__name">{{ st.name }}</span>
+							<span v-if="st.role" class="status-type-row__role">
+								{{ roleLabel(st.role) }}
+							</span>
 							<span v-if="st.isFinal" class="status-type-row__final">
 								{{ t('dossiq', 'Final') }}
 							</span>
 							<span
-								v-if="st.notifyInitiator"
-								class="status-type-row__notify">
-								{{ t('dossiq', 'Notify') }}
+								v-if="st.hiddenInLists"
+								class="status-type-row__hidden">
+								{{ t('dossiq', 'Hidden') }}
 							</span>
 							<span
-								v-if="st.notifyInitiator && st.notificationText"
-								class="status-type-row__notify-text">
-								{{ st.notificationText }}
+								v-if="checklistCount(st) > 0"
+								class="status-type-row__checklist">
+								{{
+									n(
+										'dossiq',
+										'%n checklist item',
+										'%n checklist items',
+										checklistCount(st),
+									)
+								}}
 							</span>
 							<div class="status-type-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('dossiq', 'Edit {name}', {
 											name: st.name,
@@ -70,7 +84,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('dossiq', 'Delete {name}', {
 											name: st.name,
@@ -87,64 +101,18 @@
 						<!-- Edit mode -->
 						<template v-else>
 							<div class="status-type-row__edit-form">
-								<div class="edit-row">
-									<NcTextField
-										:modelValue="editForm.name"
-										:label="t('dossiq', 'Name')"
-										:error="!!editError"
-										class="edit-field"
-										@update:modelValue="
-											(v) => (editForm.name = v)
-										" />
-									<NcTextField
-										:modelValue="String(editForm.order)"
-										:label="t('dossiq', 'Order')"
-										type="number"
-										class="edit-field edit-field--small"
-										@update:modelValue="
-											(v) =>
-												(editForm.order =
-													parseInt(v, 10) || 0)
-										" />
-								</div>
-								<div class="edit-row">
-									<NcCheckboxRadioSwitch
-										:modelValue="editForm.isFinal"
-										@update:modelValue="
-											(v) => (editForm.isFinal = v)
-										">
-										{{ t('dossiq', 'Final status') }}
-									</NcCheckboxRadioSwitch>
-									<NcCheckboxRadioSwitch
-										:modelValue="editForm.notifyInitiator"
-										@update:modelValue="
-											(v) => (editForm.notifyInitiator = v)
-										">
-										{{ t('dossiq', 'Notify initiator') }}
-									</NcCheckboxRadioSwitch>
-								</div>
-								<div
-									v-if="editForm.notifyInitiator"
-									class="edit-row">
-									<NcTextField
-										:modelValue="editForm.notificationText"
-										:label="t('dossiq', 'Notification text')"
-										class="edit-field"
-										@update:modelValue="
-											(v) => (editForm.notificationText = v)
-										" />
-								</div>
-								<span v-if="editError" class="field-error">{{
-									editError
-								}}</span>
+								<StatusTypeForm
+									:form="editForm"
+									:error="editError"
+									@update="onEditFieldUpdate" />
 								<div class="edit-row edit-row--actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
 										{{ t('dossiq', 'Save') }}
 									</NcButton>
-									<NcButton type="tertiary" @click="cancelEdit">
+									<NcButton variant="tertiary" @click="cancelEdit">
 										{{ t('dossiq', 'Cancel') }}
 									</NcButton>
 								</div>
@@ -164,56 +132,18 @@
 
 				<!-- Add new status type form -->
 				<div class="statuses-tab__add">
-					<h4>{{ t('dossiq', 'Add Status Type') }}</h4>
-					<div class="add-form">
-						<div class="add-form__row">
-							<NcTextField
-								:modelValue="newForm.name"
-								:label="t('dossiq', 'Name *')"
-								class="add-form__field"
-								@update:modelValue="(v) => (newForm.name = v)" />
-							<NcTextField
-								:modelValue="String(newForm.order)"
-								:label="t('dossiq', 'Order *')"
-								type="number"
-								class="add-form__field add-form__field--small"
-								@update:modelValue="
-									(v) => (newForm.order = parseInt(v, 10) || 0)
-								" />
-						</div>
-						<div class="add-form__row">
-							<NcCheckboxRadioSwitch
-								:modelValue="newForm.isFinal"
-								@update:modelValue="(v) => (newForm.isFinal = v)">
-								{{ t('dossiq', 'Final status') }}
-							</NcCheckboxRadioSwitch>
-							<NcCheckboxRadioSwitch
-								:modelValue="newForm.notifyInitiator"
-								@update:modelValue="
-									(v) => (newForm.notifyInitiator = v)
-								">
-								{{ t('dossiq', 'Notify initiator') }}
-							</NcCheckboxRadioSwitch>
-						</div>
-						<div v-if="newForm.notifyInitiator" class="add-form__row">
-							<NcTextField
-								:modelValue="newForm.notificationText"
-								:label="t('dossiq', 'Notification text')"
-								class="add-form__field"
-								@update:modelValue="
-									(v) => (newForm.notificationText = v)
-								" />
-						</div>
-						<span v-if="addError" class="field-error">{{
-							addError
-						}}</span>
-						<NcButton
-							type="primary"
-							:disabled="addSaving"
-							@click="addStatusType">
-							{{ t('dossiq', 'Add') }}
-						</NcButton>
-					</div>
+					<h4>{{ t('dossiq', 'Add a status') }}</h4>
+					<StatusTypeForm
+						:form="newForm"
+						:error="addError"
+						@update="onNewFieldUpdate" />
+					<NcButton
+						variant="primary"
+						:disabled="addSaving"
+						data-testid="status-type-add"
+						@click="addStatusType">
+						{{ t('dossiq', 'Add') }}
+					</NcButton>
 				</div>
 			</template>
 
@@ -225,25 +155,27 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcCheckboxRadioSwitch,
-	NcLoadingIcon,
-	NcTextField,
-} from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import StatusTypeForm from '../components/StatusTypeForm.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { statusColourStyle } from '../../../utils/statusColour.js'
+import {
+	emptyStatusTypeForm,
+	formToStatusType,
+	pruneChecklist,
+	statusTypeToForm,
+} from '../../../utils/statusTypeForm.js'
 
 export default {
 	name: 'StatusesTab',
 	components: {
 		NcButton,
 		NcLoadingIcon,
-		NcTextField,
-		NcCheckboxRadioSwitch,
 		PencilIcon,
 		DeleteIcon,
+		StatusTypeForm,
 	},
 
 	props: {
@@ -264,12 +196,12 @@ export default {
 			loading: false,
 			error: '',
 			// Add form
-			newForm: this.getEmptyForm(),
+			newForm: emptyStatusTypeForm(1),
 			addError: '',
 			addSaving: false,
 			// Edit form
 			editingId: null,
-			editForm: {},
+			editForm: emptyStatusTypeForm(1),
 			editError: '',
 			editSaving: false,
 			// Drag state
@@ -300,15 +232,46 @@ export default {
 	},
 
 	methods: {
-		/** @spec openspec/specs/status-transition-engine/spec.md */
-		getEmptyForm() {
-			return {
-				name: '',
-				order: this.statusTypes ? this.statusTypes.length + 1 : 1,
-				isFinal: false,
-				notifyInitiator: false,
-				notificationText: '',
+		/**
+		 * The swatch a row is drawn with.
+		 *
+		 * @param {unknown} colour The stored colour.
+		 * @return {object} The style object.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		swatchStyle(colour) {
+			return { backgroundColor: statusColourStyle(colour).backgroundColor }
+		},
+
+		/**
+		 * How many checklist items a status asks for.
+		 *
+		 * @param {object} st The status type.
+		 * @return {number} The count of items that would become a task.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		checklistCount(st) {
+			return pruneChecklist(st?.checklist).length
+		},
+
+		/**
+		 * The reader's word for a role.
+		 *
+		 * @param {string} role The stored role.
+		 * @return {string} The label.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		roleLabel(role) {
+			const labels = {
+				intake: t('dossiq', 'Intake'),
+				'pending-info': t('dossiq', 'Waiting for information'),
+				'in-progress': t('dossiq', 'In progress'),
+				review: t('dossiq', 'Review'),
+				closed: t('dossiq', 'Closed'),
+				stranded: t('dossiq', 'Stranded'),
 			}
+
+			return labels[role] || role
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
@@ -324,6 +287,24 @@ export default {
 				this.error = e.message
 			}
 			this.loading = false
+		},
+
+		/**
+		 * @param {string} field The field name.
+		 * @param {string|number|boolean|Array} value The new value.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		onNewFieldUpdate(field, value) {
+			this.newForm = { ...this.newForm, [field]: value }
+		},
+
+		/**
+		 * @param {string} field The field name.
+		 * @param {string|number|boolean|Array} value The new value.
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		onEditFieldUpdate(field, value) {
+			this.editForm = { ...this.editForm, [field]: value }
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
@@ -353,7 +334,7 @@ export default {
 
 			this.addSaving = true
 			const data = {
-				...this.newForm,
+				...formToStatusType(this.newForm),
 				caseType: this.caseTypeId,
 			}
 
@@ -362,13 +343,7 @@ export default {
 
 			if (result) {
 				this.statusTypes.push(result)
-				this.newForm = {
-					name: '',
-					order: this.statusTypes.length + 1,
-					isFinal: false,
-					notifyInitiator: false,
-					notificationText: '',
-				}
+				this.newForm = emptyStatusTypeForm(this.statusTypes.length + 1)
 			} else {
 				this.addError =
 					this.objectStore.getError('statusType')
@@ -382,14 +357,14 @@ export default {
 		 */
 		startEdit(st) {
 			this.editingId = st.id
-			this.editForm = { ...st }
+			this.editForm = statusTypeToForm(st)
 			this.editError = ''
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		cancelEdit() {
 			this.editingId = null
-			this.editForm = {}
+			this.editForm = emptyStatusTypeForm(1)
 			this.editError = ''
 		},
 
@@ -434,7 +409,7 @@ export default {
 			this.editSaving = true
 			const result = await this.objectStore.saveObject(
 				'statusType',
-				this.editForm,
+				formToStatusType(this.editForm),
 			)
 			this.editSaving = false
 
@@ -446,7 +421,7 @@ export default {
 					this.statusTypes[idx] = result
 				}
 				this.editingId = null
-				this.editForm = {}
+				this.editForm = emptyStatusTypeForm(1)
 			} else {
 				this.editError =
 					this.objectStore.getError('statusType')
@@ -546,9 +521,14 @@ export default {
 			this.dragOverIndex = null
 			this.dragIndex = null
 
-			// Persist changes
+			// Persist changes. Reordering writes the WHOLE row back, so it goes
+			// through the same mapping the edit form does: a partial save here
+			// would drop the colour, role and checklist off every row it moved.
 			for (const st of updates) {
-				await this.objectStore.saveObject('statusType', st)
+				await this.objectStore.saveObject(
+					'statusType',
+					formToStatusType(statusTypeToForm(st)),
+				)
 			}
 		},
 
@@ -619,6 +599,15 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+.status-type-row__swatch {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border-radius: 3px;
+	border: 1px solid var(--color-border);
+	flex: 0 0 auto;
+}
+
 .status-type-row__name {
 	flex: 1;
 	font-weight: 500;
@@ -633,22 +622,15 @@ export default {
 	color: white;
 }
 
-.status-type-row__notify {
+.status-type-row__role,
+.status-type-row__hidden,
+.status-type-row__checklist {
 	padding: 2px 8px;
 	border-radius: var(--border-radius-pill);
 	font-size: 11px;
 	font-weight: 500;
-	background: var(--color-primary-light);
-	color: var(--color-primary-text);
-}
-
-.status-type-row__notify-text {
-	font-size: 12px;
+	background: var(--color-background-dark);
 	color: var(--color-text-maxcontrast);
-	font-style: italic;
-	max-width: 200px;
-	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
@@ -673,14 +655,6 @@ export default {
 	margin-top: 8px;
 }
 
-.edit-field {
-	flex: 1;
-}
-
-.edit-field--small {
-	max-width: 80px;
-}
-
 .statuses-tab__add {
 	border-top: 2px solid var(--color-border);
 	padding-top: 16px;
@@ -688,21 +662,6 @@ export default {
 
 .statuses-tab__add h4 {
 	margin-bottom: 12px;
-}
-
-.add-form__row {
-	display: flex;
-	gap: 12px;
-	margin-bottom: 8px;
-	align-items: center;
-}
-
-.add-form__field {
-	flex: 1;
-}
-
-.add-form__field--small {
-	max-width: 80px;
 }
 
 .statuses-tab__empty {
@@ -714,13 +673,6 @@ export default {
 .statuses-tab__error {
 	color: var(--color-error);
 	margin-top: 12px;
-}
-
-.field-error {
-	display: block;
-	color: var(--color-error);
-	font-size: 12px;
-	margin-bottom: 8px;
 }
 
 @media (prefers-reduced-motion: reduce) {

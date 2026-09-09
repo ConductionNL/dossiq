@@ -528,9 +528,6 @@
     }
   },
   "src/views/settings/CaseTypeDetail.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -741,11 +738,6 @@
     }
   },
   "src/views/settings/tabs/RolesTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 5
-    }
-  },
-  "src/views/settings/tabs/StatusesTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 5
     }
