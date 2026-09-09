@@ -112,14 +112,38 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		// indistinguishable from "besluitvorming was deleted": the leaf is what
 		// carries the capability now, and it is registered by decidiq's init
 		// script on every page, not by dossiq.
-		// THREE OUTCOMES, not two. The previous version returned `null` both when
-		// the registry was absent and when the leaf was missing from it, then
-		// reported every null as "registry not present" — so a real missing leaf
-		// would have been described as an environment problem, and an
-		// environment problem (this repo's CI does not install the decision app)
-		// was reported as a missing leaf. A lookup failure must not wear the same
-		// words as a judgement.
+		// FOUR OUTCOMES, not three. The previous version read the ABSENCE OF THE
+		// REGISTRY as "the decision app is not installed", and those are two
+		// different apps: the registry is OpenRegister's, installed by its
+		// `openregister-integration-global` bundle on every page. That bundle
+		// was never built in CI (openregister gitignores `/js/`, and the shared
+		// workflow cloned it without building), so the registry was absent on
+		// every run and this test skipped on every run, reporting a fact about
+		// openregister's packaging in the words of decidiq's absence. A skip
+		// renders exactly like a pass, so it read as covered for as long as it
+		// existed.
+		//
+		// ConductionNL/.github#722 builds that bundle, and the moment it did,
+		// this test started running and failing — correctly, because decidiq
+		// really is not installed here. So the guard now asks the question it
+		// was always meant to ask, of the right app.
+		//
+		// `OC.appswebroots` is how Nextcloud itself resolves an installed app,
+		// and it is already this suite's probe for exactly this (see
+		// dutch-value-l10n.spec.ts). BOTH ids are accepted: the fleet rename is
+		// in flight and `lib/Support/FleetAppId.php` maps
+		// `decidiq => ['decidiq', 'decidesk']`, so naming only one would make
+		// this skip on whichever side of the rename the instance is on.
 		const probe = await page.evaluate(() => {
+			const oc = (
+				window as unknown as {
+					OC?: { appswebroots?: Record<string, string> }
+				}
+			).OC
+			const roots = oc?.appswebroots ?? {}
+			const decisionsApp =
+				['decidiq', 'decidesk'].find((id) => id in roots) ?? null
+
 			const registry = (
 				window as unknown as {
 					OCA?: {
@@ -128,12 +152,13 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 				}
 			).OCA?.OpenRegister?.integrations
 			if (!registry?.list) {
-				return { registry: false as const }
+				return { decisionsApp, registry: false as const }
 			}
 
 			const entries = registry.list() as Array<{ id?: string; tab?: unknown }>
 			const found = entries.find((entry) => entry.id === 'decidesk-decisions')
 			return {
+				decisionsApp,
 				registry: true as const,
 				ids: entries.map((entry) => entry.id).filter(Boolean),
 				leaf: found
@@ -142,14 +167,24 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 			}
 		})
 
-		// No registry at all = the decision app is not installed on this
-		// instance. That is an environment fact, not a defect in this repo, and
-		// dossiq's CI does not install it. Skip with the reason stated, rather
-		// than failing red on something this PR cannot affect.
+		// THE ONLY ENVIRONMENT FACT THAT EARNS A SKIP: the app that registers
+		// the leaf is not on this instance. dossiq's CI installs openregister
+		// and nothing else, so this is the branch CI takes — but it now says so
+		// about the app it actually measured.
 		test.skip(
-			probe.registry === false,
-			'OpenRegister integration registry absent — the decision app is not installed on this instance',
+			probe.decisionsApp === null,
+			'neither `decidiq` nor `decidesk` is installed on this instance, so nothing can register the decisions leaf',
 		)
+
+		// The decisions app IS installed. An absent registry is now a REAL
+		// failure and must not be skipped past: it means OpenRegister shipped
+		// without its integration bundle, and every integration leaf in this
+		// app is silently rendering nothing. That is the condition that hid
+		// this test for its whole life, so it fails loudly rather than quietly.
+		expect(
+			probe.registry,
+			`\`${probe.decisionsApp}\` is installed but OpenRegister's integration registry is absent, so no integration leaf can render. Its \`openregister-integration-global\` bundle is missing — an unbuilt openregister checkout serves nothing to register the providers with.`,
+		).toBe(true)
 
 		// Registry present: now a missing leaf IS a real finding, and the message
 		// can name what was actually registered instead of guessing.

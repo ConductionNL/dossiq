@@ -28,6 +28,7 @@ use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\IAppConfig;
@@ -52,6 +53,7 @@ class DsoDeadlineJob extends TimedJob {
 	 * @param ContainerInterface $container The DI container
 	 * @param INotificationManager $notificationManager The notification manager
 	 * @param LoggerInterface $logger The logger
+	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic
 	 */
 	public function __construct(
 		ITimeFactory $timeFactory,
@@ -59,6 +61,7 @@ class DsoDeadlineJob extends TimedJob {
 		private readonly ContainerInterface $container,
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
+		private readonly WorkingDayCalculator $workingDays,
 	) {
 		parent::__construct(time: $timeFactory);
 		$this->setInterval(seconds: 24 * 3600);
@@ -211,34 +214,17 @@ class DsoDeadlineJob extends TimedJob {
 	/**
 	 * Determine whether a date is a working day (not weekend, not public holiday).
 	 *
+	 * Delegates to WorkingDayCalculator. This job used to carry its own copy of
+	 * the rule that knew only the five fixed holidays, so the countdown it
+	 * reports overstated the time left by the four Easter-derived weekday
+	 * holidays every year.
+	 *
 	 * @param \DateTimeImmutable $date The date to check
 	 *
 	 * @return bool
 	 */
 	private function isWorkingDay(\DateTimeImmutable $date): bool {
-		$dayOfWeek = (int)$date->format('N');
-		if ($dayOfWeek >= 6) {
-			return false;
-		}
-
-		$month = (int)$date->format('n');
-		$day = (int)$date->format('j');
-
-		$holidays = [
-			[1, 1],
-			[4, 27],
-			[5, 5],
-			[12, 25],
-			[12, 26],
-		];
-
-		foreach ($holidays as $holiday) {
-			if ($holiday[0] === $month && $holiday[1] === $day) {
-				return false;
-			}
-		}
-
-		return true;
+		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
 
 	/**

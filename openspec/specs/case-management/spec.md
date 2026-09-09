@@ -1144,6 +1144,159 @@ sidebar can group on it.
 - **THEN** the list SHALL show only the building rows
 - **AND** All objects SHALL bring every row back
 
+### Requirement: You copy a case from its page (REQ-CM-24)
+
+You copy a case with its type, requester and properties into a new case. The
+Actions menu of `CaseDetail` SHALL offer Copy case. Confirming SHALL create a
+new case of the same type in the type's initial status, carrying the source's
+requester, confidentiality, priority, intake channel and properties, with the
+source listed under related cases. The number, deadline, result, status
+history, decisions and publications SHALL NOT be copied. When you tick Include
+documents, the source's open documents SHALL be linked to the new case, not
+duplicated.
+
+**Feature tier**: V1
+
+#### Scenario: A handler copies a case
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case of type Melding openbare ruimte with a requester and two filled properties
+- **WHEN** the handler chooses Copy case and confirms with the proposed title
+- **THEN** a new case SHALL open with the same type, requester and property values
+- **AND** its status SHALL be the type's initial status
+- **AND** its number SHALL differ from the source's number
+- **AND** the source SHALL be listed under its related cases
+
+#### Scenario: Documents come along as links
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case with one document
+- **WHEN** the handler copies it with Include documents ticked
+- **THEN** the new case's Documents tab SHALL list that document
+- **AND** the file SHALL exist once in storage
+
+#### Scenario: A reader cannot copy
+@e2e exclude Playwright signs in as admin and cannot take a lesser role; PHPUnit covers the refusal in CaseActionsControllerTest, which asserts the guard is asked before the service and that no case is created
+
+- **GIVEN** a user who may read the case but not write cases
+- **WHEN** they post to the copy endpoint
+- **THEN** the answer SHALL be 403
+- **AND** no case SHALL be created
+
+### Requirement: REQ-CASE-LTA-001 The Cases index MUST offer a Due this week lens
+
+You see the week ahead without reading every deadline. The `Cases` page SHALL
+carry a Due this week chip after Overdue, filtering
+`deadline[gte] = "@today"`, `deadline[lt] = "@today+7d"` and
+`isFinalStatus = false`.
+
+The window is half-open on both sides. Without the near edge the chip would
+list every overdue case as well and still read as a plausible list, which is
+the failure mode a reader cannot see.
+
+The chip SHALL NOT carry a `statusHiddenInLists` condition, matching its
+sibling Overdue rather than All.
+
+#### Scenario: Due this week shows the case due in three days and neither neighbour
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open case due in three days, an open case due in thirty days and an open case that was due two days ago
+- **WHEN** you choose the chip Due this week
+- **THEN** the list SHALL show the case due in three days
+- **AND** the list SHALL NOT show the case due in thirty days
+- **AND** the list SHALL NOT show the case that was due two days ago
+
+### Requirement: The case task is namespaced (REQ-CM-070)
+
+The case task schema SHALL be `caseTask` and SHALL NOT be `task`. planninq's
+project task keeps the bare slug; pipelinq uses `crmTask`.
+
+The three claiming schemas share `description`, `priority` and `status` alone,
+so all three are renamed apart rather than folded onto one owner.
+
+Every local schema-id map keyed by the slug SHALL move with it, including
+`KpiAggregationService::ids()` and `DemoCaseloadGateway::schemaIds()`, together
+with their declared array shapes. A reader renamed without its builder resolves
+to null and fails several frames away, where the cause is no longer visible.
+
+`tests/e2e/ci-seed.sh` SHALL name the new slug in its required-schema list.
+
+The rename SHALL NOT touch `task` where it is a row or item type label:
+`WorkQueueService`'s `itemType`, or the `type` key in
+`CaseReassignmentService`, `BulkReassignModal`, `taskApi` and
+`dashboardHelpers`.
+
+#### Scenario: The KPI counts still resolve their schema
+
+- **WHEN** the dashboard KPIs are computed
+- **THEN** the task count resolves a schema id rather than null.
+
+#### Scenario: The demo caseload still seeds its tasks
+
+- **WHEN** the demo caseload is seeded
+- **THEN** each task is created against a resolved schema id.
+
+### Requirement: REQ-CM-31 Open work by default, closed work on request
+
+Your work list shows open cases only unless you ask for closed ones. On the
+`Cases` page the chips Mine and Unclaimed MUST carry `isFinalStatus = false`
+and the chip Closed MUST carry `isFinalStatus = true`, so a closed case
+appears under Closed and under All and nowhere else. `isFinalStatus` is a
+stored boolean on every case row, so plain equality reaches it and no
+derived filter is needed.
+
+#### Scenario: A closed case leaves Mine
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a case assigned to the signed-in user whose status is final
+- **WHEN** you open the Cases page with the chip Mine active
+- **THEN** the list SHALL NOT show the closed case
+
+#### Scenario: Closed shows the closed case
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a case whose status is final and an open case
+- **WHEN** you choose the chip Closed
+- **THEN** the list SHALL show the closed case and SHALL NOT show the open one
+
+### Requirement: REQ-CM-32 Deadline before in the sidebar
+
+You narrow the case list on a deadline. The `Cases` page sidebar MUST offer
+a filter Deadline before, a date input that adds `deadline lt <date>` to the
+active query.
+
+**[blocked: the index sidebar has no manifest-declared filter and no
+operator]** `CnIndexSidebar` builds its Filters section entirely from the
+SCHEMA — `filtersFromSchema` walks the properties marked `facetable: true`
+and renders each as a checkbox (booleans) or a values select (everything
+else), whose `filter-change` event carries `{ key, values }`. There is no
+manifest key for a sidebar filter, no date input among the widget types and
+no operator anywhere in that path: a facet can only say `field = one of
+these values`, never `field < this date`. Nothing in `@conduction/nextcloud-vue`
+2.41 can express this requirement, so no configuration in this repo
+satisfies it.
+
+Interim, the state is reachable but not offerable: `resolveQueryFilters`
+passes any non-underscore route query through to the fetch, so
+`/cases?deadline[lt]=2026-10-01` narrows the list exactly as this
+requirement describes, and that is the path the Overdue dashboard tiles
+take. What is missing is a control a reader can operate. Unblocking it is a
+nextcloud-vue change: a `sidebar.filters[]` array of
+`{ field, operator, label, type }` on `CnIndexPage`, rendered beside the
+schema facets and merged into the fetch the way the facets already are. It MUST combine with the active chip rather than replace it,
+so Mine plus Deadline before shows your cases due before that date. The
+Requester text filter on `initiatorDisplayName` sits in the same sidebar and
+is specified by `requester-on-the-case` (`initiator-display` REQ-ID-2); this
+requirement does not restate it.
+
+#### Scenario: Deadline before narrows the list
+@e2e exclude The control does not exist to drive: nextcloud-vue 2.41's index sidebar derives its filters from schema `facetable` properties as value lists, with no date input and no operator, so there is no Deadline before field for a spec to fill. The narrowing itself is covered where it IS reachable, by the Overdue tile's View all in tests/e2e/case-list-lenses.spec.ts, which sends `deadline[lt]` through the route query.
+
+- **GIVEN** two open cases assigned to the signed-in user, one due in 3 days and one due in 30 days
+- **WHEN** you set Deadline before to 10 days from today
+- **THEN** the list SHALL show the case due in 3 days and SHALL NOT show the case due in 30 days
+- **AND** the chip Mine SHALL still be active
+
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
 ### REQ-101: Dossiq SHALL expose case-sharing endpoints via CaseSharingController
