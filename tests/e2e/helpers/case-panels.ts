@@ -15,6 +15,23 @@
  * root, because two collections now share a tab: an unscoped assertion inside
  * a merged tab can be satisfied by the wrong half of it, which is a test that
  * passes for the wrong reason.
+ *
+ * 🔴 AND `[aria-label="<widget id>"]` DOES NOT REACH A PANEL, which is the
+ * other half of the same trap. `CnDetailPage` sets that label from the
+ * manifest id only on the widgets it lays out itself, and `case-panels`
+ * renders its children instead of the grid. So a widget that moved into the
+ * strip keeps its id in the manifest and loses the attribute in the DOM, and a
+ * locator naming it matches nothing while the panel renders perfectly.
+ * `case-core` made that move: it is the strip's first tab, `Data`.
+ *
+ * The panels are also LAZY. A panel does not mount, and therefore does not
+ * query, until its tab has been opened once, so the click is part of reaching
+ * the content rather than a convenience.
+ *
+ * Scoping to the strip matters for a third reason: the app sidebar's own
+ * panels carry `role="tabpanel"` too and hide with `aria-hidden` rather than
+ * `hidden`, so an unscoped query matches a hidden sidebar panel as readily as
+ * this one.
  */
 
 import type { Locator, Page } from '@playwright/test'
