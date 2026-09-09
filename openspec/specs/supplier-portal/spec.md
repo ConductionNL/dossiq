@@ -30,7 +30,9 @@ status-note: >-
 
 ## Purpose
 Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Dossiq workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.
+
 ## Requirements
+
 ### Requirement: Supplier-Portal Schemas Are Registered
 
 The system SHALL register seven OpenRegister schemas — `Supplier`, `SupplierUser`,
@@ -565,3 +567,34 @@ app sets enable-newman false. Portaliq now renders the supplier experience.
   contract reference and an email sent to the account manager
 - AND a cross-supplier contract request SHALL return 403
 
+### Requirement: The case supplier invoice is namespaced (REQ-SP-030)
+
+The supplier invoice schema SHALL be `caseSupplierInvoice` and SHALL NOT be
+`supplierInvoice`.
+
+A schema slug is global per organisation and `SchemaMapper::find()` matches
+`LOWER(slug)`, so a bare `supplierInvoice` was answered for by shillinq's
+accounts-payable record as readily as by this app's case-side view. shillinq
+owns the invoice and keeps the bare slug.
+
+They SHALL be renamed apart and SHALL NOT be folded. The two share only
+`invoiceDate` and `dueDate`; there is no invoice number and nothing else that
+identifies the document.
+
+A repair step SHALL rename the row IN PLACE before the register import, scoped
+to this app's own rows, and SHALL be registered in both the post-migration and
+the install block. Enabling the app is a fresh install as far as Nextcloud is
+concerned, so an instance holding the old slug reaches the import through
+either path.
+
+#### Scenario: The slug is renamed in place
+
+- **GIVEN** an install carrying a dossiq-owned `supplierInvoice` schema
+- **WHEN** the repair step runs
+- **THEN** the row keeps its schema id, and so its shard table and objects.
+
+#### Scenario: The register declares the namespaced slug
+
+- **WHEN** the register JSON is read
+- **THEN** `caseSupplierInvoice` is declared and `supplierInvoice` is not, so the
+  import cannot create a second schema behind the renamed row.
