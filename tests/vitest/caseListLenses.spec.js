@@ -31,6 +31,7 @@
  * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
  */
 
+import { TODAY_DELTA_RE } from '@conduction/nextcloud-vue/src/utils/sentinelTokens.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -73,15 +74,21 @@ const chips = (id) => page(id).config.quickFilters
  */
 const chip = (id, label) => chips(id).find((entry) => entry.label === label)
 
+/**
+ * The six lens labels, in the order both index pages declare them.
+ *
+ * ONE list, asserted against both pages, because the parallel between the
+ * two lists is the point rather than a coincidence: a person who learned the
+ * Cases chips has learned the Tasks chips, and only the field underneath
+ * differs. Two separate literals would let the pages drift apart while both
+ * tests stayed green, which is the failure `a-test-that-feeds-two-different-
+ * literals` names.
+ */
+const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
+
 describe('Cases index lenses', () => {
-	it('declares the five chips in order', () => {
-		expect(chips('Cases').map((entry) => entry.label)).toEqual([
-			'All',
-			'Mine',
-			'Unclaimed',
-			'Closed',
-			'Overdue',
-		])
+	it('declares the six chips in order', () => {
+		expect(chips('Cases').map((entry) => entry.label)).toEqual(LENSES)
 	})
 
 	it('marks All as the default chip and nothing else', () => {
@@ -122,19 +129,21 @@ describe('Cases index lenses', () => {
 			'deadline[lt]': '@today',
 		})
 	})
+
+	it('gives Due this week the half-open window on deadline', () => {
+		expect(chip('Cases', 'Due this week').filter).toEqual({
+			isFinalStatus: false,
+			'deadline[gte]': '@today',
+			'deadline[lt]': '@today+7d',
+		})
+	})
 })
 
 describe('Tasks index lenses', () => {
-	it('declares the same first three labels as Cases', () => {
-		expect(chips('Tasks').map((entry) => entry.label)).toEqual([
-			'All',
-			'Mine',
-			'Unclaimed',
-		])
+	it('declares the same six labels as Cases, in the same order', () => {
+		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
-			chips('Cases')
-				.slice(0, 3)
-				.map((entry) => entry.label),
+			chips('Cases').map((entry) => entry.label),
 		)
 	})
 
@@ -153,6 +162,59 @@ describe('Tasks index lenses', () => {
 			assignee: 'IS NULL',
 			isTerminalStatus: false,
 		})
+	})
+
+	it('shows completed tasks under Closed only', () => {
+		expect(chip('Tasks', 'Closed').filter).toEqual({ isTerminalStatus: true })
+	})
+
+	it('spells the two dueDate windows as flat bracket keys', () => {
+		expect(chip('Tasks', 'Overdue').filter).toEqual({
+			isTerminalStatus: false,
+			'dueDate[lt]': '@today',
+		})
+		expect(chip('Tasks', 'Due this week').filter).toEqual({
+			isTerminalStatus: false,
+			'dueDate[gte]': '@today',
+			'dueDate[lt]': '@today+7d',
+		})
+	})
+
+	it('shows the priority the task list has always been specified to show', () => {
+		// REQ-TASK-004's first scenario names priority in the row, and the
+		// column was never declared. `priority` is `facetable`, so it was
+		// reachable through the sidebar facet and absent from the row.
+		const keys = page('Tasks').config.columns.map((column) =>
+			typeof column === 'string' ? column : column.key,
+		)
+		expect(keys).toContain('priority')
+		expect(keys.indexOf('priority')).toBeGreaterThan(keys.indexOf('dueDate'))
+	})
+})
+
+/**
+ * The two chips per page whose filter carries an `@`-token with arithmetic
+ * in it.
+ *
+ * A token that is not in nextcloud-vue's CLOSED sentinel vocabulary does not
+ * error: `resolveFilterValue` returns the string unchanged, `buildQueryString`
+ * sends the literal `@today+7d` to OpenRegister, and the lens shows an empty
+ * list that reads exactly like "no work due this week". `npm run
+ * check:manifest` rejects an out-of-vocabulary token through the schema's
+ * `$defs`, and this holds the same line for the delta grammar specifically,
+ * against the library's own regex rather than a copy of it.
+ */
+describe('the relative-date tokens the windows are built from', () => {
+	it('spells the week edge the way the library parses it', () => {
+		for (const id of ['Cases', 'Tasks']) {
+			const window = chip(id, 'Due this week').filter
+			const far = Object.values(window).find(
+				(value) => typeof value === 'string' && value.startsWith('@today+'),
+			)
+			expect(far, `${id} declares a forward day-delta token`).toBeTruthy()
+			expect(TODAY_DELTA_RE.test(far)).toBe(true)
+			expect(far.match(TODAY_DELTA_RE)[1]).toBe('+7')
+		}
 	})
 })
 

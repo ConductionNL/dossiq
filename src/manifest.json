@@ -1141,9 +1141,9 @@
 						"type": "handler"
 					}
 				],
-				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself and is the interim for the blocked Team chip.",
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
 				"extend": ["assignedGroup"],
-				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time.",
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -1177,6 +1177,14 @@
 						"filter": {
 							"isFinalStatus": false,
 							"deadline[lt]": "@today"
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[gte]": "@today",
+							"deadline[lt]": "@today+7d"
 						}
 					}
 				],
@@ -2560,7 +2568,7 @@
 				],
 				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
 				"extend": ["case", "assigneeGroup"],
-				"_quickFiltersNote": "one-case-list: the same three lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases.",
+				"_quickFiltersNote": "one-case-list: the same lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases. lists-that-answer added Closed, Overdue and Due this week, which finishes the parallel: the six labels are now identical on both pages and only the field underneath differs, `dueDate` here against `deadline` there. `dueDate` is `format: date-time` while `deadline` is `format: date`, and the comparison is a plain string comparison on a string column (MagicSearchHandler casts only numeric columns), so `2026-09-08T09:00:00+00:00` sorts AFTER the prefix `2026-09-08`. That is the behaviour these windows need: a task due at nine this morning is due today, not overdue, and it belongs to Due this week. The boundary is asserted in tests/e2e/case-list-lenses.spec.ts rather than left to the reader to re-derive.",
 				"quickFilters": [
 					{ "label": "All", "filter": {}, "default": true },
 					{
@@ -2570,15 +2578,36 @@
 					{
 						"label": "Unclaimed",
 						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+					},
+					{
+						"label": "Closed",
+						"filter": { "isTerminalStatus": true }
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"isTerminalStatus": false,
+							"dueDate[lt]": "@today"
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"isTerminalStatus": false,
+							"dueDate[gte]": "@today",
+							"dueDate[lt]": "@today+7d"
+						}
 					}
 				],
+				"_priorityColumnNote": "REQ-TASK-004's first scenario has always required the task row to show priority, and the column was never declared. `caseTask.priority` is a `facetable` enum (low, normal, high, urgent) with a default of normal, so it was reachable through the sidebar facet and invisible in the row a handler actually reads. It sits after `dueDate` because the two answer the same question in order: when is this due, and does it jump the queue.",
 				"columns": [
 					"title",
 					{ "key": "case.title", "label": "Case", "sortable": false },
 					"assignee",
 					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
 					"status",
-					"dueDate"
+					"dueDate",
+					"priority"
 				],
 				"sidebar": {
 					"enabled": true,
