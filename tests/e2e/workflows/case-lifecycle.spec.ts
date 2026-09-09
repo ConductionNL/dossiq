@@ -105,7 +105,11 @@ test.describe('Case lifecycle — state machine', () => {
 		).toBeVisible({ timeout: 15000 })
 	}
 
-	// @e2e openspec/specs/status-transition-engine/spec.md#current-status-renders
+	// @e2e exclude No scenario states that the available-transitions
+	// response resolves the current status type's NAME, which is what the
+	// API leg here asserts. DASH-V1-006b covers a board card's fields and
+	// this test asserts only the title, so citing it would claim more than
+	// it proves.
 	test('a case renders its current status (statusType name resolves)', async ({
 		page,
 	}) => {
@@ -132,7 +136,7 @@ test.describe('Case lifecycle — state machine', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/specs/status-transition-engine/spec.md#status-persists
+	// @e2e openspec/specs/status-transition-engine/spec.md#scenario-a-handler-advances-a-case
 	test('advancing a case status persists and renders the new status', async ({
 		page,
 	}) => {
@@ -180,7 +184,7 @@ test.describe('Case lifecycle — state machine', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/specs/status-transition-engine/spec.md#board-reflects-status
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
 	test('the workflow board renders a column per status type with real case rows', async ({
 		page,
 	}) => {
@@ -229,7 +233,7 @@ test.describe('Case lifecycle — state machine', () => {
 	// available-transitions populates, executing a transition persists +
 	// records a statusRecord, and an unmet guard blocks the transition (409).
 	//
-	// @e2e openspec/specs/status-transition-engine/spec.md#guarded-transitions
+	// @e2e openspec/specs/status-transition-engine/spec.md#scenario-successful-transition-with-audit-trail
 	test('engine offers transitions, records history, and BLOCKS an invalid transition', async () => {
 		const kase = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Engine case`,

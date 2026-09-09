@@ -19,7 +19,7 @@ import { dismissSupportDialog } from '../helpers/nav.ts'
 import { MyWorkCards } from '../helpers/page-components.ts'
 
 test.describe('My Work spec coverage', () => {
-	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	// @e2e openspec/specs/my-work/spec.md#scenario-card-and-table-view
 	test("shows the current user's assigned cases as a card list", async ({
 		page,
 	}) => {
@@ -38,7 +38,7 @@ test.describe('My Work spec coverage', () => {
 		).toBeVisible({ timeout: 10000 })
 	})
 
-	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	// @e2e openspec/specs/my-work/spec.md#scenario-card-and-table-view
 	test('view mode can be switched between cards and table', async ({ page }) => {
 		await page.goto(`/index.php/apps/dossiq${MyWorkCards}`)
 		await dismissSupportDialog(page)

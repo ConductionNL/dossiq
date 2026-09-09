@@ -65,6 +65,13 @@ Blocked on: **no production transport exists to move** (Berichtenbox has only `M
 `LogZgwExternalAdapter` returns synthetic `PUSH_DEFERRED`; DSO-LV production needs OAuth2 + OIN
 PKIoverheid mTLS that was never built). These are integriq build-out items, not extractions.
 
+Re-verified 2026-09-09 against `development`. The Berichtenbox half is not waiting on
+anyone's code. A MijnOverheid transport needs a Logius aansluiting — credentials issued to
+the municipality — and a PKIoverheid certificate on the OIN behind it. Both are procurement
+with a lead time, so this phase stays open on a purchase order rather than on a branch, and
+should not be read as unfinished engineering. `BerichtenboxReadStatusJob` is still absent
+from `appinfo/info.xml`, so its cron is still dead.
+
 - [ ] When a real MijnOverheid transport is commissioned: build it as an integriq provider quintet
       (controller + provider seam + sync service + `*_message` schema + retry job, the
       IwmoIjw/StufZkn pattern); dossiq keeps `BerichtenboxRoutingService` (channel choice is

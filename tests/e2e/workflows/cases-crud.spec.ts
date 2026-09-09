@@ -147,7 +147,7 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// Case type / Confidentiality, with the identifier absent from the page
 	// text entirely. It DOES render in the case LIST, which is why the
 	// list-view assertion above passes.
-	// @e2e openspec/specs/case-management/spec.md#case-detail-page-renders
+	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,
 	}) => {
@@ -185,7 +185,10 @@ test.describe('Cases — full CRUD with persistence', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#edit-a-case
+	// @e2e exclude REQ-CM-02 carries scenarios for the description, the
+	// priority and the handler; none of them covers editing the TITLE,
+	// which is what this test edits. FIXME(#1454) tracks the defect it
+	// pins.
 	test('editing a case persists the change', async ({ page }) => {
 		test.fixme(
 			true,

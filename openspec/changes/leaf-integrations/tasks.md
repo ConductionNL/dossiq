@@ -35,3 +35,14 @@
 - [ ] 6.2 Grep gates, with a non-zero searched-file count asserted: `mailObjectTemplate` matches exactly the `case` + `complaint` declarations; `linkedTypes` additions are exactly `talk`, `deck`, `maps` (×2); every declared linkedType id exists in `nextcloud-vue/src/integrations/builtin/leaves.js` or is `decidesk-decisions`.
 - [ ] 6.3 `php -l` on new/changed PHP; `composer check:strict` (PHPCS/PHPMD/Psalm/PHPStan) clean on touched files; `npm run build` green; run the hydra-gates suite and resolve any finding.
 - [ ] 6.4 Verify on a live instance: re-run the register import repair step, read `case`, `complaint`, `caseType`, `fieldInspection`, `inspectionChecklistRun` back **from OpenRegister** (not from the files — `case` is union-merged with `register.d/dso-omgevingsloket.json`) and assert the new `configuration` keys survived; `LogDanglingLinkedTypes` reports no dangling Dossiq value; Mail sidebar shows both create buttons and prefills per REQ-LEAF-101; case detail renders Talk and Deck surfaces (and their empty states with `spreed`/`deck` disabled); a bound Forms submission creates a correctly-clocked case and an unbound one creates nothing.
+
+## Re-verified 2026-09-09
+
+Nothing has landed. `mailObjectTemplate` has zero hits outside this change's own files; the
+only leaf tab in `src/components/tabs/` is `BesluitvormingLeafTab.vue`, with no Talk or Deck
+sibling; `FormsIntakeService.php` has an empty `git log --all`; `case.configuration.linkedTypes`
+is unchanged in both register files.
+
+Five unrelated leaves — email, Talk, Forms, maps, Deck — in one change is why none of them
+shipped: there is no order in which a reviewer can take a slice. Split at least the Forms
+intake service out before this is picked up again.
