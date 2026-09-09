@@ -67,16 +67,6 @@
       "count": 1
     }
   },
-  "src/dialogs/AiClassifyDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    }
-  },
-  "src/dialogs/AiExtractDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
   "src/dialogs/BerichtenboxComposeDialog.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 2
@@ -650,11 +640,6 @@
       "count": 1
     },
     "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/settings/tabs/AiSettingsTab.vue": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 2
     }
   },

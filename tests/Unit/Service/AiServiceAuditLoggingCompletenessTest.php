@@ -126,6 +126,15 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase {
 					return '1';
 				}
 
+				// The DPIA acknowledgement is now a real precondition in
+				// `isFeatureEnabled()`, so a fixture that wants an AI operation
+				// to RUN has to record it. Left unset, all six tests below fail
+				// with "Failed asserting that false is true" — which is the gate
+				// doing its job, not a broken fixture.
+				if ($key === 'ai_dpia_acknowledged') {
+					return '1';
+				}
+
 				if (str_starts_with($key, 'ai_feature_') === true) {
 					return '1';
 				}
