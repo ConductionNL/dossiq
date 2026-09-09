@@ -42,16 +42,44 @@
 
 ## 4. Raise upstream, not here
 
-- [ ] 4.1 Gate 46 reads only `@spec`. Its pattern is `@spec\s+(openspec/...)`,
+- [x] 4.1 Filed as ConductionNL/.github#726. Gate 46 reads only `@spec`. Its pattern is `@spec\s+(openspec/...)`,
   so 286 `@e2e` anchors in this repo are checked by nothing. This is why the six
   were found by hand, twice, rather than by CI once. Belongs in
   `ConductionNL/.github`, `hydra-gates/scripts/lib/check_spec_anchors.py`.
-- [ ] 4.2 Gate 46 enumerates `lib src tests`. Two anchors under `appinfo/` and
+- [x] 4.2 Filed as ConductionNL/.github#727. Gate 46 enumerates `lib src tests`. Two anchors under `appinfo/` and
   `scripts/` are never opened. Same helper.
 
-## 5. Process, recorded because it cost a branch
+## 5. The claim this change first made was wrong, twice over
 
-- [x] 5.1 Search before building. `git log origin/development -5 -- <path>` comes
+- [x] 5.1 "6,244 anchors, zero unresolvable" was measured with a REIMPLEMENTATION
+  of the resolver, not the resolver. Mine ignored two things the real one does:
+  the flat `openspec/specs/<cap>.md` spelling, and fragment checking. It called
+  13 of planix's anchors dangling that are fine, and it called 28 of this repo's
+  `@e2e` anchors fine that are not.
+  - the real resolver, run over all 284 `@e2e` targets here, reports 28
+    unresolved. Every one is "anchor not found": the file resolves and the
+    `#fragment` names a heading nobody wrote.
+- [x] 5.2 Two of the 28 were broken by this session's own #2057, and nothing
+  caught it.
+  - #2057 renumbered the kanban delta's scenarios from `DASH-V1-006d/e` to
+    `006f/g` to clear a collision with two scenarios the spec already had.
+    `tests/e2e/spec-coverage/kanban-board-keyboard-status-transition.spec.ts`
+    still cited `006d` and `006e`. Gate 46 did not look, because they are `@e2e`.
+    Repointed at the canonical `openspec/specs/dashboard/spec.md` per the rule
+    this change writes down.
+- [ ] 5.3 The other 26 are pre-existing dossiq debt that the gate fix in section
+  4 would surface on the next PR touching those files. Not fixed here: each one
+  needs a judgement about which scenario it meant, which is the work, not the
+  sed.
+- [x] 5.4 Stop reimplementing the instrument. Every wrong number in this
+  investigation came from a hand-rolled resolver; every correct one came from
+  running `check_spec_anchors.py`. `@e2e` was measured by rewriting the tags to
+  `@spec` in a probe file outside the repo and running the real helper against
+  it, which is how the fleet numbers in section 4 were taken.
+
+## 6. Process, recorded because it cost a branch
+
+- [x] 6.1 Search before building. `git log origin/development -5 -- <path>` comes
   first: two PRs on this exact topic landed while this branch was being written,
   and the PR went out CONFLICTING with 4 of 49 checks passing, which is the shape
   a conflicting PR always has and reads green.
