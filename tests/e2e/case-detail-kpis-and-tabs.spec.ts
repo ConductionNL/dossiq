@@ -64,17 +64,17 @@ const TAB_LABELS = [
  * of assertion that can be satisfied by deleting things. These are what make
  * the difference between six tabs and four missing features.
  */
-const FOLDED_SECTIONS: Array<[string, string]> = [
-	['Documents', 'case-section-case-documents'],
-	['Documents', 'case-section-case-files'],
-	['People', 'case-section-case-roles'],
-	['People', 'case-section-case-communication'],
-	['Work', 'case-section-case-tasks'],
-	['Work', 'case-section-case-calendar'],
-	['Related', 'case-section-case-related'],
-	['Related', 'case-section-case-sub-cases'],
-	['Objects and locations', 'case-section-case-objects'],
-	['Objects and locations', 'case-section-case-locaties'],
+const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
+	['Documents', 'case-section-case-documents', 'registry'],
+	['Documents', 'case-section-case-files', 'integration'],
+	['People', 'case-section-case-roles', 'registry'],
+	['People', 'case-section-case-communication', 'registry'],
+	['Work', 'case-section-case-tasks', 'registry'],
+	['Work', 'case-section-case-calendar', 'integration'],
+	['Related', 'case-section-case-related', 'registry'],
+	['Related', 'case-section-case-sub-cases', 'registry'],
+	['Objects and locations', 'case-section-case-objects', 'registry'],
+	['Objects and locations', 'case-section-case-locaties', 'registry'],
 ]
 
 /**
@@ -435,29 +435,79 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
-		for (const [tabLabel, testid] of FOLDED_SECTIONS) {
+		for (const [tabLabel, testid, kind] of FOLDED_SECTIONS) {
 			await strip.getByRole('tab', { name: tabLabel, exact: true }).click()
 			const panel = strip.locator(
 				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 			)
 			const section = panel.locator(`[data-testid="${testid}"]`)
+			// ATTACHED, not visible, and the difference matters now that
+			// `case-sections` hides an empty section's heading and drops its
+			// divider: such a section has zero height, so `toBeVisible` would
+			// fail on it for the very reason the component is correct. The
+			// registry sections get the visibility check below, where it is a
+			// real claim rather than a measurement of CSS.
 			await expect(
 				section,
 				`${testid} did not render inside ${tabLabel}`,
-			).toBeVisible({ timeout: 30_000 })
+			).toBeAttached({ timeout: 30_000 })
 
-			// The section WRAPPER is not the evidence. `case-sections` renders
-			// the heading and the host element whether or not the child
-			// resolved, and CnDetailWidgetHost renders NOTHING for a type it
-			// cannot resolve, so a broken registration leaves a headed, empty
-			// block and the visibility check above passes on it. Assert the
-			// host has content: a widget that resolved renders its rows or its
-			// empty state, and one that did not renders an empty div.
-			const host = section.locator('> *:not(h3)')
-			await expect(
-				host,
-				`${testid} rendered its heading and nothing under it, which is what a widget type the registry cannot resolve looks like`,
-			).not.toBeEmpty({ timeout: 30_000 })
+			// THE SECTION WRAPPER IS NOT THE EVIDENCE. CnDetailWidgetHost
+			// renders NOTHING for a widget type it cannot resolve, so a broken
+			// `case-sections` registration leaves a section that is present and
+			// says nothing, and the visibility check above passes on it.
+			//
+			// The invariant, for BOTH kinds: a section is ABSENT OR NON-EMPTY,
+			// never a heading over a void. `case-sections` hides the heading
+			// until its host has content precisely so that state cannot exist,
+			// and this is what holds it to that.
+			//
+			// One instrument, not two: the heading and the host are read in the
+			// SAME evaluate, inside a poll. Reading the host with a snapshot and
+			// the heading with a retrying matcher would compare two different
+			// moments and could pass on either being briefly right.
+			const state = async () =>
+				await section.evaluate((el) => {
+					const heading = el.querySelector('h3')
+					const host = el.querySelector(':scope > *:not(h3)')
+					const filled =
+						!!host && (host.textContent || '').trim().length > 0
+					if (!heading)
+						return filled ? 'heading-missing' : 'empty-and-silent'
+					return filled ? 'filled-with-heading' : 'heading-over-void'
+				})
+
+			await expect
+				.poll(state, {
+					timeout: 30_000,
+					message: `${testid} must never be a heading over nothing, which is worse than the empty tab it replaced`,
+				})
+				.not.toBe('heading-over-void')
+
+			// ⚠️ THE `integration` SECTIONS STOP HERE, AND THAT IS A NARROWING
+			// RATHER THAN A WEAKENING, so: an integration leaf is served by
+			// OpenRegister's global registry bundle, which CI NEVER HAS,
+			// because openregister gitignores its `/js/`. Demanding content
+			// from `case-files` or `case-calendar` asserts a property of the
+			// environment rather than of this change, and it went red on CI
+			// while passing locally for exactly that reason.
+			//
+			// The eight that resolve from dossiq's OWN bundle keep the full
+			// assertion, and they are the eight a broken registration would
+			// take down, which is the mutation this test was proved against. So
+			// the teeth are still where the failure mode is.
+			if (kind === 'registry') {
+				await expect
+					.poll(state, {
+						timeout: 30_000,
+						message: `${testid} rendered nothing, which is what a widget type the registry cannot resolve looks like`,
+					})
+					.toBe('filled-with-heading')
+				await expect(
+					section,
+					`${testid} resolved but is not on screen`,
+				).toBeVisible({ timeout: 30_000 })
+			}
 		}
 	})
 

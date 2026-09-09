@@ -36,23 +36,34 @@
 			v-for="section in sections"
 			:key="section.key"
 			class="case-sections__section"
+			:class="{ 'case-sections__section--empty': !filled[section.key] }"
 			:data-testid="`case-section-${section.key}`">
-			<h3 class="case-sections__heading">
+			<!-- The heading waits for content. A section whose widget type does
+			     not resolve renders NOTHING, and a heading over that is a label
+			     on a void: worse than what it replaced, because as a whole tab
+			     an unresolvable panel was merely an empty tab. -->
+			<h3 v-if="filled[section.key]" class="case-sections__heading">
 				{{ section.label }}
 			</h3>
-			<CnDetailWidgetHost
-				:widget="section.widget"
-				chrome="bare"
-				:objectId="objectId"
-				:object="objectData"
-				:objectType="objectType"
-				:schemaObject="schemaObject"
-				:register="register"
-				:schema="schema"
-				:store="store"
-				:surface="surface"
-				:integrationContext="integrationContext"
-				:cnRegistry="cnRegistry" />
+			<!-- The HOST always mounts, even while the section reads as empty.
+			     Gating the host on `filled` instead would deadlock: a widget
+			     that has not mounted cannot fetch, so it could never gain the
+			     content that would let it render. -->
+			<div :ref="(el) => setHostRef(section.key, el)">
+				<CnDetailWidgetHost
+					:widget="section.widget"
+					chrome="bare"
+					:objectId="objectId"
+					:object="objectData"
+					:objectType="objectType"
+					:schemaObject="schemaObject"
+					:register="register"
+					:schema="schema"
+					:store="store"
+					:surface="surface"
+					:integrationContext="integrationContext"
+					:cnRegistry="cnRegistry" />
+			</div>
 		</section>
 	</div>
 </template>
@@ -143,6 +154,18 @@ export default {
 		},
 	},
 
+	data() {
+		return {
+			/**
+			 * Section key to "has this section rendered anything", so the
+			 * heading can wait for its widget.
+			 *
+			 * @type {Record<string, boolean>}
+			 */
+			filled: {},
+		}
+	},
+
 	computed: {
 		/**
 		 * The sections to render, each with a stable key and a heading.
@@ -168,6 +191,79 @@ export default {
 				}))
 		},
 	},
+
+	beforeUnmount() {
+		this.stopObserving()
+	},
+
+	methods: {
+		/**
+		 * Watch one section's host for content, so its heading can appear when
+		 * the widget renders and stay away when it never does.
+		 *
+		 * A MutationObserver rather than a one-shot check on mount: nearly
+		 * every widget here mounts empty and fills after its own fetch, so a
+		 * check taken once would record every section as empty and hide every
+		 * heading on the page.
+		 *
+		 * @param {string} key The section key.
+		 * @param {HTMLElement|null} el The host wrapper, or null on teardown.
+		 * @return {void}
+		 */
+		setHostRef(key, el) {
+			this.observers = this.observers || {}
+			if (this.observers[key]) {
+				this.observers[key].disconnect()
+				delete this.observers[key]
+			}
+			if (!el) return
+
+			const measure = () => {
+				this.filled = { ...this.filled, [key]: this.hasContent(el) }
+			}
+			const observer = new MutationObserver(measure)
+			observer.observe(el, {
+				childList: true,
+				subtree: true,
+				characterData: true,
+			})
+			this.observers[key] = observer
+			measure()
+		},
+
+		/**
+		 * Whether a host has rendered anything a reader would see.
+		 *
+		 * `CnDetailWidgetHost` renders an EMPTY element for a widget type it
+		 * cannot resolve, so "has an element child" is not the question. Text
+		 * answers it for almost every widget, including an empty state, which
+		 * is content: an empty list still tells the reader the section exists
+		 * and holds nothing. The element list catches the purely graphical
+		 * case, such as a map or a chart with no labels.
+		 *
+		 * @param {HTMLElement} el The host wrapper.
+		 * @return {boolean} true when the section has something to show.
+		 */
+		hasContent(el) {
+			if (!el) return false
+			if (el.textContent && el.textContent.trim().length > 0) return true
+			return (
+				el.querySelector('img, svg, canvas, table, input, button') !== null
+			)
+		},
+
+		/**
+		 * Drop every observer, so a destroyed panel leaves none running.
+		 *
+		 * @return {void}
+		 */
+		stopObserving() {
+			for (const observer of Object.values(this.observers || {})) {
+				observer.disconnect()
+			}
+			this.observers = {}
+		},
+	},
 }
 </script>
 
@@ -181,6 +277,19 @@ export default {
 .case-sections__section + .case-sections__section {
 	padding-top: calc(var(--default-grid-baseline, 4px) * 4);
 	border-top: 1px solid var(--color-border);
+}
+
+/*
+ * A section with nothing in it keeps its host mounted, so the widget can still
+ * fetch and fill later, but it must not draw a divider or reserve space. An
+ * empty block with a rule above it reads as a section that failed to load,
+ * which is the thing this component stopped doing when the heading went
+ * conditional.
+ */
+.case-sections__section--empty,
+.case-sections__section--empty + .case-sections__section {
+	padding-top: 0;
+	border-top: none;
 }
 
 .case-sections__heading {
