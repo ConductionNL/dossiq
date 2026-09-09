@@ -179,9 +179,32 @@ async function narrowToThisRun(page: Page): Promise<void> {
  * @param page The Playwright page.
  */
 async function openCaseTypes(page: Page): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/settings/case-types`)
+	// NEWEST FIRST, because the folder sidebar is built from the rows that are
+	// actually loaded. `folderSidebar.source` is `field`, which CnIndexPage
+	// documents as "distinct values of the CURRENT ROWS" — not a facet query
+	// over the whole collection. The Case types index is instance-wide and
+	// bounded, so under four workers this run's types sit behind other runs'
+	// and its `category` is not among the distinct values. The folder button
+	// then never renders, and a working filter reads as a broken one.
+	//
+	// `_order` is the only query parameter CnIndexPage reads back from the URL,
+	// as a JSON-encoded `{key, order}` list. Sorting on `created` puts this
+	// run's freshly seeded types on page one, which is the same narrowing
+	// `narrowToThisRun` does for the cases index.
+	const order = JSON.stringify([{ key: 'created', order: 'desc' }])
+	await page.goto(
+		`/apps/${REGISTER}/settings/case-types?_order=${encodeURIComponent(order)}`,
+	)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
+
+	// The rows must have arrived before a caller reads the folder sidebar off
+	// them. Without this the sort is asserted by nothing and a miss looks like
+	// a missing folder rather than a list that had not answered yet.
+	await expect(
+		page.getByRole('row').filter({ hasText: RUN_PREFIX }).first(),
+		`the Case types index should list this run's types, newest first`,
+	).toBeVisible({ timeout: 30_000 })
 }
 
 test.describe('Colour, versions, folders and the AVG fields', () => {
