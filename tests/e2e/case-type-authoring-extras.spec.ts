@@ -501,19 +501,44 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	// teardown; the retry worker seeded its own category, opened the page inside
 	// the hour, and was handed the dead category instead of its own.
 	//
+	// THE TEN-SECOND PROOF, if you ever need to re-establish this. One live
+	// instance, same request, same instant, one parameter that changes only the
+	// cache key:
+	//
+	//   create a case type with a category nothing else uses
+	//     -> total 24 becomes 25, buckets UNCHANGED
+	//   add `_order[title]=asc`, so the key misses
+	//     -> the same 25 rows, and the new bucket is there
+	//
+	// If two otherwise identical requests disagree, it is the cache, not the
+	// data. Clearing it with `DELETE /api/settings/cache?type=facet` then makes
+	// the original request agree.
+	//
 	// ⚠️ I first wrote the page-size explanation here, and it was wrong. The
 	// manifest's own `_folderSidebarNote` says `field` derives the folders from
 	// the distinct values of the loaded rows. That stopped being true at
 	// nextcloud-vue 2.42.0 (#1036), which prefers the facet with pagination
 	// stripped. A docblock outlived its truth and sent me, and two sessions
-	// before me, back to the same wrong theory.
+	// before me, back to the same wrong theory. That note is corrected in the
+	// same change as this comment, so the two now agree.
+	//
+	// 🔑 THE SIBLING THAT PASSES, PASSES BY NARROWING. `case-objects.spec.ts`
+	// clicks a folder in the same component and is green, because it opens its
+	// index filtered by a fresh case uuid: that filter is part of the cache key,
+	// so its facet can never be warm. Do not read it as evidence the pane works.
+	//
+	// 🔑 #2170's retry is the independent confirmation. It sorted this run's
+	// rows onto page one, got them, and still found no folder. Rows present,
+	// facet stale. So do not retry a sort, and note that `_order` IS read back
+	// by `parseSortKeysFromQuery`, contrary to what #2210 recorded.
 	//
 	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
 	// `DELETE /api/settings/cache?type=facet` is an admin action a page reader
 	// cannot take, so a test that arranges it asserts the arrangement.
 	//
-	// dossiq#2278 carries the full measurement and the manifest-note correction.
-	// Restore this by deleting the `fixme` once OpenRegister#3560 lands.
+	// This is a live product defect, not a test artefact: an administrator who
+	// gives a case type a new category gets no folder for it until the hour is
+	// out. Restore this by deleting the `fixme` once OpenRegister#3560 lands.
 	test.fixme('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
