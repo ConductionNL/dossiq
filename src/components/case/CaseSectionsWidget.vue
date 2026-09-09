@@ -153,6 +153,7 @@ export default {
 		 * cannot resolve, so the heading would be the only thing left.
 		 *
 		 * @return {Array<{key: string, label: string, widget: object}>} the sections.
+		 * @spec openspec/changes/the-case-page-finished/specs/case-dashboard-view/spec.md
 		 */
 		sections() {
 			const raw = Array.isArray(this.content?.sections)
