@@ -59,7 +59,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix — Administration')"
+			:name="t('dossiq', 'Mandate Matrix: Administration')"
 			:description="
 				t(
 					'dossiq',
@@ -71,7 +71,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix — System Settings')"
+			:name="t('dossiq', 'Mandate Matrix: System Settings')"
 			:description="
 				t(
 					'dossiq',
@@ -109,7 +109,7 @@
 
 		<CnSettingsSection
 			id="section-mailbox"
-			:name="t('dossiq', 'Case Email — Shared Mailbox')"
+			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
 				t(
 					'dossiq',
@@ -148,7 +148,7 @@
 
 		<CnSettingsSection
 			id="section-financial"
-			:name="t('dossiq', 'Financial Integration — Dwangsom Callback')"
+			:name="t('dossiq', 'Financial Integration: Dwangsom Callback')"
 			:description="
 				t(
 					'dossiq',
