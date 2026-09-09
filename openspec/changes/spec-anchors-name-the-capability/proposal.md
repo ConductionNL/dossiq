@@ -91,6 +91,31 @@ same backlog, so `git log origin/development -5 -- <path>` comes before building
 not after. This branch went out CONFLICTING with 4 of 49 checks green, which is
 the shape a conflicting PR always has.
 
+## The correction this change had to make to itself
+
+The first version of this proposal claimed 6,244 anchors and zero unresolvable.
+That was measured with a REIMPLEMENTATION of the resolver rather than the
+resolver, and it was wrong in both directions.
+
+Mine ignored two things the real one does. The flat `openspec/specs/<cap>.md`
+spelling, which predates the directory form: that alone made it call 13 of
+planix's healthy anchors dangling. And fragment checking: the real helper
+verifies that a `#fragment` names a heading somebody wrote, and mine only
+checked the file.
+
+Run properly, this repo has **28 unresolved `@e2e` anchors**, every one of them
+"anchor not found". Two of the 28 were broken by this session's own #2057, which
+renumbered two scenarios from `DASH-V1-006d/e` to `006f/g` to clear a collision
+and left two `@e2e` citations naming the old ids. Every check passed. Those two
+are repointed here; the other 26 are pre-existing and are the debt the gate fix
+in "Not in this change" would surface.
+
+The lesson is the one this whole investigation keeps teaching: every wrong
+number came from a hand-rolled resolver, and every right one came from running
+`check_spec_anchors.py`. `@e2e` was eventually measured by rewriting the tags to
+`@spec` in a probe file OUTSIDE the repo and running the real helper with cwd set
+to the app, which is exact and touches nothing.
+
 ## Not in this change
 
 - **Gate 46 does not read `@e2e`.** Its pattern is `@spec\s+(openspec/...)`, so
@@ -100,4 +125,6 @@ the shape a conflicting PR always has.
   `scripts/` are never opened.
 
 Both live in `ConductionNL/.github`, `hydra-gates/scripts/lib/check_spec_anchors.py`,
-and neither is fixable here.
+and neither is fixable here. Filed as ConductionNL/.github#726 (1,964 `@e2e`
+anchors fleet-wide, 194 dangling) and #727 (52 anchors under `appinfo/` and
+`scripts/` never opened, 8 of openregister's 9 in `routes.php` dangling).
