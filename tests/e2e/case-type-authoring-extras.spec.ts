@@ -491,66 +491,54 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A folder narrows the index
-	// FIXME(dossiq#2204, superseded by OpenRegister#3560): parked, and NOT for
-	// the reason #2210 wrote here. That explanation said the folder pane
-	// derives from the currently loaded rows, so this run's types were behind
-	// other runs' on a bounded index. Measured, and it is not the cause.
+	// 🔴 PARKED ON OpenRegister#3560. The cause is a stale facet, NOT the page
+	// size, and not anything in this app or in the library.
 	//
-	// BOTH HALVES OF THIS APP'S CONTRACT ARE CORRECT.
-	//   `caseType.category` carries `facetable: true`; the object store adds
-	//   `_facets=extend` once the fetched schema has any facetable property;
-	//   and since nextcloud-vue#1036, in the 2.42.0 this app depends on,
-	//   `CnFolderSidebar.fieldTree` returns the FACET buckets and does not look
-	//   at `objects` at all when it has them. `source: "field"` IS the facet
-	//   path now, so there is no manifest change to make. Verified in a
-	//   browser: on an instance whose page one holds no categorised row, the
-	//   pane still draws the folder.
+	// `FacetHandler::getFacetsForObjects()` caches the whole facet response for
+	// an hour and no object write invalidates it. CnFolderSidebar builds the
+	// folder pane from that facet, so a category created today gets no folder
+	// today. On CI an earlier worker warmed the facet and deleted its rows in
+	// teardown; the retry worker seeded its own category, opened the page inside
+	// the hour, and was handed the dead category instead of its own.
 	//
-	// THE FACET ARRIVES AN HOUR STALE. `FacetHandler::getFacetsForObjects()`
-	// caches the whole facet response for 3600 seconds and no object write
-	// invalidates it, so one response carries a LIVE `total` beside a `facets`
-	// block that can be an hour old, and nothing says the two disagree.
-	// Measured on a live instance, same request, same instant:
+	// THE TEN-SECOND PROOF, if you ever need to re-establish this. One live
+	// instance, same request, same instant, one parameter that changes only the
+	// cache key:
 	//
 	//   create a case type with a category nothing else uses
 	//     -> total 24 becomes 25, buckets UNCHANGED
-	//   add `_order[title]=asc`, which only changes the cache key
+	//   add `_order[title]=asc`, so the key misses
 	//     -> the same 25 rows, and the new bucket is there
 	//
-	// That is what beat this test on CI. An earlier worker process opened this
-	// page, cached the facet, and deleted its rows in teardown. The retry
-	// process seeded its own category, opened the page inside the hour, and was
-	// handed the DEAD category and not its own. The failure screenshot is the
-	// tell: the pane is not empty, it draws one folder, for another process's
-	// run prefix. `Showing 20 of 27` says the rows were live.
+	// If two otherwise identical requests disagree, it is the cache, not the
+	// data. Clearing it with `DELETE /api/settings/cache?type=facet` then makes
+	// the original request agree.
+	//
+	// ⚠️ I first wrote the page-size explanation here, and it was wrong. The
+	// manifest's own `_folderSidebarNote` says `field` derives the folders from
+	// the distinct values of the loaded rows. That stopped being true at
+	// nextcloud-vue 2.42.0 (#1036), which prefers the facet with pagination
+	// stripped. A docblock outlived its truth and sent me, and two sessions
+	// before me, back to the same wrong theory. That note is corrected in the
+	// same change as this comment, so the two now agree.
 	//
 	// 🔑 THE SIBLING THAT PASSES, PASSES BY NARROWING. `case-objects.spec.ts`
 	// clicks a folder in the same component and is green, because it opens its
 	// index filtered by a fresh case uuid: that filter is part of the cache key,
 	// so its facet can never be warm. Do not read it as evidence the pane works.
 	//
-	// TWO CORRECTIONS TO THE SUPERSEDED NOTE, so nobody re-derives them.
-	// `_order` IS read back: `parseSortKeysFromQuery` in nc-vue's
-	// `utils/routeFilters.js` parses `route.query._order` in exactly the JSON
-	// form #2170 wrote. It failed for a different reason, and its retry got the
-	// rows onto page one and STILL found no folder, which is the cleanest
-	// independent confirmation of the cache we have. And `folderSidebar` does
-	// not need "a facet source": `field` is it.
-	//
-	// STILL TRUE, AND STILL NOT THE FIX: this page has no search box, because
-	// `CnActionsBar` renders one only behind `showSearch` and that key is not in
-	// the manifest schema, and it has no date column to sort on. Both were dead
-	// ends before and are moot now, because the pane no longer reads the page.
+	// 🔑 #2170's retry is the independent confirmation. It sorted this run's
+	// rows onto page one, got them, and still found no folder. Rows present,
+	// facet stale. So do not retry a sort, and note that `_order` IS read back
+	// by `parseSortKeysFromQuery`, contrary to what #2210 recorded.
 	//
 	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
-	// `DELETE /api/settings/cache?type=facet` is an admin action, and a person
-	// reading this page cannot take it. A test that arranges a state no reader
-	// can reach asserts the arrangement, not the feature.
+	// `DELETE /api/settings/cache?type=facet` is an admin action a page reader
+	// cannot take, so a test that arranges it asserts the arrangement.
 	//
 	// This is a live product defect, not a test artefact: an administrator who
 	// gives a case type a new category gets no folder for it until the hour is
-	// out. Marked rather than deleted so the requirement stays visible. Delete
-	// this `fixme` once OpenRegister#3560 lands; nothing below needs to change.
+	// out. Restore this by deleting the `fixme` once OpenRegister#3560 lands.
 	test.fixme('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
