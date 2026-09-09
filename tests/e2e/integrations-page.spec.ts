@@ -28,7 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { login } from './helpers/auth.ts'
+import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -288,44 +288,91 @@ test.describe('Integrations', () => {
 	 *     entries and the route has no rows, so both assertions below pass for
 	 *     a reason that has nothing to do with permissions.
 	 *
-	 * So: a real session for a real ordinary account, through the same login
-	 * form a person uses, and the identity asserted BEFORE anything else. Those
-	 * two assertions are the ones that keep this test honest; without them
-	 * every other line here is satisfiable by an account that was never tested.
+	 * #2305 fixed that identity half, and it is what the setup below does:
+	 * `ensureUser` provisions the account over the API so this spec does not
+	 * depend on the seed having run, and `captureStorageState` is the
+	 * sanctioned second session. Given a genuine non-admin, the link-count
+	 * assertion below does catch the leak — measured, not assumed: run against
+	 * an unguarded build it reports `Received: 7`.
+	 *
+	 * The DESTINATION assertion is here for a different reason, and it is not
+	 * that the count is too weak today. It is that "no admin-settings links" is
+	 * also what a page that never rendered looks like — a bundle that 404s, a
+	 * JS error during mount, a route that silently 500s. Any of those would
+	 * satisfy the count while telling us nothing about the guard, and this is
+	 * the one test in the suite whose whole job is to be believed. Asserting
+	 * where the router actually LANDED distinguishes "the guard turned this
+	 * account away" from "nothing rendered", which the count cannot.
 	 */
 	test('is not reachable by a user who is not an admin', async ({
 		browser,
 		baseURL,
 	}) => {
-		// Clearing `storageState` is not the default — see (1) above. It has to
-		// be said, or this context is the admin.
+		// LOG IN, do not send credentials. Basic auth does not authenticate
+		// Nextcloud's HTML route here: with the admin jar cleared and
+		// `httpCredentials` set, the page came back with no session at all
+		// (`OC.getCurrentUser` absent). And with the jar NOT cleared it came back
+		// as `uid=admin isAdmin=true`, which is how this test spent its life
+		// asserting the admin's view under a name promising the opposite.
+		//
+		// `captureStorageState` is the sanctioned second session, the one
+		// `dashboard-tiles.spec.ts` uses for the same reason, and its own
+		// docblock carries the warning this test walked into: an OMITTED
+		// `storageState` in a spec silently becomes the admin's.
+		await ensureUser(api, token, PLAIN_USER, PLAIN_PASS)
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+
 		const context = await browser.newContext({
 			baseURL,
-			storageState: undefined,
+			storageState: plainState,
 		})
 		const page = await context.newPage()
-		await login(page, PLAIN_USER, PLAIN_PASS)
 
 		await page.goto('/apps/dossiq')
 		await dismissSupportDialog(page)
 
-		// WHO IS ACTUALLY DRIVING. Everything below is a claim about an
-		// ordinary account and means nothing until this holds.
-		const who = await page.evaluate(() => ({
-			uid: window.OC?.getCurrentUser?.()?.uid ?? null,
+		// NAME THE USER IN THE FAILURE. This assertion has failed on
+		// `development` while every link in the permission chain reads correct:
+		// the menu entry declares `permission: "admin"`, CnAppNav's
+		// `visibleItems` applies `passesPermission` before `settingsItems`
+		// filters on `section === "settings"`, and `App.vue` answers
+		// `['user']` for a non-admin, never `[]`. So either the chain is not
+		// what it reads as, or this context is not the user it asks for, and
+		// the failure as written cannot tell those apart.
+		//
+		// `httpCredentials` on a fresh context is an assumption about how
+		// Nextcloud authenticates an HTML route, not a measurement. Reading
+		// the identity the PAGE settled on turns the next red into an answer.
+		const whoami = await page.evaluate(() => ({
+			uid:
+				(window as any).OC?.getCurrentUser?.()?.uid
+				?? '(no OC.getCurrentUser)',
 			isAdmin:
-				typeof window.OC?.isUserAdmin === 'function'
-					? window.OC.isUserAdmin()
-					: null,
+				typeof (window as any).OC?.isUserAdmin === 'function'
+					? (window as any).OC.isUserAdmin()
+					: '(no OC.isUserAdmin)',
 		}))
-		expect(who.uid, 'the session under test is the ordinary account').toBe(
-			PLAIN_USER,
-		)
-		expect(who.isAdmin, 'the ordinary account is not an admin').toBe(false)
+
+		// ASSERT THE IDENTITY FIRST. Without this the test still passes or
+		// fails on whatever user it happens to get, which is exactly how it came
+		// to assert the admin's view under a name that promised the opposite.
+		expect(
+			whoami,
+			'this test must act as the non-admin, not as whoever the shared '
+				+ 'storage state logged in',
+		).toEqual({ uid: PLAIN_USER, isAdmin: false })
 
 		// The gear foldout does not carry the entry.
 		await expect(
 			page.locator('.app-navigation a[href$="/settings/integrations"]'),
+			`the page rendered as uid=${whoami.uid} isAdmin=${whoami.isAdmin}; `
+				+ `it should be the non-admin ${PLAIN_USER}`,
 		).toHaveCount(0)
 
 		// And the route does not render the page even when typed in directly.
@@ -336,9 +383,10 @@ test.describe('Integrations', () => {
 		// eleven integration rows and seven links into `/settings/admin/dossiq`.
 		await page.goto('/apps/dossiq/settings/integrations')
 		await dismissSupportDialog(page)
-		// The guard redirects to the dashboard, so assert the destination and
-		// not only the absence of a link: "no links" is also what a page that
-		// simply failed to load looks like.
+		// The guard redirects to the dashboard. Assert the DESTINATION, not
+		// only the absence of a link: a page that never rendered has no links
+		// either, so the count alone cannot tell a working guard from a broken
+		// bundle. See the docblock.
 		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
 		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
 			0,
