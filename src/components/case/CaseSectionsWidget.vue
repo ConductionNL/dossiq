@@ -218,8 +218,13 @@ export default {
 			}
 			if (!el) return
 
+			// Only ASSIGN on a change. `filled` drives the template, so writing
+			// it unconditionally on every mutation re-renders, which mutates
+			// the DOM, which fires the observer again.
 			const measure = () => {
-				this.filled = { ...this.filled, [key]: this.hasContent(el) }
+				const next = this.hasContent(el)
+				if (this.filled[key] === next) return
+				this.filled = { ...this.filled, [key]: next }
 			}
 			const observer = new MutationObserver(measure)
 			observer.observe(el, {
@@ -228,7 +233,11 @@ export default {
 				characterData: true,
 			})
 			this.observers[key] = observer
-			measure()
+
+			// NOT synchronously. A `:ref` callback runs DURING the patch, and
+			// writing reactive state there either loops or is dropped, which
+			// left every section reading as empty and every heading hidden.
+			this.$nextTick(measure)
 		},
 
 		/**

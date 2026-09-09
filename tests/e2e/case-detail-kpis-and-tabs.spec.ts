@@ -541,13 +541,34 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		)
 		const files = panel.locator('[data-testid="case-section-case-files"]')
 		await expect(documents).toBeVisible({ timeout: 30_000 })
-		await expect(files).toBeVisible({ timeout: 30_000 })
+		// ATTACHED, not visible, and NOT compared by bounding box. The files
+		// leaf is served by OpenRegister's global registry bundle, which CI
+		// never has, and `case-sections` now hides an empty section's heading
+		// and drops its divider, so on CI this section is correctly present and
+		// zero-height. A box comparison would fail there for the very reason
+		// the component is right, and it would be measuring CSS rather than the
+		// claim, which is ORDER: the registered documents first, loose
+		// attachments under them.
+		await expect(files).toBeAttached({ timeout: 30_000 })
 
-		const documentsBox = await documents.boundingBox()
-		const filesBox = await files.boundingBox()
-		expect(documentsBox, 'the documents section has no box').toBeTruthy()
-		expect(filesBox, 'the files section has no box').toBeTruthy()
-		expect(documentsBox!.y).toBeLessThan(filesBox!.y)
+		const order = await panel.evaluate((el) => {
+			const nodes = Array.from(
+				el.querySelectorAll('[data-testid^="case-section-"]'),
+			).map((n) => n.getAttribute('data-testid'))
+			return {
+				documents: nodes.indexOf('case-section-case-documents'),
+				files: nodes.indexOf('case-section-case-files'),
+			}
+		})
+		expect(
+			order.documents,
+			'the documents section is absent',
+		).toBeGreaterThanOrEqual(0)
+		expect(order.files, 'the files section is absent').toBeGreaterThanOrEqual(0)
+		expect(
+			order.documents,
+			'the dossier must read before the loose attachments',
+		).toBeLessThan(order.files)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({
