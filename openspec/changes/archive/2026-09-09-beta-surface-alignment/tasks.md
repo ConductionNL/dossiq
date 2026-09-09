@@ -13,6 +13,12 @@
   - [x] CMMN 1.1 / ZGW API standards claims
 - [x] Update `appinfo/info.xml` EN + NL descriptions: add VTH/bezwaar-beroep/WOO/dwangsom/map/
       appointments/kanban to the feature list; correct the CMMN/ZGW standards line.
+      - This box was ticked in July with the edit absent. `appinfo/info.xml` still carried the
+        original ten bullets and the "modelled on CMMN 1.1" standards line until 2026-09-09, when
+        the openspec triage sweep caught it and the edit was made for real. Every one of the seven
+        added bullets was re-verified against the tree first, not against this proposal: the
+        navigation has moved a lot since July, so the July wording could not be trusted as a
+        description of what ships now.
 - [x] Update `conduction-website/src/pages/apps/dossiq.mdx`: version/status, FeatureList,
       WidgetShelf widget names, RotatingCards wording, Showcase (n8n only, real AI feature),
       PairCard wording.

@@ -1,8 +1,23 @@
-## ADDED Requirements
+# beta-alignment Specification
+
+## Purpose
+
+The rule that what we say the app does matches what it does. dossiq describes
+itself on four surfaces: `appinfo/info.xml`, the manifest navigation, the
+conduction.nl product page in English and Dutch, and the docs site. They drifted
+apart from each other, and in several places from the code.
+
+A feature named on any of those surfaces has to be traceable to a controller, a
+service, a background job or a Vue view that ships. A mocked adapter is
+described as pluggable, never as behaviour. An integration with another app
+needs a code reference in one of them, or it is positioning rather than an
+integration.
+
+## Requirements
 
 ### Requirement: Cross-surface feature vocabulary SHALL match shipped code
-The app's four public surfaces — `appinfo/info.xml`, `src/manifest.json` nav/menu, the
-conduction.nl product page (EN + NL), and the `docs/` site — SHALL describe the same canonical
+The app's four public surfaces (`appinfo/info.xml`, `src/manifest.json` nav/menu, the
+conduction.nl product page in EN and NL, and the `docs/` site) SHALL describe the same canonical
 feature vocabulary, derived from `lib/Controller/`, `lib/BackgroundJob/`, and the manifest nav.
 Any feature named on the product page or in info.xml SHALL be traceable to a controller, service,
 background job, or Vue view in the shipped code.

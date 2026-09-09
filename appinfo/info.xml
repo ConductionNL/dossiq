@@ -19,7 +19,17 @@
 - **Sub-cases**: break a complex case into a parent and its children
 - **Confidentiality levels**: eight levels from public to top secret, defaulted from the case type
 - **My Work dashboard**: your assigned cases and open tasks in one place
-- **Standards-aligned**: modelled on CMMN 1.1 and the ZGW APIs
+
+**For Dutch government case work**
+
+- **VTH process templates**: six seeded workflows for permits, supervision, enforcement and demolition notices
+- **Objections and appeals**: the Awb bezwaar and beroep route, with hearings and an advisory committee
+- **Wet open overheid (Woo) requests**: handle a disclosure request and assess what can be published
+- **Workflow board**: move a case between statuses on a board, by drag or by keyboard
+- **Deadline monitoring**: watch the decision term, and calculate the dwangsom penalty when it runs out
+- **Case map**: see your cases plotted by location, with configurable layers
+- **Appointment booking**: let a citizen pick a timeslot, then cancel it or record a no-show
+- **Standards-aligned**: deep ZGW API alignment, with workflow templates modelled on CMMN case-management concepts
 
 **Requires:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (install from the [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
@@ -40,7 +50,17 @@ Free and open source under the EUPL-1.2 licence.
 - **Subzaken**: splits een complexe zaak op in een ouderzaak en haar deelzaken
 - **Vertrouwelijkheidsniveaus**: acht niveaus van openbaar tot staatsgeheim, standaard vanuit het zaaktype
 - **Mijn Werk dashboard**: je toegewezen zaken en openstaande taken op één plek
-- **Aansluitend op standaarden**: gemodelleerd naar CMMN 1.1 en de ZGW API's
+
+**Voor de Nederlandse overheid**
+
+- **VTH-processjablonen**: zes ingerichte workflows voor vergunning, toezicht, handhaving en sloopmelding
+- **Bezwaar en beroep**: de Awb-route, met hoorzittingen en een adviescommissie
+- **Wet open overheid (Woo)-verzoeken**: behandel een verzoek en beoordeel wat openbaar kan
+- **Workflowbord**: verplaats een zaak tussen statussen, met de muis of het toetsenbord
+- **Termijnbewaking**: bewaak de beslistermijn en bereken de dwangsom als die verloopt
+- **Zaakkaart**: zie je zaken op de kaart, met instelbare lagen
+- **Afspraken**: laat een inwoner een tijdslot kiezen, annuleren of als no-show vastleggen
+- **Aansluitend op standaarden**: diepe ZGW API-aansluiting, met workflowsjablonen gemodelleerd naar CMMN-concepten
 
 **Vereist:** [OpenRegister](https://apps.nextcloud.com/apps/openregister) (installeer via de [Nextcloud App Store](https://apps.nextcloud.com/apps/openregister)).
 
