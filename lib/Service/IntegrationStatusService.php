@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -123,7 +124,11 @@ class IntegrationStatusService {
 	 */
 	public const SAVE_UNFILLED_STATE = [
 		'berichtenbox' => ['simulated', 'A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class.'],
-		'templates' => ['simulated', 'A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to a real adapter class.'],
+		'templates' => [
+			'simulated',
+			'A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to '
+			. FilinqTemplateEngineAdapter::class . ' to render through Filinq.',
+		],
 	];
 
 	/**

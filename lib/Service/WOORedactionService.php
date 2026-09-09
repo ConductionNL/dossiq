@@ -30,6 +30,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Service for WOO document redaction with Docudesk feature detection.
@@ -54,10 +55,12 @@ class WOORedactionService {
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection
+	 * @param FilinqRedactionClient $filinq The hand-off to filinq's anonymisation pipeline
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
+		private readonly FilinqRedactionClient $filinq,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,28 +97,48 @@ class WOORedactionService {
 	 */
 	public function queueForRedaction(string $caseId, array $documents): array {
 		if (empty($documents) === true) {
-			return ['mode' => 'none', 'queued' => [], 'manual' => []];
+			return ['mode' => 'none', 'redacted' => [], 'queued' => [], 'manual' => []];
 		}
 
 		if ($this->isDocuDeskInstalled() === true) {
-			return $this->queueViaDocuDesk(caseId: $caseId, documents: $documents);
+			return $this->redactViaFilinq(caseId: $caseId, documents: $documents);
 		}
 
 		return $this->manualRedactionFallback(caseId: $caseId, documents: $documents);
 	}//end queueForRedaction()
 
 	/**
-	 * Queue documents via Docudesk anonymization pipeline.
+	 * Redact documents through filinq's anonymisation pipeline.
+	 *
+	 * 🔴 THIS METHOD USED TO MAKE NO CALL. It looped the documents, recorded
+	 * `status: 'queued'`, logged that each one had been queued via Docudesk,
+	 * and returned. The comment where the call belonged read "Actual API call
+	 * deferred to DocuDeskService ... For now we record the intent and let
+	 * Docudesk poll", and filinq ships no ingestion that polls for such
+	 * intents, so nothing on either side of the seam ever moved. An instance
+	 * WITH filinq installed took this branch, reported every document queued,
+	 * and redacted none of them; the manual branch below, taken only when
+	 * filinq is absent, was the app's sole working redaction path.
+	 *
+	 * Each document is now handed to filinq one at a time and reports what
+	 * filinq did with it. A document filinq cannot be given — no file id and
+	 * no id/fileName pair to find one — falls to manual redaction carrying the
+	 * reason, and a document filinq refuses reports the refusal. A run that
+	 * detected no personal data at all also lands on the manual list: filinq
+	 * produced a file, but its content is the original's, and a human already
+	 * judged this document to hold something worth withholding. There is no
+	 * longer any outcome called `queued`, because nothing queues.
 	 *
 	 * @param string $caseId The case UUID
 	 * @param array<int, array<string, mixed>> $documents Documents to redact
 	 *
-	 * @return array<string, mixed> Queued document references
+	 * @return array<string, mixed> Per-document redaction outcomes
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
-	private function queueViaDocuDesk(string $caseId, array $documents): array {
-		$queued = [];
+	private function redactViaFilinq(string $caseId, array $documents): array {
+		$redacted = [];
+		$manual = [];
 
 		foreach ($documents as $document) {
 			$docId = $document['id'] ?? $document['uuid'] ?? null;
@@ -123,28 +146,53 @@ class WOORedactionService {
 				continue;
 			}
 
-			// Hook point: Docudesk integration sends document to anonymization pipeline.
-			// Actual API call deferred to DocuDeskService when the docudesk app ships its
-			// service interface. For now we record the intent and let Docudesk poll.
-			$queued[] = [
-				'documentId' => $docId,
-				'caseId' => $caseId,
-				'status' => 'queued',
-				'mode' => 'docudesk',
-			];
+			try {
+				$outcome = $this->filinq->redact(caseId: $caseId, document: $document);
+			} catch (Throwable $e) {
+				// Filinq could not take this document. The reader needs to know
+				// which one and why, and the document still needs redacting, so
+				// it joins the manual list rather than reporting a success.
+				$this->logger->warning(
+					'WOO redaction fell back to manual for document ' . $docId . ' in case ' . $caseId,
+					['app' => Application::APP_ID, 'error' => $e->getMessage()],
+				);
 
-			$this->logger->info(
-				'WOO redaction queued via Docudesk: document ' . $docId . ' for case ' . $caseId,
-				['app' => Application::APP_ID],
-			);
+				$manual[] = [
+					'documentId' => $docId,
+					'caseId' => $caseId,
+					'status' => 'awaiting_manual_redaction',
+					'reason' => $e->getMessage(),
+					'instruction' => 'Upload a redacted version to replace this document.',
+				];
+				continue;
+			}//end try
+
+			$outcome['documentId'] = $docId;
+			$outcome['caseId'] = $caseId;
+			$outcome['mode'] = 'filinq';
+
+			if (($outcome['status'] ?? '') !== 'redacted') {
+				// Filinq ran and removed nothing. The document still needs a
+				// person, so it belongs on the manual list carrying what filinq
+				// reported, not on the redacted one carrying an outcome word
+				// that would close the task.
+				$outcome['status'] = 'awaiting_manual_redaction';
+				$outcome['reason'] = 'filinq_detected_no_entities';
+				$outcome['instruction'] = 'Upload a redacted version to replace this document.';
+				$manual[] = $outcome;
+				continue;
+			}
+
+			$redacted[] = $outcome;
 		}//end foreach
 
 		return [
-			'mode' => 'docudesk',
-			'queued' => $queued,
-			'manual' => [],
+			'mode' => 'filinq',
+			'redacted' => $redacted,
+			'queued' => [],
+			'manual' => $manual,
 		];
-	}//end queueViaDocuDesk()
+	}//end redactViaFilinq()
 
 	/**
 	 * Return manual redaction instructions when Docudesk is not installed.
@@ -180,6 +228,7 @@ class WOORedactionService {
 
 		return [
 			'mode' => 'manual',
+			'redacted' => [],
 			'queued' => [],
 			'manual' => $manual,
 		];

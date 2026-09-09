@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
@@ -145,15 +146,16 @@ class SubstitutableAdapterRegistrar {
 		if (FleetAppId::isEnabledForUser(appManager: $container->get(IAppManager::class), canonical: 'filinq') === true) {
 			return $l10n->t(
 				'Filinq is installed but no template adapter is configured, so every '
-				. 'beschikking is rendered by a mock. Name filinq\'s adapter class in the '
-				. 'beschikking_template_adapter setting.'
+				. 'beschikking is rendered by a mock. Set beschikking_template_adapter to '
+				. '%s to render through filinq.',
+				[FilinqTemplateEngineAdapter::class]
 			);
 		}
 
 		return $l10n->t(
 			'Filinq is not installed, so every beschikking is rendered by a mock. '
-			. 'Install filinq, then name its adapter class in the '
-			. 'beschikking_template_adapter setting.'
+			. 'Install filinq, then set beschikking_template_adapter to %s.',
+			[FilinqTemplateEngineAdapter::class]
 		);
 	}//end templateFallbackReason()
 }//end class

@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter;
 use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
@@ -348,4 +349,32 @@ class AdapterHonestyTest extends TestCase {
 
 		$this->assertContains('simulated', IntegrationStatusService::STATUSES);
 	}//end testAnUnconfiguredAdapterSeamReadsAsSimulated()
+
+	/**
+	 * The instruction on the templates row names a class that can actually serve it.
+	 *
+	 * The row used to say "set it to a real adapter class" while dossiq shipped
+	 * none, so the only way to follow the instruction was to write one. There
+	 * is one now, and the row names it. This asserts the name is not a dead
+	 * end: the class exists and implements the seam, which is exactly what
+	 * ConfiguredAdapter will check before binding it. A rename that moved the
+	 * class without moving this sentence would leave an admin pasting a value
+	 * that resolves to the mock, which is how the seam went quiet the first
+	 * time.
+	 *
+	 * @return void
+	 */
+	public function testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam(): void {
+		$message = IntegrationStatusService::SAVE_UNFILLED_STATE['templates'][1];
+
+		$this->assertStringContainsString(
+			FilinqTemplateEngineAdapter::class,
+			$message,
+			'the row must name the adapter an admin is supposed to paste'
+		);
+		$this->assertTrue(
+			is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
+			'the named class must implement the seam, or ConfiguredAdapter will refuse it'
+		);
+	}//end testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam()
 }//end class
