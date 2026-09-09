@@ -48,6 +48,13 @@ every system.
 
 A rating SHALL be conveyed by a word, never by colour alone.
 
+A rating MAY be `unknown`, and `unknown` SHALL be rendered and counted like any
+other rating rather than left blank. A later round can add a capability row
+without re-reading the products an earlier round rated, and the honest cell for
+those products is one that says nobody looked. Hiding it would show a reader
+three systems scored over fewer rows than ours with nothing to explain the
+difference.
+
 #### Scenario: Areas summarise before they expand
 
 - **GIVEN** a user opens the comparison section
@@ -78,7 +85,13 @@ The comparison section SHALL state, before any score:
    many were corrected and when, and that the other three columns are NOT
    corrected that way. Re-rating a competitor without re-reading the product
    would be a guess presented as a correction.
-7. What the capability list is made of, that it is written in our own shape,
+7. When rows have been added to the list since the reading, how many, when,
+   and that the three competitor columns are unrated on them. This is the same
+   rule as item 6 pointed at the list instead of at a score: we may re-rate
+   ourselves because we can read our own code, and we may not rate a product
+   we did not open. A guess in a competitor's column is worse than an empty
+   cell, because a reader cannot tell the two apart.
+8. What the capability list is made of, that it is written in our own shape,
    and that it grows. Every system read so far is a municipal case system or a
    workflow engine, so a capability none of them has is absent from the LIST
    rather than from the market. The rows are also framed the way dossiq splits
@@ -90,6 +103,14 @@ The comparison section SHALL state, before any score:
    the growth clause, a reader who watches the totals fall between two releases
    has no way to tell a growing denominator from a regressing product, and the
    honest reading is the one they cannot reach.
+
+#### Scenario: The panel accounts for rows a later round added
+
+- **GIVEN** a round has added capability rows since the four systems were read
+- **WHEN** a reader opens the comparison
+- **THEN** the panel MUST say how many rows were added and when
+- **AND** it MUST say that the three competitor columns are unrated on those rows
+- **AND** those rows MUST show `unknown` for every competitor, never a guess
 
 #### Scenario: The panel says what the list is made of
 
@@ -120,7 +141,24 @@ SHALL therefore be guarded by assertions: the row count, unique ids, every row
 filed under a declared area, every rating drawn from the known set, and the
 per-system totals the audit published.
 
+Two further assertions guard the `unknown` rating, because it is the one value
+that can be written for the wrong reason. Our own column SHALL never be
+`unknown`: we can read our own code, so an empty cell there is an unfinished
+row that understates our score for free. And a row carrying a competitor
+`unknown` SHALL carry `addedOn`, while a row carrying `addedOn` SHALL be
+`unknown` for every competitor. That pins the value to its only honest cause.
+
+The four caveats SHALL additionally be asserted against the rendered component,
+not only end to end. Each one is a plain paragraph inside a note card, and
+deleting one while editing the panel around it breaks nothing a build can see.
+
 @e2e exclude Guarded by assertions over the committed data file in tests/vitest/capabilityComparison.spec.js, which no browser can reach: the failure mode is an edited JSON row, not a rendered screen.
+
+#### Scenario: A guessed competitor rating fails
+
+- **GIVEN** a row added after the four systems were read
+- **WHEN** somebody fills a competitor cell on it with a rating
+- **THEN** the unit suite MUST fail and name the row
 
 #### Scenario: An edited row changes a total and fails
 

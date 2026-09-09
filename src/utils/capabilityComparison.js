@@ -26,6 +26,19 @@
 export const RATINGS = Object.freeze(['yes', 'partial', 'no'])
 
 /**
+ * The columns the totals table and the legend show, ratings plus `unknown`.
+ *
+ * `unknown` is a real answer here, not a data error. A later round can add a
+ * capability row without re-reading the products the earlier round rated, and
+ * the honest cell for those three columns is empty. Leaving `unknown` out of
+ * the totals would hide that: a reader would see three systems scored over a
+ * smaller list than ours and no column explaining the difference.
+ *
+ * @type {ReadonlyArray<string>}
+ */
+export const RATING_COLUMNS = Object.freeze([...RATINGS, 'unknown'])
+
+/**
  * Pick the reader's language variant of a labelled entry.
  *
  * The data file carries `name` (English) and `name_nl` (Dutch) side by side,
