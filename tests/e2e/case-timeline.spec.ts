@@ -127,9 +127,7 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		// update and the comparison below is red. Measured: on a dev instance
 		// still running the pre-#3540 build this test fails with
 		// "the create sits above the update", and on #3540 it passes.
-		await expect
-			.poll(() => rows.count(), { timeout: 20_000 })
-			.toBeGreaterThan(1)
+		await expect.poll(() => rows.count(), { timeout: 20_000 }).toBeGreaterThan(1)
 		const texts = await rows.allInnerTexts()
 		const seen = JSON.stringify(texts)
 
