@@ -28,6 +28,7 @@ import {
 	plannedRows,
 	proposedCopyTitle,
 } from '../../src/utils/caseActionsHelpers.js'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -205,7 +206,7 @@ describe('The Related cases tab', () => {
 	}
 
 	it('is rendered by a widget whose TYPE the registry answers to', () => {
-		const widget = widgets().find((w) => w.id === 'case-related')
+		const widget = panels.caseWidget('case-related')
 		expect(widget.type).toBe('case-related-planned')
 		expect(registryDeclares('case-related-planned', 'widget')).toBe(true)
 	})
@@ -213,7 +214,9 @@ describe('The Related cases tab', () => {
 	it('is not type custom, which resolves to nothing inside a tab panel', () => {
 		const tabs = widgets().find((w) => w.id === 'case-panels').content.tabs
 		const children = tabs.map((tab) => tab.widgetId)
-		const byId = Object.fromEntries(widgets().map((w) => [w.id, w]))
+		const byId = Object.fromEntries(
+			panels.allCaseWidgets().map((w) => [w.id, w]),
+		)
 		for (const id of children) {
 			expect(
 				byId[id],
@@ -225,12 +228,19 @@ describe('The Related cases tab', () => {
 		}
 	})
 
-	it('keeps its tab entry, its id and its label', () => {
-		const tabs = widgets().find((w) => w.id === 'case-panels').content.tabs
-		expect(tabs).toContainEqual({
-			widgetId: 'case-related',
-			label: 'Related cases',
-		})
+	it('is the first section of the Related tab, labelled for what it lists', () => {
+		// It had a tab of its own until the strip came down from fourteen tabs
+		// to six. It is the top half of Related now, with the sub-cases under
+		// it: both halves are cases connected to this one, upward and downward.
+		const where = panels.caseTabOf('case-related')
+		expect(where, 'case-related is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('Related')
+		expect(where.label).toBe('Related cases')
+
+		const sections = panels
+			.caseWidget('case-related-panel')
+			.content.sections.map((section) => section.widget.id)
+		expect(sections).toEqual(['case-related', 'case-sub-cases'])
 	})
 
 	it('stays out of the layout, which would render it twice', () => {
