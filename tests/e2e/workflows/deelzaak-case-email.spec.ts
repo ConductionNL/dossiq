@@ -306,13 +306,22 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		await expect(page.locator('aside.app-sidebar')).toBeVisible({
 			timeout: 15_000,
 		})
-		const emailTab = page
-			.locator('[data-testid="cn-object-sidebar-tab-email"]')
-			.or(page.getByRole('tab', { name: 'Email' }))
-			.or(page.getByRole('button', { name: 'Email' }))
-			.first()
+		// `#tab-button-email`, which is what NcAppSidebarTab renders for the
+		// manifest tab id, and the same handle `case-identity` and
+		// `case-timeline` use for their sidebar tabs. The `.or()` chain it
+		// replaces put the tab PANEL first — `cn-object-sidebar-tab-email` is
+		// the panel's testid, not the button's — so `.first()` resolved to a
+		// panel, the click landed on a hidden panel instead of switching to
+		// it, `.catch(() => {})` swallowed the failure, and the assertion
+		// below then reported `.case-email-tab` as hidden. Measured on this
+		// run's own snapshot: the sidebar strip had History selected and the
+		// Email tab was never entered.
+		//
+		// The id is stable in every language; the label is not.
+		const sidebar = page.locator('aside.app-sidebar')
+		const emailTab = sidebar.locator('#tab-button-email')
 		await expect(emailTab).toBeVisible({ timeout: 15_000 })
-		await emailTab.click().catch(() => {})
+		await emailTab.click()
 		// CaseEmailTab itself renders inside the tab. On an instance without
 		// NC Mail it surfaces the "Email integration unavailable" empty state;
 		// otherwise it renders the compose surface. Either proves the manifest
