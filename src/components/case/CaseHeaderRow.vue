@@ -426,11 +426,43 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * `safe center`, not `center`.
+ *
+ * This box is a fixed-height grid cell (`gridHeight: 2`) that is also a
+ * scroll container: `overflow-x: auto` leaves the other axis `visible`, and
+ * CSS resolves that pair by computing `overflow-y` to `auto` as well. A
+ * column flex box that overflows and centres its content pushes the overflow
+ * out of BOTH ends, and the half above the box is unreachable, because
+ * `scrollTop` cannot go below zero.
+ *
+ * The breadcrumb trail is the first child, so it is the half that was lost.
+ * Measured on a running instance at 860px, before the change: the box starts
+ * at y=147 and the trail renders at y=135 — twelve pixels above its own
+ * container — with `scrollHeight` 152 against `clientHeight` 136 and a scroll
+ * range of 0 to 16 that only ever reveals the BOTTOM. So the Cases crumb was
+ * painted, hit-tested against whatever sat behind it, and could not be
+ * clicked. `case-header.spec.ts` reported it as fifteen seconds of "element
+ * is visible, enabled and stable" followed by three different elements
+ * intercepting the click, which reads as a flaky test rather than a control
+ * that is out of reach.
+ *
+ * `safe center` is the keyword for exactly this: it centres while the content
+ * fits and falls back to start-alignment the moment it does not. Measured on
+ * the same instance, same case: content that fits is centred identically
+ * (4px above, 4px below, unchanged), and content that overflows now starts
+ * 4px INSIDE the top with the whole 31px of overflow at the bottom, where the
+ * scroll range can reach it.
+ *
+ * Growing the box instead (`height: auto; min-height: 100%`) also frees the
+ * crumb, and was rejected: it spills 47px over the widget in the cell below,
+ * which has `overflow: visible`.
+ */
 .case-header {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	justify-content: center;
+	justify-content: safe center;
 	height: 100%;
 	padding: 4px 12px;
 	overflow-x: auto;

@@ -65,18 +65,6 @@ class ComplaintService {
 	];
 
 	/**
-	 * Dutch public holidays (fixed dates) for working-day calculation.
-	 * Format: 'MM-DD'.
-	 */
-	private const FIXED_HOLIDAYS_NL = [
-		'01-01',
-		'04-27',
-		'05-05',
-		'12-25',
-		'12-26',
-	];
-
-	/**
 	 * Awb chapter 9 acknowledgment deadline in working days.
 	 */
 	private const AWB_ACK_WORKING_DAYS = 5;
@@ -96,10 +84,13 @@ class ComplaintService {
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
+	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
+	 *                                          arithmetic for the Awb deadlines
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly WorkingDayCalculator $workingDays,
 	) {
 	}//end __construct()
 
@@ -348,7 +339,13 @@ class ComplaintService {
 	/**
 	 * Get complaints approaching or past their deadlines.
 	 *
-	 * @param int $warningDays Warn when deadline is within this many working days
+	 * The window is counted in CALENDAR days, which is what the body does. The
+	 * docblock used to say working days and the code never did; this corrects
+	 * the comment rather than the behaviour, because an advisory alert window
+	 * is not a statutory term.
+	 *
+	 * @param int $warningDays Warn when the deadline is within this many
+	 *                         calendar days
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> Grouped overdue/warning complaints
 	 *
@@ -392,17 +389,8 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addWorkingDays(string $startDate, int $days): string {
-		$date = new DateTimeImmutable($startDate);
-		$added = 0;
-
-		while ($added < $days) {
-			$date = $date->modify('+1 day');
-			if ($this->isWorkingDay(date: $date) === true) {
-				$added++;
-			}
-		}
-
-		return $date->format('Y-m-d');
+		$start = new DateTimeImmutable($startDate);
+		return $this->workingDays->addWorkingDays(start: $start, days: $days)->format('Y-m-d');
 	}//end addWorkingDays()
 
 	/**
@@ -431,34 +419,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function isWorkingDay(\DateTimeImmutable $date): bool {
-		$dayOfWeek = (int)$date->format('N');
-
-		// Skip weekends (Saturday=6, Sunday=7).
-		if ($dayOfWeek >= 6) {
-			return false;
-		}
-
-		// Skip fixed Dutch public holidays.
-		$monthDay = $date->format('m-d');
-		if (in_array($monthDay, self::FIXED_HOLIDAYS_NL, true) === true) {
-			return false;
-		}
-
-		// Skip Easter-derived holidays (Good Friday, Easter Monday, Ascension, Whit Monday).
-		$year = (int)$date->format('Y');
-		$easter = new DateTimeImmutable(date('Y-m-d', easter_date($year)));
-		$easterDerived = [
-			$easter->modify('-2 days')->format('Y-m-d'),
-			$easter->modify('+1 day')->format('Y-m-d'),
-			$easter->modify('+39 days')->format('Y-m-d'),
-			$easter->modify('+50 days')->format('Y-m-d'),
-		];
-
-		if (in_array($date->format('Y-m-d'), $easterDerived, true) === true) {
-			return false;
-		}
-
-		return true;
+		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
 
 	/**

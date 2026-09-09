@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 use OCP\Notification\IManager as INotificationManager;
@@ -77,6 +78,7 @@ interface DsoDeadlineObjectServiceStub {
  * Unit tests for DsoDeadlineJob.
  *
  * @covers \OCA\Dossiq\BackgroundJob\DsoDeadlineJob
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class DsoDeadlineJobTest extends TestCase {
 
@@ -142,6 +144,7 @@ class DsoDeadlineJobTest extends TestCase {
 			container: $this->container,
 			notificationManager: $this->notificationManager,
 			logger: $this->logger,
+			workingDays: new WorkingDayCalculator(),
 		);
 	}//end buildJob()
 

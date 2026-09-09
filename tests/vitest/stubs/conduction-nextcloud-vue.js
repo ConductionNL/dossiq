@@ -74,3 +74,51 @@ export const CnLifecycleActions = {
 		])
 	},
 }
+
+/**
+ * Stand-in for `CnRelatedObjectsWidget`.
+ *
+ * Only the part a dossiq consumer owns is reproduced: the `extraSections`
+ * prop, which is how a host hands the widget rows the widget cannot fetch
+ * for itself. `CasePlannedWidget` is the one such host, and what a test can
+ * honestly assert about it is that the planned follow-ups it read reach this
+ * boundary — the real widget's own rendering belongs to the library and is
+ * not this suite's to check.
+ *
+ * The sections are rendered rather than merely recorded, so a spec asserts on
+ * output the way a reader meets it instead of reaching into component
+ * internals.
+ */
+export const CnRelatedObjectsWidget = {
+	name: 'CnRelatedObjectsWidget',
+	props: {
+		bare: { type: Boolean, default: false },
+		objectId: { type: [String, Number], default: '' },
+		objectData: { type: Object, default: null },
+		objectType: { type: String, default: '' },
+		register: { type: [String, Object], default: '' },
+		schema: { type: [String, Object], default: '' },
+		store: { type: Object, default: null },
+		extraSections: { type: Array, default: () => [] },
+	},
+	render() {
+		return h(
+			'div',
+			{ 'data-testid': 'cn-related-objects-widget' },
+			this.extraSections.map((section) =>
+				h('section', { class: 'cn-related-objects-widget__group' }, [
+					(section.items || []).length
+						? h('h4', {}, String(section.label))
+						: null,
+					h(
+						'ul',
+						{},
+						(section.items || []).map((item) =>
+							h('li', { key: item.key }, String(item.label ?? '')),
+						),
+					),
+				]),
+			),
+		)
+	},
+}

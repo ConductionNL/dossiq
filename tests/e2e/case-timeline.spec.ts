@@ -170,22 +170,48 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 
 		await option.click()
 
-		// Every remaining row is an update, and there are fewer of them than
-		// before. The count alone would pass on a filter that dropped
-		// everything; the text alone would pass on a filter that did nothing to
-		// a trail that happened to hold updates only.
+		// Poll until the list has SETTLED, on a condition the empty state
+		// cannot satisfy.
+		//
+		// `.toBeLessThan(before)` on its own could not do that, and reported a
+		// working filter as a broken one. `CnAuditTrailTab.resetAndFetch()`
+		// assigns `entries = []` BEFORE it issues the request, so the moment
+		// the filter changes the rendered count is zero — and zero is less
+		// than `before`, so the poll succeeded on the widget's own reset
+		// rather than on its answer. The very next line then read the rows
+		// while the request was still in flight and found none, failing with
+		// `rows after filtering: 0`.
+		//
+		// The filter itself is fine. Measured against the API on a case seeded
+		// the way this spec seeds one, a create plus one update:
+		// `?action=update` on the audit-trails endpoint returns the update
+		// rows and nothing else.
+		//
+		// So require non-empty AND all-updates together. Neither the reset nor
+		// a filter that did nothing can satisfy that pair: the reset fails the
+		// first half, and an unfiltered trail carrying reads fails the second.
 		await expect
-			.poll(() => rows.count(), { timeout: 20_000 })
-			.toBeLessThan(before)
-		const texts = await rows.allInnerTexts()
-		expect(
-			texts.length,
-			`rows after filtering: ${texts.length}`,
-		).toBeGreaterThan(0)
-		for (const text of texts) {
-			expect(text, `a non-update row survived the filter: ${text}`).toMatch(
-				/update/i,
+			.poll(
+				async () => {
+					const rendered = await rows.allInnerTexts()
+					return (
+						rendered.length > 0
+						&& rendered.every((t) => /update/i.test(t))
+					)
+				},
+				{
+					timeout: 20_000,
+					message: 'the filtered list never settled on updates only',
+				},
 			)
-		}
+			.toBe(true)
+
+		// And it is NARROWER than it was. Asserted after the list has settled,
+		// so this is a claim about the filtered answer rather than about the
+		// gap before it arrived.
+		const texts = await rows.allInnerTexts()
+		expect(texts.length, `rows after filtering: ${texts.length}`).toBeLessThan(
+			before,
+		)
 	})
 })

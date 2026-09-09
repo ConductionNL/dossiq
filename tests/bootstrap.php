@@ -55,41 +55,18 @@ if (is_link($ocpVendorDir) === true && file_exists($ocpVendorDir) === false) {
 
 unset($ocpVendorDir);
 
-// Polyfill easter_date() when the PHP `calendar` extension is not loaded
-// (it is absent from the slim PHP-CLI image used in the dev container).
-// Production Nextcloud images ship the calendar extension, so this guard is a
-// no-op there. The algorithm is the standard Gauss/Meeus computation returning
-// a Unix timestamp for noon (matching the extension's CAL_EASTER_DEFAULT).
-if (function_exists('easter_date') === false) {
-	/**
-	 * Compute the Unix timestamp of Easter Sunday for a Gregorian year.
-	 *
-	 * @param int|null $year The year (defaults to the current year).
-	 *
-	 * @return int Unix timestamp (UTC noon) of Easter Sunday.
-	 */
-	function easter_date(?int $year = null): int {
-		$year = ($year ?? (int)date('Y'));
-
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv((($b - $f) + 1), 3);
-		$h = (((19 * $a) + $b - $d - $g + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
-
-		$month = intdiv(($h + $l - (7 * $m) + 114), 31);
-		$day = ((($h + $l - (7 * $m) + 114) % 31) + 1);
-
-		return gmmktime(0, 0, 0, $month, $day, $year);
-	}//end easter_date()
-}//end if
+// NOTE: there used to be an easter_date() polyfill here, defining the function
+// when ext-calendar was absent. It is gone on purpose. lib/ crashed in
+// production on any ordinary weekday because two services called
+// easter_date() and no Nextcloud image we run ships ext-calendar — and the
+// test suite could never see it, because this bootstrap handed the tests a
+// function production did not have. It also papered over a second bug: the
+// real easter_date() returns a fixed CEST-midnight timestamp, so
+// date('Y-m-d', easter_date($y)) reads one day early under date.timezone=UTC,
+// while the polyfill's gmmktime() read correctly. Nothing in lib/ calls it
+// now; WorkingDayCalculator owns the computus, and
+// Unit/Service/WorkingDayCalculatorTest::testLibDoesNotDependOnExtCalendar
+// fails if that changes. Do not reinstate this.
 
 // Load the OC-internal and Doctrine stubs FIRST — before the OCP pre-load and
 // before any OCP autoloader is registered.
