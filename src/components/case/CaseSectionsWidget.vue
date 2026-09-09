@@ -209,6 +209,7 @@ export default {
 		 * @param {string} key The section key.
 		 * @param {HTMLElement|null} el The host wrapper, or null on teardown.
 		 * @return {void}
+		 * @spec openspec/specs/case-dashboard-view/spec.md#scenario-a-section-whose-widget-does-not-resolve-stays-silent
 		 */
 		setHostRef(key, el) {
 			this.observers = this.observers || {}
@@ -252,6 +253,7 @@ export default {
 		 *
 		 * @param {HTMLElement} el The host wrapper.
 		 * @return {boolean} true when the section has something to show.
+		 * @spec openspec/specs/case-dashboard-view/spec.md#scenario-a-section-whose-widget-does-not-resolve-stays-silent
 		 */
 		hasContent(el) {
 			if (!el) return false
@@ -265,6 +267,7 @@ export default {
 		 * Drop every observer, so a destroyed panel leaves none running.
 		 *
 		 * @return {void}
+		 * @spec openspec/specs/case-dashboard-view/spec.md#scenario-a-section-whose-widget-does-not-resolve-stays-silent
 		 */
 		stopObserving() {
 			for (const observer of Object.values(this.observers || {})) {
