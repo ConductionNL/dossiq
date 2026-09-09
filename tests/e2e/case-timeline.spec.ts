@@ -102,28 +102,52 @@ test.describe('Case timeline — one history, in the sidebar', () => {
 		const rows = sidebar.locator('.cn-audit-entry')
 		await expect(rows.first()).toBeVisible({ timeout: 20_000 })
 
-		// The first row is the update this spec made, by admin. Asserting only
-		// that SOME row says update would pass on a list in any order, and
-		// newest-first is half of what row A05 asks for.
+		// The claim is ORDER: the newest write sits above the older one, and it
+		// carries its actor. It used to be written as "row 0 says update", and
+		// that form could not pass however well the product worked, because
+		// OPENING THE PAGE IS ITSELF AN AUDITED EVENT. OpenRegister logs a
+		// `read` on every load, so by the time this test can look at the list,
+		// the newest row is the read its own navigation just made. CI reported
+		// exactly that: `Sep 9, 2026, 07:34 AM` / `admin` / `read`.
 		//
-		// This assertion was red on a real defect until openregister#3540,
-		// which merged into openregister@development on 2026-09-08 and is the
-		// ref CI installs. `CnAuditTrailTab` asks for `_sort[created]=DESC`
-		// and the mapper dropped it: the loop that builds the ORDER BY
-		// assigned its `ASC` default over the value it was about to test, so
-		// every trail came back oldest-first however it was asked for.
-		// Measured on a running instance before the fix, same object with and
-		// without the parameter, identical ascending output both times.
-		// Deliberately left as written rather than relaxed to match the
-		// broken order: bottom-up is the wrong order for a reader, and this
-		// is the assertion that catches a regression of it.
-		await expect(rows.first()).toContainText(/update/i)
-		await expect(rows.first()).toContainText('admin')
+		// The reads are not noise to be filtered away at the source. An
+		// inzage-log is what a zaaksysteem owes the person the case is about
+		// (AVG art. 15), so the tab keeps them and offers the Action filter to
+		// narrow — which the third test in this file covers. What changed here
+		// is the assertion, not the timeline: it now reads the order of the
+		// WRITES within the list instead of demanding that no read be newer
+		// than them.
+		//
+		// It still guards the defect it was written for. Until openregister
+		// #3540 (merged into openregister@development on 2026-09-08, the ref
+		// CI installs) `CnAuditTrailTab` asked for `_sort[created]=DESC` and
+		// the mapper dropped it — the loop building the ORDER BY assigned its
+		// `ASC` default over the value it was about to test — so every trail
+		// came back oldest-first. Under that defect the create is ABOVE the
+		// update and the comparison below is red. Measured: on a dev instance
+		// still running the pre-#3540 build this test fails with
+		// "the create sits above the update", and on #3540 it passes.
+		await expect.poll(() => rows.count(), { timeout: 20_000 }).toBeGreaterThan(1)
+		const texts = await rows.allInnerTexts()
+		const seen = JSON.stringify(texts)
 
-		// And the create sits below it, so the order is a claim about time
-		// rather than an accident of a one-row list.
-		await expect(rows).not.toHaveCount(1, { timeout: 20_000 })
-		await expect(rows.nth(1)).toContainText(/create|update/i)
+		const updateAt = texts.findIndex((row) => /update/i.test(row))
+		const createAt = texts.findIndex((row) => /create/i.test(row))
+		expect(updateAt, `no update row in the trail: ${seen}`).toBeGreaterThan(-1)
+		expect(createAt, `no create row in the trail: ${seen}`).toBeGreaterThan(-1)
+
+		// Newest-first: the update this spec made after the create has to read
+		// above it. Bottom-up ordering inverts exactly this pair.
+		expect(
+			updateAt,
+			`the create sits above the update, so the trail is bottom-up: ${seen}`,
+		).toBeLessThan(createAt)
+
+		// And the write names who made it.
+		expect(
+			texts[updateAt],
+			`the newest write does not name its actor: ${texts[updateAt]}`,
+		).toContain('admin')
 	})
 
 	// @e2e openspec/changes/case-timeline/specs/case-dashboard-view/spec.md#the-action-filter-narrows-to-updates
