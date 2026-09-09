@@ -41,7 +41,11 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import {
+	clickHeaderAction,
+	dismissSupportDialog,
+	openHeaderActionsMenu,
+} from './helpers/nav.ts'
 
 /** The fields the Add party form asks a handler to fill. */
 const FORM_FIELDS = [
@@ -426,10 +430,13 @@ test.describe('Case detail — the Parties tab', () => {
 			`role queries: ${statuses.join(',')}`,
 		).toBe(true)
 
-		// The way out of the empty state is on the page, not behind it.
-		await expect(
-			page.getByRole('button', { name: /Add party|Betrokkene toevoegen/ }),
-		).toBeVisible({ timeout: 15_000 })
+		// The way out of the empty state is on the page, not behind it —
+		// in the header's Actions menu, which has to be opened before the
+		// entry can be seen at all.
+		await openHeaderActionsMenu(page)
+		await expect(page.getByTestId('cn-action-add-party')).toBeVisible({
+			timeout: 15_000,
+		})
 	})
 
 	// @e2e openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
@@ -443,9 +450,7 @@ test.describe('Case detail — the Parties tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Add party|Betrokkene toevoegen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-add-party')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
@@ -475,9 +480,7 @@ test.describe('Case detail — the Parties tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Add party|Betrokkene toevoegen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-add-party')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),

@@ -40,7 +40,11 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import {
+	clickHeaderAction,
+	openHeaderActionsMenu,
+	trackDossiqErrors,
+} from './helpers/nav.ts'
 
 /** A day in milliseconds, for the extension arithmetic. */
 const DAY = 24 * 60 * 60 * 1000
@@ -409,7 +413,7 @@ test.describe('Case lifecycle on the case page', () => {
 	}) => {
 		await openCase(page, 'suspend')
 
-		await page.getByTestId('cn-action-case-suspend').click()
+		await clickHeaderAction(page, 'cn-action-case-suspend')
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		// The reason is required: the button says so by staying disabled.
@@ -451,7 +455,7 @@ test.describe('Case lifecycle on the case page', () => {
 		).toBe(true)
 
 		await openCase(page, 'extend')
-		await page.getByTestId('cn-action-case-extend').click()
+		await clickHeaderAction(page, 'cn-action-case-extend')
 		const dialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		await dialog.getByTestId('case-lifecycle-reason').fill('Awb 4:14 e2e')
@@ -497,6 +501,11 @@ test.describe('Case lifecycle on the case page', () => {
 		)
 
 		await openCase(page, 'closed')
+		// Opened explicitly rather than through clickHeaderAction, because what
+		// this test is about is that Reopen is OFFERED on a closed case: the
+		// visibility assertion has to be its own step, and an entry in a shut
+		// menu is absent whether the gate let it through or not.
+		await openHeaderActionsMenu(page)
 		const reopen = page.getByTestId('cn-action-case-reopen')
 		await expect(reopen).toBeVisible({ timeout: 25_000 })
 		await reopen.click()

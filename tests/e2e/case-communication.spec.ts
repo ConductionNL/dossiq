@@ -35,6 +35,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { clickHeaderAction } from './helpers/nav.ts'
 
 /** The five fields the Log contact action asks a handler to fill. */
 const FORM_FIELDS = [
@@ -280,9 +281,7 @@ test.describe('Case detail — the Communication tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Log contact|Contact vastleggen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-log-contact')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
@@ -316,9 +315,7 @@ test.describe('Case detail — the Communication tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Log contact|Contact vastleggen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-log-contact')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),

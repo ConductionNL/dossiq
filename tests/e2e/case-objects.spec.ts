@@ -44,7 +44,11 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import {
+	clickHeaderAction,
+	dismissSupportDialog,
+	openHeaderActionsMenu,
+} from './helpers/nav.ts'
 
 /** The fields the Link object form asks a handler to fill. */
 const FORM_FIELDS = [
@@ -324,9 +328,10 @@ test.describe('Case objects', () => {
 				exact: true,
 			}),
 		).toBeVisible({ timeout: 15_000 })
-		await expect(
-			page.getByRole('button', { name: /Link object|Object koppelen/ }),
-		).toBeVisible({ timeout: 15_000 })
+		await openHeaderActionsMenu(page)
+		await expect(page.getByTestId('cn-action-link-object')).toBeVisible({
+			timeout: 15_000,
+		})
 	})
 
 	// @e2e openspec/changes/custom-objects-on-the-case/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
@@ -340,9 +345,7 @@ test.describe('Case objects', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Link object|Object koppelen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-link-object')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
@@ -372,9 +375,7 @@ test.describe('Case objects', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Link object|Object koppelen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-link-object')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
@@ -436,9 +437,7 @@ test.describe('Case objects', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Link object|Object koppelen/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-link-object')
 
 		const dialog = page.getByRole('dialog').filter({
 			has: page.locator('[data-testid-modal="cn-form-dialog"]'),

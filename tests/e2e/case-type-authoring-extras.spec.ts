@@ -49,7 +49,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { clickHeaderAction, dismissSupportDialog } from './helpers/nav.ts'
 
 let api: APIRequestContext
 let token = ''
@@ -577,7 +577,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await openCaseType(page, parent.caseType)
 
 		const download = page.waitForEvent('download', { timeout: 30_000 })
-		await page.getByRole('button', { name: /^(Export|Exporteren)$/ }).click()
+		await clickHeaderAction(page, 'cn-action-case-type-export')
 
 		const file = await download
 		// The endpoint names the file after the case type; asserting only that
@@ -592,7 +592,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	}) => {
 		await openCaseType(page, publishable.caseType)
 
-		await page.getByRole('button', { name: /^(Duplicate|Dupliceren)$/ }).click()
+		await clickHeaderAction(page, 'cn-action-case-type-duplicate')
 		await expect(page.getByTestId('case-type-duplicate-dialog')).toBeVisible({
 			timeout: 20_000,
 		})
@@ -623,7 +623,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('a draft with findings lists them and stays a draft', async ({ page }) => {
 		await openCaseType(page, incomplete.caseType)
 
-		await page.getByRole('button', { name: /^(Publish|Publiceren)$/ }).click()
+		await clickHeaderAction(page, 'cn-action-case-type-publish')
 		await expect(page.getByTestId('case-type-publish-dialog')).toBeVisible({
 			timeout: 20_000,
 		})
@@ -647,7 +647,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	}) => {
 		await openCaseType(page, publishable.caseType)
 
-		await page.getByRole('button', { name: /^(Publish|Publiceren)$/ }).click()
+		await clickHeaderAction(page, 'cn-action-case-type-publish')
 		await expect(page.getByTestId('case-type-publish-dialog')).toBeVisible({
 			timeout: 20_000,
 		})

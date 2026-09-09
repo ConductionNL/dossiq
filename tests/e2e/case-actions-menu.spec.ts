@@ -39,7 +39,12 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { tickCheckbox, trackDossiqErrors } from './helpers/nav.ts'
+import {
+	clickHeaderAction,
+	openHeaderActionsMenu,
+	tickCheckbox,
+	trackDossiqErrors,
+} from './helpers/nav.ts'
 
 /** The case types this suite seeds: one that allows a flow, one that does not. */
 let typeWithFlows = ''
@@ -180,7 +185,7 @@ test.describe('The case Actions menu', () => {
 		const errors = trackDossiqErrors(page)
 		await openCase(page, 'copy')
 
-		await page.getByTestId('cn-action-copy-case').click()
+		await clickHeaderAction(page, 'cn-action-copy-case')
 		const dialog = page.getByTestId('case-copy-dialog')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
@@ -242,7 +247,7 @@ test.describe('The case Actions menu', () => {
 	}) => {
 		await openCase(page, 'copy-with-documents')
 
-		await page.getByTestId('cn-action-copy-case').click()
+		await clickHeaderAction(page, 'cn-action-copy-case')
 		const dialog = page.getByTestId('case-copy-dialog')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
@@ -295,7 +300,7 @@ test.describe('The case Actions menu', () => {
 
 		await openCase(page, 'start')
 
-		await page.getByTestId('cn-action-start-flow').click()
+		await clickHeaderAction(page, 'cn-action-start-flow')
 		const dialog = page.getByTestId('case-start-flow-dialog')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
@@ -310,7 +315,13 @@ test.describe('The case Actions menu', () => {
 	test('a case type that allows none does not offer Start', async ({ page }) => {
 		await openCase(page, 'no-start')
 
-		// The Actions menu itself is there; the entry is not.
+		// Both entries live in the Actions menu, so the menu has to be open
+		// before either can be counted: with it shut, Copy case is absent too
+		// and the pair of assertions would agree with each other about a page
+		// that offers nothing at all.
+		await openHeaderActionsMenu(page)
+
+		// The menu itself holds Copy case; the Start entry is not in it.
 		await expect(page.getByTestId('cn-action-copy-case')).toBeVisible({
 			timeout: 20_000,
 		})
@@ -334,7 +345,7 @@ test.describe('The case Actions menu', () => {
 		// this page, and what the scenario is about is the ROW appearing, not
 		// how the date was typed. The dialog's own wiring is asserted by the
 		// vitest over the manifest and by the picker's presence below.
-		await page.getByTestId('cn-action-plan-follow-up').click()
+		await clickHeaderAction(page, 'cn-action-plan-follow-up')
 		const dialog = page.getByTestId('case-plan-dialog')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 		await expect(dialog.getByTestId('case-plan-date')).toBeVisible()

@@ -414,3 +414,65 @@ export async function tickCheckbox(checkbox: Locator): Promise<void> {
 	await checkbox.page().locator(`#${id}-label`).click()
 	await expect(checkbox).toBeChecked({ timeout: 10_000 })
 }
+
+/**
+ * Click one of a detail page's manifest header actions.
+ *
+ * These used to be buttons in the page header, so a test clicked them
+ * directly. They are entries in the header's Actions menu now: CnDetailPage
+ * feeds `headerActions` into CnActionsMenu instead of rendering a row of
+ * buttons, which on a case with twelve of them squeezed the title to a stub.
+ * The `data-testid` on each entry is unchanged, so the only new step is
+ * opening the menu.
+ *
+ * The menu is `force-menu`, so nothing is inline and every entry is absent from
+ * the DOM until it opens: a bare `getByTestId(...).click()` now fails with
+ * `element(s) not found` after the full timeout, which reads as a missing
+ * feature rather than as a closed menu. Hence this helper rather than an
+ * open-the-menu line copied into each test.
+ *
+ * @param page The page showing the detail view.
+ * @param testId The action entry's `data-testid`, e.g. `cn-action-copy-case`.
+ *
+ * @return Resolves once the entry has been clicked.
+ */
+export async function clickHeaderAction(page: Page, testId: string): Promise<void> {
+	await openHeaderActionsMenu(page)
+	const entry = page.getByTestId(testId)
+	await expect(entry).toBeVisible({ timeout: 10_000 })
+	await entry.click()
+}
+
+/**
+ * Open a detail page's header Actions menu and wait for it to render.
+ *
+ * Split out from {@link clickHeaderAction} for the tests that assert on what
+ * the menu holds — that Copy case is offered and Start is not, say — rather
+ * than pressing one entry.
+ *
+ * Opening an already-open menu would close it, so this is a no-op when the
+ * root already carries `action-item--open`.
+ *
+ * @param page The page showing the detail view.
+ *
+ * @return Resolves once the menu is open.
+ */
+export async function openHeaderActionsMenu(page: Page): Promise<void> {
+	// `cn-detail-page-actions` lands on NcActions' ROOT div, not on the toggle:
+	// NcActions renders its root with a class list and no attribute spread, so
+	// Vue's fallthrough puts the testid there. That root is also what carries
+	// `action-item--open`, which is the only open-state signal this version
+	// publishes — the toggle button gets no `aria-expanded` of its own, so an
+	// assertion on one would wait out its timeout on a menu that did open.
+	const menu = page.getByTestId('cn-detail-page-actions')
+	await expect(menu).toBeVisible({ timeout: 20_000 })
+
+	const open = await menu.evaluate((el) =>
+		el.classList.contains('action-item--open'),
+	)
+	if (!open) {
+		await menu.locator('.action-item__menutoggle').click()
+	}
+
+	await expect(menu).toHaveClass(/action-item--open/, { timeout: 10_000 })
+}
