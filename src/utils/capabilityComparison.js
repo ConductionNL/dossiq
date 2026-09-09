@@ -152,3 +152,33 @@ export function formatComparedOn(iso, locale = 'en') {
 		return iso
 	}
 }
+
+/**
+ * The rows where every rival has the capability and we do not.
+ *
+ * DERIVED, never stored, for the same reason the tallies are. This answers the
+ * one question a reader of a vendor's own comparison actually has, and it is
+ * the question a stored sentence would go on answering after it stopped being
+ * true. When the list comes back empty the page may say so; when a future
+ * round fills it, the page names the rows instead of keeping the boast.
+ *
+ * `partial` on our side still counts as behind: the claim being made is that
+ * three independent teams shipped something we did not, and a half-built
+ * version of it does not refute that.
+ *
+ * @param {object} data Parsed `capabilityComparison.json`.
+ * @return {Array<object>} Rows where every non-self system is `yes` and we are not.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+ */
+export function behindEveryRival(data) {
+	const self = (data?.systems ?? []).find((system) => system.isSelf)
+	const rivals = (data?.systems ?? []).filter((system) => !system.isSelf)
+	if (!self || rivals.length === 0) {
+		return []
+	}
+	return (data?.capabilities ?? []).filter(
+		(row) =>
+			row[self.key] !== 'yes'
+			&& rivals.every((rival) => row[rival.key] === 'yes'),
+	)
+}

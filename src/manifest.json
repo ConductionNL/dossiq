@@ -226,7 +226,15 @@
 			"label": "Contacts",
 			"icon": "AccountGroupOutline",
 			"route": "Contacts",
-			"order": 25
+			"order": 25,
+			"open": true
+		},
+		{
+			"id": "OrganisationsMenu",
+			"label": "Organisations",
+			"icon": "OfficeBuildingOutline",
+			"route": "Organisations",
+			"order": 26
 		},
 		{
 			"id": "Cases",
@@ -4711,7 +4719,7 @@
 				"schema": "brpPerson",
 				"allowSavedViews": true,
 				"showViewAction": false,
-				"_folderSidebarNote": "THE FOLDER SIDEBAR IS ABSENT, AND THAT IS THE HONEST STATE. Design D1 asks for a `custom` sidebar with a People folder over `brpPerson` and an Organisations folder naming `kvkCompany` as its schema, the second marked `hidden: true` until nextcloud-vue reads a folder's `schema` (the B10 seam). Two things measured against the installed dist stop that shipping. FIRST, there is no `hidden`: CnFolderTree renders every entry of `folders[]`, so the Organisations folder would appear, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list — the opposite of what REQ-ID-4's scenario asks. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. That would have emptied the list on the FIRST click of the only folder shipped. The block to add when the seam lands, unchanged from the design: `folderSidebar: {source: \"custom\", filterField: \"@self.schema\", allLabel: \"All contacts\", folders: [{id: \"brpPerson\", name: \"People\", schema: \"brpPerson\"}, {id: \"kvkCompany\", name: \"Organisations\", schema: \"kvkCompany\"}]}`. Until then the page lists people, the index search box covers name and number, and an organisation is reached from its case through the initiator card.",
+				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
 				"columns": [
 					{
 						"key": "displayName",
@@ -4749,6 +4757,58 @@
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose \u2014 the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
+		},
+		{
+			"id": "Organisations",
+			"route": "/organisations",
+			"type": "index",
+			"title": "Organisations",
+			"config": {
+				"register": "dossiq",
+				"schema": "kvkCompany",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"columns": [
+					{
+						"key": "tradeName",
+						"label": "Name"
+					},
+					{
+						"key": "kvkNumber",
+						"label": "KvK number"
+					},
+					{
+						"key": "legalForm",
+						"label": "Legal form"
+					},
+					{
+						"key": "address.place",
+						"label": "Place",
+						"sortable": false
+					},
+					{
+						"key": "description",
+						"label": "Description",
+						"sortable": false
+					}
+				],
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "OrganisationDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The organisations dossiq knows, and the other half of the Contacts domain. `contacts-domain` shipped `OrganisationDetail` with no way to reach it except the initiator card of a case that already named the company, so the ten seeded `kvkCompany` rows were listed nowhere. This page is that list. It spends NO top-level navigation slot: `src/menu-layout.json` relocates `OrganisationsMenu` under `Contacts`, and ADR-097 Decision 1 counts top-level entries only. `Contacts` carries `open: true` so the child is visible on mount rather than behind a chevron, because a nav entry you must first expand to discover is not the answer to a capability called contacts you can find. The `address.place` column is `sortable: false` for the same reason the Contacts page's residence column is: a dot-path resolves client-side for rendering, but a sort sends the key to OpenRegister as an `_order` field and no such column exists there."
 		},
 		{
 			"id": "ContactDetail",
@@ -5306,6 +5366,18 @@
 			"schemaSlug": "beroep",
 			"urlTemplate": "/apps/dossiq/beroepen/{uuid}",
 			"displayName": "Beroep"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "brpPerson",
+			"urlTemplate": "/apps/dossiq/contacts/{uuid}",
+			"displayName": "Contact"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "kvkCompany",
+			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
+			"displayName": "Organisation"
 		}
 	]
 }

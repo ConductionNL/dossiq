@@ -402,15 +402,24 @@ describe('what this change does NOT move', () => {
 		// LATER change may legitimately add an entry, and then this list grows
 		// by exactly that entry. `Objects` (custom-objects-on-the-case) is the
 		// first such addition, `Integrations`
-		// (pluggable-integration-registry) the second and `Contacts`
-		// (contacts-domain) the third; every entry this change was about is
-		// unmoved, in the same order.
+		// (pluggable-integration-registry) the second, `Contacts`
+		// (contacts-domain) the third and the `Organisations` right after it
+		// (contacts-you-can-find) the fourth; every entry this change was
+		// about is unmoved, in the same order.
+		//
+		// TWO ENTRIES ARE LABELLED `Organisations` AND THAT IS NOT A TYPO. The
+		// second one, further down, is `TenantsMenu` — the multitenancy
+		// tenant, not a KvK company. It sits in `menu-layout.json#removals`
+		// and renders nowhere, so the two never appear together; the
+		// collision is only visible here, on the RAW manifest, which is
+		// exactly where it should be visible.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
 			'Queue',
 			'Assigned to me',
 			'My work',
 			'Contacts',
+			'Organisations',
 			'All cases',
 			'Objects',
 			'Tasks',
