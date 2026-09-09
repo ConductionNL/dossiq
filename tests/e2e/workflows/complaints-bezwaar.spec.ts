@@ -109,7 +109,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		})
 	}
 
-	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-appears-in-list
+	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaren-list-surface
 	test('a seeded bezwaar appears in the list with its workflow status', async ({
 		page,
 	}) => {
@@ -128,7 +128,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		).toBeVisible()
 	})
 
-	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-status-persists
+	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-status-types
 	test('changing the bezwaar workflow status persists and re-renders', async ({
 		page,
 	}) => {
