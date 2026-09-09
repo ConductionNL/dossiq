@@ -18,20 +18,27 @@ import {
 	groupByArea,
 	labelFor,
 	overallTallies,
+	RATING_COLUMNS,
 	RATINGS,
 	tally,
 } from '../../src/utils/capabilityComparison.js'
 
-// The audit's own totals, from concurrentie-analyse
-// procest/_round2/compare/M1-functionality.md "Tally per area". Hard-coded on
-// purpose: if a row is edited, one of these fails and names the system whose
-// score moved.
+// The audit's own totals. Hard-coded on purpose: if a row is edited, one of
+// these fails and names the system whose score moved.
+//
+// Round 3 added 19 rows on 2026-09-09. It read GLPI and Zammad, not the three
+// products in this table, so those three carry `unknown` on all 19 and their
+// yes/partial/no counts did not move. Ours did, downward: 84/87/35 over 206
+// became 87/92/46 over 225. That is the round working, not the product
+// regressing. The rows are things the round 2 list never thought to ask.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 84, partial: 87, no: 35 },
-	opencase: { yes: 62, partial: 46, no: 98 },
-	gzac: { yes: 86, partial: 55, no: 65 },
-	zaaksysteem: { yes: 136, partial: 40, no: 30 },
+	dossiq: { yes: 87, partial: 92, no: 46, unknown: 0 },
+	opencase: { yes: 62, partial: 46, no: 98, unknown: 19 },
+	gzac: { yes: 86, partial: 55, no: 65, unknown: 19 },
+	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 19 },
 }
+
+const ROW_COUNT = 225
 
 // Our own column moved on 2026-09-08: six rows the audit read as `no` on
 // 2026-09-07 had been built by the next day. 80/85/41 became 84/87/35, and the
@@ -40,6 +47,31 @@ const AUDIT_TOTALS = {
 // move is listed in the data file's `_rerated`, which the guard below pins to
 // the ratings themselves so a note cannot outlive the score it explains.
 const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
+
+// Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
+// 7.1.3 driven locally. They are logged in `_rerated` with `cause: 'added'`
+// and a null `from`, because there was no previous rating to move.
+const ADDED_IDS = [
+	'2.23',
+	'2.24',
+	'2.25',
+	'2.26',
+	'2.27',
+	'3.20',
+	'6.15',
+	'6.16',
+	'8.11',
+	'8.12',
+	'8.13',
+	'8.14',
+	'8.15',
+	'9.13',
+	'10.11',
+	'11.25',
+	'11.26',
+	'13.17',
+	'13.18',
+]
 
 // The rows where all three rivals have the capability and we do not. Pinned
 // rather than asserted empty, because it is NOT empty and a plan that said so
@@ -58,8 +90,8 @@ const BEHIND_EVERY_RIVAL = ['2.1', '2.4', '4.16', '4.22', '9.1', '11.10', '12.7'
 const IDENTICAL_BY_DESIGN = new Set(['12.4'])
 
 describe('capabilityComparison data', () => {
-	it('carries the 206 rows and 13 areas the audit produced', () => {
-		expect(data.capabilities).toHaveLength(206)
+	it('carries the 225 rows and 13 areas the audit produced', () => {
+		expect(data.capabilities).toHaveLength(ROW_COUNT)
 		expect(data.areas).toHaveLength(13)
 		expect(data.systems).toHaveLength(4)
 	})
@@ -79,12 +111,52 @@ describe('capabilityComparison data', () => {
 		const bad = []
 		for (const row of data.capabilities) {
 			for (const system of data.systems) {
-				if (!RATINGS.includes(row[system.key])) {
+				if (!RATING_COLUMNS.includes(row[system.key])) {
 					bad.push(`${row.id}/${system.key}=${row[system.key]}`)
 				}
 			}
 		}
 		expect(bad).toEqual([])
+	})
+
+	it('never leaves our own column unrated', () => {
+		// We can always read our own code. An `unknown` in the dossiq column
+		// is not honesty about someone else's product, it is a row nobody
+		// finished, and it would understate our score for free.
+		const unrated = data.capabilities.filter((c) => !RATINGS.includes(c.dossiq))
+		expect(unrated.map((c) => c.id)).toEqual([])
+	})
+
+	it('marks an unrated competitor cell as a row a later round added', () => {
+		// The only honest reason a competitor cell is empty is that the row
+		// was added after that product was read. Any other `unknown` is a gap
+		// in the audit pretending to be a disclosure.
+		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
+		const wrong = data.capabilities.filter(
+			(c) => rivals.some((k) => c[k] === 'unknown') && !c.addedOn,
+		)
+		expect(wrong.map((c) => c.id)).toEqual([])
+	})
+
+	it('leaves every rival unrated on a row added after they were read', () => {
+		// The mirror of the test above. A row added without re-reading the
+		// three products cannot carry a rating for any of them: a guess in a
+		// competitor's column is the error this page exists to avoid.
+		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
+		const guessed = data.capabilities.filter(
+			(c) => c.addedOn && rivals.some((k) => c[k] !== 'unknown'),
+		)
+		expect(guessed.map((c) => c.id)).toEqual([])
+	})
+
+	it('dates every added row on the day the rows were added', () => {
+		const added = data.capabilities.filter((c) => c.addedOn)
+		expect(added.map((c) => c.id).sort()).toEqual([...ADDED_IDS].sort())
+		expect(data.rowsAddedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+		for (const row of added) {
+			expect(row.addedOn, row.id).toBe(data.rowsAddedOn)
+			expect(row.addedOn >= data.comparedOn, row.id).toBe(true)
+		}
 	})
 
 	it('reproduces the audit tallies for all four systems', () => {
@@ -95,10 +167,11 @@ describe('capabilityComparison data', () => {
 					yes: totals[system].yes,
 					partial: totals[system].partial,
 					no: totals[system].no,
+					unknown: totals[system].unknown,
 				},
 				system,
 			).toEqual(expected)
-			expect(totals[system].total, system).toBe(206)
+			expect(totals[system].total, system).toBe(ROW_COUNT)
 		}
 	})
 
@@ -130,13 +203,26 @@ describe('capabilityComparison data', () => {
 
 	it('explains every correction, and corrects only our own column', () => {
 		expect(data._rerated.map((r) => r.id).sort()).toEqual(
-			[...RERATED_IDS].sort(),
+			[...RERATED_IDS, ...ADDED_IDS].sort(),
 		)
 		for (const entry of data._rerated) {
 			expect(entry.from, entry.id).not.toBe(entry.to)
 			expect(RATINGS, entry.id).toContain(entry.to)
 			expect(entry.on, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 			expect(entry.reason.length, entry.id).toBeGreaterThan(20)
+			expect(['built', 'added'], entry.id).toContain(entry.cause)
+		}
+	})
+
+	it('logs an added row as an addition and not as a correction', () => {
+		// A row that never had a rating cannot have been corrected. Recording
+		// one as `built` would tell a reader we shipped something, when what
+		// happened is that we started asking a question we had ducked.
+		const added = data._rerated.filter((e) => e.cause === 'added')
+		expect(added.map((e) => e.id).sort()).toEqual([...ADDED_IDS].sort())
+		for (const entry of added) {
+			expect(entry.from, entry.id).toBeNull()
+			expect(entry.on, entry.id).toBe(data.rowsAddedOn)
 		}
 	})
 
@@ -173,6 +259,25 @@ describe('behindEveryRival', () => {
 			],
 		}
 		expect(behindEveryRival(shaped).map((row) => row.id)).toEqual(['x'])
+	})
+
+	it('does not count a row a rival was never rated on', () => {
+		// A row added by a later round leaves the three competitor cells
+		// `unknown`. Counting one of those as agreement would let us claim
+		// three teams shipped something we did not, on no evidence at all.
+		const shaped = {
+			systems: data.systems,
+			capabilities: [
+				{
+					id: 'x',
+					dossiq: 'no',
+					opencase: 'yes',
+					gzac: 'unknown',
+					zaaksysteem: 'yes',
+				},
+			],
+		}
+		expect(behindEveryRival(shaped)).toEqual([])
 	})
 
 	it('does not count a row one rival merely half has', () => {
@@ -231,7 +336,7 @@ describe('groupByArea', () => {
 	it('places every row in exactly one area group', () => {
 		const groups = groupByArea(data, 'en')
 		const total = groups.reduce((n, g) => n + g.capabilities.length, 0)
-		expect(total).toBe(206)
+		expect(total).toBe(ROW_COUNT)
 	})
 
 	it('labels the groups and their rows in Dutch for a Dutch locale', () => {
