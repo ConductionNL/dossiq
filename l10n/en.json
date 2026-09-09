@@ -3859,7 +3859,12 @@
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.",
         "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.": "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.",
         "Case type for mail nobody claims": "Case type for mail nobody claims",
-        "Leave it in the mailbox": "Leave it in the mailbox"
+        "Leave it in the mailbox": "Leave it in the mailbox",
+        "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.": "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.",
+        "We could not load the AI settings, so none are shown. Reload the page to try again.": "We could not load the AI settings, so none are shown. Reload the page to try again.",
+        "You have a key stored. Type a new one to replace it.": "You have a key stored. Type a new one to replace it.",
+        "You have no key stored.": "You have no key stored.",
+        "Why the attempt failed, when action is failed": "Why the attempt failed, when action is failed"
     },
     "plurals": ""
 }

@@ -69,15 +69,25 @@ class AiSettingsController extends Controller {
 	/**
 	 * Get AI settings.
 	 *
+	 * Answers `{"settings": {...}}`. The settings used to be returned FLAT while
+	 * the admin tab read `response.settings`, so the tab always got `undefined`,
+	 * fell back to its hard-coded defaults, and drew all six feature switches
+	 * plus PII stripping as ON no matter what was stored. An administrator who
+	 * had turned PII stripping off — or had never turned it on — was shown a
+	 * switch saying it was on.
+	 *
+	 * Wrapped rather than unwrapped on the client, because an envelope leaves
+	 * room to say something ABOUT the settings later (who last changed them,
+	 * whether a value is locked by config) without another shape change, and
+	 * because a bare object cannot distinguish "no settings" from "no response".
+	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function getSettings(): JSONResponse {
-		$settings = $this->aiService->getAiSettings();
-
-		return new JSONResponse($settings);
+		return new JSONResponse(['settings' => $this->aiService->getAiSettings()]);
 	}//end getSettings()
 
 	/**

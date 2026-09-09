@@ -13,6 +13,30 @@
   UI mirrors the backend invariant), and must explicitly Approve or Reject
   before anything is handed to the redaction pipeline. Nothing here marks a
   document "anonymised" or publishes anything.
+
+  ⚠️ THIS FILE HAS NO IMPORTER, AND IT IS NOT DEAD CODE. Do not delete it on
+  that basis without reading this paragraph first.
+
+  It was wired up when the feature shipped (6b29a890c). Its only importer was
+  `src/views/cases/components/WooPublicationPanel.vue`, which was removed by
+  5e30712a9 ("remove 77 unreachable .vue files under src/views") as part of a
+  gate-26 sweep — so the sweep deleted the parent and left the child, and what
+  is missing is the way IN, not the dialog.
+
+  Everything behind it is still live: `WOOAnonymisationAssistService` and its
+  unit tests, the two routes `…/woo/documents/{documentRef}/redaction-proposal`
+  and `…/redaction-proposal/review`, the vitest suite over
+  `src/utils/redactionAssistHelpers.js`, and the spec at
+  `openspec/specs/woo-llm-anonymisation`. Deleting the dialog would make that
+  orphaning permanent and silent; restoring an entry point is the open work.
+
+  The sibling `AiClassifyDialog.vue` and `AiExtractDialog.vue` were a genuinely
+  different case: `git log --all -S"import … from"` finds no commit that ever
+  imported either one, so they were never reachable and they were removed. So
+  was `src/views/cases/components/AiConfidenceBadge.vue`, whose only importers
+  were those two dialogs. That last one is the same trap in miniature and it was
+  caught by gate-26 rather than by reading: deleting a file can orphan the next
+  one down, so check what the deletion leaves behind, not just what it removes.
 -->
 <template>
 	<NcDialog
