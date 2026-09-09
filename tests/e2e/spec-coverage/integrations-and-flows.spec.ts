@@ -126,7 +126,7 @@ test.describe('ADR-110: a link that leaves the app leaves the navigation', () =>
 		expect(labels).not.toContain('AI oversight')
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/admin-settings-surface/spec.md#scenario-exactly-one-entry-links-to-the-administration-surface
+	// @e2e openspec/specs/admin-settings-surface/spec.md#scenario-no-duplicate-configuration-entries
 	test('exactly one entry links to the administration surface', async ({
 		page,
 	}) => {

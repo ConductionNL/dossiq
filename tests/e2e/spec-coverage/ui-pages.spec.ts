@@ -51,7 +51,7 @@ test.describe('Dashboard page render', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#dashboard-mounts-without-console-errors
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dashboard-page-renders-heading-and-widget-grid
 	test('dashboard mounts without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		await navTo(page, 'Dashboard')

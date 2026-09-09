@@ -119,7 +119,11 @@ const SETTINGS_PAGES: Array<{ name: string; route: string; addBtn: string }> = [
 
 for (const { name, route, addBtn } of SETTINGS_PAGES) {
 	test.describe(`Settings · ${name}`, () => {
-		// @e2e openspec/specs/admin-settings/spec.md#settings-page-renders-distinct-control
+		// @e2e exclude No scenario governs "a settings index route resolves to its own
+		// view and offers its create control". The three pages this loop drives (LHS
+		// recommendations, Map layers, Organisations) belong to three capabilities, and
+		// admin-settings' in-app settings scenario describes the /settings page that
+		// page-topology-cleanup retired.
 		test(`${name} settings page renders its own "${addBtn}" control`, async ({
 			page,
 		}) => {

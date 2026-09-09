@@ -22,7 +22,7 @@ import { expect, test } from '@playwright/test'
 import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 
 test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
-	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-committees-settings-page-renders-list-shell
+	// @e2e openspec/specs/objections-appeals-nav-group/spec.md#scenario-deep-links-to-grouped-pages-still-resolve
 	test('bezwaar committees page renders its own create control', async ({
 		page,
 	}) => {

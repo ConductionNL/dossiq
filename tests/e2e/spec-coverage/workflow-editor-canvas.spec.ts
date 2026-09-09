@@ -87,7 +87,7 @@ async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 }
 
 test.describe('Visual workflow editor canvas (workflow-editor-integration)', () => {
-	// @e2e openspec/changes/archive/2026-07-13-workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-the-canvas-renders-an-existing-definitions-steps-and-transitions
+	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-open-workflow-editor-for-a-case-type
 	test('the Workflow tab renders the canonical canvas or its empty state', async ({
 		page,
 	}) => {
@@ -104,7 +104,8 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		await expect(canvas.or(emptyState)).toBeVisible({ timeout: 10000 })
 	})
 
-	// @e2e openspec/changes/archive/2026-07-13-workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-keyboard-operable-canvas
+	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-keyboard-node-selection
+	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-visible-action-names
 	test('a status node on the canvas is keyboard-focusable and exposes a keyboard-operable actions menu', async ({
 		page,
 	}) => {
@@ -137,7 +138,7 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		await page.keyboard.press('Escape')
 	})
 
-	// @e2e openspec/changes/archive/2026-07-13-workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-keyboard-operable-canvas
+	// @e2e openspec/specs/visual-workflow-editor/spec.md#scenario-keyboard-add-status-node
 	test('the palette exposes a keyboard-reachable "Add status node" button as a drag-and-drop alternative', async ({
 		page,
 	}) => {

@@ -374,7 +374,10 @@ test.describe('Case detail — the Documents tab', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
+	// @e2e exclude No canonical scenario covers the Documents tab and its six columns.
+	// REQ-ZAK-011 "Documents visible on the case" governs it and lives in the open
+	// change documents-on-the-case; canonical REQ-ZAK-004a describes the older
+	// grouped dossier view, which is a different surface.
 	test('the tab lists this case documents with all six columns', async ({
 		page,
 	}) => {
@@ -430,7 +433,10 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(panel.getByText(TAGGED_TITLE)).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
+	// @e2e exclude No canonical scenario covers the pairing of the Documents tab to
+	// the panel the dossier renders in. REQ-ZAK-011 "Documents visible on the case"
+	// in the open change documents-on-the-case is the governing one; the manifest
+	// half is pinned by tests/vitest/caseDocumentsTab.spec.js.
 	test('the Documents tab owns the panel the dossier renders in', async ({
 		page,
 	}) => {
@@ -480,7 +486,7 @@ test.describe('Case detail — the Documents tab', () => {
 		).toBeVisible({ timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
+	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-004b-empty-dossier-shows-upload-cta-with-drag-and-drop-zone
 	test('a case without documents says so and still offers upload', async ({
 		page,
 	}) => {
@@ -514,8 +520,11 @@ test.describe('Case detail — the Documents tab', () => {
 		).toBe(true)
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-an-informatieobject-must-carry-a-direction
+	// @e2e exclude No canonical scenario covers filing a dropped file on the case
+	// with its type and direction. REQ-ZAK-011 "Drop a file onto the tab" and
+	// REQ-ZAK-013 "Direction chosen on upload" govern it and live in the open change
+	// documents-on-the-case; canonical REQ-ZAK-005a asserts the dialog opening for a
+	// two-file drop, not the saved type, direction and case link this proves.
 	test('a dropped file is filed on the case with its type and direction', async ({
 		page,
 	}) => {
@@ -556,7 +565,9 @@ test.describe('Case detail — the Documents tab', () => {
 		expect(String(join.case)).toBe(dropCaseId)
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-012-an-informatieobject-must-carry-keywords-you-can-filter-on
+	// @e2e exclude Keywords are not in the canonical spec. REQ-ZAK-012 "Tag a
+	// document on upload" governs this and lives in the open change
+	// documents-on-the-case.
 	test('keywords typed on upload are saved and shown as chips', async ({
 		page,
 	}) => {
@@ -584,7 +595,9 @@ test.describe('Case detail — the Documents tab', () => {
 		])
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-012-an-informatieobject-must-carry-keywords-you-can-filter-on
+	// @e2e exclude The keyword filter is not in the canonical spec. REQ-ZAK-012
+	// "Filter the list on a keyword" governs it and lives in the open change
+	// documents-on-the-case; canonical REQ-ZAK-004c is status and date filtering.
 	test('the keyword filter narrows the list, and clearing it restores both', async ({
 		page,
 	}) => {
@@ -623,7 +636,7 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(rows).toHaveCount(2, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-the-case-page-must-list-the-dossier-in-a-documents-tab
+	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
 	}) => {
@@ -705,7 +718,10 @@ test.describe('Case detail — the Documents tab', () => {
 		expect(String(stored.status)).toBe('final')
 	})
 
-	// @e2e openspec/specs/template-library/spec.md#requirement-req-005-a-library-template-is-offered-on-the-case
+	// @e2e exclude No canonical scenario covers the Generate document picker listing
+	// the library. REQ-005 "The picker lists the library" governs it and lives in the
+	// open change documents-on-the-case; canonical template-library REQ-001 to
+	// REQ-004 are the REST and discovery contracts, not this picker.
 	test('the Generate document picker lists the library by name', async ({
 		page,
 	}) => {
@@ -737,7 +753,10 @@ test.describe('Case detail — the Documents tab', () => {
 		).toHaveCount(1)
 	})
 
-	// @e2e openspec/specs/beschikking-generatie/spec.md#requirement-generate-a-document-from-the-case-req-bes-012
+	// @e2e exclude No canonical scenario covers generating a letter onto the
+	// Documents tab. REQ-BES-012 "Generate a letter onto the Documents tab" governs
+	// it and lives in the open change documents-on-the-case; canonical REQ-BES-001 is
+	// the conceptbeschikking composer, a different flow.
 	test('Generate document files a draft outgoing letter on the case', async ({
 		page,
 	}) => {

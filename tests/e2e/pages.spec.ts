@@ -271,7 +271,7 @@ test.describe('Tasks page', () => {
 })
 
 test.describe('My Work page', () => {
-	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	// @e2e openspec/specs/my-work/spec.md#scenario-card-and-table-view
 	test('renders as a card index scoped to the current user', async ({ page }) => {
 		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
 		// nav link and used to burn the whole test budget inside navTo.
