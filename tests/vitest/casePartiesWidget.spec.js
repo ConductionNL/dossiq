@@ -21,6 +21,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 const REGISTER_PATH = path.resolve(
@@ -57,7 +58,11 @@ function schema(slug) {
  * @return {object} The widget entry.
  */
 function widget(id) {
-	return page('CaseDetail').config.widgets.find((entry) => entry.id === id)
+	// Through the shared helper and not `config.widgets`: since the strip came
+	// down from fourteen tabs to six, this widget is a SECTION of a tab, so a
+	// top-level `find` returns undefined and every assertion reads as "the
+	// widget was deleted".
+	return panels.caseWidget(id)
 }
 
 /**
@@ -113,18 +118,27 @@ describe('the Parties widget', () => {
 		// the address book, never the people on this case. It is what the
 		// Parties tab was standing in for, so it goes.
 		expect(tabs.map((tab) => tab.widgetId)).not.toContain('case-contacts')
-		expect(detail.config.widgets.map((entry) => entry.id)).not.toContain(
+		expect(panels.allCaseWidgets().map((entry) => entry.id)).not.toContain(
 			'case-contacts',
 		)
+		void detail
 	})
 
-	it('is a tab of the case panels and never a layout cell of its own', () => {
+	it('leads the People tab, and is never a layout cell of its own', () => {
 		const detail = page('CaseDetail')
-		const tabs = detail.config.widgets.find(
-			(entry) => entry.id === 'case-panels',
-		).content.tabs
+		const where = panels.caseTabOf('case-roles')
 
-		expect(tabs.map((tab) => tab.widgetId)).toContain('case-roles')
+		expect(where, 'case-roles is not reachable from the strip').toBeTruthy()
+		expect(where.tab).toBe('People')
+		expect(where.label).toBe('Parties')
+
+		// First, above the contact moments: who is involved, then the contact
+		// with them.
+		const sections = panels
+			.caseWidget('case-people-panel')
+			.content.sections.map((section) => section.widget.id)
+		expect(sections[0]).toBe('case-roles')
+
 		// A widget rendered by the tabs widget AND placed in `layout` renders
 		// twice, which is why its siblings are absent from `layout` too.
 		expect(

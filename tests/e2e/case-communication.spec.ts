@@ -22,6 +22,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
@@ -119,20 +120,16 @@ async function openCommunicationTab(page, id: string) {
 	await page.goto(`/apps/${REGISTER}/cases/${id}`)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	const strip = page.locator('.cn-tabs-widget')
-	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: /Communication|Communicatie/ }).click()
-
-	// The open panel INSIDE the tabs widget, not a widget id: CnDetailPage sets
-	// `aria-label` to the manifest widget id only on the top-level widgets it
-	// lays out, so a widget rendered as a tab child carries no such label and
-	// `[aria-label="case-communication"]` matches nothing. Scope to the strip
-	// as well: the sidebar's own panels also carry `role="tabpanel"`, and they
-	// hide with `aria-hidden` rather than `hidden`, so an unscoped query is
-	// ambiguous.
-	const widget = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(widget).toBeVisible({ timeout: 20_000 })
-	return widget
+	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// instead of fourteen, a tab carries two collections, so an assertion made
+	// against the panel root can be satisfied by the wrong half of it. The
+	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
+	// moves one table rather than every spec that opens a panel.
+	//
+	// It is a testid and not a widget id because CnDetailPage sets `aria-label`
+	// to the manifest widget id only on the top-level widgets it lays out, so a
+	// widget rendered inside a tab carries no such label.
+	return await openCasePanel(page, 'communication')
 }
 
 test.describe('Case detail — the Communication tab', () => {

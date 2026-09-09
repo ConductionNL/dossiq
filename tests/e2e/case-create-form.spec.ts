@@ -20,6 +20,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -30,7 +31,6 @@ import {
 	seedCase,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { openCasePanel } from './helpers/nav.ts'
 
 const DASHBOARD_URL = '/apps/dossiq/'
 
@@ -549,7 +549,7 @@ test.describe('New case dialog', () => {
 		// and its children render bare, so `Core case data` is no longer
 		// rendered anywhere and the tab's own label, `Data`, is what names the
 		// panel. Asserting that label is what opening the tab already does.
-		const coreWidget = await openCasePanel(page, /^(Data|Gegevens)$/)
+		const coreWidget = await openCasePanel(page, 'data')
 
 		// Scoped to that widget, so this cannot pass on the words appearing
 		// somewhere else on a busy page.

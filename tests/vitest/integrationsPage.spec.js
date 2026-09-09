@@ -177,13 +177,32 @@ describe('the seeded connections', () => {
 		expect(rows.some((r) => r.status === 'configured')).toBe(false)
 	})
 
-	it('say Not available where the spec has no implementation', () => {
+	// BRP and KvK were both seeded Not available with "Specified, not built
+	// yet", and that sentence was false for both of them. Each ships a Log
+	// adapter, a real HTTP adapter, a DI registrar bound from
+	// ExternalRegisterRegistrar, and unit tests. What separates them is who
+	// calls them: ConflictOfInterestService injects the BRP adapter for the
+	// belangenconflict check, and nothing anywhere injects the KvK one.
+	it('say Not available only where nothing calls the adapter', () => {
 		const unavailable = rows.filter((r) => r.status === 'unavailable')
-		expect(unavailable.map((r) => r.key)).toEqual(['brp', 'kvk'])
+		expect(unavailable.map((r) => r.key)).toEqual(['kvk'])
 		for (const row of unavailable) {
-			expect(row.statusMessage).toBe('Specified, not built yet')
+			expect(row.statusMessage).not.toMatch(/not built/i)
+			expect(row.statusMessage).toMatch(/built and bound/i)
 			expect(row.settingsUrl).toBe('')
 		}
+	})
+
+	// The row that was wrong. BRP is built, bound and called, and it reaches
+	// nothing because its tier defaults to `log`. That is Not configured, and
+	// the message has to name the key an integrator sets, because no admin
+	// section writes it.
+	it('say Not configured for BRP, and name the key that wakes it', () => {
+		const brp = rows.find((r) => r.key === 'brp')
+		expect(brp.status).toBe('unconfigured')
+		expect(brp.statusMessage).not.toMatch(/not built/i)
+		expect(brp.statusMessage).toMatch(/integration\.brp\.mode/)
+		expect(brp.settingsUrl).toBe('')
 	})
 
 	// The row this change exists for. Berichtenbox and the template engine both
@@ -203,7 +222,10 @@ describe('the seeded connections', () => {
 
 	it('say Not checked yet everywhere else', () => {
 		const rest = rows.filter(
-			(r) => r.status !== 'unavailable' && r.status !== 'simulated',
+			(r) =>
+				r.status !== 'unavailable'
+				&& r.status !== 'simulated'
+				&& r.key !== 'brp',
 		)
 		expect(rest).toHaveLength(8)
 		for (const row of rest) {

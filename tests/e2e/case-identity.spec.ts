@@ -39,6 +39,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCasePanel } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -50,7 +51,6 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { openCasePanel } from './helpers/nav.ts'
 
 /** The processing deadline this run's case type declares. */
 const PROCESSING_DEADLINE = 'P56D'
@@ -305,7 +305,7 @@ test.describe('Case identity', () => {
 		// `Data` tab of the case strip now, not a laid-out widget, so it
 		// carries no `aria-label` of its own.
 		await expect(
-			await openCasePanel(page, /^(Data|Gegevens)$/),
+			await openCasePanel(page, 'data'),
 			'the case page shows the number it was given',
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})

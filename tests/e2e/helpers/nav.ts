@@ -207,7 +207,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 
 /**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
- * sections progressively — the lower ones (Case Email — Shared Mailbox,
+ * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.
@@ -344,54 +344,6 @@ export function trackDossiqErrors(page: Page): string[] {
 		}
 	})
 	return errors
-}
-
-/**
- * Open one panel of the case page's tab strip, and return the open panel.
- *
- * 🔴 `[aria-label="<widget id>"]` DOES NOT REACH A PANEL. `CnDetailPage` sets
- * that label from the manifest id only on the widgets it lays out itself, and
- * `case-panels` renders its children instead of the grid. So a widget that
- * moved into the strip keeps its id in the manifest and loses the attribute in
- * the DOM, and a locator naming it matches nothing while the panel renders
- * perfectly. `case-core` made that move: it is the strip's first tab, `Data`.
- *
- * The panels are also LAZY. A panel does not mount, and therefore does not
- * query, until its tab has been opened once, so the click is part of reaching
- * the content rather than a convenience.
- *
- * Scoped to the strip on purpose: the app sidebar's own panels carry
- * `role="tabpanel"` too and hide with `aria-hidden` rather than `hidden`, so an
- * unscoped query matches a hidden sidebar panel as readily as this one.
- *
- * ⚠️ And scoped to `.cn-tabs__content`'s DIRECT children, because a panel can
- * contain another `role="tabpanel"`. `Related cases` does: the related-objects
- * widget renders its own `<section role="tabpanel">` inside the strip's panel,
- * so a descendant query matches two elements and every assertion on it fails
- * as a strict mode violation rather than as anything about the tab. Measured
- * on a running instance: the open panel is `.cn-tab`, its parent is
- * `.cn-tabs__content`, and the strip is that parent's parent.
- *
- * Six other specs carry their own copy of the descendant query and pass, since
- * their tabs hold no nested panel. They should adopt this rather than grow a
- * seventh: `case-communication`, `case-objects`, `case-documents`,
- * `case-parties`, `case-task-pane` and `checklist-per-status`.
- *
- * @param page The Playwright page, already on a case detail route.
- * @param tab  The tab to open, by its accessible name.
- *
- * @return The open panel inside the strip.
- */
-export async function openCasePanel(page: Page, tab: RegExp): Promise<Locator> {
-	const strip = page.locator('.cn-tabs-widget')
-	await expect(strip).toBeVisible({ timeout: 30_000 })
-	await strip.getByRole('tab', { name: tab }).click()
-
-	const panel = strip.locator(
-		'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
-	)
-	await expect(panel).toBeVisible({ timeout: 20_000 })
-	return panel
 }
 
 /**
