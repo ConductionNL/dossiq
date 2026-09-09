@@ -102,7 +102,7 @@ async function readAllTolerant(request, schema) {
 }
 
 test.describe('the grant schemes became case types', () => {
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('both schemes exist as case types, with their fields carried', async ({
 		request,
 	}) => {
@@ -137,7 +137,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('requestTermWeeks became an ISO-8601 duration, not a bare integer', async ({
 		request,
 	}) => {
@@ -158,7 +158,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('the enum property kept its allowed values instead of flattening', async ({
 		request,
 	}) => {
@@ -192,7 +192,7 @@ test.describe('the grant schemes became case types', () => {
 		}
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('the grant-specific properties came across as property definitions', async ({
 		request,
 	}) => {
@@ -213,7 +213,7 @@ test.describe('the grant schemes became case types', () => {
 })
 
 test.describe('the retired scheme surface', () => {
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('the Subsidy schemes menu entry is gone', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq')
 		await dismissSupportDialog(page)
@@ -243,7 +243,7 @@ test.describe('the retired scheme surface', () => {
 		expect(labels).toContain('Case types')
 	})
 
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md
 	test('the retired route no longer renders a scheme index', async ({ page }) => {
 		await navToRoute(page, '/subsidieregelingen')
 
