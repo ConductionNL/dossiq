@@ -24452,54 +24452,6 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-1-1",
-          "id": "9d1e7a01-4c2b-4f18-9a5e-2b7c8d3f1001"
-        },
-        "key": "zgw",
-        "title": "ZGW APIs",
-        "description": "Demo connection 1.",
-        "status": "unconfigured",
-        "statusMessage": "Not checked yet",
-        "checkedAt": "2026-09-01T09:01:00+00:00",
-        "settingsUrl": "/settings/admin/dossiq#section-zgw",
-        "order": 10
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-2-2",
-          "id": "9d1e7a02-4c2b-4f18-9a5e-2b7c8d3f1002"
-        },
-        "key": "stuf",
-        "title": "StUF-ZKN",
-        "description": "Demo connection 2.",
-        "status": "error",
-        "statusMessage": "Circuit open on Gemeente Zuid",
-        "checkedAt": "2026-09-02T09:02:00+00:00",
-        "settingsUrl": "/settings/admin/dossiq#section-stuf",
-        "order": 20
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-3-3",
-          "id": "9d1e7a03-4c2b-4f18-9a5e-2b7c8d3f1003"
-        },
-        "key": "brp",
-        "title": "BRP",
-        "description": "Demo connection 3.",
-        "status": "unconfigured",
-        "statusMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
-        "checkedAt": "2026-09-03T09:03:00+00:00",
-        "settingsUrl": "",
-        "order": 80
       }
     ]
   }
