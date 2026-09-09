@@ -23,6 +23,17 @@
 			`:use-registry="false"` keeps the manifest `component:`-based
 			tabs (CaseTasksTab / CaseEmailTab / …) instead of the
 			integration-registry tabs.
+
+			`objectSchema` and `objectData` are the RESOLVED schema and record,
+			not the slugs beside them. A `data` sidebar tab renders
+			CnObjectDataWidget, which builds its field list from the schema
+			OBJECT and its values from the loaded record; given neither it
+			returns an empty list and the tab reads "No data available" on a
+			case that is perfectly fine. CnDetailPage publishes both into this
+			shared state for exactly this reason — `schemaObject` and `object`
+			— and they were simply never passed on, so the Tags tab could not
+			show a tag and could not offer the Click-to-edit that adds a first
+			one.
 		-->
 		<template #sidebar="{ pageSidebarComponent }">
 			<CnObjectSidebar
@@ -34,6 +45,8 @@
 				:objectId="objectSidebarState.objectId"
 				:register="objectSidebarState.register"
 				:schema="objectSidebarState.schema"
+				:objectSchema="objectSidebarState.schemaObject"
+				:objectData="objectSidebarState.object"
 				:tabs="objectSidebarState.tabs"
 				:hiddenTabs="objectSidebarState.hiddenTabs"
 				:open="objectSidebarState.open"

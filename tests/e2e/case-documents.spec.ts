@@ -639,8 +639,27 @@ test.describe('Case detail — the Documents tab', () => {
 		// is an input, not a button), and the menu itself is appended to the
 		// body, so the entry is found on the page.
 		await row.getByRole('button').last().click()
+
+		// 🔴 THE ENTRY IS A `menuitem`, NOT A `button`. `NcActions` decides its
+		// own semantics from what it holds: every child here is an
+		// `NcActionButton`, so `actionsMenuSemanticType` resolves to `menu`, the
+		// component provides `isInSemanticMenu`, and `NcActionButton` puts
+		// `role="menuitem"` ON the `<button>` (its `<li>` takes
+		// `role="presentation"`). An explicit role REPLACES the implicit one, so
+		// `getByRole('button', …)` cannot match a menu entry at all — it waited
+		// the full budget and reported `locator.click: Timeout` on an entry that
+		// was on screen the whole time, which reads as a menu that never opened.
+		//
+		// The toggle on the line above keeps `role="button"` because it sits in
+		// the row rather than in the menu, which is why only the SECOND click
+		// failed and the first looked fine.
+		//
+		// Asserting the menu role is the accessible truth rather than a
+		// workaround: if an `NcActionInput` is ever added here the menu becomes a
+		// `dialog`, the entries go back to plain buttons, and this line should
+		// fail and be read again.
 		await page
-			.getByRole('button', { name: /Version history|Versiegeschiedenis/ })
+			.getByRole('menuitem', { name: /Version history|Versiegeschiedenis/ })
 			.click()
 
 		const versionPanel = panel.locator('.dossier-version-panel')

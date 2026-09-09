@@ -32,6 +32,7 @@ import {
 	seedCase,
 	seedStateMachine,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -79,6 +80,20 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 			machine.statusInProgress,
 		)
 		statusName = String(inProgress.name ?? '')
+		// GIVE THE TYPE A TERM. `case.deadline` is computed declaratively as
+		// `startDate + caseType.processingDeadline`, and `seedStateMachine`
+		// creates its case type WITHOUT one — so without this the register has
+		// nothing to compute from, `deadline` stays empty, and the countdown
+		// element is never rendered at all. The spec then reads as "the
+		// countdown is missing from the header" when the header is correct and
+		// the FIXTURE never gave it a deadline to show.
+		//
+		// Set here rather than in `seedStateMachine`, which many specs share:
+		// each call mints its own case type, so this touches only this run's.
+		await updateObject(api, token, 'caseType', machine.caseTypeId, {
+			processingDeadline: 'P30D',
+		})
+
 		const caseType = await showObject(api, 'caseType', machine.caseTypeId)
 		caseTypeTitle = String(caseType.title ?? caseType.name ?? '')
 
@@ -195,8 +210,12 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 
 		// Unknown, not nothing: an absent badge and an unset status look
 		// identical, and only one of the two is a data problem.
+		// `\s*` on both sides: CnStatusBadge contributes a leading space, and
+		// `toHaveText` compares the element's WHOLE text, so a bare anchor
+		// fails on a correct badge — the run reports `" Unknown"` against
+		// `/^(Unknown|Onbekend)$/`. Same trap decidiq hit on its status chips.
 		await expect(page.getByTestId('case-header-status')).toHaveText(
-			/^(Unknown|Onbekend)$/,
+			/^\s*(Unknown|Onbekend)\s*$/,
 			{ timeout: 20_000 },
 		)
 		// And no countdown at all. "0 days left" would be a claim this case

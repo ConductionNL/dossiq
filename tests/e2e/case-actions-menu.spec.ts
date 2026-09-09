@@ -254,16 +254,34 @@ test.describe('The case Actions menu', () => {
 		await page.getByTestId('case-copy-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 30_000 })
 
-		// TWO links, ONE document. That is the whole requirement: the copy has
-		// the document, and nothing was duplicated in storage.
-		const links = (
-			await listObjects(request, 'caseDocument', { _limit: '200' })
-		).filter((row: any) => String(row.document ?? '') === DOCUMENT_URI)
-		expect(links.length, 'the document is linked twice').toBe(2)
+		// ONE link on the source and ONE on the copy. That is the whole
+		// requirement: the copy has the document, and nothing was duplicated
+		// in storage.
+		//
+		// Counted PER CASE, not across the instance. `DOCUMENT_URI` is a fixed
+		// constant with no run prefix, so every run and every worker writes
+		// rows carrying it, and a retry of this very test makes a second copy
+		// with a second link. Counting every row with that URI therefore
+		// answered 4 where it wanted 2, and no amount of prefixing the URI
+		// would fix the retry — only asking about these two cases does.
+		await expect(page).toHaveURL(/\/cases\/[^/?#]+$/, { timeout: 30_000 })
+		const copyId = new URL(page.url()).pathname.split('/').pop() ?? ''
+		expect(copyId, 'the page should have landed on the copy').not.toBe('')
+		expect(copyId).not.toBe(cases['copy-with-documents'])
 
-		const owners = new Set(links.map((row: any) => String(row.case ?? '')))
-		expect(owners.has(cases['copy-with-documents'])).toBe(true)
-		expect(owners.size, 'the two links belong to two different cases').toBe(2)
+		const linksOn = async (caseId: string) =>
+			(await listObjects(request, 'caseDocument', { case: caseId })).filter(
+				(row: any) => String(row.document ?? '') === DOCUMENT_URI,
+			)
+
+		expect(
+			(await linksOn(cases['copy-with-documents'])).length,
+			'the source keeps its one link',
+		).toBe(1)
+		expect(
+			(await linksOn(copyId)).length,
+			'the copy has the document, linked once',
+		).toBe(1)
 	})
 
 	// @e2e openspec/specs/workflow-definition-engine/spec.md#the-start-list-follows-the-case-type
