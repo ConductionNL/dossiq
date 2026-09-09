@@ -151,7 +151,7 @@ permissions:
 jobs:
   quality:
     if: (github.event_name != 'pull_request' || github.head_ref != 'development')
-    uses: ConductionNL/.github/.github/workflows/quality.yml@main
+    uses: ConductionNL/.github/.github/workflows/quality.yml@fix/build-additional-app-frontends-for-browser-jobs
     with:
       app-name: dossiq
       php-version: "8.3"
