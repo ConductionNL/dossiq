@@ -142,7 +142,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		return card
 	}
 
-	// @e2e openspec/changes/archive/2026-09-09-kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006d-keyboard-only-status-transition-new
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006f-keyboard-only-status-transition-new
 	test('a case card exposes a keyboard-operable "Move to…" menu', async ({
 		page,
 	}) => {
@@ -171,7 +171,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		await page.keyboard.press('Escape')
 	})
 
-	// @e2e openspec/changes/archive/2026-09-09-kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006e-drag-path-unchanged-new
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006g-drag-path-unchanged-new
 	test('case cards remain draggable for mouse/touch users', async ({ page }) => {
 		const card = await openBoardAndFindSeededCard(page)
 		await expect(card).toHaveAttribute('draggable', 'true')
