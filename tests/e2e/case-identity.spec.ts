@@ -351,13 +351,35 @@ test.describe('Case identity', () => {
 			'the tag dropdown still covers the editor actions',
 		).toHaveCount(0, { timeout: 15_000 })
 
-		// Confirm the field, then save the widget: the field editor stages the
-		// value and the widget's own Save writes it.
+		// Confirming the field IS the save. CnObjectDataWidget's `commitEdit`
+		// stages the value and then awaits its own `save()`, so a click-to-edit
+		// confirm writes in one step; the header Save exists only for edits that
+		// queue without a per-field confirm.
+		//
+		// This test used to click that header Save afterwards and could not
+		// pass. `save()` sets `saving` before the PUT and clears `dirtyFields`
+		// after it, and the header button is `v-if="isDirty" :disabled="saving"`
+		// — so it exists ONLY while the write is in flight, and is disabled for
+		// every millisecond of that. Playwright resolved it, spent the whole
+		// budget on "element is not enabled", and then reported it detached.
+		// Measured on the CI trace of the failing run: one
+		// `PUT /apps/openregister/api/objects/dossiq/case/<id>` with
+		// `{"tags":["spoed"]}`, 200, response body carrying the tag — sent 15s
+		// BEFORE the click that failed. The write worked; the click was for a
+		// second step the widget does not have.
 		await panel
 			.locator('.cn-object-data-widget__editor-actions button')
 			.first()
 			.click()
-		await panel.getByRole('button', { name: /^(Save|Opslaan)$/ }).click()
+
+		// Assert the single step out loud rather than deleting the line: the
+		// widget must be left with nothing staged. A revert to a two-step save
+		// would leave a Save button standing here and redden this, which is the
+		// signal a bare deletion would throw away.
+		await expect(
+			panel.getByRole('button', { name: /^(Save|Opslaan)$/ }),
+			'confirming the field left unsaved state behind: the widget no longer saves in one step',
+		).toHaveCount(0, { timeout: 20_000 })
 
 		await expect
 			.poll(
