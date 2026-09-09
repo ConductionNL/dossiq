@@ -126,7 +126,7 @@
 					{{
 						t(
 							'dossiq',
-							'Published versions are not editable — clone a new version first.',
+							'Published versions are not editable. Clone a new version first.',
 						)
 					}}
 				</div>

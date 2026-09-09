@@ -74,6 +74,30 @@ The comparison section SHALL state, before any score:
    hedging.
 5. The first concrete step: shortlist the capabilities they need and test every
    system against that shortlist.
+6. When any rating in our own column has been corrected since the reading, how
+   many were corrected and when, and that the other three columns are NOT
+   corrected that way. Re-rating a competitor without re-reading the product
+   would be a guess presented as a correction.
+7. What the capability list is made of, that it is written in our own shape,
+   and that it grows. Every system read so far is a municipal case system or a
+   workflow engine, so a capability none of them has is absent from the LIST
+   rather than from the market. The rows are also framed the way dossiq splits
+   the work, so a product that splits it differently scores low without being
+   worse: a system that owns no data because the record and its retention live
+   in a separate register loses rows to its architecture. **That bias runs in
+   our favour, which is exactly why the panel has to declare it.** A total that
+   flatters us for a structural reason is worth less than no total. And without
+   the growth clause, a reader who watches the totals fall between two releases
+   has no way to tell a growing denominator from a regressing product, and the
+   honest reading is the one they cannot reach.
+
+#### Scenario: The panel says what the list is made of
+
+- **GIVEN** a reader opens the comparison
+- **WHEN** they read the panel
+- **THEN** it MUST name the kind of system every rated product is
+- **AND** it MUST say that a product shaped differently scores low without being worse
+- **AND** it MUST say that the list grows, so a later total is not comparable to an earlier one
 
 #### Scenario: The panel advises the reader to test for themselves
 

@@ -137,8 +137,9 @@ export default {
 	 * The text of the Open settings link on an integration row.
 	 *
 	 * Empty when the connection has no settings section, which is what makes
-	 * the cell fall through to plain text and offer nothing to click — a
-	 * connection that is specified and not built has nowhere to send a reader.
+	 * the cell fall through to plain text and offer nothing to click. A
+	 * connection configured by an app-config key rather than a form has nowhere
+	 * to send a reader, so its row names the key in its message instead.
 	 *
 	 * @param {string} value The row's `settingsUrl`.
 	 * @return {string} The link text, or '' when there is no destination.

@@ -120,6 +120,57 @@ async function openCaseType(page: Page, id: string): Promise<void> {
 }
 
 /**
+ * Narrow the Cases index to the rows this run seeded, by clicking this run's
+ * own case type in the facet sidebar.
+ *
+ * 🔴 WITHOUT THIS THE HIDDEN-STATUS TEST LOOKS AT PAGE 1 OF SEVERAL. The Cases
+ * index paginates at 20 (`CnIndexPage` falls back to `limit || 20`) and orders
+ * by identifier ascending, so a case seeded seconds ago carries a HIGH number
+ * and lands on the LAST page. The assertion then reads "the open case is not in
+ * the list" while the hidden status is behaving perfectly and the row is three
+ * pages away.
+ *
+ * ⚠️ The absence half of that test is what makes this necessary rather than
+ * merely tidy. `Afgehandelde zaak 1..3` are asserted to have count 0, and on an
+ * unnarrowed list they have count 0 because they are off the page — so the
+ * assertion passed for the wrong reason and could not have caught a hidden
+ * status that stopped hiding. Narrowing first is what gives that absence its
+ * meaning back.
+ *
+ * The facet is the instrument rather than a search box: `CnActionsBar` renders
+ * an `<input type="search">` only behind its `showSearch` prop and this page
+ * does not set it, which is the trap #1974 recorded for `case-list-lenses`. The
+ * sidebar facet is a control the page really renders, and `CnIndexPage` spreads
+ * a quick filter's own filter BEFORE the user's `activeFilters`, so the facet
+ * survives the Closed tab click below and that tab re-fetches at page 1.
+ *
+ * @param page The page.
+ */
+async function narrowToThisRun(page: Page): Promise<void> {
+	// The accessible name carries the facet's COUNT when it has matches, so
+	// `E2EZAAK-… Bezwaar 4` and not `E2EZAAK-… Bezwaar`. Anchored at both ends
+	// and carrying the run prefix, so it still cannot match another run's type
+	// or this spec's own `… Bezwaar (verkort)` child.
+	const title = `${RUN_PREFIX} Bezwaar`
+	const facet = page.getByRole('button', {
+		name: new RegExp(
+			`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
+		),
+	})
+	await expect(
+		facet,
+		`the sidebar should offer a case-type filter named ${title}`,
+	).toBeVisible({ timeout: 30_000 })
+	await facet.click()
+
+	// The list must have answered before anything is asserted, or the first
+	// assertion races the fetch this click started.
+	await expect(
+		page.getByRole('row').filter({ hasText: RUN_PREFIX }).first(),
+	).toBeVisible({ timeout: 30_000 })
+}
+
+/**
  * Open the Case types index.
  *
  * By ROUTE and not by sidebar label: `navTo` resolves a nav entry by its
@@ -301,6 +352,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await expect(page.locator('.cn-index-page')).toBeVisible({
 			timeout: 30_000,
 		})
+		await narrowToThisRun(page)
 
 		// The open case of the same type proves the list is populated at all:
 		// without it, an empty list would pass this test for the wrong reason.
@@ -427,14 +479,25 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
+		// The precondition is checked through the API, not off page one of the
+		// index. The Case types index is bounded and instance-wide: it holds
+		// every type every spec in the run has seeded, and under four workers
+		// this run's four are not reliably on the first page. Asserting them
+		// there tests the page size, and fails on a page that is working.
+		const listed = await listObjects(api, 'caseType')
+		const titles = listed.map((row: any) => String(row.title ?? ''))
+		for (const title of [
+			`${RUN_PREFIX} Onaf concept`,
+			`${RUN_PREFIX} Bezwaar`,
+			`${RUN_PREFIX} Bezwaar (verkort)`,
+		]) {
+			expect(
+				titles,
+				`${title} should exist before the folder narrows`,
+			).toContain(title)
+		}
+
 		await openCaseTypes(page)
-
-		// Before: this run's four types are all listed, two of them in the
-		// category and two outside it.
-		await expect(
-			page.getByText(`${RUN_PREFIX} Onaf concept`, { exact: true }),
-		).toBeVisible({ timeout: 30_000 })
-
 		await page.getByRole('button', { name: CATEGORY }).click()
 
 		await expect(

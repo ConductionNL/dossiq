@@ -120,6 +120,14 @@
 					}}
 				</p>
 				<p>{{ reratedText }}</p>
+				<p>
+					{{
+						t(
+							'dossiq',
+							'Every system here is a municipal case system or a workflow engine, and the list is drawn from what they do, in the shape we do it. A capability none of them has is missing from the list, not from the market. A product that splits the work differently scores low without being worse, and that bias runs in our favour. We add rows as we read more systems, so a lower score in a later release can mean the list grew rather than the product shrank.',
+						)
+					}}
+				</p>
 			</NcNoteCard>
 
 			<h3>

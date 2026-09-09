@@ -30,7 +30,7 @@
 			</div>
 			<div v-if="slaData.excluded > 0" class="kpi-card__note">
 				{{
-					t('dossiq', '{count} cases excluded — no SLA target', {
+					t('dossiq', '{count} cases excluded, no SLA target', {
 						count: slaData.excluded,
 					})
 				}}

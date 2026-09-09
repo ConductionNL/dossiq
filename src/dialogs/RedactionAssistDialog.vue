@@ -67,7 +67,7 @@
 					{{
 						t(
 							'dossiq',
-							'AI assist is currently unavailable — showing rule-based matches only.',
+							'AI assist is currently unavailable. Showing rule-based matches only.',
 						)
 					}}
 				</NcNoteCard>
@@ -77,7 +77,7 @@
 					{{
 						t(
 							'dossiq',
-							'AI-assisted detection failed ({error}) — falling back to rule-based matches only.',
+							'AI-assisted detection failed ({error}). Falling back to rule-based matches only.',
 							{ error: proposal.llmError || '' },
 						)
 					}}

@@ -111,6 +111,11 @@ async function openCasesListOrSkip(page) {
  * PAGE at `/cases/:id/deelzaken`, and `CaseDetail` carried only the
  * `case-kpis-sub-cases` COUNT.
  *
+ * It is a section in the literal sense now: the sub-cases list is the second
+ * SECTION of the Related tab, reached by opening that tab. There was briefly a
+ * Sub-cases tab, between the widget landing and the strip coming down from
+ * fourteen tabs to six.
+ *
  * The spec is the authority and it says section, not tab:
  *
  *   "The case detail view SHALL display a 'Sub-cases' section ... listing all
@@ -143,7 +148,7 @@ async function openSubCasesSectionOrSkip(page) {
 	// Asserting the container alone would pass while the list below never renders.
 	const tab = page
 		.locator('.cn-tabs-widget')
-		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
+		.getByRole('tab', { name: 'Related', exact: true })
 		.first()
 	if ((await tab.count()) > 0) {
 		await expect(
@@ -158,7 +163,14 @@ async function openSubCasesSectionOrSkip(page) {
 		// cannot retry — it fired against an empty panel and reported the
 		// section missing. Same trap the comment above guards for the tab
 		// itself; making the panel lazy moved it one step later.
-		const panel = page.locator('.cn-tabs-widget [role="tabpanel"]:not([hidden])')
+		// Scoped to the sub-cases SECTION and not to the whole panel. Since the
+		// strip came down from fourteen tabs to six, the Related tab holds the
+		// related-cases list ABOVE this one, so an unscoped `table` count is
+		// satisfied by the neighbouring table and this test would pass with the
+		// sub-cases list missing entirely.
+		const panel = page.locator(
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+		)
 		await expect
 			.poll(
 				async () =>
