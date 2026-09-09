@@ -177,11 +177,28 @@ export default {
 					),
 				)
 				this.planned = Array.isArray(data?.results) ? data.results : []
-			} catch {
+			} catch (error) {
 				// A read that fails leaves the related content alone. The planned
 				// group is additive, and hiding the whole tab because one extra
 				// section could not load would cost more than it saves.
 				this.planned = []
+
+				// But it does not fail QUIETLY. The bare `catch` this replaces
+				// made a failed read and a case with nothing planned the same
+				// observation: an empty group, an empty console, and no way to
+				// tell them apart from the page. That cost real time — the
+				// endpoint was answering 200 with the row while the tab showed
+				// none, and the first thing anyone had to rule out was a read
+				// that had silently thrown.
+				//
+				// The disable, and the console, follow `CaseNotesTab.vue`: the
+				// app has no logger of its own, and a swallowed read is worse
+				// than a lint exception.
+				// eslint-disable-next-line no-console
+				console.error(
+					`[CasePlannedWidget] could not read the planned follow-ups for case ${id}`,
+					error,
+				)
 			}
 		},
 
