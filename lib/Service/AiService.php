@@ -759,6 +759,8 @@ class AiService {
 	 * @return array The AI model response
 	 *
 	 * @throws \RuntimeException If the AI model call fails
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	protected function callAiModel(string $prompt): array {
 		$modelUrl = $this->appConfig->getValueString(
