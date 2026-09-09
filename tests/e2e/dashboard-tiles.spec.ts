@@ -614,7 +614,7 @@ test.describe('Dashboard tiles', () => {
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
 	// @e2e dashboard::view-all-keeps-the-tiles-filter
-	// @e2e openspec/changes/one-case-list/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,

@@ -143,7 +143,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 	// reference. A fixture that cannot clean up after itself breaks its
 	// neighbours; this one leaves nothing dangling instead.
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
 	test('the case number, type, status and assignee read under the title', async ({
 		page,
 	}) => {
@@ -172,7 +172,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(headerBox!.y).toBeLessThan(stripBox!.y)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
+	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
 	test('the status badge and the overdue countdown sit in the row', async ({
 		page,
 	}) => {
@@ -204,7 +204,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.locator('.cn-countdown-widget')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
+	// @e2e openspec/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
 	test('a case with no status and no deadline still has a header', async ({
 		page,
 	}) => {
@@ -229,7 +229,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.getByTestId('case-header-countdown')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-current-crumb-is-not-a-link
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-current-crumb-is-not-a-link
 	test('the breadcrumb ends on the case, unlinked and marked current', async ({
 		page,
 	}) => {
@@ -249,7 +249,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(await current.getAttribute('href')).toBeNull()
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#cases-is-one-click-away
+	// @e2e openspec/specs/case-dashboard-view/spec.md#cases-is-one-click-away
 	test('the first crumb opens the case list, carrying the query it had', async ({
 		page,
 	}) => {
@@ -273,7 +273,7 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-five-work-tabs-come-first-in-order
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
@@ -293,13 +293,17 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		expect(labels).toEqual(WORK_TABS)
 	})
 
-	// @e2e openspec/changes/case-header/specs/case-dashboard-view/spec.md#the-work-tabs-fit-a-laptop-screen
-	test('the work tabs share one line at 1024, above the fold', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-six-tabs-fit-a-laptop-screen
+	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {
-		// This is the whole of row A33. Ten tabs wrapped onto three lines at
-		// 1440 and the strip fell below the fold at 1024, so the tabs a handler
-		// works in were the ones they could not see.
+		// Row A33 asked for one line. It cannot be had: measured 2026-09-09, six
+		// tabs need 661px on one line and this strip's tab row has about 280, and
+		// even a full-width strip yields roughly 570. `CnTabs` wraps rather than
+		// scrolls on purpose, because a scrolling strip hides tabs behind an edge
+		// with nothing to say they are there. So the thing worth guarding is the
+		// one the handler actually loses when this breaks: a tab that is clipped,
+		// off-screen, or below the fold.
 		await page.setViewportSize({ width: 1024, height: 768 })
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)
@@ -314,22 +318,38 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 			`the tab strip starts at y=${stripBox!.y}, below a 768px fold`,
 		).toBeLessThan(768)
 
-		// The work tabs share one line: same offsetTop, to the pixel.
-		const tops = await strip
-			.getByRole('tab')
-			.evaluateAll(
-				(tabs, count) =>
-					tabs
-						.slice(0, count)
-						.map(
-							(tab) =>
-								(tab as HTMLElement).getBoundingClientRect().top,
-						),
-				WORK_TABS.length,
-			)
-		expect(
-			new Set(tops.map((top) => Math.round(top))).size,
-			`work-tab tops: ${tops.join(', ')}`,
-		).toBe(1)
+		const boxes = await strip.getByRole('tab').evaluateAll(
+			(tabs, count) =>
+				tabs.slice(0, count).map((tab) => {
+					const box = (tab as HTMLElement).getBoundingClientRect()
+					return {
+						left: box.left,
+						right: box.right,
+						width: box.width,
+						height: box.height,
+					}
+				}),
+			WORK_TABS.length,
+		)
+
+		// A strip that rendered no tabs at all would otherwise pass every
+		// assertion below by having nothing to assert on.
+		expect(boxes, 'every work tab must be on the strip').toHaveLength(
+			WORK_TABS.length,
+		)
+
+		boxes.forEach((box, index) => {
+			const tab = WORK_TABS[index]
+			expect(box.width, `${tab} has no width`).toBeGreaterThan(0)
+			expect(box.height, `${tab} has no height`).toBeGreaterThan(0)
+			expect(
+				box.left,
+				`${tab} starts at x=${box.left}, off the left edge`,
+			).toBeGreaterThanOrEqual(0)
+			expect(
+				box.right,
+				`${tab} ends at x=${box.right}, past the 1024px viewport`,
+			).toBeLessThanOrEqual(1024)
+		})
 	})
 })

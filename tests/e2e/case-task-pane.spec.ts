@@ -299,7 +299,7 @@ test.describe('Case detail — the task pane', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/task-on-the-case/specs/task-management/spec.md#the-open-task-shows-its-buttons-on-the-case
+	// @e2e openspec/specs/task-management/spec.md#the-open-task-shows-its-buttons-on-the-case
 	// @e2e task-management::the-open-task-shows-its-buttons-on-the-case
 	test('the open task shows its lifecycle buttons on the case, with the next one listed under it', async ({
 		page,
@@ -335,7 +335,7 @@ test.describe('Case detail — the task pane', () => {
 		await expect(remaining).not.toContainText(readFirstTitle)
 	})
 
-	// @e2e openspec/changes/task-on-the-case/specs/task-management/spec.md#completing-the-task-confirms-and-shows-the-next-one
+	// @e2e openspec/specs/task-management/spec.md#completing-the-task-confirms-and-shows-the-next-one
 	// @e2e task-management::completing-the-task-confirms-and-shows-the-next-one
 	test('completing the task confirms it by name, stays on the case and shows the next task', async ({
 		page,
@@ -379,7 +379,7 @@ test.describe('Case detail — the task pane', () => {
 		expect(String(completed?.status)).toBe('completed')
 	})
 
-	// @e2e openspec/changes/task-on-the-case/specs/task-management/spec.md#the-last-task-leaves-an-empty-pane
+	// @e2e openspec/specs/task-management/spec.md#the-last-task-leaves-an-empty-pane
 	// @e2e task-management::the-last-task-leaves-an-empty-pane
 	test('the last task leaves the empty text, and View all shows it completed', async ({
 		page,
@@ -414,7 +414,7 @@ test.describe('Case detail — the task pane', () => {
 		await expect(row).toContainText(/completed|afgerond|voltooid/i)
 	})
 
-	// @e2e openspec/changes/task-on-the-case/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
+	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
 	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
 	test('the task page names its case and following the link opens the case', async ({
 		page,

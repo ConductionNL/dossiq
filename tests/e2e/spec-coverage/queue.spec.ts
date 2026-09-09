@@ -47,7 +47,7 @@ test.describe('Queue', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
 	test('the queue page renders for a deep link', async ({ page }) => {
 		// A PATH, not `#/queue`: dossiq runs on createWebHistory, so a hash deep
 		// link navigates nowhere and lands on the dashboard without throwing.
@@ -64,7 +64,7 @@ test.describe('Queue', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
 	test('an assigned case is on the case index and NOT in the queue', async ({
 		page,
 	}) => {
@@ -119,7 +119,7 @@ test.describe('Queue', () => {
 		).toBe(0)
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#an-empty-queue-says-so
+	// @e2e openspec/specs/add-work-queue/spec.md#an-empty-queue-says-so
 	test('an empty result renders the empty state, not a bare table', async ({
 		page,
 	}) => {
@@ -137,7 +137,7 @@ test.describe('Queue', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-narrows-by-case-type
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-narrows-by-case-type
 	test('the case-type sidebar narrows the queue', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq/queue')
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
