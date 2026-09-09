@@ -79,7 +79,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "Let's take a quick spin through case handling. We'll register a case together so you can see how the pieces fit, and you'll add the record yourself.",
+						"body": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -92,7 +92,7 @@
 						"id": "go-cases",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"body": "Cases are the heart of your work. Open Cases from the menu to see everything in progress.",
+						"body": "You work from this list: every case in the organisation, open and closed.",
 						"task": "Click Cases in the menu",
 						"target": {
 							"kind": "nav-item",

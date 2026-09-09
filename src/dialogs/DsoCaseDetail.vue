@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('dossiq', 'Omgevingsvergunning — Detail')"
+		:name="t('dossiq', 'Omgevingsvergunning: Detail')"
 		size="large"
 		:canClose="true"
 		@close="$emit('close')">

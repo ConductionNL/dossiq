@@ -15,7 +15,7 @@
 			{{
 				t(
 					'procest',
-					'Ranked by median dwell time × case volume — the statuses most worth investigating first.',
+					'Ranked by median dwell time × case volume: the statuses most worth investigating first.',
 				)
 			}}
 		</p>

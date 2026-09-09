@@ -59,7 +59,7 @@
 					maxlength="2000"
 					data-testid="leverancier-renewal-reason"
 					class="lz-input lz-textarea"
-					:placeholder="t('dossiq', 'Optional — note on the request')" />
+					:placeholder="t('dossiq', 'Optional: note on the request')" />
 			</div>
 
 			<div class="lz-form-actions">

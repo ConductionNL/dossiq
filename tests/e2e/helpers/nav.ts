@@ -207,7 +207,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 
 /**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
- * sections progressively — the lower ones (Case Email — Shared Mailbox,
+ * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.

@@ -24489,8 +24489,8 @@
         "key": "brp",
         "title": "BRP",
         "description": "Demo connection 3.",
-        "status": "unavailable",
-        "statusMessage": "Specified, not built yet",
+        "status": "unconfigured",
+        "statusMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
         "checkedAt": "2026-09-03T09:03:00+00:00",
         "settingsUrl": "",
         "order": 80
