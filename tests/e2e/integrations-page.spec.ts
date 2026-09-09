@@ -28,6 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -270,25 +271,71 @@ test.describe('Integrations', () => {
 		browser,
 		baseURL,
 	}) => {
+		// LOG IN, do not send credentials. Basic auth does not authenticate
+		// Nextcloud's HTML route here: with the admin jar cleared and
+		// `httpCredentials` set, the page came back with no session at all
+		// (`OC.getCurrentUser` absent). And with the jar NOT cleared it came back
+		// as `uid=admin isAdmin=true`, which is how this test spent its life
+		// asserting the admin's view under a name promising the opposite.
+		//
+		// `captureStorageState` is the sanctioned second session, the one
+		// `dashboard-tiles.spec.ts` uses for the same reason, and its own
+		// docblock carries the warning this test walked into: an OMITTED
+		// `storageState` in a spec silently becomes the admin's.
+		await ensureUser(api, token, PLAIN_USER, PLAIN_PASS)
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+
 		const context = await browser.newContext({
 			baseURL,
-			httpCredentials: {
-				username: PLAIN_USER,
-				password: PLAIN_PASS,
-				// The dossiq API answers 401 without a WWW-Authenticate header,
-				// so Playwright would never send the credentials on the
-				// challenge. `always` sends them on the first request.
-				send: 'always',
-			},
+			storageState: plainState,
 		})
 		const page = await context.newPage()
 
 		await page.goto('/apps/dossiq')
 		await dismissSupportDialog(page)
 
+		// NAME THE USER IN THE FAILURE. This assertion has failed on
+		// `development` while every link in the permission chain reads correct:
+		// the menu entry declares `permission: "admin"`, CnAppNav's
+		// `visibleItems` applies `passesPermission` before `settingsItems`
+		// filters on `section === "settings"`, and `App.vue` answers
+		// `['user']` for a non-admin, never `[]`. So either the chain is not
+		// what it reads as, or this context is not the user it asks for, and
+		// the failure as written cannot tell those apart.
+		//
+		// `httpCredentials` on a fresh context is an assumption about how
+		// Nextcloud authenticates an HTML route, not a measurement. Reading
+		// the identity the PAGE settled on turns the next red into an answer.
+		const whoami = await page.evaluate(() => ({
+			uid:
+				(window as any).OC?.getCurrentUser?.()?.uid
+				?? '(no OC.getCurrentUser)',
+			isAdmin:
+				typeof (window as any).OC?.isUserAdmin === 'function'
+					? (window as any).OC.isUserAdmin()
+					: '(no OC.isUserAdmin)',
+		}))
+
+		// ASSERT THE IDENTITY FIRST. Without this the test still passes or
+		// fails on whatever user it happens to get, which is exactly how it came
+		// to assert the admin's view under a name that promised the opposite.
+		expect(
+			whoami,
+			'this test must act as the non-admin, not as whoever the shared '
+				+ 'storage state logged in',
+		).toEqual({ uid: PLAIN_USER, isAdmin: false })
+
 		// The gear foldout does not carry the entry.
 		await expect(
 			page.locator('.app-navigation a[href$="/settings/integrations"]'),
+			`the page rendered as uid=${whoami.uid} isAdmin=${whoami.isAdmin}; `
+				+ `it should be the non-admin ${PLAIN_USER}`,
 		).toHaveCount(0)
 
 		// And the route renders no rows even when typed in directly.
