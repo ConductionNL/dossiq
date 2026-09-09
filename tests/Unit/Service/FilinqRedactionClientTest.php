@@ -296,4 +296,99 @@ class FilinqRedactionClientTest extends TestCase {
 
 		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
 	}//end testRedactRefusesWhenFilinqIsAbsent()
+	/**
+	 * A file id arriving as a numeric string is accepted as a file id.
+	 *
+	 * Document records come out of OpenRegister, where a number can arrive as
+	 * a string. Rejecting it would send a perfectly resolvable document to
+	 * manual redaction.
+	 *
+	 * @return void
+	 */
+	public function testRedactAcceptsANumericStringFileId(): void {
+		$filinq = $this->givenFilinq();
+
+		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => '77']);
+
+		$this->assertSame(77, $filinq->calls[0]['fileId']);
+	}//end testRedactAcceptsANumericStringFileId()
+
+	/**
+	 * A document whose file lookup throws is refused, carrying the reason.
+	 *
+	 * @return void
+	 */
+	public function testRedactRefusesWhenTheFileLookupThrows(): void {
+		$this->givenFilinq();
+		$this->documents->method('getFileId')->willThrowException(new RuntimeException('gone from storage'));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/file_unresolved: gone from storage/');
+
+		$this->client()->redact('case-1', ['id' => 'doc-9', 'fileName' => 'besluit.pdf']);
+	}//end testRedactRefusesWhenTheFileLookupThrows()
+
+	/**
+	 * With no session, filinq is still called, with an empty acting user.
+	 *
+	 * A background job has no session. Filinq's override audit takes an empty
+	 * uid, so the redaction still runs rather than being refused for the want
+	 * of a name to record.
+	 *
+	 * @return void
+	 */
+	public function testRedactRunsWithoutASessionAndRecordsNoActingUser(): void {
+		$filinq = $this->givenFilinq();
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+
+		$client = new FilinqRedactionClient(
+			$this->container,
+			$this->documents,
+			$session,
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$client->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('', $filinq->calls[1]['userId']);
+	}//end testRedactRunsWithoutASessionAndRecordsNoActingUser()
+
+	/**
+	 * A filinq that throws mid-run is reported as a refusal, not a redaction.
+	 *
+	 * @return void
+	 */
+	public function testRedactRefusesWhenFilinqThrows(): void {
+		$service = new class {
+
+			/**
+			 * Filinq's extraction, which fails here.
+			 *
+			 * @param int $fileId The Nextcloud file id.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function extractAndDetectEntities(int $fileId): array {
+				throw new \RuntimeException('detector unavailable');
+			}
+		};
+
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($service): object {
+				if ($id === self::FILINQ_ANONYMIZATION) {
+					return $service;
+				}
+
+				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
+				};
+			}
+		);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/filinq_redaction_failed: detector unavailable/');
+
+		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+	}//end testRedactRefusesWhenFilinqThrows()
+
 }//end class

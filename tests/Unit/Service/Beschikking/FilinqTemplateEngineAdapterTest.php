@@ -49,6 +49,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	private const FILINQ_DOCUMENTS = 'OCA\Filinq\Service\DocumentService';
 
 	/**
+	 * The FQCN filinq's template service answers to on a renamed instance.
+	 *
+	 * @var string
+	 */
+	private const FILINQ_TEMPLATES = 'OCA\Filinq\Service\TemplateService';
+
+	/**
 	 * A two-page PDF, as far as the page counter is concerned.
 	 *
 	 * @var string
@@ -139,19 +146,35 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			}
 		};
 
+		$this->bindFilinq(documents: $service, templates: null);
+
+		return $service;
+	}//end givenFilinq()
+
+	/**
+	 * Bind the container to whichever filinq services a test needs.
+	 *
+	 * @param object|null $documents Filinq's DocumentService double, or null when absent.
+	 * @param object|null $templates Filinq's TemplateService double, or null when absent.
+	 *
+	 * @return void
+	 */
+	private function bindFilinq(?object $documents, ?object $templates): void {
 		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service): object {
-				if ($id === self::FILINQ_DOCUMENTS) {
-					return $service;
+			static function (string $id) use ($documents, $templates): object {
+				if ($id === self::FILINQ_DOCUMENTS && $documents !== null) {
+					return $documents;
+				}
+
+				if ($id === self::FILINQ_TEMPLATES && $templates !== null) {
+					return $templates;
 				}
 
 				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
 				};
 			}
 		);
-
-		return $service;
-	}//end givenFilinq()
+	}//end bindFilinq()
 
 	/**
 	 * The template id, the case reference and the context all reach filinq.
@@ -238,4 +261,162 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 
 		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
 	}//end testRenderRefusesWhenFilinqIsAbsent()
+	/**
+	 * A render with no acting user is refused rather than answered.
+	 *
+	 * Filinq will not store a generated document without an owning user, so
+	 * this render would hand back a composition with a null fileId. Refusing is
+	 * the point: a composition naming no file is the mock's failure again.
+	 *
+	 * @return void
+	 */
+	public function testRenderRefusesWithoutAnActingUser(): void {
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$this->givenFilinq(['content' => self::PDF_BYTES, 'format' => 'pdf', 'output' => ['fileId' => 1]]);
+
+		$adapter = new FilinqTemplateEngineAdapter(
+			$this->container,
+			$this->settings,
+			$session,
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/user_required/');
+
+		$adapter->render('tpl-abc', ['caseId' => 'case-1']);
+	}//end testRenderRefusesWithoutAnActingUser()
+
+	/**
+	 * A render with no case id sends no data reference and a plain filename.
+	 *
+	 * @return void
+	 */
+	public function testRenderWithoutACaseSendsNoDataRefs(): void {
+		$this->settings->method('getConfigValue')->willReturn('zaken');
+		$filinq = $this->givenFilinq(
+			['content' => 'not a pdf', 'format' => 'html', 'output' => ['fileId' => 12]]
+		);
+
+		$composition = $this->adapter()->render('tpl-abc', ['overrides' => []]);
+
+		$this->assertSame([], $filinq->calls[0]['dataRefs']);
+		$this->assertSame('beschikking', $filinq->calls[0]['options']['filename']);
+		$this->assertSame(0, $composition['paginas'], 'a non-PDF carries no page structure to read');
+		$this->assertSame('html', $composition['format']);
+	}//end testRenderWithoutACaseSendsNoDataRefs()
+
+	/**
+	 * The version reported is the one filinq holds, not a constant.
+	 *
+	 * The mock answered `v1` for every template on every date, which is not a
+	 * version at all. This reads filinq's own value.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionReadsFilinqsTemplateVersion(): void {
+		$templates = new class {
+
+			/**
+			 * Every template id asked for.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * Filinq's template lookup.
+			 *
+			 * @param string $id The template id.
+			 *
+			 * @return array<string, mixed> The template.
+			 */
+			public function getTemplate(string $id): array {
+				$this->asked[] = $id;
+				return ['id' => $id, 'name' => 'Beschikking', 'version' => 7];
+			}
+		};
+		$this->bindFilinq(documents: null, templates: $templates);
+
+		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
+
+		$this->assertSame(['tpl-abc'], $templates->asked, 'filinq must be asked, not assumed');
+		$this->assertSame(
+			['templateId' => 'tpl-abc', 'version' => 'v7', 'effectiveDate' => '2026-09-09'],
+			$version
+		);
+	}//end testResolveVersionReadsFilinqsTemplateVersion()
+
+	/**
+	 * A template filinq does not know is refused, not defaulted.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionRefusesAnUnknownTemplate(): void {
+		$templates = new class {
+
+			/**
+			 * Filinq's template lookup, for a template that is not there.
+			 *
+			 * @param string $id The template id.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function getTemplate(string $id): array {
+				throw new \RuntimeException('not found');
+			}
+		};
+		$this->bindFilinq(documents: null, templates: $templates);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/filinq_template_unknown/');
+
+		$this->adapter()->resolveVersion('tpl-missing', '2026-09-09');
+	}//end testResolveVersionRefusesAnUnknownTemplate()
+
+	/**
+	 * Resolving a version without filinq is refused rather than guessed.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionRefusesWhenFilinqIsAbsent(): void {
+		$this->bindFilinq(documents: null, templates: null);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/filinq_unavailable/');
+
+		$this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
+	}//end testResolveVersionRefusesWhenFilinqIsAbsent()
+
+	/**
+	 * A filinq render that throws is reported as a failure, not a composition.
+	 *
+	 * @return void
+	 */
+	public function testRenderRefusesWhenFilinqThrows(): void {
+		$this->settings->method('getConfigValue')->willReturn('');
+		$service = new class {
+
+			/**
+			 * Filinq's document generation, which fails here.
+			 *
+			 * @param string $templateId The template id.
+			 * @param array<int, mixed> $dataRefs The OpenRegister references.
+			 * @param array<string, mixed> $options The generation options.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function generateDocument(string $templateId, array $dataRefs, array $options): array {
+				throw new \RuntimeException('template engine exploded');
+			}
+		};
+		$this->bindFilinq(documents: $service, templates: null);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/filinq_render_failed: template engine exploded/');
+
+		$this->adapter()->render('tpl-abc', ['caseId' => 'case-1']);
+	}//end testRenderRefusesWhenFilinqThrows()
+
 }//end class

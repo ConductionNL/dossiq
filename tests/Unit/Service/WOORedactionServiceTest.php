@@ -269,4 +269,20 @@ class WOORedactionServiceTest extends TestCase {
 		$this->assertEmpty($result['manual']);
 	}//end testQueueForRedactionReturnsEmptyForNoDocuments()
 
+	/**
+	 * A document record with no identifier at all is skipped, not sent.
+	 *
+	 * @return void
+	 */
+	public function testADocumentWithoutAnIdentifierIsSkipped(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->filinq->expects($this->never())->method('redact');
+
+		$result = $this->service->queueForRedaction('case-uuid-001', [['title' => 'no id here']]);
+
+		$this->assertEmpty($result['redacted']);
+		$this->assertEmpty($result['manual']);
+	}//end testADocumentWithoutAnIdentifierIsSkipped()
+
 }//end class
