@@ -4,13 +4,15 @@
  * Dossiq AI endpoint guard.
  *
  * The SSRF check applied to the configured AI model URL before any outbound
- * request is made: https-only plus a public-address requirement for cloud
- * models, http/https to loopback (or a docker service name that does not
- * resolve into the cloud metadata range) for local ones.
+ * request is made: https plus a public address for cloud models, http/https to
+ * an address inside the instance's own network for local ones.
+ *
+ * It answers with the ADDRESS to connect to rather than a boolean, so the check
+ * and the connection cannot disagree about which host they meant.
  *
  * Split out of {@see \OCA\Dossiq\Service\AiService}: this is a self-contained
- * security decision with its own CIDR deny-list and its own IPv4/IPv6 range
- * arithmetic, and it belongs next to that deny-list rather than inside a class
+ * security decision with its own CIDR lists and its own IPv4/IPv6 range
+ * arithmetic, and it belongs next to those lists rather than inside a class
  * that also builds prompts and writes audit entries.
  *
  * @category Service
@@ -49,7 +51,10 @@ class AiEndpointGuard {
 	use SuppressesWarnings;
 
 	/**
-	 * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
+	 * RFC1918 + loopback + link-local CIDR blocks a CLOUD endpoint may not
+	 * resolve into: a cloud model is by definition somewhere else, so an address
+	 * inside the instance's own network means the URL is being used to reach
+	 * back in.
 	 *
 	 * @var string[]
 	 */
@@ -59,6 +64,43 @@ class AiEndpointGuard {
 		'192.168.0.0/16',
 		'127.0.0.0/8',
 		'169.254.0.0/16',
+		'::1/128',
+		'fc00::/7',
+		'fe80::/10',
+	];
+
+	/**
+	 * The whole of what "local" means: an address a LOCAL model endpoint is
+	 * permitted to resolve to.
+	 *
+	 * An ALLOW-list, not a deny-list, and that is the entire point of it. This
+	 * check used to be a deny-list of exactly one block (169.254.0.0/16), so
+	 * every host on the internet passed as "local": `http://evil.example.com`
+	 * configured as a local model was accepted, and an administrator reading
+	 * "Local (Ollama)" on the settings page was told the case identifiers stayed
+	 * on the instance while they were being posted to a third party. A deny-list
+	 * cannot make that promise no matter how long it gets, because the promise
+	 * is about what IS allowed.
+	 *
+	 * Loopback alone would be too narrow to be usable and would push people
+	 * straight back to cloud mode: a containerised Nextcloud reaches its Ollama
+	 * sidecar by service name over the compose bridge network, which lands in
+	 * 172.16.0.0/12 or 10.0.0.0/8. So "local" means loopback or the private
+	 * address space the instance itself sits in — routable only from inside it —
+	 * and nothing else.
+	 *
+	 * 169.254.0.0/16 and fe80::/10 are deliberately ABSENT. Link-local is where
+	 * every cloud provider parks its instance metadata service (169.254.169.254),
+	 * which hands out credentials to anything that asks. It is not on this list,
+	 * so it is refused.
+	 *
+	 * @var string[]
+	 */
+	private const LOCAL_CIDRS = [
+		'127.0.0.0/8',
+		'10.0.0.0/8',
+		'172.16.0.0/12',
+		'192.168.0.0/16',
 		'::1/128',
 		'fc00::/7',
 	];
@@ -76,138 +118,174 @@ class AiEndpointGuard {
 	}//end __construct()
 
 	/**
-	 * Validate that the configured AI model URL is safe to connect to (SSRF guard).
+	 * Resolve the configured AI model URL to the ONE address it may be connected
+	 * to, or null when the URL is refused (SSRF guard).
 	 *
-	 * For cloud models, requires https and a public hostname.
-	 * For local models, allows http only to localhost / 127.0.0.1.
+	 * Returns an address rather than a yes/no ON PURPOSE. A guard that answers
+	 * `true` and leaves the caller to connect by NAME checks one thing and
+	 * permits another: between the check and the request the name can be
+	 * re-resolved, and the second answer is under the control of whoever owns
+	 * the DNS record. That is DNS rebinding, and it is the standard way past
+	 * exactly this kind of check — a hostname that answers 127.0.0.1 while it is
+	 * being validated and the metadata service a millisecond later. The caller
+	 * pins this address with `CURLOPT_RESOLVE`, so the connection goes to the
+	 * address that was actually inspected while the Host header and TLS SNI
+	 * still carry the original name.
+	 *
+	 * Fails CLOSED everywhere: a host that cannot be resolved is refused rather
+	 * than passed through, because an unverifiable address cannot be shown to be
+	 * safe.
 	 *
 	 * @param string $url The base AI model URL.
 	 * @param string $modelType The model type ('local' or 'cloud').
 	 *
-	 * @return bool True if the URL passes the SSRF check.
+	 * @return string|null The single IP address to connect to, or null when refused.
 	 *
 	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
-	public function isSafeUrl(string $url, string $modelType): bool {
+	public function resolveSafeAddress(string $url, string $modelType): ?string {
 		$parsed = parse_url($url);
 		$scheme = strtolower($parsed['scheme'] ?? '');
-		$host = strtolower($parsed['host'] ?? '');
+		// An IPv6 literal arrives bracketed from parse_url(); inet_pton() and
+		// the CIDR arithmetic below both want it bare.
+		$host = strtolower(trim(($parsed['host'] ?? ''), '[]'));
 
-		if ($host === '') {
-			return false;
-		}//end if
-
-		if ($modelType === 'local') {
-			return $this->isSafeLocalAiUrl(scheme: $scheme, host: $host);
-		}//end if
-
-		return $this->isSafeCloudAiUrl(scheme: $scheme, host: $host);
-	}//end isSafeUrl()
-
-	/**
-	 * Validate a local-model URL (SSRF guard).
-	 *
-	 * Only http/https to localhost or 127.0.0.1; named docker service hostnames
-	 * are allowed but must not resolve into the cloud metadata range.
-	 *
-	 * @param string $scheme The lower-cased URL scheme.
-	 * @param string $host The lower-cased URL host.
-	 *
-	 * @return bool True if the URL passes the SSRF check.
-	 */
-	private function isSafeLocalAiUrl(string $scheme, string $host): bool {
-		// Local models: only http/https to localhost or 127.0.0.1.
-		if (in_array($scheme, ['http', 'https'], true) === false) {
-			return false;
-		}//end if
-
-		if ($host !== 'localhost' && $host !== '127.0.0.1' && $host !== '::1') {
-			// Allow named docker service hostnames (e.g. 'ollama') for local deployments
-			// but still block known public metadata endpoints and RFC1918 IPs.
-			$ipAddress = gethostbyname($host);
-			if ($ipAddress !== $host
-				&& $this->ipInCidr(ipAddress: $ipAddress, cidr: '169.254.0.0/16') === true
-			) {
-				$this->logger->warning(
-					'AI SSRF: local model URL resolves to cloud metadata range',
-					['host' => $host, 'ip' => $ipAddress]
-				);
-				return false;
-			}//end if
-		}//end if
-
-		return true;
-	}//end isSafeLocalAiUrl()
-
-	/**
-	 * Validate a cloud-model URL (SSRF guard).
-	 *
-	 * Https only, and the host must resolve to a public (non-RFC1918,
-	 * non-loopback) address.
-	 *
-	 * @param string $scheme The lower-cased URL scheme.
-	 * @param string $host The lower-cased URL host.
-	 *
-	 * @return bool True if the URL passes the SSRF check.
-	 */
-	private function isSafeCloudAiUrl(string $scheme, string $host): bool {
-		// Cloud models: https only, must resolve to a public (non-RFC1918) address.
-		if ($scheme !== 'https') {
+		if ($host === '' || $this->isAllowedScheme(scheme: $scheme, modelType: $modelType) === false) {
 			$this->logger->warning(
-				'AI SSRF: cloud model URL must use https',
-				['scheme' => $scheme]
+				'AI SSRF: model URL rejected on scheme or host',
+				['scheme' => $scheme, 'host' => $host, 'modelType' => $modelType]
 			);
-			return false;
+			return null;
 		}//end if
 
-		$records = $this->withoutWarnings(
-			operation: static function () use ($host): mixed {
-				return dns_get_record($host, (DNS_A | DNS_AAAA));
-			}
-		);
-		if ($records === false || count($records) === 0) {
+		$addresses = $this->resolveHost(host: $host);
+		if (count($addresses) === 0) {
 			$this->logger->warning(
-				'AI SSRF: DNS resolution returned no records',
+				'AI SSRF: host could not be resolved, refusing',
 				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
 			);
-			return false;
+			return null;
 		}//end if
 
-		foreach ($records as $record) {
-			if ($this->isBlockedAddress(record: $record, host: $host) === true) {
-				return false;
+		// EVERY address the name answers with has to pass, not merely the first.
+		// A name that resolves to a permitted address and a forbidden one is a
+		// name whose next answer cannot be predicted.
+		foreach ($addresses as $address) {
+			if ($this->isAllowedAddress(ipAddress: $address, modelType: $modelType) === false) {
+				$this->logger->warning(
+					'AI SSRF: model URL resolves to an address this model type may not reach',
+					['host' => $host, 'ip' => $address, 'modelType' => $modelType]
+				);
+				return null;
 			}//end if
 		}
 
-		return true;
-	}//end isSafeCloudAiUrl()
+		return $addresses[0];
+	}//end resolveSafeAddress()
 
 	/**
-	 * Whether one DNS record resolves into a denied CIDR block.
+	 * Whether a URL scheme is permitted for this model type.
 	 *
-	 * @param array<string, mixed> $record One dns_get_record() entry.
-	 * @param string $host The host being validated (for logging).
+	 * @param string $scheme The lower-cased URL scheme.
+	 * @param string $modelType The model type ('local' or 'cloud').
 	 *
-	 * @return bool True when the address is denied.
+	 * @return bool True when the scheme is permitted.
 	 */
-	private function isBlockedAddress(array $record, string $host): bool {
-		$ipAddress = ($record['ip'] ?? ($record['ipv6'] ?? null));
-		if ($ipAddress === null) {
-			return false;
+	private function isAllowedScheme(string $scheme, string $modelType): bool {
+		if ($modelType === 'local') {
+			// Plain http is accepted only because the address allow-list has
+			// already confined the connection to the instance's own network.
+			return in_array($scheme, ['http', 'https'], true);
 		}//end if
 
-		foreach (self::BLOCKED_CIDRS as $cidr) {
+		return $scheme === 'https';
+	}//end isAllowedScheme()
+
+	/**
+	 * Whether one resolved address is permitted for this model type.
+	 *
+	 * Local is an allow-list (it must be inside the instance's own network);
+	 * cloud is a deny-list (it must be outside it). The two are inverses, and
+	 * neither is a superset of the other.
+	 *
+	 * @param string $ipAddress The resolved IP address.
+	 * @param string $modelType The model type ('local' or 'cloud').
+	 *
+	 * @return bool True when the address is permitted.
+	 */
+	private function isAllowedAddress(string $ipAddress, string $modelType): bool {
+		if ($modelType === 'local') {
+			return $this->ipInAnyCidr(ipAddress: $ipAddress, cidrs: self::LOCAL_CIDRS);
+		}//end if
+
+		return $this->ipInAnyCidr(ipAddress: $ipAddress, cidrs: self::BLOCKED_CIDRS) === false;
+	}//end isAllowedAddress()
+
+	/**
+	 * Whether an address falls inside any of a set of CIDR blocks.
+	 *
+	 * @param string $ipAddress The IP address to test.
+	 * @param string[] $cidrs The CIDR blocks.
+	 *
+	 * @return bool True when the address is inside at least one block.
+	 */
+	private function ipInAnyCidr(string $ipAddress, array $cidrs): bool {
+		foreach ($cidrs as $cidr) {
 			if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
-				$this->logger->warning(
-					'AI SSRF: cloud model URL resolves to private/loopback address',
-					['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
-				);
 				return true;
 			}//end if
 		}
 
 		return false;
-	}//end isBlockedAddress()
+	}//end ipInAnyCidr()
+
+	/**
+	 * Resolve a host to every address it answers with, ONCE.
+	 *
+	 * An IP literal resolves to itself. A name goes through the SYSTEM resolver
+	 * (`gethostbynamel`) rather than straight to DNS, because a container
+	 * reaches its sidecar through `/etc/hosts` and the compose embedded resolver
+	 * — which `dns_get_record()` does not consult, so the previous cloud path
+	 * could not see a docker service name at all. `dns_get_record()` is kept as
+	 * the AAAA fallback, which `gethostbynamel()` cannot return.
+	 *
+	 * @param string $host The lower-cased host, without IPv6 brackets.
+	 *
+	 * @return string[] Every resolved address; empty when the host cannot be resolved.
+	 */
+	private function resolveHost(string $host): array {
+		if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+			return [$host];
+		}//end if
+
+		$addresses = $this->withoutWarnings(
+			operation: static function () use ($host): mixed {
+				return gethostbynamel($host);
+			}
+		);
+		if (is_array($addresses) === true && count($addresses) > 0) {
+			return $addresses;
+		}//end if
+
+		$records = $this->withoutWarnings(
+			operation: static function () use ($host): mixed {
+				return dns_get_record($host, DNS_AAAA);
+			}
+		);
+		if (is_array($records) === false) {
+			return [];
+		}//end if
+
+		$resolved = [];
+		foreach ($records as $record) {
+			$address = ($record['ipv6'] ?? null);
+			if ($address !== null) {
+				$resolved[] = $address;
+			}//end if
+		}
+
+		return $resolved;
+	}//end resolveHost()
 
 	/**
 	 * Check if an IP address falls within a CIDR range (IPv4 and IPv6).

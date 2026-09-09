@@ -3828,7 +3828,12 @@ OC.L10N.register(
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Welke versie van dit zaaktype je voor je hebt. Een zaaktype pas je niet meer aan zodra er zaken op lopen: je maakt een nieuwe versie, en die nieuwe versie is een nieuw object met zijn eigen statussen, resultaten en eigenschappen. Versie 1 is een zaaktype dat nog nooit is geversioneerd.",
         "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.": "Een e-mail waarvan het onderwerp geen zaaknummer bevat, of een nummer dat niet meer bestaat, wordt een zaak van dit type. Laat het leeg en de e-mail blijft ongelezen in de mailbox staan, zoals nu.",
         "Case type for mail nobody claims": "Zaaktype voor e-mail die niemand opeist",
-        "Leave it in the mailbox": "Laat hem in de mailbox staan"
+        "Leave it in the mailbox": "Laat hem in de mailbox staan",
+        "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.": "Een DPIA is verplicht voordat je AI-functies met persoonsgegevens gebruikt. Zolang je die hier niet bevestigt, blijft elke AI-functie uit.",
+        "We could not load the AI settings, so none are shown. Reload the page to try again.": "We konden de AI-instellingen niet laden, dus je ziet er geen. Laad de pagina opnieuw om het nog eens te proberen.",
+        "You have a key stored. Type a new one to replace it.": "Er is een sleutel opgeslagen. Typ een nieuwe om die te vervangen.",
+        "You have no key stored.": "Er is geen sleutel opgeslagen.",
+        "Why the attempt failed, when action is failed": "Waarom de poging mislukte, als action failed is"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -97,15 +97,64 @@ class AiService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function isEnabled(): bool {
-		return $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_enabled',
-			''
-		) === '1';
+		return $this->flagEnabled(key: 'ai_enabled');
 	}//end isEnabled()
 
 	/**
+	 * Read one stored on/off flag as a boolean.
+	 *
+	 * The ONE place `'1'` is compared against a stored setting. Every flag in
+	 * this subsystem is written by {@see \OCA\Dossiq\Service\SettingsService::updateSettings()}
+	 * as `(string)` of a JSON boolean — so `true` becomes `'1'` and `false`
+	 * becomes `''` — and every reader must agree on that encoding. It drifted
+	 * once already: the admin tab read a differently-shaped response and fell
+	 * back to hard-coded `true` defaults, so a stored `''` displayed as ON.
+	 *
+	 * @param string $key The app-config key.
+	 * @param string $default The stored default when the key is unset.
+	 *
+	 * @return bool True when the flag is stored as enabled.
+	 */
+	private function flagEnabled(string $key, string $default = ''): bool {
+		return $this->appConfig->getValueString(
+			Application::APP_ID,
+			$key,
+			$default
+		) === '1';
+	}//end flagEnabled()
+
+	/**
+	 * Whether the DPIA acknowledgement required before any AI feature runs has
+	 * been recorded.
+	 *
+	 * @return bool True when an administrator has acknowledged the DPIA.
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	public function isDpiaAcknowledged(): bool {
+		return $this->flagEnabled(key: 'ai_dpia_acknowledged');
+	}//end isDpiaAcknowledged()
+
+	/**
 	 * Check if a specific AI feature is enabled.
+	 *
+	 * Three conditions, all required: AI is on globally, the DPIA has been
+	 * acknowledged, and this specific feature is on.
+	 *
+	 * The DPIA condition is enforced HERE rather than at each call site because
+	 * this method is the single chokepoint every AI operation already passes
+	 * through. It previously gated nothing at all: `ai_dpia_acknowledged` was
+	 * written by the admin tab and read back for display, and no PHP ever
+	 * consulted it, while the tab told the administrator "this must be
+	 * acknowledged before AI features can be activated". The claim is now true.
+	 *
+	 * The operational consequence is deliberate and stated in the release notes:
+	 * an instance that has AI enabled WITHOUT the acknowledgement stops serving
+	 * AI features until an administrator ticks the box. That is one toggle on
+	 * the page that already carries the warning, and every blocked call returns
+	 * a message naming the reason. It is not grandfathered — recording an
+	 * acknowledgement on an administrator's behalf would be the same lie in the
+	 * other direction.
 	 *
 	 * @param string $feature The feature name (classification, extraction, qa, summary, routing, decision_support)
 	 *
@@ -118,12 +167,31 @@ class AiService {
 			return false;
 		}
 
-		return $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_feature_' . $feature,
-			''
-		) === '1';
+		if ($this->isDpiaAcknowledged() === false) {
+			return false;
+		}
+
+		return $this->flagEnabled(key: 'ai_feature_' . $feature);
 	}//end isFeatureEnabled()
+
+	/**
+	 * The reason an AI operation is unavailable, phrased for the caller.
+	 *
+	 * Separates "the administrator has not acknowledged the DPIA" from "this
+	 * feature is switched off", so a blocked call says which toggle to reach
+	 * for instead of reporting a generic refusal.
+	 *
+	 * @param string $label The human-readable operation name.
+	 *
+	 * @return string The refusal message.
+	 */
+	private function unavailableMessage(string $label): string {
+		if ($this->isEnabled() === true && $this->isDpiaAcknowledged() === false) {
+			return 'AI features are unavailable until the DPIA is acknowledged in the Dossiq AI settings';
+		}
+
+		return $label . ' is not enabled';
+	}//end unavailableMessage()
 
 	/**
 	 * Classify a document using AI.
@@ -143,16 +211,19 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'classification') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI document classification is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI document classification'),
 			];
 		}
+
+		// Built and scrubbed BEFORE the try, so `$prompt` is defined in the
+		// catch and the failure entry can record what was actually sent.
+		$prompt = $this->stripPiiIfEnabled(
+			prompt: $this->prompts->classification(caseId: $caseId, documentId: $documentId)
+		);
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->classification(caseId: $caseId, documentId: $documentId);
-			$prompt = $this->stripPiiIfEnabled(prompt: $prompt);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -178,9 +249,19 @@ class AiService {
 				'suggestion' => $result,
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI classification failed',
-				['caseId' => $caseId, 'documentId' => $documentId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'classification',
+					'caseId' => $caseId,
+					'documentId' => $documentId,
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI classification failed',
+				logContext: ['caseId' => $caseId, 'documentId' => $documentId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -204,16 +285,17 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'extraction') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI data extraction is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI data extraction'),
 			];
 		}
+
+		$prompt = $this->stripPiiIfEnabled(
+			prompt: $this->prompts->extraction(caseId: $caseId, documentId: $documentId)
+		);
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->extraction(caseId: $caseId, documentId: $documentId);
-			$prompt = $this->stripPiiIfEnabled(prompt: $prompt);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -239,9 +321,19 @@ class AiService {
 				'fields' => ($result['fields'] ?? []),
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI extraction failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'extraction',
+					'caseId' => $caseId,
+					'documentId' => ($documentId ?? ''),
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI extraction failed',
+				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -265,15 +357,21 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'qa') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI knowledge base Q&A is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI knowledge base Q&A'),
 			];
 		}
+
+		// The ONE prompt in this subsystem that carries free-form text a person
+		// typed, and until now the ONE that was never scrubbed. Every other
+		// prompt interpolates identifiers only (see AiPromptFactory), so this is
+		// the operation PII stripping was actually for.
+		$prompt = $this->stripPiiIfEnabled(
+			prompt: $this->prompts->question(caseId: $caseId, question: $question)
+		);
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->question(caseId: $caseId, question: $question);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -284,7 +382,12 @@ class AiService {
 					'action' => 'suggestion',
 					'caseId' => $caseId,
 					'model' => $this->getModelIdentifier(),
-					'prompt' => $question,
+					// The SCRUBBED prompt, not the raw question. This recorded
+					// `$question` verbatim, so a BSN typed into the Q&A box was
+					// written to the audit trail in clear even with PII
+					// stripping switched on — and the schema's own description
+					// of this field promises "PII-stripped if enabled".
+					'prompt' => $prompt,
 					'suggestion' => $result,
 					'confidence' => ($result['confidence'] ?? 0.0),
 					'userId' => $userId,
@@ -299,9 +402,18 @@ class AiService {
 				'sources' => ($result['sources'] ?? []),
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI Q&A failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'qa',
+					'caseId' => $caseId,
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI Q&A failed',
+				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -326,16 +438,17 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'summary') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI summarization is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI summarization'),
 			];
 		}
+
+		$prompt = $this->stripPiiIfEnabled(
+			prompt: $this->prompts->summary(caseId: $caseId, type: $type, documentId: $documentId)
+		);
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->summary(caseId: $caseId, type: $type, documentId: $documentId);
-			$prompt = $this->stripPiiIfEnabled(prompt: $prompt);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -360,9 +473,19 @@ class AiService {
 				'summary' => ($result['summary'] ?? ''),
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI summarization failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'summary',
+					'caseId' => $caseId,
+					'documentId' => ($documentId ?? ''),
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI summarization failed',
+				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -385,15 +508,15 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'routing') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI case routing is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI case routing'),
 			];
 		}
+
+		$prompt = $this->stripPiiIfEnabled(prompt: $this->prompts->routing(caseId: $caseId));
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->routing(caseId: $caseId);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -418,9 +541,18 @@ class AiService {
 				'suggestions' => ($result['suggestions'] ?? []),
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI routing suggestion failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'routing',
+					'caseId' => $caseId,
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI routing suggestion failed',
+				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -443,15 +575,15 @@ class AiService {
 		if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
 			return [
 				'success' => false,
-				'message' => 'AI decision support is not enabled',
+				'message' => $this->unavailableMessage(label: 'AI decision support'),
 			];
 		}
+
+		$prompt = $this->stripPiiIfEnabled(prompt: $this->prompts->nextStep(caseId: $caseId));
 
 		$startTime = microtime(true);
 
 		try {
-			$prompt = $this->prompts->nextStep(caseId: $caseId);
-
 			$result = $this->callAiModel(prompt: $prompt);
 
 			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
@@ -475,9 +607,18 @@ class AiService {
 				'suggestions' => ($result['suggestions'] ?? []),
 			];
 		} catch (\Exception $e) {
-			$this->logger->error(
-				'AI next-step suggestion failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+			$this->recordFailure(
+				entry: [
+					'type' => 'decision_support',
+					'caseId' => $caseId,
+					'model' => $this->getModelIdentifier(),
+					'prompt' => $prompt,
+					'error' => $e->getMessage(),
+					'userId' => $userId,
+					'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
+				],
+				logMessage: 'AI next-step suggestion failed',
+				logContext: ['caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 			return [
 				'success' => false,
@@ -489,7 +630,17 @@ class AiService {
 	/**
 	 * Test AI model connectivity.
 	 *
-	 * @return array Health check result
+	 * The result key is `healthy`, and BOTH branches carry a `message`. It used
+	 * to be `success`, with a `message` only on the error branch, while the one
+	 * caller — the admin tab's connection test — read `healthy` and `message`.
+	 * A working model therefore rendered as a red note card with no text in it:
+	 * `healthy` was undefined, so the ternary picked `error`, and there was no
+	 * message to print. Renamed rather than aliased, because a second key
+	 * meaning the same thing is how the two halves drifted apart in the first
+	 * place.
+	 *
+	 * @return array{healthy: bool, status: string, model: string, message: string, responseTimeMs: int}
+	 *                                                                                                   Health check result
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -500,17 +651,16 @@ class AiService {
 			// The call itself is the health probe; its payload is irrelevant.
 			$this->callAiModel(prompt: 'Respond with "ok" to confirm connectivity.');
 
-			$responseTimeMs = (int)((microtime(true) - $startTime) * 1000);
-
 			return [
-				'success' => true,
+				'healthy' => true,
 				'status' => 'connected',
 				'model' => $this->getModelIdentifier(),
-				'responseTimeMs' => $responseTimeMs,
+				'message' => 'Connected to ' . $this->getModelIdentifier(),
+				'responseTimeMs' => (int)((microtime(true) - $startTime) * 1000),
 			];
 		} catch (\Exception $e) {
 			return [
-				'success' => false,
+				'healthy' => false,
 				'status' => 'error',
 				'model' => $this->getModelIdentifier(),
 				'message' => $e->getMessage(),
@@ -528,19 +678,19 @@ class AiService {
 	 */
 	public function getAiSettings(): array {
 		return [
-			'ai_enabled' => $this->appConfig->getValueString(Application::APP_ID, 'ai_enabled', ''),
+			'ai_enabled' => $this->isEnabled(),
 			'ai_model_type' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
 			'ai_model_url' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
 			'ai_model_name' => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
 			'ai_api_key_set' => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
-			'ai_feature_classification' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_classification', ''),
-			'ai_feature_extraction' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_extraction', ''),
-			'ai_feature_qa' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_qa', ''),
-			'ai_feature_summary' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_summary', ''),
-			'ai_feature_routing' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_routing', ''),
-			'ai_feature_decision_support' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_decision_support', ''),
-			'ai_dpia_acknowledged' => $this->appConfig->getValueString(Application::APP_ID, 'ai_dpia_acknowledged', ''),
-			'ai_pii_stripping' => $this->appConfig->getValueString(Application::APP_ID, 'ai_pii_stripping', '1'),
+			'ai_feature_classification' => $this->flagEnabled(key: 'ai_feature_classification'),
+			'ai_feature_extraction' => $this->flagEnabled(key: 'ai_feature_extraction'),
+			'ai_feature_qa' => $this->flagEnabled(key: 'ai_feature_qa'),
+			'ai_feature_summary' => $this->flagEnabled(key: 'ai_feature_summary'),
+			'ai_feature_routing' => $this->flagEnabled(key: 'ai_feature_routing'),
+			'ai_feature_decision_support' => $this->flagEnabled(key: 'ai_feature_decision_support'),
+			'ai_dpia_acknowledged' => $this->isDpiaAcknowledged(),
+			'ai_pii_stripping' => $this->flagEnabled(key: 'ai_pii_stripping', default: '1'),
 		];
 	}//end getAiSettings()
 
@@ -585,13 +735,7 @@ class AiService {
 	 * @return string The prompt with PII replaced
 	 */
 	private function stripPiiIfEnabled(string $prompt): string {
-		$piiEnabled = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'ai_pii_stripping',
-			'1'
-		);
-
-		if ($piiEnabled !== '1') {
+		if ($this->flagEnabled(key: 'ai_pii_stripping', default: '1') === false) {
 			return $prompt;
 		}
 
@@ -615,6 +759,8 @@ class AiService {
 	 * @return array The AI model response
 	 *
 	 * @throws \RuntimeException If the AI model call fails
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
 	 */
 	protected function callAiModel(string $prompt): array {
 		$modelUrl = $this->appConfig->getValueString(
@@ -651,8 +797,10 @@ class AiService {
 
 		$endpoint = rtrim($modelUrl, '/') . '/api/generate';
 
-		// SSRF guard: validate the configured model URL before making outbound requests.
-		if ($this->endpointGuard->isSafeUrl(url: $modelUrl, modelType: $modelType) === false) {
+		// SSRF guard: resolve the configured model URL to the ONE address it may
+		// be connected to, before making any outbound request.
+		$pinnedAddress = $this->endpointGuard->resolveSafeAddress(url: $modelUrl, modelType: $modelType);
+		if ($pinnedAddress === null) {
 			throw new RuntimeException('AI model URL failed SSRF security check');
 		}
 
@@ -662,6 +810,14 @@ class AiService {
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+
+		// Connect to the address the guard INSPECTED, not to whatever the name
+		// resolves to now. Without this, the guard's answer and curl's own
+		// lookup are two separate resolutions of the same name and only the
+		// second one carries the request — which is the whole of a DNS
+		// rebinding attack. The Host header and TLS SNI still carry the
+		// configured name, so certificate validation is unaffected.
+		curl_setopt($ch, CURLOPT_RESOLVE, [$this->pinnedResolveEntry(url: $modelUrl, address: $pinnedAddress)]);
 
 		// Add API key for cloud models.
 		if ($modelType === 'cloud') {
@@ -697,6 +853,34 @@ class AiService {
 
 		return $this->decodeAiModelResponse(response: $response);
 	}//end callAiModel()
+
+	/**
+	 * Build the `CURLOPT_RESOLVE` entry that pins one host:port to one address.
+	 *
+	 * The port has to be stated explicitly because `CURLOPT_RESOLVE` matches on
+	 * `host:port`, and an entry naming the wrong port is simply ignored — the
+	 * pin would silently do nothing and curl would resolve the name itself.
+	 * A URL without a port takes the scheme's default.
+	 *
+	 * @param string $url The configured model URL.
+	 * @param string $address The address the guard approved.
+	 *
+	 * @return string The `host:port:address` entry.
+	 */
+	private function pinnedResolveEntry(string $url, string $address): string {
+		$parsed = parse_url($url);
+		$host = strtolower(trim(($parsed['host'] ?? ''), '[]'));
+
+		$port = ($parsed['port'] ?? null);
+		if ($port === null) {
+			$port = 80;
+			if (strtolower($parsed['scheme'] ?? '') === 'https') {
+				$port = 443;
+			}
+		}
+
+		return $host . ':' . $port . ':' . $address;
+	}//end pinnedResolveEntry()
 
 	/**
 	 * Decode the raw AI model HTTP body into the suggestion array.
@@ -735,4 +919,42 @@ class AiService {
 	private function recordAuditEntry(array $entry): void {
 		$this->audit->record(entry: $entry);
 	}//end recordAuditEntry()
+
+	/**
+	 * Log a failed AI attempt AND record it in the oversight trail.
+	 *
+	 * The trail used to be reachable only from the success path: all six
+	 * operations logged the exception and returned, so an `aiAuditEntry` existed
+	 * for every call that worked and for none that did not. "What did this thing
+	 * try to do" is the question an audit trail exists to answer, and a trail of
+	 * successes cannot answer it — a model that refused, timed out or was
+	 * unreachable left no record that it had been asked at all.
+	 *
+	 * The entry carries `action: 'failed'` and the exception message in `error`;
+	 * `type`, `userId` and `timestamp` are the schema's required fields, and the
+	 * caller supplies the first two. Recording is best-effort by construction:
+	 * {@see AiAuditLog::record()} swallows its own failures, so an unavailable
+	 * audit sink can never turn a handled AI error into a 500.
+	 *
+	 * @param array $entry The audit entry, without `action` or `timestamp`.
+	 * @param string $logMessage The log line for the operator.
+	 * @param array $logContext The structured log context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/ai-assistance/spec.md
+	 */
+	private function recordFailure(array $entry, string $logMessage, array $logContext): void {
+		$this->logger->error($logMessage, $logContext);
+
+		$this->recordAuditEntry(
+			entry: array_merge(
+				$entry,
+				[
+					'action' => 'failed',
+					'timestamp' => date('c'),
+				]
+			)
+		);
+	}//end recordFailure()
 }//end class

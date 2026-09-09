@@ -475,7 +475,7 @@
       "aiAuditEntry": {
         "slug": "aiAuditEntry",
         "icon": "RobotOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:DigitalDocument",
         "title": "AI Audit Entry",
         "description": "Immutable audit log entry for AI-assisted processing interactions",
@@ -507,11 +507,17 @@
               "suggestion",
               "accepted",
               "rejected",
-              "modified"
+              "modified",
+              "failed"
             ],
-            "description": "Outcome of the AI suggestion",
+            "description": "Outcome of the AI interaction: a suggestion offered, what the human did with it, or a failed attempt",
             "title": "Action",
             "facetable": true
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the attempt failed, when action is failed",
+            "title": "Error"
           },
           "caseId": {
             "type": "string",
