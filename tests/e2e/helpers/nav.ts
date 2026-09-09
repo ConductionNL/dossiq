@@ -436,10 +436,7 @@ export async function tickCheckbox(checkbox: Locator): Promise<void> {
  *
  * @return Resolves once the entry has been clicked.
  */
-export async function clickHeaderAction(
-	page: Page,
-	testId: string,
-): Promise<void> {
+export async function clickHeaderAction(page: Page, testId: string): Promise<void> {
 	await openHeaderActionsMenu(page)
 	const entry = page.getByTestId(testId)
 	await expect(entry).toBeVisible({ timeout: 10_000 })

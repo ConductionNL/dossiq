@@ -41,7 +41,11 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, dismissSupportDialog, openHeaderActionsMenu } from './helpers/nav.ts'
+import {
+	clickHeaderAction,
+	dismissSupportDialog,
+	openHeaderActionsMenu,
+} from './helpers/nav.ts'
 
 /** The fields the Add party form asks a handler to fill. */
 const FORM_FIELDS = [
