@@ -768,8 +768,17 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const dialog = await openBulkAction(page, ['bulk-a', 'bulk-b'], 'transition')
 
 		await dialog.getByRole('combobox').first().click()
+		// By TEXT, and accepting `.vs__dropdown-option` beside `role="option"`.
+		// The transition list renders and the option is plainly on screen —
+		// measured off this test's own failure screenshot, "Start behandeling"
+		// visible in an open dropdown — but `getByRole('option')` matched
+		// nothing for the whole budget, so the failure read as an engine that
+		// offered no transitions rather than as a name the a11y tree does not
+		// carry. The sibling pattern is `case-timeline.spec.ts`, which pairs
+		// the two selectors for exactly this reason.
 		await page
-			.getByRole('option', { name: /Start behandeling/ })
+			.locator('[role="option"], .vs__dropdown-option')
+			.filter({ hasText: /Start behandeling/ })
 			.first()
 			.click()
 		await dialog

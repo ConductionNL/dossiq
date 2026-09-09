@@ -336,6 +336,21 @@ test.describe('Case identity', () => {
 		// NcSelect in taggable mode: type the word, then Enter mints it.
 		await editor.getByRole('combobox').first().fill(TYPED_TAG)
 		await page.keyboard.press('Enter')
+
+		// Then CLOSE the dropdown, which minting the tag does not do. vue-select
+		// keeps its menu open after Enter and, the search term having matched
+		// nothing, renders `<li class="vs__no-options">No results</li>` in a
+		// floating list positioned over the editor's own buttons. Playwright
+		// reported the Confirm button as visible, enabled and stable and then
+		// spent the whole 15s budget being told `vs__no-options … intercepts
+		// pointer events` — a covered control, which reads exactly like a
+		// control that is not there.
+		await page.keyboard.press('Escape')
+		await expect(
+			page.locator('.vs__dropdown-menu'),
+			'the tag dropdown still covers the editor actions',
+		).toHaveCount(0, { timeout: 15_000 })
+
 		// Confirm the field, then save the widget: the field editor stages the
 		// value and the widget's own Save writes it.
 		await panel

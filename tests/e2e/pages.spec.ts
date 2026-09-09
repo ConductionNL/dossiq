@@ -1,4 +1,16 @@
+import type { APIRequestContext } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
+import {
+	cleanupRunObjects,
+	createObject,
+	ensureCaseType,
+	getRequestToken,
+	objectId,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+} from './helpers/fixtures.ts'
 import {
 	dismissSupportDialog,
 	loadAllAdminSections,
@@ -122,6 +134,54 @@ test.describe('Cases page', () => {
 })
 
 test.describe('Tasks page', () => {
+	/**
+	 * The Case column test used to read whatever the instance happened to
+	 * hold, and on this run it held nothing: the Tasks index answered "No
+	 * items found" and the spec reported a missing table. Nothing seeds tasks
+	 * for the whole instance — `ci-seed.sh` provisions the register and its
+	 * schemas, not rows — so every task on the list belongs to some other
+	 * spec, is torn down by that spec's `afterAll`, and may or may not exist
+	 * by the time this file runs on its own worker. A test that needs a task
+	 * linked to a case has to own one.
+	 */
+	let api: APIRequestContext
+	let token = ''
+	let taskCaseId = ''
+	let taskCaseTitle = ''
+
+	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		// The signed-in storage state, explicitly. `playwright.request` is the
+		// raw API and inherits nothing from `use`, so a context built without
+		// it carries no session and every seed below answers 401.
+		const context = await browser.newContext()
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: await context.storageState(),
+		})
+		await context.close()
+		token = await getRequestToken(api)
+
+		const caseType = await ensureCaseType(api, token)
+		taskCaseTitle = `${RUN_PREFIX} Tasks page case`
+		taskCaseId = objectId(
+			await seedCase(api, token, {
+				title: taskCaseTitle,
+				caseType: caseType.id,
+			}),
+		)
+		await createObject(api, token, 'caseTask', {
+			title: `${RUN_PREFIX} Tasks page task`,
+			case: taskCaseId,
+			status: 'available',
+		})
+	})
+
+	test.afterAll(async () => {
+		if (api === undefined) return
+		await cleanupRunObjects(api, token)
+		await api.dispose()
+	})
+
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('renders list view with search and filters', async ({ page }) => {
 		// "Tasks" is no longer a top-level sidebar leaf (dropped by the
@@ -148,7 +208,20 @@ test.describe('Tasks page', () => {
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('the Case column shows the case title, not its uuid', async ({ page }) => {
-		await navToRoute(page, '/tasks')
+		// Deep-linked to THIS spec's own case, so the list holds the one task
+		// seeded above and nothing else. A non-underscore query param is a
+		// field filter on CnIndexPage, the same one the sidebar applies.
+		//
+		// Narrowing matters twice over. It stops the assertion depending on a
+		// task another spec seeded and tore down — which is how this arrived
+		// at "No items found" and reported a missing table — and it keeps the
+		// seeded row on page one of a bounded list rather than off the end of
+		// it.
+		await page.goto(
+			`/apps/${REGISTER}/tasks?case=${encodeURIComponent(taskCaseId)}`,
+		)
+		await dismissSupportDialog(page)
+
 		// The list has to have ANSWERED before the view is switched. The view
 		// switcher paints with the page shell, so the click lands whether or
 		// not any rows exist, and CnDataTable renders its `<table>` only once
@@ -176,10 +249,24 @@ test.describe('Tasks page', () => {
 		for (const text of await cells.allInnerTexts()) {
 			expect(text.trim()).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}/i)
 		}
-		expect(
-			(await cells.allInnerTexts()).some((t) => t.trim() !== ''),
-			'at least one task on the seed is linked to a case',
-		).toBe(true)
+
+		// And the cell of THIS spec's own task carries its case's TITLE. The
+		// row is found by the task title rather than taken as the first one,
+		// so the claim holds whether or not the query filter narrowed the list
+		// — a filter that silently did nothing would otherwise put another
+		// spec's task in row one and the assertion would be about that.
+		//
+		// "Not empty" is not enough on its own: a column rendering any
+		// placeholder satisfies the loop above, and what the requirement asks
+		// is that a reader sees which case the task belongs to.
+		const seededRow = table
+			.locator('tbody tr')
+			.filter({ hasText: `${RUN_PREFIX} Tasks page task` })
+		await expect(seededRow).toHaveCount(1, { timeout: 20_000 })
+		await expect(seededRow.locator(`td:nth-child(${index + 1})`)).toHaveText(
+			taskCaseTitle,
+			{ timeout: 20_000 },
+		)
 	})
 })
 
