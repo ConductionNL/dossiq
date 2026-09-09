@@ -54,10 +54,11 @@ const PDOK_APP_CANDIDATES = ['integriq', 'openconnector']
  * whatever populated it.
  *
  * @return {string} The installed id, or the canonical name when neither is
- *   present — a request that 404s is a better signal than one never sent.
+ *   present. A request that 404s is a better signal than one never sent.
  */
 function resolveAppId() {
-	const roots = (typeof window !== 'undefined' && window.OC && window.OC.appswebroots) || {}
+	const roots =
+		(typeof window !== 'undefined' && window.OC && window.OC.appswebroots) || {}
 	const found = PDOK_APP_CANDIDATES.find((id) => Object.hasOwn(roots, id))
 	return found || PDOK_APP_CANDIDATES[0]
 }
@@ -177,7 +178,9 @@ export async function lookup(id) {
 	}
 	clearWarning()
 	try {
-		const response = await axios.get(`${baseUrl()}/lookup/${encodeURIComponent(id)}`)
+		const response = await axios.get(
+			`${baseUrl()}/lookup/${encodeURIComponent(id)}`,
+		)
 		return response.data?.docs?.[0] || null
 	} catch (error) {
 		return handleNetworkError(error, null)

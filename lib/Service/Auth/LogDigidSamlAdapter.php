@@ -94,7 +94,7 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 		);
 
 		throw new RuntimeException(
-			'DigiD broker not configured — wire integriq + flip digid.feature_flag.'
+			'DigiD broker not configured. Wire integriq, then flip digid.feature_flag.'
 		);
 	}//end decodeAssertion()
 

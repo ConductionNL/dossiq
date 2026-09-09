@@ -19,7 +19,7 @@
  *   - `searchAddress(query, ...)` — address autocomplete via
  *     {@see PdokLocatieserverService::suggest()}.
  *   - `lookupAddress(id)` — single-result lookup by Locatieserver id.
- *   - `searchParcel(criteria)` — reports that integriq publishes no parcel
+ *   - `searchParcel(criteria)`: reports that integriq publishes no parcel
  *     endpoint. See the method for what closing that gap would take.
  *   - `getServiceStatus()` — health + flag introspection so the caller
  *     can render the dormant-vs-live mode.

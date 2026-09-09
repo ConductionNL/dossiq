@@ -30,7 +30,21 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
+ * The second annotation below is LOAD-BEARING, not decoration, and its name must
+ * never be written with an at-sign anywhere in this prose: PHPUnit parses
+ * annotations ANYWHERE in a docblock, so even a quoted mention becomes a second,
+ * malformed annotation and every test in the class errors as invalid.
+ *
+ * Why it is needed: PdokService resolves integriq's installed id through
+ * FleetAppId, so these tests execute that class. PHPUnit reports code executed
+ * but not declared as RISKY, the suite runs with failOnRisky, and a risky test
+ * turns a passing run into one that prints `OK, but there were issues!` and
+ * exits 1. It only fires when a coverage driver is loaded, which CI has and a
+ * plain local `composer test:all` does not, so the check is silently absent
+ * locally and the local green means nothing about it.
+ *
  * @covers \OCA\Dossiq\Service\PdokService
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class PdokServiceTest extends TestCase {
 	/**

@@ -30,7 +30,7 @@
 				:helperText="
 					t(
 						'dossiq',
-						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP or integriq integrator so it can sign X-Procest-Signature headers.',
+						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP or Integriq integrator so it can sign X-Procest-Signature headers.',
 					)
 				"
 				@update:modelValue="onSecretInput" />

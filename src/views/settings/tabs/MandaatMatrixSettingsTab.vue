@@ -11,7 +11,7 @@
 
 		<div class="setting-row">
 			<label for="mandaat_decidesk_connection">
-				{{ t('dossiq', 'Decidiq connection (integriq)') }}
+				{{ t('dossiq', 'Decidiq connection (Integriq)') }}
 			</label>
 			<NcInputField
 				id="mandaat_decidesk_connection"
@@ -22,7 +22,7 @@
 				{{
 					t(
 						'dossiq',
-						'Identifier of the integriq connection used to fetch mandateringsbesluiten from Decidiq.',
+						'Identifier of the Integriq connection used to fetch mandateringsbesluiten from Decidiq.',
 					)
 				}}
 			</p>

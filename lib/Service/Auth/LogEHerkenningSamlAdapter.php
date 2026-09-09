@@ -95,7 +95,7 @@ final class LogEHerkenningSamlAdapter implements EHerkenningSamlAdapterInterface
 		);
 
 		throw new RuntimeException(
-			'eHerkenning broker not configured — wire integriq + flip eherkenning.feature_flag.'
+			'eHerkenning broker not configured. Wire integriq, then flip eherkenning.feature_flag.'
 		);
 	}//end decodeAssertion()
 

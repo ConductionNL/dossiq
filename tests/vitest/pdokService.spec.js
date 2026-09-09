@@ -121,7 +121,7 @@ describe('pdokService shim — endpoint routing', () => {
 	})
 })
 
-describe('pdokService shim — app-id resolution across the rename', () => {
+describe('pdokService shim: app-id resolution across the rename', () => {
 	beforeEach(() => {
 		axios.get.mockReset()
 		delete globalThis.window
