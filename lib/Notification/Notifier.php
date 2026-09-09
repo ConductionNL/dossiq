@@ -55,6 +55,11 @@ class Notifier implements INotifier {
 	public const SUBJECT_CASE_STATUS_CHANGED = 'case_status_changed';
 
 	/**
+	 * The subject key a `notifyRole` automatic action dispatches.
+	 */
+	public const SUBJECT_CASE_ROLE_NOTIFIED = 'case_role_notified';
+
+	/**
 	 * Every subject key this notifier can render.
 	 *
 	 * A subject that is not on this list is refused in `prepare()`, and
@@ -66,6 +71,7 @@ class Notifier implements INotifier {
 	private const KNOWN_SUBJECTS = [
 		self::SUBJECT_NOTE_MENTION,
 		self::SUBJECT_CASE_STATUS_CHANGED,
+		self::SUBJECT_CASE_ROLE_NOTIFIED,
 	];
 
 	/**
@@ -129,6 +135,7 @@ class Notifier implements INotifier {
 
 		[$subject, $message] = match ($subjectKey) {
 			self::SUBJECT_CASE_STATUS_CHANGED => $this->caseStatusChangedText(subjectRaw: $subjectRaw, l: $l),
+			self::SUBJECT_CASE_ROLE_NOTIFIED => $this->caseRoleNotifiedText(subjectRaw: $subjectRaw, l: $l),
 			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
 		};
 
@@ -193,4 +200,31 @@ class Notifier implements INotifier {
 
 		return [$subject, $message];
 	}//end caseStatusChangedText()
+
+	/**
+	 * The `case_role_notified` wording.
+	 *
+	 * The `message` parameter is written by whoever configured the
+	 * `notifyRole` action, so it is shown as given. The role slug is NOT in
+	 * the wording: it is workflow-configuration vocabulary, and a recipient
+	 * who never opened the workflow editor cannot read it.
+	 *
+	 * @param array<string,mixed> $subjectRaw The stored subject parameters
+	 *                                        (`caseId`, `roleSlug`, `message`).
+	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/automatic-actions/spec.md
+	 */
+	private function caseRoleNotifiedText(array $subjectRaw, \OCP\IL10N $l): array {
+		$subject = $l->t('A case you handle needs your attention');
+
+		$message = trim((string)($subjectRaw['message'] ?? ''));
+		if ($message === '') {
+			$message = $l->t('Open the case to see what to do next.');
+		}
+
+		return [$subject, $message];
+	}//end caseRoleNotifiedText()
 }//end class

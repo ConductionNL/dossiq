@@ -3,9 +3,12 @@
 /**
  * Dossiq CreateDocumentHandler
  *
- * Renders a document template against the case (merge fields) and attaches
- * the resulting file to the case folder. In dry-run mode it returns the
- * rendered output name + byte count without persisting any file.
+ * Renders a document template against the case (merge fields) and files the
+ * result in the case dossier through ZaakdossierService::uploadDocument(),
+ * the same two writes MergeTemplateHandler makes for a generated letter, so
+ * the document lands on the Documents tab beside the files people dropped
+ * there. In dry-run mode it returns the rendered output without persisting
+ * any file.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Actions
@@ -29,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ZaakdossierService;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -43,14 +48,23 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor for CreateDocumentHandler.
 	 *
-	 * @param ContainerInterface $container DI container — used to resolve
-	 *                                      the document service lazily.
+	 * @param ContainerInterface $container DI container, used to resolve
+	 *                                      ZaakdossierService lazily. This
+	 *                                      handler is built whenever the Flow
+	 *                                      node catalogue is read, and a
+	 *                                      constructor dependency would drag
+	 *                                      the whole dossier stack (settings,
+	 *                                      file storage, access guard) into
+	 *                                      every catalogue read.
+	 * @param IUserSession $userSession Supplies the author of a generated
+	 *                                  document.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
+		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -81,7 +95,7 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 		try {
 			$templateSlug = (string)($actionConfig['templateSlug'] ?? '');
 			$outputName = $this->renderTemplate(
-				template: (string)($actionConfig['outputName'] ?? 'document.pdf'),
+				template: (string)($actionConfig['outputName'] ?? 'document.md'),
 				case: $case
 			);
 			$mergeFields = (array)($actionConfig['mergeFields'] ?? []);
@@ -90,10 +104,18 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 				$renderedFields[(string)$key] = $this->renderTemplate(template: (string)$tpl, case: $case);
 			}
 
+			// The merge fields join the case context under their own root, so
+			// a template writes `{{case.mergeFields.besluit}}` for a value the
+			// action computed and `{{case.title}}` for one the case holds.
+			// Under their own root they cannot shadow a real case field.
+			$context = array_merge($case, ['mergeFields' => $renderedFields]);
+			$body = $this->renderTemplate(template: $templateSlug, case: $context);
+
 			$preview = [
 				'templateSlug' => $templateSlug,
 				'outputName' => $outputName,
 				'mergeFields' => $renderedFields,
+				'body' => $body,
 			];
 
 			if (($transitionContext['dryRun'] ?? false) === true) {
@@ -104,26 +126,53 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'missing_template_slug', data: $preview);
 			}
 
-			$documentService = $this->resolveDocumentService();
-			if ($documentService === null) {
-				return new ActionResult(succeeded: false, error: 'document_service_unavailable', data: $preview);
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			if ($caseId === '') {
+				return new ActionResult(succeeded: false, error: 'missing_case_id', data: $preview);
 			}
 
-			// The document service is owned by status-transition-engine's
-			// sibling feature `ZgwDocumentService`; signature is intentionally
-			// soft-bound to avoid a hard dependency before that change lands.
-			$documentId = null;
-			if (method_exists($documentService, 'renderAndAttach') === true) {
-				// @phpstan-ignore-next-line — signature owned by service.
-				$documentId = $documentService->renderAndAttach(
-					$templateSlug,
-					(string)($case['id'] ?? ''),
-					$outputName,
-					$renderedFields
+			// The dossier requires a document type, and so does the schema. A
+			// template that names none cannot be filed, and saying so beats
+			// guessing a type for a letter that goes out under the council's
+			// name. Same refusal MergeTemplateHandler makes.
+			$documentType = (string)($actionConfig['documentType'] ?? '');
+			if ($documentType === '') {
+				return new ActionResult(succeeded: false, error: 'missing_document_type', data: $preview);
+			}
+
+			// A letter with a hole where the addressee should be is worse than
+			// no letter, so an unresolvable placeholder refuses BEFORE the
+			// first write and the dossier stays exactly as it was.
+			$missing = $this->missingTemplateFields(template: $templateSlug, case: $context);
+			if ($missing !== []) {
+				return new ActionResult(
+					succeeded: false,
+					error: 'missing_template_field:' . $missing[0],
+					data: $preview
 				);
 			}
 
-			$preview['documentId'] = $documentId;
+			$dossier = $this->resolveDossierService();
+			if ($dossier === null) {
+				return new ActionResult(succeeded: false, error: 'document_service_unavailable', data: $preview);
+			}
+
+			$created = $dossier->uploadDocument(
+				$caseId,
+				$outputName,
+				$body,
+				[
+					'title' => $outputName,
+					'informatieobjecttype' => $documentType,
+					'direction' => 'outgoing',
+					'auteur' => $this->currentAuthor(),
+					'format' => 'text/markdown',
+				]
+			);
+
+			$preview['documentId'] = (string)($created['id'] ?? '');
+			$preview['case'] = $caseId;
+
 			return new ActionResult(succeeded: true, data: $preview);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -139,15 +188,45 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 	}//end handle()
 
 	/**
-	 * Resolve ZgwDocumentService lazily.
+	 * The signed-in user's display name, for the document's author.
 	 *
-	 * @return object|null
+	 * Empty on a background run with no session, which the schema allows:
+	 * `auteur` is optional, and an empty author is honest where a fabricated
+	 * one is not.
+	 *
+	 * @return string The display name, or empty.
 	 */
-	private function resolveDocumentService(): ?object {
+	private function currentAuthor(): string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return '';
+		}
+
+		return $user->getDisplayName();
+	}//end currentAuthor()
+
+	/**
+	 * Resolve dossiq's own ZaakdossierService lazily, and typed.
+	 *
+	 * Typed on purpose. The soft binding this replaced asked
+	 * `method_exists($service, 'renderAndAttach')`, a method ZgwDocumentService
+	 * has never had, and answered `succeeded: true, documentId: null` when the
+	 * answer was no. An `instanceof` narrows the return so the call below is
+	 * analysed against the real signature.
+	 *
+	 * @return ZaakdossierService|null The service, or null when unavailable.
+	 */
+	private function resolveDossierService(): ?ZaakdossierService {
 		try {
-			return $this->container->get('OCA\Dossiq\Service\ZgwDocumentService');
+			$service = $this->container->get(ZaakdossierService::class);
 		} catch (\Throwable $e) {
 			return null;
 		}
-	}//end resolveDocumentService()
+
+		if ($service instanceof ZaakdossierService) {
+			return $service;
+		}
+
+		return null;
+	}//end resolveDossierService()
 }//end class

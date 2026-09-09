@@ -2025,6 +2025,8 @@
         "A case you handle changed status": "A case you handle changed status",
         "A case you handle changed status: %s": "A case you handle changed status: %s",
         "Open the case to see what changed.": "Open the case to see what changed.",
+        "A case you handle needs your attention": "A case you handle needs your attention",
+        "Open the case to see what to do next.": "Open the case to see what to do next.",
         "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.": "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.",
         "OpenRegister is available but the Dossiq register is not configured. Go to Administration Settings > Dossiq to import the configuration.": "OpenRegister is available but the Dossiq register is not configured. Go to Administration Settings > Dossiq to import the configuration.",
         "OpenRegister is not available": "OpenRegister is not available",

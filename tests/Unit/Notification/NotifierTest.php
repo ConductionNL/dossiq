@@ -253,4 +253,66 @@ class NotifierTest extends TestCase {
 
 		$this->notifier->prepare($notification, 'en');
 	}//end testPrepareFallsBackWhenTheTransitionCarriesNoText()
+
+	/**
+	 * The subject a `notifyRole` automatic action dispatches is rendered.
+	 *
+	 * Without this the handler dispatches correctly into a channel that
+	 * discards the result: an unlisted subject is refused here and Nextcloud
+	 * drops the notification before the recipient sees it.
+	 *
+	 * The role slug does NOT reach the wording. It is workflow-configuration
+	 * vocabulary, and a recipient who never opened the workflow editor cannot
+	 * read it.
+	 *
+	 * @return void
+	 */
+	public function testPrepareRendersARoleNotification(): void {
+		$notification = $this->createMock(INotification::class);
+		$notification->method('getApp')->willReturn(Application::APP_ID);
+		$notification->method('getSubject')->willReturn(Notifier::SUBJECT_CASE_ROLE_NOTIFIED);
+		$notification->method('getSubjectParameters')->willReturn(
+			[
+				'caseId' => 'case-1',
+				'roleSlug' => 'behandelaar',
+				'message' => 'Toets de ontvankelijkheid.',
+			]
+		);
+
+		$notification->expects($this->once())
+			->method('setParsedSubject')
+			->with('A case you handle needs your attention')
+			->willReturn($notification);
+		$notification->expects($this->once())
+			->method('setParsedMessage')
+			->with('Toets de ontvankelijkheid.')
+			->willReturn($notification);
+		$notification->method('setIcon')->willReturn($notification);
+
+		$this->notifier->prepare($notification, 'en');
+	}//end testPrepareRendersARoleNotification()
+
+	/**
+	 * Without a configured message the recipient still gets the next step.
+	 *
+	 * @return void
+	 */
+	public function testPrepareFallsBackWhenTheRoleActionCarriesNoText(): void {
+		$notification = $this->createMock(INotification::class);
+		$notification->method('getApp')->willReturn(Application::APP_ID);
+		$notification->method('getSubject')->willReturn(Notifier::SUBJECT_CASE_ROLE_NOTIFIED);
+		$notification->method('getSubjectParameters')->willReturn(['caseId' => 'case-1']);
+
+		$notification->expects($this->once())
+			->method('setParsedSubject')
+			->with('A case you handle needs your attention')
+			->willReturn($notification);
+		$notification->expects($this->once())
+			->method('setParsedMessage')
+			->with('Open the case to see what to do next.')
+			->willReturn($notification);
+		$notification->method('setIcon')->willReturn($notification);
+
+		$this->notifier->prepare($notification, 'en');
+	}//end testPrepareFallsBackWhenTheRoleActionCarriesNoText()
 }//end class
