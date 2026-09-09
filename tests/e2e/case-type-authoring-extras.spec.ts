@@ -491,7 +491,46 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A folder narrows the index
-	test('picking a folder narrows the Case types index to that category', async ({
+	//
+	// 🔴 PARKED ON OpenRegister#3560, NOT ON ANYTHING IN THIS APP OR IN THE
+	// LIBRARY. Both halves of the folder pane are correct and measured:
+	//
+	//   `caseType.category` carries `facetable: true`, the object store adds
+	//   `_facets=extend` when the fetched schema has any facetable property,
+	//   and CnFolderSidebar builds the folder list from that facet rather than
+	//   from the loaded page (nextcloud-vue#1036, in 2.42.0). Verified in a
+	//   browser: on an instance whose only categorised rows sit on page two,
+	//   the pane still draws their folder.
+	//
+	// What is stale is the facet. `FacetHandler::getFacetsForObjects()` caches
+	// the whole facet response for an hour and no object write invalidates it,
+	// so the buckets beside a live row count can be an hour old. Measured on a
+	// live instance, same request, same instant:
+	//
+	//   create a case type with a category nothing else uses
+	//   ->  total 24 becomes 25, buckets unchanged
+	//   add an `_order` parameter, so the cache key misses
+	//   ->  the same 25 rows, and the new bucket is there
+	//
+	// That is what beat this test on CI. An earlier worker process opened this
+	// page, cached the facet, and deleted its rows in teardown. The retry
+	// process seeded its own category, opened the page inside the hour, and was
+	// handed the dead category and not its own. The failure screenshot reads
+	// `Showing 20 of 27`, so the rows were live while the facet was three
+	// minutes old.
+	//
+	// This is not a test artefact. An administrator who gives a case type a new
+	// category gets no folder for it until the hour is out, which is the defect
+	// the issue carries.
+	//
+	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
+	// `DELETE /api/settings/cache?type=facet` is an admin action, and a person
+	// reading this page cannot take it. A test that arranges a state no reader
+	// can reach asserts the arrangement, not the feature.
+	//
+	// Restore it by deleting this `fixme` once OpenRegister#3560 lands. Nothing
+	// below needs to change.
+	test.fixme('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
 		// The precondition is checked through the API, not off page one of the
