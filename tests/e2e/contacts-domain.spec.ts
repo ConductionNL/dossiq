@@ -48,7 +48,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { clickHeaderAction, dismissSupportDialog } from './helpers/nav.ts'
 
 /** The person the whole spec is about. Unique per run. */
 const PERSON_NAME = `${RUN_PREFIX} Jansen`
@@ -362,7 +362,7 @@ test.describe('Contacts', () => {
 	test('files a case with the requester already filled in', async ({ page }) => {
 		await openContact(page, emptyPersonId)
 
-		await page.getByRole('button', { name: /^(New case|Nieuwe zaak)$/ }).click()
+		await clickHeaderAction(page, 'cn-action-new-case-for-contact')
 
 		const dialog = page.locator('.modal-container, [role="dialog"]').first()
 		await expect(dialog).toBeVisible({ timeout: 30_000 })
@@ -377,9 +377,7 @@ test.describe('Contacts', () => {
 	test('logs a contact moment against this contact', async ({ page }) => {
 		await openContact(page, emptyPersonId)
 
-		await page
-			.getByRole('button', { name: /^(Log contact|Contact vastleggen)$/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-log-contact')
 
 		const dialog = page.locator('.modal-container, [role="dialog"]').first()
 		await expect(dialog).toBeVisible({ timeout: 30_000 })

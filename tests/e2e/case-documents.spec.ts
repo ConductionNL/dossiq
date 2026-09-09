@@ -45,6 +45,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { clickHeaderAction } from './helpers/nav.ts'
 
 /** The six columns the case file is read by, in order. */
 const COLUMNS = ['Title', 'Type', 'Status', 'Direction', 'Date', 'Author']
@@ -713,9 +714,7 @@ test.describe('Case detail — the Documents tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Generate document|Document genereren/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-generate-document')
 
 		const dialog = page
 			.getByRole('dialog')
@@ -747,9 +746,7 @@ test.describe('Case detail — the Documents tab', () => {
 			timeout: 30_000,
 		})
 
-		await page
-			.getByRole('button', { name: /Generate document|Document genereren/ })
-			.click()
+		await clickHeaderAction(page, 'cn-action-generate-document')
 
 		const dialog = page
 			.getByRole('dialog')
