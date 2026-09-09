@@ -691,6 +691,19 @@ Work SHALL hold the tasks and the appointments; Related SHALL hold the related
 cases and the sub-cases; Objects and locations SHALL hold the case objects and
 the case locations.
 
+A section SHALL be absent or non-empty, never a heading over a void.
+`CnDetailWidgetHost` renders nothing, and logs nothing, for a widget type it
+cannot resolve, so a section naming an unresolvable widget would leave its
+heading as the only thing on screen. That is worse than the tab it replaced: as
+a whole tab an unresolvable panel was merely an empty tab, and folding it under
+a heading makes it look broken. Such a section SHALL withhold its heading, its
+divider and its padding, so it reserves no space and reads as absent.
+
+An empty state is content, and keeps its heading. A list that renders "no
+documents yet" tells the handler the section exists and holds nothing, which is
+the line of text the paragraph below is about. Only a section that renders
+literally nothing goes silent.
+
 The strip SHALL carry no Notes, Mail, Decisions or Timeline tab. Each of those
 duplicates a sidebar tab on the same page, and one surface in two places is
 duplication rather than coverage (REQ-CDV-17). A panel SHALL NOT be removed
@@ -727,6 +740,15 @@ the handler opened deliberately.
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading
+
+#### Scenario: A section whose widget does not resolve stays silent
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+
+- **GIVEN** a `case-sections` tab holding a section whose widget type the registry cannot resolve
+- **WHEN** the handler opens that tab
+- **THEN** that section SHALL render no heading
+- **AND** it SHALL reserve no vertical space and draw no divider
+- **AND** every section on the tab that did resolve SHALL keep its own heading
 
 #### Scenario: Files keeps its share and comment surface
 @e2e tests/e2e/case-documents.spec.ts
