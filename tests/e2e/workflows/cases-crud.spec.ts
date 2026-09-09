@@ -261,7 +261,12 @@ test.describe('Cases — full CRUD with persistence', () => {
 			.toBe(newTitle)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#delete-a-case
+	// @e2e exclude This anchor used to read #delete-a-case, which prefix-resolves to
+	// Scenario CM-03a "Delete a case in initial status", a scenario that says the
+	// delete SUCCEEDS, while this test asserts a 403 because the case schema declares
+	// x-openregister-archival. It resolved, so no count caught it. No scenario states
+	// that a user delete of an archival case is refused and the record survives;
+	// REQ-CM-03 still describes the pre-archival behaviour and needs amending.
 	// The `case` schema declares x-openregister-archival, so a case is a record:
 	// user-driven deletion is rejected (Archiefwet immutability) and removal is
 	// reserved for the retention-sweep cron. This asserts that guarantee rather

@@ -136,7 +136,7 @@ test.describe('Case lifecycle — state machine', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/specs/status-transition-engine/spec.md#scenario-a-handler-advances-a-case
+	// @e2e openspec/specs/status-transition-engine/spec.md#scenario-successful-transition-with-audit-trail
 	test('advancing a case status persists and renders the new status', async ({
 		page,
 	}) => {
