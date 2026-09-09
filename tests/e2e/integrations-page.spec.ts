@@ -286,9 +286,33 @@ test.describe('Integrations', () => {
 		await page.goto('/apps/dossiq')
 		await dismissSupportDialog(page)
 
+		// NAME THE USER IN THE FAILURE. This assertion has failed on
+		// `development` while every link in the permission chain reads correct:
+		// the menu entry declares `permission: "admin"`, CnAppNav's
+		// `visibleItems` applies `passesPermission` before `settingsItems`
+		// filters on `section === "settings"`, and `App.vue` answers
+		// `['user']` for a non-admin, never `[]`. So either the chain is not
+		// what it reads as, or this context is not the user it asks for, and
+		// the failure as written cannot tell those apart.
+		//
+		// `httpCredentials` on a fresh context is an assumption about how
+		// Nextcloud authenticates an HTML route, not a measurement. Reading
+		// the identity the PAGE settled on turns the next red into an answer.
+		const whoami = await page.evaluate(() => ({
+			uid:
+				(window as any).OC?.getCurrentUser?.()?.uid
+				?? '(no OC.getCurrentUser)',
+			isAdmin:
+				typeof (window as any).OC?.isUserAdmin === 'function'
+					? (window as any).OC.isUserAdmin()
+					: '(no OC.isUserAdmin)',
+		}))
+
 		// The gear foldout does not carry the entry.
 		await expect(
 			page.locator('.app-navigation a[href$="/settings/integrations"]'),
+			`the page rendered as uid=${whoami.uid} isAdmin=${whoami.isAdmin}; `
+				+ `it should be the non-admin ${PLAIN_USER}`,
 		).toHaveCount(0)
 
 		// And the route renders no rows even when typed in directly.
