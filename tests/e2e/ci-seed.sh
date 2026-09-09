@@ -326,7 +326,17 @@ fi
 # for a reason that has nothing to do with the guard it is testing. Reported
 # rather than repaired, because a test account that quietly acquired admin is
 # something to look at, not something to paper over.
-if ! php occ user:info "${E2E_USER_NAME:-e2euser}" --output=json 2>/dev/null \
+#
+# Two failure modes, kept apart on purpose. `occ` not answering at all and the
+# account turning out to be an admin want different fixes, and `set -o pipefail`
+# would otherwise report the first as the second. Nothing here is sent to
+# /dev/null: an occ error that reaches CI as silence is the failure mode
+# CiSeedScriptTest::testNoOccInvocationDiscardsItsOutput exists to prevent.
+if ! e2e_user_json=$(php occ user:info "${E2E_USER_NAME:-e2euser}" --output=json); then
+	echo "::error::occ user:info could not read ${E2E_USER_NAME:-e2euser}, so the account integrations-page.spec.ts needs cannot be confirmed ordinary. The occ error is above."
+	exit 1
+fi
+if ! printf '%s' "$e2e_user_json" \
 	| php -r 'exit(in_array("admin", json_decode(stream_get_contents(STDIN), true)["groups"] ?? [], true) ? 1 : 0);'; then
 	echo "::error::${E2E_USER_NAME:-e2euser} is in the admin group. integrations-page.spec.ts asserts that an ORDINARY account cannot reach the Integrations page, and against an admin that assertion cannot pass. Remove it: occ group:removeuser admin ${E2E_USER_NAME:-e2euser}"
 	exit 1
