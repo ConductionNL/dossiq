@@ -126,6 +126,10 @@ $extra = [
 
         // Case type duplicate (zaaktype-copy) + draft-only guarded delete.
     ['name' => 'caseDefinition#copy',   'url' => '/api/case-definitions/{id}/copy', 'verb' => 'POST'],
+        // The next version of a published case type. A separate gesture from
+        // copy because it means something different: same case type, later on,
+        // with the running cases left on the version they started under.
+    ['name' => 'caseDefinition#newVersion', 'url' => '/api/case-definitions/{id}/new-version', 'verb' => 'POST'],
         // The effective blueprint of a case type (its own rows merged with its
         // parent's) and the validate-then-publish gesture. Keyed on the case
         // type rather than on a definition package, so they sit under
