@@ -100,3 +100,51 @@ field-by-field diff viewer.
 - **WHEN** any of those detail pages is rendered
 - **THEN** the "Version history" tab SHALL be present and functional on that page too
 
+
+### Requirement: REQ-W2L-005 — Every dispatched notification subject is a subject the Notifier renders
+
+`OCA\Dossiq\Notification\Notifier::prepare()` SHALL refuse a subject key that is not in
+`KNOWN_SUBJECTS` by throwing `UnknownNotificationException`, and Nextcloud then drops that
+notification before the recipient ever sees it. **A dispatch is therefore not a delivery.**
+Every sender in the app SHALL dispatch only subject keys that are on that list, and SHALL
+add a key to it, with its own wording, in the same change that starts sending it.
+
+The list SHALL cover, at minimum, every key the app dispatches today: `note_mention`,
+`case_status_changed`, `case_role_notified`, `milestone_bottleneck`, `cases_reassigned`,
+`advies_aangevraagd`, `advice_requested`, `advies_ontvangen`, `advies_herinnering`,
+`woo_deadline_warning`, `woo_deadline_overdue`, `dso_deadline_warning`,
+`dso_deadline_critical`, `dso_deadline_overdue`, `stuf_circuit_open`, `stuf_timeout`
+and `stuf_permanent_error`.
+
+Wording SHALL be produced through `IL10N::t()` and SHALL be present in `l10n/en.json` and
+`l10n/nl.json`. It SHALL NOT use `IL10N::n()`: this catalogue holds no `_singular_::_plural_`
+entries and no tool writes them, so a plural lookup misses and hands every Dutch reader the
+English string. A count belongs after a colon, which reads correctly at one and at twenty.
+
+Internal identifiers SHALL stay out of the wording. A role slug, an endpoint UUID and a case
+id are configuration vocabulary; they travel as subject parameters so the renderer and the
+link can use them, and the recipient reads prose.
+
+#### Scenario: A sender adds a subject key without registering it
+
+- **GIVEN** a service dispatches a notification under a subject key absent from
+  `Notifier::KNOWN_SUBJECTS`
+- **WHEN** Nextcloud asks the notifier to prepare it for display
+- **THEN** `prepare()` SHALL throw `UnknownNotificationException`
+- **AND** the notification SHALL never reach the recipient's bell menu, with no error
+  surfaced to the sender
+
+#### Scenario: A registered subject renders as itself
+
+- **GIVEN** a notification dispatched under `milestone_bottleneck` with a `milestone`
+  parameter
+- **WHEN** the notifier prepares it
+- **THEN** the parsed subject SHALL name that milestone, and SHALL NOT be the wording of
+  any other subject key
+
+#### Scenario: A subject with no parameters still tells the recipient what to do
+
+- **GIVEN** a registered subject dispatched with none of its optional parameters set
+- **WHEN** the notifier prepares it
+- **THEN** the parsed message SHALL be a next step the recipient can act on, never an
+  empty string
