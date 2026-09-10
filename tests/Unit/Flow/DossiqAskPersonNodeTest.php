@@ -153,7 +153,6 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new DossiqAskPersonNode(
-			$settings,
 			new AssigneeResolver(new NullLogger()),
 			$l10n,
 			new NullLogger(),
@@ -621,7 +620,6 @@ class DossiqAskPersonNodeTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 
 		$node = new DossiqAskPersonNode(
-			$settings,
 			new AssigneeResolver(new NullLogger()),
 			$l10n,
 			new NullLogger(),
