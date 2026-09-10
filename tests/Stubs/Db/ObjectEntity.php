@@ -83,6 +83,41 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	private ?string $schema = null;
 
 	/**
+	 * Deletion metadata surfaced under `@self.deleted` by jsonSerialize().
+	 *
+	 * ⚠️ Defaults to `[]`, NOT `null`, exactly as the real entity does. A live
+	 * row never has `setDeleted()` called on it and keeps this default, so
+	 * `getDeleted() === null` is false for every object that has ever existed
+	 * and a guard written that way does not guard. The real class says the
+	 * same in its own docblock; the stub repeats it because a stub that is
+	 * kinder than the real thing hides the bug rather than reproducing it.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $deleted = [];
+
+	/**
+	 * Set the deletion metadata, as `DeleteObject` does before it saves a
+	 * soft delete.
+	 *
+	 * @param array<string, mixed>|null $deleted Deletion details.
+	 *
+	 * @return void
+	 */
+	public function setDeleted(?array $deleted): void {
+		$this->deleted = $deleted;
+	}//end setDeleted()
+
+	/**
+	 * Get the deletion metadata.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function getDeleted(): ?array {
+		return $this->deleted;
+	}//end getDeleted()
+
+	/**
 	 * Get the object UUID.
 	 *
 	 * @return string|null
@@ -156,6 +191,7 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 		$data['@self'] = [
 			'schema' => $this->schema,
 			'id' => $this->uuid,
+			'deleted' => $this->deleted,
 		];
 
 		// 🔴 TOP-LEVEL id, because the real class guarantees one.

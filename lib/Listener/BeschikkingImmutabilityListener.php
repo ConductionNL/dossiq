@@ -16,6 +16,12 @@
  * written, with no surrounding transaction, so a listener there cannot stop
  * the mutation it objects to.
  *
+ * `ObjectDeletingEvent` is NOT the delete path a caller normally takes. It is
+ * dispatched only for a permanent delete; the ordinary DELETE, and the
+ * referential-integrity cascade, both soft-delete by stamping the deletion
+ * metadata on the entity and saving it, which dispatches
+ * `ObjectUpdatingEvent`. Both shapes are handled here.
+ *
  * @category Listener
  * @package  OCA\Dossiq\Listener
  *
@@ -99,11 +105,21 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Refuse an update that changes content on a frozen beschikking.
+	 * Refuse an update that changes content on a frozen beschikking, or that
+	 * soft-deletes one.
 	 *
 	 * The STORED state decides which fields may move. The incoming payload is
 	 * consulted only for what it wants to change, never for what the status
 	 * is: a payload claiming `draft` over a row that is `sent` is refused.
+	 *
+	 * A soft delete reaches this method, not `inspectDelete()`. OpenRegister
+	 * dispatches `ObjectDeletingEvent` only on a PERMANENT delete
+	 * (`DeleteObject::delete()` with `permanent: true`); the ordinary DELETE
+	 * the generic object API serves stamps the deletion metadata on the entity
+	 * and persists it through `ObjectEntityMapper::update()`, so it arrives
+	 * here as an update that moves no content field at all. The cascade path
+	 * (`DeleteObject::batchCascadeSoftDelete()`) has the same shape. Checking
+	 * only the content diff therefore let a signed besluit be deleted.
 	 *
 	 * @param ObjectUpdatingEvent $event The pre-persist, stoppable event.
 	 *
@@ -115,8 +131,27 @@ class BeschikkingImmutabilityListener implements IEventListener {
 			return;
 		}
 
+		$uuid = (string)$event->getOldObject()?->getUuid();
+
 		$incoming = $this->payload(object: $event->getNewObject());
 		if ($incoming === null) {
+			// Fail CLOSED. A payload that cannot be read cannot be cleared
+			// either, so a frozen beschikking refuses the write it is unable
+			// to inspect rather than waving it through.
+			if ($this->stateMachine->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === true) {
+				$this->reject(event: $event, uuid: $uuid);
+			}
+
+			return;
+		}
+
+		if ($this->isSoftDelete(stored: $stored, incoming: $incoming) === true) {
+			try {
+				$this->stateMachine->assertDeletable(stored: $stored);
+			} catch (RuntimeException $rejection) {
+				$this->reject(event: $event, uuid: $uuid);
+			}
+
 			return;
 		}
 
@@ -128,9 +163,41 @@ class BeschikkingImmutabilityListener implements IEventListener {
 		try {
 			$this->stateMachine->assertMutable(stored: $stored, changed: $changed);
 		} catch (RuntimeException $rejection) {
-			$this->reject(event: $event, uuid: (string)$event->getOldObject()?->getUuid());
+			$this->reject(event: $event, uuid: $uuid);
 		}
 	}//end inspectUpdate()
+
+	/**
+	 * Whether this update is the deletion marker being stamped on the row.
+	 *
+	 * @param array<string, mixed> $stored The state in the database.
+	 * @param array<string, mixed> $incoming The state being written.
+	 *
+	 * @return bool True when the write turns a live row into a deleted one.
+	 */
+	private function isSoftDelete(array $stored, array $incoming): bool {
+		return $this->isMarkedDeleted(object: $stored) === false
+			&& $this->isMarkedDeleted(object: $incoming) === true;
+	}//end isSoftDelete()
+
+	/**
+	 * Whether a payload carries OpenRegister's deletion metadata.
+	 *
+	 * The marker lives in `@self.deleted`, which `ObjectEntity::jsonSerialize()`
+	 * builds from `setDeleted()`. The bare `deleted` fallback covers a payload
+	 * handed over without the `@self` envelope.
+	 *
+	 * @param array<string, mixed> $object Object payload (incl. `@self`).
+	 *
+	 * @return bool True when the object is marked deleted.
+	 */
+	private function isMarkedDeleted(array $object): bool {
+		if (isset($object['@self']) === true && is_array($object['@self']) === true) {
+			return empty($object['@self']['deleted']) === false;
+		}
+
+		return empty($object['deleted']) === false;
+	}//end isMarkedDeleted()
 
 	/**
 	 * Refuse a delete on a frozen beschikking.
