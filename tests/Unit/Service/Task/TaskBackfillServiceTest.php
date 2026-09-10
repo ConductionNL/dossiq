@@ -146,7 +146,12 @@ class TaskBackfillServiceTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 		$gateway->method('unavailableReason')->willReturn($reason);
+		// The backfill writes through mirrorImport(), the engine's TRUSTED
+		// path: most existing dossiq tasks are `completed` and create()
+		// refuses a terminal state. Both are stubbed so a future caller
+		// switching paths does not silently start asserting nothing.
 		$gateway->method('mirrorCreate')->willReturn('engine-uuid');
+		$gateway->method('mirrorImport')->willReturn('engine-uuid');
 		$gateway->method('existingKeysFor')->willReturn([]);
 
 		return $gateway;
@@ -208,7 +213,11 @@ class TaskBackfillServiceTest extends TestCase {
 			->getMock();
 		$gateway->method('unavailableReason')->willReturn('');
 		$gateway->method('existingKeysFor')->willReturn([]);
+		// BOTH write paths, or this assertion is vacuous: the backfill writes
+		// through mirrorImport(), so asserting only that mirrorCreate() is
+		// never called would pass no matter what the code did.
 		$gateway->expects($this->never())->method('mirrorCreate');
+		$gateway->expects($this->never())->method('mirrorImport');
 
 		$service = new TaskBackfillService(
 			$this->settings($this->objectService([['title' => 'A', 'case' => 'c1'], ['title' => 'B', 'case' => 'c2']])),
@@ -342,7 +351,11 @@ class TaskBackfillServiceTest extends TestCase {
 		$gateway->method('existingKeysFor')->willReturn(
 			[EngineTaskGateway::sourceKey(registerTaskId: 'reg-1') => true]
 		);
+		// BOTH write paths, or this assertion is vacuous: the backfill writes
+		// through mirrorImport(), so asserting only that mirrorCreate() is
+		// never called would pass no matter what the code did.
 		$gateway->expects($this->never())->method('mirrorCreate');
+		$gateway->expects($this->never())->method('mirrorImport');
 
 		$service = new TaskBackfillService(
 			$this->settings($this->objectService([['id' => 'reg-1', 'title' => 'already there', 'case' => 'c1']])),

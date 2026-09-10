@@ -76,6 +76,135 @@ class TaskBackfillService {
     }//end __construct()
 
     /**
+     * Why the backfill cannot run at all, or '' when it can.
+     *
+     * Lifted out of run() so the three preconditions read as one question with
+     * one answer. They were three separate early returns, each carrying its own
+     * `$result` assignment, and together they were most of run()'s branching.
+     *
+     * @return string The refusal, or '' when every precondition holds.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    private function refusalReason(): string {
+        $reason = $this->gateway->unavailableReason();
+        if ($reason !== '') {
+            return $reason;
+        }
+
+        if ($this->settings->getObjectService() === null) {
+            return 'openregister ObjectService is unavailable';
+        }
+
+        if ($this->settings->getConfigValue(key: 'register') === ''
+            || $this->settings->getConfigValue(key: 'task_schema') === ''
+        ) {
+            return 'register or task_schema is not configured';
+        }
+
+        return '';
+    }//end refusalReason()
+
+    /**
+     * Whether this task is already in the engine, remembering what it learns.
+     *
+     * Answers the dedup question that used to sit inline in run(), where its
+     * three nested branches were most of that method's NPath complexity (3504
+     * against a threshold of 200). The caching is the load-bearing part and is
+     * why `$seenByCase` is taken by reference: keys are read once per CASE,
+     * and without that a second run doubles every task -- measured, 33 rows
+     * became 66.
+     *
+     * A task with no source id is reported as NOT mirrored: it carries nothing
+     * to key on, so the caller writes it and the engine is left to judge.
+     *
+     * @param array<string, mixed>                     $task       The register task row.
+     * @param string                                   $caseId     The case (object) uuid.
+     * @param string                                   $readActor  The identity the inbox is read as.
+     * @param array<string, array<string, true>>       $seenByCase Per-case key cache, updated in place.
+     *
+     * @return bool True when the engine already holds this task.
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess) `EngineTaskGateway::sourceKey()` is
+     * a pure one-line key format (`'dossiq:caseTask:' . $id`), not a hidden
+     * collaborator, which is what this rule exists to catch. Reaching it
+     * through the injected instance was tried and is WORSE: PHPUnit refuses to
+     * invoke a static method on a mock, so the dedup test errored outright, and
+     * making it a real instance method would force every test to stub a pure
+     * function to get a string back. The key must also be formatted in exactly
+     * one place, or a re-run stops recognising what it wrote.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    private function alreadyMirrored(array $task, string $caseId, string $readActor, array &$seenByCase): bool {
+        if (array_key_exists($caseId, $seenByCase) === false) {
+            $seenByCase[$caseId] = $this->gateway->existingKeysFor(caseId: $caseId, actor: $readActor);
+        }
+
+        $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
+        if ($sourceId === '') {
+            return false;
+        }
+
+        $key = EngineTaskGateway::sourceKey(registerTaskId: $sourceId);
+        if (isset($seenByCase[$caseId][$key]) === true) {
+            return true;
+        }
+
+        // Remember it within this run too, so a register store that returns the
+        // same row on two pages cannot write it twice.
+        $seenByCase[$caseId][$key] = true;
+
+        return false;
+    }//end alreadyMirrored()
+
+    /**
+     * Mirror one task into the engine and record the outcome.
+     *
+     * The write half of run()'s loop, lifted out so the loop reads as the four
+     * outcomes it actually has -- skipped, present, written, failed -- rather
+     * than as the branching that produces them. `$result` is taken by
+     * reference because it is a running tally, not a value to thread back.
+     *
+     * A dry run counts what it WOULD write and touches nothing, which is what
+     * makes `--dry-run` worth trusting before a real backfill.
+     *
+     * @param array<string, mixed> $task       The register task row.
+     * @param string               $caseId     The case (object) uuid.
+     * @param string|null          $writeActor The identity the write is made as.
+     * @param bool                 $dryRun     Count only, write nothing.
+     * @param array<string, mixed> $result     The running tally, updated in place.
+     *
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$dryRun` is the command's
+     * own `--dry-run` switch carried through, not a hidden second
+     * responsibility: the method does the same thing either way and only
+     * declines to persist.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    private function writeOne(array $task, string $caseId, ?string $writeActor, bool $dryRun, array &$result): void {
+        if ($dryRun === true) {
+            $result['written']++;
+            return;
+        }
+
+        $uuid = $this->gateway->mirrorImport(task: $task, caseId: $caseId, actor: $writeActor);
+        if ($uuid !== '') {
+            $result['written']++;
+            return;
+        }
+
+        $result['failed']++;
+        if ($result['error'] === '') {
+            // The FIRST reason, reported by the command. 33 identical failures
+            // with "see the log" is not a diagnosis.
+            $result['error'] = $this->gateway->lastError();
+        }
+    }//end writeOne()
+
+    /**
      * Copy every register task into the engine.
      *
      * @param boolean $dryRun When true, nothing is written.
@@ -88,24 +217,15 @@ class TaskBackfillService {
     public function run(bool $dryRun, string $actor = ''): array {
         $result = ['read' => 0, 'written' => 0, 'skipped' => 0, 'present' => 0, 'failed' => 0, 'error' => ''];
 
-        $reason = $this->gateway->unavailableReason();
-        if ($reason !== '') {
-            $result['error'] = $reason;
+        $refusal = $this->refusalReason();
+        if ($refusal !== '') {
+            $result['error'] = $refusal;
             return $result;
         }
 
         $objectService = $this->settings->getObjectService();
-        if ($objectService === null) {
-            $result['error'] = 'openregister ObjectService is unavailable';
-            return $result;
-        }
-
         $register = $this->settings->getConfigValue(key: 'register');
         $schema = $this->settings->getConfigValue(key: 'task_schema');
-        if ($register === '' || $schema === '') {
-            $result['error'] = 'register or task_schema is not configured';
-            return $result;
-        }
 
         // Existing engine keys, read once per CASE and cached. Without this
         // a second run doubles every task: measured, 33 rows became 66.
@@ -136,47 +256,21 @@ class TaskBackfillService {
                 continue;
             }
 
-            if (array_key_exists($caseId, $seenByCase) === false) {
-                $seenByCase[$caseId] = $this->gateway->existingKeysFor(
-                    caseId: $caseId,
-                    actor: $readActor
-                );
-            }
-
-            $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
-            if ($sourceId !== '') {
-                $key = EngineTaskGateway::sourceKey(registerTaskId: $sourceId);
-                if (isset($seenByCase[$caseId][$key]) === true) {
-                    // Already mirrored. Counted separately from `skipped`,
-                    // which means "could not be placed": reporting a clean
-                    // re-run as 33 skipped-no-case reads like a defect.
-                    $result['present']++;
-                    continue;
-                }
-
-                // Remember it within this run too, so a register store that
-                // returns the same row on two pages cannot write it twice.
-                $seenByCase[$caseId][$key] = true;
-            }
-
-            if ($dryRun === true) {
-                $result['written']++;
+            if ($this->alreadyMirrored(task: $task, caseId: $caseId, readActor: $readActor, seenByCase: $seenByCase) === true) {
+                // Already mirrored. Counted separately from `skipped`, which
+                // means "could not be placed": reporting a clean re-run as 33
+                // skipped-no-case reads like a defect.
+                $result['present']++;
                 continue;
             }
 
-            $uuid = $this->gateway->mirrorCreate(task: $task, caseId: $caseId, actor: $writeActor, trusted: true);
-            if ($uuid === '') {
-                $result['failed']++;
-                if ($result['error'] === '') {
-                    // The FIRST reason, reported by the command. 33 identical
-                    // failures with "see the log" is not a diagnosis.
-                    $result['error'] = $this->gateway->lastError();
-                }
-
-                continue;
-            }
-
-            $result['written']++;
+            $this->writeOne(
+                task: $task,
+                caseId: $caseId,
+                writeActor: $writeActor,
+                dryRun: $dryRun,
+                result: $result
+            );
         }//end foreach
 
         return $result;
