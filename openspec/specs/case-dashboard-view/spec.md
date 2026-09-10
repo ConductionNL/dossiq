@@ -556,7 +556,8 @@ manifest, reads it as an oversight, and adds the trail back.
 - **GIVEN** a case titled Aanbouw Beethovenlaan 8
 - **WHEN** the handler opens the case page
 - **THEN** the page SHALL render no breadcrumb trail
-- **AND** the case title SHALL appear once above the fold, not twice
+- **AND** no element SHALL carry both the case title and `aria-current="page"`,
+  which is the signature the trail's last crumb left
 
 ### Requirement: The case shows its step (REQ-CDV-13)
 

@@ -230,9 +230,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#no-trail-is-rendered
-	test('renders no breadcrumb trail, and the title appears once', async ({
-		page,
-	}) => {
+	test('renders no breadcrumb trail above the case title', async ({ page }) => {
 		// The trail's LAST crumb was the case title, one line under the page
 		// header that already printed it: `Cases > Dakkapel Kerkstraat 12`
 		// directly below `Dakkapel Kerkstraat 12`. A repeat, not a location, and
@@ -245,10 +243,24 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 
 		await expect(page.getByTestId('case-header-breadcrumbs')).toHaveCount(0)
 
-		// The point of removing it: the title is stated once above the fold. An
-		// exact-text locator, because the case title is also a substring of the
-		// browser tab title and of the sidebar heading.
-		await expect(page.getByText(caseTitle, { exact: true })).toHaveCount(1)
+		// 🔑 THE TRAIL'S SIGNATURE, NOT A GLOBAL COUNT OF THE TITLE.
+		//
+		// This asserted `getByText(caseTitle, { exact: true })` had count 1, on
+		// the reasoning that the title should now be stated once. That is a
+		// claim about the WHOLE PAGE, and the whole page is not this test's
+		// business: `CnObjectSidebar` renders `:name="sidebarTitle"`, so an open
+		// sidebar prints the case title a second time and the count is 2 with
+		// the breadcrumb correctly absent. The assertion would have failed for a
+		// reason that has nothing to do with the breadcrumb.
+		//
+		// What the removed trail actually contributed was a node carrying BOTH
+		// the title and `aria-current="page"` — CnBreadcrumbs marks its last
+		// crumb that way. Nothing else on the page does. Asserting that exact
+		// pair is gone is the regression, and it cannot be confounded by a
+		// sidebar, a tab panel or the browser tab title.
+		await expect(
+			page.locator('[aria-current="page"]').filter({ hasText: caseTitle }),
+		).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
