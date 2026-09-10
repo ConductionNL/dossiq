@@ -25,83 +25,106 @@
   @spec openspec/specs/semantic-case-intake/spec.md
 -->
 <template>
-	<div
-		v-if="hasInitiator || hasHandoff"
-		class="initiator-section"
-		data-testid="initiator-section">
-		<template v-if="hasInitiator">
-			<div class="initiator-section__row">
-				<component
-					:is="typeIcon"
-					:size="20"
-					class="initiator-section__icon" />
-				<span class="initiator-section__name" data-testid="initiator-name">{{
-					caseObject.initiatorDisplayName
-				}}</span>
-				<span class="initiator-section__type" data-testid="initiator-type">{{
-					typeLabel
-				}}</span>
-				<span
-					v-if="isProtected"
-					class="initiator-section__protected"
-					data-testid="initiator-protected">
-					<ShieldLockOutline :size="16" />
-					{{ t('dossiq', 'Protected') }}
-				</span>
-			</div>
+	<div class="initiator-widget">
+		<div
+			v-if="hasInitiator || hasHandoff"
+			class="initiator-section"
+			data-testid="initiator-section">
+			<template v-if="hasInitiator">
+				<div class="initiator-section__row">
+					<component
+						:is="typeIcon"
+						:size="20"
+						class="initiator-section__icon" />
+					<span
+						class="initiator-section__name"
+						data-testid="initiator-name"
+						>{{ caseObject.initiatorDisplayName }}</span
+					>
+					<span
+						class="initiator-section__type"
+						data-testid="initiator-type"
+						>{{ typeLabel }}</span
+					>
+					<span
+						v-if="isProtected"
+						class="initiator-section__protected"
+						data-testid="initiator-protected">
+						<ShieldLockOutline :size="16" />
+						{{ t('dossiq', 'Protected') }}
+					</span>
+				</div>
 
-			<div class="initiator-section__source">
-				<a
-					v-if="sourceLink"
-					:href="sourceLink"
-					data-testid="initiator-source-link">
-					{{ shownSourceId }}
-				</a>
-				<span v-else data-testid="initiator-source-id">{{
-					shownSourceId
-				}}</span>
+				<div class="initiator-section__source">
+					<a
+						v-if="sourceLink"
+						:href="sourceLink"
+						data-testid="initiator-source-link">
+						{{ shownSourceId }}
+					</a>
+					<span v-else data-testid="initiator-source-id">{{
+						shownSourceId
+					}}</span>
 
-				<NcButton
-					v-if="isProtected && !revealed"
-					variant="tertiary"
-					data-testid="initiator-reveal"
-					:disabled="revealing"
-					@click="reveal">
-					{{ t('dossiq', 'Reveal') }}
-				</NcButton>
-			</div>
+					<NcButton
+						v-if="isProtected && !revealed"
+						variant="tertiary"
+						data-testid="initiator-reveal"
+						:disabled="revealing"
+						@click="reveal">
+						{{ t('dossiq', 'Reveal') }}
+					</NcButton>
+				</div>
 
-			<div
-				v-if="addressLine"
-				class="initiator-section__address"
-				data-testid="initiator-address">
-				{{ addressLine }}
-			</div>
-		</template>
+				<div
+					v-if="addressLine"
+					class="initiator-section__address"
+					data-testid="initiator-address">
+					{{ addressLine }}
+				</div>
+			</template>
 
-		<!-- Handoff provenance (semantic-case-intake): when the case arrived
+			<!-- Handoff provenance (semantic-case-intake): when the case arrived
 		     via the ns#Case handoff it carries a handoffSource back-link to the
 		     originating object; surface the origin badge + the received-at
 		     timestamp (the case's creation time = the handoff moment). -->
-		<div
-			v-if="hasHandoff"
-			class="initiator-section__handoff"
-			data-testid="handoff-provenance">
-			<TransitConnectionVariant :size="18" class="initiator-section__icon" />
-			<span class="initiator-section__handoff-label">{{
-				t('dossiq', 'Received via handoff')
-			}}</span>
-			<span v-if="handoffReceivedAt" class="initiator-section__type">{{
-				handoffReceivedAt
-			}}</span>
-			<a
-				class="initiator-section__handoff-link"
-				:href="handoffSourceLink"
-				target="_blank"
-				rel="noopener noreferrer">
-				{{ t('dossiq', 'Open source object') }}
-			</a>
+			<div
+				v-if="hasHandoff"
+				class="initiator-section__handoff"
+				data-testid="handoff-provenance">
+				<TransitConnectionVariant
+					:size="18"
+					class="initiator-section__icon" />
+				<span class="initiator-section__handoff-label">{{
+					t('dossiq', 'Received via handoff')
+				}}</span>
+				<span v-if="handoffReceivedAt" class="initiator-section__type">{{
+					handoffReceivedAt
+				}}</span>
+				<a
+					class="initiator-section__handoff-link"
+					:href="handoffSourceLink"
+					target="_blank"
+					rel="noopener noreferrer">
+					{{ t('dossiq', 'Open source object') }}
+				</a>
+			</div>
 		</div>
+
+		<!-- The card is drawn by the widget host whether or not this component
+		     renders, so "no initiator, no clutter" used to produce the opposite:
+		     a titled 240px box with nothing in it, which ADR-062 calls a
+		     reserved void. Saying so fills the cell and answers the question the
+		     empty box raised.
+
+		     It is a SIBLING of `initiator-section`, not a state of it. Three
+		     tests read that testid as "this case has an initiator", and they are
+		     right to: two e2e specs and a vitest assert it is absent without one.
+		     Widening it to mean "the widget rendered" would have made all three
+		     pass on a case that has no initiator at all. -->
+		<p v-else class="initiator-widget__empty" data-testid="initiator-empty">
+			{{ t('dossiq', 'This case has no initiator yet') }}
+		</p>
 	</div>
 </template>
 
@@ -537,6 +560,20 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.initiator-widget {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+
+	/* Same treatment as `case-steps__empty` and the Flow runs empty state, so
+	   the three empty cells on this page read as one thing rather than three. */
+	&__empty {
+		color: var(--color-text-maxcontrast);
+		margin: 0;
+		padding: calc(var(--default-grid-baseline) * 2);
+	}
+}
+
 .initiator-section {
 	display: flex;
 	flex-direction: column;

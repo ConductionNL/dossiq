@@ -3877,7 +3877,8 @@ OC.L10N.register(
         "Sender address": "Afzenderadres",
         "Sender name": "Afzendernaam",
         "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "Het adres waarmee dossiq verstuurt. Laat het leeg en dossiq weigert te versturen.",
-        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Latere leesrondes stelden vragen die de eerste ronde niet had bedacht. In totaal hebben we {count} functies aan de lijst toegevoegd, de laatste daarvan op {date}. Onszelf hebben we op elk van die rijen beoordeeld. De andere {others} kolommen staan op Onbekend, want die producten hebben we niet tegen deze rijen gelezen, en een gegokt oordeel is erger dan een lege cel."
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Latere leesrondes stelden vragen die de eerste ronde niet had bedacht. In totaal hebben we {count} functies aan de lijst toegevoegd, de laatste daarvan op {date}. Onszelf hebben we op elk van die rijen beoordeeld. De andere {others} kolommen staan op Onbekend, want die producten hebben we niet tegen deze rijen gelezen, en een gegokt oordeel is erger dan een lege cel.",
+        "This case has no initiator yet": "Deze zaak heeft nog geen indiener"
     },
     "nplurals=2; plural=(n != 1);"
 )
