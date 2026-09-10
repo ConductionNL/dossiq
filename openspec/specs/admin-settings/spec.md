@@ -715,6 +715,13 @@ SHALL offer an Open settings action that opens the section of the Nextcloud
 admin page that configures the connection. A user who is not an admin SHALL
 NOT see the menu entry and SHALL NOT reach the route.
 
+The rows SHALL be admin only as well as the page. A menu filter and a router
+guard stop the page rendering; they cannot narrow a list the browser fetches
+from OpenRegister. The `dossiqIntegration` schema SHALL therefore declare an
+`authorization` block restricting `read` to admins, and SHALL name `create`,
+`update` and `delete` in the same block, because OpenRegister treats an absent
+block as open and fails an unnamed action closed once the block exists.
+
 **Feature tier**: MVP
 
 #### Scenario: The page lists the ten connections
@@ -741,6 +748,15 @@ NOT see the menu entry and SHALL NOT reach the route.
 - **THEN** Integrations SHALL NOT be listed
 - **AND** opening `/settings/integrations` directly SHALL NOT render the cards
 - **AND** the router SHALL send them to the dashboard rather than leave them on the route
+
+#### Scenario: A regular user is not answered the rows either
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** a user who is signed in, is not an admin, and holds no group
+- **AND** an admin who reads the same endpoint and is answered the seeded rows
+- **WHEN** they request `GET /apps/openregister/api/objects/dossiq/dossiqIntegration`
+- **THEN** the response SHALL be `200` with an empty result set and a total of zero
+- **AND** the admin's non-empty result SHALL be what proves the endpoint and the register are working
 
 ### Requirement: A card tells the truth about its connection (REQ-ADMIN-019)
 
