@@ -356,11 +356,30 @@ describe('the team on the detail forms', () => {
 		)
 	})
 
-	it('the task widget renders the whole schema, so the team comes for free', () => {
-		const taskData = page('TaskDetail').config.widgets.find(
-			(entry) => entry.id === 'task-data',
+	it('the task page still names the team the task sits with', () => {
+		// This used to read the manifest: TaskDetail was `type: "detail"` and
+		// its `task-data` widget named no `include`, so every property the
+		// schema gained appeared on the page and `assignedGroup` came for
+		// free. remove-casetask 2.1 retyped the page to `custom` and there is
+		// no widget config left to read, so the fact list is the component's
+		// and has to be checked there.
+		//
+		// The FIELD moved with the store. `caseTask` had one `assignedGroup`;
+		// the engine has `candidateGroups`, a list, because a task can be
+		// offered to more than one team. What has not moved is the reason it
+		// is on the page: a handler deciding whether to pick a task up needs
+		// to know whose queue it is in.
+		//
+		// Asserted on the source rather than by mounting, matching the
+		// registry assertions in manifestCaseTaskPane.spec.js. The BEHAVIOUR
+		// (two groups render as one comma-separated row, no groups renders no
+		// row at all) is `tests/vitest/taskDetailView.spec.js`.
+		const view = fs.readFileSync(
+			path.resolve(__dirname, '../../src/views/tasks/TaskDetailView.vue'),
+			'utf8',
 		)
 
-		expect(taskData.content.include).toBeUndefined()
+		expect(view).toContain('candidateGroups')
+		expect(view).toContain("key: 'team'")
 	})
 })

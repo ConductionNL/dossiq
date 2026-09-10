@@ -52,7 +52,14 @@ function sidebarTabs(id) {
 const OTHER_SIDEBARS = {
 	BezwaarDetail: 2,
 	BezwaarDecisionDetail: 2,
-	TaskDetail: 2,
+	// TaskDetail is NOT in this map any more. remove-casetask 2.1 retyped it
+	// to `type: "custom"`, and CnPageRenderer mounts a custom page's
+	// component and nothing else: it reads no `config.sidebar`, so a sidebar
+	// declared there would render nowhere. Its History tab moved into the
+	// page body (TaskAuditLeaf, over the engine's own audit endpoint); its
+	// version-history tab is gone, because an engine task is not an
+	// OpenRegister object and nothing writes a version of it, so the tab was
+	// an always-empty drawer.
 	AdviceDetail: 2,
 	WmsLayerDetail: 2,
 	TenantDetail: 2,
