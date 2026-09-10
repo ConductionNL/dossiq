@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\BeschikkingImmutabilityListener;
 use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
@@ -79,6 +80,19 @@ class ImmutabilityListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: ChecklistRunImmutabilityListener::class
+		);
+
+		// REQ-BES-008: a beschikking at `signed` or later is frozen. The rule
+		// was enforced only inside BeschikkingService::updateFields(), one
+		// method behind one route, while the frontend writes through
+		// OpenRegister's generic object API (ADR-022) and never reached it.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: BeschikkingImmutabilityListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: BeschikkingImmutabilityListener::class
 		);
 	}//end register()
 }//end class

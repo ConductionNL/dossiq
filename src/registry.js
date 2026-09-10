@@ -58,7 +58,7 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // The way back from a task to its case (task-on-the-case).
 // @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
-import TaskCaseLink from './components/tasks/TaskCaseLink.vue'
+import TaskCaseCard from './components/tasks/TaskCaseCard.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -395,16 +395,16 @@ const registry = {
 	// --- The way back from a task to its case (task-on-the-case). ---
 	//
 	// Keyed by COMPONENT NAME, unlike `case-task-pane` above, because
-	// `task-case-link` sits in TaskDetail's `layout`: CnDetailPage renders a
+	// `task-case` sits in TaskDetail's `layout`: CnDetailPage renders a
 	// `widget-<id>` slot for every grid item, and `page.slots` maps that slot
 	// name to this key. The pane could not use that path because it is a tab
 	// child, which has no grid item and therefore no slot.
 	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
-	TaskCaseLink: {
-		// @custom-widget-ratchet exclude a cross-object link rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also has to render NOTHING for a task with no case, which no built-in widget can do
+	TaskCaseCard: {
+		// @custom-widget-ratchet exclude a cross-object card rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also resolves the case's OWN caseType and status $refs, and has to render NOTHING for a task with no case, none of which a built-in widget can do
 		kind: 'widget',
-		component: TaskCaseLink,
-		_note: 'TaskDetail section above the Data widget: names the case this task is on, by title, and links to it. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
+		component: TaskCaseCard,
+		_note: 'TaskDetail card above the Data widget: the case this task is on, with its identifier, title as the link, status, case type, handler and deadline. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

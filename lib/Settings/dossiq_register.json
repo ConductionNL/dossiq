@@ -2110,7 +2110,7 @@
                     }
                 },
                 "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "Taak",
                 "title": "Task",
@@ -2237,6 +2237,10 @@
                 },
                 "searchable": true,
                 "configuration": {
+                    "linkedTypes": [
+                        "notes",
+                        "calendar"
+                    ],
                     "x-openregister-calculations": {
                         "isTerminalStatus": {
                             "type": "boolean",
