@@ -217,7 +217,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(
 					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
 				)
-				this.task = asTaskRow(response.data?.results ?? response.data ?? null)
+				this.task = asTaskRow(
+					response.data?.results ?? response.data ?? null,
+				)
 				return this.task
 			} catch (error) {
 				this.error = error?.message || String(error)

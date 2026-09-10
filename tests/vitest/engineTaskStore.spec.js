@@ -256,7 +256,11 @@ describe('the read path speaks the register vocabulary', () => {
 	})
 
 	it('keeps the engine names alongside, because isTerminal reads state', () => {
-		const row = asTaskRow({ uuid: 'task-1', state: 'completed', isTerminal: true })
+		const row = asTaskRow({
+			uuid: 'task-1',
+			state: 'completed',
+			isTerminal: true,
+		})
 
 		expect(row.uuid).toBe('task-1')
 		expect(row.state).toBe('completed')
@@ -277,7 +281,11 @@ describe('the read path speaks the register vocabulary', () => {
 		get.mockResolvedValue({
 			data: {
 				results: [
-					{ uuid: 'task-1', state: 'active', dueAt: '2026-09-10T00:00:00+00:00' },
+					{
+						uuid: 'task-1',
+						state: 'active',
+						dueAt: '2026-09-10T00:00:00+00:00',
+					},
 					{ uuid: 'task-2', state: 'available' },
 				],
 				total: 2,
@@ -293,7 +301,12 @@ describe('the read path speaks the register vocabulary', () => {
 
 	it('maps the single task a fetch returns', async () => {
 		get.mockResolvedValue({
-			data: { uuid: 'task-1', state: 'active', dueAt: '2026-09-11T00:00:00+00:00', objectUuid: 'case-4' },
+			data: {
+				uuid: 'task-1',
+				state: 'active',
+				dueAt: '2026-09-11T00:00:00+00:00',
+				objectUuid: 'case-4',
+			},
 		})
 
 		const task = await useEngineTaskStore().fetch('task-1')
