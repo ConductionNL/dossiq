@@ -34,10 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads a status's checklist and expands it into createTask actions.
@@ -45,8 +43,6 @@ use Throwable;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusChecklist {
-
-	use SearchesObjects;
 
 	/**
 	 * Who a checklist task goes to.
@@ -61,12 +57,12 @@ class StatusChecklist {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
+	 * @param EngineTaskInbox  $engineTasks      Reads the tasks a case holds in the engine.
 	 * @param StatusTypeLookup $statusTypeLookup Resolves the status row.
 	 * @param LoggerInterface  $logger           Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
 	) {
@@ -129,6 +125,7 @@ class StatusChecklist {
 	 *
 	 * @param string               $statusTypeId The statusType UUID being entered.
 	 * @param array<string, mixed> $case         The case entering it.
+	 * @param string               $actor        The identity the engine is read as.
 	 *
 	 * Every action also names its assignee, in the same spelling the shipped
 	 * flow declarations use. It is written out rather than left implicit
@@ -142,13 +139,13 @@ class StatusChecklist {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function actionsFor(string $statusTypeId, array $case): array {
+	public function actionsFor(string $statusTypeId, array $case, string $actor = ''): array {
 		$items = $this->itemsFor(statusTypeId: $statusTypeId);
 		if ($items === []) {
 			return [];
 		}
 
-		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case);
+		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case, actor: $actor);
 
 		$actions = [];
 		foreach ($items as $item) {
@@ -175,16 +172,17 @@ class StatusChecklist {
 	 *
 	 * @param string               $statusTypeId The statusType UUID.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $actor        The identity the engine is read as.
 	 *
 	 * @return array<int, string> The titles, whatever status the tasks are at.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function existingTitles(string $statusTypeId, array $case): array {
+	public function existingTitles(string $statusTypeId, array $case, string $actor = ''): array {
 		return array_values(
 			array_map(
 				static fn (array $task): string => trim((string)($task['title'] ?? '')),
-				$this->tasksFor(statusTypeId: $statusTypeId, case: $case)
+				$this->tasksFor(statusTypeId: $statusTypeId, case: $case, actor: $actor)
 			)
 		);
 	}//end existingTitles()
@@ -194,43 +192,71 @@ class StatusChecklist {
 	 *
 	 * @param string               $statusTypeId The statusType UUID.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $actor        The identity the engine is read as.
 	 *
 	 * @return array<int, array<string, mixed>> The tasks.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function tasksFor(string $statusTypeId, array $case): array {
+	public function tasksFor(string $statusTypeId, array $case, string $actor = ''): array {
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$objectService = $this->settingsService->getObjectService();
-		if ($caseId === '' || $statusTypeId === '' || $objectService === null) {
+		if ($caseId === '' || $statusTypeId === '') {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-		if ($register === '' || $taskSchema === '') {
-			return [];
+		// 🔴 THIS READS THE ENGINE, AND READING THE REGISTER COST THE FEATURE.
+		//
+		// dossiq#2363 made the engine the only store: `CreateTaskHandler` calls
+		// `mirrorImport()` and writes no `caseTask` object at all. This method
+		// kept searching the `task_schema` register, so it answered [] on every
+		// case, and both of its readers took that as fact:
+		//
+		//  - `existingTitles()` saw no tasks, so a case sent back to intake and
+		//    forward again received a SECOND copy of the whole checklist;
+		//  - `StatusChecklistGuard` saw no COMPLETED task, so every required
+		//    item read as still open and no case could leave a status that
+		//    declared one. The guard failed CLOSED, which is the safe
+		//    direction but is still a case stuck for ever on work that was done.
+		//
+		// `forCase()` was written for exactly this caller and had no callers at
+		// all. It asks with SCOPE_ALL and no terminality filter, which is what
+		// this question needs: a ticked item stays ticked on a task somebody
+		// already completed, and narrowing to the caller's own tasks would make
+		// the guard's verdict depend on who pressed the button.
+		//
+		// The engine has no per-status filter, so the scoping `workflowStepId`
+		// used to do in the query happens here instead. It is not optional: a
+		// read that did not scope would hand another status's tasks to this
+		// status's guard.
+		$readActor = 'admin';
+		if (trim($actor) !== '') {
+			$readActor = trim($actor);
 		}
 
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['case' => $caseId, 'workflowStepId' => $statusTypeId, '_limit' => 200],
-			);
-		} catch (Throwable $e) {
-			// A search that cannot answer reads as "no tasks yet", which on a
-			// re-entry means a second copy of the list and, for the guard, an
-			// item that counts as not done. Both are the safe direction of the
-			// design's own trade-off: a duplicate task is cheaper than a missed
-			// one, and a guard that fails closed cannot open a hole. It is
-			// logged because the duplicate is otherwise unattributable.
+		$rows = $this->engineTasks->forCase(caseId: $caseId, actor: $readActor);
+
+		// A read that could not answer looks exactly like a case with no tasks,
+		// and the two have opposite consequences: the first duplicates the
+		// checklist and holds the guard closed, the second is the normal first
+		// entry into a status. Only the engine can tell them apart, so its
+		// reason is logged rather than inferred from an empty list.
+		$reason = $this->engineTasks->lastError();
+		if ($reason !== '') {
 			$this->logger->error(
-				'StatusChecklist: reading the status tasks failed',
-				['exception' => $e->getMessage(), 'statusType' => $statusTypeId],
+				'StatusChecklist: reading the status tasks from the engine failed',
+				['reason' => $reason, 'statusType' => $statusTypeId, 'case' => $caseId],
 			);
-			return [];
 		}
+
+		$tasks = [];
+		foreach ($rows as $task) {
+			if (trim((string)($task['workflowStepId'] ?? '')) !== $statusTypeId) {
+				continue;
+			}
+
+			$tasks[] = $task;
+		}
+
+		return $tasks;
 	}//end tasksFor()
 }//end class

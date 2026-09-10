@@ -306,6 +306,11 @@ class EngineTaskInbox {
             'dueDate' => $get($row, 'dueAt', 'getDueAt'),
             'case' => $get($row, 'objectUuid', 'getObjectUuid'),
             'assignee' => $get($row, 'assignee', 'getAssignee'),
+            // Which status asked for this task. `toEnginePayload()` has always
+            // written it and `Task` has always stored it, but this mapper
+            // dropped it on the way back, so `StatusChecklist` could not tell
+            // one status's tasks from another's and read none at all.
+            'workflowStepId' => $get($row, 'workflowStepId', 'getWorkflowStepId'),
             // NOT through `$get`: the engine stores a typed list of
             // {id, label, description, checked} and casting that to a
             // string gives "Array". `caseTask` held JSON in a string,

@@ -208,6 +208,7 @@ class EngineTaskInboxTest extends TestCase {
 							'dueAt'      => '2026-09-15T00:00:00+00:00',
 							'objectUuid' => 'case-9',
 							'assignee'   => 'user:admin',
+							'workflowStepId' => 'st-behandeling',
 							'checklist'  => [['id' => 'i-1', 'label' => 'Stuk 1', 'checked' => false]],
 						],
 					],
@@ -225,6 +226,10 @@ class EngineTaskInboxTest extends TestCase {
 					'dueDate'  => '2026-09-15T00:00:00+00:00',
 					'case'     => 'case-9',
 					'assignee' => 'user:admin',
+					// Which status asked for this task. `StatusChecklist` scopes
+					// on it, so a mapper that dropped it handed every status's
+					// tasks to every status's guard — or, as it did, none.
+					'workflowStepId' => 'st-behandeling',
 					// A TYPED list, not a string. `caseTask` held JSON in a
 					// string and the checklist guard had to decode it; the
 					// engine refuses a string at write time, so this arrives
