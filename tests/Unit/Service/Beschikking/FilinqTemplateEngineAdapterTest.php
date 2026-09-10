@@ -56,6 +56,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	private const FILINQ_TEMPLATES = 'OCA\Filinq\Service\TemplateService';
 
 	/**
+	 * The FQCN filinq's template version chain answers to.
+	 *
+	 * @var string
+	 */
+	private const FILINQ_TEMPLATE_VERSIONS = 'OCA\Filinq\Service\TemplateVersionService';
+
+	/**
 	 * A two-page PDF, as far as the page counter is concerned.
 	 *
 	 * @var string
@@ -156,12 +163,13 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 	 *
 	 * @param object|null $documents Filinq's DocumentService double, or null when absent.
 	 * @param object|null $templates Filinq's TemplateService double, or null when absent.
+	 * @param object|null $versions Filinq's TemplateVersionService double, or null when absent.
 	 *
 	 * @return void
 	 */
-	private function bindFilinq(?object $documents, ?object $templates): void {
+	private function bindFilinq(?object $documents, ?object $templates, ?object $versions = null): void {
 		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($documents, $templates): object {
+			static function (string $id) use ($documents, $templates, $versions): object {
 				if ($id === self::FILINQ_DOCUMENTS && $documents !== null) {
 					return $documents;
 				}
@@ -170,11 +178,95 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 					return $templates;
 				}
 
+				if ($id === self::FILINQ_TEMPLATE_VERSIONS && $versions !== null) {
+					return $versions;
+				}
+
 				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
 				};
 			}
 		);
 	}//end bindFilinq()
+
+	/**
+	 * A filinq template lookup that answers with a canned object.
+	 *
+	 * @param array<string, mixed> $template What filinq holds for the template.
+	 *
+	 * @return object The double; its `$asked` holds every id looked up.
+	 */
+	private function templateDouble(array $template): object {
+		return new class($template) {
+
+			/**
+			 * Every template id asked for.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $asked = [];
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array<string, mixed> $template The canned template.
+			 */
+			public function __construct(private array $template) {
+			}
+
+			/**
+			 * Filinq's template lookup.
+			 *
+			 * @param string $id The template id.
+			 *
+			 * @return array<string, mixed> The template.
+			 */
+			public function getTemplate(string $id): array {
+				$this->asked[] = $id;
+				return (['id' => $id] + $this->template);
+			}
+		};
+	}//end templateDouble()
+
+	/**
+	 * A filinq version chain that answers with canned rows.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The chain, newest first.
+	 *
+	 * @return object The double; its `$asked` holds every call's arguments.
+	 */
+	private function versionChainDouble(array $rows): object {
+		return new class($rows) {
+
+			/**
+			 * Every call, in order.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $asked = [];
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array<int, array<string, mixed>> $rows The canned chain.
+			 */
+			public function __construct(private array $rows) {
+			}
+
+			/**
+			 * Filinq's version listing.
+			 *
+			 * @param string $templateId The template id.
+			 * @param int $limit How many entries to return.
+			 * @param int $offset Where to start.
+			 *
+			 * @return array<string, mixed> The paginated chain.
+			 */
+			public function getVersions(string $templateId, int $limit = 20, int $offset = 0): array {
+				$this->asked[] = ['templateId' => $templateId, 'limit' => $limit, 'offset' => $offset];
+				return ['results' => $this->rows, 'total' => count($this->rows)];
+			}
+		};
+	}//end versionChainDouble()
 
 	/**
 	 * The template id, the case reference and the context all reach filinq.
@@ -347,6 +439,102 @@ class FilinqTemplateEngineAdapterTest extends TestCase {
 			$version
 		);
 	}//end testResolveVersionReadsFilinqsTemplateVersion()
+
+	/**
+	 * The version in force is the chain entry the effective date selects.
+	 *
+	 * The date used to be echoed back untouched, so a beschikking issued in
+	 * March reported whatever the template said today. Here the chain holds a
+	 * version created after the effective date and two before it; the answer
+	 * must be the newest of the two, not the newest of the three.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionPicksTheChainEntryInForceOnTheDate(): void {
+		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.9']]);
+		$versions = $this->versionChainDouble(
+			[
+				['version' => 3, '@self' => ['created' => '2026-08-01T09:00:00+00:00']],
+				['version' => 2, '@self' => ['created' => '2026-03-04T09:00:00+00:00']],
+				['version' => 1, '@self' => ['created' => '2026-01-05T09:00:00+00:00']],
+			]
+		);
+		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
+
+		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
+
+		$this->assertSame(
+			[['templateId' => 'tpl-abc', 'limit' => 100, 'offset' => 0]],
+			$versions->asked,
+			'the chain must be queried for this template'
+		);
+		$this->assertSame(
+			['templateId' => 'tpl-abc', 'version' => 'v2', 'effectiveDate' => '2026-03-15'],
+			$version
+		);
+	}//end testResolveVersionPicksTheChainEntryInForceOnTheDate()
+
+	/**
+	 * A version created on the effective date itself is in force on it.
+	 *
+	 * The boundary matters: a template revised in the morning and used to
+	 * decide in the afternoon must report the revision, not its predecessor.
+	 *
+	 * @return void
+	 */
+	public function testAVersionCreatedOnTheEffectiveDateIsInForce(): void {
+		$templates = $this->templateDouble(['@self' => ['version' => '0.0.9']]);
+		$versions = $this->versionChainDouble(
+			[
+				['version' => 4, '@self' => ['created' => '2026-03-15T08:30:00+00:00']],
+				['version' => 3, '@self' => ['created' => '2026-03-14T08:30:00+00:00']],
+			]
+		);
+		$this->bindFilinq(documents: null, templates: $templates, versions: $versions);
+
+		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-03-15');
+
+		$this->assertSame('v4', $version['version']);
+	}//end testAVersionCreatedOnTheEffectiveDateIsInForce()
+
+	/**
+	 * Without a chain, the template's own OpenRegister version is read.
+	 *
+	 * 🔴 THE BUG THIS PINS. The adapter read `$template['version']`, which
+	 * filinq never sets: `getTemplate()` returns an OpenRegister serialisation
+	 * that keeps the version under `@self`, and filinq's `template` schema
+	 * declares no `version` property. The coalesce to 1 therefore always
+	 * fired, and every beschikking in every install recorded version 1. A
+	 * template that has never been revised has no chain either, so this is the
+	 * common case, not the edge.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionReadsTheVersionOpenRegisterKeepsUnderSelf(): void {
+		$templates = $this->templateDouble(['name' => 'Beschikking', '@self' => ['version' => '0.0.4']]);
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble([]));
+
+		$version = $this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
+
+		$this->assertSame('0.0.4', $version['version'], 'the version filinq holds, not a default');
+	}//end testResolveVersionReadsTheVersionOpenRegisterKeepsUnderSelf()
+
+	/**
+	 * A template filinq holds no version for at all is refused.
+	 *
+	 * `v1` is not a safe default on a document a citizen can appeal.
+	 *
+	 * @return void
+	 */
+	public function testResolveVersionRefusesATemplateWithNoVersionAnywhere(): void {
+		$templates = $this->templateDouble(['name' => 'Beschikking']);
+		$this->bindFilinq(documents: null, templates: $templates, versions: $this->versionChainDouble([]));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/filinq_template_unversioned/');
+
+		$this->adapter()->resolveVersion('tpl-abc', '2026-09-09');
+	}//end testResolveVersionRefusesATemplateWithNoVersionAnywhere()
 
 	/**
 	 * A template filinq does not know is refused, not defaulted.
