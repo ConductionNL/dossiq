@@ -13,10 +13,14 @@
  * not that something rendered.
  *
  * The engine's row is not `caseTask`'s row. Its identity is `uuid`, its
- * deadline is `dueAt`, its case is `objectUuid`, and no code anywhere maps
- * those to the old names. The rows used below are the shape the live API
- * returned on 2026-09-10, numeric `id` and all, because a hand-rolled row
- * agreeing with the reader is how the last one of these went wrong.
+ * deadline is `dueAt`, its case is `objectUuid`, and `asTaskRow` in the
+ * store is the ONE place those become `id`, `dueDate` and `case`. The stub
+ * below applies it, exactly as `list()` does, so a tile that re-shaped rows
+ * for itself would not be able to pass here.
+ *
+ * The rows used are the shape the live API returned on 2026-09-10, numeric
+ * `id` and all, because a hand-rolled row agreeing with the reader is how
+ * the last one of these went wrong.
  *
  * @spec openspec/specs/dashboard/spec.md
  * @spec openspec/specs/signalering-widgets/spec.md
@@ -34,11 +38,23 @@ let rows = []
 /** Every `list()` call, so the query can be asserted. */
 let calls = []
 
+const { asTaskRow } = await import('../../src/store/modules/engineTask.js')
+
+/**
+ * The store, stubbed at the HTTP boundary and not above it.
+ *
+ * 🔴 `list()` PUTS EVERY ROW THROUGH `asTaskRow`, AND SO DOES THIS. A stub
+ * that answered raw engine rows would let the tile read `uuid`, `state` and
+ * `dueAt` directly and still pass, which is the opposite of what this file
+ * is for: the whole claim is that the mapping happens ONCE, in the store,
+ * and the tile reads the register's names. Handing back unmapped rows would
+ * make a tile that re-shaped them itself look correct.
+ */
 const storeStub = {
 	error: null,
 	async list(params) {
 		calls.push(params)
-		return rows
+		return rows.map(asTaskRow)
 	},
 }
 
@@ -49,16 +65,11 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
-const { shapeEngineTask, signedDaysUntilDue } =
-	await import('../../src/views/widgets/engineTaskRows.js')
 
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src/registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')
 
 /** The Dashboard page as the manifest declares it. */
 const dashboard = manifest.pages.find((p) => p.id === 'Dashboard')
@@ -140,50 +151,30 @@ beforeEach(() => {
 	rows = []
 })
 
-describe('the engine row, read by the names it actually has', () => {
-	it('takes the identity from uuid, never from the numeric id', () => {
-		const shaped = shapeEngineTask(engineRow())
-		expect(shaped.id).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
-		expect(shaped.id).not.toBe('153')
+describe('the engine row, as the store hands it to the tile', () => {
+	/**
+	 * These are properties of `asTaskRow`, asserted here on THIS file's
+	 * fixture rather than trusted. `engineTaskStore.spec.js` owns the
+	 * mapping; what is checked here is that the fixture really is the
+	 * shape the mapping has to cope with, so the tile tests below are not
+	 * running against a row that already agrees with the reader.
+	 */
+	it('is the raw shape the API answers, numeric id and all', () => {
+		const raw = engineRow()
+		// Absence, not an undefined value: `toBe(undefined)` passes on a key
+		// that is present and set to undefined, which is a different claim.
+		expect(raw).not.toHaveProperty('dueDate')
+		expect(raw).not.toHaveProperty('status')
+		expect(raw).not.toHaveProperty('case')
+		expect(raw.id).toBe(153)
 	})
 
-	it('takes the deadline from dueAt, which is the only one there is', () => {
-		const shaped = shapeEngineTask(engineRow())
-		expect(shaped.dueDate).toBe('2026-09-01T00:00:00+00:00')
-		// The old name is absent from the response, so a reader of it gets
-		// undefined and renders "No deadline" on every single row.
-		expect(engineRow().dueDate).toBe(undefined)
-	})
-
-	it('takes the case from objectUuid, and its name from subject', () => {
-		expect(shapeEngineTask(engineRow()).caseId).toBe(
-			'86adb041-34ff-4829-a064-a202fb1cec0d',
-		)
-		expect(shapeEngineTask(engineRow()).caseTitle).toBe('')
-		expect(
-			shapeEngineTask(
-				engineRow({ subject: { uuid: 'c-1', title: 'Subsidieaanvraag' } }),
-			).caseTitle,
-		).toBe('Subsidieaanvraag')
-	})
-
-	it('folds the engine two deadline counters into one signed number', () => {
-		// The engine reports the two directions in two fields and never both.
-		expect(signedDaysUntilDue(engineRow())).toBe(-9)
-		expect(
-			signedDaysUntilDue(
-				engineRow({ overdue: false, daysUntilDue: 4, daysOverdue: null }),
-			),
-		).toBe(4)
-		expect(
-			signedDaysUntilDue(
-				engineRow({ overdue: false, daysUntilDue: null, daysOverdue: null }),
-			),
-		).toBe(null)
-		// Overdue by less than a day is zero days, and zero is not negative.
-		expect(signedDaysUntilDue(engineRow({ daysOverdue: 0 }))).toBe(0)
-		expect(Object.is(signedDaysUntilDue(engineRow({ daysOverdue: 0 })), -0))
-			.toBe(false)
+	it('gains the register names, with uuid winning the identity', () => {
+		const row = asTaskRow(engineRow())
+		expect(row.id).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
+		expect(row.status).toBe('active')
+		expect(row.dueDate).toBe('2026-09-01T00:00:00+00:00')
+		expect(row.case).toBe('86adb041-34ff-4829-a064-a202fb1cec0d')
 	})
 })
 
@@ -204,7 +195,27 @@ describe('the My work tile', () => {
 		})
 	})
 
-	it('takes its limit from the manifest, not from a literal', () => {
+	it('takes its limit from the manifest, not from a literal', async () => {
+		// The manifest says 10 and the component's own fallback is also 10,
+		// so asking for 10 proves nothing about where the number came from.
+		// Mount over a DIFFERENT limit: only a component that really reads
+		// `content.limit` can ask for 3.
+		rows = []
+		mount(MyWorkWidget, {
+			props: {
+				widget: { ...myWork, content: { ...myWork.content, limit: 3 } },
+				item: { widgetId: 'my-work' },
+			},
+			global: {
+				stubs: { RouterLink: RouterLinkStub },
+				mocks: { $router: { push: () => {} } },
+			},
+		})
+		await flushPromises()
+
+		expect(calls[0].limit).toBe(3)
+		// And the manifest still declares one, so the swap back to a generic
+		// widget has a number to read.
 		expect(myWork.content.limit).toBe(10)
 	})
 
@@ -276,7 +287,7 @@ describe('the My work tile', () => {
 		// somebody with eighteen open tasks that they have none.
 		storeStub.error = 'Request failed with status code 500'
 		const wrapper = await mountTile([])
-		expect(wrapper.text()).toContain('could not be loaded')
+		expect(wrapper.text()).toContain('Could not load your tasks')
 		expect(wrapper.text()).toContain('500')
 		expect(wrapper.text()).not.toContain('You have no open tasks')
 		storeStub.error = null
@@ -293,38 +304,47 @@ describe('the My work tile', () => {
 		expect(wrapper.text()).not.toContain('Toets aan subsidieplafond')
 	})
 
-	it('links View all at the route the manifest names, query and all', async () => {
-		// The WHOLE route object, not just its name. The component also has a
-		// bare `{ name: 'Tasks' }` fallback for a widget entry that declares
-		// none, and a test that checked only the name could not tell the
-		// manifest's route from that fallback: the filter would be dropped
-		// and the reader would land on every task in the instance.
+	it('links View all at the whole route object the manifest names', async () => {
 		const wrapper = await mountTile([engineRow()])
 		const link = wrapper.find('.cn-data-table__view-all')
 		expect(link.exists()).toBe(true)
 		expect(JSON.parse(link.attributes('data-to'))).toEqual(
 			myWork.content.viewAllRoute,
 		)
-		expect(myWork.content.viewAllRoute.query).toBeTypeOf('object')
 		expect(link.text()).toBe('View all')
+	})
+
+	it('carries no query, because the Tasks index cannot read one', async () => {
+		// It used to carry `assignee: @me` plus `isTerminalStatus: false`.
+		// remove-casetask 2.2 put the index on `entitySource: "tasks"`, and
+		// `useNamedSource.loadActive()` merges the page's `sourceConfig` with
+		// the active quick-filter tab and never reads `$route.query`;
+		// CnIndexPage's query watcher is guarded on `isSelfFetchMode`, which
+		// a named source is not. The query was therefore ignored, and a
+		// widget claiming a filter nothing applies is the same
+		// looks-fine-does-nothing failure this whole change is about.
+		expect(myWork.content.viewAllRoute).not.toHaveProperty('query')
+
+		const wrapper = await mountTile([engineRow()])
+		const to = JSON.parse(
+			wrapper.find('.cn-data-table__view-all').attributes('data-to'),
+		)
+		expect(to).not.toHaveProperty('query')
+		expect(to.name).toBe('Tasks')
 	})
 })
 
 describe('the manifest-to-registry chain the tile hangs on', () => {
 	it('declares the widget custom, because no built-in can address the engine', () => {
 		expect(myWork.type).toBe('custom')
-		expect(
-			Object.hasOwn(myWork.content, 'source'),
-		).toBe(false)
+		expect(Object.hasOwn(myWork.content, 'source')).toBe(false)
 	})
 
 	it('maps the page slot beside config, where CnPageRenderer reads it', () => {
 		// Under `config` it is accepted by the schema and never read, and the
 		// widget renders the "Widget not available" placeholder in silence.
 		expect(dashboard.slots['widget-my-work']).toBe('MyWorkWidget')
-		expect(
-			Object.hasOwn(dashboard.config, 'slots'),
-		).toBe(false)
+		expect(Object.hasOwn(dashboard.config, 'slots')).toBe(false)
 	})
 
 	it('answers that slot name with a registry entry', () => {
@@ -345,9 +365,7 @@ describe('the manifest-to-registry chain the tile hangs on', () => {
 	})
 
 	it('imports the component from a file that exists', () => {
-		const match = registrySource.match(
-			/^import MyWorkWidget from '(.+)'$/m,
-		)
+		const match = registrySource.match(/^import MyWorkWidget from '(.+)'$/m)
 		expect(match, 'MyWorkWidget must be imported').not.toBeNull()
 		expect(
 			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),

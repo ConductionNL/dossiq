@@ -10,6 +10,13 @@
 	table, so the tile looked healthy while showing rows no writer had
 	touched since the engine took over.
 
+	ONE READER, AND THIS IS NOT IT. The store's `list()` puts every row
+	through `asTaskRow`, which adds the register's names for the engine's
+	own (`uuid` to `id`, `state` to `status`, `dueAt` to `dueDate`,
+	`objectUuid` to `case`). This tile reads those names and shapes nothing
+	itself: a per-widget row shaper is a second vocabulary, and the day the
+	two disagree neither one fails, they just render different cells.
+
 	@spec openspec/specs/dashboard/spec.md
 	@spec openspec/specs/signalering-widgets/spec.md
 -->
@@ -33,8 +40,12 @@
 <script>
 import { CnDataTable } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
-import { shapeEngineTask } from './engineTaskRows.js'
+import {
+	isTerminal,
+	signedDaysUntilDue,
+	useEngineTaskStore,
+} from '../../store/modules/engineTask.js'
+import { taskRouteFor } from '../../utils/caseTaskPaneHelpers.js'
 
 /** How many rows the tile shows when the manifest names no limit. */
 const DEFAULT_LIMIT = 10
@@ -81,17 +92,26 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The engine's task store. */
+		/**
+		 * @return {object} The engine's task store.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
 		engineTasks() {
 			return useEngineTaskStore()
 		},
 
-		/** @return {object} The widget's manifest `content` block. */
+		/**
+		 * @return {object} The widget's manifest `content` block.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
 		content() {
 			return this.widget?.content ?? {}
 		},
 
-		/** @return {number} How many rows to ask the engine for. */
+		/**
+		 * @return {number} How many rows to ask the engine for.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
 		limit() {
 			const declared = Number(this.content.limit)
 			return Number.isFinite(declared) && declared > 0
@@ -109,18 +129,22 @@ export default {
 		 * migration keeps producing, and it is worse than an error.
 		 *
 		 * @return {string} The empty-state text.
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		emptyText() {
 			const failure = this.failure || this.engineTasks.error
 			if (failure) {
-				return t('dossiq', 'Your tasks could not be loaded: {reason}', {
+				return t('dossiq', 'Could not load your tasks: {reason}', {
 					reason: String(failure),
 				})
 			}
 			return this.content.emptyText || t('dossiq', 'You have no open tasks')
 		},
 
-		/** @return {string} The footer link's label. */
+		/**
+		 * @return {string} The footer link's label.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
 		viewAllLabel() {
 			return this.content.viewAllLabel || t('dossiq', 'View all')
 		},
@@ -132,6 +156,7 @@ export default {
 		 * can read the engine this tile hands its destination straight back.
 		 *
 		 * @return {object} A vue-router location.
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		viewAllRoute() {
 			const declared = this.content.viewAllRoute
@@ -152,10 +177,10 @@ export default {
 		 * The cause is in OpenRegister, not here, and it is reported rather
 		 * than worked around. A column blank on every row is the same
 		 * looks-fine-shows-nothing failure this widget is being fixed for, so
-		 * the column comes back when `subject` resolves. `shapeEngineTask`
-		 * already reads it.
+		 * the column comes back when `subject` resolves.
 		 *
 		 * @return {Array<object>} The column definitions.
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		columns() {
 			return [
@@ -172,15 +197,29 @@ export default {
 			]
 		},
 
-		/** @return {Array<object>} The shaped rows, in the engine's order. */
+		/**
+		 * The rows the table renders, in the engine's order.
+		 *
+		 * The row is passed through, not rebuilt. The store already put it
+		 * through `asTaskRow`, so the two visible columns read what is
+		 * already there (`title`) or a projection of it, and the register's
+		 * `id` is on the row for `openTask` to route by.
+		 *
+		 * Only the two cells no row carries are added: `daysLeft`, which is
+		 * a phrase rather than a number, and `daysUntilDue`, overwritten
+		 * with the SIGNED value so `rowClass()` can colour an overdue row.
+		 * The engine's own `daysUntilDue` is null exactly when the task is
+		 * overdue, so reading it unfolded would colour nothing.
+		 *
+		 * @return {Array<object>} The rows.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
 		rows() {
-			return this.tasks.map((task) => {
-				const row = shapeEngineTask(task)
-				return {
-					...row,
-					daysLeft: this.daysLeftPhrase(row.daysUntilDue),
-				}
-			})
+			return this.tasks.map((task) => ({
+				...task,
+				daysUntilDue: signedDaysUntilDue(task),
+				daysLeft: this.daysLeftPhrase(signedDaysUntilDue(task)),
+			}))
 		},
 	},
 
@@ -198,6 +237,7 @@ export default {
 		 *
 		 * @param {number|null} days Days left, negative when overdue.
 		 * @return {string} The phrase for the Days left cell.
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		daysLeftPhrase(days) {
 			if (typeof days !== 'number') {
@@ -217,6 +257,7 @@ export default {
 		 *
 		 * @param {object} row A shaped row.
 		 * @return {string} The row's class, or ''.
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		rowClass(row) {
 			return typeof row?.daysUntilDue === 'number' && row.daysUntilDue < 0
@@ -227,18 +268,25 @@ export default {
 		/**
 		 * Open a task. The lifecycle buttons live on its page.
 		 *
+		 * Routed by `taskRouteFor`, the same builder the case task pane
+		 * uses, so the two cannot disagree about which key `/tasks/:id`
+		 * takes. Belt and braces on purpose: `asTaskRow` has already put
+		 * the uuid on `id`, and this reads `uuid` first anyway, so a
+		 * regression in that mapping cannot turn every row on this tile
+		 * into a dead link to the engine's numeric primary key.
+		 *
 		 * @param {object} row The clicked row.
 		 * @return {void}
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		openTask(row) {
-			const id = String(row?.id ?? '')
-			if (id === '') {
+			const route = taskRouteFor(row, {
+				rowRoute: this.content.rowRoute || 'TaskDetail',
+			})
+			if (route === null) {
 				return
 			}
-			this.$router.push({
-				name: this.content.rowRoute || 'TaskDetail',
-				params: { id },
-			})
+			this.$router.push(route)
 		},
 
 		/**
@@ -252,6 +300,7 @@ export default {
 		 * that fails answers an empty list rather than throwing.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		async fetchData() {
 			this.loading = true

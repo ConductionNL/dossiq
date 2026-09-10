@@ -78,6 +78,42 @@ export function isTerminal(task) {
 }
 
 /**
+ * The signed distance to a task's deadline, in whole days.
+ *
+ * The engine reports the two directions in two fields and never both.
+ * `TaskInboxService::row()` attaches a projection per row: `daysUntilDue`
+ * counts down and is null once the deadline has passed, `daysOverdue`
+ * counts up and is null before it. A "days left" column reads one signed
+ * number, with an overdue task carrying a negative one, so the two are
+ * folded here rather than in each widget.
+ *
+ * Derived on the server, never stored, so this reads the projection and
+ * does not recompute it from `dueAt`. A second clock in the client would
+ * disagree with the badge the engine already decided.
+ *
+ * @param {object|null|undefined} task The engine row.
+ * @return {number|null} Days left, negative when overdue, null with no deadline.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function signedDaysUntilDue(task) {
+	if (!task || typeof task !== 'object') {
+		return null
+	}
+
+	if (typeof task.daysOverdue === 'number') {
+		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
+		// less than a day stays a plain zero rather than a negative one.
+		return task.daysOverdue === 0 ? 0 : -task.daysOverdue
+	}
+
+	if (typeof task.daysUntilDue === 'number') {
+		return task.daysUntilDue
+	}
+
+	return null
+}
+
+/**
  * One engine row in the vocabulary dossiq's components read.
  *
  * 🔴 THE WRITE PATH MAPPED AND THE READ PATH DID NOT, and the result was a
@@ -108,9 +144,24 @@ export function asTaskRow(row) {
 	// `dueDate: undefined` onto every row would make a task with no deadline
 	// carry the key anyway, which reads as "we looked and there is one" to
 	// anything doing `'dueDate' in row` and shows up in every diff.
+	// 🔴 `uuid` WINS OVER `id`, AND THE OTHER THREE TAKE THE REGISTER NAME
+	// FIRST. Every engine row carries BOTH: `Task::jsonSerialize()` emits
+	// `id` (the database primary key) beside `uuid`, so `row.id ?? row.uuid`
+	// never once reached the uuid and this mapping was a no-op on real data.
+	// No route or verb accepts the numeric key: `/tasks/:id` and every
+	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so three surfaces
+	// (MyTasksWidget, TaskRemindersWidget, CaseTasksTab) built a deep link
+	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
+	// error, it just went nowhere. `taskIdOf()` in `caseTaskPaneHelpers.js`
+	// already reads uuid first, and this is the same precedence in the one
+	// place every reader goes through.
+	//
+	// The other three keep `row.<registerName> ?? row.<engineName>`: unlike
+	// `id`, none of them is emitted by the engine at all, so the register
+	// name is only ever present on a row that already carries it.
 	const mapped = { ...row }
 	for (const [name, value] of [
-		['id', row.id ?? row.uuid],
+		['id', row.uuid ?? row.id],
 		['status', row.status ?? row.state],
 		['dueDate', row.dueDate ?? row.dueAt],
 		['case', row.case ?? row.objectUuid],

@@ -3885,7 +3885,10 @@
         "This case has no initiator yet": "This case has no initiator yet",
         "Something is holding this case here.": "Something is holding this case here.",
         "You cannot move this case to {status} from here.": "You cannot move this case to {status} from here.",
-        "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.": "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today."
+        "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.": "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.",
+        "{n} days overdue": "{n} days overdue",
+        "{n} days remaining": "{n} days remaining",
+        "Could not load your tasks: {reason}": "Could not load your tasks: {reason}"
     },
     "plurals": ""
 }

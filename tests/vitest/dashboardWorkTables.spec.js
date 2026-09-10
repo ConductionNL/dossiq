@@ -258,9 +258,7 @@ describe('dashboard work tables', () => {
 		// Absence, not an `undefined` value: `toBeUndefined()` and
 		// `toBe(undefined)` both pass on a key that is present and set to
 		// undefined, which is not the same claim.
-		expect(
-			Object.hasOwn(w.content, 'rowActions'),
-		).toBe(false)
+		expect(Object.hasOwn(w.content, 'rowActions')).toBe(false)
 		const target = manifest.pages.find((p) => p.id === 'TaskDetail')
 		expect(target, 'rowRoute must name a page that exists').toBeDefined()
 	})

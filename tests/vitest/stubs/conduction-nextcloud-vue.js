@@ -173,7 +173,9 @@ export const CnDataTable = {
 							'tr',
 							{
 								key: row.id ?? index,
-								class: this.rowClass ? this.rowClass(row) : undefined,
+								class: this.rowClass
+									? this.rowClass(row)
+									: undefined,
 								onClick: () => this.$emit('row-click', row),
 							},
 							this.columns.map((col) =>
