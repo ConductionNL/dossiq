@@ -24452,6 +24452,47 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-demo-001",
+          "id": "da8fa015-8133-5b74-86d6-8a4a5ffa745a"
+        },
+        "key": "zgw",
+        "title": "ZGW API's",
+        "status": "configured",
+        "description": "Verbonden met OpenZaak. Zaken, documenten en besluiten worden gesynchroniseerd.",
+        "order": 10,
+        "checkedAt": "2026-09-10T08:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-demo-002",
+          "id": "a5ff70e4-028d-5e89-a356-77dcc00f55cc"
+        },
+        "key": "brp",
+        "title": "BRP personen",
+        "status": "simulated",
+        "description": "Draait op de proefomgeving. Antwoorden komen uit de testset, niet uit de echte BRP.",
+        "order": 20,
+        "checkedAt": "2026-09-10T08:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-demo-003",
+          "id": "1530115f-bb9d-578f-8643-8229960380df"
+        },
+        "key": "mailbox",
+        "title": "Zaakpostbus",
+        "status": "unconfigured",
+        "description": "Nog geen postbus gekoppeld. Inkomende e-mail wordt niet aan zaken gekoppeld.",
+        "order": 30
       }
     ]
   }
