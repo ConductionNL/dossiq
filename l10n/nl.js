@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.": "De versie van het sjabloon dat dit besluit heeft voortgebracht, bepaald via de versieketen van filinq op het moment van opstellen. Vastgelegd zodat een bezwaar tegen een besluit wordt beoordeeld op de tekst die daadwerkelijk is verstuurd, en niet op het sjabloon zoals dat er vandaag uitziet.",
         "Load example data?": "Voorbeeldgegevens laden?",
         "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Voorbeeldgegevens vullen de lijsten, detailpagina’s en dashboards, zodat je de app meteen ziet werken. Kies \"Geen\" op een productieomgeving.",
         "Load the example data": "Laad de voorbeeldgegevens",

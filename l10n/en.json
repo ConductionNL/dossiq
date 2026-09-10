@@ -1,5 +1,6 @@
 {
     "translations": {
+        "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.": "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today.",
         "Load example data?": "Load example data?",
         "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.",
         "Load the example data": "Load the example data",

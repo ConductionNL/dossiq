@@ -189,7 +189,10 @@ describe('moving a case on the workflow board', () => {
 		// The shape StatusTransitionController answers a `transition_unauthorized`
 		// with: a coded refusal behind its static message.
 		axios.post.mockRejectedValue({
-			response: { status: 400, data: { error: 'Could not execute transition' } },
+			response: {
+				status: 400,
+				data: { error: 'Could not execute transition' },
+			},
 		})
 
 		await wrapper.vm.onDrop('case-1', 'In behandeling')
@@ -206,7 +209,10 @@ describe('moving a case on the workflow board', () => {
 				...OFFERED,
 				guardsPassed: false,
 				failedGuards: [
-					{ type: 'requiredDocument', failureMessage: 'Upload the decision first.' },
+					{
+						type: 'requiredDocument',
+						failureMessage: 'Upload the decision first.',
+					},
 				],
 			},
 		])
