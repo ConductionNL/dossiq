@@ -44,7 +44,7 @@ export function waitingCaseIdFrom(task) {
 /**
  * Read a case reference in either of the shapes the store returns.
  *
- * Exported since task-on-the-case: TaskCaseLink asks the same question of
+ * Exported since task-on-the-case: TaskCaseCard asks the same question of
  * the same field for a different reason (which case is this task ON, rather
  * than which run is waiting on me), and a second reader of `$ref` shapes is
  * exactly the copy that drifts.

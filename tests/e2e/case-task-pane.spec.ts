@@ -114,6 +114,10 @@ let lastTaskTitle = ''
 let linkCaseId = ''
 let linkCaseTitle = ''
 let linkTaskId = ''
+let linkCaseTypeTitle = ''
+/** The handler and deadline the link case is seeded with, asserted on the card. */
+const LINK_CASE_HANDLER = 'admin'
+const LINK_CASE_DEADLINE = '2026-11-02'
 
 /**
  * Seed one task on a case.
@@ -234,6 +238,14 @@ test.describe('Case detail — the task pane', () => {
 			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(caseTypes[0])
+		// The card resolves `case.caseType` to this TITLE. Read it off the same
+		// row the case is seeded against, so the assertion cannot drift from
+		// whichever published type the instance happens to ship.
+		linkCaseTypeTitle = String(
+			(caseTypes[0] as any)?.title
+				?? (caseTypes[0] as any)?.['@self']?.title
+				?? '',
+		).trim()
 
 		// FOUR cases rather than one. Two of these tests COMPLETE a task, so
 		// sharing a case would make every test after them depend on the order
@@ -253,7 +265,15 @@ test.describe('Case detail — the task pane', () => {
 				title: `${RUN_PREFIX} Task pane last`,
 				caseType: caseTypeId,
 			}),
-			seedCase(api, token, { title: linkCaseTitle, caseType: caseTypeId }),
+			// Seeded WITH a handler and a deadline: the card carries both, and a
+			// case without them renders neither row, so a bare case could not tell
+			// a working card from a broken one.
+			seedCase(api, token, {
+				title: linkCaseTitle,
+				caseType: caseTypeId,
+				assignee: LINK_CASE_HANDLER,
+				deadline: LINK_CASE_DEADLINE,
+			}),
 		])
 		readCaseId = objectId(readCase)
 		completeCaseId = objectId(completeCase)
@@ -439,5 +459,75 @@ test.describe('Case detail — the task pane', () => {
 		await expect(page.locator('.cn-detail-page')).toContainText(linkCaseTitle, {
 			timeout: 30_000,
 		})
+	})
+
+	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
+	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
+	test('the case card carries the case identity, and the case is not repeated as a raw row', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const card = page.locator('[data-testid="task-case-card"]')
+		await expect(card).toBeVisible({ timeout: 20_000 })
+
+		// The case's own reference, and its handler, both read off the CASE
+		// rather than the task: the two have separate owners and separate
+		// clocks, which is the whole reason for carrying them here.
+		await expect(
+			card.locator('[data-testid="task-case-card-identifier"]'),
+		).toContainText(RUN_PREFIX);
+		await expect(
+			card.locator('[data-testid="task-case-card-handler"]'),
+		).toHaveText(LINK_CASE_HANDLER)
+
+		// `case.caseType` is a $ref. A uuid here is the defect the card
+		// exists to prevent, so assert the resolved TITLE.
+		if (linkCaseTypeTitle !== '') {
+			await expect(
+				card.locator('[data-testid="task-case-card-type"]'),
+			).toHaveText(linkCaseTypeTitle)
+		}
+
+		// The deadline is the CASE's, formatted by the browser's locale.
+		await expect(
+			card.locator('[data-testid="task-case-card-deadline"]'),
+		).toHaveText(new Date(LINK_CASE_DEADLINE).toLocaleDateString())
+
+		// And the Data widget below must NOT restate it. `case` is hidden by
+		// a manifest override precisely because the platform would render the
+		// $ref as its uuid, and one relationship shown twice, once correctly
+		// and once as a uuid, reads as broken data.
+		const data = page.locator('[data-testid="task-case-card"] >> nth=0')
+		await expect(data).toBeVisible()
+		await expect(
+			page.locator('.cn-object-data-widget').getByText('Case', { exact: true }),
+		).toHaveCount(0)
+	})
+
+	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
+	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
+	test('the task carries its own notes and appointments', async ({ page }) => {
+		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// Both are integration leaves on the TASK, not on the parent case.
+		// `notes` is an always-available OpenRegister built-in, so it renders
+		// unconditionally; `calendar` requires the NC Calendar app and renders
+		// its own empty state without it, which is why the assertion is on the
+		// widget being present rather than on any row inside it.
+		await expect(
+			page.getByRole('heading', { name: 'Notes', exact: true }),
+		).toBeVisible({ timeout: 20_000 })
+		await expect(
+			page.getByRole('heading', { name: 'Appointments', exact: true }),
+		).toBeVisible({ timeout: 20_000 })
 	})
 })

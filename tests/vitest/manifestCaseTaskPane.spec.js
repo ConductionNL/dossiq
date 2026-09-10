@@ -202,31 +202,31 @@ describe('the case-tasks widget after the retype', () => {
 	})
 })
 
-describe('the TaskCaseLink registry binding', () => {
+describe('the TaskCaseCard registry binding', () => {
 	it('is keyed by component name, for the page slot on TaskDetail', () => {
-		const entry = registryEntry('TaskCaseLink')
+		const entry = registryEntry('TaskCaseCard')
 		expect(entry).toContain("kind: 'widget'")
-		expect(entry).toContain('component: TaskCaseLink')
+		expect(entry).toContain('component: TaskCaseCard')
 		expect(entry).toContain('_note:')
 		expect(entry).toMatch(/@custom-widget-ratchet exclude \S+ \S+/)
 	})
 
 	it('imports the component from a file that exists', () => {
-		const match = registrySource().match(/^import TaskCaseLink from '(.+)'$/m)
-		expect(match, 'TaskCaseLink must be imported').not.toBeNull()
+		const match = registrySource().match(/^import TaskCaseCard from '(.+)'$/m)
+		expect(match, 'TaskCaseCard must be imported').not.toBeNull()
 		expect(
 			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
 		).toBe(true)
 	})
 })
 
-describe('the task-case-link widget on TaskDetail', () => {
+describe('the task-case widget on TaskDetail', () => {
 	it('is a custom widget resolved through the page slot', () => {
-		const link = widget('TaskDetail', 'task-case-link')
-		expect(link).toBeDefined()
-		expect(link.type).toBe('custom')
-		expect(page('TaskDetail').slots['widget-task-case-link']).toBe(
-			'TaskCaseLink',
+		const card = widget('TaskDetail', 'task-case')
+		expect(card).toBeDefined()
+		expect(card.type).toBe('custom')
+		expect(page('TaskDetail').slots['widget-task-case']).toBe(
+			'TaskCaseCard',
 		)
 		// A `custom` widget with no slot entry renders nothing and says
 		// nothing, on this path exactly as on the tab path.
@@ -240,11 +240,39 @@ describe('the task-case-link widget on TaskDetail', () => {
 		const item = (id) => layout.find((entry) => entry.widgetId === id)
 		// A widget-<id> slot is rendered per GRID item, so a layout entry is
 		// not decoration here: without one the component never mounts.
-		expect(item('task-case-link')).toBeDefined()
-		expect(item('task-case-link').gridY).toBeLessThan(item('task-data').gridY)
+		expect(item('task-case')).toBeDefined()
+		expect(item('task-case').gridY).toBeLessThan(item('task-data').gridY)
 		// An empty titled box on every task with no case is the clutter the
 		// null render exists to avoid.
-		expect(item('task-case-link').showTitle).toBe(false)
+		expect(item('task-case').showTitle).toBe(false)
+	})
+
+	it('hides the case row from the Data widget, so the case is stated once', () => {
+		// The card resolves `case` to a title and a link. Leaving the raw
+		// $ref row in the grid below shows the same relationship twice, and
+		// the second one shows it as a uuid.
+		const data = widget('TaskDetail', 'task-data')
+		expect(data.content.overrides.case.hidden).toBe(true)
+	})
+
+	it('carries the notes and appointment leaves, side by side below the task', () => {
+		const notes = widget('TaskDetail', 'task-notes')
+		const calendar = widget('TaskDetail', 'task-calendar')
+		expect(notes.type).toBe('integration')
+		expect(notes.integrationId).toBe('notes')
+		expect(calendar.type).toBe('integration')
+		expect(calendar.integrationId).toBe('calendar')
+
+		const layout = page('TaskDetail').config.layout
+		const item = (id) => layout.find((entry) => entry.widgetId === id)
+		// Below the task data, and beside each other rather than stacked.
+		expect(item('task-notes').gridY).toBeGreaterThan(item('task-data').gridY)
+		expect(item('task-calendar').gridY).toBe(item('task-notes').gridY)
+		expect(item('task-notes').gridWidth + item('task-calendar').gridWidth).toBe(12)
+		// These two DO draw a title: unlike the case card they render their
+		// own empty state, so a titled empty box is the correct affordance.
+		expect(item('task-notes').showTitle).toBe(true)
+		expect(item('task-calendar').showTitle).toBe(true)
 	})
 
 	it('does not disturb the flow waiting section', () => {
