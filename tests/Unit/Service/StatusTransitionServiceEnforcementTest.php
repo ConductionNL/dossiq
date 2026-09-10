@@ -72,6 +72,12 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\StatusTransitionService
  * @covers \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  *
+ * `TransitionSpecReader` is a real collaborator here rather than a mock, so
+ * `beStrictAboutCoverageMetadata` counts its execution and the test reports
+ * RISKY without this line. `@uses`, not `@covers`: it is not the subject.
+ *
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ *
  * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
  */
 class StatusTransitionServiceEnforcementTest extends TestCase {

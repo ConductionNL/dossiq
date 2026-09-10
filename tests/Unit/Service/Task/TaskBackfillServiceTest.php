@@ -44,6 +44,14 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskBackfillService
+ *
+ * The idempotency test calls the STATIC `EngineTaskGateway::sourceKey()` to
+ * build the key it seeds, which executes the real class even though the
+ * gateway itself is mocked. Without this line that test reports RISKY under
+ * `beStrictAboutCoverageMetadata` and every PHPUnit cell fails on
+ * `failOnRisky`.
+ *
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskGateway
  */
 class TaskBackfillServiceTest extends TestCase {
 
