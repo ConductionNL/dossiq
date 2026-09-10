@@ -633,7 +633,14 @@ export async function seedStateMachine(
 	})
 	add('workflowTemplate', wf)
 
-	return { caseTypeId, caseTypeTitle, statusReceived, statusInProgress, statusDone, created }
+	return {
+		caseTypeId,
+		caseTypeTitle,
+		statusReceived,
+		statusInProgress,
+		statusDone,
+		created,
+	}
 }
 
 const DOSSIQ_API = '/index.php/apps/dossiq/api'

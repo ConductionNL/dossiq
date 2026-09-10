@@ -192,7 +192,10 @@ async function openCase(page: Page, caseId: string): Promise<void> {
 async function readFigure(figure: Locator, what: string): Promise<number> {
 	const text = (await figure.innerText()).trim()
 	const match = text.match(/-?\d+(?:[.,]\d+)?/)
-	expect(match, `${what} must print a number, and it printed "${text}"`).not.toBeNull()
+	expect(
+		match,
+		`${what} must print a number, and it printed "${text}"`,
+	).not.toBeNull()
 	return Number(String(match?.[0]).replace(',', '.'))
 }
 
@@ -295,7 +298,9 @@ if (!HUMANIQ_DECLARED) {
 			const asked: string[] = []
 			page.on('request', (request) => {
 				const url = request.url()
-				if (/\/apps\/(humaniq|hrmq)\/|\/objects\/(humaniq|hrmq)\//.test(url)) {
+				if (
+					/\/apps\/(humaniq|hrmq)\/|\/objects\/(humaniq|hrmq)\//.test(url)
+				) {
 					asked.push(url)
 				}
 			})
@@ -337,7 +342,7 @@ if (!HUMANIQ_DECLARED) {
 		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
-		test('the tile leads with the hours on the case and the caller\'s own beneath', async ({
+		test("the tile leads with the hours on the case and the caller's own beneath", async ({
 			page,
 		}) => {
 			await openCase(page, caseId)
@@ -403,7 +408,10 @@ if (!HUMANIQ_DECLARED) {
 			// paints it anywhere.
 			const timerBox = await widget.getByTestId(HOOK.timer).boundingBox()
 			const bookBox = await widget.getByTestId(HOOK.book).boundingBox()
-			expect(timerBox, 'the timer button must be painted somewhere').not.toBeNull()
+			expect(
+				timerBox,
+				'the timer button must be painted somewhere',
+			).not.toBeNull()
 			expect(bookBox, 'Book hours must be painted somewhere').not.toBeNull()
 			expect(
 				Number(timerBox?.x),
@@ -428,7 +436,7 @@ if (!HUMANIQ_DECLARED) {
 			const dialog = page.getByTestId(HOOK.dialog)
 			await expect(
 				dialog,
-				'Book hours must open humaniq\'s booking dialog',
+				"Book hours must open humaniq's booking dialog",
 			).toBeVisible({ timeout: 15_000 })
 
 			await fillField(
@@ -452,7 +460,8 @@ if (!HUMANIQ_DECLARED) {
 			// booking as lost.
 			await expect
 				.poll(
-					async () => readFigure(widget.getByTestId(HOOK.total), 'the total'),
+					async () =>
+						readFigure(widget.getByTestId(HOOK.total), 'the total'),
 					{
 						timeout: 20_000,
 						message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
@@ -510,7 +519,8 @@ if (!HUMANIQ_DECLARED) {
 			).toBeVisible({ timeout: 15_000 })
 			await expect
 				.poll(
-					async () => readFigure(reloaded.getByTestId(HOOK.total), 'the total'),
+					async () =>
+						readFigure(reloaded.getByTestId(HOOK.total), 'the total'),
 					{
 						timeout: 20_000,
 						message: `stopping the timer books the run, so the total may not fall below the ${before} it showed before`,
