@@ -3867,7 +3867,13 @@ OC.L10N.register(
         "We could not load the AI settings, so none are shown. Reload the page to try again.": "We could not load the AI settings, so none are shown. Reload the page to try again.",
         "You have a key stored. Type a new one to replace it.": "You have a key stored. Type a new one to replace it.",
         "You have no key stored.": "You have no key stored.",
-        "Why the attempt failed, when action is failed": "Why the attempt failed, when action is failed"
+        "Why the attempt failed, when action is failed": "Why the attempt failed, when action is failed",
+        "Allowed recipients": "Allowed recipients",
+        "Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.": "Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.",
+        "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.": "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.",
+        "Sender address": "Sender address",
+        "Sender name": "Sender name",
+        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "The address dossiq sends from. Leave it empty and dossiq refuses to send at all."
     },
     "nplurals=2; plural=(n != 1);"
 )

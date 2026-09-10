@@ -1337,6 +1337,34 @@ The `OCA\Dossiq\Controller\EmailController` SHALL expose the HTTP surface: `POST
 - **WHEN** a behandelaar calls `EmailController::preview($caseId)` with `{templateId, recipient}`
 - **THEN** the response SHALL contain the fully-rendered subject + body without any side effects
 
+### REQ-103a: CaseEmailService SHALL reject any recipient that is not on the allow-list
+
+@e2e exclude Backend recipient policy; the reject path is covered by PHPUnit and has no dossiq UI surface that can exercise it without a configured mail transport.
+
+`CaseEmailService::sendEmail()` SHALL send only to a recipient that matches the allow-list resolved by `OCA\Dossiq\Service\Email\RecipientAllowlist`, or that is a contact registered on the case. Every other recipient SHALL be rejected before the message reaches the mailer, and the rejection SHALL be logged.
+
+The allow-list SHALL never be empty on an instance that can send at all. When the operator has configured no entries, it SHALL default to the domain of `email_from_address`, which `resolveFromAddress()` already requires. An entry of `*` SHALL allow every recipient, so opening the relay stays possible but stays an explicit operator decision.
+
+An empty address list SHALL NOT be read as "no restriction". This requirement exists because it was: the guard was handed `loadCaseVariables()`'s six-key projection, which carries none of the contact fields the reader inspects, so the list was empty on every call and the guard passed every address it ever saw.
+
+The `case` schema declares no contact address field today, so the case-contact source contributes nothing and the allow-list carries the whole policy. Any future contact field SHALL be read from the raw case record, never from the variable projection.
+
+#### Scenario: A recipient outside a populated allow-list is rejected
+- **GIVEN** `email_recipient_allowlist` is `@gemeente.nl` and a readable case
+- **WHEN** a behandelaar calls `sendEmail()` with `attacker@evil.example`
+- **THEN** the call SHALL throw, the mailer SHALL NOT be handed a message, and a warning SHALL be logged
+
+#### Scenario: No configured allow-list still restricts to the sender's own domain
+- **GIVEN** `email_recipient_allowlist` is unset and `email_from_address` is `zaken@gemeente.nl`
+- **WHEN** a behandelaar calls `sendEmail()` with `iemand@gemeente.nl`
+- **THEN** the mail SHALL be sent
+- **AND** the same call with `iemand@elders.example` SHALL be rejected
+
+#### Scenario: The operator can open the relay deliberately
+- **GIVEN** `email_recipient_allowlist` is `*`
+- **WHEN** a behandelaar calls `sendEmail()` with any valid address
+- **THEN** the mail SHALL be sent
+
 ### REQ-104: PublicShareController SHALL enforce token-scoped access to case data
 
 @e2e exclude Backend public share controller spec; token-scoped access covered by PHPUnit.

@@ -3867,7 +3867,13 @@ OC.L10N.register(
         "We could not load the AI settings, so none are shown. Reload the page to try again.": "We konden de AI-instellingen niet laden, dus je ziet er geen. Laad de pagina opnieuw om het nog eens te proberen.",
         "You have a key stored. Type a new one to replace it.": "Er is een sleutel opgeslagen. Typ een nieuwe om die te vervangen.",
         "You have no key stored.": "Er is geen sleutel opgeslagen.",
-        "Why the attempt failed, when action is failed": "Waarom de poging mislukte, als action failed is"
+        "Why the attempt failed, when action is failed": "Waarom de poging mislukte, als action failed is",
+        "Allowed recipients": "Toegestane ontvangers",
+        "Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.": "Configureer de gedeelde functionele mailbox (bijv. zaken@gemeente.nl) die de inkomende poller inleest en automatisch aan zaken koppelt via de onderwerptag [ZAAK-YYYY-NNNNNN]. Mailaccounts per gebruiker blijven in Nextcloud Mail. De uitgaande velden hieronder gelden alleen voor de e-mail die dossiq zelf verstuurt. Dat zijn workflowacties en het e-mailscherm bij de zaak.",
+        "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.": "Noteer de adressen en domeinen waar dossiq zaakmail naartoe mag sturen. Laat het leeg en alleen uw eigen domein is toegestaan, afgeleid van het afzenderadres. Typ * om elke ontvanger toe te staan.",
+        "Sender address": "Afzenderadres",
+        "Sender name": "Afzendernaam",
+        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "Het adres waarmee dossiq verstuurt. Laat het leeg en dossiq weigert te versturen."
     },
     "nplurals=2; plural=(n != 1);"
 )

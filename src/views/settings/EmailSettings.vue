@@ -4,7 +4,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail. They are not configured here.',
+					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
 				)
 			}}
 		</NcNoteCard>
@@ -139,6 +139,56 @@
 			</p>
 		</div>
 
+		<div class="setting-row">
+			<label for="email_from_address">{{
+				t('dossiq', 'Sender address')
+			}}</label>
+			<NcInputField
+				id="email_from_address"
+				v-model="form.email_from_address"
+				:disabled="!writable || loading"
+				placeholder="zaken@gemeente.nl"
+				data-testid="email-from-address" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'The address dossiq sends from. Leave it empty and dossiq refuses to send at all.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_from_name">{{ t('dossiq', 'Sender name') }}</label>
+			<NcInputField
+				id="email_from_name"
+				v-model="form.email_from_name"
+				:disabled="!writable || loading"
+				placeholder="Gemeente Voorbeeld"
+				data-testid="email-from-name" />
+		</div>
+
+		<div class="setting-row">
+			<label for="email_recipient_allowlist">{{
+				t('dossiq', 'Allowed recipients')
+			}}</label>
+			<NcInputField
+				id="email_recipient_allowlist"
+				v-model="form.email_recipient_allowlist"
+				:disabled="!writable || loading"
+				placeholder="@gemeente.nl, team@gemeente.nl"
+				data-testid="email-recipient-allowlist" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
+					)
+				}}
+			</p>
+		</div>
+
 		<div class="email-settings__actions">
 			<NcButton
 				variant="primary"
@@ -212,6 +262,9 @@ export default {
 				email_poll_interval: '300',
 				email_poll_batch_size: '50',
 				email_fallback_case_type: '',
+				email_from_address: '',
+				email_from_name: '',
+				email_recipient_allowlist: '',
 			},
 
 			caseTypes: [],
