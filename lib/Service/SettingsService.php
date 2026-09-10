@@ -291,47 +291,6 @@ class SettingsService {
 	}//end getFileService()
 
 	/**
-	 * Lazily resolve any OpenRegister service by its fully-qualified name.
-	 *
-	 * The three resolvers above each hard-code one class, which is right when
-	 * a seam is permanent. This one takes the name, because the task engine's
-	 * seam is TEMPORARY: `EngineTaskGateway` is the dual-run half of the
-	 * caseTask migration and is deleted with it, and adding a fourth
-	 * copy-pasted resolver for something scheduled for removal is how a
-	 * migration leaves debris behind.
-	 *
-	 * 🔴 The caller is responsible for `class_exists()`. A container `get()`
-	 * on an absent class throws, which is caught and logged here as a resolve
-	 * failure, and a rename then reads identically to a misconfiguration.
-	 * `EngineTaskGateway::unavailableReason()` separates the two and is the
-	 * only reason a silent namespace move would ever be noticed.
-	 *
-	 * @param string $className Fully-qualified OpenRegister service class.
-	 *
-	 * @return object|null The service, or null when unavailable.
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
-	 * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-	 */
-	public function resolveOpenRegisterService(string $className): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get($className);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access an OpenRegister service',
-				['class' => $className, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end resolveOpenRegisterService()
-
-	/**
 	 * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
 	 *
 	 * Per ADR-022 (apps consume OpenRegister abstractions) the parafering

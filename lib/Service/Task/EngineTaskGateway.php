@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -88,11 +89,20 @@ class EngineTaskGateway {
     /**
      * Constructor.
      *
-     * @param SettingsService $settings The dossiq settings seam.
-     * @param LoggerInterface $logger   The logger.
+     * The container is injected here rather than another resolver being added
+     * to SettingsService. That class sits at PHPMD's complexity ceiling: a
+     * fourth `get()` wrapper took it from 50 to 52 and failed the gate. It is
+     * also the wrong home. This seam is TEMPORARY and is deleted with the
+     * caseTask migration, so it owns its own resolution and leaves nothing
+     * behind in a class that outlives it.
+     *
+     * @param SettingsService    $settings  The dossiq settings seam.
+     * @param ContainerInterface $container The DI container.
+     * @param LoggerInterface    $logger    The logger.
      */
     public function __construct(
         private readonly SettingsService $settings,
+        private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -281,7 +291,11 @@ class EngineTaskGateway {
      */
     private function decodeChecklist(mixed $value): ?array {
         if (is_array($value) === true) {
-            return ($value === [] ? null : $value);
+            if ($value === []) {
+                return null;
+            }
+
+            return $value;
         }
 
         $raw = trim((string)($value ?? ''));
@@ -325,7 +339,7 @@ class EngineTaskGateway {
         }
 
         try {
-            return $this->settings->resolveOpenRegisterService(className: self::TASK_SERVICE);
+            return $this->container->get(self::TASK_SERVICE);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Dossiq: could not resolve the OpenRegister task service',

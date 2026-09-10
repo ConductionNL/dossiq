@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -64,10 +65,23 @@ class EngineTaskGatewayTest extends TestCase {
 			->getMock();
 		$settings->method('getConfigValue')->willReturn($flag);
 		$settings->method('isOpenRegisterAvailable')->willReturn($available);
-		$settings->method('resolveOpenRegisterService')->willReturn($service);
 
 		return $settings;
 	}//end settings()
+
+	/**
+	 * A container double that hands back one service.
+	 *
+	 * @param object|null $service The service, or null.
+	 *
+	 * @return ContainerInterface&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function container(?object $service): ContainerInterface {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($service);
+
+		return $container;
+	}//end container()
 
 	/**
 	 * A gateway whose service resolution is overridden, so the paths that
@@ -86,18 +100,20 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return EngineTaskGateway The gateway.
 	 */
 	private function gatewayWith(?object $service, string $flag = '1'): EngineTaskGateway {
-		return new class ($this->settings($flag, true, $service), new NullLogger(), $service) extends EngineTaskGateway {
+		return new class ($this->settings($flag, true, $service), $this->container($service), new NullLogger(), $service) extends EngineTaskGateway {
 			/**
-			 * @param SettingsService $settings The settings double.
-			 * @param NullLogger      $logger   The logger.
-			 * @param object|null     $service  The engine double.
+			 * @param SettingsService    $settings  The settings double.
+			 * @param ContainerInterface $container The container double.
+			 * @param NullLogger         $logger    The logger.
+			 * @param object|null        $service   The engine double.
 			 */
 			public function __construct(
 				SettingsService $settings,
+				ContainerInterface $container,
 				NullLogger $logger,
 				private readonly ?object $service,
 			) {
-				parent::__construct($settings, $logger);
+				parent::__construct($settings, $container, $logger);
 			}
 
 			/**
@@ -115,7 +131,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testPayloadCarriesEveryMappedProperty(): void {
-		$gateway = new EngineTaskGateway($this->settings('0'), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('0'), $this->container(null), new NullLogger());
 
 		$payload = $gateway->toEnginePayload(
 			task: [
@@ -167,7 +183,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testOmitsAbsentPropertiesRatherThanSendingEmptyStrings(): void {
-		$gateway = new EngineTaskGateway($this->settings('0'), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('0'), $this->container(null), new NullLogger());
 
 		$payload = $gateway->toEnginePayload(task: ['title' => 'Bare'], caseId: 'case-9');
 
@@ -186,7 +202,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testDecodesTheJsonStringChecklist(): void {
-		$gateway = new EngineTaskGateway($this->settings('0'), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('0'), $this->container(null), new NullLogger());
 
 		$payload = $gateway->toEnginePayload(
 			task: ['title' => 'T', 'checklist' => '[{"id":"a","label":"Check","checked":false}]'],
@@ -206,7 +222,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testDropsAnUndecodableChecklistRatherThanFailingTheCreate(): void {
-		$gateway = new EngineTaskGateway($this->settings('0'), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('0'), $this->container(null), new NullLogger());
 
 		foreach (['not json at all', '', '[]', '{}'] as $bad) {
 			$payload = $gateway->toEnginePayload(task: ['title' => 'T', 'checklist' => $bad], caseId: 'c');
@@ -281,7 +297,7 @@ class EngineTaskGatewayTest extends TestCase {
 	 * @return void
 	 */
 	public function testReportsAnAbsentOpenRegisterAsNotInstalled(): void {
-		$gateway = new EngineTaskGateway($this->settings('1', false), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('1', false), $this->container(null), new NullLogger());
 
 		$this->assertFalse($gateway->isEnabled());
 		$this->assertStringContainsString('not installed', $gateway->unavailableReason());
@@ -306,7 +322,7 @@ class EngineTaskGatewayTest extends TestCase {
 		// Installed, but the container hands back nothing and the class is
 		// absent from this test runtime (OpenRegister is not autoloadable in
 		// dossiq's unit suite), which is exactly the rename shape.
-		$gateway = new EngineTaskGateway($this->settings('1', true, null), new NullLogger());
+		$gateway = new EngineTaskGateway($this->settings('1', true, null), $this->container(null), new NullLogger());
 
 		$this->assertFalse($gateway->isEnabled());
 
