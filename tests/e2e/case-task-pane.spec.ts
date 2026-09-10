@@ -547,9 +547,14 @@ test.describe('Case detail — the task pane', () => {
 		// assertions fail for a reason that has nothing to do with the pane.
 		//
 		// Moving the index is task 2.2 of
-		// openspec/changes/remove-casetask/tasks.md (`entitySource: "tasks"`),
-		// and it is BLOCKED on nextcloud-vue#1063 and openregister#3581
-		// landing plus a dossiq nc-vue bump. Rewriting the assertion to
+		// openspec/changes/remove-casetask/tasks.md (`entitySource: "tasks"`).
+		// Both library PRs it waited on have MERGED: nextcloud-vue#1063 at
+		// 2026-09-10T13:05Z and openregister#3581. What is left is a RELEASE,
+		// not a review: 2.45.0 is the version dossiq pins and it predates
+		// #1063, so `indexSources.js` there carries no `isTerminal` and no
+		// `dueAfter`/`dueBefore`. When a version containing them ships and
+		// dossiq takes it, 2.2 is unblocked and these three assertions should
+		// go green without being touched. Rewriting the assertion to
 		// something the current pair of surfaces can satisfy would turn a
 		// stated gap into a test that cannot fail, which is worse than a red
 		// cell that names its cause.
