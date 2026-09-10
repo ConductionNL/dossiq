@@ -13,13 +13,23 @@
  * ---------------------
  * Every promise here is a sequence rather than a render, and each half fails
  * in a way that looks fine on its own. A pane bound to the CASE id renders no
- * buttons at all and looks exactly like a task with no transitions left
- * (`available-actions` answers an empty list for a case, which is the defect
- * this change deliberately does not try to solve). A pane that filters open
- * tasks client-side over a paged window shows an empty pane on a case with
- * work left. A completion that navigates away confirms nothing. So the
- * assertions are: the buttons, the toast text, the URL after the press, and
- * the identity of the task that took the completed one's place.
+ * task at all and looks exactly like a case whose work is finished. A pane
+ * that filters open tasks client-side over a paged window shows an empty pane
+ * on a case with work left. A completion that navigates away confirms
+ * nothing. So the assertions are: the buttons, the toast text, the URL after
+ * the press, and the identity of the task that took the completed one's
+ * place.
+ *
+ * WHICH TASK STORE THIS SEEDS
+ * ---------------------------
+ * Two of them, on purpose. dossiq's task surfaces are mid-migration from the
+ * `caseTask` register object onto OpenRegister's task ENGINE, which is a
+ * separate entity behind `/api/flow-tasks` with its own table and its own
+ * lifecycle verbs. The pane has moved, so the three cases it is read on are
+ * seeded through `seedEngineTask`. The task DETAIL page has not, so the case
+ * whose task is opened on its own page is seeded through `seedTask`, which
+ * still writes a register object. Seeding either one into the other's surface
+ * produces an empty screen and no error anywhere.
  *
  * ADDRESSING THE WIDGET
  * ---------------------
@@ -37,11 +47,12 @@
  * LOCALE
  * ------
  * Nothing forces the language of the E2E instance, so tab labels and the
- * pane's own copy are matched in either language the app ships. The lifecycle
- * BUTTON labels are the schema's transition descriptions, which OpenRegister
- * returns verbatim from `lib/Settings/dossiq_register.json` and which are
- * English on every instance. Everything else is matched on a `data-testid`
- * or on data this spec seeded.
+ * pane's own copy are matched in either language the app ships. The verb
+ * buttons are no longer an exception: they used to carry the schema's
+ * transition descriptions, which OpenRegister returned verbatim and which
+ * were English on every instance, and they now carry translated labels, so
+ * they are addressed by `data-testid` like everything else here that is not
+ * data this spec seeded.
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'
@@ -52,7 +63,6 @@ import {
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
@@ -61,15 +71,25 @@ import {
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
+/** OpenRegister's task engine, the collection the pane reads and writes. */
+const FLOW_TASKS = '/index.php/apps/openregister/api/flow-tasks'
+
 /**
- * The transition descriptions `caseTask`'s lifecycle declares, which is what
- * `available-actions` hands CnLifecycleActions as button labels. The trailing
- * full stop is part of the schema text, so the patterns stop short of it.
+ * The pane's verb buttons, addressed by `data-testid` and not by label.
+ *
+ * They used to be the transition descriptions `caseTask`'s lifecycle declared,
+ * which OpenRegister returned verbatim from `available-actions` and which
+ * CnLifecycleActions rendered as button text. The pane no longer asks that
+ * endpoint at all: an engine task is not an OpenRegister object, so
+ * `/api/objects/{uuid}/available-actions` answers 500 for one. CaseTaskPane
+ * renders a fixed pair of engine verbs instead and lets the engine rule on
+ * each press (`verbs()` in src/components/tasks/CaseTaskPane.vue), and it
+ * labels them through `t('dossiq', ...)`, so a label match would depend on the
+ * instance locale that this spec's header explains is not forced. The testids
+ * do not, which is the reason everything else here is matched on one.
  */
-const COMPLETE_LABEL = /Mark task as completed/
-const TERMINATE_LABEL = /Terminate the task/
-const DISABLE_LABEL = /Disable the task/
-const ACTIVATE_LABEL = /Pick up the task/
+const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
+const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
 
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
@@ -96,7 +116,7 @@ let token: string
 let caseTypeId = ''
 let currentUser = ''
 
-/** The case the pane is READ on: an active task and a later open one. */
+/** The case the pane is READ on: an open task and a later open one. */
 let readCaseId = ''
 let readFirstTitle = ''
 let readSecondTitle = ''
@@ -105,10 +125,13 @@ let readSecondTitle = ''
 let completeCaseId = ''
 let completeFirstTitle = ''
 let completeSecondTitle = ''
+/** The engine uuid of that first task, read back to prove the write landed. */
+let completeFirstId = ''
 
 /** A case with exactly one open task, which is completed to empty the pane. */
 let lastCaseId = ''
 let lastTaskTitle = ''
+let lastTaskId = ''
 
 /** A case whose task is opened on its own page, to follow the link back. */
 let linkCaseId = ''
@@ -119,8 +142,17 @@ let linkCaseTypeTitle = ''
 const LINK_CASE_HANDLER = 'admin'
 const LINK_CASE_DEADLINE = '2026-11-02'
 
+/** Every engine task this run created, so teardown can close them. */
+const seededEngineTasks: string[] = []
+
 /**
- * Seed one task on a case.
+ * Seed one task on a case, as a `caseTask` REGISTER OBJECT.
+ *
+ * Kept for the task DETAIL page only. `TaskDetail` (`/tasks/:id`) is still a
+ * `type: "detail"` page bound to `register: dossiq, schema: caseTask`, because
+ * `entitySource` has no detail-page equivalent, and moving it is task 2.1 of
+ * openspec/changes/remove-casetask/tasks.md, which is still open. Every
+ * surface that HAS moved is seeded by `seedEngineTask` below.
  *
  * @param onCase The case the task belongs to.
  * @param title  The task title (carries RUN_PREFIX so teardown finds it).
@@ -142,40 +174,88 @@ async function seedTask(
 }
 
 /**
- * Drive a task through OpenRegister's lifecycle route, the same endpoint the
- * pane's buttons post to, and assert the new status was actually written.
+ * Seed one task on a case, in OpenRegister's TASK ENGINE.
  *
- * Seeding `status: "active"` directly would be a claim about what the
- * importer does with a lifecycle-managed field rather than a fact; this both
- * seeds the state and proves the lifecycle is live before any UI is opened.
+ * WHY THIS IS NOT `createObject(api, token, 'caseTask', ...)`
+ * -----------------------------------------------------------
+ * A `caseTask` register object and an engine task are DIFFERENT ENTITIES: one
+ * is a row in the dossiq register behind `/api/objects/dossiq/caseTask`, the
+ * other is a first-class record in the engine's own table behind
+ * `/api/flow-tasks`, with its own lifecycle verbs. dossiq's six task read
+ * surfaces moved to the engine (openspec/changes/remove-casetask/tasks.md,
+ * section 1), and CaseTaskPane is the first of them, so the pane lists engine
+ * tasks and can never see a register row. Seeding one left the pane correctly
+ * empty, which on screen is indistinguishable from a pane that is broken.
  *
- * @param taskId The task to transition.
- * @param action The transition action key.
- * @param to     The status the task must hold afterwards.
+ * THE PAYLOAD
+ * -----------
+ * The names are the engine's, and the map from the dossiq shape is the one
+ * both halves of the app already use: `EngineTaskGateway::toEnginePayload()`
+ * server-side and `useEngineTaskStore().create()` in the browser. `case`
+ * becomes `objectUuid`, because the case IS the anchor object and the engine
+ * holds no typed case reference; `dueDate` becomes `dueAt`; and `status`
+ * becomes `state` over the SAME CMMN vocabulary, translated by nothing.
+ *
+ * `requester` is named on purpose, and is the one field neither of those maps
+ * sends. `TaskService::create()` writes the acting identity into it only for a
+ * non-administrator caller, so on an admin session it would stay null, and
+ * `cancel` asserts the requester. Naming it keeps teardown working whichever
+ * kind of account the suite runs as.
+ *
+ * @param onCase The case the task is anchored to.
+ * @param title  The task title (carries RUN_PREFIX so teardown finds it).
+ * @param dueAt  The due date, which is what orders the pane.
  */
-async function transitionTask(
-	taskId: string,
-	action: string,
-	to: string,
-): Promise<void> {
-	const res = await api.post(
-		`/index.php/apps/openregister/api/objects/${taskId}/transition`,
-		{
-			headers: {
-				requesttoken: token,
-				'OCS-APIRequest': 'true',
-				'Content-Type': 'application/json',
-			},
-			data: { action },
+async function seedEngineTask(
+	onCase: string,
+	title: string,
+	dueAt: string,
+): Promise<string> {
+	const res = await api.post(FLOW_TASKS, {
+		headers: {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
 		},
-	)
+		data: {
+			title,
+			appId: 'dossiq',
+			state: 'available',
+			objectUuid: onCase,
+			assignee: currentUser,
+			requester: currentUser,
+			dueAt,
+		},
+	})
 	expect(
 		res.ok(),
-		`transition ${action} on ${taskId} -> ${res.status()} ${await res.text()}`,
+		`creating the engine task ${title} -> ${res.status()} ${await res.text()}`,
 	).toBeTruthy()
 
-	const stored = await showObject(api, 'caseTask', taskId)
-	expect(String(stored.status), `${taskId} after ${action}`).toBe(to)
+	const created = (await res.json()) as Record<string, unknown>
+	const uuid = String(created?.uuid ?? '')
+	expect(uuid, `the engine must answer ${title} with a uuid`).not.toBe('')
+	seededEngineTasks.push(uuid)
+	return uuid
+}
+
+/**
+ * Read one engine task back, as the row the API serves.
+ *
+ * The `uuid`, not the numeric `id`: the engine is addressed by uuid on every
+ * route and verb, and its `id` is a database primary key nothing accepts.
+ *
+ * @param uuid The engine task uuid.
+ */
+async function showEngineTask(uuid: string): Promise<Record<string, unknown>> {
+	const res = await api.get(`${FLOW_TASKS}/${uuid}`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
+	expect(
+		res.ok(),
+		`reading engine task ${uuid} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	return (await res.json()) as Record<string, unknown>
 }
 
 /**
@@ -286,36 +366,66 @@ test.describe('Case detail — the task pane', () => {
 		completeSecondTitle = `${RUN_PREFIX} complete second task`
 		lastTaskTitle = `${RUN_PREFIX} last open task`
 
-		const readFirst = await seedTask(readCaseId, readFirstTitle, EARLIER_DUE)
-		await seedTask(readCaseId, readSecondTitle, LATER_DUE)
-		const completeFirst = await seedTask(
+		// The three cases the PANE is read on carry engine tasks, because that
+		// is what the pane lists. No task here is picked up first: the engine
+		// admits `complete` on any task that is not already terminal
+		// (`TaskService::openTaskFor()` checks authorization and terminality
+		// and nothing else), and the pane offers its verbs without asking
+		// which are available, so an intermediate claim would prove nothing
+		// these three tests assert.
+		await seedEngineTask(readCaseId, readFirstTitle, EARLIER_DUE)
+		await seedEngineTask(readCaseId, readSecondTitle, LATER_DUE)
+		completeFirstId = await seedEngineTask(
 			completeCaseId,
 			completeFirstTitle,
 			EARLIER_DUE,
 		)
-		await seedTask(completeCaseId, completeSecondTitle, LATER_DUE)
-		const lastTask = await seedTask(lastCaseId, lastTaskTitle, EARLIER_DUE)
+		await seedEngineTask(completeCaseId, completeSecondTitle, LATER_DUE)
+		lastTaskId = await seedEngineTask(lastCaseId, lastTaskTitle, EARLIER_DUE)
+
+		// The link case keeps a REGISTER task: its two tests open the task's
+		// own detail page, which has not moved off `caseTask` yet.
 		linkTaskId = await seedTask(
 			linkCaseId,
 			`${RUN_PREFIX} link task`,
 			EARLIER_DUE,
 		)
-
-		// The first task of each pair is picked up, so `available-actions`
-		// answers `complete` for it. The second stays available on purpose:
-		// what the pane offers has to follow the task's own status.
-		await transitionTask(readFirst, 'activate', 'active')
-		await transitionTask(completeFirst, 'activate', 'active')
-		await transitionTask(lastTask, 'activate', 'active')
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
-		// The tasks. The cases are archival and cannot be removed by a user;
-		// they carry the family prefix, so global-setup's residue sweep takes
-		// them before the next run rather than this teardown failing on a 403
-		// it was never going to win.
+		// The register tasks. The cases are archival and cannot be removed by
+		// a user; they carry the family prefix, so global-setup's residue
+		// sweep takes them before the next run rather than this teardown
+		// failing on a 403 it was never going to win.
 		await cleanupRunObjects(api, token, ['caseTask'])
+
+		// 🔴 THE ENGINE TASKS ARE CLOSED, NOT REMOVED, AND THIS IS A LEAK.
+		// OpenRegister exposes no delete for an engine task: `appinfo/routes.php`
+		// registers index / show / audit and the lifecycle verbs and no DELETE,
+		// there is no `occ` command for one either, and the archival purge
+		// route the case fixtures use only knows OpenRegister OBJECTS. So the
+		// closest teardown available is `cancel`, which puts the row in
+		// `terminated` and therefore out of every open-task surface, and leaves
+		// it in the table for good. Each row carries RUN_PREFIX in its title,
+		// so a sweep can find them once the engine grows a way to remove one.
+		//
+		// Best effort per task, and never fatal: a task a test already
+		// completed answers 409 (`cancel` is refused on a terminal task), which
+		// is the expected outcome for two of the five, not a teardown failure.
+		for (const uuid of seededEngineTasks) {
+			await api
+				.post(`${FLOW_TASKS}/${uuid}/cancel`, {
+					headers: {
+						requesttoken: token,
+						'OCS-APIRequest': 'true',
+						'Content-Type': 'application/json',
+					},
+					data: { reason: 'e2e teardown' },
+				})
+				.catch(() => undefined)
+		}
+
 		await api.dispose()
 	})
 
@@ -331,22 +441,15 @@ test.describe('Case detail — the task pane', () => {
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(readFirstTitle, { timeout: 20_000 })
 
-		// The buttons OpenRegister answers for an ACTIVE task. Their presence
-		// is the whole change: they render on the case page, not two
-		// navigations away, and they are bound to the task rather than to the
-		// case (a pane wired to the case id renders none of them, because
-		// `available-actions` answers an empty list for a case).
-		const actions = panel.locator('[data-testid="cn-lifecycle-actions"]')
+		// The engine verbs the pane offers on an open task. Their presence is
+		// the whole change: they render on the case page, not two navigations
+		// away, and they are bound to the TASK rather than to the case. A pane
+		// wired to the case id renders none of them, because the engine lists
+		// by `objectUuid` and a case has no tasks anchored to another case.
+		const actions = panel.locator('[data-testid="case-task-pane-actions"]')
 		await expect(actions).toBeVisible({ timeout: 20_000 })
-		await expect(
-			actions.getByRole('button', { name: COMPLETE_LABEL }),
-		).toBeVisible()
-		await expect(
-			actions.getByRole('button', { name: TERMINATE_LABEL }),
-		).toBeVisible()
-		await expect(
-			actions.getByRole('button', { name: DISABLE_LABEL }),
-		).toBeVisible()
+		await expect(actions.locator(COMPLETE_BUTTON)).toBeVisible()
+		await expect(actions.locator(CANCEL_BUTTON)).toBeVisible()
 
 		// The second open task is listed under the pane, and it is NOT the one
 		// carrying the buttons.
@@ -366,7 +469,7 @@ test.describe('Case detail — the task pane', () => {
 		).toHaveText(completeFirstTitle, { timeout: 20_000 })
 
 		const before = new URL(page.url()).pathname
-		await panel.getByRole('button', { name: COMPLETE_LABEL }).click()
+		await panel.locator(COMPLETE_BUTTON).click()
 
 		// The confirmation names the task that was finished. Without it the
 		// press is indistinguishable from a press that did nothing.
@@ -378,25 +481,34 @@ test.describe('Case detail — the task pane', () => {
 		// would satisfy every other assertion here and defeat the point.
 		expect(new URL(page.url()).pathname).toBe(before)
 
-		// The next open task takes its place, with the buttons ITS status
-		// allows: it was never picked up, so it offers Pick up rather than
-		// Mark as completed.
+		// The next open task takes its place, ready to be worked the same way.
+		//
+		// This used to assert that the second task offered Pick up and NOT
+		// Mark as completed, because the register lifecycle answered a
+		// per-status button set through `available-actions`. The engine model
+		// is deliberately different: the pane offers its verbs and the engine
+		// rules on the press, refusing visibly with a message that names both
+		// the verb and the reason, rather than the client pre-judging
+		// availability. Pre-judging in two places is the duplicated
+		// authorization this migration exists to remove, so what is asserted
+		// here is what the surface now promises: the completed task is gone
+		// and the next one is in its place with its verbs.
 		await expect(
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(completeSecondTitle, { timeout: 30_000 })
-		await expect(
-			panel.getByRole('button', { name: ACTIVATE_LABEL }),
-		).toBeVisible({ timeout: 20_000 })
-		await expect(
-			panel.getByRole('button', { name: COMPLETE_LABEL }),
-		).toHaveCount(0)
+		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({
+			timeout: 20_000,
+		})
 
-		// The write reached the server, not just the screen.
-		const stored = await listObjects(api, 'caseTask', { _limit: '200' })
-		const completed = stored.find(
-			(row) => String(row.title ?? '') === completeFirstTitle,
+		// The write reached the server, not just the screen. Addressed by the
+		// uuid the seed returned rather than found by title in a page of rows:
+		// the engine's list is paged, and a title search that falls off the
+		// page reads as a completion that never happened.
+		const stored = await showEngineTask(completeFirstId)
+		expect(String(stored.state), `${completeFirstId} after complete`).toBe(
+			'completed',
 		)
-		expect(String(completed?.status)).toBe('completed')
+		expect(stored.isTerminal, `${completeFirstId} after complete`).toBe(true)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#the-last-task-leaves-an-empty-pane
@@ -409,7 +521,7 @@ test.describe('Case detail — the task pane', () => {
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(lastTaskTitle, { timeout: 20_000 })
 
-		await panel.getByRole('button', { name: COMPLETE_LABEL }).click()
+		await panel.locator(COMPLETE_BUTTON).click()
 		await expect(page.locator(SUCCESS_TOAST)).toContainText(lastTaskTitle, {
 			timeout: 30_000,
 		})
@@ -420,6 +532,28 @@ test.describe('Case detail — the task pane', () => {
 			panel.locator('[data-testid="case-task-pane-empty"]'),
 		).toHaveText(EMPTY_PANE, { timeout: 30_000 })
 
+		// The completion landed on the engine, not only on the screen.
+		const stored = await showEngineTask(lastTaskId)
+		expect(String(stored.state), `${lastTaskId} after complete`).toBe(
+			'completed',
+		)
+
+		// 🔴 KNOWN RED BELOW, AND DELIBERATELY NOT WEAKENED.
+		//
+		// The pane reads the engine; the `Tasks` index this footer leads to is
+		// still `type: "index"` over `register: dossiq, schema: caseTask` in
+		// src/manifest.json. So the task completed above, which is an engine
+		// task, cannot appear in that list at all, and these last three
+		// assertions fail for a reason that has nothing to do with the pane.
+		//
+		// Moving the index is task 2.2 of
+		// openspec/changes/remove-casetask/tasks.md (`entitySource: "tasks"`),
+		// and it is BLOCKED on nextcloud-vue#1063 and openregister#3581
+		// landing plus a dossiq nc-vue bump. Rewriting the assertion to
+		// something the current pair of surfaces can satisfy would turn a
+		// stated gap into a test that cannot fail, which is worse than a red
+		// cell that names its cause.
+		//
 		// View all still leads to the Tasks list scoped to THIS case, which is
 		// where a finished task remains readable.
 		await panel.locator('[data-testid="case-task-pane-view-all"]').click()
