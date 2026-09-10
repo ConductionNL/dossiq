@@ -547,7 +547,10 @@ export default {
 					this.refuseMove(caseId, caseObj, fromColumn, newColumn)
 					showError(
 						transitionBlockReason(transition)
-							|| this.t('dossiq', 'Something is holding this case here.'),
+							|| this.t(
+								'dossiq',
+								'Something is holding this case here.',
+							),
 					)
 					return
 				}
