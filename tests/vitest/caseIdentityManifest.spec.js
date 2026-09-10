@@ -125,18 +125,49 @@ describe('CaseDetail: tags', () => {
 })
 
 describe('CaseDetail: terms and archive', () => {
-	it('shows the lead time, the legal basis, the archive and the payment data', () => {
+	it('shows the lead time, the legal basis and the payment data', () => {
+		// The ARCHIVAL half moved out to `case-archival`. A data widget builds
+		// its fields from the schema's own properties and reads them off the top
+		// level of the record, so it cannot bind `@self._retention` — which is
+		// where the archival answer now lives for every app, not just this one.
 		const terms = widget('case-terms')
 		expect(terms.type).toBe('data')
 		expect(terms.content.include).toEqual([
 			'statutoryTerm',
 			'legalBasis',
-			'archiveNomination',
-			'archiveActionDate',
-			'archiveStatus',
 			'paymentIndication',
 			'lastPaymentDate',
 		])
+	})
+
+	it('reads the archival constraints from the abstract @self._retention', () => {
+		// The point of the move: one shape any app can ask an object for, rather
+		// than each app reading its own field names. `type: metadata` is
+		// nextcloud-vue's CnObjectMetadataWidget and `include` names keys of the
+		// resolved decision.
+		const archival = widget('case-archival')
+		expect(archival.type).toBe('metadata')
+		expect(archival.content.include).toEqual([
+			'nomination',
+			'period',
+			'actionDate',
+			'status',
+			'basis',
+			'source',
+			'legalHold',
+		])
+	})
+
+	it('keeps the legal hold in the list, because it overrides the rest', () => {
+		// A destruction date shown without an active hold beside it is actively
+		// misleading: the hold is what stops the destruction.
+		expect(widget('case-archival').content.include).toContain('legalHold')
+	})
+
+	it('says so when no archiving rule applies, instead of showing blank rows', () => {
+		expect(widget('case-archival').content.emptyLabel).toBe(
+			'No archiving rule applies to this case yet.',
+		)
 	})
 
 	it('keeps an empty row visible instead of hiding it', () => {
@@ -150,7 +181,9 @@ describe('CaseDetail: terms and archive', () => {
 		const overrides = widget('case-terms').content.overrides
 		expect(overrides.statutoryTerm.readOnly).toBe(false)
 		expect(overrides.statutoryTerm.editable).toBe(false)
-		expect(overrides.archiveActionDate.editable).toBe(false)
+		// `archiveActionDate` no longer needs an un-editable override here: it
+		// left this widget, and the archival card is read-only by construction.
+		expect(overrides.archiveActionDate).toBeUndefined()
 	})
 
 	it('reads properties the case actually has, not a path through its type', () => {

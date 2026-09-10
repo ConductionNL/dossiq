@@ -214,12 +214,39 @@ describe('InitiatorSection — the requester on the case', () => {
 		)
 	})
 
-	it('renders nothing at all for a case without a requester', async () => {
+	it('says so for a case without a requester, instead of an empty box', async () => {
+		// 🔴 IT USED TO RENDER NOTHING, on a rule written "no initiator, no
+		// clutter". That rule assumed this component could decide whether it
+		// appeared at all. It cannot: the manifest declares `initiator` as a
+		// grid cell with `showTitle: true`, so the card chrome and the word
+		// Initiator painted regardless and the body below them was blank. The
+		// page therefore showed an empty titled box on every case with no
+		// requester, which is the demo case and most real ones early on.
+		//
+		// A sentence costs the same space and answers the question the blank
+		// box raised.
 		const wrapper = await mountCard({ caseObject: { id: 'case-1' } })
 
-		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(
-			false,
+		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(true)
+		expect(wrapper.get('[data-testid="initiator-empty"]').text()).toBe(
+			'No initiator has been recorded for this case.',
 		)
+		// Still no requester rows: the empty state replaces them, it does not
+		// sit above a half-rendered card.
+		expect(wrapper.find('[data-testid="initiator-name"]').exists()).toBe(false)
+	})
+
+	it('drops the empty line the moment a requester is present', async () => {
+		const wrapper = await mountCard({
+			caseObject: {
+				id: 'case-1',
+				requester: 'uuid-person-1',
+				initiatorDisplayName: 'Jan Bakker',
+				initiatorType: 'person',
+			},
+		})
+
+		expect(wrapper.find('[data-testid="initiator-empty"]').exists()).toBe(false)
 	})
 
 	it('fills the projection from a bare requester uuid on first render', async () => {

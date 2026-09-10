@@ -532,28 +532,31 @@ alone is the subtitle.
 - **WHEN** `CaseDetail` sets it to identifier, case type and assignee
 - **THEN** the subtitle SHALL read 2026-0015, Omgevingsvergunning, Jan de Vries
 
-### Requirement: A breadcrumb leads back to the list (REQ-CDV-15)
+### Requirement: The case page carries no breadcrumb (REQ-CDV-15)
 
-You go back to the case list from the case without the menu. `CaseDetail`
-SHALL declare `breadcrumbs` with Cases (route `Cases`) followed by the case
-title, and the page SHALL render them through `CnBreadcrumbs` above the
-title. The last crumb SHALL be the current page and SHALL not be a link.
+The case page SHALL NOT render a breadcrumb trail. The way back to the case
+list is the app menu, which every other detail page in this app uses.
 
-#### Scenario: Cases is one click away
-@e2e tests/e2e/case-header.spec.ts
+This requirement used to say the opposite: `CaseDetail` declared a trail of
+Cases followed by the case title, rendered through `CnBreadcrumbs` above the
+title. It was withdrawn because the trail's LAST crumb was the case title,
+rendered one line below the page header that already printed that title, so
+the page read `Cases > Dakkapel Kerkstraat 12` directly under
+`Dakkapel Kerkstraat 12`. A trail whose final segment repeats the heading
+beside it states a location the reader is already looking at, and it cost the
+top of the page a row that the content below it needed.
 
-- **GIVEN** the handler is on a case page
-- **WHEN** they click Cases in the breadcrumb
-- **THEN** the Cases page SHALL open
-- **AND** the case list SHALL keep the lens it had before
+It is stated as a requirement rather than simply deleted so the absence is
+legible: without it the next reader finds the `_breadcrumbsNote` in the
+manifest, reads it as an oversight, and adds the trail back.
 
-#### Scenario: The current crumb is not a link
+#### Scenario: No trail is rendered
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case titled Aanbouw Beethovenlaan 8
 - **WHEN** the handler opens the case page
-- **THEN** the breadcrumb SHALL read Cases, Aanbouw Beethovenlaan 8
-- **AND** the last crumb SHALL have `aria-current="page"` and no `href`
+- **THEN** the page SHALL render no breadcrumb trail
+- **AND** the case title SHALL appear once above the fold, not twice
 
 ### Requirement: The case shows its step (REQ-CDV-13)
 

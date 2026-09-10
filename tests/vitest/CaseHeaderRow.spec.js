@@ -29,28 +29,6 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 			return h('span', { class: `badge badge--${this.variant}` }, this.label)
 		},
 	}),
-	CnBreadcrumbs: defineComponent({
-		name: 'CnBreadcrumbs',
-		props: ['crumbs', 'ariaLabel'],
-		render() {
-			return h(
-				'nav',
-				this.crumbs.map((crumb, index) =>
-					h(
-						'a',
-						{
-							class: 'crumb',
-							'aria-current':
-								index === this.crumbs.length - 1
-									? 'page'
-									: undefined,
-						},
-						crumb.label,
-					),
-				),
-			)
-		},
-	}),
 }))
 
 vi.mock('../../src/store/store.js', () => ({
@@ -73,10 +51,6 @@ const WIDGET = {
 	id: 'case-header',
 	type: 'custom',
 	props: {
-		breadcrumbs: [
-			{ label: 'Cases', route: 'Cases', icon: 'FolderAccountOutline' },
-			{ field: 'title' },
-		],
 		thresholds: { warn: 14, danger: 5 },
 	},
 }
@@ -206,31 +180,18 @@ describe('CaseHeaderRow', () => {
 		)
 	})
 
-	it('trails Cases then the case title, the last crumb unlinked', async () => {
+	it('renders no breadcrumb trail at all', async () => {
+		// The trail's LAST crumb was the case title, one line below the page
+		// header that already printed it: a repeat, not a location. It is gone,
+		// and this asserts the absence because the removal is a decision. The
+		// way back to the list is the app menu.
 		const wrapper = await mountRow({
 			title: 'Aanbouw Beethovenlaan 8',
 			status: 'status-1',
 		})
-		const crumbs = wrapper.findAll('.crumb')
-		expect(crumbs).toHaveLength(2)
-		expect(crumbs[0].text()).toBe('Cases')
-		expect(crumbs[1].text()).toBe('Aanbouw Beethovenlaan 8')
-		expect(crumbs[1].attributes('aria-current')).toBe('page')
-		expect(wrapper.vm.crumbs[0].to).toEqual({ name: 'Cases', query: {} })
-		expect(wrapper.vm.crumbs[1].to).toBeUndefined()
-	})
-
-	it('carries the query the case route had back to the list', async () => {
-		// The Cases lenses are chip state, not a query parameter, so today
-		// there is usually nothing to carry. This is what stops the crumb
-		// dropping a search or a page number the day one lands on the URL.
-		const wrapper = await mountRow(
-			{ title: 'Aanbouw Beethovenlaan 8', status: 'status-1' },
-			{ lens: 'mine', page: '3' },
+		expect(wrapper.findAll('.crumb')).toHaveLength(0)
+		expect(wrapper.find('[data-testid="case-header-breadcrumbs"]').exists()).toBe(
+			false,
 		)
-		expect(wrapper.vm.crumbs[0].to).toEqual({
-			name: 'Cases',
-			query: { lens: 'mine', page: '3' },
-		})
 	})
 })
