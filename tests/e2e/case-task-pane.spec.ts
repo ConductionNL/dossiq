@@ -480,7 +480,7 @@ test.describe('Case detail — the task pane', () => {
 		// clocks, which is the whole reason for carrying them here.
 		await expect(
 			card.locator('[data-testid="task-case-card-identifier"]'),
-		).toContainText(RUN_PREFIX);
+		).toContainText(RUN_PREFIX)
 		await expect(
 			card.locator('[data-testid="task-case-card-handler"]'),
 		).toHaveText(LINK_CASE_HANDLER)
@@ -505,7 +505,9 @@ test.describe('Case detail — the task pane', () => {
 		const data = page.locator('[data-testid="task-case-card"] >> nth=0')
 		await expect(data).toBeVisible()
 		await expect(
-			page.locator('.cn-object-data-widget').getByText('Case', { exact: true }),
+			page
+				.locator('.cn-object-data-widget')
+				.getByText('Case', { exact: true }),
 		).toHaveCount(0)
 	})
 

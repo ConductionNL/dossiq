@@ -225,9 +225,7 @@ describe('the task-case widget on TaskDetail', () => {
 		const card = widget('TaskDetail', 'task-case')
 		expect(card).toBeDefined()
 		expect(card.type).toBe('custom')
-		expect(page('TaskDetail').slots['widget-task-case']).toBe(
-			'TaskCaseCard',
-		)
+		expect(page('TaskDetail').slots['widget-task-case']).toBe('TaskCaseCard')
 		// A `custom` widget with no slot entry renders nothing and says
 		// nothing, on this path exactly as on the tab path.
 		expect(page('TaskDetail').slots['widget-task-waiting-case']).toBe(
@@ -268,7 +266,9 @@ describe('the task-case widget on TaskDetail', () => {
 		// Below the task data, and beside each other rather than stacked.
 		expect(item('task-notes').gridY).toBeGreaterThan(item('task-data').gridY)
 		expect(item('task-calendar').gridY).toBe(item('task-notes').gridY)
-		expect(item('task-notes').gridWidth + item('task-calendar').gridWidth).toBe(12)
+		expect(item('task-notes').gridWidth + item('task-calendar').gridWidth).toBe(
+			12,
+		)
 		// These two DO draw a title: unlike the case card they render their
 		// own empty state, so a titled empty box is the correct affordance.
 		expect(item('task-notes').showTitle).toBe(true)

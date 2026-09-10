@@ -41,7 +41,7 @@
 		<div class="task-case-card__head">
 			<div class="task-case-card__identity">
 				<span
-v-if="identifier"
+					v-if="identifier"
 					class="task-case-card__identifier"
 					data-testid="task-case-card-identifier">
 					{{ identifier }}
@@ -54,7 +54,7 @@ v-if="identifier"
 				</router-link>
 			</div>
 			<CnStatusBadge
-v-if="statusLabel"
+				v-if="statusLabel"
 				:label="statusLabel"
 				size="small"
 				data-testid="task-case-card-status" />
@@ -65,7 +65,9 @@ v-if="statusLabel"
 				<dt class="task-case-card__label">
 					{{ fact.label }}
 				</dt>
-				<dd class="task-case-card__value" :data-testid="`task-case-card-${fact.key}`">
+				<dd
+					class="task-case-card__value"
+					:data-testid="`task-case-card-${fact.key}`">
 					{{ fact.value }}
 				</dd>
 			</div>
@@ -189,9 +191,21 @@ export default {
 		 */
 		facts() {
 			const rows = [
-				{ key: 'type', label: t('dossiq', 'Case type'), value: this.caseTypeLabel },
-				{ key: 'handler', label: t('dossiq', 'Handler'), value: this.handler },
-				{ key: 'deadline', label: t('dossiq', 'Case deadline'), value: this.deadline },
+				{
+					key: 'type',
+					label: t('dossiq', 'Case type'),
+					value: this.caseTypeLabel,
+				},
+				{
+					key: 'handler',
+					label: t('dossiq', 'Handler'),
+					value: this.handler,
+				},
+				{
+					key: 'deadline',
+					label: t('dossiq', 'Case deadline'),
+					value: this.deadline,
+				},
 			]
 			return rows.filter((row) => row.value !== '')
 		},
@@ -312,12 +326,19 @@ export default {
 				return
 			}
 			try {
-				this.caseObject = (await this.objectStore.fetchObject('case', caseId)) || null
+				this.caseObject =
+					(await this.objectStore.fetchObject('case', caseId)) || null
 			} catch {
 				this.caseObject = null
 			}
-			this.caseTypeLabel = await this.labelOf('caseType', this.caseObject?.caseType)
-			this.statusLabel = await this.labelOf('statusType', this.caseObject?.status)
+			this.caseTypeLabel = await this.labelOf(
+				'caseType',
+				this.caseObject?.caseType,
+			)
+			this.statusLabel = await this.labelOf(
+				'statusType',
+				this.caseObject?.status,
+			)
 		},
 
 		/**

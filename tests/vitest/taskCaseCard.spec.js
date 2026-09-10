@@ -132,16 +132,20 @@ describe('TaskCaseCard', () => {
 
 		const wrapper = await mountCard({ objectId: 'task-1' })
 
-		expect(wrapper.find('[data-testid="task-case-card-identifier"]').text())
-			.toBe('ZAAK-2026-0114')
+		expect(
+			wrapper.find('[data-testid="task-case-card-identifier"]').text(),
+		).toBe('ZAAK-2026-0114')
 		// Resolved, not the raw uuid. A "Case type: ct-1" row is the failure
 		// this card exists to prevent.
-		expect(wrapper.find('[data-testid="task-case-card-type"]').text())
-			.toBe('Objection')
-		expect(wrapper.find('[data-testid="task-case-card-status"]').text())
-			.toBe('Under review')
-		expect(wrapper.find('[data-testid="task-case-card-handler"]').text())
-			.toBe('k.dijkstra')
+		expect(wrapper.find('[data-testid="task-case-card-type"]').text()).toBe(
+			'Objection',
+		)
+		expect(wrapper.find('[data-testid="task-case-card-status"]').text()).toBe(
+			'Under review',
+		)
+		expect(wrapper.find('[data-testid="task-case-card-handler"]').text()).toBe(
+			'k.dijkstra',
+		)
 	})
 
 	it('omits a fact it cannot read instead of showing a blank row', async () => {
@@ -156,12 +160,15 @@ describe('TaskCaseCard', () => {
 
 		// The link still renders. The facts do not, and neither does the
 		// definition list that would otherwise be empty.
-		expect(wrapper.find('[data-testid="task-case-link-link"]').text())
-			.toBe('Bare case')
-		expect(wrapper.find('[data-testid="task-case-card-type"]').exists())
-			.toBe(false)
-		expect(wrapper.find('[data-testid="task-case-card-handler"]').exists())
-			.toBe(false)
+		expect(wrapper.find('[data-testid="task-case-link-link"]').text()).toBe(
+			'Bare case',
+		)
+		expect(wrapper.find('[data-testid="task-case-card-type"]').exists()).toBe(
+			false,
+		)
+		expect(wrapper.find('[data-testid="task-case-card-handler"]').exists()).toBe(
+			false,
+		)
 		expect(wrapper.find('.task-case-card__facts').exists()).toBe(false)
 	})
 
@@ -169,14 +176,19 @@ describe('TaskCaseCard', () => {
 		rows = {
 			caseTask: { 'task-1': { id: 'task-1', case: 'case-9' } },
 			case: {
-				'case-9': { id: 'case-9', title: 'Planned only', plannedEndDate: '2026-12-24' },
+				'case-9': {
+					id: 'case-9',
+					title: 'Planned only',
+					plannedEndDate: '2026-12-24',
+				},
 			},
 		}
 
 		const wrapper = await mountCard({ objectId: 'task-1' })
 
-		expect(wrapper.find('[data-testid="task-case-card-deadline"]').text())
-			.toBe(new Date('2026-12-24').toLocaleDateString())
+		expect(wrapper.find('[data-testid="task-case-card-deadline"]').text()).toBe(
+			new Date('2026-12-24').toLocaleDateString(),
+		)
 	})
 
 	it('reads an expanded case reference and never re-reads a task the page handed over', async () => {
