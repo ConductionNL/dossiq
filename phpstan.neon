@@ -15,6 +15,7 @@ includes:
     - vendor/conduction/hydra-gates/quality-config/phpstan-base.neon
 
 parameters:
+
     # App-specific only. The base already sets level, paths, bootstrapFiles,
     # excludePaths, scanDirectories and every fleet-wide ignore.
     scanDirectories:
@@ -75,6 +76,24 @@ parameters:
         DataResponseType: 'array|int|float|string|bool|object|null|\stdClass|\JsonSerializable'
 
     ignoreErrors:
+        # CaseFieldWriter probes a DUCK-TYPED OpenRegister object service for
+        # the seams it offers (`patchObject`, else `find` + `saveObject`),
+        # because OpenRegister is an optional runtime dependency whose service
+        # this app cannot type-hint. phpstan narrows an `object` parameter to
+        # `stdClass` the moment `method_exists()` is called on it, and then
+        # reports every probed call as unknown on stdClass.
+        #
+        # Fixing at source was tried and does not work: `mixed` narrows the
+        # same way, and an `is_object()` guard makes phpstan call THAT
+        # comparison always-false, turning five errors into six. The code is
+        # correct and the narrowing is the false positive, which is the case
+        # this file's header reserves a documented ignore for.
+        -
+            message: '#Unknown parameter \$(data|objectId|register|schema) in call to method stdClass::patchObject\(\)#'
+            path: lib/Service/CaseFieldWriter.php
+        -
+            message: '#Call to an undefined method object::saveObject\(\)#'
+            path: lib/Service/CaseFieldWriter.php
         # ApprovalStepNotificationListener dispatches on ANOTHER APP's event classes.
         #
         # It compares get_class($event) against

@@ -175,7 +175,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 * that was already completed. Each of those is an ordinary thing to do and
 	 * must resume nothing.
 	 *
-	 * @param ObjectUpdatedEvent $event The update.
+	 * @param TaskTerminalEvent $event The engine's terminal event.
 	 *
 	 * @return array|null The task, or null when nothing should be resumed.
 	 *
