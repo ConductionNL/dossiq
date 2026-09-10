@@ -31,21 +31,43 @@ criteria under a task are plain bullets.
   `layout` cell.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`
   - `npm run check:manifest` exits 0
-- [ ] 2.2 [blocked: nextcloud-vue a `tabs` entry that renders several widgets
-  as stacked sections] Fold `case-notes` and `case-email` into the
-  Communication tab as sections per design D4. Until it lands they keep
-  their own tabs and this task stays open.
+- [x] 2.2 CLOSED, not folded, because both halves of the premise moved.
+  THE BLOCKER IS GONE: a tab does hold several widgets as stacked sections
+  now, through the `case-sections` container type registered in
+  `src/components/case/registerCaseSections.js` over the library's own
+  `registerDashboardWidget(..., container: true)` seam. `case-communication`
+  is already one of those sections, under Communication in the People tab
+  (`src/manifest.json` widget `case-people-panel`), and
+  `tests/e2e/helpers/case-panels.ts` maps `communication` to it. THE FOLD
+  ITSELF NO LONGER APPLIES: `case-notes` and `case-email` are not body tabs
+  waiting to be folded, they are sidebar tabs. `page-topology-cleanup` moved
+  them there on the rule that one log in two places is duplication rather
+  than coverage, which is the opposite decision to design D4's. Folding them
+  back into the body would restore the duplication that change removed.
+  Verified against `@conduction/nextcloud-vue` 2.42.0 as installed, not
+  against its changelog.
 
 ## 3. Log contact
 
 - [x] 3.1 `src/manifest.json` page `CaseDetail`: header action `log-contact`
   per design D3 with `props: {case: "@objectId"}`.
   - `@spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md`
-- [ ] 3.2 [blocked: nextcloud-vue `CnObjectListWidget` and `CnDetailPage`
-  passing a filter or `props` into the create form as initial data (triage
-  #6, Tier D05)] Interim: 3.1 passes the case in `props`; the e2e asserts
-  the saved object's `case`, not the prefilled field. When the change lands,
-  drop the interim note and enable the prefill scenario.
+- [x] 3.2 UNBLOCKED, and 3.1 was never an interim: passing `props` into the
+  create form as initial data is the shipped mechanism, not a stand-in for
+  it. `CnActionButtons.formInitialValues` resolves an `open-form` action's
+  `props` through the same filter-token grammar the filters use, and hands
+  the result to `CnFormDialog` as `initial-data` (and to
+  `CnAdvancedFormDialog` as `initial-values`). Read out of the installed
+  `@conduction/nextcloud-vue` 2.42.0 tree, and present in 2.41.0 as well, so
+  this task has been closable for longer than the version bump.
+  What is NOT shipped, and is not wanted, is the case rendered as a form
+  field. REQ-KWZ-13 names the five fields the form asks for and says the
+  case is PASSED, so a sixth field holding a value nobody may change would
+  contradict the requirement it was written under. The spec's prefill
+  scenario asserted that field, so it is rewritten to assert what the
+  requirement actually promises: the form never asks which case, and the
+  saved contact carries it anyway. `tests/e2e/case-communication.spec.ts`
+  covers it by adding `case` to the fields the form must not render.
 - [x] 3.3 `l10n/en.json` and `l10n/nl.json`: Communication, Log contact,
   Channel, Direction, Summary, "No contact logged on this case yet".
 

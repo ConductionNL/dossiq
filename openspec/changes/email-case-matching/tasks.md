@@ -89,3 +89,11 @@ Still phase 5 only. `CaseEmailMatchService.php` and `CaseEmailMatchJob.php` do n
 never have: `git log --all` on both paths is empty, so this is unbuilt rather than removed.
 Nothing under `lib/Service/Email/` or `lib/BackgroundJob/` matches. The design holds and the
 work is unstarted; this is backlog, not in flight.
+
+## Re-verified 2026-09-10
+
+Unchanged, and one thing worth adding for whoever picks it up: **the dependency is in place.**
+Phase 2 links through OpenRegister's `EmailLinkService`, and
+`ConductionNL/openregister` carries `lib/Service/EmailLinkService.php`. So phases 1 to 4 are
+unstarted rather than blocked. The one part that cannot be finished at a desk is the phase 4
+dev-environment smoke, which needs a live instance with the mail app and a real message.
