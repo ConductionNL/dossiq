@@ -15,24 +15,39 @@ Each moves from `useObjectStore` over `caseTask` to `useEngineTaskStore`.
 Each gets its unit test updated and its e2e assertion checked BEFORE the next
 one starts.
 
-- [ ] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
+- [x] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
       `objectStore.fetchCollection('caseTask', openTasksQuery(...))`. Becomes
       `engineTasks.openForCase(caseId)`, which already filters terminal rows.
       Its lifecycle buttons move from the register's transitions to the
       engine's verbs (`invoke(uuid, 'complete')`).
-- [ ] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
+- [x] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
       same three states the engine calls terminal. Delete it and use
       `isTerminal` from the engine store, rather than keeping a second copy
       that can drift.
-- [ ] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
-- [ ] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
+- [x] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
+- [x] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
       unlike the case surfaces: this one IS the reader's own list.
-- [ ] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
+- [x] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
       which the engine's inbox filter already supports, so dossiq stops
       deriving overdue-ness itself.
-- [ ] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
+- [x] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
       `src/components/tasks/TaskCaseCard.vue` — both read a task to find its
       case. The engine's `objectUuid` IS the case, so these get simpler.
+
+### Section 1 was already green
+
+Measured 2026-09-10: all six surfaces import `useEngineTaskStore` and no
+`fetchCollection('caseTask', ...)` survives in `src/`. The boxes were never
+ticked, not the work left undone. The two surfaces that still import
+`useObjectStore` (`TaskWaitingCaseSection`, `TaskCaseCard`) use it for the
+CASE object, which is correct: the case is still an OpenRegister object.
+
+One `caseTask` WRITE did survive the sweep, in a place nothing read:
+`workflow.js`'s `dispatchCreateTaskAction`. A task written there succeeded,
+the transition reported success, and the task was invisible to every one of
+the six surfaces above -- an object write producing a task nobody sees and
+no error anywhere. It now writes the engine and THROWS on refusal, because
+`dispatchActions` records a per-action result the user is shown.
 
 ## 2. The two pages
 

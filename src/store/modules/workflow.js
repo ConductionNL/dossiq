@@ -10,6 +10,7 @@ import { generateUrl } from '@nextcloud/router'
  */
 import { defineStore } from 'pinia'
 import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
+import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
 /**
@@ -780,15 +781,28 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		async dispatchCreateTaskAction(action, caseData) {
-			const objectStore = useObjectStore()
-			await objectStore.saveObject('caseTask', {
+			// The ENGINE, not the register. A task this action creates is
+			// the same kind of thing every other dossiq surface now reads,
+			// and one written as a `caseTask` object would be invisible to
+			// all of them: the case pane, the widgets and the work queue
+			// all ask the engine.
+			const engineTasks = useEngineTaskStore()
+			const created = await engineTasks.create({
 				title: action.title || t('dossiq', 'New task'),
 				description: action.description || '',
 				case: caseData.id,
 				status: 'available',
 				priority: action.priority || 'normal',
-				assignee: action.assignee || null,
+				assignee: action.assignee || '',
 			})
+
+			if (created === null) {
+				// LOUD. `dispatchActions` records a per-action result and
+				// the caller shows it, so a refused write that returned
+				// quietly would be reported as a successful transition
+				// with a task nobody ever sees.
+				throw new Error(engineTasks.error || 'The task engine refused the task')
+			}
 		},
 
 		/**
