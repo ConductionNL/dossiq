@@ -222,7 +222,7 @@ the matching READS on `caseTask`.
       register and will fail outright. Two further e2e specs navigate to a
       task surface without naming the slug and are not in 5.1:
       `spec-coverage/task-management.spec.ts` and `docs-screenshots.spec.ts`.
-- [ ] 6.10 🔴 48 `@spec` citations ALREADY DANGLE, independent of this change:
+- [x] 6.10 🔴 48 `@spec` citations ALREADY DANGLED, independent of this change:
       they name `openspec/changes/task-on-the-case/…`, which was archived on
       2026-09-08. They live in exactly the files this change touches
       (`CaseTaskPane.vue` 18, `TaskCaseCard.vue` 15, `registry.js` 4,
