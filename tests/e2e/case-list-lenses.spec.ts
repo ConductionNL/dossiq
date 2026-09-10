@@ -220,22 +220,27 @@ function row(page: Page, key: string): Locator {
  * @param page The page.
  */
 async function narrowToThisRun(page: Page): Promise<void> {
-	// 🔴 THE FACET'S ACCESSIBLE NAME CARRIES ITS COUNT. A sidebar entry with
-	// matches renders as "<case type> <n>", so the accessible name of this
-	// run's type is one character group longer than the stored title, and
-	// `exact: true` on the title alone matched nothing. A type with NO matches
-	// renders without the count, so the suffix is optional rather than
-	// required.
+	// 🔴 ANCHOR ON THE FIXTURE'S TITLE, NEVER ON A REBUILT ONE.
 	//
-	// 🔴 THE TITLE IS THE FIXTURE'S, NOT A REBUILT ONE, AND THAT IS THE WHOLE
-	// FIX. This used to anchor on `${RUN_PREFIX} Vergunning` and absorb the
-	// trailing digits as the count. They are not only the count: the stored
-	// title ENDS in a per-call suffix, so `… Vergunning 1` and `… Vergunning 2`
-	// both matched and Playwright refused the ambiguity. One spec file per
-	// worker hid it; a second one sharing the worker seeded the second machine
-	// and every lens test failed inside this helper rather than on its own
-	// assertion. Anchored on the exact title, the run's own type is the only
-	// button that can match.
+	// This used to anchor on `${RUN_PREFIX} Vergunning` with the trailing
+	// digits optional, on the reading that they were the facet's match count.
+	// They are not. `seedStateMachine` appends a per-call suffix to the
+	// caseType TITLE — deliberately, because `RUN_PREFIX` is per-process and a
+	// second call in the same worker would otherwise reuse the first call's
+	// identifier — so the stored titles are `… Vergunning 1` and
+	// `… Vergunning 2`, the regex absorbed both, and Playwright refused the
+	// ambiguity.
+	//
+	// One spec file per worker hid it. A second file sharing the worker seeded
+	// the second machine, and from then on every lens test failed inside this
+	// helper rather than on its own assertion.
+	//
+	// ⚠️ THE COUNT SUFFIX IS TOLERANCE, NOT A DESCRIPTION. Measured in a real
+	// browser on 2026-09-10, `.cn-folder-tree__item` renders the bare title and
+	// nothing else: `textContent` of the "Cultuursubsidie 2026" facet is
+	// exactly that, digits and all, with no count node anywhere in the button.
+	// The optional group stays only so a build that DOES render a count cannot
+	// break this, and it is safe now that the exact title anchors the match.
 	const facet = page.getByRole('button', {
 		name: new RegExp(
 			`^${caseTypeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
