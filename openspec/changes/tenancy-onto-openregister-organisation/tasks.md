@@ -18,7 +18,9 @@ is the accurate signal. Do not silence it with a placeholder capability.
   `QuotaEnforcementMiddlewareTest.php`, `MandateValidationMiddlewareTest.php`
   and `TenantIsolationMiddlewareTest.php` are all in `tests/Unit/Middleware/`.
   The three the proposal named as untested are the first three of those.
-- [ ] 2 **Map.** For each of the seven schemas, what OpenRegister's
+- [x] 2 **Map.** Drafted 2026-09-10, see the section at the end of this
+      file. Four decisions came out of it (2a-2d) and they block step 4.
+      For each of the seven schemas, what OpenRegister's
   `Organisation` already covers and what it does not. Not started. This is
   analysis and it destroys nothing, so it is the step to take next.
   `tenantMandate` and `tenantOnboardingTask` are the two the proposal expects
@@ -46,3 +48,68 @@ All seven tenant schemas are still declared: `tenant`, `tenantConfiguration`,
 `TenantClaimValidationMiddleware`, `TenantIsolationMiddleware`, plus the
 quota and mandate pair registered beside them). Nothing has moved onto
 `Organisation`.
+
+## Step 2, the map, drafted 2026-09-10
+
+Task 2 asked "for each of the seven schemas, what OpenRegister's Organisation
+carries". Here it is, read off `openregister/lib/Db/Organisation.php` (44
+columns) against each schema's properties.
+
+**`tenant` maps almost completely, once renames are allowed.** A name-level
+comparison scores it 2 of 9, which is why this needed doing by hand:
+
+| tenant | Organisation | Note |
+|---|---|---|
+| `slug` | `slug` | 1:1 |
+| `status` | `status` | 1:1, but the value sets need comparing |
+| `displayName` | `name` | rename |
+| `legalName` | `description` or `name` | **decision needed** |
+| `kvkNumber` | `kvk` | rename. `Organisation` also has `rsin`, `oin` and `tooi`, which dossiq lacks |
+| `createdAt` | `created` | rename |
+| `activatedAt` | `provisionedAt` | rename, and the semantics match |
+| `terminatedAt` | `deprovisionedAt` | rename, and `mergedAt` / `suspendedAt` are extra |
+| `tier` | — | **no column. Decision needed** |
+
+**The six satellites do NOT map, and that is the real finding.**
+
+| Schema | Organisation offers | Verdict |
+|---|---|---|
+| `tenantUser` (7 props) | `users`, `groups`, `owner` as JSON lists | Membership survives. `role`, `mfaEnabled`, `eherkenningLevel`, `joinedAt`, `lastActiveAt` have **no home** |
+| `tenantQuota` (7 props) | `storageQuota`, `bandwidthQuota`, `requestQuota` as typed columns | A generic `quotaType` row does not fit three fixed columns. `currentUsage`, `resetAt`, `softLimitWarningPercent`, `enforcement` have **no home** |
+| `tenantConfiguration` (8) | — | **Nothing.** branding, domain, locale, timezone, dateFormat, currency, features |
+| `tenantMandate` (6) | `authorization` (json) | Possibly, but mandate matrices and signed documents are not an authorization rule set |
+| `tenantBillingEvent` (7) | — | **Nothing.** OpenRegister has `TenantUsage`, which is metering, not billing events |
+| `tenantOnboardingTask` (6) | — | **Nothing here, but see below** |
+
+**`tenantOnboardingTask` belongs to the task cluster, not this one.** It is a
+step, a completedBy, a completedAt and a blockedReason: that is a task, and
+OpenRegister's `Task` carries all four (`state`, `completed_by`,
+`completed_at`, `blocked_reason`). Moving it here would mean inventing a home
+on `Organisation` for something the fleet-generic task already models. It
+should be re-filed under the caseTask migration.
+
+## What this step establishes
+
+The proposal's framing was "dossiq runs a second, parallel tenancy model
+beside the one OpenRegister already owns". That is true of `tenant` itself
+and **not** true of five of its six satellites: OpenRegister has no
+configuration store, no billing events, no per-membership role or assurance
+level, and no generic quota rows.
+
+So this is not one migration. It is:
+
+- **`tenant` onto `Organisation`** — a real, mostly mechanical rename job.
+- **`tenantOnboardingTask` onto `Task`** — re-filed to the task cluster.
+- **Five satellites with nowhere to go** — either OpenRegister grows the
+  fields, or they stay in dossiq as satellites of an `Organisation` reference
+  instead of a `tenant` reference, or the capability is dropped.
+
+The third of those is a product decision and blocks step 4 (Move). Step 3
+(pinning tests) is already done and does not depend on it.
+
+- [ ] 2a Decide `legalName` (own column on Organisation, or fold into
+      `description`) and `tier` (own column, or derive from quota).
+- [ ] 2b Decide the five satellites: grow OpenRegister, re-point at
+      `Organisation`, or drop.
+- [ ] 2c Re-file `tenantOnboardingTask` under the caseTask cluster.
+- [ ] 2d Compare the `status` value sets before assuming the 1:1.
