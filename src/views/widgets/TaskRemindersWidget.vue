@@ -20,9 +20,8 @@
 
 <script>
 import { CnDataTable } from '@conduction/nextcloud-vue'
-import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
-import { useObjectStore } from '../../store/modules/object.js'
+import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { getTaskDueReminders } from '../../utils/dashboardHelpers.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
@@ -64,8 +63,8 @@ export default {
 
 	computed: {
 		/** @spec openspec/specs/signalering-widgets/spec.md */
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/**
@@ -146,17 +145,15 @@ export default {
 		async fetchData() {
 			this.loading = true
 			try {
-				const currentUser = getCurrentUser()?.uid || ''
 				// Bare field names, not `_filters[x]`: that form is inert and this
 				// widget was reading every user's tasks. See MyTasksWidget.
-				const tasks = await this.objectStore.fetchCollection('caseTask', {
-					assignee: currentUser,
-					isTerminalStatus: false,
-					_limit: 100,
+				// The reader's own, open ones. The engine keeps the terminal
+				// split server-side.
+				const tasks = await this.engineTasks.list({
+					scope: 'assigned',
+					limit: 100,
 				})
-				const activeTasks = (tasks || []).filter(
-					(t) => t.status === 'available' || t.status === 'active',
-				)
+				const activeTasks = (tasks || []).filter((t) => !isTerminal(t))
 				this.reminders = getTaskDueReminders(activeTasks)
 			} catch (err) {
 				console.error('[TaskRemindersWidget] Failed to fetch data:', err)

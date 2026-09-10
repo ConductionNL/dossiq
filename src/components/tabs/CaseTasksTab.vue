@@ -73,7 +73,7 @@
 <script>
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { useObjectStore } from '../../store/modules/object.js'
+import { useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
 
@@ -102,8 +102,8 @@ export default {
 	},
 
 	computed: {
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		resolvedCaseId() {
@@ -156,9 +156,14 @@ export default {
 			}
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('caseTask', {
-					case: this.resolvedCaseId,
-					_limit: 50,
+				// The case IS the object, and `scope: all` because this tab
+				// lists the CASE's tasks, not the reader's. No state filter:
+				// the header shows a completed/total count, so the closed ones
+				// have to be in the list.
+				const results = await this.engineTasks.list({
+					objectUuid: this.resolvedCaseId,
+					scope: 'all',
+					limit: 50,
 				})
 				this.tasks = results || []
 			} catch (err) {

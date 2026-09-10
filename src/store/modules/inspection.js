@@ -5,6 +5,7 @@
  * and follow-up task creation for VTH supervision cases.
  */
 import { defineStore } from 'pinia'
+import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
 export const useInspectionStore = defineStore('inspection', {
@@ -297,12 +298,11 @@ export const useInspectionStore = defineStore('inspection', {
 		 */
 		async createFollowUpTask(caseId, failedCount, reportId) {
 			try {
-				const objectStore = useObjectStore()
-				return await objectStore.saveObject('caseTask', {
+				return await useEngineTaskStore().create({
 					case: caseId,
 					title: `Opvolging vereist: ${failedCount} afwijkingen geconstateerd`,
 					description: `Inspectierapport bevat ${failedCount} niet-conforme punten. Beoordeel de afwijkingen en plan opvolging.`,
-					status: 'open',
+					status: 'available',
 					relatedObject: reportId,
 				})
 			} catch (error) {

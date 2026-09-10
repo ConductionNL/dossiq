@@ -63,6 +63,10 @@ vi.mock('../../src/store/store.js', () => ({
 }))
 
 const fetchCollection = vi.fn()
+vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	useEngineTaskStore: () => ({ list: fetchCollection, error: null }),
+}))
 vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => ({ fetchCollection }),
 }))
@@ -129,11 +133,14 @@ describe('CaseTasksTab', () => {
 			{ id: 't2', title: 'File the decision', status: 'completed' },
 		])
 		const { wrapper } = await mountTab()
-		expect(fetchCollection).toHaveBeenCalledWith('caseTask', {
-			case: 'case-1',
-			_limit: 50,
+		// The case IS the object, and `scope: all` because this tab lists the
+		// CASE's tasks, not the reader's. No state filter: the header shows a
+		// completed/total count, so the closed ones have to be in the list.
+		expect(fetchCollection).toHaveBeenCalledWith({
+			objectUuid: 'case-1',
+			scope: 'all',
+			limit: 50,
 		})
-		expect(fetchCollection.mock.calls[0][1]).not.toHaveProperty('_filters')
 		expect(wrapper.findAll('.case-tab__item')).toHaveLength(2)
 		expect(wrapper.find('.case-tab__count').text()).toBe('(1/2)')
 	})
