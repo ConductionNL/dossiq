@@ -54,10 +54,10 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 // The inline task pane on the case page (task-on-the-case A06).
-// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+// @spec openspec/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // The way back from a task to its case (task-on-the-case).
-// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+// @spec openspec/specs/task-management/spec.md
 import TaskCaseCard from './components/tasks/TaskCaseCard.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -384,7 +384,7 @@ const registry = {
 	// and logs nothing. So the registry key is the type the manifest names, which
 	// is the injection CnAppRoot provides and the shape the library documents for
 	// an app's own widget types.
-	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	// @spec openspec/specs/task-management/spec.md
 	'case-task-pane': {
 		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
 		kind: 'widget',
@@ -399,7 +399,7 @@ const registry = {
 	// `widget-<id>` slot for every grid item, and `page.slots` maps that slot
 	// name to this key. The pane could not use that path because it is a tab
 	// child, which has no grid item and therefore no slot.
-	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	// @spec openspec/specs/task-management/spec.md
 	TaskCaseCard: {
 		// @custom-widget-ratchet exclude a cross-object card rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also resolves the case's OWN caseType and status $refs, and has to render NOTHING for a task with no case, none of which a built-in widget can do
 		kind: 'widget',

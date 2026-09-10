@@ -19,7 +19,7 @@
  * key that answers it, the component identifier that key binds, the import
  * that binds that identifier to a path, and the file at that path.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import fs from 'fs'
