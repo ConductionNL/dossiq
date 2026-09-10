@@ -394,8 +394,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	}) => {
 		// The tabs card already draws the border, and the open tab already
 		// names the panel, so a widget card inside it repeats both: a second
-		// border, a "Data" heading under the "Data" tab, and a second Actions
-		// button under the strip's own.
+		// border around the fields and a "Data" heading under the "Data" tab.
 		//
 		// That heading was never a choice. `CnObjectDataWidget.title` carries a
 		// DEFAULT of "Data", so the `undefined` bare mode passed became the
@@ -403,6 +402,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// keeping the actions, which is what previously blocked it: the Save
 		// button for an inline edit lives in that same header, so hiding the
 		// header hid Save with it.
+		//
+		// So the panel keeps a header when there are controls in it. A control
+		// is not chrome, and a panel that silently cannot be saved is a worse
+		// outcome than a row of buttons.
 		//
 		// Asserted in a browser because it is chrome: jsdom computes no layout
 		// and a unit test can only see the props, not the card.
@@ -422,8 +425,77 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// widget that failed to mount.
 		await expect(panel).toContainText(/Case type|Zaaktype/, { timeout: 20_000 })
 
-		// No widget card of its own inside the panel.
-		await expect(panel.locator('.cn-widget-wrapper')).toHaveCount(0)
+		// No widget card of its own inside the panel — and "no card" is about
+		// what is DRAWN, not about which elements exist.
+		//
+		// This used to assert `.cn-widget-wrapper` had a count of zero, which
+		// asked for the wrong thing. That element is load-bearing:
+		// `CnObjectDataWidget` finds `.cn-widget-wrapper__content` with
+		// `closest()` to measure whether its field grid overflows and to
+		// observe the cell resizing, and nextcloud-vue's table and detail-page
+		// CSS size their content areas through the same node. Deleting it takes
+		// the whole-row clip and the "Show all N fields" affordance out
+		// silently, because a `closest()` that finds nothing returns null and
+		// the widget reads null as "nothing overflows" rather than as an error.
+		//
+		// So the contract is: the wrapper renders, and draws nothing. Asserted
+		// on computed style, which is the only place a border width is a real
+		// number, and which fails on a card whatever the class names are called
+		// that day.
+		const wrappers = panel.locator('.cn-widget-wrapper')
+		const wrapperCount = await wrappers.count()
+		expect(
+			wrapperCount,
+			'the data widget must still render its wrapper: it measures its own overflow against that node',
+		).toBeGreaterThan(0)
+
+		for (let i = 0; i < wrapperCount; i++) {
+			const chrome = await wrappers.nth(i).evaluate((el) => {
+				const card = getComputedStyle(el)
+				const content = el.querySelector(
+					':scope > .cn-widget-wrapper__content',
+				)
+				const inner = content ? getComputedStyle(content) : null
+				return {
+					border: [
+						card.borderTopWidth,
+						card.borderRightWidth,
+						card.borderBottomWidth,
+						card.borderLeftWidth,
+					],
+					background: card.backgroundColor,
+					padding: inner
+						? [
+							inner.paddingTop,
+							inner.paddingRight,
+							inner.paddingBottom,
+							inner.paddingLeft,
+						]
+						: null,
+					title:
+						el
+							.querySelector('.cn-widget-wrapper__title')
+							?.textContent?.trim() ?? null,
+				}
+			})
+
+			expect(
+				chrome.border,
+				'a widget in a tab panel draws no border of its own: the strip drew it',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.background,
+				'a widget in a tab panel paints no card behind itself',
+			).toBe('rgba(0, 0, 0, 0)')
+			expect(
+				chrome.padding,
+				'the panel supplies the inset, so the widget adds none of its own',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.title,
+				'the open tab already names the panel, so the widget prints no heading',
+			).toBeNull()
+		}
 
 		// And no second heading repeating the open tab's label. Scoped to the
 		// panel, because the tab itself says "Data" and is outside it.
