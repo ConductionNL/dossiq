@@ -60,6 +60,13 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskInbox
+ *
+ * `@uses` is not decoration. `beStrictAboutCoverageMetadata` makes a test RISKY
+ * when it executes a class this block does not name, and `failOnRisky` turns that
+ * into a red suite. No local run can show it: the check only fires with a
+ * coverage driver, and neither pcov nor xdebug is installed here.
+ *
+ * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
  */
 class EngineTaskInboxTest extends TestCase {
 
