@@ -145,6 +145,22 @@ The comparison section SHALL state, before any score:
 - **AND** it MUST say that every competitor column is unrated on those rows
 - **AND** those rows MUST show `unknown` for every competitor, never a guess
 
+#### Scenario: More than one round has added rows
+
+- **GIVEN** rows were added by two or more rounds, on different days
+- **WHEN** the panel reports them
+- **THEN** each row MUST carry the date of the round that added it
+- **AND** `rowsAddedOn` MUST be the most recent of those dates, not the only one
+- **AND** the panel MUST NOT state one date for rows added on several
+- **AND** the count it reports MUST cover every round, because the totals do
+
+#### Scenario: A new area is declared with rows in it
+
+- **GIVEN** a round adds an area for a capability the existing areas cannot hold
+- **WHEN** the data declares that area
+- **THEN** at least one row MUST be filed under it
+- **AND** the area MUST be appended, so the row numbering stays the render order
+
 #### Scenario: The panel says what the list is made of
 
 - **GIVEN** a reader opens the comparison

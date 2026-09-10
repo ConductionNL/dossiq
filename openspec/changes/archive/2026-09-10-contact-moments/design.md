@@ -78,6 +78,15 @@ tab holds the contact-moment list and Notes and Mail keep their tabs; the
 manifest edit that folds them in is one tab entry, recorded in tasks.md as
 blocked.
 
+**Resolved 2026-09-10, by retirement rather than by the fold.** A tab does
+hold several widgets as stacked sections now, through the `case-sections`
+container type. Notes and Mail are no longer body tabs to fold in:
+`page-topology-cleanup` moved both to the sidebar, because one log in two
+places is duplication rather than coverage. Folding them back would undo
+that. The Communication list is a section of the People tab beside Parties,
+which is the shape D4 was reaching for with the collections that are still
+body content. See tasks.md 2.2.
+
 ## Declarative-vs-imperative decision (ADR-031)
 
 | behaviour | path | reason |

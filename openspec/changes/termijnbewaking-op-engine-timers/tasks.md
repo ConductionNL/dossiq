@@ -40,6 +40,16 @@
 
 ## Phase 2: sibling engines (staged)
 
+> **Re-verified 2026-09-10 against `development`.** Phase 1 still holds and
+> phases 2 to 4 are untouched. All five jobs these phases exist to retire are
+> present in `lib/BackgroundJob/`: `WOODeadlineCheckJob.php`,
+> `BezwaarTermijnJob.php`, `DsoDeadlineJob.php`, `AdviceDeadlineJob.php` and
+> `BottleneckDetectionJob.php`, and all five are still registered in
+> `appinfo/info.xml`, so they are live cron and not dead machinery. Nothing
+> external blocks this: the OpenRegister timer seam phase 1 already uses is
+> the same one phases 2 and 3 need. It is unstarted, and it is the largest
+> single piece of unstarted work in this app's open changes.
+
 - [ ] 2.1 **WOO** — `WOODeadlineService` + `WOODeadlineCheckJob`: arm one `due`/`wettelijk` timer
       per Woo-verzoek (28d, verdaging +14d via `extend()`); the check job's threshold walk moves
       to the ladder; opschorting (zienswijze) onto suspend/resume. The Woo dwangsom regime

@@ -3798,7 +3798,6 @@ OC.L10N.register(
         "Totals over all {count} capabilities": "Totalen over alle {count} functies",
         "we did not find it": "we hebben het niet gevonden",
         "we have not read that system on this row": "we hebben dat systeem op deze regel niet gelezen",
-        "On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Op {date} hebben we {count} functies aan de lijst toegevoegd uit een latere leesronde. Onszelf hebben we erop beoordeeld. De andere {others} kolommen staan op Onbekend, want die producten hebben we niet tegen deze rijen gelezen, en een gegokt oordeel is erger dan een lege cel.",
         "we found part of it, and part is missing": "we vonden een deel, een deel ontbreekt",
         "we found the whole capability": "we vonden de hele functie",
         "We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.": "We vergeleken alleen open source software die we zelf konden installeren en draaien. Gesloten en gehoste producten staan niet in deze tabel. Dat ze ontbreken is geen oordeel over die producten.",
@@ -3881,7 +3880,8 @@ OC.L10N.register(
         "Archiving": "Archivering",
         "Timeline": "Tijdlijn",
         "Terms and payment": "Termijnen en betaling",
-        "No initiator has been recorded for this case.": "Er is geen initiator vastgelegd voor deze zaak."
+        "No initiator has been recorded for this case.": "Er is geen initiator vastgelegd voor deze zaak.",
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Latere leesrondes stelden vragen die de eerste ronde niet had bedacht. In totaal hebben we {count} functies aan de lijst toegevoegd, de laatste daarvan op {date}. Onszelf hebben we op elk van die rijen beoordeeld. De andere {others} kolommen staan op Onbekend, want die producten hebben we niet tegen deze rijen gelezen, en een gegokt oordeel is erger dan een lege cel."
     },
     "nplurals=2; plural=(n != 1);"
 )

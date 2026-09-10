@@ -352,10 +352,14 @@ test.describe('Case detail — the Communication tab', () => {
 			.getByRole('button', { name: /^(Create|Save|Aanmaken|Opslaan)$/ })
 			.click()
 
-		// The SAVED OBJECT, not the prefilled field. `props` seeding the case
-		// into the form is the interim while nextcloud-vue cannot pass initial
-		// data into a create form (tasks 3.2), so what is asserted here is the
-		// outcome that has to hold either way.
+		// THE SAVED OBJECT, and deliberately not a prefilled field. Seeding the
+		// case through the action's `props` is the shipped mechanism, not a
+		// stand-in for one: CnActionButtons resolves those props through the
+		// filter-token grammar and hands them to CnFormDialog as `initial-data`.
+		// REQ-KWZ-13 names the five fields the form asks for and says the case
+		// is PASSED, so there is no `case` input to read it back off, and the
+		// sibling test asserts that absence. The outcome is what can be
+		// asserted, and it is also the only thing that matters here.
 		let saved: any
 		await expect(async () => {
 			const rows = await listObjects(api, 'contactmoment', { _limit: '200' })
