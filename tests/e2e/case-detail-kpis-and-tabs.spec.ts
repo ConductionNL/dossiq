@@ -466,11 +466,11 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 					background: card.backgroundColor,
 					padding: inner
 						? [
-							inner.paddingTop,
-							inner.paddingRight,
-							inner.paddingBottom,
-							inner.paddingLeft,
-						]
+								inner.paddingTop,
+								inner.paddingRight,
+								inner.paddingBottom,
+								inner.paddingLeft,
+							]
 						: null,
 					title:
 						el
