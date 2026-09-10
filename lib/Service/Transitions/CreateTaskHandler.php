@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\AssigneeResolver;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
@@ -51,13 +52,15 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister + config
-	 * @param AssigneeResolver $assignees       The app's one answer to who work goes to
-	 * @param LoggerInterface  $logger          Logger
+	 * @param SettingsService   $settingsService Bridge to OpenRegister + config
+	 * @param AssigneeResolver  $assignees       The app's one answer to who work goes to
+	 * @param EngineTaskGateway $engineTasks     The dual-run seam onto OpenRegister's task engine
+	 * @param LoggerInterface   $logger          Logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly AssigneeResolver $assignees,
+		private readonly EngineTaskGateway $engineTasks,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -130,7 +133,25 @@ class CreateTaskHandler implements ActionHandlerInterface {
 				$taskId = (string)($created['id'] ?? '');
 			}
 
-			return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
+			// Dual-run (dossiq-duplication-to-abstractions, D-1 step 3): the
+			// register object above is still the record. This mirrors it into
+			// OpenRegister's task engine so the two stores can be compared on
+			// live data before the read moves. Off unless `task_engine_write`
+			// is set, and it cannot fail this handler: the transition has
+			// already done its job, and refusing it because a shadow write
+			// failed would turn a migration into an outage.
+			$engineTaskId = $this->engineTasks->mirrorCreate(
+				task: $task,
+				caseId: $caseId,
+				actor: null
+			);
+
+			$result = ['taskId' => $taskId];
+			if ($engineTaskId !== '') {
+				$result['engineTaskId'] = $engineTaskId;
+			}
+
+			return new ActionResult(succeeded: true, data: $result);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CreateTaskHandler failed',
