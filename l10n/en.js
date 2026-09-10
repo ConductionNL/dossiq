@@ -3798,7 +3798,6 @@ OC.L10N.register(
         "Totals over all {count} capabilities": "Totals over all {count} capabilities",
         "we did not find it": "we did not find it",
         "we have not read that system on this row": "we have not read that system on this row",
-        "On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.",
         "we found part of it, and part is missing": "we found part of it, and part is missing",
         "we found the whole capability": "we found the whole capability",
         "We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.": "We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.",
@@ -3878,6 +3877,7 @@ OC.L10N.register(
         "Sender address": "Sender address",
         "Sender name": "Sender name",
         "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.",
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.",
         "This case has no initiator yet": "This case has no initiator yet"
     },
     "nplurals=2; plural=(n != 1);"
