@@ -267,6 +267,43 @@ test.describe('Integrations', () => {
 		expect(String(kcc.checkedAt || '')).not.toBe('')
 	})
 
+	/**
+	 * THE ONE TEST IN THIS FILE THAT IS NOT ABOUT THE PAGE'S CLAIMS.
+	 *
+	 * It was written with `browser.newContext({ httpCredentials })` and neither
+	 * half of that worked, in opposite directions:
+	 *
+	 *  1. Playwright's `browser` FIXTURE patches `newContext()` to merge the
+	 *     project's `use` options, so `use.storageState` — the ADMIN session
+	 *     written by global-setup — came along uninvited. The context reported
+	 *     `OC.getCurrentUser().uid === 'admin'` and `OC.isUserAdmin() === true`,
+	 *     and the failure screenshot said "Avatar of admin" in the header. The
+	 *     test asserted an admin cannot see an admin page, so it could only
+	 *     ever fail — and it never ran, because this project is skipped whole
+	 *     while its dependency is red.
+	 *  2. Clearing the storage state does not rescue basic auth: Nextcloud's
+	 *     web entry point does not authenticate an `Authorization: Basic`
+	 *     header, it redirects to `/login`. A context with credentials and no
+	 *     cookie lands on the login page as ANONYMOUS — where the nav has no
+	 *     entries and the route has no rows, so both assertions below pass for
+	 *     a reason that has nothing to do with permissions.
+	 *
+	 * #2305 fixed that identity half, and it is what the setup below does:
+	 * `ensureUser` provisions the account over the API so this spec does not
+	 * depend on the seed having run, and `captureStorageState` is the
+	 * sanctioned second session. Given a genuine non-admin, the link-count
+	 * assertion below does catch the leak — measured, not assumed: run against
+	 * an unguarded build it reports `Received: 7`.
+	 *
+	 * The DESTINATION assertion is here for a different reason, and it is not
+	 * that the count is too weak today. It is that "no admin-settings links" is
+	 * also what a page that never rendered looks like — a bundle that 404s, a
+	 * JS error during mount, a route that silently 500s. Any of those would
+	 * satisfy the count while telling us nothing about the guard, and this is
+	 * the one test in the suite whose whole job is to be believed. Asserting
+	 * where the router actually LANDED distinguishes "the guard turned this
+	 * account away" from "nothing rendered", which the count cannot.
+	 */
 	test('is not reachable by a user who is not an admin', async ({
 		browser,
 		baseURL,
@@ -338,12 +375,26 @@ test.describe('Integrations', () => {
 				+ `it should be the non-admin ${PLAIN_USER}`,
 		).toHaveCount(0)
 
-		// And the route renders no rows even when typed in directly.
+		// And the route does not render the page even when typed in directly.
+		// This is the half nothing enforced: the manifest declares
+		// `permission: "admin"` on the PAGE, `CnAppNav` only ever read the
+		// declaration on the MENU entry, and the router built by `main.js`
+		// dropped the field — so this route answered an ordinary account with
+		// eleven integration rows and seven links into `/settings/admin/dossiq`.
 		await page.goto('/apps/dossiq/settings/integrations')
 		await dismissSupportDialog(page)
+		// The guard redirects to the dashboard. Assert the DESTINATION, not
+		// only the absence of a link: a page that never rendered has no links
+		// either, so the count alone cannot tell a working guard from a broken
+		// bundle. See the docblock.
+		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
 		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
 			0,
 		)
+		await expect(
+			page.getByRole('row', { name: /ZGW APIs/i }),
+			'no integration row survives the redirect',
+		).toHaveCount(0)
 
 		await context.close()
 	})
