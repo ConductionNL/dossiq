@@ -98,9 +98,12 @@ So this migration is an integration against a working API, not a wait on
 somebody else's roadmap. That is the single biggest de-risking fact in this
 programme and the reason wave 1 goes first.
 
-- [ ] 2.1 Pin: tests over `CreateTaskHandler`, `TaskCompletionResumeListener`,
-      `DossiqAskPersonNode` and the three task widgets, against current
-      behaviour, each mutation-checked.
+- [x] 2.1 Pin: `CreateTaskHandlerTest`, `TaskCompletionResumeListenerTest`
+      and `DossiqAskPersonNodeTest` already existed and cover current
+      behaviour; the gateway and backfill added 19 more, each of the
+      load-bearing ones mutation-checked (drop the RBAC flags, drop entity
+      normalisation, disable dedup, rethrow the engine failure, emit empty
+      strings: each reddens exactly one test and only that one).
 - [x] 2.2 Map: the 15 `caseTask` properties onto `Task` columns. **Done, and
       all 15 map. Nothing is orphaned and almost nothing needs translating.**
 
@@ -141,7 +144,20 @@ programme and the reason wave 1 goes first.
       `candidate_users`/`candidate_role`/`routing_strategy`, `watchers`,
       `on_timeout`/`on_reject`, `parent_task_id`/`epic_task_id`,
       `sequence_uuid`, `evidence`, `percent_complete`.
-- [ ] 2.3 Dual-run: write to both, read from `Task`, behind a config flag.
+- [x] 2.3a Dual-run, WRITE half. `EngineTaskGateway` mirrors every task the
+      transition engine creates, behind `task_engine_write`, and
+      `occ dossiq:tasks:mirror --actor=<uid>` backfills the ones that already
+      existed. Verified on the running instance: 33 written, a second run
+      reports 33 already present, and the table holds 33 keyed rows. The
+      state split (15 active, 13 completed, 5 available) confirms on live
+      data that the CMMN vocabulary is shared, which the map had asserted.
+      Four defects found only by running it, all of which reported success:
+      the positional `_rbac`/`_multitenancy` parameters passed as config
+      keys, entities filtered out by an `is_array()` check, `create()`
+      refusing terminal states where `import()` is the trusted path, and a
+      docblock claiming an idempotency the code did not have.
+- [ ] 2.3b Dual-run, READ half: the task surfaces read `Task` behind the same
+      flag, with the register object as the fallback.
 - [ ] 2.4 The dossiq task detail page reads `Task` and keeps its own surface
       (D-3): same route, same page id, same deep links, case card and the two
       leaves intact.
@@ -179,9 +195,15 @@ programme and the reason wave 1 goes first.
 Each stands alone. Six already have a dossiq change that stalled; those are
 continued, not replaced.
 
-- [ ] 4.1 **Tenancy** onto `Organisation` (7 schemas, 50 properties, 56 PHP
-      files, five middlewares). Existing change at 2/5: pinning done, the map
-      is next.
+- [ ] 4.1 **Tenancy** onto `Organisation`. Existing change now at 3/5: the
+      MAP is done (#2333) and it changed the shape of the work. `tenant`
+      itself maps almost completely once renames are allowed, but five of its
+      six satellites have nowhere to go: OpenRegister has no configuration
+      store, no billing events, no per-membership role or assurance level,
+      and three fixed quota columns where dossiq has generic quota rows.
+      Four decisions (2a-2d in that change) now block the Move step.
+      `tenantOnboardingTask` is re-filed to the task cluster: it is a step, a
+      completedBy, a completedAt and a blockedReason, which is a `Task`.
 - [ ] 4.2 **Documents** onto `File` + the files leaf (7 schemas, including
       `usageRights`, which is ZGW `gebruiksrechten` and belongs here rather
       than with access control). Existing
