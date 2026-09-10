@@ -41,78 +41,99 @@ use RuntimeException;
  */
 class CreateTaskHandlerTest extends TestCase {
 	/**
-	 * A gateway that is switched off, which is the default everywhere.
+	 * A gateway that records the task it was asked to write.
 	 *
-	 * Every pre-existing test in this file asserts the register write and
-	 * nothing else, and must keep asserting exactly that: the dual-run seam
-	 * is additive, so a disabled gateway is what proves it changed nothing.
+	 * The handler writes ONLY here now: the register write is gone with the
+	 * dual-run, so this is where the assertions about what a transition
+	 * creates have to look. It replaces `disabledGateway`, which returned ''
+	 * and existed to prove the mirror changed nothing while both stores were
+	 * live.
 	 *
-	 * @param TestCase $test The test case, for the mock builder.
+	 * @param mixed    $recorded The recording slot.
+	 * @param TestCase $test     The test case, for the mock builder.
+	 * @param string   $taskId   What the engine answers with ('' refuses).
+	 * @param string   $reason   The unavailable reason ('' means reachable).
 	 *
 	 * @return EngineTaskGateway&\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private static function disabledGateway(TestCase $test): EngineTaskGateway {
+	private static function recordingGateway(&$recorded, TestCase $test, string $taskId = 'task-uuid', string $reason = ''): EngineTaskGateway {
 		$gateway = $test->getMockBuilder(EngineTaskGateway::class)
 			->disableOriginalConstructor()
 			->getMock();
-		$gateway->method('mirrorCreate')->willReturn('');
+		$gateway->method('unavailableReason')->willReturn($reason);
+		$gateway->method('lastError')->willReturn('the engine said no');
+		$gateway->method('mirrorImport')->willReturnCallback(
+			static function (array $task, string $caseId, ?string $actor) use (&$recorded, $taskId): string {
+				$recorded = ['object' => $task, 'case' => $caseId];
+
+				return $taskId;
+			}
+		);
 
 		return $gateway;
-	}//end disabledGateway()
+	}//end recordingGateway()
+
+
 
 	/**
 	 * @return void
 	 */
-	public function testFailsWhenObjectServiceUnavailable(): void {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn(null);
-
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
-
-		$result = $handler->handle(
-			actionConfig: ['type' => 'createTask', 'title' => 'Doe X'],
-			case: ['id' => 'case-1'],
-			transitionContext: ['transitionLabel' => 'Approve'],
-		);
-
-		self::assertFalse($result->succeeded);
-		self::assertSame('storage_unavailable', $result->error);
-	}//end testFailsWhenObjectServiceUnavailable()
-
 	/**
+	 * An unreachable engine fails the transition and names the reason.
+	 *
+	 * This replaces three tests about the register path: no object service,
+	 * no configured task schema, and an exception from a save. None of those
+	 * can happen now — the handler resolves no schema and writes no object.
+	 *
+	 * What replaces them is the engine's own reachability check, which
+	 * distinguishes 'not installed' from 'installed but the class moved'.
+	 * That second case is the one a duck-typed lookup hides.
+	 *
 	 * @return void
 	 */
-	public function testFailsWhenTaskSchemaNotConfigured(): void {
-		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
-				return ['id' => 'unreachable'];
-			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-		$settings->method('getConfigValue')->willReturnCallback(
-			function (string $key): string {
-				return $key === 'register' ? 'reg-1' : '';
-			}
+	public function testAnUnreachableEngineFailsTheTransition(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this, 'task-uuid', 'the namespace moved'),
+			new NullLogger()
 		);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$result = $handler->handle(['title' => 'T'], ['id' => 'case-1'], []);
 
-		$result = $handler->handle(
-			actionConfig: ['type' => 'createTask'],
-			case: ['id' => 'c'],
-			transitionContext: [],
-		);
-
-		self::assertFalse($result->succeeded);
-		self::assertSame('task_schema_not_configured', $result->error);
-	}//end testFailsWhenTaskSchemaNotConfigured()
+		$this->assertFalse($result->succeeded);
+		$this->assertSame('storage_unavailable', $result->error);
+		$this->assertNull($recorded, 'nothing may be written when the engine is unreachable');
+	}//end testAnUnreachableEngineFailsTheTransition()
 
 	/**
+	 * 🔴 A REFUSED task fails the transition, and that is a change.
+	 *
+	 * Under the dual-run a failed mirror was swallowed, because the register
+	 * task already existed and refusing the transition over a shadow write
+	 * would have turned a migration into an outage. With the register write
+	 * gone there is nothing left, and a transition that silently created no
+	 * task is the worse outcome: a checklist step whose task never appeared
+	 * looks like a case that needs no work.
+	 *
 	 * @return void
 	 */
+	public function testATaskTheEngineRefusesFailsTheTransition(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this, ''),
+			new NullLogger()
+		);
+
+		$result = $handler->handle(['title' => 'T'], ['id' => 'case-1'], []);
+
+		$this->assertFalse($result->succeeded);
+		$this->assertSame('create_task_failed', $result->error);
+	}//end testATaskTheEngineRefusesFailsTheTransition()
+
 	public function testCreatesTaskWithCaseLinkAndAssigneeOnSuccess(): void {
+		$recorded = null;
 		$recorded = null;
 
 		$objectService = new class($recorded) {
@@ -140,7 +161,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'assignee' => 'alice'],
@@ -162,8 +183,10 @@ class CreateTaskHandlerTest extends TestCase {
 			['available', 'active', 'completed', 'terminated', 'disabled'],
 			'CreateTaskHandler must write a status the task schema allows'
 		);
-		self::assertSame('reg-1', $recorded['register']);
-		self::assertSame('task-schema', $recorded['schema']);
+		// The CASE the task is placed against, not a register and schema:
+		// the engine keys on the object triple and has no case reference of
+		// its own, because OpenRegister has no case entity.
+		self::assertSame('case-9', $recorded['case']);
 	}//end testCreatesTaskWithCaseLinkAndAssigneeOnSuccess()
 
 	/**
@@ -178,7 +201,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testWritesTheWorkflowStepIdTheActionNames(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: [
@@ -201,7 +225,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testLeavesTheWorkflowStepIdOffWhenTheActionNamesNone(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'workflowStepId' => '  '],
@@ -212,82 +237,7 @@ class CreateTaskHandlerTest extends TestCase {
 		self::assertArrayNotHasKey('workflowStepId', $recorded['object']);
 	}//end testLeavesTheWorkflowStepIdOffWhenTheActionNamesNone()
 
-	/**
-	 * A SettingsService whose object service records what it is asked to save.
-	 *
-	 * @param mixed $recorded Filled with `['object' =>, 'register' =>, 'schema' =>]`.
-	 *
-	 * @return SettingsService&\PHPUnit\Framework\MockObject\MockObject The settings double.
-	 */
-	private function recordingSettings(&$recorded): SettingsService {
-		$objectService = new class($recorded) {
-			/** @var mixed */
-			public $recorded;
 
-			/**
-			 * @param mixed $recorded The recording slot.
-			 */
-			public function __construct(&$recorded) {
-				$this->recorded = &$recorded;
-			}
-
-			/**
-			 * @param array<string, mixed> $object   The task to save.
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 *
-			 * @return array<string, mixed> The saved task.
-			 */
-			public function saveObject(array $object, string $register, string $schema): array {
-				$this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
-				return ['id' => 'task-uuid'];
-			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ([
-				'register' => 'reg-1',
-				'task_schema' => 'task-schema',
-			][$key] ?? '')
-		);
-
-		return $settings;
-	}//end recordingSettings()
-
-	/**
-	 * @return void
-	 */
-	public function testCatchesExceptionFromObjectService(): void {
-		$objectService = new class {
-			public function saveObject(array $object, string $register, string $schema): array {
-				throw new RuntimeException('storage went away');
-			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-		$settings->method('getConfigValue')->willReturnCallback(
-			function (string $key): string {
-				return [
-					'register' => 'reg-1',
-					'task_schema' => 'task-schema',
-				][$key] ?? '';
-			}
-		);
-
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
-
-		$result = $handler->handle(
-			actionConfig: ['type' => 'createTask'],
-			case: ['id' => 'c'],
-			transitionContext: [],
-		);
-
-		self::assertFalse($result->succeeded);
-		self::assertSame('create_task_failed', $result->error);
-	}//end testCatchesExceptionFromObjectService()
 
 	/**
 	 * 🔴 A templated assignee is RESOLVED, not written down as the template.
@@ -302,7 +252,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testATemplatedAssigneeIsResolvedAgainstTheCase(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => '{{ case.assignee }}'],
@@ -325,7 +276,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheTemplateIsRenderedRatherThanFallenBackFrom(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => '{{ case.responsible }}'],
@@ -345,7 +297,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheDeclaredFallbackTakesTheTask(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: [
@@ -373,7 +326,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnActionNamingNobodyFallsBackToTheCasesHandler(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -395,7 +349,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheCasesTeamIsCarriedOntoTheTask(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -422,7 +377,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnExpandedTeamReferenceWritesTheUuid(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -441,7 +397,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnExpandedCaseAssigneeResolvesToItsId(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -462,7 +419,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testACaseWithNoTeamWritesNoTeamField(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -483,7 +441,8 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testALiteralAssigneeSurvivesResolution(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => 'behandelaars'],
