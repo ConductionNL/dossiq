@@ -801,7 +801,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				// the caller shows it, so a refused write that returned
 				// quietly would be reported as a successful transition
 				// with a task nobody ever sees.
-				throw new Error(engineTasks.error || 'The task engine refused the task')
+				throw new Error(
+					engineTasks.error || 'The task engine refused the task',
+				)
 			}
 		},
 
