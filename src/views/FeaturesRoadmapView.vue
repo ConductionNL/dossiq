@@ -477,9 +477,16 @@ export default {
 		 *
 		 * A round can ask a new question without re-reading the products an
 		 * earlier round rated. Those rows carry `addedOn`, we rate ourselves
-		 * on them, and the other three columns stay `unknown`. Saying so is
-		 * the point: without it a reader sees three systems scored over fewer
+		 * on them, and the other four columns stay `unknown`. Saying so is
+		 * the point: without it a reader sees four systems scored over fewer
 		 * rows than us and has no way to learn why.
+		 *
+		 * Two rounds have now added rows, on different days, so this no longer
+		 * says "on {date} we added {count}". That sentence was true while one
+		 * round had done it and became false for round 3's 19 rows the moment
+		 * round 4 added 104 more. The date is named as the most recent, and
+		 * the count covers every round, which is what the totals actually add
+		 * up over.
 		 *
 		 * @return {string} The sentence, empty when no row was added this way.
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
@@ -489,13 +496,20 @@ export default {
 			if (added.length === 0 || !comparison.rowsAddedOn) {
 				return ''
 			}
+			// Derived, not stored, like everything else on this page. The most
+			// recent addition date comes from the rows themselves so it cannot
+			// disagree with them.
+			const latest = added
+				.map((row) => row.addedOn)
+				.sort()
+				.at(-1)
 			return t(
 				'dossiq',
-				'On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.',
+				'Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.',
 				{
 					count: added.length,
 					others: comparison.systems.length - 1,
-					date: formatComparedOn(comparison.rowsAddedOn, this.locale),
+					date: formatComparedOn(latest, this.locale),
 				},
 			)
 		},

@@ -1,9 +1,9 @@
 {
-	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor audit (private repo concurrentie-analyse). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands. `comparedOn` is the date the FIRST FOUR columns were read and it moves only when all four are read again. A column added later carries its own `readOn` and its own `columnAddedOn`, because moving `comparedOn` to cover it would make the reading-date sentence false for the four it already covers. A column added after the LIST grew is `unknown` on the rows it was never read against, the same rule the competitor columns follow. `rowsAddedOn` is the date rows were last added to the LIST, which is a different event: a later round can ask a new question without re-reading the older products. A row added that way carries `addedOn` and rates EVERY competitor `unknown`, because a guess in someone else's column is worse than an empty cell. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every correction and every added row is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
+	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor audit (private repo concurrentie-analyse). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands. `comparedOn` is the date the FIRST FOUR columns were read and it moves only when all four are read again. A column added later carries its own `readOn` and its own `columnAddedOn`, because moving `comparedOn` to cover it would make the reading-date sentence false for the four it already covers. A column added after the LIST grew is `unknown` on the rows it was never read against, the same rule the competitor columns follow. `rowsAddedOn` is the date rows were LAST added to the LIST, which is a different event: a later round can ask a new question without re-reading the older products. More than one round has now done so, so a row carries its OWN `addedOn` and `rowsAddedOn` is the most recent of them. A row added that way carries `addedOn` and rates EVERY competitor `unknown`, because a guess in someone else's column is worse than an empty cell. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every correction and every added row is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
 	"comparedOn": "2026-09-07",
-	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-09",
-	"dossiqRevision": "add765a06",
+	"rowsAddedOn": "2026-09-10",
+	"reratedOn": "2026-09-10",
+	"dossiqRevision": "d1fcc02fb",
 	"_rerated": [
 		{
 			"id": "1.8",
@@ -204,6 +204,838 @@
 			"to": "no",
 			"cause": "added",
 			"reason": "Round 3 row. A favourite is navigation and row 2.19 already asks about it. A watch is a subscription, and a jurist following a sensitive case has no way to ask for one."
+		},
+		{
+			"id": "1.14",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "DeadlinePauseService::resumeAfterPauze credits the unused pause back when the aanvulling arrives, which is the clock half. No object represents the request, so nobody can list the cases waiting on an applicant."
+		},
+		{
+			"id": "1.15",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "ZgwRulesBase::checkFieldUniqueness refuses a colliding write on the ZGW path. It refuses rather than returning the candidates, there is no override the writer records, and it does not run outside ZGW."
+		},
+		{
+			"id": "2.28",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "case.priority is a fixed four-value enum and the queue weights are a private constant in WorkQueueService. The LHS matrix is a genuine two-axis administered scheme, and it derives an intervention rather than a priority."
+		},
+		{
+			"id": "2.29",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "CaseCopyService opens a second, separately numbered case and writes a typed vervolg relation back to the source, and DeelzaakService splits off a sub-case. Documents are linked whole rather than apportioned, and parties are not divided at all."
+		},
+		{
+			"id": "2.30",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.8 tags are free labels anyone can remove silently. Nothing demands a written reason on raising or clearing, and nothing attributes either act."
+		},
+		{
+			"id": "2.31",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "CaseTransferService moves a case between organisations and writes an audit entry. There is no dated ownership history you can read back as a chain, so who held the case in March is not a query."
+		},
+		{
+			"id": "2.32",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "CaseTransferService only pushes a case away. Nothing lets a colleague pull one, and there is no accept or refuse with a reason on the holder's side."
+		},
+		{
+			"id": "2.33",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "ConsultationService::getBlockingConsultations blocks on an open advice request. Nothing generalises that to other dependencies, and the closing statuses are still offered rather than withheld."
+		},
+		{
+			"id": "2.34",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "lhsRecommendation carries a severity read by LhsLookupService, but it is scoped to VTH. It is not on the case schema, it is not separately permissioned, and it drives neither priority nor filtering, so all three qualifiers of the row fail."
+		},
+		{
+			"id": "2.35",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "BulkStatusTransitionService pairs a preview with an execute and has no inverse and no stored batch record. A mistake on a hundred cases is a hundred manual corrections."
+		},
+		{
+			"id": "2.36",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The workflow editor and the board are keyboard operable and spec'd as such, which is accessibility rather than this capability. There is no command palette and no global shortcut layer anywhere in src/."
+		},
+		{
+			"id": "2.37",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "StateMachineService moves a case when somebody chooses a transition. Nothing computes the status from which forms and documents are present."
+		},
+		{
+			"id": "2.38",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.30 is a marker a person raises on the whole case. This is one the system raises against a specific tab and drops when the work behind that tab is done."
+		},
+		{
+			"id": "2.39",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "A case holds one situation. Nothing models several dated incidents inside it, each with its own owner and its own transfer, which is how repeat reports on one address are handled elsewhere."
+		},
+		{
+			"id": "2.40",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "statusType.role is an administered enum including pending-info and stranded, rendered as Waiting for information and read by StatusTypeLookup and the shipped flow. It conflates waiting on the applicant with waiting on a third party, and no team count is built on it."
+		},
+		{
+			"id": "2.41",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "ComplaintService has a withdrawn status, set internally by a handler. No case type lets the applicant close their own case from the portal."
+		},
+		{
+			"id": "2.42",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.26 declares typed links. Nothing walks them to answer who else is affected, and nothing lets you prune a branch of that walk."
+		},
+		{
+			"id": "2.43",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "CaseNumberService issues a number without a locked counter row. The demo data already shows identifier reading a dash on five of seven cases, so the weakness is visible rather than theoretical."
+		},
+		{
+			"id": "2.44",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "No If-Match, ETag or expected version exists on any write, so the last save wins silently. conflictRecord is declared in the offline sync fragment and has no reader. Row 2.27 answers the same problem with a lock, which is the heavier of the two designs."
+		},
+		{
+			"id": "2.45",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "CaseTransferService carries the whole hand-off: offer, acceptance, rejection and the audit entry for each. Added so the instrument can record a strength, not only a gap."
+		},
+		{
+			"id": "3.21",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "DispositionService gates a complaint disposition on an approval. It resolves no manager from the organisation tree and no other case type can use it."
+		},
+		{
+			"id": "3.22",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Routing/Strategy has RoundRobin and LeastLoaded. There is no per-person weight, no way to target a named position inside a team, and no condition that takes work back."
+		},
+		{
+			"id": "3.23",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "WorkflowBoard.vue groups by status into columns on one axis, so there are no swimlanes. Its drop handler writes case.status straight to OpenRegister and never reaches TransitionAuthorizer, so a drag is not restricted by role at all."
+		},
+		{
+			"id": "3.24",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "milestoneDefinition declares dependsOn and nothing reads it: offsets are a cumulative sum from the case start ordered by a number. Neither milestoneDefinition nor deadlineInstance carries an assignee, so nothing resolves one from a role on the case."
+		},
+		{
+			"id": "3.25",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 8.4 reminders fire at a date. A planned next action is a typed record with an owner that, on completion, schedules the one that follows it."
+		},
+		{
+			"id": "3.26",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Tasks carry due dates and assignees, not dependencies. Nothing derives a blocked state and nothing releases it without a person noticing."
+		},
+		{
+			"id": "3.27",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "ConsultationService blocks a case on an advice request and releases it. Nothing generalises the pattern to any other obligation, so each new one is a new service."
+		},
+		{
+			"id": "3.28",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "SubstitutionService and MandaatEscalatieService exist. Nothing declares what happens when an approver says nothing, and nothing asks a substitute before the timeout runs out."
+		},
+		{
+			"id": "3.29",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "ConsultationService carries the question, the attachments, the deadline, the blocking behaviour, the extension request and its approval. Added so the instrument can record a strength."
+		},
+		{
+			"id": "4.24",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The informatieobject already carries a direction, incoming, outgoing or internal, and a registration date. document.identifier has no generator, so there is no gapless year and unit scoped number, and no outbound entry discharging an inbound one."
+		},
+		{
+			"id": "4.25",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Qualified signing ships per beschikking, through the signing adapter and the mandaat check. Nothing gathers documents from several cases into one pass, and a wethouder signing forty decisions opens forty cases."
+		},
+		{
+			"id": "4.26",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 4.4 and 11.11 ask whether a letter can be generated. Nothing asks whether it can be understood, and for a decision carrying a bezwaartermijn that is a legal interest."
+		},
+		{
+			"id": "5.14",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.24 asks about duplicate cases. Nothing finds two records of the same person, and nothing merges them field by field with a refusal when the merger cannot see every domain involved."
+		},
+		{
+			"id": "5.15",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Without this a deduplication screen offers the same false pair every week until people stop reading it. It is what makes row 5.14 usable rather than a second capability on top of it."
+		},
+		{
+			"id": "5.16",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 5.1 gives a party a role on a case. Nothing relates two parties to each other, so guardian and ward, or employer and employee, cannot be stated."
+		},
+		{
+			"id": "5.17",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The party model carries no language and the email templates carry no locale. document.language exists and is an attribute of the file, not a preference of the person we are writing to."
+		},
+		{
+			"id": "5.18",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "sociaalDomeinAuditLog.authorisationGround is declared in the register and no code reads it. Row 5.4 asks for the opposite thing, a full 360 view, which purpose limitation does not allow between Wmo, Jeugdwet and Participatiewet."
+		},
+		{
+			"id": "5.19",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 5.3 and 5.11 ask whether we can look a person up in BRP or KvK. 25-brp-kvk.json carries no readOnlyFromSource, no policy for a record that disappears, and no lock against a manual delete."
+		},
+		{
+			"id": "6.17",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "statusType carries one name, so whatever a caseworker calls a status is what a citizen reads in the portal. Two systems in the corpus invented the split independently."
+		},
+		{
+			"id": "6.18",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "InboundEmailJob matches on mailMessageId only. In-Reply-To and References appear nowhere, and quoted text and signatures are not stripped, so a reply chain lands as repeated text."
+		},
+		{
+			"id": "6.19",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "CaseEmailService sends to the recipients the case implies. There is no way to add a person to one message only, or to leave one out and record that you did."
+		},
+		{
+			"id": "6.20",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The beschikking dispatch record carries receipt and read confirmation dates, and BerichtenboxService writes readAt. The job that would poll it is deliberately not registered and has never run on any instance, and nothing rolls up to a sortable field on the case."
+		},
+		{
+			"id": "6.21",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "ContactMomentService files a contact onto one case. One phone call about three cases becomes three records that then drift apart."
+		},
+		{
+			"id": "6.22",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "NotificatieService sends on events the code decides. An administrator cannot say which field change notifies whom, and recipients are not derived from the case."
+		},
+		{
+			"id": "6.23",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "DeliveryConcludedListener does project status, attempts and error onto the case's publication record, and Berichtenbox polls a read flag per message, so the proposal's claim that bounces appear only in a comment is wrong. No channel reports per recipient and nothing reaches a case list column, so the row is still no."
+		},
+		{
+			"id": "6.24",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 13.18 watchers is itself no, so nobody subscribes to anything yet. Nothing marks a kind as never reaching the external party, and nothing lets an administrator say this one always goes by post."
+		},
+		{
+			"id": "7.8",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "30-beschikking.json declares the beschikking immutable once signed, StateMachineService pins four immutable statuses, BeschikkingService::updateFields throws on a content field at or after signed, and the controller answers 409. decisionType already carries amendment. What is missing is the pointer at the record it replaces and the derived successor number."
+		},
+		{
+			"id": "7.9",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "The committees register models bezwaaradviescommissie and bacAdviceRequest, and BezwaarDecisionDelegationService and AdviceDelegationService carry the round trip. Added so the instrument can record a strength."
+		},
+		{
+			"id": "8.16",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "ComplaintService computes an acknowledgement deadline from a private constant, for complaints and nothing else. Nothing measures whether it was met and nothing stores how late we were."
+		},
+		{
+			"id": "8.17",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "StalledCaseDetector projects the earliest unreached milestone from the case start and reports a case past a grace period. No status carries a configured maximum time of its own."
+		},
+		{
+			"id": "8.18",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "WorkingDayCalculator is day-level by design and there is one global calendar. Row 8.12 asks for that one calendar to be administered; this asks for hours inside the day and for more than one set of them."
+		},
+		{
+			"id": "8.19",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.26 declares typed links and none of them carries a scheduling consequence. When a predecessor slips two weeks, every dependent date is corrected by hand or not at all."
+		},
+		{
+			"id": "8.20",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 8.4 reminders attach to a case with a responsible user. They cannot bind to an arbitrary date field, cannot repeat, and cannot stop themselves when the thing they chase is done."
+		},
+		{
+			"id": "8.21",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 8.1 puts the term on the case type, so one shared case type cannot carry different terms for different participating municipalities. This is the gemeenschappelijke-regeling shape."
+		},
+		{
+			"id": "8.22",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "DeadlinePauseService and DeadlineEscalationService do this imperatively, with thresholds in days rather than as a share of the term. Nothing declares which statuses the clock runs in."
+		},
+		{
+			"id": "9.14",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "statusRecord stores every transition as a queryable object with fromStatus, and process mining reads it. There is still no case list filter of the form was ever in status X, and giving this partial credit would double count row 10.4, which already scores that surface."
+		},
+		{
+			"id": "9.15",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Nothing lets an administrator teach the search that omgevingsvergunning and bouwvergunning are the same thing to a citizen typing in the portal."
+		},
+		{
+			"id": "10.12",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "The beschikking state machine log carries actorType, employee or systeem, and trigger, manual or automatic, written by BeschikkingService and read by AuditPacketBuilder. It is a two-value axis on one subsystem, with no import, migration or cascade cause, and the general trail is OpenRegister's."
+		},
+		{
+			"id": "10.13",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 10.11 asks whether time can be booked against a case and is partial. Nothing holds an estimate, so nothing can say how much of it is left."
+		},
+		{
+			"id": "10.14",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "DwellTimeAnalyzer computes dwell per case and status visit and aggregates median, p90 and mean, charted on the process mining page. The number is not held on the case, so a handler cannot sort or filter a work list by it."
+		},
+		{
+			"id": "10.15",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 11.18 detects configuration problems and is yes. Nothing defines a population of records, runs rules over it and scores the result against a tolerance."
+		},
+		{
+			"id": "11.27",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Routing/Strategy holds Hierarchical, LeastLoaded, OrSet, RoundRobin and SingleRole, and PdokService resolves an address without boundaries. districtTeam is declared with no PHP reader, and the wijk and buurt selection is a written spec scenario nothing implements."
+		},
+		{
+			"id": "11.28",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 11.2 exports and imports case types. Nothing tracks that a municipality changed a published one, so an update either overwrites the local change or is never applied."
+		},
+		{
+			"id": "11.29",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 11.25 hides and requires fields by role and case state. Nothing makes a field required because another field holds a particular value, and nothing enforces that on a write that skips the form."
+		},
+		{
+			"id": "11.30",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Resolved rather than assumed: StatusTransitionService re-evaluates the identical guard set on the POST transition path and throws GuardFailedException, so the rules do run server-side. It stays partial because the set is transition-scoped rather than per field on every write, and the board's drop handler bypasses it entirely."
+		},
+		{
+			"id": "11.31",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "An import runs and reports at the end. Nothing survives it, so nobody can go back to a load from last month and see which rows failed and why."
+		},
+		{
+			"id": "11.32",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 11.20 rules stand alone. Without composition, the same condition is written out in twenty rules and corrected in nineteen of them."
+		},
+		{
+			"id": "11.33",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "statusType.description exists and nothing renders it. There is no text on a transition at all, so the moment a handler is choosing is the moment with no guidance."
+		},
+		{
+			"id": "11.34",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Nothing lets an administrator nominate a field as effectively unique and get a warning on save. A second case on the same KvK number is found later or never."
+		},
+		{
+			"id": "11.35",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 11.6 to 11.9 are all no, so there is no screen configuration to store yet. This is the mechanism to build them in, because the alternative drops a customer's change silently at the next release."
+		},
+		{
+			"id": "11.36",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 11.20 rules read current values, so moved into this status and is in this status are the same condition. The first fires once, the second fires every time anything is saved."
+		},
+		{
+			"id": "11.37",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 11.3 custom fields per case type is yes, and only an administrator can add one. A team that needs one field waits for a change request."
+		},
+		{
+			"id": "11.38",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 11.23 groups case types into folders for administrators. This is the citizen-facing side of the same object, and it is what makes a term resolvable per service rather than per case type."
+		},
+		{
+			"id": "11.39",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 11.10 code lists are flat and fixed. A field cannot offer only the contacts of the organisation already chosen on this case."
+		},
+		{
+			"id": "11.40",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "workflowTemplate.lifecycleStatus carries deprecated, described as cannot back new cases while existing cases keep using it, and WorkflowDefinitionService enforces it and refuses a deprecation that would strand open cases. There is no equivalent for arbitrary code list values, and caseType.validUntil is shown but not enforced as a picker filter."
+		},
+		{
+			"id": "11.41",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 11.20 and 3.11 ask whether rules exist. Nothing records that one ran, so why did this case not get its letter has no answer short of reading the code."
+		},
+		{
+			"id": "11.42",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "A rule cannot say created more than three working hours ago, so time-based escalation is written as jobs rather than as configuration a manager can change."
+		},
+		{
+			"id": "11.43",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 11.6 to 11.9 are all no. One screen for handlers, a narrower one for the front office and a third for the portal is the ordinary requirement, and there is no shape for it."
+		},
+		{
+			"id": "11.44",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 11.10 is flat and each entry is a label. Nothing hangs a term, a route or a required document off the value the handler picks."
+		},
+		{
+			"id": "11.45",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "FieldValidator and StepConfigValidator validate what the code says. An administrator cannot add a check, and cannot write the sentence the handler reads when it fails."
+		},
+		{
+			"id": "11.46",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "WorkflowStepAuthorizationResolver reads each transition's allowed roles and WorkflowDefinitionService::publish writes the resolved group ids into the transition, which OpenRegister enforces server-side. Added so the instrument can record a strength."
+		},
+		{
+			"id": "13.19",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Mandaat is modelled and MandaatVerifier reads it, and ConflictOfInterestService asks whether a handler is related to the applicant. No transition carries a negative flag, so nothing stops the person who wrote a decision from approving it."
+		},
+		{
+			"id": "13.20",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 13.4 grants access, by somebody else, with no reason and no per-case-type switch. sociaalDomeinAuditLog.authorisationGround is declared in the register and has zero readers, so there is no time box, no reason and no access level per case type."
+		},
+		{
+			"id": "13.21",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "toestemming is declared in the sociaal domein register and the only toestemming hits in lib/ are Dutch error strings. CaseTransferService::initiateTransfer has no consent branch and createPartnerShare writes a share with no scope, so nothing is ever blocked."
+		},
+		{
+			"id": "13.22",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 8.7 and 13.10 delete on a retention schedule. An erasure request names a person and has to reach identifiers inside message bodies and mail headers, and report honestly what it could not remove."
+		},
+		{
+			"id": "13.23",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Row 5.1 puts parties on a case with roles. Rights are granted to people and groups, not to the slot, so replacing the occupant means editing every grant."
+		},
+		{
+			"id": "13.24",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 8.7 and 13.10 destroy on a date. A vernietigingslijst is reviewed item by item by a named reviewer and a co-reviewer, and each response is recorded before anything is destroyed."
+		},
+		{
+			"id": "13.25",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "anonymisationAtParts has zero readers, and ArchivalNominationDeriver's whole action vocabulary is bewaren, blijvend_bewaren and vernietigen. There is no anonymise branch to configure."
+		},
+		{
+			"id": "13.26",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The Wet bescherming klokkenluiders obliges a municipality to run exactly this surface. Nothing accepts a report against a receipt code, and nothing gates the reveal on a motivated request a custodian answers."
+		},
+		{
+			"id": "13.27",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "A gemachtigde, a guardian or a parent company should see the record they are entitled to see because of the relationship. Access is granted per case and per user instead."
+		},
+		{
+			"id": "13.28",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "AuditPacketBuilder assembles the beschikking, its immutable transition log and a validation report into a ZIP and stamps it with a sha256 digest, routed at /api/beschikkingen/{id}/audit-pakket. It is a per-beschikking export, not a chained log over the whole trail, and no previousHash exists anywhere."
+		},
+		{
+			"id": "13.29",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 2.26 declares typed links. A link is all or nothing, so relating a Wmo case to a Jeugdwet case exposes everything or nothing rather than the two fields that were meant."
+		},
+		{
+			"id": "13.30",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Rows 13.2 and 13.16 ask whether the rules exist and can be administered. Neither asks whether a caseworker can find out why they cannot see something, so every denial becomes a support ticket."
+		},
+		{
+			"id": "13.31",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 13.13 grants portal rights per case. A holding company with eleven subsidiaries is then eleven separate grants, maintained by hand as the group changes."
+		},
+		{
+			"id": "13.32",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Row 13.9 logs a read. lib/Notification holds only the notifier and no download listener is registered, so nothing acts on one while it is happening."
+		},
+		{
+			"id": "13.33",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The case schema says of the team that it is assignment, not permission. Reassignment is gated by a coordinator check that resolves to isAdmin, so handing work over is an admin right rather than an axis of its own beside read and write."
+		},
+		{
+			"id": "13.34",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Rows 13.3 and 13.6 are both partial. Nothing says where a permission came from, and nothing marks one as not inheritable, so an access review cannot be finished."
+		},
+		{
+			"id": "13.35",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "CaseSharingService::createTokenShare issues the link and revokeTokenShare withdraws it, both with an expiry. Added so the instrument can record a strength."
+		},
+		{
+			"id": "13.36",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "LegalHoldApplier, BezwaarLegalHoldListener and AwbProceedingScanner place and lift the hold as a bezwaar or beroep opens and closes. Added so the instrument can record a strength."
+		},
+		{
+			"id": "13.37",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "CaseReassignmentService and SelectionReassignmentService move a whole caseload at once, by handler or by selection. Added so the instrument can record a strength."
+		},
+		{
+			"id": "14.1",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "The register declares gezinsplan.goals and deploymentTrajectories as plain string arrays, with no provider, no target date and no completion mark, and nothing reads them. The schema cannot express the row, so this is no and not partial."
+		},
+		{
+			"id": "15.1",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "The Subsidie services carry the whole arc: award, interim reporting, final determination, evidence, co-financing and recovery, with the Dwangsom services beside them. Added so the instrument can record a strength."
+		},
+		{
+			"id": "16.1",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "dossiq registers the field-inspection leaf with its own offline config, and the leaf owns the queue and the replay. Its own Dexie store, sync queue engine, replay service and controller were deleted, so conflictRecord has no reader and an inspector still cannot work without a signal."
+		},
+		{
+			"id": "17.1",
+			"on": "2026-09-10",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Twenty Tenant services carry it, including TenantSchemaProvisioner, TenantQuotaService and TenantAuditTrailService. Added so the instrument can record a strength."
 		}
 	],
 	"systems": [
@@ -301,6 +1133,26 @@
 			"key": "access-and-privacy",
 			"name": "Access and privacy",
 			"name_nl": "Toegang en privacy"
+		},
+		{
+			"key": "case-plan-and-services",
+			"name": "Case plan and services",
+			"name_nl": "Plan van aanpak en diensten"
+		},
+		{
+			"key": "money-on-the-case",
+			"name": "Money on the case",
+			"name_nl": "Geld op de zaak"
+		},
+		{
+			"key": "field-work-and-offline",
+			"name": "Field work and offline",
+			"name_nl": "Buitendienst en offline"
+		},
+		{
+			"key": "multi-organisation",
+			"name": "Multi-organisation",
+			"name_nl": "Meerdere organisaties"
 		}
 	],
 	"capabilities": [
@@ -446,6 +1298,30 @@
 			"gzac": "yes",
 			"zaaksysteem": "yes",
 			"zac": "no"
+		},
+		{
+			"id": "1.14",
+			"area": "intake",
+			"name": "Request to the applicant to complete their submission, with a typed reason",
+			"name_nl": "Verzoek om aanvulling aan de aanvrager, met een reden uit een lijst",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "1.15",
+			"area": "intake",
+			"name": "Duplicate candidates shown on every save, with a recorded override",
+			"name_nl": "Dubbelen gemeld bij elke opslag, met een vastgelegde afwijking",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "2.1",
@@ -750,6 +1626,222 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "2.28",
+			"area": "case-core",
+			"name": "Priority levels administered per case type, derived from impact and urgency",
+			"name_nl": "Prioriteiten per zaaktype ingericht, afgeleid uit impact en urgentie",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.29",
+			"area": "case-core",
+			"name": "Split a case in two, dividing documents and parties over both",
+			"name_nl": "Een zaak splitsen in twee, met documenten en partijen verdeeld",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.30",
+			"area": "case-core",
+			"name": "Flag a case as needing attention, cleared only with a written reason",
+			"name_nl": "Zaak markeren als aandachtszaak, alleen op te heffen met een reden",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.31",
+			"area": "case-core",
+			"name": "Dated chain of custody of case ownership between organisation units",
+			"name_nl": "Gedateerde overdrachtsketen van zaakeigendom tussen organisatieonderdelen",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.32",
+			"area": "case-core",
+			"name": "Request a case from its current handler, who accepts or refuses with a reason",
+			"name_nl": "Een zaak opvragen bij de huidige behandelaar, die weigert met reden",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.33",
+			"area": "case-core",
+			"name": "Closing statuses withheld while something the case depends on is open",
+			"name_nl": "Afsluitstatussen niet aangeboden zolang een afhankelijkheid openstaat",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.34",
+			"area": "case-core",
+			"name": "Assessed risk level on the case, separately permissioned",
+			"name_nl": "Ingeschat risiconiveau op de zaak, met een eigen rechtencontrole",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.35",
+			"area": "case-core",
+			"name": "Undo a bulk action",
+			"name_nl": "Een bulkactie terugdraaien",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.36",
+			"area": "case-core",
+			"name": "Keyboard-first operation with a command palette",
+			"name_nl": "Bediening vanaf het toetsenbord met een opdrachtenbalk",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.37",
+			"area": "case-core",
+			"name": "Case status derived from what has been recorded, not set by hand",
+			"name_nl": "Zaakstatus afgeleid uit wat is vastgelegd, niet handmatig gezet",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.38",
+			"area": "case-core",
+			"name": "Attention marker pointing at one tab of the case, cleared by handling it",
+			"name_nl": "Attendering die naar één tabblad van de zaak wijst, weg na afhandeling",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.39",
+			"area": "case-core",
+			"name": "Incident on a case as a dated record with its own owner",
+			"name_nl": "Incident op een zaak als gedateerd record met een eigen eigenaar",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.40",
+			"area": "case-core",
+			"name": "Each status declares whether the case waits on us or on someone else",
+			"name_nl": "Elke status geeft aan of de zaak op ons wacht of op een ander",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.41",
+			"area": "case-core",
+			"name": "Applicant withdraws their own case from the portal",
+			"name_nl": "Aanvrager trekt de eigen zaak in vanuit het portaal",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.42",
+			"area": "case-core",
+			"name": "Affected parties and objects derived by walking declared relations",
+			"name_nl": "Betrokken partijen en objecten afgeleid via vastgelegde relaties",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.43",
+			"area": "case-core",
+			"name": "Case numbers that cannot skip or collide under concurrent creation",
+			"name_nl": "Zaaknummers die niet overslaan of botsen bij gelijktijdig aanmaken",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.44",
+			"area": "case-core",
+			"name": "Conflicting save refused with the other person's value shown",
+			"name_nl": "Botsende opslag geweigerd met de waarde van de ander erbij",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "2.45",
+			"area": "case-core",
+			"name": "Transfer a case to another organisation, which accepts or rejects it",
+			"name_nl": "Een zaak overdragen aan een andere organisatie, die aanneemt of weigert",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
 			"id": "3.1",
 			"area": "tasks-and-phases",
 			"name": "BPMN process engine",
@@ -969,6 +2061,114 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "3.21",
+			"area": "tasks-and-phases",
+			"name": "Approval by the case owner's manager, with closure gated on it",
+			"name_nl": "Akkoord van de leidinggevende van de zaakeigenaar, afsluiten wacht daarop",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.22",
+			"area": "tasks-and-phases",
+			"name": "Work spread over a pool by round robin, open workload or weight",
+			"name_nl": "Werk verdeeld over een pool op toerbeurt, werkvoorraad of gewicht",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.23",
+			"area": "tasks-and-phases",
+			"name": "Board swimlanes, with a drag between columns restricted per role",
+			"name_nl": "Zwembanen op het bord, met slepen tussen kolommen beperkt per rol",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.24",
+			"area": "tasks-and-phases",
+			"name": "Task timeline where each item is offset from a named earlier item",
+			"name_nl": "Takenreeks waarin elk item verschuift ten opzichte van een eerder item",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.25",
+			"area": "tasks-and-phases",
+			"name": "Planned next action of a type, with an owner, chaining the one after it",
+			"name_nl": "Geplande vervolgactie van een soort, met eigenaar, gevolgd door de volgende",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.26",
+			"area": "tasks-and-phases",
+			"name": "Task blocked by another task, released by the system when that one closes",
+			"name_nl": "Taak geblokkeerd door een andere taak, vrijgegeven zodra die sluit",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.27",
+			"area": "tasks-and-phases",
+			"name": "Hand-off that places an obligation elsewhere and returns the case when met",
+			"name_nl": "Uitzetten van werk dat elders een verplichting legt en de zaak terugzet",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.28",
+			"area": "tasks-and-phases",
+			"name": "Multi-step approval where silence has a declared meaning",
+			"name_nl": "Meerstapsakkoord waarin stilzwijgen een vastgelegde betekenis heeft",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "3.29",
+			"area": "tasks-and-phases",
+			"name": "Scoped and revocable advice request to a body outside the organisation",
+			"name_nl": "Afgebakend en intrekbaar adviesverzoek aan een orgaan buiten de organisatie",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "4.1",
@@ -1224,6 +2424,42 @@
 			"zac": "no"
 		},
 		{
+			"id": "4.24",
+			"area": "documents",
+			"name": "Registration number for every document in and out, scoped to a year and a unit",
+			"name_nl": "Registratienummer voor elk document in en uit, per jaar en per afdeling",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "4.25",
+			"area": "documents",
+			"name": "Signing folder gathering documents from several cases for one signer",
+			"name_nl": "Ondertekenmap met documenten uit meerdere zaken voor één ondertekenaar",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "4.26",
+			"area": "documents",
+			"name": "Plain-language version of a generated letter, kept beside the formal one",
+			"name_nl": "Versie in eenvoudige taal naast de formele brief, samen bewaard",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
 			"id": "5.1",
 			"area": "parties-and-contacts",
 			"name": "Parties on a case with roles",
@@ -1365,6 +2601,78 @@
 			"gzac": "partial",
 			"zaaksysteem": "partial",
 			"zac": "yes"
+		},
+		{
+			"id": "5.14",
+			"area": "parties-and-contacts",
+			"name": "Party deduplication and merge with per-field selection",
+			"name_nl": "Partijen ontdubbelen en samenvoegen met keuze per veld",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "5.15",
+			"area": "parties-and-contacts",
+			"name": "Mark a reviewed pair as not a duplicate, so it stops being offered",
+			"name_nl": "Een beoordeeld paar markeren als geen dubbele, zodat het wegblijft",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "5.16",
+			"area": "parties-and-contacts",
+			"name": "Relationship type with a reciprocal label and a party type at each end",
+			"name_nl": "Relatiesoort met een wederkerig label en een partijsoort aan beide kanten",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "5.17",
+			"area": "parties-and-contacts",
+			"name": "Preferred correspondence language per party, honoured by templates",
+			"name_nl": "Voorkeurstaal per partij, gevolgd door de sjablonen",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "5.18",
+			"area": "parties-and-contacts",
+			"name": "Cross-domain view showing only that a case exists, opened on a recorded ground",
+			"name_nl": "Domeinoverstijgend beeld dat alleen het bestaan toont, open na een grondslag",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "5.19",
+			"area": "parties-and-contacts",
+			"name": "Records owned by an external source, with a policy for when they disappear",
+			"name_nl": "Records in beheer bij een bronregister, met beleid als ze verdwijnen",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "6.1",
@@ -1545,6 +2853,102 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "6.17",
+			"area": "communication",
+			"name": "Second status label written for the applicant, beside the internal one",
+			"name_nl": "Tweede statuslabel voor de aanvrager, naast het interne label",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.18",
+			"area": "communication",
+			"name": "Inbound reply threaded onto the case through the mail headers",
+			"name_nl": "Binnenkomend antwoord aan de zaak gekoppeld via de mailheaders",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.19",
+			"area": "communication",
+			"name": "One-off recipient added to a single message, or a standing one suppressed",
+			"name_nl": "Eenmalige ontvanger bij één bericht, of een vaste ontvanger onderdrukt",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.20",
+			"area": "communication",
+			"name": "When the applicant was last actually reached, sortable in the work list",
+			"name_nl": "Wanneer de aanvrager voor het laatst echt bereikt is, sorteerbaar in de werklijst",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.21",
+			"area": "communication",
+			"name": "One contact moment or document filed onto several cases without copying",
+			"name_nl": "Eén contactmoment of document op meerdere zaken zonder te kopiëren",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.22",
+			"area": "communication",
+			"name": "Notification rules triggered by a named field changing",
+			"name_nl": "Notificatieregels die afgaan als een benoemd veld verandert",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.23",
+			"area": "communication",
+			"name": "Delivery outcome per recipient on every outgoing message, with a reason",
+			"name_nl": "Afleverresultaat per ontvanger bij elk uitgaand bericht, met een reden",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "6.24",
+			"area": "communication",
+			"name": "Notification kinds chosen per recipient, with a channel an administrator can force",
+			"name_nl": "Soorten notificaties per ontvanger, met een kanaal dat de beheerder afdwingt",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
 			"id": "7.1",
 			"area": "decisions",
 			"name": "Result or outcome from a configured list per case type",
@@ -1620,6 +3024,30 @@
 			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "partial"
+		},
+		{
+			"id": "7.8",
+			"area": "decisions",
+			"name": "Issued decision frozen, with a correction as a numbered successor",
+			"name_nl": "Genomen besluit bevroren, met een correctie als genummerde opvolger",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "7.9",
+			"area": "decisions",
+			"name": "Case put to a committee as an agenda item, with its decision flowing back",
+			"name_nl": "Zaak als agendapunt naar een commissie, met het besluit terug op de zaak",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "8.1",
@@ -1792,6 +3220,90 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "8.16",
+			"area": "deadlines",
+			"name": "First-response term per case type, with the size of the overrun stored",
+			"name_nl": "Reactietermijn per zaaktype, met de omvang van de overschrijding vastgelegd",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.17",
+			"area": "deadlines",
+			"name": "Maximum dwell time per status, breached apart from the case term",
+			"name_nl": "Maximale doorlooptijd per status, apart overschreden van de zaaktermijn",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.18",
+			"area": "deadlines",
+			"name": "Deadline clock running only in service hours, with more than one set of hours",
+			"name_nl": "Termijnklok die alleen in openingstijden loopt, met meerdere vensters",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.19",
+			"area": "deadlines",
+			"name": "Link that reschedules the follower when the predecessor moves",
+			"name_nl": "Koppeling die de opvolger verschuift zodra de voorganger opschuift",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.20",
+			"area": "deadlines",
+			"name": "Reminder bound to any date field, with a repeat interval and a stop condition",
+			"name_nl": "Herinnering gekoppeld aan elk datumveld, met herhaling en een stopvoorwaarde",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.21",
+			"area": "deadlines",
+			"name": "Lead time resolved from the organisation, the service and the priority",
+			"name_nl": "Doorlooptijd afgeleid uit de organisatie, de dienst en de prioriteit",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "8.22",
+			"area": "deadlines",
+			"name": "Term clock running only in named statuses, with thresholds as a percentage",
+			"name_nl": "Termijnklok die alleen in benoemde statussen loopt, met drempels in procenten",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
 			"id": "9.1",
 			"area": "search",
 			"name": "Global quick search",
@@ -1936,6 +3448,30 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "9.14",
+			"area": "search",
+			"name": "Filters over what a case has ever been, not only what it is now",
+			"name_nl": "Filteren op wat een zaak ooit is geweest, niet alleen op nu",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "9.15",
+			"area": "search",
+			"name": "Stopwords and synonyms for search, maintained by an administrator",
+			"name_nl": "Stopwoorden en synoniemen voor zoeken, beheerd door een beheerder",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
 			"id": "10.1",
 			"area": "reporting",
 			"name": "Configurable KPI dashboards (count, gauge, chart)",
@@ -2056,6 +3592,54 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "10.12",
+			"area": "reporting",
+			"name": "Audit entry attributed to its cause: a person, a job, an import or a cascade",
+			"name_nl": "Auditregel met de oorzaak erbij: een mens, een taak, een import of een cascade",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "10.13",
+			"area": "reporting",
+			"name": "Effort estimate on the case, with the remainder derived from what was booked",
+			"name_nl": "Geschatte inzet op de zaak, met het restant afgeleid uit het geboekte",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "10.14",
+			"area": "reporting",
+			"name": "Time spent in each status, held on the case as a column and a filter",
+			"name_nl": "Tijd per status op de zaak zelf, als kolom en als filter",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "10.15",
+			"area": "reporting",
+			"name": "Data quality audit: a defined population, rules over it, and a scored tolerance",
+			"name_nl": "Datakwaliteitscontrole: een afgebakende populatie, regels en een scoremarge",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "11.1",
@@ -2344,6 +3928,246 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "11.27",
+			"area": "configuration",
+			"name": "Routing predicates over where the case is: district, neighbourhood or area",
+			"name_nl": "Routeringsregels op de locatie van de zaak: wijk, buurt of gebied",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.28",
+			"area": "configuration",
+			"name": "Local change to a case type shipped as code, with the divergence detectable",
+			"name_nl": "Lokale wijziging op een als code geleverd zaaktype, met zichtbaar verschil",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.29",
+			"area": "configuration",
+			"name": "Field state driven by other field values, enforced on the API too",
+			"name_nl": "Veldgedrag gestuurd door andere veldwaarden, ook afgedwongen op de API",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.30",
+			"area": "configuration",
+			"name": "One rule set evaluated in the form and again on every API write",
+			"name_nl": "Eén set regels beoordeeld in het formulier en bij elke API-schrijfactie",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.31",
+			"area": "configuration",
+			"name": "Import as a durable record with an outcome per row",
+			"name_nl": "Import als blijvend record met een uitkomst per regel",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.32",
+			"area": "configuration",
+			"name": "One rule usable as a condition inside another",
+			"name_nl": "Eén regel bruikbaar als voorwaarde binnen een andere regel",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.33",
+			"area": "configuration",
+			"name": "Explanation written by an administrator on a status and on a transition",
+			"name_nl": "Toelichting van de beheerder bij een status en bij een overgang",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.34",
+			"area": "configuration",
+			"name": "Alert when a nominated field's value already exists on another record",
+			"name_nl": "Melding als de waarde van een aangewezen veld al elders voorkomt",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.35",
+			"area": "configuration",
+			"name": "Screen configuration stored as a patch, failing loudly when the layout moves",
+			"name_nl": "Scherminrichting bewaard als patch, die hoorbaar faalt bij een nieuwe indeling",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.36",
+			"area": "configuration",
+			"name": "Automation condition on a before-state and an after-state, not only on now",
+			"name_nl": "Automatiseringsvoorwaarde op de oude en de nieuwe waarde, niet alleen op nu",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.37",
+			"area": "configuration",
+			"name": "Custom field added by an ordinary user, still searchable and groupable",
+			"name_nl": "Eigen veld toegevoegd door een gewone gebruiker, nog steeds doorzoekbaar",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.38",
+			"area": "configuration",
+			"name": "Published service catalogue whose leaf sets form, case type and term at once",
+			"name_nl": "Gepubliceerde dienstencatalogus waarvan een blad formulier, zaaktype en termijn zet",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.39",
+			"area": "configuration",
+			"name": "Reference field whose choices are a query over the record being edited",
+			"name_nl": "Verwijsveld waarvan de keuzes een zoekvraag zijn op het record zelf",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.40",
+			"area": "configuration",
+			"name": "Obsolete value removed from every picker without being deleted",
+			"name_nl": "Vervallen waarde uit elke keuzelijst gehaald zonder te verwijderen",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.41",
+			"area": "configuration",
+			"name": "Ledger of which rule fired for which case, and which actions succeeded",
+			"name_nl": "Logboek van welke regel voor welke zaak liep en welke acties slaagden",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.42",
+			"area": "configuration",
+			"name": "Rule conditions expressed relative to now, including in business hours",
+			"name_nl": "Regelvoorwaarden ten opzichte van nu, ook binnen openingstijden",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.43",
+			"area": "configuration",
+			"name": "Named screen overrides bound to a team or a portal, with fall-through",
+			"name_nl": "Benoemde schermvarianten per team of portaal, met terugval op de basis",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.44",
+			"area": "configuration",
+			"name": "Hierarchical code list whose entries carry consequences, not only labels",
+			"name_nl": "Hiërarchische keuzelijst waarvan de waarden gevolgen dragen, niet alleen labels",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.45",
+			"area": "configuration",
+			"name": "Validation written by an administrator that refuses a save with its own message",
+			"name_nl": "Validatie van de beheerder die opslaan weigert met een eigen melding",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "11.46",
+			"area": "configuration",
+			"name": "Which role may move a case from one status to another",
+			"name_nl": "Welke rol een zaak van de ene status naar de andere mag brengen",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		},
 		{
 			"id": "12.1",
@@ -2797,6 +4621,282 @@
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "13.19",
+			"area": "access-and-privacy",
+			"name": "Transition the person who prepared the case may not make themselves",
+			"name_nl": "Overgang die de voorbereider van de zaak niet zelf mag zetten",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.20",
+			"area": "access-and-privacy",
+			"name": "Emergency self-granted access, time-boxed, with a reason, enabled per case type",
+			"name_nl": "Noodtoegang die je jezelf geeft, tijdelijk, met reden, per zaaktype aan te zetten",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.21",
+			"area": "access-and-privacy",
+			"name": "Hand-off refused until consent is recorded, with the sharing scope chosen",
+			"name_nl": "Overdracht geweigerd tot toestemming is vastgelegd, met gekozen deelomvang",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.22",
+			"area": "access-and-privacy",
+			"name": "Erasure for one person across every case, with a report of what was left",
+			"name_nl": "Wissen van één persoon over alle zaken, met een verslag van wat bleef",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.23",
+			"area": "access-and-privacy",
+			"name": "Named role slot on the case, where the right follows whoever occupies it",
+			"name_nl": "Benoemde rolplek op de zaak, waarbij het recht meegaat met de bezetter",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.24",
+			"area": "access-and-privacy",
+			"name": "Destruction proposed as a list, reviewed per item by a named reviewer",
+			"name_nl": "Vernietiging voorgesteld als lijst, per stuk beoordeeld door een benoemde toetser",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.25",
+			"area": "access-and-privacy",
+			"name": "Anonymising as a configured alternative to deletion, chosen per outcome",
+			"name_nl": "Anonimiseren als ingerichte keuze naast verwijderen, per resultaat gekozen",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.26",
+			"area": "access-and-privacy",
+			"name": "Report accepted without an account, unmasked only by a named custodian",
+			"name_nl": "Melding zonder account aangenomen, alleen ontsloten door een benoemde vertrouwenspersoon",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.27",
+			"area": "access-and-privacy",
+			"name": "Party relationship granting dated access to the other party's record",
+			"name_nl": "Partijrelatie die gedateerde toegang geeft tot het record van de ander",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.28",
+			"area": "access-and-privacy",
+			"name": "Tamper-evident audit log that can be verified after the fact",
+			"name_nl": "Auditlog waarin knoeien zichtbaar wordt en dat later te controleren is",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.29",
+			"area": "access-and-privacy",
+			"name": "Link type declaring which fields of the linked record it exposes",
+			"name_nl": "Koppelsoort die vastlegt welke velden van het gekoppelde record zichtbaar zijn",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.30",
+			"area": "access-and-privacy",
+			"name": "Access denial that names the rule which produced it",
+			"name_nl": "Weigering van toegang die de regel noemt waardoor die ontstond",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.31",
+			"area": "access-and-privacy",
+			"name": "Portal visibility derived from the party tree, so a parent sees its subsidiaries",
+			"name_nl": "Portaalzicht afgeleid uit de partijboom, zodat een moeder de dochters ziet",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.32",
+			"area": "access-and-privacy",
+			"name": "Notification when a file is downloaded",
+			"name_nl": "Melding zodra een bestand wordt gedownload",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.33",
+			"area": "access-and-privacy",
+			"name": "Permission to hand work to someone, distinct from read and write",
+			"name_nl": "Recht om werk toe te wijzen, los van lezen en schrijven",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.34",
+			"area": "access-and-privacy",
+			"name": "Row-level access by group, with the inheritance it came from declared",
+			"name_nl": "Toegang per rij via groepen, met de herkomst van de overerving erbij",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.35",
+			"area": "access-and-privacy",
+			"name": "Bearer link that opens a case without a login, with expiry and revocation",
+			"name_nl": "Deellink die een zaak opent zonder inloggen, met vervaldatum en intrekking",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.36",
+			"area": "access-and-privacy",
+			"name": "Legal hold suspending destruction while a proceeding runs",
+			"name_nl": "Bewaarplicht die vernietiging opschort zolang een procedure loopt",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "13.37",
+			"area": "access-and-privacy",
+			"name": "Bulk reassignment of a departing handler's caseload",
+			"name_nl": "Zaaklast van een vertrekkende behandelaar in bulk herverdelen",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "14.1",
+			"area": "case-plan-and-services",
+			"name": "Case plan of interventions, each with a goal, a provider and a target date",
+			"name_nl": "Plan van aanpak met interventies, elk met doel, aanbieder en streefdatum",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "15.1",
+			"area": "money-on-the-case",
+			"name": "Award with amount requested, amount granted, payment, reporting and recovery",
+			"name_nl": "Toekenning met gevraagd bedrag, verleend bedrag, betaling, verantwoording en terugvordering",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "16.1",
+			"area": "field-work-and-offline",
+			"name": "Offline field capture with a visible replay queue and recorded conflicts",
+			"name_nl": "Offline opnemen in het veld met een zichtbare wachtrij en vastgelegde conflicten",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
+		},
+		{
+			"id": "17.1",
+			"area": "multi-organisation",
+			"name": "One instance serving several organisations, with separated data and quotas",
+			"name_nl": "Eén omgeving voor meerdere organisaties, met gescheiden data en quota",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"addedOn": "2026-09-10"
 		}
 	]
 }
