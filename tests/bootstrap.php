@@ -563,6 +563,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
 // BezwaarDecisionListenerTest can exercise the guard's real decision through
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Db/Task.php';
+	include_once __DIR__ . '/Stubs/Event/TaskTerminalEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
