@@ -101,10 +101,38 @@ programme and the reason wave 1 goes first.
 - [ ] 2.1 Pin: tests over `CreateTaskHandler`, `TaskCompletionResumeListener`,
       `DossiqAskPersonNode` and the three task widgets, against current
       behaviour, each mutation-checked.
-- [ ] 2.2 Map: the 15 `caseTask` properties onto `Task` columns. Known
-      already: `status` onto `state` (and `CreateTaskHandler.php:76` writes
-      `'open'`, which is out of enum and must be refused, not translated),
-      `checklist` onto `checklist`, `blocksCase` onto a `TaskRelation`.
+- [x] 2.2 Map: the 15 `caseTask` properties onto `Task` columns. **Done, and
+      all 15 map. Nothing is orphaned and almost nothing needs translating.**
+
+      | caseTask | Task column | Note |
+      |---|---|---|
+      | `title` | `title` | 1:1 |
+      | `description` | `description` | 1:1 |
+      | `status` | `state` | **1:1.** `Task::STATES` is the same CMMN vocabulary: available, active, completed, terminated, disabled (plus `enabled`, which dossiq does not use). `TERMINAL_STATES` is the same three. |
+      | `isTerminalStatus` | `is_terminal` | Already materialised there; dossiq's calculation can go |
+      | `case` | `object_uuid` + `register_id` + `schema_id` | The case IS the object (OR design D-3) |
+      | `assignee` | `assignee` | 1:1 |
+      | `assigneeGroup` | `candidate_groups` | Single value into an array |
+      | `dueDate` | `due_at` | 1:1 |
+      | `priority` | `priority` | **1:1.** `TaskPriority::STRINGS` canonical four are low/normal/high/urgent, exactly dossiq's enum |
+      | `completedDate` | `completed_at` | 1:1 |
+      | `workflowStepId` | `workflow_step_id` | 1:1 |
+      | `checklist` | `checklist` | JSON-encoded string here, real `json` there. A widening, not a loss |
+      | `flowRun` | `run_uuid` | 1:1 |
+      | `flowNode` | `node_id` | 1:1 |
+      | `blocksCase` | a `TaskRelation` row | No column by design: OR keeps typed relations out of the task row |
+
+      **The one real defect to carry across:** `CreateTaskHandler.php:76`
+      writes `'open'`, which is out of enum on BOTH sides. It must be
+      refused, not translated. OpenRegister's `flow-task-entity` change
+      already has a test case for exactly this string.
+
+      **Forty Task columns have no caseTask source**, all optional, and they
+      are what dossiq gains: `responses` and `template_snapshot` (the task
+      form dossiq cannot have today), `sla_value`/`sla_unit`,
+      `candidate_users`/`candidate_role`/`routing_strategy`, `watchers`,
+      `on_timeout`/`on_reject`, `parent_task_id`/`epic_task_id`,
+      `sequence_uuid`, `evidence`, `percent_complete`.
 - [ ] 2.3 Dual-run: write to both, read from `Task`, behind a config flag.
 - [ ] 2.4 The dossiq task detail page reads `Task` and keeps its own surface
       (D-3): same route, same page id, same deep links, case card and the two
