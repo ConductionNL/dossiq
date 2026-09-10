@@ -64,9 +64,7 @@
 					data-testid="task-audit-leaf-entry">
 					<span class="task-audit-leaf__when">{{ whenOf(entry) }}</span>
 					<span class="task-audit-leaf__what">{{ describe(entry) }}</span>
-					<span
-						v-if="entry.reason"
-						class="task-audit-leaf__reason">
+					<span v-if="entry.reason" class="task-audit-leaf__reason">
 						{{ entry.reason }}
 					</span>
 				</li>

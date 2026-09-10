@@ -59,15 +59,12 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
-const { default: TaskNotesLeaf } = await import(
-	'../../src/components/tasks/TaskNotesLeaf.vue'
-)
-const { default: TaskEventsLeaf } = await import(
-	'../../src/components/tasks/TaskEventsLeaf.vue'
-)
-const { default: TaskAuditLeaf } = await import(
-	'../../src/components/tasks/TaskAuditLeaf.vue'
-)
+const { default: TaskNotesLeaf } =
+	await import('../../src/components/tasks/TaskNotesLeaf.vue')
+const { default: TaskEventsLeaf } =
+	await import('../../src/components/tasks/TaskEventsLeaf.vue')
+const { default: TaskAuditLeaf } =
+	await import('../../src/components/tasks/TaskAuditLeaf.vue')
 
 /**
  * Mount one leaf over the scripted endpoint answers.
@@ -217,9 +214,9 @@ describe('TaskEventsLeaf', () => {
 	it('says so when the task has nothing booked', async () => {
 		const wrapper = await mountLeaf(TaskEventsLeaf)
 
-		expect(
-			wrapper.find('[data-testid="task-events-leaf-empty"]').exists(),
-		).toBe(true)
+		expect(wrapper.find('[data-testid="task-events-leaf-empty"]').exists()).toBe(
+			true,
+		)
 	})
 
 	it('tells a failed read apart from an empty one', async () => {
@@ -229,9 +226,9 @@ describe('TaskEventsLeaf', () => {
 		expect(wrapper.find('[data-testid="task-events-leaf-error"]').text()).toBe(
 			'No such task',
 		)
-		expect(
-			wrapper.find('[data-testid="task-events-leaf-empty"]').exists(),
-		).toBe(false)
+		expect(wrapper.find('[data-testid="task-events-leaf-empty"]').exists()).toBe(
+			false,
+		)
 	})
 })
 
@@ -314,8 +311,8 @@ describe('TaskAuditLeaf', () => {
 		expect(wrapper.find('[data-testid="task-audit-leaf-error"]').text()).toBe(
 			'No such task',
 		)
-		expect(
-			wrapper.find('[data-testid="task-audit-leaf-empty"]').exists(),
-		).toBe(false)
+		expect(wrapper.find('[data-testid="task-audit-leaf-empty"]').exists()).toBe(
+			false,
+		)
 	})
 })

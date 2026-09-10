@@ -561,14 +561,14 @@ test.describe('Case detail — the task pane', () => {
 		const facts = page.locator('[data-testid="task-detail-body"]')
 		await expect(facts).toBeVisible({ timeout: 20_000 })
 		await expect(facts).not.toContainText(linkCaseId)
-		await expect(
-			page.locator('[data-testid="task-case-card"]'),
-		).toHaveCount(1)
+		await expect(page.locator('[data-testid="task-case-card"]')).toHaveCount(1)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
 	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
-	test('TaskDetailView carries the task own notes and appointments', async ({ page }) => {
+	test('TaskDetailView carries the task own notes and appointments', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
 		await dismissSupportDialog(page)
 		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to

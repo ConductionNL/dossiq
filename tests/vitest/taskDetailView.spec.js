@@ -74,9 +74,8 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
-const { default: TaskDetailView } = await import(
-	'../../src/views/tasks/TaskDetailView.vue'
-)
+const { default: TaskDetailView } =
+	await import('../../src/views/tasks/TaskDetailView.vue')
 
 /** A task the engine would answer with, in the engine's own vocabulary. */
 const TASK = {
@@ -112,7 +111,11 @@ async function mountPage(task) {
 					name: 'CnStatusBadge',
 					props: { label: { type: String, default: '' } },
 					render() {
-						return h('span', { 'data-testid': 'task-detail-state' }, this.label)
+						return h(
+							'span',
+							{ 'data-testid': 'task-detail-state' },
+							this.label,
+						)
 					},
 				}),
 				TaskCaseCard: true,
@@ -176,12 +179,10 @@ describe('TaskDetailView', () => {
 		})
 
 		expect(wrapper.find('[data-testid="task-detail-due"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="task-detail-team"]').exists()).toBe(
-			false,
-		)
-		expect(wrapper.find('[data-testid="task-detail-body"]').text()).not.toContain(
-			'—',
-		)
+		expect(wrapper.find('[data-testid="task-detail-team"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="task-detail-body"]').text(),
+		).not.toContain('—')
 	})
 
 	it('offers hand back on a held task and pick up on an unheld one', async () => {
@@ -253,9 +254,9 @@ describe('TaskDetailView', () => {
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
 			'active',
 		)
-		expect(wrapper.find('[data-testid="task-detail-verb-complete"]').exists()).toBe(
-			true,
-		)
+		expect(
+			wrapper.find('[data-testid="task-detail-verb-complete"]').exists(),
+		).toBe(true)
 	})
 
 	it('says a task it cannot read is not there, rather than rendering nothing', async () => {
@@ -267,13 +268,14 @@ describe('TaskDetailView', () => {
 		expect(wrapper.find('[data-testid="task-detail-missing"]').exists()).toBe(
 			true,
 		)
-		expect(wrapper.find('[data-testid="task-detail-body"]').exists()).toBe(
-			false,
-		)
+		expect(wrapper.find('[data-testid="task-detail-body"]').exists()).toBe(false)
 	})
 
 	it('ticks a checklist item by its id, and drops an item that has none', async () => {
-		invokeResult = { ...TASK, checklist: [{ id: 'a', label: 'Drawings', checked: true }] }
+		invokeResult = {
+			...TASK,
+			checklist: [{ id: 'a', label: 'Drawings', checked: true }],
+		}
 		const wrapper = await mountPage({
 			...TASK,
 			checklist: [

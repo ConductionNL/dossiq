@@ -214,7 +214,10 @@ export default {
 
 			this.busy = true
 			try {
-				const outcome = await useEngineTaskStore().writeNote(this.taskId, text)
+				const outcome = await useEngineTaskStore().writeNote(
+					this.taskId,
+					text,
+				)
 				if (outcome.note === null) {
 					this.error = outcome.error ?? ''
 					return
@@ -266,9 +269,7 @@ export default {
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		authorOf(note) {
-			const name = String(
-				note?.actorDisplayName ?? note?.actorId ?? '',
-			).trim()
+			const name = String(note?.actorDisplayName ?? note?.actorId ?? '').trim()
 			return name === '' ? t('dossiq', 'Unknown') : name
 		},
 

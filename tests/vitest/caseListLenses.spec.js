@@ -187,7 +187,10 @@ describe('Tasks index lenses', () => {
 	 */
 	it('names a scope on every lens, so none inherits the assigned default', () => {
 		for (const entry of chips('Tasks')) {
-			expect(entry.filter.scope, `${entry.label} declares no scope`).toBeTruthy()
+			expect(
+				entry.filter.scope,
+				`${entry.label} declares no scope`,
+			).toBeTruthy()
 		}
 
 		const personal = chips('Tasks')
