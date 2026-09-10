@@ -118,6 +118,9 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// The Dashboard's My work tile, over OpenRegister's task engine.
+// @spec openspec/specs/dashboard/spec.md
+import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 
@@ -132,6 +135,12 @@ import { leafTab } from './integrations/leafTabs.js'
 // entry or `slots` mapping is needed. The self-fetching `src/views/widgets/*.vue`
 // components and their `src/*Widget.js` native-dashboard entry points survive
 // UNCHANGED for the native Nextcloud Dashboard (which has no manifest).
+//
+// ONE EXCEPTION SINCE remove-casetask: `my-work`. Its rows are not
+// OpenRegister objects any more, they are engine tasks behind
+// `/api/flow-tasks`, and a built-in `object-table` can only name a register
+// and a schema. See the `MyWorkWidget` entry below for what has to land in
+// the library before the tile goes back to being declared inline.
 
 // Leverancier-zaakportaal external supplier portal MOVED to Portaliq (ADR-046,
 // procest#162): the /leverancier Vue surface + the citizen "Mijn gemeente"
@@ -405,6 +414,21 @@ const registry = {
 		kind: 'widget',
 		component: TaskCaseCard,
 		_note: 'TaskDetail card above the Data widget: the case this task is on, with its identifier, title as the link, status, case type, handler and deadline. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
+	},
+
+	// --- The Dashboard's My work tile (remove-casetask 2.3). ---
+	//
+	// Keyed by COMPONENT NAME, like TaskCaseCard above and unlike
+	// `case-task-pane`: `my-work` is a widget in the Dashboard page's own
+	// `config.widgets`, so it has a grid item, CnDashboardPage renders a
+	// `widget-my-work` slot for it, and `pages[Dashboard].slots` maps that
+	// slot name to this key.
+	// @spec openspec/specs/dashboard/spec.md
+	MyWorkWidget: {
+		// @custom-widget-ratchet exclude the rows are not OpenRegister objects: an engine task lives behind /api/flow-tasks with no register and no schema, and every built-in table widget takes exactly those two, so no configuration of object-table can address this list at all; nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages (src/composables/indexSources.js) and no widget equivalent, which is the gap this entry stands in for
+		kind: 'widget',
+		component: MyWorkWidget,
+		_note: 'Dashboard My work tile: your open tasks from OpenRegister\'s task engine, soonest due first, with a days-left column and a red row once a deadline has passed. INTERIM. It is a component rather than a built-in `object-table` only because nextcloud-vue has no task source for widgets: 2.46.0 gives an INDEX page `entitySource: "tasks"` and gives a widget nothing, so the manifest cannot name this list. TARGET: back to a generic widget the day the library grows that source, at which point the `content` block the manifest still carries is what it goes back to reading and this entry is deleted. The e2e asserts on the tile and its rows rather than on this component, so it survives the swap back.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

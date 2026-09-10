@@ -23,6 +23,7 @@ import { CnDataTable } from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
+import { shapeEngineTask } from './engineTaskRows.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
 export default {
@@ -69,14 +70,25 @@ export default {
 			return generateUrl('/apps/dossiq/tasks')
 		},
 
-		/** @spec openspec/specs/signalering-widgets/spec.md */
+		/**
+		 * 🔴 THE ENGINE HAS NO `id` AND NO `dueDate`, AND THIS READ BOTH.
+		 * `task.id` is the engine's numeric row id, not its uuid, so every
+		 * row's deep link was `/apps/dossiq/tasks/153`, which no route
+		 * resolves; `task.dueDate` does not exist on a flow-task row at all,
+		 * so every row read "No deadline". Neither failed loudly. Both names
+		 * now come from `shapeEngineTask`, which is the one place the
+		 * engine's vocabulary is read.
+		 *
+		 * @return {Array<object>} The rows, shaped for the signal table.
+		 * @spec openspec/specs/signalering-widgets/spec.md
+		 */
 		items() {
-			return this.tasks.map((task) => ({
+			return this.tasks.map(shapeEngineTask).map((task) => ({
 				id: task.id,
 				mainText: task.title || t('dossiq', 'Unnamed task'),
 				subText: task.dueDate
 					? t('dossiq', 'Deadline: {date}', {
-							date: task.dueDate.slice(0, 10),
+							date: String(task.dueDate).slice(0, 10),
 						})
 					: t('dossiq', 'No deadline'),
 				targetUrl: generateUrl(`/apps/dossiq/tasks/${task.id}`),

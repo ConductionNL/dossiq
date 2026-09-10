@@ -708,57 +708,12 @@
 					},
 					{
 						"id": "my-work",
-						"type": "object-table",
+						"type": "custom",
 						"title": "My work",
-						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `my-tasks` and `task-reminders`, which read the same schema with the same filter and differed only in a due-date window, so seven of ten rows appeared on the page twice. `extend` carries `case` as well as `calculations`: a $ref column renders the stored uuid unless the referenced object is extended AND the column reads `<property>.<labelField>`, which is why the case column is keyed `case.title`. `rowActions` Pick up and Complete stay blocked on nextcloud-vue (the 2.40.0 object-table vocabulary has no such key); the row keeps `rowRoute` to TaskDetail, where the lifecycle buttons already render.",
+						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute.query` stays in the Tasks INDEX page's vocabulary, which is still `assignee` plus `isTerminalStatus`, and not in the engine's: the tile links into that page and does not filter it itself. It moves when remove-casetask 2.2 moves the index onto `entitySource: \"tasks\"`, which is a separate task and a separate owner. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false
-								},
-								"extend": ["case", "calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"label": "Task",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "case.title",
-									"label": "Case",
-									"cellClass": "cn-cell--muted"
-								},
-								{
-									"key": "daysUntilDue",
-									"label": "Days left",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
+							"limit": 10,
 							"rowRoute": "TaskDetail",
-							"rowClass": [
-								{
-									"when": {
-										"field": "daysUntilDue",
-										"op": "lt",
-										"value": 0
-									},
-									"class": "cn-row--danger"
-								}
-							],
 							"viewAllRoute": {
 								"name": "Tasks",
 								"query": {
@@ -767,8 +722,6 @@
 								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": false,
-							"borderless": true,
 							"emptyText": "You have no open tasks"
 						}
 					},
@@ -989,6 +942,10 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The `slots` map below is not decoration. A `type: \"custom\"` dashboard widget resolves ONLY through it, and it must sit here beside `config`, never inside it. CnPageRenderer reads `page.slots`; a slots map nested under `config` is never read, the widget renders the \"Widget not available\" placeholder, and the manifest schema accepts it either way because `config` is additionalProperties:true. Nine of decidesk's eleven widgets shipped that way on 2026-06-13.",
+			"slots": {
+				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
