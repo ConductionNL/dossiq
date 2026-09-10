@@ -145,13 +145,26 @@ describe('CaseDetail: terms and archive', () => {
 		// than each app reading its own field names. `type: metadata` is
 		// nextcloud-vue's CnObjectMetadataWidget and `include` names keys of the
 		// resolved decision.
+		//
+		// 🔴 THESE ARE THE RESOLVER'S KEYS, AND FOUR OF THEM USED TO BE OURS.
+		// The list read `nomination, period, actionDate, status, ...`, which are
+		// the names dossiq writes on the RECORD. OpenRegister's
+		// ArchivalDecisionResolver does not emit those: it aliases them onto its
+		// own vocabulary (`archiveNomination` and `archiefnominatie` become
+		// `appraisal`, `archiveActionDate` becomes `disposalDate`,
+		// `archiveStatus` becomes `recordState`; see declaredArchivalFields()).
+		// So six of the seven resolved to nothing, the card rendered the single
+		// row `Basis: record`, and the nomination, the retention period and the
+		// disposal date were missing from the case page while still being
+		// written on the case. This guard pinned the wrong names, so it went
+		// green throughout.
 		const archival = widget('case-archival')
 		expect(archival.type).toBe('metadata')
 		expect(archival.content.include).toEqual([
-			'nomination',
-			'period',
-			'actionDate',
-			'status',
+			'appraisal',
+			'retentionPeriod',
+			'disposalDate',
+			'recordState',
 			'basis',
 			'source',
 			'legalHold',
