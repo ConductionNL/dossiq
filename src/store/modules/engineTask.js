@@ -51,11 +51,7 @@ export const FLOW_TASKS_URL = '/apps/openregister/api/flow-tasks'
  *
  * @type {string[]}
  */
-export const TERMINAL_STATES = Object.freeze([
-	'completed',
-	'terminated',
-	'disabled',
-])
+export const TERMINAL_STATES = Object.freeze(['completed', 'terminated', 'disabled'])
 
 /**
  * Whether a task is finished.
@@ -113,7 +109,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 			this.loading = true
 			this.error = null
 			try {
-				const response = await axios.get(generateUrl(FLOW_TASKS_URL), { params })
+				const response = await axios.get(generateUrl(FLOW_TASKS_URL), {
+					params,
+				})
 				this.tasks = response.data?.results ?? []
 				this.total = Number(response.data?.total ?? this.tasks.length) || 0
 				return this.tasks
@@ -170,7 +168,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 			this.loading = true
 			this.error = null
 			try {
-				const response = await axios.get(generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`))
+				const response = await axios.get(
+					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
+				)
 				this.task = response.data?.results ?? response.data ?? null
 				return this.task
 			} catch (error) {
@@ -206,14 +206,17 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 			this.loading = true
 			this.error = null
 			try {
-				const url = generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`)
+				const url = generateUrl(
+					`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
+				)
 				const response = await axios.post(url, body)
 				this.task = response.data?.results ?? response.data ?? null
 				return this.task
 			} catch (error) {
 				// The engine's refusal message is the useful part: it names the
 				// verb and the reason. Keep it rather than a generic failure.
-				this.error = error?.response?.data?.message || error?.message || String(error)
+				this.error =
+					error?.response?.data?.message || error?.message || String(error)
 				return null
 			} finally {
 				this.loading = false

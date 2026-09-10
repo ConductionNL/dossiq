@@ -109,7 +109,9 @@ describe('useEngineTaskStore', () => {
 	})
 
 	it('reads one task by uuid', async () => {
-		get.mockResolvedValue({ data: { uuid: 't1', title: 'Ask the applicant', state: 'active' } })
+		get.mockResolvedValue({
+			data: { uuid: 't1', title: 'Ask the applicant', state: 'active' },
+		})
 		const store = useEngineTaskStore()
 
 		const task = await store.fetch('t1')
@@ -132,7 +134,11 @@ describe('useEngineTaskStore', () => {
 	})
 
 	it('keeps the engine refusal message, which names the verb and the reason', async () => {
-		post.mockRejectedValue({ response: { data: { message: "Verb 'complete' denied: not the assignee" } } })
+		post.mockRejectedValue({
+			response: {
+				data: { message: "Verb 'complete' denied: not the assignee" },
+			},
+		})
 		const store = useEngineTaskStore()
 
 		const task = await store.invoke('t1', 'complete')
