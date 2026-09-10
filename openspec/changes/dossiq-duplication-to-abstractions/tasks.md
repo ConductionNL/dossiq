@@ -14,10 +14,20 @@ Do not silence it with a placeholder capability.
 ## 0. Programme setup
 
 - [x] 0.1 Inventory every dossiq schema against OpenRegister's entities and
-      leaves. 81 schemas, 40 in 11 clusters with a verified counterpart.
-      Published as an audit page and recorded in `proposal.md`.
-- [x] 0.2 Confirm the counterparts exist by opening the file, not by matching
-      a name. All eleven verified in the `openregister` checkout.
+      leaves. 81 schemas, **33 in 8 clusters** with a verified counterpart.
+      Recorded in `proposal.md`.
+- [x] 0.2 Confirm the counterparts by opening the file AND comparing columns
+      to properties, not by matching a name. This step removed six schemas the
+      first pass had claimed: `abonnement` and `notificationChannel` are ZGW
+      Notificaties API records and not OpenRegister subscriptions,
+      `aiAuditEntry` logs AI suggestions a user rejected and so has no row in
+      an object audit trail, `mapLayer` and `wmsLayer` are basemap
+      configuration where `MapLink` is a pin, and `caseShare` is a
+      password-protected public link where `FederatedShare` is federation.
+      `usageRights` moved clusters rather than being dropped: it is ZGW
+      `gebruiksrechten`, document metadata, so it belongs with documents.
+      The rejected rows are tabled in `proposal.md` on purpose: a name match
+      is the mistake this programme is most likely to repeat.
 - [x] 0.3 Grep the sibling checkouts for duck-typed reads of any dossiq slug
       named here, so the Remove step of each cluster knows who else breaks.
       Ran 2026-09-10 over openregister, decidesk, docudesk, doriath,
@@ -53,7 +63,7 @@ Do not silence it with a placeholder capability.
 
 ## 1. Library gaps, lifted once (nextcloud-vue)
 
-Blocks clusters 3, 5 and 7. Additive, so it can land before any of them.
+Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
 `development` there is gated: merge needs `--admin`.
 
 - [ ] 1.1 `cnFormFieldRenderer.js`: add `field.type === 'file'`. Needed by the
@@ -121,30 +131,33 @@ continued, not replaced.
 - [ ] 4.1 **Tenancy** onto `Organisation` (7 schemas, 50 properties, 56 PHP
       files, five middlewares). Existing change at 2/5: pinning done, the map
       is next.
-- [ ] 4.2 **Documents** onto `File` + the files leaf (6 schemas). Existing
+- [ ] 4.2 **Documents** onto `File` + the files leaf (7 schemas, including
+      `usageRights`, which is ZGW `gebruiksrechten` and belongs here rather
+      than with access control). Existing
       change at 11/13, both remaining tasks blocked on 1.2 and 1.4.
 - [ ] 4.3 **Workflow / case plan** onto `Flow` + `CaseItem` (2 schemas).
       Existing change `retire-cmmn-caseplanstate` at 0/16. The largest of the
       wave-3 items.
-- [ ] 4.4 **Sharing and federation** onto `FederatedShare` (4 schemas, 43
-      properties). No plan exists; write one.
-- [ ] 4.5 **Maps** onto `MapLink` + the maps leaf (3 schemas). No plan exists.
-      `integration-maps` is an empty directory with no proposal.
-- [ ] 4.6 **Audit** onto `AuditTrail` (`aiAuditEntry`, 15 properties). No plan
-      exists.
-- [ ] 4.7 **Notifications** onto `NotificationSubscription` (`abonnement`,
-      `notificationChannel`, 6 properties). Dossiq already uses the
-      `x-openregister-notifications` dialect on its schemas, so these two are
-      the leftover imperative half. Smallest cluster; good first one.
-- [ ] 4.8 **Rights** onto `DataAccessProfile` (`usageRights`). Access rules
-      held as register rows are not enforced by the authorization layer.
-- [ ] 4.9 **Contacts** (existing change at 12/16) and **email** (at 8/20) are
+- [ ] 4.4 **Federation** onto `FederatedShare` (`caseFederatedShare`,
+      `casetransfer`, 24 properties). No plan exists; write one.
+      `caseFederatedShare` is the strong match (`remoteCloudId`,
+      `federationShareId`, `permissionLevel`, `status` against
+      `remoteInstanceUrl`, `shareToken`, `permissions`, `status`);
+      `casetransfer` overlaps partially and carries a custody audit trail that
+      has no counterpart, so map it before assuming it moves whole.
+      `caseShare` is NOT in this cluster: it is a password-protected public
+      link with `failedAttempts` and `lockedUntil`, which is the shares leaf's
+      shape, not federation's.
+- [ ] 4.5 **Case location** onto `MapLink` (`case-location`, 9 properties).
+      Small. `mapLayer` and `wmsLayer` are deliberately excluded: they
+      configure basemaps, and `MapLink` is a pin on one.
+- [ ] 4.6 **Contacts** (existing change at 12/16) and **email** (at 8/20) are
       already in flight against the contacts and email leaves. Continue.
 
 ## 5. Done
 
-- [ ] 5.1 `lib/Settings/dossiq_register.json` declares 41 schemas, down from
-      81. Any other number is progress, not completion.
+- [ ] 5.1 `lib/Settings/dossiq_register.json` declares **48** schemas, down
+      from 81. Any other number is progress, not completion.
 - [ ] 5.2 Every retired slug returns zero hits from a case-insensitive
       `git grep` across the whole repo, including seed data, demo data, e2e
       fixtures and `ci-seed.sh`.

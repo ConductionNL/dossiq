@@ -2,25 +2,43 @@
 
 ## Why
 
-Dossiq declares 81 schemas. **Forty of them, carrying 349 properties, belong to
-eleven clusters that OpenRegister already ships an entity or a leaf for.**
+Dossiq declares 81 schemas. **Thirty-three of them, carrying 282 properties,
+belong to eight clusters that OpenRegister already ships an entity or a leaf
+for.**
 
 This is not a suspicion. Every counterpart below was checked by opening the
-file in the `openregister` checkout on 2026-09-10:
+file in the `openregister` checkout on 2026-09-10 and **comparing its columns
+to the dossiq schema's properties**, not by matching a name:
 
 | Dossiq cluster | Schemas | OpenRegister counterpart | Verified |
 |---|---|---|---|
 | task | 1 | `Task` | `lib/Db/Task.php`, 936 lines |
 | tenancy | 7 | `Organisation` | `lib/Db/Organisation.php`, 1128 lines |
-| sharing / federation | 4 | `FederatedShare` | `lib/Db/FederatedShare.php`, 307 lines |
+| documents | 7 | `File` + `files` leaf | `lib/Db/File.php` |
 | inspection checklists | 7 | task forms + `field-inspection` leaf | `lib/Service/Task/TaskForm*.php` |
 | advice requests | 6 | `Task` + task forms | `lib/Db/Task.php` |
-| documents | 6 | `File` + `files` leaf | `lib/Db/File.php` |
-| maps | 3 | `MapLink` + `maps` leaf | `lib/Db/MapLink.php`, 181 lines |
 | workflow / case plan | 2 | `Flow` + `CaseItem` | `lib/Db/CaseItem.php`, 638 lines |
-| audit | 1 | `AuditTrail` | `lib/Db/AuditTrail.php`, 648 lines |
-| notifications | 2 | `NotificationSubscription` | `lib/Db/NotificationSubscription.php`, 101 lines |
-| rights | 1 | `DataAccessProfile` | `lib/Db/DataAccessProfile.php`, 161 lines |
+| federation | 2 | `FederatedShare` | `lib/Db/FederatedShare.php`, 307 lines |
+| case location | 1 | `MapLink` | `lib/Db/MapLink.php`, 181 lines |
+
+## Six schemas that a name match would have caught and a field match rejects
+
+The first pass of this audit claimed eleven clusters and 42 schemas. Comparing
+columns rather than concepts removed six of them, and the reason is worth
+keeping, because it is the mistake this programme is most likely to repeat.
+
+| Schema | Looked like | Actually is | Verdict |
+|---|---|---|---|
+| `abonnement` | `NotificationSubscription` | A **ZGW Notificaties API** subscription: `callbackUrl`, `auth`, `kanalen`. OpenRegister's entity is `userId`+`registerId`+`schemaId`, an in-app subscription. | Stays |
+| `notificationChannel` | `NotificationSubscription` | The ZGW *kanaal* register that pairs with it. | Stays |
+| `usageRights` | `DataAccessProfile` | ZGW `gebruiksrechten`: a document's usage conditions and dates. Not access control at all. | Moves, but into the **documents** cluster |
+| `aiAuditEntry` | `AuditTrail` | An **AI interaction** log: `prompt`, `model`, `confidence`, `suggestion`, `userAction`. It records suggestions a user REJECTED, which changed no object, so `AuditTrail` has nowhere to put them. | Stays |
+| `mapLayer` | `MapLink` | Basemap configuration: `url`, `layers`, `srs`, `opacity`, `minZoom`. `MapLink` is a pin on a map (`lat`, `lng`, `objectUuid`). | Stays |
+| `wmsLayer` | `MapLink` | Same, for WMS/WFS. | Stays |
+| `caseShare` | `FederatedShare` | A password-protected public link with `failedAttempts` and `lockedUntil`. Federation is `caseFederatedShare`. | Stays |
+
+`case-location` survives the maps row: it carries a real location and is a
+genuine `MapLink`. The two layer schemas are configuration and are not.
 
 OpenRegister's own inventory already names dossiq as the offender in the
 largest of these. From `openregister/openspec/changes/flow-task-entity/proposal.md:40`:
@@ -84,13 +102,14 @@ finished; `flow-task-forms` is 17/20 with three UI tasks open, and those three
 are in `nextcloud-vue`, not here.
 
 **Wave 2, the clusters that become tasks.** Advice (6 schemas) and inspection
-checklists (7 schemas). Thirteen schemas retired against one abstraction.
+checklists (7 schemas). Thirteen schemas retired against one abstraction, and
+the largest single win in the programme.
 
-**Wave 3, the independent clusters.** Tenancy, documents, sharing, maps, audit,
-notifications, rights, workflow. Each stands alone and can be worked in
-parallel or dropped without affecting the others.
+**Wave 3, the independent clusters.** Tenancy, documents, workflow,
+federation, case location. Each stands alone and can be worked in parallel or
+dropped without affecting the others.
 
-Six of these already have a dossiq change that stalled. This proposal does not
+Five of these already have a dossiq change that stalled. This proposal does not
 replace them; it sequences them and states the common shape they all share.
 
 ## The blocked-on-nextcloud-vue problem
@@ -103,7 +122,10 @@ workarounds.
 
 ## Success is measured, not asserted
 
-The programme is done when `lib/Settings/dossiq_register.json` declares 41
-schemas rather than 81, and every removed slug returns zero hits from
-`git grep` across `lib/ src/ tests/`. Any other number is progress, not
-completion, and the tasks file counts it per cluster.
+The programme is done when `lib/Settings/dossiq_register.json` declares **48
+schemas rather than 81**, and every removed slug returns zero hits from a
+case-insensitive `git grep` across the whole repo. Any other number is
+progress, not completion, and the tasks file counts it per cluster.
+
+48, not 41: the first pass of this audit over-claimed by six schemas, and the
+corrected target is stated here rather than quietly adjusted later.
