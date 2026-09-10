@@ -38,6 +38,23 @@
 - [x] Implement — the roster is built by `CommitteeDelegationService::rosterOf()`; the fan-out to Person + Membership happens in decidiq's `GovernanceBodyCommandService`
 - [x] Test — including the chair-repeated-in-members case, which would otherwise silently demote the chair
 
+> **Re-verified 2026-09-10.** Tasks 1, 2 and 5 hold up against the code.
+> Task 3 is genuinely absent and, unlike most of what is left in this app's
+> open changes, it waits on NOBODY: both decidiq prerequisites are merged, so
+> this is unstarted work rather than blocked work. It is also not small.
+> `lib/Service/Bezwaar/AdvisoryCommitteeService.php` is 672 lines and reads
+> the committee locally in `assignToCommittee()` before it validates
+> `active`, and the same resolution has to move in
+> `PanelIndependenceChecker.php`, `BezwaarAdviceRequestedListener.php`,
+> `BezwaarAuditTrail.php`, `SettingsService.php` and
+> `Settings/SchemaSlugMap.php`. The constraint that makes it a design job
+> rather than a search-and-replace is that ADR-022/066 forbid reading
+> decidiq's register directly, so the read needs a seam on decidiq's side to
+> resolve through, the way the write already goes through
+> `CommitteeDelegationService`. Until it lands, committees are written to
+> decidiq and read back from dossiq, which is the drift this change exists
+> to end.
+
 ### Task 3: Read path with a permanent fallback
 - **spec_ref**: `...#requirement-req-mcd-003-reads-resolve-from-decidiq-falling-back-locally`
 - **files**: `lib/Service/Bezwaar/AdvisoryCommitteeService.php`, `lib/Service/Bezwaar/PanelIndependenceChecker.php`, `lib/Listener/BezwaarAdviceRequestedListener.php`, `lib/Service/Bezwaar/BezwaarAuditTrail.php`, `lib/Service/SettingsService.php`, `lib/Service/Settings/SchemaSlugMap.php`

@@ -52,14 +52,14 @@
 > removes. See `PLAN-RESUME.md`.
 
 
-- [ ] D1.1 **Wait for `consume-decidesk-besluitvorming-leaf` to merge** — it deliberately keeps the two besluitvorming routes alive.
+- [x] D1.1 **Wait for `consume-decidesk-besluitvorming-leaf` to merge** — it deliberately keeps the two besluitvorming routes alive. MET 2026-09-10: that change is archived at `openspec/changes/archive/2026-09-09-consume-decidesk-besluitvorming-leaf`, so the gate on D1.2 and D1.3 is lifted and what remains under D1 is the mapping work itself.
 - [ ] D1.2 Map procest's agenda-compiler and vergadering-detail onto decidesk's `/agenda-items` and `/meetings`; land the gaps in decidesk. **Merge before D1.3.**
 - [ ] D1.3 Delete `/besluitvorming/agenda`, `/besluitvorming/vergaderingen/:id`, `AgendaCompilerView.vue`, `VergaderingDetailView.vue` and `src/manifest.d/50-besluitvorming.json`.
 - [ ] D2.1 Map `bezwaaradviescommissie` onto decidesk's `governance-body`; land it in decidesk. **Merge before D2.2.**
 - [ ] D2.2 Delete `/settings/bezwaar-committees`, `/settings/bezwaar-committees/:id` and their menu entry.
 - [ ] D3.1 Map `parafeerroute` onto decidesk's routed-document/approval model; land it in decidesk. **Merge before D3.2.**
 - [ ] D3.2 Delete `/settings/parafeerroutes`, `/settings/parafeerroutes/:id` and their menu entry.
-- [ ] D4.1 Verify the case-detail leaf is render-and-read only (ADR-066): no verb, no command. Anything procest needs decidesk to *do* travels as a typed event (ADR-041).
+- [x] D4.1 Verify the case-detail leaf is render-and-read only (ADR-066): no verb, no command. Anything procest needs decidesk to *do* travels as a typed event (ADR-041). VERIFIED 2026-09-10 against `src/components/tabs/BesluitvormingLeafTab.vue`. It is 213 lines, it renders `CnLeafMountHost`, and it holds no `axios`, no `fetch`, no `generateUrl` and no store write of any kind, so there is no verb for it to carry: the leaf host mounts decidiq's own component in decidiq's own context, which is the sanctioned shape rather than a command. The command path this change asks for is elsewhere and already typed: `CommitteeDelegationService` dispatches `GovernanceBodyRequestedEvent` and reads the correlation back off `GovernanceBodyCreatedEvent`.
 
 ## E. To hermiq
 

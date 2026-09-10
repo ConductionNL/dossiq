@@ -63,6 +63,19 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   Drop `hidden` from the Organisations folder; the index then lists people
   and organisations under one entry. No manifest change beyond that key.
 
+  RE-MEASURED 2026-09-10 against `@conduction/nextcloud-vue` **2.42.0** as
+  installed, because the version bump carried a folder fix and a folder fix
+  is not the same as this one. STILL BLOCKED, on all three counts, read out
+  of `src/components/CnIndexPage/CnIndexPage.vue` in the installed package:
+  `folderSidebarFolders()` returns `this.folderSidebar.folders` verbatim for
+  `source: custom`, so there is no per-folder `schema`, no per-folder
+  `columns` and no `hidden`; `CnFolderTree.vue` matches no `hidden` at all;
+  and `onFolderSelect()` still fires the selected id at the single flat key
+  `filterField || field`. What 2.42.0 did fix is a DIFFERENT folder defect,
+  `source: field` folders built from facet values rather than the loaded
+  page (`folderSidebarFacetValues` / `folderSidebarPartial`), which this
+  page does not use.
+
 ## 3. The contact pages
 
 - [x] 3.1 `src/manifest.json` page `ContactDetail` (`route: /contacts/:id`,
@@ -111,6 +124,18 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   page `Cases`: the Requester column links to `ContactDetail` or
   `OrganisationDetail` by `initiatorType`; until then the column stays text
   and 3.5 carries the link.
+
+  RE-MEASURED 2026-09-10 against 2.42.0. HALF of the ask shipped and the
+  half this task turns on did not. `CnCellRenderer` has a built-in
+  `widget: "link"` whose `widgetProps.route` names a manifest page id and
+  whose `widgetProps.params` maps route params to row fields, so a column
+  CAN link to one route. `linkRoute()` reads a single fixed `route`, so
+  there is no way to pick `ContactDetail` or `OrganisationDetail` off
+  `initiatorType`. The `linkHref` branch interpolates `{field}` placeholders
+  into a URL but is equally fixed in its shape. An app-side cell widget in
+  `src/cellWidgets.js` could branch, and is deliberately NOT the answer
+  here: it would reimplement in dossiq the seam every fleet app needs, which
+  is what this task exists to ask the library for.
 
 ## 4. The contact reference on a contact moment
 
@@ -168,3 +193,10 @@ in `openspec/specs/initiator-display/spec.md`.
 Whoever archives this change has to turn its REQ-ID-4 block into MODIFIED first, or the archiver
 refuses the duplicate. Discovered by the 2026-09-09 triage, not by a failing run: nothing fails
 until the archive is attempted.
+
+**Fixed 2026-09-10.** The block is now MODIFIED, and its BODY is the text that stands in
+`openspec/specs/initiator-display/spec.md` today rather than the text this change proposed. That
+distinction is the whole fix. A MODIFIED block replaces the requirement wholesale, so archiving
+this change with its ORIGINAL wording would have quietly put the folderSidebar requirement back
+over the measured one that replaced it, turning a refused archive into a successful regression.
+`openspec validate contacts-domain --strict` no longer reports the archive-refusal INFO.
