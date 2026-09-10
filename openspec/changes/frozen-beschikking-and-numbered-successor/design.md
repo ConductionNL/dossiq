@@ -90,6 +90,17 @@ schema in `dossiq_register.json`. It also reads a `besluit_schema` key that is n
 
 These block the successor implementation, not this change. Each needs a product answer.
 
+**Nothing numbers a beschikking at all today, so this is not only a correction question.**
+`reference` is declared on the schema and described as the user-visible decision number, and no
+code writes it. `compose()` does not set it, and it has no other writer. It is read in exactly
+three places: `AuditPacketBuilder` twice, and `BeschikkingService` line 396, which passes it to
+the Berichtenbox as `identificatieKenmerk`. So once the lifecycle is reachable, the first
+beschikking ever served goes out to the citizen with an empty reference, and its audit packet
+records an empty one too. The successor scheme below cannot be chosen independently of this:
+whoever answers it is choosing how decisions are numbered, and the correction case is only
+where the absence first becomes visible. Numbering the first decision is the smaller half and
+should ship with, or before, the successor.
+
 **How is a correction numbered?** Two shapes are on the table. Frappe derives the successor from
 the predecessor, `ORD-0001` becomes `ORD-0001-1` then `-2`, which makes the lineage readable in
 the number itself. The alternative is the next number in the case's own sequence,
