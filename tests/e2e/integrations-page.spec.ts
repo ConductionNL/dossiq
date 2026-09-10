@@ -410,6 +410,128 @@ test.describe('Integrations', () => {
 		await context.close()
 	})
 
+	/**
+	 * THE DATA HALF OF THE SAME GUARD, and the reason the test above does not
+	 * cover it.
+	 *
+	 * The test above proves the ROUTER turns an ordinary account away. It
+	 * cannot prove anything about the rows, because the rows are not the
+	 * page's to withhold: they live in OpenRegister and the page fetches them
+	 * over `GET /apps/openregister/api/objects/dossiq/dossiqIntegration`.
+	 * A client-side guard cannot narrow a server-side list, so for as long as
+	 * that endpoint answered, "not reachable" was true of the page and false
+	 * of the data. Measured before the fix, as an account in no groups at all:
+	 * HTTP 200 and TEN rows — every connection this instance has, whether it
+	 * is configured, and the admin-settings anchor that configures it.
+	 *
+	 * WHAT MAKES THIS TEST ABLE TO FAIL, which is the only property that makes
+	 * it worth having. "An ordinary account sees no rows" is also what an
+	 * anonymous session sees, what an empty register looks like, and what a
+	 * broken route returns. All three would satisfy the assertion while
+	 * proving nothing about permissions, so all three are excluded here:
+	 *
+	 *  1. AN EMPTY REGISTER or a broken route is excluded by reading the same
+	 *     endpoint as the admin FIRST and requiring rows to come back. If that
+	 *     read is empty the test fails on the control, naming the cause,
+	 *     rather than passing on the denial.
+	 *  2. AN ANONYMOUS SESSION is excluded by asking the request context who
+	 *     it is. This is the trap the router-guard test above walked into from
+	 *     the other side: clearing the admin jar does not authenticate basic
+	 *     auth, it just produces an anonymous context, and an anonymous
+	 *     context reads this endpoint as zero rows for reasons that have
+	 *     nothing to do with the schema. `/ocs/v2.php/cloud/user` is asked on
+	 *     THE CONTEXT THAT MAKES THE READ, not on a browser page that happens
+	 *     to share a name with it.
+	 *  3. THE ADMIN'S OWN SESSION is excluded by the same question, because an
+	 *     omitted `storageState` silently becomes the admin's — `use`
+	 *     in playwright.config.ts sets it — and an admin bypasses OpenRegister
+	 *     RBAC outright, so the denial would never be exercised.
+	 *
+	 * The OCS call carries `OCS-APIRequest: true` because without that header
+	 * Nextcloud answers 412 and the identity check would fail for a reason
+	 * that is not the identity.
+	 */
+	test('answers an ordinary account no integration rows over the API', async ({
+		browser,
+		playwright,
+		baseURL,
+	}) => {
+		// CONTROL FIRST. Everything below reads a denial out of an empty list,
+		// so the list has to be non-empty for someone before that means
+		// anything. `api` is the admin context this file's other tests use.
+		const adminRows = await listObjects(api, 'dossiqIntegration')
+		expect(
+			adminRows.length,
+			'the control failed, not the guard: the admin sees no integration '
+				+ 'rows either, so this instance has an empty register or a broken '
+				+ 'route and the denial below would prove nothing',
+		).toBeGreaterThan(0)
+
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+
+		// A REQUEST context, not a page: the read under test is an API call,
+		// and a write made in a page is not visible to a read made through a
+		// request context. Ask the context that does the work.
+		const plainApi = await playwright.request.newContext({
+			baseURL,
+			storageState: plainState,
+		})
+
+		try {
+			const whoRes = await plainApi.get('/ocs/v2.php/cloud/user?format=json', {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
+			expect(
+				whoRes.status(),
+				'the identity probe itself failed; without it a zero-row result '
+					+ 'below cannot be told apart from an anonymous session',
+			).toBe(200)
+			const uid = (await whoRes.json())?.ocs?.data?.id
+
+			// ASSERT THE IDENTITY BEFORE THE PERMISSION. A denial measured on
+			// the wrong account is not a measurement.
+			expect(
+				uid,
+				`this read must be made as the ordinary account ${PLAIN_USER}; `
+					+ 'anonymous or admin both produce a passing row count for '
+					+ 'reasons that have nothing to do with the schema',
+			).toBe(PLAIN_USER)
+
+			// THE DENIED CASE. Not `listObjects()` — that helper asserts `ok()`
+			// and unwraps, and the shape of the refusal is part of what is
+			// being asserted: OpenRegister narrows a list in SQL, so a denial
+			// here is HTTP 200 with an empty result set, not a 403.
+			const res = await plainApi.get(
+				'/index.php/apps/openregister/api/objects/dossiq/dossiqIntegration'
+					+ '?_limit=200',
+			)
+			expect(res.status()).toBe(200)
+			const body = await res.json()
+
+			expect(
+				body.results ?? [],
+				`${PLAIN_USER} holds no group and must see no integration rows; `
+					+ `the admin sees ${adminRows.length}. Rows here mean the `
+					+ '`authorization` block on the dossiqIntegration schema is '
+					+ 'absent or was not imported — OpenRegister treats an absent '
+					+ 'block as open, so this is exactly how it read before the fix',
+			).toHaveLength(0)
+			expect(
+				body.total ?? 0,
+				'the row list is empty but the total is not, so the count is '
+					+ 'answering from outside the RBAC filter',
+			).toBe(0)
+		} finally {
+			await plainApi.dispose()
+		}
+	})
+
 	test('says plainly that a mock adapter is running', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
 

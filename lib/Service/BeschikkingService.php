@@ -112,6 +112,14 @@ class BeschikkingService {
 			'caseId' => $caseId,
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
+			// The resolved version is STORED, not just resolved. It was
+			// computed here and dropped on the floor: every beschikking
+			// recorded which template made it and never which version of it,
+			// so a template edited after a decision issued left the appeal
+			// against that decision reading the wrong text. `draftVersion`
+			// below counts re-renders of this beschikking and answers a
+			// different question.
+			'templateVersion' => $version['version'],
 			'draftVersion' => 1,
 			'currentStatus' => 'draft',
 			'compositeContent' => $composition,

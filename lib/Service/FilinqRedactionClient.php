@@ -26,6 +26,16 @@
  * refusal; a document whose bytes this app cannot locate falls to manual
  * redaction with the reason attached. None of those three is `queued`.
  *
+ * `redacted` is read off the EFFECT, not off the run. Filinq can detect
+ * entities and still name no output file, and a status computed from the
+ * entity count alone would call that a redaction — the same shape as the
+ * `queued` it replaced. So the outcome is `redacted` only when filinq handed
+ * back an anonymised file id.
+ *
+ * Each outcome also carries the detection backend that was actually in force,
+ * read from OpenRegister rather than from filinq's status. See
+ * {@see detectionBackend()} for why that distinction matters.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service
  *
@@ -70,6 +80,19 @@ class FilinqRedactionClient {
 	 * @var string
 	 */
 	private const ANONYMIZATION_SERVICE = 'Service\AnonymizationService';
+
+	/**
+	 * OpenRegister's anonymisation backend state service, fully qualified.
+	 *
+	 * OpenRegister is not renamed and is a hard dependency of this app, so this
+	 * one is pinned rather than resolved through {@see FleetAppId}. The
+	 * `Anonymisation` segment is load-bearing: filinq's own client omits it and
+	 * has been silently falling back to a hardcoded answer ever since.
+	 *
+	 * @var string
+	 */
+	private const OR_BACKEND_STATE_SERVICE
+		= 'OCA\OpenRegister\Service\Anonymisation\AnonymisationBackendService';
 
 	/**
 	 * Constructor.
@@ -140,6 +163,9 @@ class FilinqRedactionClient {
 			throw new RuntimeException('filinq_redaction_failed: ' . $e->getMessage(), 0, $e);
 		}
 
+		$anonymisedFileId = ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null));
+		$backend = $this->detectionBackend();
+
 		$this->logger->info(
 			'Filinq processed a Woo document',
 			[
@@ -147,12 +173,18 @@ class FilinqRedactionClient {
 				'caseId' => $caseId,
 				'fileId' => $fileId,
 				'entityCount' => count($entities),
+				'detectionBackend' => $backend,
 			]
 		);
 
 		$status = 'redacted';
 		if ($entities === []) {
 			$status = 'no_entities_detected';
+		} elseif ($anonymisedFileId === null) {
+			// Filinq detected entities and then named no output file. Whatever
+			// happened, this document's bytes are still the ones a person
+			// assessed as deels openbaar, so the outcome is not `redacted`.
+			$status = 'no_output_produced';
 		}
 
 		return [
@@ -168,10 +200,64 @@ class FilinqRedactionClient {
 			'status' => $status,
 			'sourceFileId' => $fileId,
 			'entityCount' => count($entities),
-			'anonymizedFileId' => ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null)),
+			'anonymizedFileId' => $anonymisedFileId,
+			'detectionBackend' => $backend,
 			'warning' => ($result['warning'] ?? null),
 		];
 	}//end redact()
+
+	/**
+	 * The detection backend that was actually in force for this run.
+	 *
+	 * Read from OpenRegister, which owns detection for the fleet, and NOT from
+	 * filinq's own `AnonymiserBackendStateClient`. That client asks the
+	 * container for `OCA\OpenRegister\Service\AnonymisationBackendService`,
+	 * which is not a class: the service lives one namespace segment deeper, at
+	 * `OCA\OpenRegister\Service\Anonymisation\AnonymisationBackendService`. The
+	 * lookup therefore throws on every instance, the catch returns a hardcoded
+	 * `method => regex`, and filinq's admin warning is on everywhere for a
+	 * reason that has nothing to do with the configured backend. Nothing on
+	 * filinq's run path consults that value at all, so a Woo redaction has
+	 * never said which detector produced its entities.
+	 *
+	 * This is a report, never a gate. A backend that cannot be resolved is
+	 * recorded as unknown rather than assumed, because the whole point is that
+	 * an assumed value is what went wrong upstream.
+	 *
+	 * @return string|null The effective method, or null when OpenRegister
+	 *                     cannot be asked.
+	 *
+	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by class name.
+	 * @psalm-suppress MixedAssignment OpenRegister is resolved by class name.
+	 * @psalm-suppress MixedPropertyFetch OpenRegister is resolved by class name.
+	 */
+	private function detectionBackend(): ?string {
+		try {
+			$service = $this->container->get(self::OR_BACKEND_STATE_SERVICE);
+			$state = $service->getState();
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'The anonymisation backend state could not be read from OpenRegister',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			return null;
+		}
+
+		$method = null;
+		if (is_object($state) === true) {
+			$method = ($state->effectiveMethod ?? null);
+		}
+
+		if (is_array($state) === true) {
+			$method = ($state['effectiveMethod'] ?? null);
+		}
+
+		if (is_string($method) === false || $method === '') {
+			return null;
+		}
+
+		return $method;
+	}//end detectionBackend()
 
 	/**
 	 * The Nextcloud file id filinq must anonymise.

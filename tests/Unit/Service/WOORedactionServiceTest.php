@@ -237,6 +237,35 @@ class WOORedactionServiceTest extends TestCase {
 	}//end testADocumentWithNoDetectedEntitiesFallsToManual()
 
 	/**
+	 * A run that produced no redacted file falls to manual, and says so.
+	 *
+	 * The two ways filinq can run and leave the document as it was need
+	 * different repairs: nothing detected points at the detection backend,
+	 * nothing produced points at the redaction pass. One shared sentence would
+	 * send a Woo officer to the wrong half.
+	 *
+	 * @return void
+	 */
+	public function testADocumentWithNoProducedFileFallsToManualWithItsOwnReason(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->filinq->method('redact')->willReturn(
+			[
+				'status' => 'no_output_produced',
+				'sourceFileId' => 55,
+				'entityCount' => 3,
+				'anonymizedFileId' => null,
+			]
+		);
+
+		$result = $this->service->queueForRedaction('case-uuid-001', [['id' => 'doc-1', 'fileId' => 55]]);
+
+		$this->assertEmpty($result['redacted'], 'no file produced is not a redaction');
+		$this->assertCount(1, $result['manual']);
+		$this->assertSame('filinq_produced_no_redacted_file', $result['manual'][0]['reason']);
+	}//end testADocumentWithNoProducedFileFallsToManualWithItsOwnReason()
+
+	/**
 	 * Nothing is ever reported as queued, on any branch.
 	 *
 	 * `queued` was the status the no-op invented, and it is the one word that
