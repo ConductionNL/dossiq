@@ -442,6 +442,56 @@ class EngineTaskGateway {
     }//end toEnginePayload()
 
     /**
+     * Read one engine task, as a plain array, or null when it is gone.
+     *
+     * The array shape is deliberate: `AskPersonTaskStore` hands what it
+     * reads to `DossiqAskPersonNode`, which asks about `status` and
+     * `flowRun` in the register's vocabulary. Translating here keeps that
+     * vocabulary in ONE place rather than spreading the engine's names
+     * through the node and its two heartbeat-recovery tests.
+     *
+     * @param string $taskId The engine task uuid.
+     *
+     * @return array<string, mixed>|null The task, or null.
+     *
+     * @spec openspec/changes/remove-casetask/tasks.md
+     */
+    public function find(string $taskId): ?array {
+        $id = trim($taskId);
+        if ($id === '' || $this->isEnabled() === false) {
+            return null;
+        }
+
+        try {
+            $task = $this->resolveService()?->get($id);
+        } catch (Throwable $e) {
+            // A MISSING task and an UNREADABLE engine are different answers
+            // and the caller treats them differently, so only the miss
+            // becomes null here; the caller turns an exception into another
+            // heartbeat rather than into a lost run.
+            $this->lastError = $e->getMessage();
+
+            return null;
+        }
+
+        if ($task === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $task->getUuid(),
+            'title' => (string) $task->getTitle(),
+            // The register's vocabulary, because the node speaks it. The
+            // VALUES need no translation: Task::STATES is the same CMMN set
+            // caseTask declared.
+            'status' => (string) $task->getState(),
+            'flowRun' => (string) ($task->getRunUuid() ?? ''),
+            'flowNode' => (string) ($task->getNodeId() ?? ''),
+            'assignee' => (string) ($task->getAssignee() ?? ''),
+        ];
+    }//end find()
+
+    /**
      * Decode dossiq's JSON-string checklist into the typed array the engine
      * validates, or null when there is nothing usable.
      *
