@@ -43,6 +43,34 @@ function sidebarTabs() {
 }
 
 /**
+ * The archival keys CnObjectMetadataWidget actually resolves.
+ *
+ * Read out of the installed library rather than copied here, because a copy is
+ * what let openregister#3584's rename sit unnoticed in our manifest. The
+ * widget's whitelist is a plain array of `{ key: '...' }` literals in its own
+ * source, and the package ships `src/`, so this reads the real thing.
+ *
+ * @return {string[]} The key names, or an empty array if the file is absent.
+ */
+function libraryArchivalKeys() {
+	const file = path.join(
+		ROOT,
+		'node_modules',
+		'@conduction',
+		'nextcloud-vue',
+		'src',
+		'components',
+		'CnObjectMetadataWidget',
+		'CnObjectMetadataWidget.vue',
+	)
+	if (!fs.existsSync(file)) return []
+	const source = fs.readFileSync(file, 'utf8')
+	const block = source.match(/const ARCHIVAL_FIELDS = \[([\s\S]*?)\n\]/)
+	if (!block) return []
+	return [...block[1].matchAll(/key:\s*'([^']+)'/g)].map((m) => m[1])
+}
+
+/**
  * Whether an icon name is registered, and so will actually render.
  *
  * @param {string} name The PascalCase icon name.
@@ -145,17 +173,37 @@ describe('CaseDetail: terms and archive', () => {
 		// than each app reading its own field names. `type: metadata` is
 		// nextcloud-vue's CnObjectMetadataWidget and `include` names keys of the
 		// resolved decision.
+		//
+		// This used to be a hand-copied list of the eight names, and that is the
+		// version of the test that let the defect through. openregister#3584
+		// renamed five of the keys to MDTO concepts, the widget followed in
+		// nextcloud-vue#1069, and a literal list still agreeing with itself said
+		// nothing about whether the names were the ones the widget answers to.
+		// The widget INTERSECTS `include` against its own whitelist, so a name it
+		// does not know is not rendered blank and does not warn: it drops out,
+		// and the card reads its emptyLabel on a case that carries a full
+		// retention decision.
+		//
+		// So the expectation is read out of the installed library instead. The
+		// package ships its `src/`, and the whitelist is a plain array literal
+		// there. If a rename lands in the library, this test fails on the next
+		// install rather than after a user reports an empty card.
 		const archival = widget('case-archival')
 		expect(archival.type).toBe('metadata')
-		expect(archival.content.include).toEqual([
-			'nomination',
-			'period',
-			'actionDate',
-			'status',
-			'basis',
-			'source',
-			'legalHold',
-		])
+
+		const known = libraryArchivalKeys()
+		expect(
+			known.length,
+			'the whitelist must be readable — a regex that matched nothing would make this test pass by asserting against an empty set',
+		).toBeGreaterThan(5)
+
+		const unknown = archival.content.include.filter(
+			(key) => !known.includes(key),
+		)
+		expect(
+			unknown,
+			'every included key must be one CnObjectMetadataWidget resolves, or it silently filters out',
+		).toEqual([])
 	})
 
 	it('keeps the legal hold in the list, because it overrides the rest', () => {
