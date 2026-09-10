@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -64,7 +65,40 @@ class WorkQueueServiceTest extends TestCase {
 			}
 		);
 
-		$this->service = new WorkQueueService($settings, $this->createMock(LoggerInterface::class));
+		// The engine's inbox, over the tasks this test seeds. The work queue
+		// reads tasks from the engine now; cases still come from the object
+		// service, so both doubles are in play.
+		$engineTasks = new class ($this->objects) extends EngineTaskInbox {
+			/**
+			 * @param object $objects The in-memory object double.
+			 */
+			public function __construct(private readonly object $objects) {
+			}
+
+			/**
+			 * @param string  $actor The person.
+			 * @param integer $limit The page size.
+			 *
+			 * @return array<int, array<string, mixed>> The open tasks.
+			 */
+			public function openForAssignee(string $actor, int $limit = 200): array {
+				$open = [];
+				$rows = $this->objects->searchObjectsBySlug('dossiq', 'caseTask', ['assignee' => $actor]);
+				foreach ($rows as $task) {
+					// The ENGINE makes this split; the double mirrors it so
+					// the test exercises what the service actually receives.
+					if (in_array((string) ($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
+						continue;
+					}
+
+					$open[] = $task;
+				}
+
+				return $open;
+			}
+		};
+
+		$this->service = new WorkQueueService($settings, $engineTasks, $this->createMock(LoggerInterface::class));
 	}//end setUp()
 
 	// ── Pure scoreItem() tests ──────────────────────────────────────────

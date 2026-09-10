@@ -76,17 +76,6 @@ class EngineTaskGateway {
     private const TASK_SERVICE = 'OCA\OpenRegister\Service\Task\TaskService';
 
     /**
-     * The app config key that turns the engine write on.
-     *
-     * Absent or false means dossiq writes only its register object, which is
-     * exactly today's behaviour. The flag exists so a bad engine write is one
-     * setting away from off rather than one deploy.
-     *
-     * @var string
-     */
-    public const FLAG_ENGINE_WRITE = 'task_engine_write';
-
-    /**
      * The external key an engine task carries for a dossiq register task.
      *
      * Namespaced, because `task_key` is a shared external-reference column
@@ -190,21 +179,38 @@ class EngineTaskGateway {
     }//end inbox()
 
     /**
-     * Whether the engine write is switched on AND reachable.
+     * Whether a task written here will reach the engine.
      *
-     * Both halves matter and they fail differently: the flag being off is a
-     * decision, the service being absent is a defect. Callers only need the
-     * boolean; {@see unavailableReason()} is what the log gets.
+     * 🔴 THE `task_engine_write` FLAG IS GONE, AND LEAVING IT COST A FEATURE.
+     *
+     * It existed for the dual-run, when a task was written to BOTH the
+     * `caseTask` register object and the engine, and the flag decided whether
+     * the engine half also happened. dossiq#2363 removed the register write,
+     * and `remove-casetask/tasks.md` 3.1 says in as many words that "the
+     * `task_engine_write` flag goes with the dual-run". The write was removed
+     * and the flag was not, which left the engine as the ONLY store behind a
+     * switch that nothing ever set: it appeared three times in the whole repo,
+     * as this constant and two test docblocks. No migration, repair step,
+     * admin setting or CI command wrote it, and `getConfigValue` defaults to
+     * `''`.
+     *
+     * So every write was refused while the reads had already moved. Measured
+     * on development 2026-09-10: the six read surfaces #2357 moved all showed
+     * "No open tasks on this case" on cases that had them, and, once #2363
+     * made the engine the only store, EVERY status transition carrying a
+     * createTask action failed with `create_task_failed`. An e2e spec drove a
+     * real transition, saw the register rows appear, and read the pane's empty
+     * state in the same test.
+     *
+     * Reachability is still a real question and is still asked. That half was
+     * never the problem: a missing service is a defect and says so through
+     * {@see unavailableReason()}.
      *
      * @return boolean True when a task written here will reach the engine.
      *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     * @spec openspec/changes/remove-casetask/tasks.md
      */
     public function isEnabled(): bool {
-        if ($this->settings->getConfigValue(key: self::FLAG_ENGINE_WRITE) !== '1') {
-            return false;
-        }
-
         return $this->resolveService() !== null;
     }//end isEnabled()
 
@@ -290,9 +296,12 @@ class EngineTaskGateway {
     /**
      * Mirror a dossiq task into the engine.
      *
-     * Returns the engine task's uuid, or '' when nothing was written. An empty
-     * return is NOT an error the caller should act on: the flag may simply be
-     * off. Failures are logged here and swallowed, per the dual-run rule.
+     * Returns the engine task's uuid, or '' when nothing was written. Since the
+     * dual-run ended, '' means the engine could not be REACHED, which is a
+     * defect rather than a setting, and `CreateTaskHandler` is right to fail
+     * the transition on it. It used to also mean "the flag is off", which is
+     * why that handler's failure path fired on every instance. Failures are
+     * logged here as well as returned.
      *
      * @param array<string, mixed> $task     The dossiq task, in `caseTask` shape.
      * @param string               $caseId   The case this task is on.
@@ -306,10 +315,15 @@ class EngineTaskGateway {
     private function mirror(array $task, string $caseId, ?string $actor, string $verb): string {
         if ($this->isEnabled() === false) {
             $reason = $this->unavailableReason();
-            if ($reason !== '' && $this->settings->getConfigValue(key: self::FLAG_ENGINE_WRITE) === '1') {
+            if ($reason !== '') {
                 // Asked for, and could not be done. This is the line that
                 // makes a silent namespace rename loud.
-                $this->logger->warning('Dossiq: engine task write is ON but unavailable', ['reason' => $reason]);
+                //
+                // It used to be guarded by `task_engine_write === '1'` as well,
+                // which meant it never fired: the flag was never set. With the
+                // flag gone there is no such thing as a write that was not
+                // asked for, so an unreachable engine is always worth saying.
+                $this->logger->warning('Dossiq: the engine task write is unavailable', ['reason' => $reason]);
             }
 
             return '';
@@ -353,6 +367,50 @@ class EngineTaskGateway {
             return '';
         }//end try
     }//end mirror()
+
+    /**
+     * Hand one task to a different person.
+     *
+     * 🔑 A VERB, NOT A FIELD WRITE. `caseTask` was reassigned by setting
+     * `assignee` and appending a hand-rolled entry to an `activity` array,
+     * and that entry was the only record the transfer ever left. The engine
+     * has `reassign` as a first-class lifecycle verb: it writes the
+     * assignee, stamps the acting identity, and appends to `oc_openregister_
+     * task_audit` itself, so the audit is the engine's rather than a JSON
+     * blob a reader has to know how to decode.
+     *
+     * @param string      $taskId   The task to hand over.
+     * @param string      $assignee Who receives it.
+     * @param string|null $actor    The acting identity the engine records.
+     *
+     * @return boolean Whether the engine accepted it.
+     *
+     * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+     */
+    public function reassign(string $taskId, string $assignee, ?string $actor): bool {
+        $id = trim($taskId);
+        if ($id === '' || trim($assignee) === '' || $this->isEnabled() === false) {
+            return false;
+        }
+
+        try {
+            $this->resolveService()?->reassign($id, trim($assignee), $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            // Per ITEM, not per batch. A bulk reassignment reports one row
+            // per task and stays re-runnable, so one refusal must not take
+            // the other ninety-nine with it.
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task reassignment',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end reassign()
 
     /**
      * Translate a `caseTask` into the engine's create payload.
@@ -488,6 +546,11 @@ class EngineTaskGateway {
             'flowRun' => (string) ($task->getRunUuid() ?? ''),
             'flowNode' => (string) ($task->getNodeId() ?? ''),
             'assignee' => (string) ($task->getAssignee() ?? ''),
+            // A typed list of {id, label, description, checked}, NOT a
+            // string. `caseTask` held JSON in a string and the checklist
+            // guard had to decode it; the entity removed that shape, so
+            // this arrives ready to read.
+            'checklist' => (($task->getChecklist() ?? [])),
         ];
     }//end find()
 

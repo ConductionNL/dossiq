@@ -342,18 +342,23 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
-	test('the identity card carries its title and no actions menu', async ({
+	test('the identity row carries no heading and no actions menu', async ({
 		page,
 	}) => {
-		// This assertion used to read the other way, and it flipped on purpose.
+		// THIS ASSERTION HAS NOW FLIPPED TWICE, so both turns are recorded.
 		//
-		// The identity block was a full-width band carrying `showTitle: false`,
-		// because facts laid out in a line label themselves and a heading over
-		// them printed the same word twice. dossiq#2322 rebuilt it as a titled
-		// card in the four-column rail, where the same facts stack instead: a
-		// stacked group with no heading says nothing about what the group is,
-		// so the cell now carries `showTitle: true` and the heading is the
-		// design rather than the defect.
+		// It began as a full-width band with `showTitle: false`, because facts
+		// laid out in a line label themselves and a heading over them printed
+		// the same word twice. dossiq#2322 rebuilt it as a titled card in the
+		// four-column rail, where the same facts STACK: a stacked group with no
+		// heading says nothing about what the group is, so the heading became
+		// the design and this assertion flipped to require it.
+		//
+		// dossiq#2360 moved it back to full width, and the reason the first
+		// objection does not return is that the facts are no longer a line of
+		// text: each is a card with `flex: 1 1 0`, so the row divides evenly
+		// across twelve columns instead of ending in dead space. Cards label
+		// themselves, so `showTitle` is false again and the heading is gone.
 		//
 		// The second half did NOT flip, and the reason is worth keeping. This
 		// is a consumer slot widget (`#widget-case-header`), so CnDetailPage
@@ -382,16 +387,68 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			.filter({ has: page.getByTestId('case-header') })
 			.first()
 
-		// The card names the group it stacks, exactly once.
+		// A row of self-labelling cards names nothing above itself.
 		expect(
 			await cell.getByText(/^(Case identity|Zaakgegevens)$/).count(),
-			'the identity card must carry exactly one grid heading',
-		).toBe(1)
+			'the identity row must carry no grid heading',
+		).toBe(0)
+
+		// The facts themselves are still there, which is what makes the absent
+		// heading a design rather than a widget that failed to render.
+		await expect(header.getByTestId('case-header-casetype')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(header.getByTestId('case-header-status')).toBeVisible()
 
 		// And read-only content carries no Actions menu of its own.
 		await expect(
 			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md
+	test('the Data panel holds its content directly, with no card inside the card', async ({
+		page,
+	}) => {
+		// The tabs card already draws the border, and the open tab already
+		// names the panel, so a widget card inside it repeats both: a second
+		// border, a "Data" heading under the "Data" tab, and a second Actions
+		// button under the strip's own.
+		//
+		// That heading was never a choice. `CnObjectDataWidget.title` carries a
+		// DEFAULT of "Data", so the `undefined` bare mode passed became the
+		// default. nextcloud-vue 2.45.0 lets a host ask for no title while
+		// keeping the actions, which is what previously blocked it: the Save
+		// button for an inline edit lives in that same header, so hiding the
+		// header hid Save with it.
+		//
+		// Asserted in a browser because it is chrome: jsdom computes no layout
+		// and a unit test can only see the props, not the card.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// `openCasePanel(page, 'data')` returns the OPEN tabpanel itself, which
+		// is the handle this needs. Scoping matters: the sidebar has tabpanels
+		// of its own and a panel can contain another panel, so a page-wide
+		// query would count the wrong node.
+		const panel = await openCasePanel(page, 'data')
+		await expect(panel).toBeVisible({ timeout: 20_000 })
+
+		// The fields are there, so an absent card is a decision and not a
+		// widget that failed to mount.
+		await expect(panel).toContainText(/Case type|Zaaktype/, { timeout: 20_000 })
+
+		// No widget card of its own inside the panel.
+		await expect(panel.locator('.cn-widget-wrapper')).toHaveCount(0)
+
+		// And no second heading repeating the open tab's label. Scoped to the
+		// panel, because the tab itself says "Data" and is outside it.
+		expect(
+			await panel.getByText(/^(Data|Gegevens)$/).count(),
+			'the panel must not repeat the label its own tab already carries',
+		).toBe(0)
 	})
 
 	test('the tabs widget renders one tab per configured panel', async ({

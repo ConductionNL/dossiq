@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCP\IUserSession;
 use RuntimeException;
 
 /**
@@ -43,23 +45,24 @@ use RuntimeException;
  */
 class DemoCaseloadReport {
 	/**
-	 * Task statuses OpenRegister treats as terminal.
-	 *
-	 * Mirrors the `isTerminalStatus` calculation on the task schema, which is
-	 * what the My Tasks and Task Due Reminders widgets filter on.
-	 *
-	 * @var array<int, string>
-	 */
-	private const TERMINAL_TASK_STATUSES = ['completed', 'terminated', 'disabled'];
-
-	/**
 	 * Constructor.
 	 *
+	 * 🔴 `TERMINAL_TASK_STATUSES` USED TO LIVE HERE, a third copy of the
+	 * same three state names. The engine owns the open/closed split now and
+	 * is asked for it, so there is nothing left to keep in step with
+	 * `Task::STATES`.
+	 *
 	 * @param DemoCaseloadGateway $gateway OpenRegister access.
+	 * @param EngineTaskInbox $engineTasks The engine's task counter.
+	 * @param IUserSession $userSession The identity the seed command set.
 	 *
 	 * @return void
 	 */
-	public function __construct(private DemoCaseloadGateway $gateway) {
+	public function __construct(
+		private DemoCaseloadGateway $gateway,
+		private EngineTaskInbox $engineTasks,
+		private IUserSession $userSession,
+	) {
 	}//end __construct()
 
 	/**
@@ -89,15 +92,8 @@ class DemoCaseloadReport {
 			filters: []
 		);
 
-		$tasks = $this->gateway->findMany(
-			objectService: $objectService,
-			registerId: $ids['register'],
-			schemaId: $ids['caseTask'],
-			filters: []
-		);
-
 		return ($this->caseBuckets(cases: $cases, today: $today, horizon: $horizon)
-			+ $this->taskBuckets(tasks: $tasks, horizon: $horizon));
+			+ $this->taskBuckets(horizon: $horizon));
 	}//end buckets()
 
 	/**
@@ -141,32 +137,29 @@ class DemoCaseloadReport {
 	}//end caseBuckets()
 
 	/**
-	 * Count the task buckets.
+	 * Count the task buckets, both of them server-side.
 	 *
-	 * @param array<int, mixed> $tasks The task rows.
+	 * The horizon is a `dueBefore` on the ENGINE, not a string compare over
+	 * every row dossiq happened to fetch. That matters beyond tidiness: the
+	 * old read pulled a page and counted it, so past the page boundary the
+	 * seed command's read-back would have under-reported and failed a seed
+	 * that had in fact worked.
+	 *
 	 * @param string $horizon Three days out, as Y-m-d.
 	 *
 	 * @return array{tasksOpen: integer, tasksDue: integer} The counts.
+	 *
+	 * @spec openspec/specs/dossiq-app-scaffold/spec.md
 	 */
-	private function taskBuckets(array $tasks, string $horizon): array {
-		$counts = ['tasksOpen' => 0, 'tasksDue' => 0];
+	private function taskBuckets(string $horizon): array {
+		$actor = ($this->userSession->getUser()?->getUID() ?? '');
 
-		foreach ($tasks as $task) {
-			$row = $this->gateway->toArray(object: $task);
-
-			$status = (string)($row['status'] ?? '');
-			if (in_array($status, self::TERMINAL_TASK_STATUSES, true) === true) {
-				continue;
-			}
-
-			$counts['tasksOpen']++;
-
-			$due = substr((string)($row['dueDate'] ?? ''), 0, 10);
-			if ($due !== '' && $due <= $horizon) {
-				$counts['tasksDue']++;
-			}
-		}//end foreach
-
-		return $counts;
+		return [
+			'tasksOpen' => $this->engineTasks->countOpenEverywhere(actor: $actor),
+			'tasksDue' => $this->engineTasks->countOpenEverywhere(
+				actor: $actor,
+				dueBefore: ($horizon . 'T23:59:59+00:00')
+			),
+		];
 	}//end taskBuckets()
 }//end class

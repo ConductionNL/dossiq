@@ -40,12 +40,20 @@ namespace OCA\Dossiq\Service\Task;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
- * Reads the engine's task inbox for one case.
+ * Reads the engine's task inbox, for one case or for one person.
+ *
+ * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
  */
 class EngineTaskInbox {
+
+    /**
+     * The plumbing, built on first use.
+     *
+     * @var EngineInboxQuery|null
+     */
+    private ?EngineInboxQuery $query = null;
 
     /**
      * Constructor.
@@ -64,6 +72,273 @@ class EngineTaskInbox {
     }//end __construct()
 
     /**
+     * The tasks assigned to one person, as plain arrays.
+     *
+     * Serves the PHP readers that used to query `caseTask` by assignee:
+     * the work queue, the reassignment service and the KPI counts. One
+     * method rather than one per caller, because the shape they each want
+     * is the same and a second copy is the thing that drifts.
+     *
+     * `isTerminal: false` is passed to the ENGINE rather than filtered here.
+     * Filtering a paged window client-side silently drops every open task
+     * past the boundary, which is how a queue comes to look empty on a day
+     * somebody has a hundred things to do.
+     *
+     * @param string  $actor The person whose work this is.
+     * @param integer $limit How many rows at most.
+     *
+     * @return array<int, array<string, mixed>> The tasks.
+     *
+     * @spec openspec/changes/remove-casetask/tasks.md
+     */
+    public function openForAssignee(string $actor, int $limit = 200): array {
+        if (trim($actor) === '') {
+            return [];
+        }
+
+        return $this->mapped(
+            criteria: [
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ASSIGNED'),
+                'isTerminal' => false,
+            ],
+            limit: $limit,
+            failure: ['Dossiq: could not read the engine inbox for a person', ['actor' => $actor]]
+        );
+    }//end openForAssignee()
+
+    /**
+     * How many open tasks the instance holds, optionally due before an instant.
+     *
+     * `SCOPE_ALL` with `isAdmin`, unlike `countOpenForAssignee()`: the demo
+     * caseload report asks what landed on the INSTANCE, not what landed on
+     * one person, and the seed command turns a zero here into a failure.
+     * Narrowing it to the caller would make the command's verdict depend on
+     * whose account ran it.
+     *
+     * @param string      $actor     The acting identity.
+     * @param string|null $dueBefore Only tasks due strictly before this instant.
+     *
+     * @return integer How many, or 0 when the read could not be made.
+     *
+     * @spec openspec/specs/dossiq-app-scaffold/spec.md
+     */
+    public function countOpenEverywhere(string $actor, ?string $dueBefore = null): int {
+        return $this->query()->total(
+            criteria: ([
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ALL'),
+                'isTerminal' => false,
+            ] + $this->query()->dueWindow(after: null, before: $dueBefore)),
+            failure: ['Dossiq: could not count the engine tasks on this instance', []]
+        );
+    }//end countOpenEverywhere()
+
+    /**
+     * Every task the engine holds against one case, as plain arrays.
+     *
+     * `SCOPE_ALL` and no terminality filter, unlike `openForAssignee()`:
+     * the question a case surface asks is "what work has this case", and a
+     * checklist that was ticked on a task somebody already completed is
+     * still ticked. Narrowing to the caller's own tasks would make a guard
+     * pass or fail depending on who triggered the transition.
+     *
+     * @param string  $caseId The case (object) uuid.
+     * @param string  $actor  The acting identity.
+     * @param integer $limit  How many rows at most.
+     *
+     * @return array<int, array<string, mixed>> The tasks.
+     *
+     * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
+     */
+    public function forCase(string $caseId, string $actor, int $limit = 200): array {
+        if (trim($caseId) === '') {
+            return [];
+        }
+
+        return $this->mapped(
+            criteria: [
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ALL'),
+                'objectUuid' => $caseId,
+            ],
+            limit: $limit,
+            failure: ['Dossiq: could not read the engine tasks for a case', ['case' => $caseId]]
+        );
+    }//end forCase()
+
+    /**
+     * How many open tasks one person holds, optionally inside a due window.
+     *
+     * Serves the dashboard's two task tiles. Both the terminality split and
+     * the window are asked of the ENGINE: `caseTask` had no server-side
+     * answer for "due today" at all, so dossiq read a page and derived it,
+     * which is a count of the page rather than of the work.
+     *
+     * @param string      $actor     The person whose work this is.
+     * @param string|null $dueAfter  Only tasks due at or after this instant.
+     * @param string|null $dueBefore Only tasks due strictly before this instant.
+     *
+     * @return integer How many, or 0 when the read could not be made.
+     *
+     * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
+     */
+    public function countOpenForAssignee(
+        string $actor,
+        ?string $dueAfter = null,
+        ?string $dueBefore = null,
+    ): int {
+        if (trim($actor) === '') {
+            return 0;
+        }
+
+        return $this->query()->total(
+            criteria: ([
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ASSIGNED'),
+                'isTerminal' => false,
+            ] + $this->query()->dueWindow(after: $dueAfter, before: $dueBefore)),
+            failure: ['Dossiq: could not count the engine inbox for a person', ['actor' => $actor]]
+        );
+    }//end countOpenForAssignee()
+
+
+    /**
+     * Why the last read on this instance answered nothing.
+     *
+     * @return string The engine's message, or '' when the read succeeded.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    public function lastError(): string {
+        return $this->query()->lastError();
+    }//end lastError()
+
+    /**
+     * The plumbing this class asks its questions through.
+     *
+     * PROTECTED and lazy, so the constructor keeps the three arguments
+     * every caller already passes and a test can substitute a query whose
+     * `resolveInbox()` answers. OpenRegister is not installed in this
+     * suite, so without a seam every read short-circuits to `[]` before it
+     * does any work and a test would pass whatever the body did.
+     *
+     * @return EngineInboxQuery The query.
+     *
+     * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
+     */
+    protected function query(): EngineInboxQuery {
+        if ($this->query === null) {
+            $this->query = new EngineInboxQuery($this->settings, $this->container, $this->logger);
+        }
+
+        return $this->query;
+    }//end query()
+
+    /**
+     * One inbox read, mapped into the register's vocabulary.
+     *
+     * @param array<string, mixed> $criteria Named arguments for the criteria.
+     * @param integer              $limit    How many rows at most.
+     * @param array{0: string, 1: array<string, mixed>} $failure Log message and context.
+     *
+     * @return array<int, array<string, mixed>> The tasks.
+     *
+     * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
+     */
+    private function mapped(array $criteria, int $limit, array $failure): array {
+        $tasks = [];
+        foreach ($this->query()->rows(criteria: $criteria, limit: $limit, failure: $failure) as $row) {
+            $task = $this->asArray(row: $row);
+            if ($task !== []) {
+                $tasks[] = $task;
+            }
+        }
+
+        return $tasks;
+    }//end mapped()
+
+
+
+
+
+    /**
+     * One inbox row as a plain array, in the register's vocabulary.
+     *
+     * The callers read `status`, `dueDate` and `title`, which is what
+     * `caseTask` called them. The VALUES need no translation: `Task::STATES`
+     * is the same CMMN set. Translating names in one place beats teaching
+     * four readers the engine's.
+     *
+     * @param mixed $row The inbox row.
+     *
+     * @return array<string, mixed> The task, or [] when unusable.
+     *
+     * @spec openspec/changes/remove-casetask/tasks.md
+     */
+    private function asArray(mixed $row): array {
+        $get = static function (mixed $r, string $key, string $method): string {
+            if (is_array($r) === true) {
+                return (string) ($r[$key] ?? '');
+            }
+
+            if (is_object($r) === true && method_exists($r, $method) === true) {
+                return (string) ($r->$method() ?? '');
+            }
+
+            return '';
+        };
+
+        $id = $get($row, 'uuid', 'getUuid');
+        if ($id === '') {
+            return [];
+        }
+
+        return [
+            'id' => $id,
+            'title' => $get($row, 'title', 'getTitle'),
+            'status' => $get($row, 'state', 'getState'),
+            'priority' => $get($row, 'priority', 'getPriority'),
+            'dueDate' => $get($row, 'dueAt', 'getDueAt'),
+            'case' => $get($row, 'objectUuid', 'getObjectUuid'),
+            'assignee' => $get($row, 'assignee', 'getAssignee'),
+            // NOT through `$get`: the engine stores a typed list of
+            // {id, label, description, checked} and casting that to a
+            // string gives "Array". `caseTask` held JSON in a string,
+            // which is the shape the entity exists to remove.
+            'checklist' => $this->checklistOf(row: $row),
+        ];
+    }//end asArray()
+
+    /**
+     * The checklist on one row, as the typed list the engine stores.
+     *
+     * @param mixed $row The inbox row.
+     *
+     * @return array<int, mixed> The items, or [] when there are none.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function checklistOf(mixed $row): array {
+        $items = null;
+        if (is_array($row) === true) {
+            $items = ($row['checklist'] ?? null);
+        } else if (is_object($row) === true && method_exists($row, 'getChecklist') === true) {
+            $items = $row->getChecklist();
+        }
+
+        if (is_array($items) === false) {
+            return [];
+        }
+
+        return $items;
+    }//end checklistOf()
+
+    /**
      * The source keys the engine already holds for one case.
      *
      * This is what makes re-running the backfill safe. Without it a second
@@ -78,57 +353,32 @@ class EngineTaskInbox {
      *
      * @return array<string, true> The keys already present, as a set.
      *
-     * @psalm-suppress UndefinedClass `OCA\OpenRegister\Db\TaskInboxCriteria`
-     *   is another APP's class, reached by name. It exists, in
-     *   openregister/lib/Db/TaskInboxCriteria.php, but dossiq's psalm run has
-     *   openregister nowhere on its include path and never will -- OpenRegister
-     *   is a separate app that need not be installed at all. `class_exists()`
-     *   and `container->get()` further down take the same kind of name as a
-     *   plain string and psalm never resolves them; `new $criteriaClass(...)`
-     *   is different, because psalm folds the literal back into a class
-     *   reference and demands it at ANALYSIS time. That is the tool being
-     *   wrong about a deliberately runtime-resolved binding, not a finding.
-     *   The catch below is what actually handles the class being absent.
-     *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     public function existingKeysFor(string $caseId, string $actor): array {
-        // NOTE: no `class_exists` guard here, deliberately. The catch below
-        // already handles an absent class -- a missing class throws `Error`,
-        // which is a `Throwable` -- and it LOGS, where a guard would return
-        // silently. It also cost a decision point this class cannot afford:
-        // phpmd already scores it at the ExcessiveClassComplexity threshold
-        // of 50, so any added branch reddens `development`.
-        $inbox = $this->resolveInbox();
-        if ($inbox === null || $caseId === '') {
+        if (trim($caseId) === '') {
             return [];
         }
 
-        $criteriaClass = 'OCA\OpenRegister\Db\TaskInboxCriteria';
-
-        try {
-            $criteria = new $criteriaClass(
-                uid: $actor,
-                isAdmin: true,
-                scope: $criteriaClass::SCOPE_ALL,
-                objectUuid: $caseId,
-            );
-
-            $rows = $inbox->inbox($criteria, 500, 0);
-        } catch (Throwable $e) {
-            // A failed dedup read must not stop the backfill: worst case the
-            // operator sees duplicates and is told, which is better than a
-            // migration that refuses to run.
-            $this->logger->warning(
+        // A failed dedup read must not stop the backfill: worst case the
+        // operator sees duplicates and is told, which is better than a
+        // migration that refuses to run.
+        $rows = $this->query()->rows(
+            criteria: [
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ALL'),
+                'objectUuid' => $caseId,
+            ],
+            limit: 500,
+            failure: [
                 'Dossiq: could not read existing engine tasks for a case; duplicates are possible',
-                ['exception' => $e->getMessage(), 'case' => $caseId]
-            );
-
-            return [];
-        }//end try
+                ['case' => $caseId],
+            ]
+        );
 
         $keys = [];
-        foreach ($this->rowsOf(value: $rows) as $row) {
+        foreach ($rows as $row) {
             $key = $this->keyOf(row: $row);
             if ($key !== '') {
                 $keys[$key] = true;
@@ -138,28 +388,6 @@ class EngineTaskInbox {
         return $keys;
     }//end existingKeysFor()
 
-    /**
-     * Pull the rows out of whichever envelope the inbox returned.
-     *
-     * @param mixed $value The inbox response.
-     *
-     * @return array<int, mixed> The rows.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    private function rowsOf(mixed $value): array {
-        if (is_array($value) === false) {
-            return [];
-        }
-
-        foreach (['results', 'tasks', 'items'] as $envelope) {
-            if (isset($value[$envelope]) === true && is_array($value[$envelope]) === true) {
-                return array_values($value[$envelope]);
-            }
-        }
-
-        return array_values($value);
-    }//end rowsOf()
 
     /**
      * The external key on one inbox row, in whichever shape it arrives.
@@ -182,26 +410,4 @@ class EngineTaskInbox {
         return '';
     }//end keyOf()
 
-    /**
-     * Resolve OpenRegister's task inbox service, or null.
-     *
-     * @return object|null The service, or null when unavailable.
-     *
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    private function resolveInbox(): ?object {
-        $className = 'OCA\OpenRegister\Service\Task\TaskInboxService';
-        if ($this->settings->isOpenRegisterAvailable() === false || class_exists($className) === false) {
-            return null;
-        }
-
-        try {
-            return $this->container->get($className);
-        } catch (Throwable $e) {
-            return null;
-        }
-    }//end resolveInbox()
 }//end class
