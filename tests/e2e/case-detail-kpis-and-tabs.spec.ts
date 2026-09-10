@@ -422,8 +422,40 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// widget that failed to mount.
 		await expect(panel).toContainText(/Case type|Zaaktype/, { timeout: 20_000 })
 
-		// No widget card of its own inside the panel.
-		await expect(panel.locator('.cn-widget-wrapper')).toHaveCount(0)
+		// No card of its own around that content. The wrapper ELEMENT stays:
+		// `borderless` and `flush` strip the border, the background and the
+		// padding rather than removing the div, and the Save button an inline
+		// edit needs lives inside it. So the assertion is about what a reader
+		// sees, not about how many divs there are. An earlier version of this
+		// test counted `.cn-widget-wrapper` and expected zero, which failed on
+		// a fix that was working.
+		const inner = panel.locator('.cn-widget-wrapper')
+		await expect(inner).toHaveCount(1)
+		await expect(inner).toHaveClass(/cn-widget-wrapper--borderless/)
+		await expect(inner).toHaveClass(/cn-widget-wrapper--flush/)
+
+		// The classes are the mechanism; these are the two things they buy. Read
+		// computed, because a later rule with more specificity could put either
+		// back while the class still sits on the element.
+		const chrome = await inner.evaluate((el) => {
+			const s = getComputedStyle(el)
+			return {
+				borderTop: s.borderTopWidth,
+				borderLeft: s.borderLeftWidth,
+				contentPadding: getComputedStyle(
+					el.querySelector('.cn-widget-wrapper__content') || el,
+				).padding,
+			}
+		})
+		expect(chrome.borderTop, 'the inner card must draw no border').toBe('0px')
+		expect(chrome.borderLeft, 'the inner card must draw no border').toBe('0px')
+		expect(chrome.contentPadding, 'its content must sit edge to edge').toBe(
+			'0px',
+		)
+
+		// And no header row inside the panel, which is where the doubled title
+		// and the second Actions button used to live.
+		await expect(panel.locator('.cn-widget-wrapper__header-left')).toHaveCount(0)
 
 		// And no second heading repeating the open tab's label. Scoped to the
 		// panel, because the tab itself says "Data" and is outside it.
