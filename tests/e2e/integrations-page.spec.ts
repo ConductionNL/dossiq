@@ -28,7 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { captureStorageState, ensureUser, storageStatePath } from './helpers/auth.ts'
+import { captureStorageState, storageStatePath } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -289,9 +289,11 @@ test.describe('Integrations', () => {
 	 *     a reason that has nothing to do with permissions.
 	 *
 	 * #2305 fixed that identity half, and it is what the setup below does:
-	 * `ensureUser` provisions the account over the API so this spec does not
-	 * depend on the seed having run, and `captureStorageState` is the
-	 * sanctioned second session. Given a genuine non-admin, the link-count
+	 * `captureStorageState` is the sanctioned second session, and the account
+	 * comes from `ci-seed.sh` rather than from an API call, because
+	 * provisioning one is password-confirmation protected and this spec runs
+	 * too late in the project for that window. Given a genuine non-admin, the
+	 * link-count
 	 * assertion below does catch the leak — measured, not assumed: run against
 	 * an unguarded build it reports `Received: 7`.
 	 *
@@ -319,7 +321,16 @@ test.describe('Integrations', () => {
 		// `dashboard-tiles.spec.ts` uses for the same reason, and its own
 		// docblock carries the warning this test walked into: an OMITTED
 		// `storageState` in a spec silently becomes the admin's.
-		await ensureUser(api, token, PLAIN_USER, PLAIN_PASS)
+		// NOT `ensureUser`. Provisioning a user is a password-confirmation
+		// protected action, and this spec runs late enough in the
+		// `chromium-instance-state` project that the admin session is outside the
+		// window: it answered `HTTP 403, OCS 403 Password confirmation is
+		// required` and failed the test before it reached a single assertion. I
+		// added that call as belt-and-braces and it was the only thing that broke.
+		//
+		// `ci-seed.sh` owns this account and logs `created the non-admin user
+		// e2euser`. If it ever stops, the identity assertion below says so by
+		// name rather than leaving a login to fail obscurely.
 		const plainState = storageStatePath(PLAIN_USER)
 		await captureStorageState(browser, {
 			baseURL: String(baseURL),
