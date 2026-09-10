@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +59,7 @@ class StatusChecklistTest extends TestCase {
 			tasks: [],
 		);
 
-		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1']);
+		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin');
 
 		self::assertSame(
 			[
@@ -94,13 +94,16 @@ class StatusChecklistTest extends TestCase {
 				['title' => 'Check the objection is on time', 'required' => true],
 				['title' => 'Confirm receipt to the objector'],
 			],
+			// `workflowStepId` is on every fixture because the reader narrows
+			// on it: these are THIS status's tasks, and the double also hands
+			// back one belonging to another status.
 			tasks: [
-				['title' => 'Check the objection is on time', 'status' => 'completed'],
-				['title' => 'Confirm receipt to the objector', 'status' => 'available'],
+				['title' => 'Check the objection is on time', 'status' => 'completed', 'workflowStepId' => 'st-1'],
+				['title' => 'Confirm receipt to the objector', 'status' => 'available', 'workflowStepId' => 'st-1'],
 			],
 		);
 
-		self::assertSame([], $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1']));
+		self::assertSame([], $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'));
 	}//end testAnExistingTaskByTitleSkipsItsItem()
 
 	/**
@@ -114,10 +117,10 @@ class StatusChecklistTest extends TestCase {
 				['title' => 'Check the objection is on time', 'required' => true],
 				['title' => 'Confirm receipt to the objector'],
 			],
-			tasks: [['title' => 'Check the objection is on time', 'status' => 'completed']],
+			tasks: [['title' => 'Check the objection is on time', 'status' => 'completed', 'workflowStepId' => 'st-1']],
 		);
 
-		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1']);
+		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin');
 
 		self::assertCount(1, $actions);
 		self::assertSame('Confirm receipt to the objector', $actions[0]['title']);
@@ -131,11 +134,11 @@ class StatusChecklistTest extends TestCase {
 	public function testAnAbsentOrEmptyListYieldsNothing(): void {
 		self::assertSame(
 			[],
-			$this->build(checklist: null, tasks: [])->actionsFor(statusTypeId: 'st-1', case: ['id' => 'c'])
+			$this->build(checklist: null, tasks: [])->actionsFor(statusTypeId: 'st-1', case: ['id' => 'c'], userId: 'admin')
 		);
 		self::assertSame(
 			[],
-			$this->build(checklist: [], tasks: [])->actionsFor(statusTypeId: 'st-1', case: ['id' => 'c'])
+			$this->build(checklist: [], tasks: [])->actionsFor(statusTypeId: 'st-1', case: ['id' => 'c'], userId: 'admin')
 		);
 	}//end testAnAbsentOrEmptyListYieldsNothing()
 
@@ -193,7 +196,7 @@ class StatusChecklistTest extends TestCase {
 
 		// No case id means no task search is possible, so the item is offered
 		// rather than silently skipped by a search that matched nothing.
-		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: []);
+		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: [], userId: 'admin');
 
 		self::assertCount(1, $actions);
 	}//end testACaseWithoutAnIdReadsNoTasks()
@@ -206,26 +209,85 @@ class StatusChecklistTest extends TestCase {
 	public function testASearchThatThrowsYieldsNoTasks(): void {
 		$checklist = $this->build(checklist: [['title' => 'Assemble the case file']], tasks: [], throws: true);
 
-		self::assertSame([], $checklist->tasksFor(statusTypeId: 'st-1', case: ['id' => 'case-1']));
-		self::assertCount(1, $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1']));
+		self::assertSame([], $checklist->tasksFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'));
+		self::assertCount(1, $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'));
 	}//end testASearchThatThrowsYieldsNoTasks()
 
 	/**
-	 * With no object service there is nothing to read and nothing to skip.
+	 * With no engine there is nothing to read and nothing to skip.
 	 *
 	 * @return void
 	 */
-	public function testWithoutStorageThereAreNoTasks(): void {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn(null);
+	public function testWithoutTheEngineThereAreNoTasks(): void {
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->method('forCase')->willReturn([]);
+		$engineTasks->method('lastError')->willReturn('the task engine is not available');
 
 		$lookup = $this->createMock(StatusTypeLookup::class);
 		$lookup->method('rowFor')->willReturn(['checklist' => [['title' => 'Assemble the case file']]]);
 
-		$checklist = new StatusChecklist($settings, $lookup, new NullLogger());
+		$checklist = new StatusChecklist($engineTasks, $lookup, new NullLogger());
 
-		self::assertSame([], $checklist->tasksFor(statusTypeId: 'st-1', case: ['id' => 'case-1']));
-	}//end testWithoutStorageThereAreNoTasks()
+		self::assertSame([], $checklist->tasksFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'));
+	}//end testWithoutTheEngineThereAreNoTasks()
+
+	/**
+	 * 🔴 THE READ AND THE WRITE NAME THE SAME STORE.
+	 *
+	 * `actionsFor()` emits `createTask`, `CreateTaskHandler` writes it to the
+	 * engine, and this read used to query `caseTask` objects. When the write
+	 * moved and the read did not, both callers broke at once and neither
+	 * said so: `existingTitles()` saw nothing, so every re-entry into a
+	 * status raised the whole checklist again as duplicates, and
+	 * StatusChecklistGuard saw nothing completed, so a status with a
+	 * required item could never be left.
+	 *
+	 * This asserts the read goes to the engine and nowhere else.
+	 *
+	 * @return void
+	 */
+	public function testTheChecklistReadsTheSameStoreItsActionsWriteTo(): void {
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->expects($this->once())
+			->method('forCase')
+			->with('case-1', 'admin')
+			->willReturn([
+				['id' => 't-1', 'title' => 'Assemble the case file', 'workflowStepId' => 'st-1'],
+			]);
+		$engineTasks->method('lastError')->willReturn('');
+
+		$lookup = $this->createMock(StatusTypeLookup::class);
+		$lookup->method('rowFor')->willReturn(['checklist' => [['title' => 'Assemble the case file']]]);
+
+		$checklist = new StatusChecklist($engineTasks, $lookup, new NullLogger());
+
+		// The item already stands on the case, so no action is raised again.
+		self::assertSame(
+			[],
+			$checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'),
+			'a checklist item the engine already holds must not be raised twice'
+		);
+	}//end testTheChecklistReadsTheSameStoreItsActionsWriteTo()
+
+	/**
+	 * Only this status's tasks count, not every task on the case.
+	 *
+	 * @return void
+	 */
+	public function testAnotherStatusTasksAreNotCounted(): void {
+		$checklist = $this->build(
+			checklist: [['title' => 'Assemble the case file']],
+			tasks: []
+		);
+
+		// The double always adds a task on `st-other`. If the reader did not
+		// narrow on `workflowStepId`, that row would come back here.
+		self::assertSame([], $checklist->tasksFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], userId: 'admin'));
+	}//end testAnotherStatusTasksAreNotCounted()
 
 	/**
 	 * Build a StatusChecklist over a fixed status row and task list.
@@ -237,51 +299,27 @@ class StatusChecklistTest extends TestCase {
 	 * @return StatusChecklist The reader under test.
 	 */
 	private function build(mixed $checklist, array $tasks, bool $throws = false): StatusChecklist {
-		$objectService = new class($tasks, $throws) {
-			/**
-			 * @param array<int, array<string, mixed>> $tasks  The stored tasks.
-			 * @param boolean                          $throws Whether to throw.
-			 */
-			public function __construct(
-				private array $tasks,
-				private bool $throws,
-			) {
-			}
-
-			/**
-			 * The tasks of one case and one status, as the store filters them.
-			 *
-			 * The filter is asserted here rather than trusted: a search that
-			 * did not scope on `workflowStepId` would read another status's
-			 * tasks and skip an item that has none of its own.
-			 *
-			 * @param string               $register The register slug.
-			 * @param string               $schema   The schema slug.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>> The matching tasks.
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				if ($this->throws === true) {
-					throw new RuntimeException('unreadable');
-				}
-
-				if (($filters['case'] ?? '') === '' || ($filters['workflowStepId'] ?? '') === '') {
+		// The ENGINE, not the object store. `forCase` answers every task on
+		// the case; the `workflowStepId` narrowing is the reader's job, and
+		// this double therefore hands back tasks for BOTH statuses so that
+		// narrowing is actually exercised. A double that pre-filtered would
+		// pass a reader that did not filter at all.
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->method('forCase')->willReturnCallback(
+			static function (string $caseId, string $actor) use ($tasks, $throws): array {
+				if ($throws === true || $caseId === '') {
 					return [];
 				}
 
-				return $this->tasks;
+				return array_merge(
+					$tasks,
+					[['id' => 'other-status-task', 'title' => 'Belongs to another status', 'workflowStepId' => 'st-other']]
+				);
 			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ([
-				'register' => 'dossiq',
-				'task_schema' => 'caseTask',
-			][$key] ?? '')
 		);
+		$engineTasks->method('lastError')->willReturn($throws === true ? 'unreadable' : '');
 
 		$row = [];
 		if ($checklist !== null) {
@@ -291,6 +329,6 @@ class StatusChecklistTest extends TestCase {
 		$lookup = $this->createMock(StatusTypeLookup::class);
 		$lookup->method('rowFor')->willReturn($row);
 
-		return new StatusChecklist($settings, $lookup, new NullLogger());
+		return new StatusChecklist($engineTasks, $lookup, new NullLogger());
 	}//end build()
 }//end class

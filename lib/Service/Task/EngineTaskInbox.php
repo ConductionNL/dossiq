@@ -306,6 +306,11 @@ class EngineTaskInbox {
             'dueDate' => $get($row, 'dueAt', 'getDueAt'),
             'case' => $get($row, 'objectUuid', 'getObjectUuid'),
             'assignee' => $get($row, 'assignee', 'getAssignee'),
+            // The status this task belongs to. `StatusChecklist` groups a
+            // case's tasks by it to decide what a phase still owes, and
+            // without it every re-entry into a status would raise the whole
+            // checklist again.
+            'workflowStepId' => $get($row, 'workflowStepId', 'getWorkflowStepId'),
             // NOT through `$get`: the engine stores a typed list of
             // {id, label, description, checked} and casting that to a
             // string gives "Array". `caseTask` held JSON in a string,

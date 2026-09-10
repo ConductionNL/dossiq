@@ -69,11 +69,13 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param array<string, mixed> $guardConfig Guard configuration (unused: the status carries it).
 	 * @param array<string, mixed> $case        The case being moved.
-	 * @param string               $userId      Current user UID (unused).
+	 * @param string               $userId      The acting identity, forwarded to the engine read.
 	 *
 	 * @return GuardResult The verdict, naming the first item that is not done.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $guardConfig: the STATUS
+	 * carries this checklist, not the guard entry, so there is nothing to read
+	 * off the config. $userId is now used.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -89,7 +91,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
-		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case);
+		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case, userId: $userId);
 
 		$open = [];
 		foreach ($required as $item) {
@@ -116,14 +118,15 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param string               $statusTypeId The status the case is in.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $userId       The acting identity.
 	 *
 	 * @return array<int, string> The completed titles.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function completedTitles(string $statusTypeId, array $case): array {
+	private function completedTitles(string $statusTypeId, array $case, string $userId): array {
 		$titles = [];
-		foreach ($this->checklist->tasksFor(statusTypeId: $statusTypeId, case: $case) as $task) {
+		foreach ($this->checklist->tasksFor(statusTypeId: $statusTypeId, case: $case, userId: $userId) as $task) {
 			if (strtolower(trim((string)($task['status'] ?? ''))) !== self::COMPLETED) {
 				continue;
 			}

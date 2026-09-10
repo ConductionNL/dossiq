@@ -97,7 +97,10 @@ the resume listener that already moved.
 - [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
-- [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
+- [x] 3.2 `lib/Flow/DossiqAskPersonNode.php` — DONE, and done before it was
+      ticked: the node builds an `AskPersonTaskStore` wired to
+      `EngineTaskGateway` and carries no `caseTask`, `task_schema` or
+      `saveObject` at all. Verified 2026-09-10. It originally created a `caseTask` and
       re-reads it on heartbeat. Both move to the engine. **Consider retiring
       the node entirely** in favour of OpenRegister's `UserTaskNode`
       (`flow-user-task-node`, 19/19 done), which does the same thing against
@@ -163,6 +166,68 @@ Only after 1 to 3 are green.
 - [ ] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
+
+## 6. What the first pass missed
+
+An exhaustive inventory on 2026-09-10 found references the checklist above
+does not name. Two of them were LIVE REGRESSIONS rather than deletion work,
+and both were caused by moving the task WRITES to the engine while leaving
+the matching READS on `caseTask`.
+
+- [x] 6.1 `lib/Service/Transitions/StatusChecklist.php` — the worst of them.
+      `actionsFor()` emits `createTask`, `CreateTaskHandler` writes it to the
+      engine, and `tasksFor()` read `caseTask` objects. Both callers broke at
+      once and neither said so: `existingTitles()` saw nothing, so every
+      re-entry into a status raised the whole checklist again as DUPLICATE
+      tasks, and `StatusChecklistGuard` saw nothing completed, so a status
+      with a required item could never be left. Note the guard fails CLOSED,
+      not open: an empty read blocks the transition rather than waving it
+      through.
+- [x] 6.2 `lib/Service/Substitution/SubstitutedWorkResolver.php` — a
+      substitute saw the absentee's cases with no tasks under them. The guard
+      `if ($taskSchema !== '')` stayed TRUE the whole time, so there was no
+      branch to notice. This path had NO test at all, which is why it went
+      unseen; it has two now.
+- [x] 6.3 The read path never spoke the register's vocabulary.
+      `engineTask.js`'s `create()` mapped `dueDate` to the engine's `dueAt`
+      from the first day; rows came back RAW, so every component asking for
+      `row.dueDate` got `undefined` and a task due today rendered "No due
+      date". Mapped once in the store now, the way `EngineTaskInbox::asArray()`
+      does it server-side.
+- [x] 6.4 A version mismatch became a plausible zero. Every filter is a NAMED
+      argument on another app's class, so an OpenRegister predating one throws
+      "Unknown named parameter", the catch turns it into no rows, and a count
+      answers 0 for ever. Measured on the dev instance, whose OpenRegister
+      checkout predated the due-window filter: the dashboard's due-today tile
+      read 0 and looked like a quiet morning. Logged at ERROR now, naming the
+      parameter.
+- [ ] 6.5 `src/manifest.json` metrics `tasks_total` and `tasks_overdue_total`
+      (`kind: objectCount`, `schema: caseTask`) and the `deepLinks[]` entry
+      with `schemaSlug: caseTask`. Neither is in section 4; both dangle when
+      the schema goes. The deep link is paired with
+      `tests/vitest/searchableSchemas.spec.js`, whose own comment warns the
+      pairing "fails silently" when broken.
+- [ ] 6.6 `src/views/settings/Settings.vue` — a visible admin form field bound
+      to `form.task_schema`, offering a picker for a schema that will not
+      exist.
+- [ ] 6.7 `lib/Service/Settings/ConfigKeys.php` carries `task_schema`. Decide
+      explicitly whether to drop it or leave it as an orphan appconfig row.
+      Dropping it also touches four LIVE openspec specs whose MUST-clauses
+      enumerate the key, plus `SettingsServiceTest` and `VthSettingsServiceTest`.
+- [ ] 6.8 `lib/Settings/dossiq_mock_register.json` holds THREE seeded objects
+      with `@self.schema: "caseTask"`, not just the schema block section 4.2
+      names. Orphan demo rows pointing at a dead schema.
+- [ ] 6.9 `tests/vitest/casePartiesWidget.spec.js` reads
+      `schema('caseTask').properties.assigneeGroup.facetable` off the shipped
+      register and will fail outright. Two further e2e specs navigate to a
+      task surface without naming the slug and are not in 5.1:
+      `spec-coverage/task-management.spec.ts` and `docs-screenshots.spec.ts`.
+- [ ] 6.10 🔴 48 `@spec` citations ALREADY DANGLE, independent of this change:
+      they name `openspec/changes/task-on-the-case/…`, which was archived on
+      2026-09-08. They live in exactly the files this change touches
+      (`CaseTaskPane.vue` 18, `TaskCaseCard.vue` 15, `registry.js` 4,
+      `caseTaskPaneHelpers.js` 6, and four vitest specs), so repoint them in
+      the same commit rather than leaving the debt behind.
 
 ## Not in this change
 

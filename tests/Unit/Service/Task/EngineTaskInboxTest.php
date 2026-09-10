@@ -201,6 +201,7 @@ class EngineTaskInboxTest extends TestCase {
 							'dueAt'      => '2026-09-15T00:00:00+00:00',
 							'objectUuid' => 'case-9',
 							'assignee'   => 'user:admin',
+							'workflowStepId' => 'st-1',
 							'checklist'  => [['id' => 'i-1', 'label' => 'Stuk 1', 'checked' => false]],
 						],
 					],
@@ -218,6 +219,9 @@ class EngineTaskInboxTest extends TestCase {
 					'dueDate'  => '2026-09-15T00:00:00+00:00',
 					'case'     => 'case-9',
 					'assignee' => 'user:admin',
+					// The status that raised this task. `StatusChecklist`
+					// groups on it to decide what a phase still owes.
+					'workflowStepId' => 'st-1',
 					// A TYPED list, not a string. `caseTask` held JSON in a
 					// string and the checklist guard had to decode it; the
 					// engine refuses a string at write time, so this arrives
@@ -387,6 +391,34 @@ class EngineTaskInboxTest extends TestCase {
 		self::assertInstanceOf(TaskInboxCriteria::class, $criteria);
 		self::assertNull($criteria->dueAfter);
 	}//end testABoundThatDoesNotParseIsDropped()
+
+	/**
+	 * 🔴 AN ENGINE TOO OLD FOR A FILTER IS REPORTED, NOT COUNTED AS ZERO.
+	 *
+	 * Every filter is a NAMED argument on another app's class. An
+	 * OpenRegister that predates one throws "Unknown named parameter", the
+	 * catch turns it into no rows, and a count built on that answers a
+	 * plausible zero for ever. Measured: the dashboard's "due today" tile
+	 * read 0 against an instance whose OpenRegister predated the due-window
+	 * filter, and the tile looked like a quiet morning.
+	 *
+	 * `lastError()` is what tells the two apart, so it is asserted here
+	 * rather than left to the log.
+	 *
+	 * @return void
+	 */
+	public function testAFilterTheEngineDoesNotSupportIsReportedNotCountedAsZero(): void {
+		$service = $this->service(
+			$this->inboxDouble(new \Error('Unknown named parameter $dueAfter'))
+		);
+
+		$this->assertSame(0, $service->countOpenForAssignee('admin', '2026-09-10T00:00:00+00:00'));
+		$this->assertStringContainsString(
+			'Unknown named parameter',
+			$service->lastError(),
+			'a count of zero that came from a refused filter must be distinguishable from a real zero'
+		);
+	}//end testAFilterTheEngineDoesNotSupportIsReportedNotCountedAsZero()
 
 	/**
 	 * A row carrying no id is dropped rather than queued unopenable.

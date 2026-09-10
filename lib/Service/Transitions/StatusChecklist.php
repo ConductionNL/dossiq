@@ -34,10 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads a status's checklist and expands it into createTask actions.
@@ -45,8 +43,6 @@ use Throwable;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusChecklist {
-
-	use SearchesObjects;
 
 	/**
 	 * Who a checklist task goes to.
@@ -61,12 +57,12 @@ class StatusChecklist {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
+	 * @param EngineTaskInbox  $engineTasks      The engine's task reader.
 	 * @param StatusTypeLookup $statusTypeLookup Resolves the status row.
 	 * @param LoggerInterface  $logger           Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
 	) {
@@ -129,6 +125,10 @@ class StatusChecklist {
 	 *
 	 * @param string               $statusTypeId The statusType UUID being entered.
 	 * @param array<string, mixed> $case         The case entering it.
+	 * @param string               $userId       The acting identity, needed by
+	 *                                           the engine read that decides
+	 *                                           what this status already put
+	 *                                           on the case.
 	 *
 	 * Every action also names its assignee, in the same spelling the shipped
 	 * flow declarations use. It is written out rather than left implicit
@@ -142,13 +142,13 @@ class StatusChecklist {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function actionsFor(string $statusTypeId, array $case): array {
+	public function actionsFor(string $statusTypeId, array $case, string $userId): array {
 		$items = $this->itemsFor(statusTypeId: $statusTypeId);
 		if ($items === []) {
 			return [];
 		}
 
-		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case);
+		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case, userId: $userId);
 
 		$actions = [];
 		foreach ($items as $item) {
@@ -175,52 +175,63 @@ class StatusChecklist {
 	 *
 	 * @param string               $statusTypeId The statusType UUID.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $userId       The acting identity.
 	 *
 	 * @return array<int, string> The titles, whatever status the tasks are at.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function existingTitles(string $statusTypeId, array $case): array {
+	public function existingTitles(string $statusTypeId, array $case, string $userId): array {
 		return array_values(
 			array_map(
 				static fn (array $task): string => trim((string)($task['title'] ?? '')),
-				$this->tasksFor(statusTypeId: $statusTypeId, case: $case)
+				$this->tasksFor(statusTypeId: $statusTypeId, case: $case, userId: $userId)
 			)
 		);
 	}//end existingTitles()
 
 	/**
-	 * The tasks this status put on this case, as stored.
+	 * The tasks this status put on this case, as the engine holds them.
+	 *
+	 * 🔴 THIS READ AND THE WRITE MUST NAME THE SAME STORE. `actionsFor()`
+	 * emits `createTask`, `CreateTaskHandler` writes it to the ENGINE, and
+	 * this used to read `caseTask` OBJECTS. The two halves disagreeing is
+	 * not a cosmetic drift: it broke both callers at once. `existingTitles()`
+	 * saw nothing, so every re-entry into a status raised the whole
+	 * checklist again as duplicate tasks; and `StatusChecklistGuard` saw
+	 * nothing completed, so a status with a required item could never be
+	 * left. That is why this reads the engine now.
+	 *
+	 * The `workflowStepId` narrowing is made HERE rather than by the engine,
+	 * which is the one place in this migration where that is right: the
+	 * inbox has no criteria for it, and the window is one CASE's tasks, not
+	 * a page of everybody's. A case with more tasks than the limit is not a
+	 * case anyone is working.
 	 *
 	 * @param string               $statusTypeId The statusType UUID.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $userId       The acting identity.
 	 *
 	 * @return array<int, array<string, mixed>> The tasks.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function tasksFor(string $statusTypeId, array $case): array {
+	public function tasksFor(string $statusTypeId, array $case, string $userId): array {
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$objectService = $this->settingsService->getObjectService();
-		if ($caseId === '' || $statusTypeId === '' || $objectService === null) {
+		if ($caseId === '' || $statusTypeId === '') {
 			return [];
 		}
 
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-		if ($register === '' || $taskSchema === '') {
-			return [];
+		$tasks = [];
+		foreach ($this->engineTasks->forCase(caseId: $caseId, actor: $userId) as $task) {
+			if ((string)($task['workflowStepId'] ?? '') === $statusTypeId) {
+				$tasks[] = $task;
+			}
 		}
 
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['case' => $caseId, 'workflowStepId' => $statusTypeId, '_limit' => 200],
-			);
-		} catch (Throwable $e) {
-			// A search that cannot answer reads as "no tasks yet", which on a
+		$failure = $this->engineTasks->lastError();
+		if ($failure !== '') {
+			// A read that cannot answer reads as "no tasks yet", which on a
 			// re-entry means a second copy of the list and, for the guard, an
 			// item that counts as not done. Both are the safe direction of the
 			// design's own trade-off: a duplicate task is cheaper than a missed
@@ -228,9 +239,10 @@ class StatusChecklist {
 			// logged because the duplicate is otherwise unattributable.
 			$this->logger->error(
 				'StatusChecklist: reading the status tasks failed',
-				['exception' => $e->getMessage(), 'statusType' => $statusTypeId],
+				['engine' => $failure, 'statusType' => $statusTypeId],
 			);
-			return [];
 		}
+
+		return $tasks;
 	}//end tasksFor()
 }//end class
