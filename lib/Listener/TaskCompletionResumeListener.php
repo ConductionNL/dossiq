@@ -3,11 +3,16 @@
 /**
  * A completed task wakes the run that asked for it.
  *
- * Tasks are ordinary OpenRegister objects edited through the generic object
- * API, so "completing a task" is an object update — there is no dossiq task
- * endpoint to hang this on. This listener is therefore where the human step
- * closes: it sees the update, recognises a task that a flow is waiting on, and
- * signals the run.
+ * A task is an OpenRegister `Task` row owned by the flow engine, and the
+ * engine announces terminality itself: `TaskService` dispatches one
+ * {@see TaskTerminalEvent} after the terminal write commits. This listener is
+ * therefore where the human step closes: it sees that announcement,
+ * recognises a task that a flow is waiting on, and signals the run.
+ *
+ * It listens to the ENGINE event rather than `ObjectUpdatedEvent` because
+ * nothing writes a `caseTask` object any more, so an object-update listener
+ * would never fire again and the run would only resume on
+ * DossiqAskPersonNode's 30-minute heartbeat.
  *
  * THE GUARD IS THE ENGINE'S NOW. This path used to consult the assignee rule
  * itself, because `FlowRunService::signal()` delivers unconditionally and the
@@ -170,12 +175,12 @@ class TaskCompletionResumeListener implements IEventListener {
 	/**
 	 * The task this event just completed, when it is one a flow is waiting on.
 	 *
-	 * Returns null for everything else — an update to a non-task object, a task
-	 * belonging to no run, an unrelated field change, or a re-save of a task
-	 * that was already completed. Each of those is an ordinary thing to do and
-	 * must resume nothing.
+	 * Returns null for everything else: a write whose transaction has not
+	 * committed and may still roll back, a task belonging to no run, a task
+	 * naming no node, and a terminal state that is not a completion. Each of
+	 * those is an ordinary thing to happen and must resume nothing.
 	 *
-	 * @param ObjectUpdatedEvent $event The update.
+	 * @param TaskTerminalEvent $event The engine's terminal event.
 	 *
 	 * @return array|null The task, or null when nothing should be resumed.
 	 *
