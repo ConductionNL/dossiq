@@ -79,7 +79,7 @@ the slug finds six more users the first pass missed: `AskPersonTaskStore`,
 is the important one: it is the flow node's task storage, and it pairs with
 the resume listener that already moved.
 
-- [ ] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` — stop writing the
+- [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
 - [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
@@ -88,15 +88,15 @@ the resume listener that already moved.
       (`flow-user-task-node`, 19/19 done), which does the same thing against
       the engine natively. That is a separate decision and should be made
       before this task is started, not during it.
-- [ ] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
+- [x] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
-- [ ] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
+- [x] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
       storage, reading `task_schema` directly. Pairs with the resume
       listener, which already moved to `TaskTerminalEvent`.
-- [ ] 3.3c `lib/Service/WorkQueueService.php` and
+- [x] 3.3c `lib/Service/WorkQueueService.php` (dossiq#2369) and
       `lib/Service/CaseReassignmentService.php` — both read `task_schema`;
       reassignment writes to it, so it is a writer as well as a reader.
-- [ ] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
+- [x] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
       documented trap in that file: `findAll()` overwrites the register and
       schema context as a side effect, so a count issued after another read
       silently counts the WRONG schema and answers 0.
@@ -154,3 +154,25 @@ Only after 1 to 3 are green.
 - `tenantOnboardingTask` is re-filed here from the tenancy cluster (it is a
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
+
+## What the server side learned on the way
+
+Three things came out of 3.1 to 3.4 that the plan did not anticipate, and
+each one is now a property of the code rather than a note here.
+
+**A read that fails and a case with no tasks both answer `[]`.** For the
+checklist guard that difference decides a transition: "no tasks" means
+"nothing unticked", which PASSES. So `EngineTaskInbox::lastError()` exists,
+the guard asks for it by name, and the guard's own test cannot prove it
+because that test mocks the method -- the proof lives in
+`EngineTaskInboxTest` instead.
+
+**A count is not `count($rows)`.** The inbox pages. A dashboard tile built
+on the row count reads the page size once there are more matches than the
+limit, and would have said the same number for ever. The envelope carries
+`total`, so the count asks for a page of one and throws the rows away.
+
+**`task_schema` was a required id for the whole KPI payload.** Every case
+tile on the dashboard would have blanked the moment the task schema was
+retired. It is gone from `ids()`, which is a prerequisite for step 4 rather
+than a tidy-up.

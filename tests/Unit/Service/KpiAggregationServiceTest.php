@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -90,12 +91,18 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * 🔴 THE REGRESSION. A count issued after a read of ANOTHER schema must still
 	 * count in its own schema.
 	 *
-	 * The service reads the closed cases and the open cases before it counts the
-	 * tasks. `findAll()` leaves its register/schema on the shared ObjectService,
-	 * and `count()` honours that context rather than its own filters, so a
-	 * service that does not reset the context counts tasks inside the CASE schema
-	 * and answers 0. Measured on the dev instance: 23 on its own, 0 straight
-	 * after a findAll over cases.
+	 * The service reads the closed cases and the open cases before it counts
+	 * anything. `findAll()` leaves its register/schema on the shared
+	 * ObjectService, and `count()` honours that context rather than its own
+	 * filters, so a service that does not reset the context counts in the
+	 * wrong schema and answers 0. Measured on the dev instance: 23 on its
+	 * own, 0 straight after a findAll over cases.
+	 *
+	 * ⚠️ THE REGRESSION MOVED, IT DID NOT GO AWAY. It used to be asserted on
+	 * `taskCount`, which the engine now answers and which never touches the
+	 * shared object service. Every remaining count in this payload is a CASE
+	 * count issued after the same two findAll reads, so the assertion moves
+	 * there rather than being deleted with the task tile.
 	 *
 	 * @return void
 	 */
@@ -104,9 +111,9 @@ final class KpiAggregationServiceTest extends TestCase {
 		$kpis = $this->service(objectService: $objectService)->computeKpis('admin');
 
 		$this->assertSame(
-			23,
-			$kpis['taskCount'],
-			'taskCount is counted after the case reads; without resetting the schema context it reads 0.'
+			6,
+			$kpis['overdueCount'],
+			'overdueCount is counted after the case reads; without resetting the schema context it reads 0.'
 		);
 		$this->assertGreaterThan(
 			0,
@@ -238,7 +245,7 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testOpenRegisterAbsentYieldsTheEmptyShape(): void {
-		$kpis = $this->service(openRegisterInstalled: false)->computeKpis('admin');
+		$kpis = $this->service(openRegisterInstalled: false, engineTaskCounts: [0, 0])->computeKpis('admin');
 
 		$this->assertSame(0, $kpis['openCount']);
 		$this->assertSame(0, $kpis['taskCount']);
@@ -357,6 +364,8 @@ final class KpiAggregationServiceTest extends TestCase {
 	 * @param boolean $configured Whether the register ids are set.
 	 * @param boolean $openRegisterInstalled Whether OpenRegister is present.
 	 * @param boolean $containerThrows Whether the container fails to resolve it.
+	 * @param array{0: int, 1: int} $engineTaskCounts What the engine answers:
+	 *                              [open tasks, open tasks due inside the window].
 	 *
 	 * @return KpiAggregationService The service under test.
 	 */
@@ -366,6 +375,7 @@ final class KpiAggregationServiceTest extends TestCase {
 		bool $configured = true,
 		bool $openRegisterInstalled = true,
 		bool $containerThrows = false,
+		array $engineTaskCounts = [23, 2],
 	): KpiAggregationService {
 		$objectService = ($objectService ?? $this->objectService(closedCases: $closedCases));
 
@@ -395,7 +405,24 @@ final class KpiAggregationServiceTest extends TestCase {
 			$container->method('get')->willReturn($objectService);
 		}
 
-		return new KpiAggregationService($appConfig, $container, $appManager, new NullLogger());
+		// The tasks come from the ENGINE, not the register, so they are not
+		// on the object-service fake at all. The window is the discriminator:
+		// only the "due today" tile passes one, and a service that passed it
+		// to both, or to neither, would answer the same number twice.
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->method('countOpenForAssignee')->willReturnCallback(
+			static function (string $actor, ?string $dueAfter = null, ?string $dueBefore = null) use ($engineTaskCounts): int {
+				if ($dueAfter === null && $dueBefore === null) {
+					return $engineTaskCounts[0];
+				}
+
+				return $engineTaskCounts[1];
+			}
+		);
+
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new NullLogger());
 	}
 
 	/**
