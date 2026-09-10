@@ -76,6 +76,7 @@ const HOURS_TITLE = /Hours booked|Geboekte uren/
 /** Every stable hook the leaf publishes, so a rename here is one edit. */
 const HOOK = {
 	widget: 'hq-hours-widget',
+	caption: 'hq-hours-caption',
 	total: 'hq-hours-total',
 	own: 'hq-hours-own',
 	timer: 'hq-hours-timer',
@@ -260,13 +261,19 @@ if (!HUMANIQ_DECLARED) {
 				'humaniq is absent, so its hours leaf must not be on the page',
 			).toHaveCount(0)
 
-			// The title is the tell that matters. A cell that still printed
-			// "Hours booked" over an empty body would be the reserved void
-			// ADR-062 forbids, and a cell that printed it over a `0` would be
-			// the ADR-113 lie this change removed.
+			// The heading is the tell that matters, and it belongs to the leaf
+			// now: humaniq renders its own `<h3>` caption, because a mount-mode
+			// leaf is handed no title. So it goes when the leaf goes. A cell that
+			// still printed "Hours booked" over an empty body would be the
+			// reserved void ADR-062 forbids, and one that printed it over a `0`
+			// would be the ADR-113 lie this change removed.
+			await expect(
+				page.getByTestId(HOOK.caption),
+				"the caption is drawn inside humaniq's leaf, so it cannot render without it",
+			).toHaveCount(0)
 			await expect(
 				page.getByText(HOURS_TITLE),
-				'no hours heading may render when the leaf behind it is not registered',
+				'no hours heading may render when the leaf behind it is not registered, by any route',
 			).toHaveCount(0)
 
 			// The booking affordances belong to the leaf, so they go with it.
@@ -341,6 +348,21 @@ if (!HUMANIQ_DECLARED) {
 				'humaniq is enabled, so its hours leaf must render in the widget cell',
 			).toBeVisible({ timeout: 30_000 })
 
+			// THE TILE NAMES ITSELF. A KPI card that is only a number says
+			// nothing about what was counted, and this cell cannot be titled from
+			// outside: CnDetailWidgetHost hands a mount-mode leaf its surface,
+			// register, schema, objectId and integration context, and no title.
+			// So the caption is the leaf's own `<h3>`, and it is a requirement of
+			// the tile rather than decoration on it.
+			await expect(
+				widget.getByTestId(HOOK.caption),
+				'the tile must name what it counts, or it is a bare number',
+			).toBeVisible()
+			await expect(
+				widget.getByTestId(HOOK.caption),
+				'the caption must read as the hours heading, in either locale',
+			).toHaveText(HOURS_TITLE)
+
 			await expect(
 				widget.getByTestId(HOOK.total),
 				'the headline is the total booked on this case',
@@ -365,6 +387,11 @@ if (!HUMANIQ_DECLARED) {
 				widget.getByTestId(HOOK.book),
 				'Book hours must be on the tile',
 			).toBeVisible()
+			// `administrationUrl()` in humaniq's `src/integrations/hoursApi.js`
+			// builds this as `/apps/humaniq/time-entries` with the filter query
+			// appended, so the pattern is unanchored on the right. The `hrmq`
+			// alternative cannot match today, because humaniq's `<id>` is already
+			// `humaniq`; it costs nothing and it survives a rename in reverse.
 			await expect(
 				widget.getByTestId(HOOK.view),
 				'View hours must link out to humaniq',

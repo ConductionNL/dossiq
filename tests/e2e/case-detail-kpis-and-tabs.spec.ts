@@ -104,15 +104,23 @@ const RETIRED_TAB_LABELS = [
  * cell it shipped in.
  *
  * 🔴 `Hours booked` IS DELIBERATELY NOT IN THIS LIST, and its absence is the
- * assertion rather than an omission. `case-kpis-hours` is an integration widget
- * placing humaniq's `humaniq-hours` leaf. A leaf whose app is absent is never
- * registered, so CnDetailWidgetHost resolves no renderer and the cell renders
- * nothing, heading included: the grid `<h3>` is drawn only for consumer slot
- * widgets, and this page supplies no `#widget-case-kpis-hours` slot. This CI
- * instance installs openregister and nothing else, so requiring the title here
- * would fail every run. The hours surface has a spec of its own,
- * `case-hours-leaf.spec.ts`, which asserts its absence here and its full
- * journey where humaniq is enabled.
+ * assertion rather than an omission. The heading is real, but it MOVED. It used
+ * to be drawn by the `stats-block`'s own CnWidgetWrapper. `case-kpis-hours` is
+ * now an integration widget placing humaniq's `humaniq-hours` leaf, and the
+ * heading comes from inside that leaf: a mount-mode leaf is handed no title
+ * (`integrationMountProps` carries surface, register, schema, objectId and the
+ * integration context, and nothing else), so humaniq renders its own `<h3>`
+ * caption, `hq-hours-caption`. Without it the tile was a bare number with
+ * nothing saying what was counted.
+ *
+ * A heading that lives inside the leaf is present exactly when the leaf is.
+ * Nothing renders in the cell at all where humaniq is absent: the host resolves
+ * no renderer, and the grid `<h3>` is drawn only for consumer slot widgets,
+ * which this page does not supply for this id. This file runs on a CI instance
+ * that installs openregister and nothing else, so requiring the title here
+ * would fail every run. It is asserted where the condition can be stated:
+ * `case-hours-leaf.spec.ts` requires the caption where humaniq is enabled, and
+ * requires its absence where it is not.
  */
 const COLUMN_TITLES = [/Flow runs|Flow-uitvoeringen/, /Tasks|Taken/]
 

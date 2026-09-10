@@ -40,15 +40,21 @@ task; the criteria under a task are plain bullets.
   assertions: the two halves of the scenario need opposite instances, and that
   split is the file's whole shape.
   - The absence half runs on CI and asserts REQ-HRS-001: the page renders its own
-    widgets, no `hq-hours-widget` and no `Hours booked` heading, and it makes no
-    request to humaniq at all.
+    widgets, no `hq-hours-widget`, no `hq-hours-caption` and no `Hours booked`
+    heading by any route, and it makes no request to humaniq at all.
+  - The journey half requires the caption. A mount-mode leaf is handed no title,
+    so humaniq draws its own `<h3>`, and a KPI card that is only a number is the
+    defect that caption fixes.
   - The journey half is registered only under `DOSSIQ_E2E_HUMANIQ=1`, and each
     half verifies that flag against the live OCS apps list in `beforeAll`. No
     `test.skip()`, because a skipped test reads like a passed one.
   - Stale assertions retired: `COLUMN_TITLES` in
     `tests/e2e/case-detail-kpis-and-tabs.spec.ts` required the `Hours booked`
-    heading, which no longer renders where humaniq is absent, and would have
-    failed every CI run. Its KNOWN GAP comment, and two comments in
+    heading unconditionally, and it would have failed every CI run. The heading
+    exists again, but it moved from the widget wrapper into the leaf, so it is
+    present exactly when humaniq is, and that file runs where humaniq is not.
+    The entry stays out of the list and the condition is asserted in
+    `case-hours-leaf.spec.ts` instead. Its KNOWN GAP comment, and two comments in
     `tests/e2e/case-requester.spec.ts` calling the widget a stats-block, now say
     what is true.
   - 🔴 The journey half is UNPROVEN. It is written against the leaf's published
