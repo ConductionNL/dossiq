@@ -60,6 +60,11 @@
             "title": "Template ID",
             "description": "BeschikkingTemplate identifier (Docudesk-bound)"
           },
+          "templateVersion": {
+            "type": "string",
+            "title": "Template Version",
+            "description": "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today."
+          },
           "draftVersion": {
             "type": "integer",
             "title": "Draft Version",

@@ -47,6 +47,17 @@ class FilinqRedactionClientTest extends TestCase {
 	private const FILINQ_ANONYMIZATION = 'OCA\Filinq\Service\AnonymizationService';
 
 	/**
+	 * The FQCN OpenRegister's backend-state service actually answers to.
+	 *
+	 * The `Anonymisation` segment is the point. Filinq's own client asks for
+	 * `OCA\OpenRegister\Service\AnonymisationBackendService`, which is not a
+	 * class, catches the miss and returns a hardcoded `regex`.
+	 *
+	 * @var string
+	 */
+	private const OR_BACKEND_STATE = 'OCA\OpenRegister\Service\Anonymisation\AnonymisationBackendService';
+
+	/**
 	 * @var ContainerInterface|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private ContainerInterface $container;
@@ -93,9 +104,12 @@ class FilinqRedactionClientTest extends TestCase {
 	/**
 	 * Point the container at a recording filinq anonymisation service.
 	 *
+	 * @param object|null $backendState OpenRegister's backend-state double, or
+	 *                                  null when OpenRegister cannot be asked.
+	 *
 	 * @return object The double; its `$calls` holds every invocation, in order.
 	 */
-	private function givenFilinq(): object {
+	private function givenFilinq(?object $backendState = null): object {
 		$service = new class {
 
 			/**
@@ -148,9 +162,13 @@ class FilinqRedactionClientTest extends TestCase {
 		};
 
 		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service): object {
+			static function (string $id) use ($service, $backendState): object {
 				if ($id === self::FILINQ_ANONYMIZATION) {
 					return $service;
+				}
+
+				if ($id === self::OR_BACKEND_STATE && $backendState !== null) {
+					return $backendState;
 				}
 
 				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
@@ -160,6 +178,47 @@ class FilinqRedactionClientTest extends TestCase {
 
 		return $service;
 	}//end givenFilinq()
+
+	/**
+	 * An OpenRegister backend-state service reporting one effective method.
+	 *
+	 * Shaped like the real one: `getState()` returns a `BackendState` value
+	 * object with a public readonly `effectiveMethod`, not an array.
+	 *
+	 * @param string $effectiveMethod The method OpenRegister reports.
+	 *
+	 * @return object The double.
+	 */
+	private function backendStateDouble(string $effectiveMethod): object {
+		return new class($effectiveMethod) {
+
+			/**
+			 * Constructor.
+			 *
+			 * @param string $effectiveMethod The method to report.
+			 */
+			public function __construct(private string $effectiveMethod) {
+			}
+
+			/**
+			 * OpenRegister's backend state.
+			 *
+			 * @return object The state value object.
+			 */
+			public function getState(): object {
+				return new class($this->effectiveMethod) {
+
+					/**
+					 * Constructor.
+					 *
+					 * @param string $effectiveMethod The method in force.
+					 */
+					public function __construct(public readonly string $effectiveMethod) {
+					}
+				};
+			}
+		};
+	}//end backendStateDouble()
 
 	/**
 	 * Filinq is asked to extract, then to anonymise, the resolved file.
@@ -279,6 +338,110 @@ class FilinqRedactionClientTest extends TestCase {
 		$this->assertSame('no_entities_detected', $outcome['status']);
 		$this->assertSame(0, $outcome['entityCount']);
 	}//end testARunThatDetectedNothingIsNotCalledRedacted()
+
+	/**
+	 * Entities found and no file produced is not called redacted either.
+	 *
+	 * 🔴 THE TRAP THIS PINS. The status was computed from the entity count
+	 * alone, so filinq detecting a BSN and then naming no output file reported
+	 * `redacted` on a document whose bytes are untouched. A status that says
+	 * redacted looks identical whether or not anything was redacted, so the
+	 * assertion here is on the effect: an anonymised file id came back, or the
+	 * document is not redacted.
+	 *
+	 * @return void
+	 */
+	public function testEntitiesWithoutAnOutputFileAreNotCalledRedacted(): void {
+		$service = new class {
+
+			/**
+			 * A detector that finds something.
+			 *
+			 * @param int $fileId The Nextcloud file id.
+			 *
+			 * @return array<string, mixed> Two entities.
+			 */
+			public function extractAndDetectEntities(int $fileId): array {
+				return ['entities' => [['type' => 'BSN'], ['type' => 'PERSON']]];
+			}
+
+			/**
+			 * An anonymisation that names no output.
+			 *
+			 * @param int $fileId The Nextcloud file id.
+			 * @param array<int, mixed> $entities The entities to redact.
+			 * @param string $outputFormat The output format.
+			 * @param array<int, mixed> $unredacted Entities published unredacted.
+			 * @param array<int, mixed> $overrides Acknowledged overrides.
+			 * @param string $userId The acting user.
+			 *
+			 * @return array<string, mixed> A result with no file in it.
+			 */
+			public function anonymizeDocument(
+				int $fileId,
+				array $entities,
+				string $outputFormat = 'pdf-only',
+				array $unredacted = [],
+				array $overrides = [],
+				string $userId = '',
+			): array {
+				return ['warning' => 'the redaction pass produced no document'];
+			}
+		};
+
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($service): object {
+				if ($id === self::FILINQ_ANONYMIZATION) {
+					return $service;
+				}
+
+				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
+				};
+			}
+		);
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('no_output_produced', $outcome['status']);
+		$this->assertNull($outcome['anonymizedFileId'], 'nothing came back to point a Woo officer at');
+		$this->assertSame(2, $outcome['entityCount'], 'the detection itself did happen');
+	}//end testEntitiesWithoutAnOutputFileAreNotCalledRedacted()
+
+	/**
+	 * The outcome names the detection backend OpenRegister actually reports.
+	 *
+	 * Not filinq's status. Filinq's `AnonymiserBackendStateClient` resolves
+	 * `OCA\OpenRegister\Service\AnonymisationBackendService`, one namespace
+	 * segment short of the class that exists, so it catches and answers
+	 * `regex` on every instance whatever is configured. Reading OpenRegister
+	 * directly is what makes a regex-only run visible on the case instead of
+	 * being buried under an admin banner that is on everywhere.
+	 *
+	 * @return void
+	 */
+	public function testTheOutcomeNamesTheBackendOpenRegisterReports(): void {
+		$this->givenFilinq($this->backendStateDouble('presidio'));
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('presidio', $outcome['detectionBackend']);
+	}//end testTheOutcomeNamesTheBackendOpenRegisterReports()
+
+	/**
+	 * A backend that cannot be read is unknown, never assumed.
+	 *
+	 * The upstream defect is precisely an unreadable state answered with a
+	 * confident constant, so this one reports null and says so.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableBackendIsReportedAsUnknown(): void {
+		$this->givenFilinq();
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertNull($outcome['detectionBackend'], 'an unread backend must not be guessed');
+	}//end testAnUnreadableBackendIsReportedAsUnknown()
 
 	/**
 	 * An absent filinq is refused rather than answered.
