@@ -3866,6 +3866,7 @@
         "We could not load the AI settings, so none are shown. Reload the page to try again.": "We konden de AI-instellingen niet laden, dus je ziet er geen. Laad de pagina opnieuw om het nog eens te proberen.",
         "You have a key stored. Type a new one to replace it.": "Er is een sleutel opgeslagen. Typ een nieuwe om die te vervangen.",
         "You have no key stored.": "Er is geen sleutel opgeslagen.",
-        "Why the attempt failed, when action is failed": "Waarom de poging mislukte, als action failed is"
+        "Why the attempt failed, when action is failed": "Waarom de poging mislukte, als action failed is",
+        "This case has no initiator yet": "Deze zaak heeft nog geen indiener"
     }
 }
