@@ -49,8 +49,6 @@ import type { APIRequestContext, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	adoptableCaseTypes,
-	cleanupRunObjects,
-	createObject,
 	getRequestToken,
 	listObjects,
 	objectId,
@@ -119,63 +117,66 @@ let linkCaseTypeTitle = ''
 const LINK_CASE_HANDLER = 'admin'
 const LINK_CASE_DEADLINE = '2026-11-02'
 
+/** The engine's own table. A flow task is not an OpenRegister object. */
+const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/** Every task this file seeds, so teardown can cancel each one. */
+const seededTaskUuids: string[] = []
+
 /**
- * Seed one task on a case.
+ * Seed one task on a case, in the engine.
+ *
+ * IT USED TO POST A `caseTask` OBJECT and the pane stopped reading those.
+ * dossiq#2357 moved every task read onto the engine, so the fixture wrote
+ * `/api/objects/dossiq/caseTask` while the pane read `/api/flow-tasks` — two
+ * different tables. The pane then showed nothing, and three tests timed out
+ * waiting for a title that was never going to arrive.
+ *
+ * The engine anchors a task to its subject with a bare `objectUuid`, because
+ * OpenRegister has no case entity: the case IS the object. Three field names
+ * change with the table — `case` becomes `objectUuid`, `status` becomes
+ * `state`, `dueDate` becomes `dueAt` — and the id comes back as `uuid`, not
+ * as a numeric `id`, which no route accepts.
  *
  * @param onCase The case the task belongs to.
  * @param title  The task title (carries RUN_PREFIX so teardown finds it).
  * @param dueDate The due date, which is what orders the pane.
+ * @param state  The state to create in. Defaults to available.
  */
 async function seedTask(
 	onCase: string,
 	title: string,
 	dueDate: string,
+	state: string = 'available',
 ): Promise<string> {
-	const created = await createObject(api, token, 'caseTask', {
-		title,
-		case: onCase,
-		assignee: currentUser,
-		status: 'available',
-		dueDate,
-	})
-	return objectId(created)
-}
-
-/**
- * Drive a task through OpenRegister's lifecycle route, the same endpoint the
- * pane's buttons post to, and assert the new status was actually written.
- *
- * Seeding `status: "active"` directly would be a claim about what the
- * importer does with a lifecycle-managed field rather than a fact; this both
- * seeds the state and proves the lifecycle is live before any UI is opened.
- *
- * @param taskId The task to transition.
- * @param action The transition action key.
- * @param to     The status the task must hold afterwards.
- */
-async function transitionTask(
-	taskId: string,
-	action: string,
-	to: string,
-): Promise<void> {
-	const res = await api.post(
-		`/index.php/apps/openregister/api/objects/${taskId}/transition`,
-		{
-			headers: {
-				requesttoken: token,
-				'OCS-APIRequest': 'true',
-				'Content-Type': 'application/json',
-			},
-			data: { action },
+	const res = await api.post(FLOW_TASKS_BASE, {
+		headers: {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
 		},
-	)
+		data: {
+			title,
+			objectUuid: onCase,
+			assignee: currentUser,
+			state,
+			dueAt: dueDate,
+			appId: 'dossiq',
+		},
+	})
 	expect(
-		res.ok(),
-		`transition ${action} on ${taskId} -> ${res.status()} ${await res.text()}`,
-	).toBeTruthy()
+		res.status(),
+		`seed task "${title}" -> ${res.status()} ${await res.text()}`,
+	).toBe(201)
 
-	const stored = await showObject(api, 'caseTask', taskId)
-	expect(String(stored.status), `${taskId} after ${action}`).toBe(to)
+	const created = await res.json()
+	expect(created.uuid, `seeded task "${title}" has no uuid`).toBeTruthy()
+	expect(
+		String(created.state),
+		`seeded task "${title}" did not take the state asked for`,
+	).toBe(state)
+	seededTaskUuids.push(String(created.uuid))
+	return String(created.uuid)
 }
 
 /**
@@ -286,15 +287,11 @@ test.describe('Case detail — the task pane', () => {
 		completeSecondTitle = `${RUN_PREFIX} complete second task`
 		lastTaskTitle = `${RUN_PREFIX} last open task`
 
-		const readFirst = await seedTask(readCaseId, readFirstTitle, EARLIER_DUE)
+		await seedTask(readCaseId, readFirstTitle, EARLIER_DUE, 'active')
 		await seedTask(readCaseId, readSecondTitle, LATER_DUE)
-		const completeFirst = await seedTask(
-			completeCaseId,
-			completeFirstTitle,
-			EARLIER_DUE,
-		)
+		await seedTask(completeCaseId, completeFirstTitle, EARLIER_DUE, 'active')
 		await seedTask(completeCaseId, completeSecondTitle, LATER_DUE)
-		const lastTask = await seedTask(lastCaseId, lastTaskTitle, EARLIER_DUE)
+		await seedTask(lastCaseId, lastTaskTitle, EARLIER_DUE, 'active')
 		linkTaskId = await seedTask(
 			linkCaseId,
 			`${RUN_PREFIX} link task`,
@@ -303,19 +300,39 @@ test.describe('Case detail — the task pane', () => {
 
 		// The first task of each pair is picked up, so `available-actions`
 		// answers `complete` for it. The second stays available on purpose:
-		// what the pane offers has to follow the task's own status.
-		await transitionTask(readFirst, 'activate', 'active')
-		await transitionTask(completeFirst, 'activate', 'active')
-		await transitionTask(lastTask, 'activate', 'active')
+		// what the pane offers has to follow the task's own state.
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
-		// The tasks. The cases are archival and cannot be removed by a user;
-		// they carry the family prefix, so global-setup's residue sweep takes
-		// them before the next run rather than this teardown failing on a 403
-		// it was never going to win.
-		await cleanupRunObjects(api, token, ['caseTask'])
+		// The tasks, one verb at a time. An engine task is NOT an OpenRegister
+		// object, so `cleanupRunObjects` cannot see it however the prefix is
+		// spelled, and the engine publishes no delete: `cancel` is the only
+		// removal verb it has, and it terminates rather than erases.
+		//
+		// Failures are swallowed on purpose. A task the test already completed
+		// or cancelled answers 409 to a second cancel, and a teardown that
+		// throws on that would redden a run whose assertions all passed.
+		for (const uuid of seededTaskUuids) {
+			try {
+				await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+					headers: {
+						requesttoken: token,
+						'OCS-APIRequest': 'true',
+						'Content-Type': 'application/json',
+					},
+					data: {},
+				})
+			} catch {
+				// Teardown is best effort; the next run's residue sweep is the
+				// backstop.
+			}
+		}
+
+		// The cases are archival and cannot be removed by a user; they carry
+		// the family prefix, so global-setup's residue sweep takes them before
+		// the next run rather than this teardown failing on a 403 it was never
+		// going to win.
 		await api.dispose()
 	})
 
