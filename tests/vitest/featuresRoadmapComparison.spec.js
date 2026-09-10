@@ -157,6 +157,31 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		expect(text).toContain('a guessed rating is worse than an empty cell')
 	})
 
+	it('does not date every added row to the most recent round', async () => {
+		// The failure this catches, which is the one that actually happened.
+		// The sentence read "On {date} we added {count}" and was true while a
+		// single round had ever added rows. A second round made it a lie about
+		// the first round's 19: they were asked a day earlier, and the page
+		// would have said otherwise while every test went on passing.
+		const text = (await mountComparison()).text()
+		const dates = data.capabilities
+			.filter((row) => row.addedOn)
+			.map((row) => row.addedOn)
+		const latest = [...dates].sort().at(-1)
+		const onLatest = dates.filter((date) => date === latest).length
+
+		// Only meaningful while more than one round has added rows. If a
+		// future compaction ever collapses them, this says so out loud rather
+		// than passing vacuously.
+		expect(new Set(dates).size).toBeGreaterThan(1)
+		expect(onLatest).toBeLessThan(dates.length)
+
+		// The page names the most recent date and the total, and must not
+		// glue them together into a claim that they all landed that day.
+		expect(text).toContain('the most recent of them on')
+		expect(text).not.toContain(`On ${latest} we added ${dates.length}`)
+	})
+
 	it('shows Unknown as a column in the totals, not as a silent gap', async () => {
 		const wrapper = await mountComparison()
 		const headers = wrapper
