@@ -1300,7 +1300,7 @@
 						"type": "data",
 						"title": "Terms and payment",
 						"icon": "CalendarClock",
-						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget into `case-archival`: `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but the page reads them from `@self._retention`, which is the one place any app can ask an object what happens to it and when. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record.",
+						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget and no longer has a card of its own. `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but they are read from `@self._retention`, the one place any app can ask an object what happens to it and when, and they surface in the object metadata panel under its Archiving category alongside every other `@self` fact. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record. The separate `case-archival` card that briefly held them is gone: it duplicated a category the metadata panel already groups, and it spent five rows of the right column saying what the panel says in five.",
 						"content": {
 							"title": "Terms and payment",
 							"columns": 2,
@@ -1317,28 +1317,6 @@
 									"editable": false
 								}
 							}
-						}
-					},
-					{
-						"id": "case-archival",
-						"type": "metadata",
-						"title": "Archiving",
-						"icon": "Archive",
-						"_note": "What happens to this file after the case closes, read from the ONE abstract answer rather than from this app's own field names. `type: metadata` is nextcloud-vue's CnObjectMetadataWidget, and `include` names keys of `@self._retention`: the resolved archival decision OpenRegister builds by merging the object's stored retention block, the ZGW archival properties the record itself declares (`archiveNomination` and friends, which dossiq derives from the resultaattype on close per zrc-021), the schema's `x-openregister-archival` evaluation, and any legal hold. Before that resolver existed the slot was declared and filled by nothing, so every app read its own fields and no shared surface could ask the question once. `legalHold` is included deliberately: a hold overrides the nomination and the date above it, and a destruction date shown without it is actively misleading. The card renders its empty state on a case with no archival obligation, which is a real answer and not a gap. ⚠️ IT ALSO RENDERS THAT EMPTY STATE UNTIL nextcloud-vue SHIPS THE READER: the `_retention` keys named in `include` are resolved by CnObjectMetadataWidget only from the release that carries nextcloud-vue#1054, and 2.43.0 does not (checked against the installed package, not the range). On an older library every key filters out and the card reads its emptyLabel, which is degraded but not wrong. Bump the dependency when that release lands.",
-						"content": {
-							"layout": "horizontal",
-							"labelWidth": 130,
-							"include": [
-								"nomination",
-								"period",
-								"actionDate",
-								"status",
-								"basis",
-								"source",
-								"legalHold"
-							],
-							"title": "Archiving",
-							"emptyLabel": "No archiving rule applies to this case yet."
 						}
 					},
 					{
@@ -1831,7 +1809,7 @@
 						"gridX": 8,
 						"gridY": 2,
 						"gridWidth": 4,
-						"gridHeight": 3,
+						"gridHeight": 5,
 						"showTitle": true
 					},
 					{
@@ -1847,7 +1825,7 @@
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 5,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1856,7 +1834,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 8,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1865,27 +1843,18 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 10,
+						"gridY": 12,
 						"gridWidth": 4,
-						"gridHeight": 4
+						"gridHeight": 7
 					},
 					{
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 8,
-						"gridY": 14,
+						"gridY": 19,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
-					},
-					{
-						"id": "12",
-						"widgetId": "case-archival",
-						"gridX": 8,
-						"gridY": 17,
-						"gridWidth": 4,
-						"gridHeight": 5,
-						"showTitle": false
 					}
 				],
 				"sidebar": {

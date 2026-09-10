@@ -140,6 +140,31 @@ async function openSidebar(page: Page): Promise<Locator> {
 	return sidebar
 }
 
+/**
+ * Open the object metadata panel and return the dialog.
+ *
+ * There is no page widget for it. CnObjectDataWidget puts a Metadata item in
+ * its overflow Actions menu, and the panel opens from there, which is the
+ * whole point: `@self` facts are read on demand rather than taking permanent
+ * space on the detail page.
+ *
+ * @param page The Playwright page.
+ */
+async function openMetadataPanel(page: Page): Promise<Locator> {
+	// The terms card is a data widget, so it carries the actions menu. Scoping
+	// to it rather than to the page matters: several widgets on this page carry
+	// an actions menu and a bare menu locator is a strict mode violation.
+	const terms = page.locator('[aria-label="case-terms"]')
+	await expect(terms).toBeVisible({ timeout: 30_000 })
+	await terms.getByRole('button', { name: /actions/i }).click()
+
+	await page.getByRole('menuitem', { name: /^(Metadata|Metagegevens)$/ }).click()
+
+	const dialog = page.getByRole('dialog').filter({ hasText: /Metadata|Metagegevens/ })
+	await expect(dialog).toBeVisible({ timeout: 15_000 })
+	return dialog
+}
+
 test.describe('Case identity', () => {
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
@@ -471,21 +496,30 @@ test.describe('Case identity', () => {
 		await expect(terms).toContainText(PROCESSING_DEADLINE)
 		await expect(terms).toContainText(LEGAL_BASIS)
 
-		// The archival half moved out into its own card (dossiq#2322). The
-		// page no longer reads dossiq's `archiveNomination` off the record: it
-		// reads the abstract decision OpenRegister resolves into
-		// `@self._retention`, so the same card answers for any object. Two
-		// consequences this assertion has to respect:
+		// The archival half has no card on this page at all any more. It is
+		// read from `@self._retention`, the abstract decision OpenRegister
+		// resolves for any object, and it surfaces in the object metadata
+		// panel under its own Archiving category beside every other `@self`
+		// fact. Three consequences this assertion has to respect:
 		//
-		//  - the widget is a `metadata` one, so the block is `case-archival`
-		//    and not `case-terms`;
-		//  - the stored ZGW code is translated on the way out, so
-		//    `blijvend_bewaren` arrives as the phrase an archivist would say.
-		//    The raw code stays in the pattern because an unrecognised
-		//    nomination falls back to it rather than being hidden.
-		const archival = page.locator('[aria-label="case-archival"]')
-		await expect(archival).toBeVisible({ timeout: 30_000 })
-		await expect(archival).toContainText(/keep permanently|blijvend[ _]bewaren/i)
+		//  - the panel opens on demand from a data widget's overflow Actions
+		//    menu, so there is nothing to assert until it is opened;
+		//  - the archival keys are MDTO concepts in English since
+		//    openregister#3584, so the stored `blijvend_bewaren` resolves to
+		//    `retain_permanently` before the panel ever sees it;
+		//  - that code is then translated on the way out, so it arrives as the
+		//    phrase an archivist would say. The raw codes stay in the pattern
+		//    because an unrecognised appraisal falls back to the stored value
+		//    rather than being hidden.
+		const metadata = await openMetadataPanel(page)
+
+		await expect(
+			metadata.getByText('Archiving', { exact: true }),
+			'the panel groups the archival facts under their own heading',
+		).toBeVisible({ timeout: 15_000 })
+		await expect(metadata).toContainText(
+			/keep permanently|retain[ _]permanently|blijvend[ _]bewaren/i,
+		)
 	})
 
 	// @e2e openspec/specs/case-management/spec.md
