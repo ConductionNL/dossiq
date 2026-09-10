@@ -39,9 +39,11 @@ already possible. It is about not needing to.
 
 ## Decisions
 
-**Enforce at the persistence boundary, not in the controller.** Under ADR-022 the frontend
-writes objects through OpenRegister's generic API, so a controller guard is a guard on a door
-nobody uses. The alternative, forcing every beschikking write through `BeschikkingController`,
+**Enforce at the persistence boundary, not in the controller.** The controller guard is not
+useless: `beschikkingApi.js` does go through it, and it does answer 409. It is just not
+sufficient, because the beschikking is an OpenRegister object and the object API reaches it
+for any authenticated caller without entering dossiq at all. A guard on one of two doors is a
+guard on neither. The alternative, forcing every beschikking write through `BeschikkingController`,
 would mean removing the object API's reach into one schema, which OpenRegister has no mechanism
 for and which would break the case detail view. The pre-persist listener guards the store
 itself, so the route no longer matters.

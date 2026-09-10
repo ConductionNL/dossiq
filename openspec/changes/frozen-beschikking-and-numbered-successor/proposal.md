@@ -4,11 +4,20 @@ A signed beschikking is a rechtshandeling with a bezwaartermijn attached. In a b
 court or in an audit, "the decision now says X" and "the decision said Y when it was served"
 have to be separable. Today they are not, for two reasons that compound.
 
-The rule already exists. `REQ-BES-008` says a beschikking at `signed` or later may not be
-edited substantively. But the only code that enforces it is
-`BeschikkingService::updateFields()`, one method behind one route. Under ADR-022 the frontend
-writes objects through OpenRegister's generic object API, which never reaches that method. So
-the guard covers the door nobody uses.
+The rule already exists, and it is real as far as it goes.
+`BeschikkingService::updateFields()` refuses any of seven content fields once the status is
+`signed`, `sent`, `received-confirmation` or `archived`, and `BeschikkingController` turns that
+into a 409. Reading the PATCH route alone, the decision looks frozen.
+
+But that method is the only enforcement, and it is not the only door. The beschikking is an
+OpenRegister object, so OpenRegister's own object API will PATCH or DELETE it for any
+authenticated caller without ever entering dossiq's service. dossiq already knows this: the
+`BewijsstukImmutabilityListener` docblock on `development` spells it out, that a rule with no
+call site on the persistence path is "identical to having no check at all", and both
+bewijsstuk and checklistRun are guarded by pre-persist listeners for exactly that reason.
+`beschikking` was simply never added to them. Delete had no guard at any layer, and the
+controller exposes no DELETE route, so deleting a signed decision was only ever possible
+through the unguarded door.
 
 And the door itself is bricked up. `beschikking` is imported into OpenRegister but its slug is
 absent from `SchemaSlugMap::SLUG_TO_CONFIG_KEY`, so `SchemaKeyReconciler` never writes
@@ -17,11 +26,21 @@ on every call. The same holds for `state_machine_log_schema`, `bezwaar_trigger_s
 `mandaat_regeling_schema`. Four services read config keys that nothing writes. The whole
 beschikking lifecycle is unreachable at runtime.
 
-The history is not lost. OpenRegister records per-property `old`/`new` diffs sealed into a
-SHA-256 hash chain, and `AuditTrailMapper::revertObject()` reconstructs a point-in-time state.
-So this is "we cannot show what was served", not "we cannot recover it". That is a smaller
-problem than it looked, and it is still a real one: reconstruction runs through a revert that
-writes, values above 64 KB are elided from the diff, and no surface names the served version.
+The audit trail is weaker than it reads. OpenRegister does seal per-property `old`/`new` diffs
+into a SHA-256 hash chain, so a tampered row is detectable, and that part is genuine. What it
+does not hold is a snapshot of any earlier version: only a diff, and four things eat into
+replaying one. `AuditTrailMapper::revertObject()` is the app's single reconstruction path and
+it cannot run at all, because `revertChanges()` calls `$audit->getChanges()` while the entity's
+property is `changed`, so `Entity::__call` throws and the route answers 500. Any value above
+64 KB is dropped from the diff permanently. A permanent delete returns before the audit block
+and writes no row whatsoever. And some update rows are written with a null `old`, which records
+the object as having come from nothing.
+
+So "we could always reconstruct what was served" does not hold. What contains this case is
+narrower and much more specific, and it is the bricked-up door above: because
+`beschikking_schema` was never configured, no beschikking has ever been persisted, so there is
+no served version to have lost. This is a window, not a loss, and it is open only until the
+lifecycle is made reachable, which is the first thing this change does.
 
 ## What Changes
 
