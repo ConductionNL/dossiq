@@ -156,8 +156,19 @@ programme and the reason wave 1 goes first.
       keys, entities filtered out by an `is_array()` check, `create()`
       refusing terminal states where `import()` is the trusted path, and a
       docblock claiming an idempotency the code did not have.
-- [ ] 2.3b Dual-run, READ half: the task surfaces read `Task` behind the same
-      flag, with the register object as the fallback.
+- [x] 2.3b Dual-run, READ half: `useEngineTaskStore`
+      (`src/store/modules/engineTask.js`) reads the engine's list, one task,
+      and its lifecycle verbs. No surface consumes it yet; the six that will
+      are enumerated in `remove-casetask` task 1.
+- [x] 2.9 The flow-resume path is migrated, and it was the load-bearing
+      part. `TaskCompletionResumeListener` listened to `ObjectUpdatedEvent`
+      on a `caseTask` row; once nothing writes such a row it would never
+      fire again and a suspended run would only recover on
+      `DossiqAskPersonNode`'s 30-minute heartbeat. It now listens to the
+      engine's `TaskTerminalEvent`, refuses an uncommitted event, and
+      resumes only on `completed` (the engine fires the event for all three
+      terminal states, and `terminated`/`disabled` are the ask being
+      withdrawn). Both guards mutation-checked.
 - [ ] 2.4 The dossiq task detail page reads `Task` and keeps its own surface
       (D-3): same route, same page id, same deep links, case card and the two
       leaves intact.
@@ -167,8 +178,15 @@ programme and the reason wave 1 goes first.
 - [ ] 2.6 Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
       that ticking it off there completes the engine task through
       `TaskVtodoWriteBackGate`. Dossiq writes no CalDAV code (D-4).
-- [ ] 2.7 Remove `caseTask`. `git grep -i caseTask lib/ src/ tests/` returns
-      nothing.
+- [ ] 2.7 Remove `caseTask`. **Planned in full as its own change,
+      `openspec/changes/remove-casetask/`**, because it is 70 files and two
+      of them are rewrites rather than repoints: `Tasks` and `TaskDetail` are
+      generic manifest pages that bind a register and a schema, and the
+      engine is not an OpenRegister object, so both become `type: custom`.
+      The done test is a grep over the WHOLE repo, not `lib/ src/ tests/`:
+      seed data, fixtures and `ci-seed.sh` all carry the slug, and a miss in
+      `ci-seed.sh` exits before Playwright starts, reporting every spec as
+      NOT RUN rather than as one broken seed.
 - [ ] 2.8 e2e: a task created by a transition, completed with a form, resuming
       a suspended flow run.
 
