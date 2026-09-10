@@ -304,8 +304,26 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			return null;
 		}
 
+		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
+		if ($highest === null) {
+			return null;
+		}
+
+		return 'v' . $highest;
+	}//end versionInForce()
+
+	/**
+	 * The highest version number among the chain rows at or before a moment.
+	 *
+	 * @param array<int, mixed> $rows Filinq's chain rows.
+	 * @param integer $cutoff The last second of the effective date, as a timestamp.
+	 *
+	 * @return integer|null The version number, or null when no row qualifies.
+	 */
+	private function highestVersionAtOrBefore(array $rows, int $cutoff): ?int {
 		$highest = null;
-		foreach ((array)($page['results'] ?? []) as $row) {
+
+		foreach ($rows as $row) {
 			$row = (array)$row;
 			$created = strtotime((string)(((array)($row['@self'] ?? []))['created'] ?? ''));
 			if ($created === false || $created > $cutoff) {
@@ -318,12 +336,8 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			}
 		}
 
-		if ($highest === null) {
-			return null;
-		}
-
-		return 'v' . $highest;
-	}//end versionInForce()
+		return $highest;
+	}//end highestVersionAtOrBefore()
 
 	/**
 	 * The template object's own OpenRegister version, if it carries one.
