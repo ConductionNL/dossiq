@@ -35,7 +35,22 @@ task; the criteria under a task are plain bullets.
   widget renders the leaf in its cell, the total matches hours booked through the
   Log hours action, and the same instance with humaniq disabled renders no hours
   surface rather than `0`.
-- [ ] 2.4 [blocked: the same] Add the e2e coverage the delta scenarios name, into
-  `tests/e2e/case-detail-kpis-and-tabs.spec.ts` beside the existing tile
-  assertions. Assert the leaf surface and its absence, not the widget type.
-  Retire any assertion that reads a summed hours number from the old tile.
+- [x] 2.4 Add the e2e coverage the delta scenarios name. It landed in a file of
+  its own, `tests/e2e/case-hours-leaf.spec.ts`, rather than beside the tile
+  assertions: the two halves of the scenario need opposite instances, and that
+  split is the file's whole shape.
+  - The absence half runs on CI and asserts REQ-HRS-001: the page renders its own
+    widgets, no `hq-hours-widget` and no `Hours booked` heading, and it makes no
+    request to humaniq at all.
+  - The journey half is registered only under `DOSSIQ_E2E_HUMANIQ=1`, and each
+    half verifies that flag against the live OCS apps list in `beforeAll`. No
+    `test.skip()`, because a skipped test reads like a passed one.
+  - Stale assertions retired: `COLUMN_TITLES` in
+    `tests/e2e/case-detail-kpis-and-tabs.spec.ts` required the `Hours booked`
+    heading, which no longer renders where humaniq is absent, and would have
+    failed every CI run. Its KNOWN GAP comment, and two comments in
+    `tests/e2e/case-requester.spec.ts` calling the widget a stats-block, now say
+    what is true.
+  - 🔴 The journey half is UNPROVEN. It is written against the leaf's published
+    `data-testid` contract and has never run, because the bundle is not shipped
+    yet. Task 2.3 is what turns it green.

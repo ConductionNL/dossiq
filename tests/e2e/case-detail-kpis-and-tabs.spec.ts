@@ -102,12 +102,19 @@ const RETIRED_TAB_LABELS = [
  * was open (#1615); it supersedes the `case-runs` this branch had. Only the
  * PLACEMENT is ours — the right column beside Hours, rather than the middle
  * cell it shipped in.
+ *
+ * 🔴 `Hours booked` IS DELIBERATELY NOT IN THIS LIST, and its absence is the
+ * assertion rather than an omission. `case-kpis-hours` is an integration widget
+ * placing humaniq's `humaniq-hours` leaf. A leaf whose app is absent is never
+ * registered, so CnDetailWidgetHost resolves no renderer and the cell renders
+ * nothing, heading included: the grid `<h3>` is drawn only for consumer slot
+ * widgets, and this page supplies no `#widget-case-kpis-hours` slot. This CI
+ * instance installs openregister and nothing else, so requiring the title here
+ * would fail every run. The hours surface has a spec of its own,
+ * `case-hours-leaf.spec.ts`, which asserts its absence here and its full
+ * journey where humaniq is enabled.
  */
-const COLUMN_TITLES = [
-	/Hours booked|Geboekte uren/,
-	/Flow runs|Flow-uitvoeringen/,
-	/Tasks|Taken/,
-]
+const COLUMN_TITLES = [/Flow runs|Flow-uitvoeringen/, /Tasks|Taken/]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
@@ -299,13 +306,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			`dossiq 4xx: ${ownClientErrors.map((f) => `${f.status} ${f.url}`).join(' | ')}`,
 		).toEqual([])
 
-		// KNOWN GAP, deliberately not asserted away. The hours tile queries
-		// humaniq's register, so on an instance without humaniq it 404s and
-		// renders 0 — indistinguishable from a real zero. The `Log hours` action
-		// beside it IS gated on `visibleWhen: { appInstalled: "humaniq" }`; the
-		// tile cannot be, because the manifest schema allows `visibleWhen` on
-		// actions and fields but not on a widget or a layout cell. Closing it
-		// needs that gating in nextcloud-vue's CnDetailPage, not a change here.
+		// THE GAP THAT USED TO STAND HERE IS CLOSED. The hours tile queried
+		// humaniq's register, so on an instance without humaniq it 404'd and
+		// rendered 0, which is what a case with no hours booked renders too. It
+		// is now a placement of humaniq's `humaniq-hours` leaf, and an
+		// unregistered leaf renders nothing rather than a zero. The absence is
+		// asserted in `case-hours-leaf.spec.ts`, not here.
+		//
+		// The filter below stays, and it is still worth its lines: `hermiq` is
+		// on it, and a humaniq the manifest starts querying again would show up
+		// as a URL in this log rather than as a silent zero on the page.
 		const absent = failures.filter((f) => ABSENT_APPS.test(f.url))
 		if (absent.length > 0) {
 			console.log(
