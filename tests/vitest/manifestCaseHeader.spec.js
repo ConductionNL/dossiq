@@ -77,19 +77,26 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 		expect(entry.type).toBe('custom')
 	})
 
-	it('places it at the top of the right-hand column, as a titled card', () => {
-		// IT USED TO BE A FULL-WIDTH BAND AND IT WAS MOSTLY AIR: twelve columns
-		// and two rows for three to five short facts laid out in a line, so on a
-		// real case more than half of it was empty and the two rows came out of
-		// the content below. As a card in the four-column rail the same facts
-		// stack and read as a labelled group.
+	it('leads the page as a full-width row of KPI cards', () => {
+		// THIS REVERSES A DELIBERATE MOVE, so the reason it is safe this time is
+		// written down. The strip was pulled OUT of full width because it was
+		// mostly air: twelve columns and two rows for three to five short facts
+		// laid out in a line, more than half of it empty on a real case. That
+		// objection was about the LAYOUT of the facts, not their placement.
+		//
+		// Each fact is its own card now, with `flex: 1 1 0` in
+		// CaseHeaderRow.vue, so the row divides evenly across the full width
+		// instead of ending in dead space. The rail card it replaced is gone,
+		// so the same facts are read once, across the top, where a handler
+		// looks first.
 		const placed = cells('case-header')
 		expect(placed).toHaveLength(1)
 		expect(placed[0].gridY).toBe(0)
-		expect(placed[0].gridX).toBe(8)
-		expect(placed[0].gridWidth).toBe(4)
-		// It no longer draws its own heading, so the grid supplies one.
-		expect(placed[0].showTitle).toBe(true)
+		expect(placed[0].gridX).toBe(0)
+		expect(placed[0].gridWidth).toBe(12)
+		// A KPI strip, not a titled panel: the cards carry their own labels, so
+		// a heading above them would name the group twice.
+		expect(placed[0].showTitle).toBe(false)
 		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
 	})
 
