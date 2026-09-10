@@ -2,24 +2,57 @@
 
 ## Why
 
-Dossiq declares 81 schemas. **Thirty-three of them, carrying 282 properties,
-belong to eight clusters that OpenRegister already ships an entity or a leaf
-for.**
+Dossiq declares 81 schemas. Some of them duplicate a concept OpenRegister
+already ships. **How many is a question this proposal has now got wrong twice,
+so it states a confidence per row instead of a headline number.**
 
-This is not a suspicion. Every counterpart below was checked by opening the
-file in the `openregister` checkout on 2026-09-10 and **comparing its columns
-to the dossiq schema's properties**, not by matching a name:
+Rows are graded by how they were checked:
 
-| Dossiq cluster | Schemas | OpenRegister counterpart | Verified |
+- **field-verified** — the OpenRegister entity's columns were listed and
+  compared against the schema's properties, one by one.
+- **owned elsewhere** — a dossiq change already exists with its own analysis.
+  This proposal sequences it and does not re-derive it.
+- **mechanics only** — the request/run/answer machinery moves onto a shared
+  abstraction; the domain fields stay on a dossiq schema. A real reduction,
+  but a partial one.
+- **rejected** — checked at field level and it does not hold.
+
+| Cluster | Schemas | Counterpart | Grade |
 |---|---|---|---|
-| task | 1 | `Task` | `lib/Db/Task.php`, 936 lines |
-| tenancy | 7 | `Organisation` | `lib/Db/Organisation.php`, 1128 lines |
-| documents | 7 | `File` + `files` leaf | `lib/Db/File.php` |
-| inspection checklists | 7 | task forms + `field-inspection` leaf | `lib/Service/Task/TaskForm*.php` |
-| advice requests | 6 | `Task` + task forms | `lib/Db/Task.php` |
-| workflow / case plan | 2 | `Flow` + `CaseItem` | `lib/Db/CaseItem.php`, 638 lines |
-| federation | 2 | `FederatedShare` | `lib/Db/FederatedShare.php`, 307 lines |
-| case location | 1 | `MapLink` | `lib/Db/MapLink.php`, 181 lines |
+| task (`caseTask`) | 1 | `Task` | **field-verified, all 15 map** |
+| tenancy | 7 | `Organisation` | owned elsewhere (2/5) |
+| documents | 7 | `File` + files leaf | owned elsewhere (11/13) |
+| workflow / case plan | 2 | `Flow` + `CaseItem` | owned elsewhere (0/16) |
+| contacts | 4 | contacts leaf | owned elsewhere (12/16) |
+| email | 2 | `EmailLink` | owned elsewhere (8/20) |
+| inspection checklists | 7 | task forms | mechanics only |
+| advice requests | 6 | `Task` + task forms | mechanics only |
+| federation | 2 | `FederatedShare` | **rejected, see below** |
+| case location | 1 | `MapLink` | **rejected, see below** |
+
+**Only one row is field-verified and clean, and it is the one being built
+first.** That is the honest state, and it is a better basis than a total.
+
+## Two more rows that a name match claimed and a field match rejects
+
+Added after the six below, by running the same check on the rows that had
+survived it.
+
+**`caseFederatedShare` and `casetransfer` onto `FederatedShare`.** One of
+eleven and one of thirteen properties find a column. `fieldSnapshot` (what
+the shared fields held at share time), `sharedDocuments`, and
+`revokedAt`/`revokedBy` have nowhere to go; `casetransfer` is a custody
+workflow with `custodyAuditTrail`, `idempotencyKey`, source and target
+organisations and a rejection reason, which is a different thing from a
+share. Either OpenRegister grows those fields, or these stay. Not a
+migration anyone can start today.
+
+**`case-location` onto `MapLink`.** `MapLink` is a pin: `lat`, `lng`,
+`objectUuid`, `name`, `category`. `case-location` carries BAG
+`addressDesignationId`, BRK `parcelId`, `accuracyRadius` and a `source`
+provenance saying whether the coordinates were validated against BAG or
+geocoded. Dropping those loses the legal difference between a verified
+address and a guess. It stays.
 
 ## Six schemas that a name match would have caught and a field match rejects
 
@@ -127,10 +160,15 @@ workarounds.
 
 ## Success is measured, not asserted
 
-The programme is done when `lib/Settings/dossiq_register.json` declares **48
-schemas rather than 81**, and every removed slug returns zero hits from a
-case-insensitive `git grep` across the whole repo. Any other number is
-progress, not completion, and the tasks file counts it per cluster.
+**There is no target number, and inventing one is what went wrong twice.**
 
-48, not 41: the first pass of this audit over-claimed by six schemas, and the
-corrected target is stated here rather than quietly adjusted later.
+Done is per cluster, not per programme: a cluster is finished when its
+schemas are gone from `lib/Settings/dossiq_register.json` and every removed
+slug returns zero hits from a case-insensitive `git grep` across the whole
+repo, seed data and e2e fixtures included.
+
+The programme's own progress is the count of clusters that reached that
+state, out of the ten graded above, with the two rejected rows excluded and
+the reason recorded. A schema total would hide that `caseTask` is one clean
+row and `advice` is a partial one, and those are not the same kind of
+finished.
