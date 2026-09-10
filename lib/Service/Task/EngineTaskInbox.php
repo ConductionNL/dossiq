@@ -109,6 +109,34 @@ class EngineTaskInbox {
     }//end openForAssignee()
 
     /**
+     * How many open tasks the instance holds, optionally due before an instant.
+     *
+     * `SCOPE_ALL` with `isAdmin`, unlike `countOpenForAssignee()`: the demo
+     * caseload report asks what landed on the INSTANCE, not what landed on
+     * one person, and the seed command turns a zero here into a failure.
+     * Narrowing it to the caller would make the command's verdict depend on
+     * whose account ran it.
+     *
+     * @param string      $actor     The acting identity.
+     * @param string|null $dueBefore Only tasks due strictly before this instant.
+     *
+     * @return integer How many, or 0 when the read could not be made.
+     *
+     * @spec openspec/specs/dossiq-app-scaffold/spec.md
+     */
+    public function countOpenEverywhere(string $actor, ?string $dueBefore = null): int {
+        return $this->query()->total(
+            criteria: ([
+                'uid' => $actor,
+                'isAdmin' => true,
+                'scope' => $this->query()->scope('SCOPE_ALL'),
+                'isTerminal' => false,
+            ] + $this->query()->dueWindow(after: null, before: $dueBefore)),
+            failure: ['Dossiq: could not count the engine tasks on this instance', []]
+        );
+    }//end countOpenEverywhere()
+
+    /**
      * Every task the engine holds against one case, as plain arrays.
      *
      * `SCOPE_ALL` and no terminality filter, unlike `openForAssignee()`:

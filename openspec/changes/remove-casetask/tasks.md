@@ -107,7 +107,7 @@ the resume listener that already moved.
       entry goes.
 - [ ] 3.7 `lib/Repair/RenameCollidingSchemaSlugs.php` — remove the slug from
       the collision list.
-- [ ] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
+- [x] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
       `DemoCaseloadSeedDataService` and the 64 `tasks` rows in the seed files.
       Demo tasks must become engine tasks, or the demo caseload arrives with
       no work on it.

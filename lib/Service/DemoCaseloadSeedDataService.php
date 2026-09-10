@@ -40,6 +40,8 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -60,12 +62,16 @@ class DemoCaseloadSeedDataService {
 	 * Constructor.
 	 *
 	 * @param DemoCaseloadGateway $gateway OpenRegister access.
+	 * @param EngineTaskGateway $engineTask The engine's task writer.
+	 * @param IUserSession $userSession The identity the seed command set.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private DemoCaseloadGateway $gateway,
+		private EngineTaskGateway $engineTask,
+		private IUserSession $userSession,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -132,8 +138,6 @@ class DemoCaseloadSeedDataService {
 
 			$summary['cases']++;
 			$summary['tasks'] += $this->createTasks(
-				objectService: $objectService,
-				ids: $ids,
 				caseId: $caseId,
 				tasks: (array)($caseSeed['tasks'] ?? []),
 				now: $now
@@ -236,8 +240,6 @@ class DemoCaseloadSeedDataService {
 	/**
 	 * Create the tasks belonging to one case.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array<string, string> $ids The register and schema ids.
 	 * @param string $caseId The parent case id.
 	 * @param array $tasks The task seed entries.
 	 * @param DateTimeImmutable $now The clock.
@@ -245,25 +247,35 @@ class DemoCaseloadSeedDataService {
 	 * @return int How many tasks were created.
 	 */
 	private function createTasks(
-		object $objectService,
-		array $ids,
 		string $caseId,
 		array $tasks,
 		DateTimeImmutable $now,
 	): int {
 		$created = 0;
+		$actor = $this->userSession->getUser()?->getUID();
 
 		foreach ($tasks as $taskSeed) {
-			$id = $this->gateway->create(
-				objectService: $objectService,
-				registerId: $ids['register'],
-				schemaId: $ids['caseTask'],
-				data: $this->taskPayload(taskSeed: $taskSeed, caseId: $caseId, now: $now)
+			// `mirrorImport`, not `mirrorCreate`. The engine's create path
+			// refuses a task born in a terminal state, and it is right to:
+			// a task reaches `completed` through a lifecycle verb. Demo
+			// tasks are asserted into whatever state the caseload needs to
+			// look realistic, including completed ones, and `import` is the
+			// engine's own trusted path for exactly that.
+			$id = $this->engineTask->mirrorImport(
+				task: $this->taskPayload(taskSeed: $taskSeed, caseId: $caseId, now: $now),
+				caseId: $caseId,
+				actor: $actor
 			);
 
 			if ($id !== '') {
 				$created++;
+				continue;
 			}
+
+			$this->logger->warning(
+				'Dossiq: the engine refused a demo task',
+				['case' => $caseId, 'title' => ($taskSeed['title'] ?? ''), 'reason' => $this->engineTask->lastError()]
+			);
 		}
 
 		return $created;
