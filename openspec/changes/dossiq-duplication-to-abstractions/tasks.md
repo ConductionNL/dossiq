@@ -189,26 +189,31 @@ continued, not replaced.
 - [ ] 4.3 **Workflow / case plan** onto `Flow` + `CaseItem` (2 schemas).
       Existing change `retire-cmmn-caseplanstate` at 0/16. The largest of the
       wave-3 items.
-- [ ] 4.4 **Federation** onto `FederatedShare` (`caseFederatedShare`,
-      `casetransfer`, 24 properties). No plan exists; write one.
-      `caseFederatedShare` is the strong match (`remoteCloudId`,
-      `federationShareId`, `permissionLevel`, `status` against
-      `remoteInstanceUrl`, `shareToken`, `permissions`, `status`);
-      `casetransfer` overlaps partially and carries a custody audit trail that
-      has no counterpart, so map it before assuming it moves whole.
-      `caseShare` is NOT in this cluster: it is a password-protected public
-      link with `failedAttempts` and `lockedUntil`, which is the shares leaf's
-      shape, not federation's.
-- [ ] 4.5 **Case location** onto `MapLink` (`case-location`, 9 properties).
-      Small. `mapLayer` and `wmsLayer` are deliberately excluded: they
-      configure basemaps, and `MapLink` is a pin on one.
+- [x] 4.4 **Federation onto `FederatedShare`: REJECTED at field level.**
+      One of `caseFederatedShare`'s eleven properties and one of
+      `casetransfer`'s thirteen find a column. `fieldSnapshot`,
+      `sharedDocuments` and `revokedAt`/`revokedBy` have nowhere to go, and
+      `casetransfer` is a custody workflow (`custodyAuditTrail`,
+      `idempotencyKey`, source and target organisations, rejection reason),
+      which is a different concept from a share. Either OpenRegister grows
+      those fields first or these stay. Recorded rather than deleted so the
+      next audit does not re-propose it.
+- [x] 4.5 **Case location onto `MapLink`: REJECTED at field level.**
+      `MapLink` is a pin (`lat`, `lng`, `objectUuid`, `name`, `category`).
+      `case-location` carries BAG `addressDesignationId`, BRK `parcelId`,
+      `accuracyRadius` and a `source` provenance distinguishing a
+      BAG-validated address from a geocoded guess. Dropping those loses a
+      legal distinction.
 - [ ] 4.6 **Contacts** (existing change at 12/16) and **email** (at 8/20) are
       already in flight against the contacts and email leaves. Continue.
 
 ## 5. Done
 
-- [ ] 5.1 `lib/Settings/dossiq_register.json` declares **48** schemas, down
-      from 81. Any other number is progress, not completion.
+- [ ] 5.1 Every cluster graded `field-verified`, `owned elsewhere` or
+      `mechanics only` in the proposal has reached its own done state. There
+      is deliberately NO target schema count: two attempts at one were both
+      wrong, and a total hides the difference between a clean row and a
+      partial one.
 - [ ] 5.2 Every retired slug returns zero hits from a case-insensitive
       `git grep` across the whole repo, including seed data, demo data, e2e
       fixtures and `ci-seed.sh`.
