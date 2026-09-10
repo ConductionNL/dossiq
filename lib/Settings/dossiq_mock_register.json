@@ -14693,7 +14693,7 @@
         "icon": "PowerPlugOutline",
         "version": "1.2.0",
         "title": "Integration",
-        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, matching the schema of the same name in the application register. The demo register seeds NO rows here — `MockRegisterHasNoSeededCatalogueTest` holds that line — so this block changes nothing that exists today; it is here so that a demo instance which later grows one does not reopen what the application register just closed.",
+        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, matching the schema of the same name in the application register. The demo register seeds no rows here, and MockRegisterHasNoSeededCatalogueTest holds that line, so this block changes nothing that exists today. It is here so a demo instance that later grows a row does not reopen what the application register just closed.",
         "type": "object",
         "authorization": {
           "read": [
