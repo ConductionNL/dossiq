@@ -222,6 +222,36 @@ describe('InitiatorSection — the requester on the case', () => {
 		)
 	})
 
+	// The widget host draws the card whether or not this component renders, so
+	// "no initiator, no clutter" produced the opposite: a titled 240px box with
+	// nothing in it. The empty line fills the cell and answers the question the
+	// blank box raised.
+	it('says so instead of leaving the widget cell blank', async () => {
+		const wrapper = await mountCard({ caseObject: { id: 'case-1' } })
+
+		const empty = wrapper.find('[data-testid="initiator-empty"]')
+		expect(empty.exists()).toBe(true)
+		expect(empty.text()).toBe('This case has no initiator yet')
+	})
+
+	// The empty line is a SIBLING of the section, never a state of it. If it
+	// ever renders alongside a real initiator, the two e2e specs and the test
+	// above that read `initiator-section` as "this case has an initiator" would
+	// still pass while the card showed both.
+	it('drops the empty line as soon as there is an initiator', async () => {
+		const wrapper = await mountCard({
+			caseObject: {
+				id: 'case-1',
+				requester: 'person-1',
+				initiatorDisplayName: 'Jansen',
+				initiatorType: 'person',
+			},
+		})
+
+		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="initiator-empty"]').exists()).toBe(false)
+	})
+
 	it('fills the projection from a bare requester uuid on first render', async () => {
 		const saveObject = vi.fn().mockResolvedValue({})
 		const fetchObject = vi.fn().mockImplementation(async (type) => {

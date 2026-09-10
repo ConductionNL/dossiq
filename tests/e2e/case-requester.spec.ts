@@ -483,6 +483,22 @@ test.describe('The requester on the case', () => {
 		await expect(page.locator('[data-testid="initiator-section"]')).toHaveCount(
 			0,
 		)
+
+		// ...and the widget cell says so rather than sitting blank. The card is
+		// drawn by the widget host whether or not InitiatorSection renders, so
+		// "no initiator, no clutter" used to produce the opposite: a titled
+		// 240px box holding the word Initiator and nothing else, which ADR-062
+		// calls a reserved void.
+		//
+		// A SEPARATE testid on purpose. `initiator-section` means this case has
+		// an initiator, which is what the assertion above depends on; reusing it
+		// for the empty line would make that assertion pass on a case that has
+		// one.
+		const empty = page.getByTestId('initiator-empty')
+		await expect(empty).toBeVisible({ timeout: 15_000 })
+		await expect(empty).toHaveText(
+			/This case has no initiator yet|Deze zaak heeft nog geen indiener/,
+		)
 	})
 
 	// @e2e openspec/specs/initiator-display/spec.md

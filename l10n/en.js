@@ -3878,7 +3878,8 @@ OC.L10N.register(
         "Sender name": "Sender name",
         "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.",
         "Case deadline": "Case deadline",
-        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell."
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.",
+        "This case has no initiator yet": "This case has no initiator yet"
     },
     "nplurals=2; plural=(n != 1);"
 )
