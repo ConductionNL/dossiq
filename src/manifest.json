@@ -1370,7 +1370,7 @@
 						"type": "flow-runs",
 						"title": "Flow runs",
 						"icon": "Sitemap",
-						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow whose sidebar lists its runs. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing.",
+						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing. The row click also carries the clicked run as `?run=`, so FlowDetail opens with that run inspected and the canvas showing the graph version the run actually executed, rather than the flow's current graph with no run selected. Nothing here declares that: the widget adds the query, and CnPageRenderer forwards `run` to a flow page because that page type declares it reads it.",
 						"content": {
 							"subject": "@objectId",
 							"limit": 5,
