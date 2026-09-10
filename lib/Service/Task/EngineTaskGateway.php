@@ -87,6 +87,163 @@ class EngineTaskGateway {
     public const FLAG_ENGINE_WRITE = 'task_engine_write';
 
     /**
+     * The external key an engine task carries for a dossiq register task.
+     *
+     * Namespaced, because `task_key` is a shared external-reference column
+     * and a bare uuid would collide with whatever another app stamps there.
+     *
+     * @param string $registerTaskId The register task's uuid.
+     *
+     * @return string The key.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    public static function sourceKey(string $registerTaskId): string {
+        return 'dossiq:caseTask:' . $registerTaskId;
+    }//end sourceKey()
+
+    /**
+     * The source keys the engine already holds for one case.
+     *
+     * This is what makes re-running the backfill safe. Without it a second
+     * run doubles every task: measured, 33 rows became 66.
+     *
+     * Queried per CASE rather than per task, because the engine's inbox
+     * criteria filter on `objectUuid` and one query per case is a great deal
+     * cheaper than one per task.
+     *
+     * @param string $caseId The case (object) uuid.
+     * @param string $actor  The acting identity.
+     *
+     * @return array<string, true> The keys already present, as a set.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    public function existingKeysFor(string $caseId, string $actor): array {
+        $inbox = $this->resolveInbox();
+        if ($inbox === null || $caseId === '') {
+            return [];
+        }
+
+        try {
+            $criteriaClass = 'OCA\OpenRegister\Db\TaskInboxCriteria';
+            $criteria = new $criteriaClass(
+                uid: $actor,
+                isAdmin: true,
+                scope: $criteriaClass::SCOPE_ALL,
+                objectUuid: $caseId,
+            );
+
+            $rows = $inbox->inbox($criteria, 500, 0);
+        } catch (Throwable $e) {
+            // A failed dedup read must not stop the backfill: worst case the
+            // operator sees duplicates and is told, which is better than a
+            // migration that refuses to run.
+            $this->logger->warning(
+                'Dossiq: could not read existing engine tasks for a case; duplicates are possible',
+                ['exception' => $e->getMessage(), 'case' => $caseId]
+            );
+
+            return [];
+        }//end try
+
+        $keys = [];
+        foreach ($this->rowsOf(value: $rows) as $row) {
+            $key = $this->keyOf(row: $row);
+            if ($key !== '') {
+                $keys[$key] = true;
+            }
+        }
+
+        return $keys;
+    }//end existingKeysFor()
+
+    /**
+     * Pull the rows out of whichever envelope the inbox returned.
+     *
+     * @param mixed $value The inbox response.
+     *
+     * @return array<int, mixed> The rows.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    private function rowsOf(mixed $value): array {
+        if (is_array($value) === false) {
+            return [];
+        }
+
+        foreach (['results', 'tasks', 'items'] as $envelope) {
+            if (isset($value[$envelope]) === true && is_array($value[$envelope]) === true) {
+                return array_values($value[$envelope]);
+            }
+        }
+
+        return array_values($value);
+    }//end rowsOf()
+
+    /**
+     * The external key on one inbox row, in whichever shape it arrives.
+     *
+     * @param mixed $row The row.
+     *
+     * @return string The key, or ''.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    private function keyOf(mixed $row): string {
+        if (is_array($row) === true) {
+            return trim((string)($row['key'] ?? $row['taskKey'] ?? ''));
+        }
+
+        if (is_object($row) === true && method_exists($row, 'getTaskKey') === true) {
+            return trim((string)$row->getTaskKey());
+        }
+
+        return '';
+    }//end keyOf()
+
+    /**
+     * Resolve OpenRegister's task inbox service, or null.
+     *
+     * @return object|null The service, or null when unavailable.
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    protected function resolveInbox(): ?object {
+        $className = 'OCA\OpenRegister\Service\Task\TaskInboxService';
+        if ($this->settings->isOpenRegisterAvailable() === false || class_exists($className) === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get($className);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }//end resolveInbox()
+
+    /**
+     * The most recent engine failure, for callers that report rather than log.
+     *
+     * @var string
+     */
+    private string $lastError = '';
+
+    /**
+     * The most recent engine failure message, or ''.
+     *
+     * @return string The message.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    public function lastError(): string {
+        return $this->lastError;
+    }//end lastError()
+
+    /**
      * Constructor.
      *
      * The container is injected here rather than another resolver being added
@@ -168,12 +325,13 @@ class EngineTaskGateway {
      * @param array<string, mixed> $task     The dossiq task, in `caseTask` shape.
      * @param string               $caseId   The case this task is on.
      * @param string|null          $actor    The acting user, or null.
+     * @param boolean              $trusted  Use the engine's trusted import path.
      *
      * @return string The engine task uuid, or '' when not written.
      *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
-    public function mirrorCreate(array $task, string $caseId, ?string $actor): string {
+    public function mirrorCreate(array $task, string $caseId, ?string $actor, bool $trusted = false): string {
         if ($this->isEnabled() === false) {
             $reason = $this->unavailableReason();
             if ($reason !== '' && $this->settings->getConfigValue(key: self::FLAG_ENGINE_WRITE) === '1') {
@@ -187,12 +345,34 @@ class EngineTaskGateway {
 
         try {
             $service = $this->resolveService();
-            $created = $service->create(data: $this->toEnginePayload(task: $task, caseId: $caseId), actor: $actor);
+            $payload = $this->toEnginePayload(task: $task, caseId: $caseId);
+
+            // `create()` is the HTTP path and refuses a task born in a
+            // terminal state, which is right: a task reaches `completed`
+            // through a lifecycle verb, not by being asserted into it.
+            //
+            // A BACKFILL is the exception the engine already accounts for.
+            // Most of dossiq's existing tasks are `completed`, and refusing
+            // them would migrate only the open ones: measured, 33 of 33
+            // failed with "A task cannot be created in terminal state
+            // 'completed'". `import()` is the engine's own trusted path,
+            // documented for "a completed approval carried over from a legacy
+            // shape", which is exactly this.
+            $created = match ($trusted) {
+                true => $service->import(data: $payload, actor: $actor),
+                false => $service->create(data: $payload, actor: $actor),
+            };
 
             return (string)$created->getUuid();
         } catch (Throwable $e) {
             // Swallowed on purpose. The register task already exists and the
             // transition succeeded; a failed shadow write must not undo that.
+            //
+            // The message is also KEPT, because "see the log" is not a usable
+            // instruction on an instance whose nextcloud.log is approaching a
+            // gigabyte. The backfill command reports the first one it sees.
+            $this->lastError = $e->getMessage();
+
             $this->logger->error(
                 'Dossiq: could not mirror a task into the engine',
                 ['exception' => $e->getMessage(), 'case' => $caseId]
@@ -238,6 +418,14 @@ class EngineTaskGateway {
             'state'   => (string)($task['status'] ?? 'available'),
         ];
 
+        // The engine's external-reference field, stamped with the register
+        // row this task came from. It is what makes the backfill idempotent
+        // and what lets the two stores be reconciled while both exist.
+        $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
+        if ($sourceId !== '') {
+            $payload['key'] = self::sourceKey(registerTaskId: $sourceId);
+        }
+
         // The case IS the object. No typed case reference exists engine-side.
         if ($caseId !== '') {
             $payload['objectUuid'] = $caseId;
@@ -248,8 +436,14 @@ class EngineTaskGateway {
                 'description'    => 'description',
                 'assignee'       => 'assignee',
                 'dueDate'        => 'dueAt',
+                // NOTE: `completedDate` is deliberately absent. TaskBuilder
+                // reads no `completedAt`, because the engine sets it through
+                // the complete verb rather than accepting it as an assertion.
+                // Mapping it would be a silent no-op, which is worse than a
+                // stated gap: a backfilled completed task keeps its state but
+                // loses the date it was completed on, and reconciliation has
+                // to read that from the register row while both stores exist.
                 'priority'       => 'priority',
-                'completedDate'  => 'completedAt',
                 'workflowStepId' => 'workflowStepId',
                 'flowRun'        => 'runUuid',
                 'flowNode'       => 'nodeId',

@@ -493,10 +493,19 @@ test.describe('Case detail — the task pane', () => {
 			).toHaveText(linkCaseTypeTitle)
 		}
 
-		// The deadline is the CASE's, formatted by the browser's locale.
-		await expect(
-			card.locator('[data-testid="task-case-card-deadline"]'),
-		).toHaveText(new Date(LINK_CASE_DEADLINE).toLocaleDateString())
+		// The deadline is the CASE's, formatted by the browser's locale, and
+		// it is read back from the case rather than compared to the seed.
+		// The seeded value does NOT survive: a case type with a statutory
+		// term recalculates `deadline` on create, so asserting the seed
+		// asserted this test's assumption instead of the app's behaviour.
+		// Measured in CI: seeded 2026-11-02, rendered 11/5/2026.
+		const seenCase = await showObject(api, 'case', linkCaseId)
+		const actualDeadline = String(seenCase?.deadline ?? '').trim()
+		if (actualDeadline !== '') {
+			await expect(
+				card.locator('[data-testid="task-case-card-deadline"]'),
+			).toHaveText(new Date(actualDeadline).toLocaleDateString())
+		}
 
 		// And the Data widget below must NOT restate it. `case` is hidden by
 		// a manifest override precisely because the platform would render the

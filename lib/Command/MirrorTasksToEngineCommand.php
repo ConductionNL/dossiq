@@ -63,6 +63,12 @@ class MirrorTasksToEngineCommand extends Command {
                 shortcut: null,
                 mode: InputOption::VALUE_NONE,
                 description: 'Count what would be written without writing anything'
+            )
+            ->addOption(
+                name: 'actor',
+                shortcut: null,
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'The user id to attribute the migrated tasks to (required for a real run)'
             );
     }//end configure()
 
@@ -83,14 +89,27 @@ class MirrorTasksToEngineCommand extends Command {
      */
     protected function execute(InputInterface $input, OutputInterface $output): int {
         $dryRun = (bool)$input->getOption('dry-run');
+        $actor = trim((string)$input->getOption('actor'));
 
         if ($dryRun === true) {
             $output->writeln('<comment>Dry run: nothing will be written.</comment>');
         }
 
-        $result = $this->backfill->run(dryRun: $dryRun);
+        // The engine is fail-closed and refuses a verb with no acting
+        // identity: `occ` carries no session, so a real run must name one.
+        // Refused here rather than at the engine so the message says what to
+        // do instead of "Verb 'create' denied: no acting identity" repeated
+        // once per task.
+        if ($dryRun === false && $actor === '') {
+            $output->writeln('<error>--actor is required for a real run: the engine records who migrated each task.</error>');
+            $output->writeln('  occ dossiq:tasks:mirror --actor=admin');
 
-        if ($result['error'] !== '') {
+            return Command::FAILURE;
+        }
+
+        $result = $this->backfill->run(dryRun: $dryRun, actor: $actor);
+
+        if ($result['error'] !== '' && $result['read'] === 0) {
             $output->writeln(sprintf('<error>%s</error>', $result['error']));
 
             return Command::FAILURE;
@@ -103,17 +122,20 @@ class MirrorTasksToEngineCommand extends Command {
 
         $output->writeln(
             sprintf(
-                'Read %d task(s): %d %s, %d skipped (no case), %d failed.',
+                'Read %d task(s): %d %s, %d already present, %d skipped (no case), %d failed.',
                 $result['read'],
                 $result['written'],
                 $verb,
+                $result['present'],
                 $result['skipped'],
                 $result['failed']
             )
         );
 
         if ($result['failed'] > 0) {
-            $output->writeln('<error>Some tasks did not reach the engine. See the log.</error>');
+            $output->writeln(
+                sprintf('<error>Some tasks did not reach the engine. First reason: %s</error>', $result['error'])
+            );
 
             return Command::FAILURE;
         }

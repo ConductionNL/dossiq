@@ -59,19 +59,55 @@ class TaskBackfillServiceTest extends TestCase {
 			/** @var array<string, mixed> */
 			public array $lastQuery = [];
 
+			/** Whether the read asked for RBAC to be bypassed. */
+			public bool $lastRbac = true;
+
+			/** Whether the read asked for multitenancy to be bypassed. */
+			public bool $lastMultitenancy = true;
+
+			/** The register context set before the read. */
+			public string $register = '';
+
+			/** The schema context set before the read. */
+			public string $schema = '';
+
 			/**
-			 * @param array<int, array<string, mixed>> $rows The rows.
+			 * @param array<int, mixed> $rows The rows.
 			 */
 			public function __construct(private readonly array $rows) {
 			}
 
 			/**
-			 * @param array<string, mixed> $query The query.
+			 * @param string $register The register.
+			 *
+			 * @return void
+			 */
+			public function setRegister(string $register): void {
+				$this->register = $register;
+			}
+
+			/**
+			 * @param string $schema The schema.
+			 *
+			 * @return void
+			 */
+			public function setSchema(string $schema): void {
+				$this->schema = $schema;
+			}
+
+			/**
+			 * Mirrors the real signature: the two flags are POSITIONAL.
+			 *
+			 * @param array<string, mixed> $query          The query.
+			 * @param boolean              $rbac           RBAC flag.
+			 * @param boolean              $multitenancy   Multitenancy flag.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function findAll(array $query): array {
+			public function findAll(array $query, bool $rbac = true, bool $multitenancy = true): array {
 				$this->lastQuery = $query;
+				$this->lastRbac = $rbac;
+				$this->lastMultitenancy = $multitenancy;
 
 				// One page only: the caller stops when a page is short.
 				return ['results' => $this->rows];
@@ -111,6 +147,7 @@ class TaskBackfillServiceTest extends TestCase {
 			->getMock();
 		$gateway->method('unavailableReason')->willReturn($reason);
 		$gateway->method('mirrorCreate')->willReturn('engine-uuid');
+		$gateway->method('existingKeysFor')->willReturn([]);
 
 		return $gateway;
 	}//end gateway()
@@ -130,10 +167,16 @@ class TaskBackfillServiceTest extends TestCase {
 
 		$service->run(dryRun: true);
 
-		$this->assertArrayHasKey('_rbac', $objects->lastQuery);
-		$this->assertFalse($objects->lastQuery['_rbac'], 'occ runs as Anonymous; a scoped read returns nothing');
-		$this->assertArrayHasKey('_multitenancy', $objects->lastQuery);
-		$this->assertFalse($objects->lastQuery['_multitenancy']);
+		// POSITIONAL, not config keys. Passed inside the array they are
+		// silently ignored and the read runs as Anonymous: the first cut did
+		// exactly that and reported "Read 0 task(s)" over 34 real rows.
+		$this->assertFalse($objects->lastRbac, 'occ runs as Anonymous; a scoped read returns nothing');
+		$this->assertFalse($objects->lastMultitenancy);
+
+		// And the register/schema context is set BEFORE the read, because
+		// findAll overwrites it as a side effect.
+		$this->assertSame('dossiq', $objects->register);
+		$this->assertSame('caseTask', $objects->schema);
 	}//end testTheReadDisablesRbacAndMultitenancyBecauseOccHasNoSession()
 
 	/**
@@ -164,6 +207,7 @@ class TaskBackfillServiceTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 		$gateway->method('unavailableReason')->willReturn('');
+		$gateway->method('existingKeysFor')->willReturn([]);
 		$gateway->expects($this->never())->method('mirrorCreate');
 
 		$service = new TaskBackfillService(
@@ -224,6 +268,109 @@ class TaskBackfillServiceTest extends TestCase {
 		// The bug this guards: never the literal "Array".
 		$this->assertNotSame('Array', $service->caseIdOf(task: ['case' => ['id' => 'c1']]));
 	}//end testReadsTheCaseReferenceInBothShapes()
+
+	/**
+	 * 🔴 findAll returns RENDERED ENTITIES, not arrays.
+	 *
+	 * The first cut filtered rows on `is_array()` and dropped every one,
+	 * reporting "Read 0 task(s)" against an instance holding 34, with no
+	 * exception and nothing in the log. An empty result is the one failure
+	 * shape that reads exactly like success on a clean instance, and only
+	 * running the command against real data found it.
+	 *
+	 * @return void
+	 */
+	public function testReadsEntitiesAndNotOnlyArrays(): void {
+		$service = new TaskBackfillService($this->settings(null), $this->gateway(), new NullLogger());
+
+		$entity = new class {
+			/**
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return ['title' => 'from an entity', 'case' => 'c1'];
+			}
+		};
+
+		$this->assertSame(['title' => 'from an entity', 'case' => 'c1'], $service->toArray(row: $entity));
+		$this->assertSame(['title' => 'plain'], $service->toArray(row: ['title' => 'plain']));
+		$this->assertSame([], $service->toArray(row: 'a string'));
+		$this->assertSame([], $service->toArray(row: null));
+	}//end testReadsEntitiesAndNotOnlyArrays()
+
+	/**
+	 * And the whole pipeline counts an entity row, not just the helper.
+	 *
+	 * @return void
+	 */
+	public function testCountsEntityRowsEndToEnd(): void {
+		$entity = new class {
+			/**
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return ['title' => 'entity task', 'case' => 'c1'];
+			}
+		};
+
+		$service = new TaskBackfillService(
+			$this->settings($this->objectService([$entity])),
+			$this->gateway(),
+			new NullLogger()
+		);
+
+		$result = $service->run(dryRun: true);
+
+		$this->assertSame(1, $result['read'], 'an entity row must be counted, not silently dropped');
+	}//end testCountsEntityRowsEndToEnd()
+
+	/**
+	 * 🔴 Re-running must not double every task.
+	 *
+	 * The first cut claimed idempotency in its own docblock and had none.
+	 * Measured against the live instance: a second run took the engine from
+	 * 33 dossiq tasks to 66. The fix stamps the register row's uuid into the
+	 * engine's `key` field and skips a key the engine already holds.
+	 *
+	 * @return void
+	 */
+	public function testATaskTheEngineAlreadyHoldsIsCountedPresentAndNotRewritten(): void {
+		$gateway = $this->getMockBuilder(EngineTaskGateway::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$gateway->method('unavailableReason')->willReturn('');
+		$gateway->method('existingKeysFor')->willReturn(
+			[EngineTaskGateway::sourceKey(registerTaskId: 'reg-1') => true]
+		);
+		$gateway->expects($this->never())->method('mirrorCreate');
+
+		$service = new TaskBackfillService(
+			$this->settings($this->objectService([['id' => 'reg-1', 'title' => 'already there', 'case' => 'c1']])),
+			$gateway,
+			new NullLogger()
+		);
+
+		$result = $service->run(dryRun: false, actor: 'admin');
+
+		$this->assertSame(1, $result['read']);
+		$this->assertSame(1, $result['present']);
+		$this->assertSame(0, $result['written']);
+		// NOT counted as skipped: that means "could not be placed", and
+		// reporting a clean re-run as skipped-no-case reads like a defect.
+		$this->assertSame(0, $result['skipped']);
+	}//end testATaskTheEngineAlreadyHoldsIsCountedPresentAndNotRewritten()
+
+	/**
+	 * The engine key is namespaced, so it cannot collide with another app's.
+	 *
+	 * @return void
+	 */
+	public function testTheSourceKeyIsNamespaced(): void {
+		$key = EngineTaskGateway::sourceKey(registerTaskId: 'abc');
+
+		$this->assertSame('dossiq:caseTask:abc', $key);
+		$this->assertStringStartsWith('dossiq:', $key);
+	}//end testTheSourceKeyIsNamespaced()
 
 	/**
 	 * A missing ObjectService is an error rather than a zero.

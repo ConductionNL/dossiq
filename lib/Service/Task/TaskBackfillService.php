@@ -33,14 +33,17 @@ use Throwable;
  * shows only tasks made since Tuesday is worse than one that shows none,
  * because it looks like it works.
  *
- * IDEMPOTENT, BY READING THE ENGINE FIRST
- * ---------------------------------------
- * Re-running must not double every task. The engine is asked what it already
- * holds for this app before anything is written, and a task whose title and
- * object are already there is skipped. That is a weaker key than a uuid, and
- * deliberately so: the register task's uuid is NOT the engine task's uuid, and
- * inventing a mapping table for a store that is about to be deleted would
- * outlive the migration.
+ * IDEMPOTENT, BY STAMPING THE SOURCE ROW'S ID
+ * -------------------------------------------
+ * Re-running must not double every task. It did: the first cut claimed
+ * idempotency in this very docblock and had none, and a second run took the
+ * engine from 33 dossiq tasks to 66.
+ *
+ * Every mirrored task now carries `taskKey = dossiq:caseTask:<register uuid>`,
+ * the engine's own external-reference field. Before writing, the engine is
+ * asked which keys it already holds for that CASE (one query per case, not
+ * per task, since the inbox criteria filter on `objectUuid`) and a key it
+ * already has is skipped.
  *
  * 🔴 `occ` HAS NO SESSION, so every ObjectService call here runs as Anonymous
  * unless RBAC and multitenancy are switched off explicitly. Without the flags
@@ -76,13 +79,14 @@ class TaskBackfillService {
      * Copy every register task into the engine.
      *
      * @param boolean $dryRun When true, nothing is written.
+     * @param string  $actor  The user id the migrated tasks are attributed to.
      *
-     * @return array{read: int, written: int, skipped: int, failed: int, error: string}
+     * @return array{read: int, written: int, skipped: int, present: int, failed: int, error: string}
      *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
-    public function run(bool $dryRun): array {
-        $result = ['read' => 0, 'written' => 0, 'skipped' => 0, 'failed' => 0, 'error' => ''];
+    public function run(bool $dryRun, string $actor = ''): array {
+        $result = ['read' => 0, 'written' => 0, 'skipped' => 0, 'present' => 0, 'failed' => 0, 'error' => ''];
 
         $reason = $this->gateway->unavailableReason();
         if ($reason !== '') {
@@ -103,6 +107,22 @@ class TaskBackfillService {
             return $result;
         }
 
+        // Existing engine keys, read once per CASE and cached. Without this
+        // a second run doubles every task: measured, 33 rows became 66.
+        $seenByCase = [];
+
+        // Resolved once. The engine is fail-closed and refuses a verb with no
+        // acting identity, so a blank actor could never write anything.
+        $readActor = 'admin';
+        if ($actor !== '') {
+            $readActor = $actor;
+        }
+
+        $writeActor = null;
+        if ($actor !== '') {
+            $writeActor = $actor;
+        }
+
         foreach ($this->readTasks(objectService: $objectService, register: $register, schema: $schema) as $task) {
             $result['read']++;
 
@@ -116,14 +136,43 @@ class TaskBackfillService {
                 continue;
             }
 
+            if (array_key_exists($caseId, $seenByCase) === false) {
+                $seenByCase[$caseId] = $this->gateway->existingKeysFor(
+                    caseId: $caseId,
+                    actor: $readActor
+                );
+            }
+
+            $sourceId = trim((string)($task['id'] ?? $task['uuid'] ?? ''));
+            if ($sourceId !== '') {
+                $key = EngineTaskGateway::sourceKey(registerTaskId: $sourceId);
+                if (isset($seenByCase[$caseId][$key]) === true) {
+                    // Already mirrored. Counted separately from `skipped`,
+                    // which means "could not be placed": reporting a clean
+                    // re-run as 33 skipped-no-case reads like a defect.
+                    $result['present']++;
+                    continue;
+                }
+
+                // Remember it within this run too, so a register store that
+                // returns the same row on two pages cannot write it twice.
+                $seenByCase[$caseId][$key] = true;
+            }
+
             if ($dryRun === true) {
                 $result['written']++;
                 continue;
             }
 
-            $uuid = $this->gateway->mirrorCreate(task: $task, caseId: $caseId, actor: null);
+            $uuid = $this->gateway->mirrorCreate(task: $task, caseId: $caseId, actor: $writeActor, trusted: true);
             if ($uuid === '') {
                 $result['failed']++;
+                if ($result['error'] === '') {
+                    // The FIRST reason, reported by the command. 33 identical
+                    // failures with "see the log" is not a diagnosis.
+                    $result['error'] = $this->gateway->lastError();
+                }
+
                 continue;
             }
 
@@ -154,15 +203,33 @@ class TaskBackfillService {
 
         while (true) {
             try {
+                // 🔴 setRegister/setSchema BEFORE findAll, and the pair also
+                // goes inside `filters`. `findAll()` overwrites the service's
+                // register/schema context as a side effect, so a read issued
+                // after any other read silently queries the WRONG schema and
+                // answers zero. KpiAggregationService carries the measurement:
+                // a task count returns 23 alone and 0 straight after a findAll
+                // over cases.
+                $objectService->setRegister($register);
+                $objectService->setSchema($schema);
+
+                // 🔴 `_rbac` and `_multitenancy` are POSITIONAL parameters of
+                // findAll(), not config keys. Passed inside the array they are
+                // silently ignored, the read runs as Anonymous, and the command
+                // reports "Read 0 task(s)" over an instance holding 34 of them.
+                // That is measured, not hypothetical: it is what the first cut
+                // of this command did.
                 $response = $objectService->findAll(
                     [
-                        'register'       => $register,
-                        'schema'         => $schema,
-                        'limit'          => self::PAGE_SIZE,
-                        'page'           => $page,
-                        '_rbac'          => false,
-                        '_multitenancy'  => false,
-                    ]
+                        'filters' => [
+                            'register' => $register,
+                            'schema'   => $schema,
+                        ],
+                        'limit'   => self::PAGE_SIZE,
+                        'offset'  => (($page - 1) * self::PAGE_SIZE),
+                    ],
+                    false,
+                    false
                 );
             } catch (Throwable $e) {
                 $this->logger->error(
@@ -179,8 +246,9 @@ class TaskBackfillService {
             }
 
             foreach ($rows as $row) {
-                if (is_array($row) === true) {
-                    yield $row;
+                $task = $this->toArray(row: $row);
+                if ($task !== []) {
+                    yield $task;
                 }
             }
 
@@ -214,6 +282,45 @@ class TaskBackfillService {
 
         return array_values($response);
     }//end rowsOf()
+
+    /**
+     * Normalise a row to a plain array.
+     *
+     * `findAll()` returns RENDERED ENTITIES, not arrays. The first cut of
+     * this service filtered on `is_array()` and therefore dropped every row,
+     * reporting "Read 0 task(s)" against an instance holding 34 of them, with
+     * no exception and nothing in the log. An empty result is the one failure
+     * shape that reads exactly like success, which is why this is a named
+     * method with its own test rather than an inline cast.
+     *
+     * @param mixed $row The row as the service returned it.
+     *
+     * @return array<string, mixed> The row as an array, or [] when unusable.
+     *
+     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
+     */
+    public function toArray(mixed $row): array {
+        if (is_array($row) === true) {
+            return $row;
+        }
+
+        if (is_object($row) === false) {
+            return [];
+        }
+
+        foreach (['jsonSerialize', 'getObject', 'toArray'] as $method) {
+            if (method_exists($row, $method) === false) {
+                continue;
+            }
+
+            $value = $row->$method();
+            if (is_array($value) === true) {
+                return $value;
+            }
+        }
+
+        return (array)$row;
+    }//end toArray()
 
     /**
      * The case this task is on, in either shape the store returns.
