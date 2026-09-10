@@ -1,5 +1,5 @@
 {
-	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor audit (private repo concurrentie-analyse). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands. `comparedOn` is the date the four COLUMNS were read and it moves only when all four are read again. `rowsAddedOn` is the date rows were last added to the LIST, which is a different event: a later round can ask a new question without re-reading the older products. A row added that way carries `addedOn` and rates the three competitors `unknown`, because a guess in someone else's column is worse than an empty cell. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every correction and every added row is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
+	"_comment": "Capability comparison shown on the Features & roadmap page. Generated once, offline, from the competitor audit (private repo concurrentie-analyse). The audit is not public, so this file is committed rather than built in CI. Regenerate by hand when a new round lands. `comparedOn` is the date the FIRST FOUR columns were read and it moves only when all four are read again. A column added later carries its own `readOn` and its own `columnAddedOn`, because moving `comparedOn` to cover it would make the reading-date sentence false for the four it already covers. A column added after the LIST grew is `unknown` on the rows it was never read against, the same rule the competitor columns follow. `rowsAddedOn` is the date rows were last added to the LIST, which is a different event: a later round can ask a new question without re-reading the older products. A row added that way carries `addedOn` and rates EVERY competitor `unknown`, because a guess in someone else's column is worse than an empty cell. Our OWN column is corrected between rounds, because a rating that says we lack something we shipped is the one error on this page a reader cannot check for themselves. Every correction and every added row is listed in `_rerated` with its date and its reason, and `reratedOn` carries the latest. The competitor columns are NOT corrected that way: we would be re-reading someone else's product without saying so, and the honest fix for those is a new round with a new comparedOn.",
 	"comparedOn": "2026-09-07",
 	"rowsAddedOn": "2026-09-09",
 	"reratedOn": "2026-09-09",
@@ -226,6 +226,14 @@
 			"key": "zaaksysteem",
 			"name": "xxllnc Zaken",
 			"vendor": "xxllnc"
+		},
+		{
+			"key": "zac",
+			"name": "Dimpact ZAC",
+			"vendor": "Dimpact",
+			"readOn": "2026-09-08",
+			"columnAddedOn": "2026-09-10",
+			"ownsNoData": "Open Zaak"
 		}
 	],
 	"areas": [
@@ -304,7 +312,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "1.2",
@@ -314,7 +323,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "1.3",
@@ -324,7 +334,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "1.4",
@@ -334,7 +345,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "1.5",
@@ -344,7 +356,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "1.6",
@@ -354,7 +367,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "1.7",
@@ -364,7 +378,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "1.8",
@@ -374,7 +389,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "1.9",
@@ -384,7 +400,8 @@
 			"dossiq": "no",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "1.10",
@@ -394,7 +411,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "1.11",
@@ -404,7 +422,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "1.12",
@@ -414,7 +433,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "1.13",
@@ -424,7 +444,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "2.1",
@@ -434,7 +455,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "2.2",
@@ -444,7 +466,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "2.3",
@@ -454,7 +477,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "2.4",
@@ -464,7 +488,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.5",
@@ -474,7 +499,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.6",
@@ -484,7 +510,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.7",
@@ -494,7 +521,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "partial"
 		},
 		{
 			"id": "2.8",
@@ -504,7 +532,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "2.9",
@@ -514,7 +543,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "2.10",
@@ -524,7 +554,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.11",
@@ -534,7 +565,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.12",
@@ -544,7 +576,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.13",
@@ -554,7 +587,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "2.14",
@@ -564,7 +598,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.15",
@@ -574,7 +609,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "2.16",
@@ -584,7 +620,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "2.17",
@@ -594,7 +631,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "2.18",
@@ -604,7 +642,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "2.19",
@@ -614,7 +653,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "2.20",
@@ -624,7 +664,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "2.21",
@@ -634,7 +675,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "2.22",
@@ -644,7 +686,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "2.23",
@@ -655,6 +698,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -666,6 +710,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -677,6 +722,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -688,6 +734,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -699,6 +746,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -709,7 +757,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "3.2",
@@ -719,7 +768,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "3.3",
@@ -729,7 +779,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "3.4",
@@ -739,7 +790,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.5",
@@ -749,7 +801,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.6",
@@ -759,7 +812,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.7",
@@ -769,7 +823,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.8",
@@ -779,7 +834,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "3.9",
@@ -789,7 +845,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.10",
@@ -799,7 +856,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "3.11",
@@ -809,7 +867,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "3.12",
@@ -819,7 +878,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "3.13",
@@ -829,7 +889,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "3.14",
@@ -839,7 +900,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "3.15",
@@ -849,7 +911,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "3.16",
@@ -859,7 +922,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "3.17",
@@ -869,7 +933,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "3.18",
@@ -879,7 +944,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "3.19",
@@ -889,7 +955,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "3.20",
@@ -900,6 +967,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -910,7 +978,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.2",
@@ -920,7 +989,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.3",
@@ -930,7 +1000,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "4.4",
@@ -940,7 +1011,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.5",
@@ -950,7 +1022,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "4.6",
@@ -960,7 +1033,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.7",
@@ -970,7 +1044,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.8",
@@ -980,7 +1055,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "4.9",
@@ -990,7 +1066,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.10",
@@ -1000,7 +1077,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "4.11",
@@ -1010,7 +1088,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.12",
@@ -1020,7 +1099,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "4.13",
@@ -1030,7 +1110,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "4.14",
@@ -1040,7 +1121,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "4.15",
@@ -1050,7 +1132,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.16",
@@ -1060,7 +1143,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.17",
@@ -1070,7 +1154,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.18",
@@ -1080,7 +1165,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.19",
@@ -1090,7 +1176,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.20",
@@ -1100,7 +1187,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "4.21",
@@ -1110,7 +1198,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "4.22",
@@ -1120,7 +1209,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "4.23",
@@ -1130,7 +1220,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "5.1",
@@ -1140,7 +1231,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.2",
@@ -1150,7 +1242,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.3",
@@ -1160,7 +1253,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "5.4",
@@ -1170,7 +1264,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "5.5",
@@ -1180,7 +1275,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.6",
@@ -1190,7 +1286,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.7",
@@ -1200,7 +1297,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "5.8",
@@ -1210,7 +1308,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "5.9",
@@ -1220,7 +1319,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.10",
@@ -1230,7 +1330,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "5.11",
@@ -1240,7 +1341,8 @@
 			"dossiq": "no",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "5.12",
@@ -1250,7 +1352,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "5.13",
@@ -1260,7 +1363,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "6.1",
@@ -1270,7 +1374,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "6.2",
@@ -1280,7 +1385,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "6.3",
@@ -1290,7 +1396,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "6.4",
@@ -1300,7 +1407,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "6.5",
@@ -1310,7 +1418,8 @@
 			"dossiq": "no",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "6.6",
@@ -1320,7 +1429,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "6.7",
@@ -1330,7 +1440,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "6.8",
@@ -1340,7 +1451,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "6.9",
@@ -1350,7 +1462,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "6.10",
@@ -1360,7 +1473,8 @@
 			"dossiq": "no",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "6.11",
@@ -1370,7 +1484,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "6.12",
@@ -1380,7 +1495,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "6.13",
@@ -1390,7 +1506,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "6.14",
@@ -1400,7 +1517,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "6.15",
@@ -1411,6 +1529,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1422,6 +1541,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1432,7 +1552,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "7.2",
@@ -1442,7 +1563,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "7.3",
@@ -1452,7 +1574,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "7.4",
@@ -1462,7 +1585,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "7.5",
@@ -1472,7 +1596,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "7.6",
@@ -1482,7 +1607,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "7.7",
@@ -1492,7 +1618,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "8.1",
@@ -1502,7 +1629,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "8.2",
@@ -1512,7 +1640,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "8.3",
@@ -1522,7 +1651,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "8.4",
@@ -1532,7 +1662,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "8.5",
@@ -1542,7 +1673,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "8.6",
@@ -1552,7 +1684,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "8.7",
@@ -1562,7 +1695,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "8.8",
@@ -1572,7 +1706,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "8.9",
@@ -1582,7 +1717,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "partial"
 		},
 		{
 			"id": "8.10",
@@ -1592,7 +1728,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "8.11",
@@ -1603,6 +1740,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1614,6 +1752,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1625,6 +1764,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1636,6 +1776,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1647,6 +1788,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1657,7 +1799,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "9.2",
@@ -1667,7 +1810,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "9.3",
@@ -1677,7 +1821,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "9.4",
@@ -1687,7 +1832,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "9.5",
@@ -1697,7 +1843,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "9.6",
@@ -1707,7 +1854,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "9.7",
@@ -1717,7 +1865,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "9.8",
@@ -1727,7 +1876,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "9.9",
@@ -1737,7 +1887,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "9.10",
@@ -1747,7 +1898,8 @@
 			"dossiq": "no",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "9.11",
@@ -1757,7 +1909,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "9.12",
@@ -1767,7 +1920,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "9.13",
@@ -1778,6 +1932,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1788,7 +1943,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "10.2",
@@ -1798,7 +1954,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "10.3",
@@ -1808,7 +1965,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "10.4",
@@ -1818,7 +1976,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "10.5",
@@ -1828,7 +1987,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "10.6",
@@ -1838,7 +1998,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "10.7",
@@ -1848,7 +2009,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "10.8",
@@ -1858,7 +2020,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "10.9",
@@ -1868,7 +2031,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "10.10",
@@ -1878,7 +2042,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "10.11",
@@ -1889,6 +2054,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1899,7 +2065,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.2",
@@ -1909,7 +2076,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "11.3",
@@ -1919,7 +2087,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.4",
@@ -1929,7 +2098,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "11.5",
@@ -1939,7 +2109,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "11.6",
@@ -1949,7 +2120,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "11.7",
@@ -1959,7 +2131,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "11.8",
@@ -1969,7 +2142,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "11.9",
@@ -1979,7 +2153,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "11.10",
@@ -1989,7 +2164,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "11.11",
@@ -1999,7 +2175,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.12",
@@ -2009,7 +2186,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "11.13",
@@ -2019,7 +2197,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "11.14",
@@ -2029,7 +2208,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "11.15",
@@ -2039,7 +2219,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.16",
@@ -2049,7 +2230,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "11.17",
@@ -2059,7 +2241,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "11.18",
@@ -2069,7 +2252,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "11.19",
@@ -2079,7 +2263,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "11.20",
@@ -2089,7 +2274,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.21",
@@ -2099,7 +2285,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "11.22",
@@ -2109,7 +2296,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "11.23",
@@ -2119,7 +2307,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "11.24",
@@ -2129,7 +2318,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "11.25",
@@ -2140,6 +2330,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -2151,6 +2342,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -2161,7 +2353,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "12.2",
@@ -2171,7 +2364,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "yes"
 		},
 		{
 			"id": "12.3",
@@ -2181,7 +2375,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "partial"
 		},
 		{
 			"id": "12.4",
@@ -2191,7 +2386,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "12.5",
@@ -2201,7 +2397,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "12.6",
@@ -2211,7 +2408,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "12.7",
@@ -2221,7 +2419,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "12.8",
@@ -2231,7 +2430,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "12.9",
@@ -2241,7 +2441,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "12.10",
@@ -2251,7 +2452,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "12.11",
@@ -2261,7 +2463,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "12.12",
@@ -2271,7 +2474,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "12.13",
@@ -2281,7 +2485,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "12.14",
@@ -2291,7 +2496,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "12.15",
@@ -2301,7 +2507,8 @@
 			"dossiq": "no",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "12.16",
@@ -2311,7 +2518,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "12.17",
@@ -2321,7 +2529,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "12.18",
@@ -2331,7 +2540,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "12.19",
@@ -2341,7 +2551,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "12.20",
@@ -2351,7 +2562,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "12.21",
@@ -2361,7 +2573,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "12.22",
@@ -2371,7 +2584,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "12.23",
@@ -2381,7 +2595,8 @@
 			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "13.1",
@@ -2391,7 +2606,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "yes"
 		},
 		{
 			"id": "13.2",
@@ -2401,7 +2617,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "yes"
 		},
 		{
 			"id": "13.3",
@@ -2411,7 +2628,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.4",
@@ -2421,7 +2639,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "13.5",
@@ -2431,7 +2650,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "13.6",
@@ -2441,7 +2661,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.7",
@@ -2451,7 +2672,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.8",
@@ -2461,7 +2683,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.9",
@@ -2471,7 +2694,8 @@
 			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.10",
@@ -2481,7 +2705,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.11",
@@ -2491,7 +2716,8 @@
 			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.12",
@@ -2501,7 +2727,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
-			"zaaksysteem": "no"
+			"zaaksysteem": "no",
+			"zac": "no"
 		},
 		{
 			"id": "13.13",
@@ -2511,7 +2738,8 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "no"
 		},
 		{
 			"id": "13.14",
@@ -2521,7 +2749,8 @@
 			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "no"
 		},
 		{
 			"id": "13.15",
@@ -2531,7 +2760,8 @@
 			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "partial",
-			"zaaksysteem": "yes"
+			"zaaksysteem": "yes",
+			"zac": "partial"
 		},
 		{
 			"id": "13.16",
@@ -2541,7 +2771,8 @@
 			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "yes",
-			"zaaksysteem": "partial"
+			"zaaksysteem": "partial",
+			"zac": "partial"
 		},
 		{
 			"id": "13.17",
@@ -2552,6 +2783,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -2563,6 +2795,7 @@
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
+			"zac": "unknown",
 			"addedOn": "2026-09-09"
 		}
 	]

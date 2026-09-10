@@ -736,10 +736,11 @@ NOT see the menu entry and SHALL NOT reach the route.
 #### Scenario: A regular user does not reach the page
 @e2e tests/e2e/integrations-page.spec.ts
 
-- **GIVEN** a user who is not an admin
+- **GIVEN** a user who is signed in and is not an admin
 - **WHEN** they open the gear
 - **THEN** Integrations SHALL NOT be listed
 - **AND** opening `/settings/integrations` directly SHALL NOT render the cards
+- **AND** the router SHALL send them to the dashboard rather than leave them on the route
 
 ### Requirement: A card tells the truth about its connection (REQ-ADMIN-019)
 

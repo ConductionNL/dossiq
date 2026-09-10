@@ -28,6 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { captureStorageState, storageStatePath } from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -266,37 +267,145 @@ test.describe('Integrations', () => {
 		expect(String(kcc.checkedAt || '')).not.toBe('')
 	})
 
+	/**
+	 * THE ONE TEST IN THIS FILE THAT IS NOT ABOUT THE PAGE'S CLAIMS.
+	 *
+	 * It was written with `browser.newContext({ httpCredentials })` and neither
+	 * half of that worked, in opposite directions:
+	 *
+	 *  1. Playwright's `browser` FIXTURE patches `newContext()` to merge the
+	 *     project's `use` options, so `use.storageState` — the ADMIN session
+	 *     written by global-setup — came along uninvited. The context reported
+	 *     `OC.getCurrentUser().uid === 'admin'` and `OC.isUserAdmin() === true`,
+	 *     and the failure screenshot said "Avatar of admin" in the header. The
+	 *     test asserted an admin cannot see an admin page, so it could only
+	 *     ever fail — and it never ran, because this project is skipped whole
+	 *     while its dependency is red.
+	 *  2. Clearing the storage state does not rescue basic auth: Nextcloud's
+	 *     web entry point does not authenticate an `Authorization: Basic`
+	 *     header, it redirects to `/login`. A context with credentials and no
+	 *     cookie lands on the login page as ANONYMOUS — where the nav has no
+	 *     entries and the route has no rows, so both assertions below pass for
+	 *     a reason that has nothing to do with permissions.
+	 *
+	 * #2305 fixed that identity half, and it is what the setup below does:
+	 * `captureStorageState` is the sanctioned second session, and the account
+	 * comes from `ci-seed.sh` rather than from an API call, because
+	 * provisioning one is password-confirmation protected and this spec runs
+	 * too late in the project for that window. Given a genuine non-admin, the
+	 * link-count
+	 * assertion below does catch the leak — measured, not assumed: run against
+	 * an unguarded build it reports `Received: 7`.
+	 *
+	 * The DESTINATION assertion is here for a different reason, and it is not
+	 * that the count is too weak today. It is that "no admin-settings links" is
+	 * also what a page that never rendered looks like — a bundle that 404s, a
+	 * JS error during mount, a route that silently 500s. Any of those would
+	 * satisfy the count while telling us nothing about the guard, and this is
+	 * the one test in the suite whose whole job is to be believed. Asserting
+	 * where the router actually LANDED distinguishes "the guard turned this
+	 * account away" from "nothing rendered", which the count cannot.
+	 */
 	test('is not reachable by a user who is not an admin', async ({
 		browser,
 		baseURL,
 	}) => {
+		// LOG IN, do not send credentials. Basic auth does not authenticate
+		// Nextcloud's HTML route here: with the admin jar cleared and
+		// `httpCredentials` set, the page came back with no session at all
+		// (`OC.getCurrentUser` absent). And with the jar NOT cleared it came back
+		// as `uid=admin isAdmin=true`, which is how this test spent its life
+		// asserting the admin's view under a name promising the opposite.
+		//
+		// `captureStorageState` is the sanctioned second session, the one
+		// `dashboard-tiles.spec.ts` uses for the same reason, and its own
+		// docblock carries the warning this test walked into: an OMITTED
+		// `storageState` in a spec silently becomes the admin's.
+		// NOT `ensureUser`. Provisioning a user is a password-confirmation
+		// protected action, and this spec runs late enough in the
+		// `chromium-instance-state` project that the admin session is outside the
+		// window: it answered `HTTP 403, OCS 403 Password confirmation is
+		// required` and failed the test before it reached a single assertion. I
+		// added that call as belt-and-braces and it was the only thing that broke.
+		//
+		// `ci-seed.sh` owns this account and logs `created the non-admin user
+		// e2euser`. If it ever stops, the identity assertion below says so by
+		// name rather than leaving a login to fail obscurely.
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+
 		const context = await browser.newContext({
 			baseURL,
-			httpCredentials: {
-				username: PLAIN_USER,
-				password: PLAIN_PASS,
-				// The dossiq API answers 401 without a WWW-Authenticate header,
-				// so Playwright would never send the credentials on the
-				// challenge. `always` sends them on the first request.
-				send: 'always',
-			},
+			storageState: plainState,
 		})
 		const page = await context.newPage()
 
 		await page.goto('/apps/dossiq')
 		await dismissSupportDialog(page)
 
+		// NAME THE USER IN THE FAILURE. This assertion has failed on
+		// `development` while every link in the permission chain reads correct:
+		// the menu entry declares `permission: "admin"`, CnAppNav's
+		// `visibleItems` applies `passesPermission` before `settingsItems`
+		// filters on `section === "settings"`, and `App.vue` answers
+		// `['user']` for a non-admin, never `[]`. So either the chain is not
+		// what it reads as, or this context is not the user it asks for, and
+		// the failure as written cannot tell those apart.
+		//
+		// `httpCredentials` on a fresh context is an assumption about how
+		// Nextcloud authenticates an HTML route, not a measurement. Reading
+		// the identity the PAGE settled on turns the next red into an answer.
+		const whoami = await page.evaluate(() => ({
+			uid:
+				(window as any).OC?.getCurrentUser?.()?.uid
+				?? '(no OC.getCurrentUser)',
+			isAdmin:
+				typeof (window as any).OC?.isUserAdmin === 'function'
+					? (window as any).OC.isUserAdmin()
+					: '(no OC.isUserAdmin)',
+		}))
+
+		// ASSERT THE IDENTITY FIRST. Without this the test still passes or
+		// fails on whatever user it happens to get, which is exactly how it came
+		// to assert the admin's view under a name that promised the opposite.
+		expect(
+			whoami,
+			'this test must act as the non-admin, not as whoever the shared '
+				+ 'storage state logged in',
+		).toEqual({ uid: PLAIN_USER, isAdmin: false })
+
 		// The gear foldout does not carry the entry.
 		await expect(
 			page.locator('.app-navigation a[href$="/settings/integrations"]'),
+			`the page rendered as uid=${whoami.uid} isAdmin=${whoami.isAdmin}; `
+				+ `it should be the non-admin ${PLAIN_USER}`,
 		).toHaveCount(0)
 
-		// And the route renders no rows even when typed in directly.
+		// And the route does not render the page even when typed in directly.
+		// This is the half nothing enforced: the manifest declares
+		// `permission: "admin"` on the PAGE, `CnAppNav` only ever read the
+		// declaration on the MENU entry, and the router built by `main.js`
+		// dropped the field — so this route answered an ordinary account with
+		// eleven integration rows and seven links into `/settings/admin/dossiq`.
 		await page.goto('/apps/dossiq/settings/integrations')
 		await dismissSupportDialog(page)
+		// The guard redirects to the dashboard. Assert the DESTINATION, not
+		// only the absence of a link: a page that never rendered has no links
+		// either, so the count alone cannot tell a working guard from a broken
+		// bundle. See the docblock.
+		await expect(page).not.toHaveURL(/\/settings\/integrations$/)
 		await expect(page.locator('a[href^="/settings/admin/dossiq#"]')).toHaveCount(
 			0,
 		)
+		await expect(
+			page.getByRole('row', { name: /ZGW APIs/i }),
+			'no integration row survives the redirect',
+		).toHaveCount(0)
 
 		await context.close()
 	})

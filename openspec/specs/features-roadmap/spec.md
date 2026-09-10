@@ -52,7 +52,7 @@ A rating MAY be `unknown`, and `unknown` SHALL be rendered and counted like any
 other rating rather than left blank. A later round can add a capability row
 without re-reading the products an earlier round rated, and the honest cell for
 those products is one that says nobody looked. Hiding it would show a reader
-three systems scored over fewer rows than ours with nothing to explain the
+the other systems scored over fewer rows than ours with nothing to explain the
 difference.
 
 #### Scenario: Areas summarise before they expand
@@ -82,11 +82,14 @@ The comparison section SHALL state, before any score:
 5. The first concrete step: shortlist the capabilities they need and test every
    system against that shortlist.
 6. When any rating in our own column has been corrected since the reading, how
-   many were corrected and when, and that the other three columns are NOT
+   many were corrected and when, and that the competitor columns are NOT
    corrected that way. Re-rating a competitor without re-reading the product
-   would be a guess presented as a correction.
+   would be a guess presented as a correction. The count SHALL be the ratings
+   that actually MOVED. The change log holds added rows as well, and counting
+   those as corrections overstates our own diligence on the one panel whose
+   job is to caveat itself.
 7. When rows have been added to the list since the reading, how many, when,
-   and that the three competitor columns are unrated on them. This is the same
+   and that the competitor columns are unrated on them. This is the same
    rule as item 6 pointed at the list instead of at a score: we may re-rate
    ourselves because we can read our own code, and we may not rate a product
    we did not open. A guess in a competitor's column is worse than an empty
@@ -103,13 +106,43 @@ The comparison section SHALL state, before any score:
    the growth clause, a reader who watches the totals fall between two releases
    has no way to tell a growing denominator from a regressing product, and the
    honest reading is the one they cannot reach.
+9. Beside any column that needs reading differently, and before the first
+   score: the date that column was read when it is not the date in item 2, and
+   the register a product defers to when it owns no data of its own. Item 8
+   states the bias in general; this states it against the named column a reader
+   is about to compare with, which is the only form they can act on. A caveat
+   they meet after the totals is a caveat they meet too late.
+
+#### Scenario: An added row is not counted as a correction
+
+- **GIVEN** the change log holds both corrected ratings and added rows
+- **WHEN** the panel says how many of our ratings we corrected
+- **THEN** the count MUST be the entries that moved a rating
+- **AND** the date MUST be the day those entries were made
+
+#### Scenario: A column read on its own day does not move the shared date
+
+- **GIVEN** a system is added to the comparison and was read after `comparedOn`
+- **WHEN** the page states when the systems were read
+- **THEN** `comparedOn` MUST keep the date the columns it already covers were read
+- **AND** the sentence MUST count only the systems that date covers
+- **AND** the new column MUST state its own reading date beside itself
+
+#### Scenario: A column that owns no data says so beside itself
+
+- **GIVEN** a system in the comparison keeps no record of its own
+- **WHEN** a reader opens the comparison
+- **THEN** the panel MUST name that system and the register that holds the record
+- **AND** it MUST say the column scores low for that reason
+- **AND** it MUST say that reason runs in our favour
+- **AND** the note MUST appear before the totals table, not after it
 
 #### Scenario: The panel accounts for rows a later round added
 
-- **GIVEN** a round has added capability rows since the four systems were read
+- **GIVEN** a round has added capability rows since the rated systems were read
 - **WHEN** a reader opens the comparison
 - **THEN** the panel MUST say how many rows were added and when
-- **AND** it MUST say that the three competitor columns are unrated on those rows
+- **AND** it MUST say that every competitor column is unrated on those rows
 - **AND** those rows MUST show `unknown` for every competitor, never a guess
 
 #### Scenario: The panel says what the list is made of
@@ -146,17 +179,21 @@ that can be written for the wrong reason. Our own column SHALL never be
 `unknown`: we can read our own code, so an empty cell there is an unfinished
 row that understates our score for free. And a row carrying a competitor
 `unknown` SHALL carry `addedOn`, while a row carrying `addedOn` SHALL be
-`unknown` for every competitor. That pins the value to its only honest cause.
+`unknown` for every competitor, the column added last included: it was read
+before those rows existed, so it is as empty on them as the rest. That pins the value to its only honest cause.
 
-The four caveats SHALL additionally be asserted against the rendered component,
-not only end to end. Each one is a plain paragraph inside a note card, and
-deleting one while editing the panel around it breaks nothing a build can see.
+Every caveat SHALL additionally be asserted against the rendered component, not
+only end to end. Each one is a plain paragraph inside a note card, and deleting
+one while editing the panel around it breaks nothing a build can see. The
+caveats bound to a named column SHALL be asserted from the data that declares
+them, so removing the declaration removes the caveat AND reddens the test
+instead of quietly removing only the caveat.
 
 @e2e exclude Guarded by assertions over the committed data file in tests/vitest/capabilityComparison.spec.js, which no browser can reach: the failure mode is an edited JSON row, not a rendered screen.
 
 #### Scenario: A guessed competitor rating fails
 
-- **GIVEN** a row added after the four systems were read
+- **GIVEN** a row added after the rated systems were read
 - **WHEN** somebody fills a competitor cell on it with a rating
 - **THEN** the unit suite MUST fail and name the row
 

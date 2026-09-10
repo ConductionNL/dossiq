@@ -76,8 +76,14 @@ from `appinfo/info.xml`, so its cron is still dead.
       (controller + provider seam + sync service + `*_message` schema + retry job, the
       IwmoIjw/StufZkn pattern); dossiq keeps `BerichtenboxRoutingService` (channel choice is
       domain) and calls through the delivery seam.
-- [ ] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`
-      (dead cron today — register it or delete it with the re-point).
+- [ ] Also fix en route: `BerichtenboxReadStatusJob` is not registered in `appinfo/info.xml`.
+      Re-verified 2026-09-10: still unregistered, and DELIBERATELY so rather than by oversight.
+      The class docblock at `lib/BackgroundJob/BerichtenboxReadStatusJob.php:9-28` now says why,
+      in the words the audit needed: integriq ships only `BerichtenboxClientMock`, so scheduling
+      it today would poll a mock daily and write back a read status the mock invents, and a cron
+      that appears to confirm citizens are reading post no instance has sent is worse than no
+      cron. The open item is therefore "register it in the same change that binds a real
+      transport", not "fix a dead cron".
 - [ ] When cross-municipality ZGW push activates: bind `ZgwExternalAdapterInterface` to an
       integriq source (`zgw-external`) instead of a local HTTP client.
 - [ ] DSO-LV: land production auth (OAuth2 + PKIoverheid mTLS) on integriq's `dso-omgevingsloket`

@@ -39,6 +39,29 @@ criteria under a task are plain bullets.
   `informatieobject.creatiedatum`, `informatieobject.auteur`, `emptyText`
   "No documents yet", the `DossierTab` drop handler as `dropZone` and a
   row action Versions opening `VersionHistoryPanel`. 2.1 is the interim.
+
+  RE-MEASURED 2026-09-10 against `@conduction/nextcloud-vue` **2.42.0** as
+  installed. THE NAMED BLOCKER SHIPPED AND THE TASK IS STILL BLOCKED, which
+  is why the recheck was worth doing rather than reading the changelog.
+  `CnCellRenderer` now has a built-in `widget: "fkResolve"`
+  (`CnFkResolveCell`, `widgetProps { register, schema, labelField }`) that
+  resolves a reference uuid to the referenced object's label through the
+  shared object store, and `CnObjectListWidget` forwards `widget` and
+  `widgetProps` to it. That is a `$ref` column rendered by a label field,
+  word for word what the blocker asked for.
+  It does not get this task done, on three counts measured in the same tree.
+  ONE, this task needs SIX fields off the referenced `informatieobject`, not
+  one label, and `fkResolve` resolves one `labelField` per column.
+  TWO, the dotted columns `informatieobject.title` and its five siblings are
+  read by `CnDataTable` as paths into the ROW
+  (`key.split('.').reduce(...)`), and the row holds a uuid string there,
+  because `CnObjectListWidget` builds its query params from `_limit`,
+  `_page`, `_order[...]` and the `filter` entries and sends no `_extend`.
+  OpenRegister does answer `_extend`, so the seam to ask the library for is
+  narrower than it looked: an `extend` key on the widget's content.
+  THREE, and decisively, `CnObjectListWidget` matches neither `dropZone` nor
+  `rowActions` at all, so it cannot host the `DossierTab` drop handler or the
+  Versions row action this task also requires. 2.1 stays the shipped form.
 - [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on
   `keywords`) beside the sort dropdown, and the empty state "No documents
@@ -85,6 +108,14 @@ criteria under a task are plain bullets.
   token)] Replace 3.2's action with `type: run-action`, `node:
   DossiqMergeTemplateNode`, `subject: @objectId`, `config.templateSlug:
   @pick:template`, and drop the dialog. 3.2 is the interim.
+
+  RE-MEASURED 2026-09-10 against 2.42.0. STILL BLOCKED. The action `type`
+  enum in the installed `src/schemas/app-manifest-v2.schema.json` reads
+  `handler`, `open-modal`, `open-page`, `navigate`, `object-op`, `export`,
+  `open-form`, `refresh`, `api-call`, `agent`, `toggle`. There is no
+  `run-action`, and no `@pick:` token in the sentinel grammar. The `agent`
+  type added since is the closest shape in the family and runs a hermiq
+  agent, not a flow node.
 
 ## 4. Seed
 

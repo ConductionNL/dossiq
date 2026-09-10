@@ -1542,7 +1542,7 @@
 										"type": "object-list",
 										"title": "Communication",
 										"icon": "PhoneInTalk",
-										"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail stay their own tabs until a tabs entry can render several widgets as stacked sections (design D4). The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
+										"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail are NOT beside it and are not going to be: page-topology-cleanup moved both to the sidebar on the rule that one log in two places is duplication rather than coverage, which retires design D4's fold rather than deferring it. The tab that holds this list already holds two widgets as stacked sections, through the case-sections container type, so the capability D4 waited on is here and the fold is what is no longer wanted. The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
 										"content": {
 											"register": "dossiq",
 											"schema": "contactmoment",
@@ -3097,6 +3097,8 @@
 			"route": "/settings/tenants",
 			"type": "index",
 			"title": "Tenants",
+			"permission": "admin",
+			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -3245,6 +3247,7 @@
 			"route": "/settings/tenants/:id",
 			"type": "detail",
 			"title": "Tenant",
+			"permission": "admin",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -4381,6 +4384,7 @@
 			"route": "/substitution-admin",
 			"type": "custom",
 			"title": "Substitutions & reassignment",
+			"permission": "admin",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		},

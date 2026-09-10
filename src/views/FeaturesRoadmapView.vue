@@ -111,14 +111,7 @@
 						)
 					}}
 				</p>
-				<p>
-					{{
-						t(
-							'dossiq',
-							'Pick the capabilities your organisation needs. Then test all four systems against that shortlist yourself.',
-						)
-					}}
-				</p>
+				<p>{{ shortlistText }}</p>
 				<p>{{ reratedText }}</p>
 				<p>{{ addedRowsText }}</p>
 				<p>
@@ -128,6 +121,21 @@
 							'Every system here is a municipal case system or a workflow engine, and the list is drawn from what they do, in the shape we do it. A capability none of them has is missing from the list, not from the market. A product that splits the work differently scores low without being worse, and that bias runs in our favour. We add rows as we read more systems, so a lower score in a later release can mean the list grew rather than the product shrank.',
 						)
 					}}
+				</p>
+			</NcNoteCard>
+
+			<!-- One card per column that needs reading differently: a column
+			     read on its own date, or a product whose architecture costs it
+			     rows on a list written in our shape. It sits here, between the
+			     general caveats and the first score, because a caveat a reader
+			     meets after the totals is a caveat they meet too late. -->
+			<NcNoteCard
+				v-for="note in systemNotes"
+				:key="note.key"
+				type="info"
+				:heading="note.heading">
+				<p v-for="(paragraph, index) in note.paragraphs" :key="index">
+					{{ paragraph }}
 				</p>
 			</NcNoteCard>
 
@@ -356,17 +364,41 @@ export default {
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
 		 */
 		leadText() {
+			const rivals = comparison.systems.filter((s) => !s.isSelf)
 			return t(
 				'dossiq',
-				'We rated dossiq and three other case management systems on {count} capabilities: {systems}.',
+				'We rated dossiq and {rivals} other case management systems on {count} capabilities: {systems}.',
 				{
+					rivals: rivals.length,
 					count: comparison.capabilities.length,
-					systems: comparison.systems
-						.filter((s) => !s.isSelf)
-						.map((s) => s.name)
-						.join(', '),
+					systems: rivals.map((s) => s.name).join(', '),
 				},
 			)
+		},
+
+		/**
+		 * The first concrete step, with the real number of systems in it.
+		 *
+		 * @return {string} The shortlist advice.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		shortlistText() {
+			return t(
+				'dossiq',
+				'Pick the capabilities your organisation needs. Then test all {count} systems against that shortlist yourself.',
+				{ count: comparison.systems.length },
+			)
+		},
+
+		/**
+		 * The systems read on `comparedOn`, which is every system that does
+		 * not carry a reading date of its own.
+		 *
+		 * @return {Array<object>} System entries.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		systemsOnComparedOn() {
+			return comparison.systems.filter((system) => !system.readOn)
 		},
 
 		/**
@@ -382,16 +414,34 @@ export default {
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
 		 */
 		reratedText() {
-			const corrections = comparison._rerated ?? []
-			if (corrections.length === 0 || !comparison.reratedOn) {
+			// Only entries that MOVED a rating. `_rerated` is also the log for
+			// rows a later round added, which carry a null `from` because
+			// there was no earlier rating to move. Counting those here claimed
+			// 25 corrections where six were made, and the other 19 are the
+			// additions the next paragraph reports in its own words. An
+			// inflated correction count on a page about honesty is the wrong
+			// number to get wrong.
+			const corrections = (comparison._rerated ?? []).filter(
+				(entry) => entry.from !== null,
+			)
+			if (corrections.length === 0) {
 				return ''
 			}
+			// Dated from the corrections themselves rather than `reratedOn`,
+			// which moves whenever the log gains any entry, additions
+			// included. Same reason the tallies are derived: a second copy of
+			// a date goes stale on its own.
+			const on = corrections
+				.map((entry) => entry.on)
+				.sort()
+				.at(-1)
 			return t(
 				'dossiq',
-				'We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other three columns that way. The competitor ratings are as we read them on the date above.',
+				'We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other {others} columns that way. Those ratings are as we read them, on the dates given here.',
 				{
 					count: corrections.length,
-					date: formatComparedOn(comparison.reratedOn, this.locale),
+					others: comparison.systems.length - 1,
+					date: formatComparedOn(on, this.locale),
 				},
 			)
 		},
@@ -401,12 +451,24 @@ export default {
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
 		 */
 		readingDateText() {
+			const date = formatComparedOn(comparison.comparedOn, this.locale)
+			const read = this.systemsOnComparedOn.length
+			// A column added later was read on its own day, and saying "we
+			// read the systems on this date" would then be false for one of
+			// them. The count is derived rather than written out for exactly
+			// that reason: a fifth column must not be able to make an existing
+			// sentence lie.
+			if (read === comparison.systems.length) {
+				return t(
+					'dossiq',
+					'We read all {count} systems on {date}. Open source moves fast, so some of these ratings are already out of date. Check that date before you rely on them.',
+					{ count: read, date },
+				)
+			}
 			return t(
 				'dossiq',
-				'We read the four systems on {date}. Open source moves fast, so some of these ratings are already out of date. Check that date before you rely on them.',
-				{
-					date: formatComparedOn(comparison.comparedOn, this.locale),
-				},
+				'We read {count} of the {total} systems on {date}. Open source moves fast, so some of these ratings are already out of date. Check that date before you rely on them.',
+				{ count: read, total: comparison.systems.length, date },
 			)
 		},
 
@@ -429,12 +491,75 @@ export default {
 			}
 			return t(
 				'dossiq',
-				'On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other three columns read Unknown, because we did not read those products again, and a guessed rating is worse than an empty cell.',
+				'On {date} we added {count} capabilities to the list from a later round of reading. We rated ourselves on them. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.',
 				{
 					count: added.length,
+					others: comparison.systems.length - 1,
 					date: formatComparedOn(comparison.rowsAddedOn, this.locale),
 				},
 			)
+		},
+
+		/**
+		 * A note card per column that a reader has to take differently.
+		 *
+		 * Two things put a column here. A column added after `comparedOn` was
+		 * read on its own day, and the reading-date sentence above does not
+		 * cover it. And a product that owns no data loses rows to its
+		 * architecture on a list written in our shape, which moves its score
+		 * down for a reason that is not about the product. Publishing that
+		 * score without saying so would flatter us for free.
+		 *
+		 * Driven off the data rather than written into the template, so the
+		 * next column that needs either note gets it by declaring it.
+		 *
+		 * @return {Array<{key: string, heading: string, paragraphs: Array<string>}>} One entry per column.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		systemNotes() {
+			return comparison.systems
+				.filter((system) => system.readOn || system.ownsNoData)
+				.map((system) => {
+					const paragraphs = []
+					if (system.readOn) {
+						paragraphs.push(
+							t(
+								'dossiq',
+								'We read {system} on {date}, not on the date above. Its column joined this table on {added}.',
+								{
+									system: system.name,
+									date: formatComparedOn(
+										system.readOn,
+										this.locale,
+									),
+									added: formatComparedOn(
+										system.columnAddedOn ?? system.readOn,
+										this.locale,
+									),
+								},
+							),
+						)
+					}
+					if (system.ownsNoData) {
+						paragraphs.push(
+							t(
+								'dossiq',
+								'{system} owns no data. The case, its documents and its retention live in {register}. A row we score in our own shape often falls outside {system} by design. Its column reads low for that reason, which flatters us. Read the gap as a difference in architecture, not as a weaker product.',
+								{
+									system: system.name,
+									register: system.ownsNoData,
+								},
+							),
+						)
+					}
+					return {
+						key: system.key,
+						heading: t('dossiq', 'About the {system} column', {
+							system: system.name,
+						}),
+						paragraphs,
+					}
+				})
 		},
 	},
 
@@ -517,9 +642,10 @@ export default {
 		areaCaption(area) {
 			return t(
 				'dossiq',
-				'Capabilities in {area}, rated for each of the four systems.',
+				'Capabilities in {area}, rated for each of the {count} systems.',
 				{
 					area: area.label,
+					count: this.systems.length,
 				},
 			)
 		},

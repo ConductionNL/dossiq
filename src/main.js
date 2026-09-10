@@ -33,6 +33,7 @@ import registry from './registry.js'
 import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { routerBase } from './utils/routerBase.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
@@ -174,28 +175,6 @@ const { manifest: resolvedManifest } = useAppManifest('dossiq', builtManifest)
 // component-options object without altering the lib's internals.
 const RoutePageRenderer = { ...CnPageRenderer }
 
-/**
- * Build the vue-router config from the manifest. Each manifest page becomes
- * one route; the route's `name` IS `page.id` (per the lib's manifest contract).
- * Routes whose path declares a `:` parameter receive `props: true` so the
- * underlying detail/custom component receives the route param.
- *
- * @param {object} manifest The bundled manifest (with `pages[]`).
- * @return {Array<object>} vue-router 3 routes config.
- */
-function routesFromManifest(manifest) {
-	const routes = manifest.pages.map((page) => ({
-		name: page.id,
-		path: page.route,
-		component: RoutePageRenderer,
-		props: page.route.includes(':'),
-	}))
-	// Catch-all redirect to dashboard, preserving prior router behaviour.
-	// vue-router 4 syntax: the bare '*' catch-all became a named param matcher.
-	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })
-	return routes
-}
-
 // Routes are built from the built manifest only. The backend delta merely adds
 // menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
 // it introduces no new pages, so the route table needs no reactive rebuild.
@@ -212,8 +191,13 @@ const router = createRouter({
 	history: createWebHistory(
 		routerBase(window.location.pathname, generateUrl('/apps/dossiq')),
 	),
-	routes: routesFromManifest(builtManifest),
+	routes: routesFromManifest(builtManifest, RoutePageRenderer),
 })
+
+// The route half of the manifest's `permission` field. See
+// `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
+// redirects rather than errors, and what it deliberately does NOT close.
+router.beforeEach(permissionGuard)
 
 tryLoadTranslations()
 
