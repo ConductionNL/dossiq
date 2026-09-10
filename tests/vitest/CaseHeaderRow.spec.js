@@ -190,8 +190,8 @@ describe('CaseHeaderRow', () => {
 			status: 'status-1',
 		})
 		expect(wrapper.findAll('.crumb')).toHaveLength(0)
-		expect(wrapper.find('[data-testid="case-header-breadcrumbs"]').exists()).toBe(
-			false,
-		)
+		expect(
+			wrapper.find('[data-testid="case-header-breadcrumbs"]').exists(),
+		).toBe(false)
 	})
 })

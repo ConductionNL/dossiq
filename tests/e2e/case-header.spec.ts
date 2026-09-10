@@ -248,9 +248,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// The point of removing it: the title is stated once above the fold. An
 		// exact-text locator, because the case title is also a substring of the
 		// browser tab title and of the sidebar heading.
-		await expect(
-			page.getByText(caseTitle, { exact: true }),
-		).toHaveCount(1)
+		await expect(page.getByText(caseTitle, { exact: true })).toHaveCount(1)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more

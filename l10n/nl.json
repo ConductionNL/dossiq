@@ -3876,6 +3876,10 @@
         "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.": "Noteer de adressen en domeinen waar dossiq zaakmail naartoe mag sturen. Laat het leeg en alleen uw eigen domein is toegestaan, afgeleid van het afzenderadres. Typ * om elke ontvanger toe te staan.",
         "Sender address": "Afzenderadres",
         "Sender name": "Afzendernaam",
-        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "Het adres waarmee dossiq verstuurt. Laat het leeg en dossiq weigert te versturen."
+        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "Het adres waarmee dossiq verstuurt. Laat het leeg en dossiq weigert te versturen.",
+        "Archiving": "Archivering",
+        "Timeline": "Tijdlijn",
+        "Terms and payment": "Termijnen en betaling",
+        "No initiator has been recorded for this case.": "Er is geen initiator vastgelegd voor deze zaak."
     }
 }

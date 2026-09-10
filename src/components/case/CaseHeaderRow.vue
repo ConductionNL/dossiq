@@ -269,7 +269,6 @@ export default {
 			}
 			return ''
 		},
-
 	},
 
 	watch: {
