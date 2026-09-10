@@ -91,7 +91,6 @@ const TASK_PAGE = '[data-testid="task-detail-page"]'
 
 const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
 const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
-const ACTIVATE_LABEL = /Pick up the task/
 
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
@@ -417,16 +416,28 @@ test.describe('Case detail — the task pane', () => {
 		// would satisfy every other assertion here and defeat the point.
 		expect(new URL(page.url()).pathname).toBe(before)
 
-		// The next open task takes its place, with the buttons ITS status
-		// allows: it was never picked up, so it offers Pick up rather than
-		// Mark as completed.
+		// The next open task takes its place.
+		//
+		// 🔴 THE BUTTONS NO LONGER FOLLOW THE TASK'S STATE, and this used to
+		// assert that they did: a Pick up button on a task never claimed, and
+		// no Complete beside it. The pane reads the engine now (dossiq#2408)
+		// and offers Complete and Cancel unconditionally, on purpose — the
+		// engine decides whether a verb is legal and whether the caller may
+		// invoke it, and refuses visibly with a message naming both, so
+		// pre-judging availability client-side would be exactly the
+		// duplicated authorization this migration removes. There is no
+		// "Pick up the task" button on this surface at all, which is why the
+		// old assertion could not pass and could not be repaired in place.
+		//
+		// The succession is the claim that survives: a DIFFERENT task, named,
+		// with the pane's verbs on it.
 		await expect(
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(completeSecondTitle, { timeout: 30_000 })
-		await expect(
-			panel.getByRole('button', { name: ACTIVATE_LABEL }),
-		).toBeVisible({ timeout: 20_000 })
-		await expect(panel.locator(COMPLETE_BUTTON)).toHaveCount(0)
+		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({
+			timeout: 20_000,
+		})
+		await expect(panel.locator(CANCEL_BUTTON)).toBeVisible()
 
 		// The write reached the server, not just the screen — READ FROM THE
 		// TABLE THE PANE WRITES. This asked
