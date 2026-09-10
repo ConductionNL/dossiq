@@ -355,6 +355,50 @@ class EngineTaskGateway {
     }//end mirror()
 
     /**
+     * Hand one task to a different person.
+     *
+     * 🔑 A VERB, NOT A FIELD WRITE. `caseTask` was reassigned by setting
+     * `assignee` and appending a hand-rolled entry to an `activity` array,
+     * and that entry was the only record the transfer ever left. The engine
+     * has `reassign` as a first-class lifecycle verb: it writes the
+     * assignee, stamps the acting identity, and appends to `oc_openregister_
+     * task_audit` itself, so the audit is the engine's rather than a JSON
+     * blob a reader has to know how to decode.
+     *
+     * @param string      $taskId   The task to hand over.
+     * @param string      $assignee Who receives it.
+     * @param string|null $actor    The acting identity the engine records.
+     *
+     * @return boolean Whether the engine accepted it.
+     *
+     * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+     */
+    public function reassign(string $taskId, string $assignee, ?string $actor): bool {
+        $id = trim($taskId);
+        if ($id === '' || trim($assignee) === '' || $this->isEnabled() === false) {
+            return false;
+        }
+
+        try {
+            $this->resolveService()?->reassign($id, trim($assignee), $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            // Per ITEM, not per batch. A bulk reassignment reports one row
+            // per task and stays re-runnable, so one refusal must not take
+            // the other ninety-nine with it.
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task reassignment',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end reassign()
+
+    /**
      * Translate a `caseTask` into the engine's create payload.
      *
      * The map is 1:1 for almost everything, which is the finding that made
@@ -488,6 +532,11 @@ class EngineTaskGateway {
             'flowRun' => (string) ($task->getRunUuid() ?? ''),
             'flowNode' => (string) ($task->getNodeId() ?? ''),
             'assignee' => (string) ($task->getAssignee() ?? ''),
+            // A typed list of {id, label, description, checked}, NOT a
+            // string. `caseTask` held JSON in a string and the checklist
+            // guard had to decode it; the entity removed that shape, so
+            // this arrives ready to read.
+            'checklist' => (($task->getChecklist() ?? [])),
         ];
     }//end find()
 

@@ -15,24 +15,39 @@ Each moves from `useObjectStore` over `caseTask` to `useEngineTaskStore`.
 Each gets its unit test updated and its e2e assertion checked BEFORE the next
 one starts.
 
-- [ ] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
+- [x] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
       `objectStore.fetchCollection('caseTask', openTasksQuery(...))`. Becomes
       `engineTasks.openForCase(caseId)`, which already filters terminal rows.
       Its lifecycle buttons move from the register's transitions to the
       engine's verbs (`invoke(uuid, 'complete')`).
-- [ ] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
+- [x] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
       same three states the engine calls terminal. Delete it and use
       `isTerminal` from the engine store, rather than keeping a second copy
       that can drift.
-- [ ] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
-- [ ] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
+- [x] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
+- [x] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
       unlike the case surfaces: this one IS the reader's own list.
-- [ ] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
+- [x] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
       which the engine's inbox filter already supports, so dossiq stops
       deriving overdue-ness itself.
-- [ ] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
+- [x] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
       `src/components/tasks/TaskCaseCard.vue` — both read a task to find its
       case. The engine's `objectUuid` IS the case, so these get simpler.
+
+### Section 1 was already green
+
+Measured 2026-09-10: all six surfaces import `useEngineTaskStore` and no
+`fetchCollection('caseTask', ...)` survives in `src/`. The boxes were never
+ticked, not the work left undone. The two surfaces that still import
+`useObjectStore` (`TaskWaitingCaseSection`, `TaskCaseCard`) use it for the
+CASE object, which is correct: the case is still an OpenRegister object.
+
+One `caseTask` WRITE did survive the sweep, in a place nothing read:
+`workflow.js`'s `dispatchCreateTaskAction`. A task written there succeeded,
+the transition reported success, and the task was invisible to every one of
+the six surfaces above -- an object write producing a task nobody sees and
+no error anywhere. It now writes the engine and THROWS on refusal, because
+`dispatchActions` records a per-action result the user is shown.
 
 ## 2. The two pages
 
@@ -79,7 +94,7 @@ the slug finds six more users the first pass missed: `AskPersonTaskStore`,
 is the important one: it is the flow node's task storage, and it pairs with
 the resume listener that already moved.
 
-- [ ] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` — stop writing the
+- [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
 - [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
@@ -88,15 +103,15 @@ the resume listener that already moved.
       (`flow-user-task-node`, 19/19 done), which does the same thing against
       the engine natively. That is a separate decision and should be made
       before this task is started, not during it.
-- [ ] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
+- [x] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
-- [ ] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
+- [x] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
       storage, reading `task_schema` directly. Pairs with the resume
       listener, which already moved to `TaskTerminalEvent`.
-- [ ] 3.3c `lib/Service/WorkQueueService.php` and
+- [x] 3.3c `lib/Service/WorkQueueService.php` (dossiq#2369) and
       `lib/Service/CaseReassignmentService.php` — both read `task_schema`;
       reassignment writes to it, so it is a writer as well as a reader.
-- [ ] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
+- [x] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
       documented trap in that file: `findAll()` overwrites the register and
       schema context as a side effect, so a count issued after another read
       silently counts the WRONG schema and answers 0.
@@ -107,7 +122,7 @@ the resume listener that already moved.
       entry goes.
 - [ ] 3.7 `lib/Repair/RenameCollidingSchemaSlugs.php` — remove the slug from
       the collision list.
-- [ ] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
+- [x] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
       `DemoCaseloadSeedDataService` and the 64 `tasks` rows in the seed files.
       Demo tasks must become engine tasks, or the demo caseload arrives with
       no work on it.
@@ -154,3 +169,25 @@ Only after 1 to 3 are green.
 - `tenantOnboardingTask` is re-filed here from the tenancy cluster (it is a
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
+
+## What the server side learned on the way
+
+Three things came out of 3.1 to 3.4 that the plan did not anticipate, and
+each one is now a property of the code rather than a note here.
+
+**A read that fails and a case with no tasks both answer `[]`.** For the
+checklist guard that difference decides a transition: "no tasks" means
+"nothing unticked", which PASSES. So `EngineTaskInbox::lastError()` exists,
+the guard asks for it by name, and the guard's own test cannot prove it
+because that test mocks the method -- the proof lives in
+`EngineTaskInboxTest` instead.
+
+**A count is not `count($rows)`.** The inbox pages. A dashboard tile built
+on the row count reads the page size once there are more matches than the
+limit, and would have said the same number for ever. The envelope carries
+`total`, so the count asks for a page of one and throws the rows away.
+
+**`task_schema` was a required id for the whole KPI payload.** Every case
+tile on the dashboard would have blanked the moment the task schema was
+retired. It is gone from `ids()`, which is a prerequisite for step 4 rather
+than a tidy-up.

@@ -18,6 +18,8 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\MandaatGuard;
@@ -212,8 +214,20 @@ class WorkflowGuardConformanceTest extends TestCase {
 			fn (string $uid, string $gid): bool => in_array($gid, $this->groups, true)
 		);
 
+		// The checklist guard reads the ENGINE, not the register, so its
+		// tasks come through this double rather than `rowsFor('caseTask')`.
+		$engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTasks->method('forCase')->willReturnCallback(fn (): array => $this->tasks);
+		$engineTasks->method('lastError')->willReturn('');
+
 		return new GuardRegistry(
-			new ChecklistGuard($settings, new NullLogger()),
+			new ChecklistGuard(
+				$engineTasks,
+				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+				new NullLogger()
+			),
 			new RequiredFieldGuard(),
 			new RequiredDocumentGuard(),
 			new RoleGuard($groupManager, $userManager, new NullLogger()),
@@ -518,15 +532,24 @@ class WorkflowGuardConformanceTest extends TestCase {
 				(array)($entry['guard']['requiredItems'] ?? ['Alles gecontroleerd'])
 			);
 
-			$this->tasks = [['checklist' => json_encode(
-				array_map(static fn (string $l): array => ['label' => $l, 'checked' => true], $labels)
-			)]];
+			// A TYPED list. `caseTask` stored the checklist as a JSON-encoded
+			// string; the engine refuses a string at write time, so seeding
+			// one here would model a row nothing can produce.
+			$this->tasks = [[
+				'checklist' => array_map(
+					static fn (string $l): array => ['label' => $l, 'checked' => true],
+					$labels
+				),
+			]];
 			$done = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
 			$this->assertTrue($done['passed'], $entry['path'] . ' must pass when every item is ticked');
 
-			$this->tasks = [['checklist' => json_encode(
-				array_map(static fn (string $l): array => ['label' => $l, 'checked' => false], $labels)
-			)]];
+			$this->tasks = [[
+				'checklist' => array_map(
+					static fn (string $l): array => ['label' => $l, 'checked' => false],
+					$labels
+				),
+			]];
 			$open = $this->evaluateShipped(guard: $entry['guard'], case: ['id' => 'case-1']);
 			$this->assertFalse($open['passed'], $entry['path'] . ' must fail while an item is unticked');
 		}

@@ -48,7 +48,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
+use DateTime;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\OpenRegister\Db\TaskInboxCriteria;
 use PHPUnit\Framework\TestCase;
@@ -127,9 +129,10 @@ class EngineTaskInboxTest extends TestCase {
 		$settings = $this->getMockBuilder(SettingsService::class)
 			->disableOriginalConstructor()
 			->getMock();
+		$container = $this->createMock(ContainerInterface::class);
+		$logger = new NullLogger();
 
-		return new class ($settings, $this->createMock(ContainerInterface::class), new NullLogger(), $inbox)
-			extends EngineTaskInbox {
+		$query = new class ($settings, $container, $logger, $inbox) extends EngineInboxQuery {
 
 			/**
 			 * @param SettingsService    $settings  The settings bridge.
@@ -153,6 +156,31 @@ class EngineTaskInboxTest extends TestCase {
 				return $this->inbox;
 			}
 		};
+
+		return new class ($settings, $container, $logger, $query) extends EngineTaskInbox {
+
+			/**
+			 * @param SettingsService    $settings  The settings bridge.
+			 * @param ContainerInterface $container The app container.
+			 * @param NullLogger         $logger    The logger.
+			 * @param EngineInboxQuery   $query     The query this test supplied.
+			 */
+			public function __construct(
+				SettingsService $settings,
+				ContainerInterface $container,
+				NullLogger $logger,
+				private readonly EngineInboxQuery $stubQuery,
+			) {
+				parent::__construct($settings, $container, $logger);
+			}
+
+			/**
+			 * @return EngineInboxQuery The query this test supplied.
+			 */
+			protected function query(): EngineInboxQuery {
+				return $this->stubQuery;
+			}
+		};
 	}//end service()
 
 	/**
@@ -172,6 +200,8 @@ class EngineTaskInboxTest extends TestCase {
 							'priority'   => 'high',
 							'dueAt'      => '2026-09-15T00:00:00+00:00',
 							'objectUuid' => 'case-9',
+							'assignee'   => 'user:admin',
+							'checklist'  => [['id' => 'i-1', 'label' => 'Stuk 1', 'checked' => false]],
 						],
 					],
 				]
@@ -187,6 +217,12 @@ class EngineTaskInboxTest extends TestCase {
 					'priority' => 'high',
 					'dueDate'  => '2026-09-15T00:00:00+00:00',
 					'case'     => 'case-9',
+					'assignee' => 'user:admin',
+					// A TYPED list, not a string. `caseTask` held JSON in a
+					// string and the checklist guard had to decode it; the
+					// engine refuses a string at write time, so this arrives
+					// ready to read and must not be flattened by a cast.
+					'checklist' => [['id' => 'i-1', 'label' => 'Stuk 1', 'checked' => false]],
 				],
 			],
 			$service->openForAssignee('admin')
@@ -246,6 +282,20 @@ class EngineTaskInboxTest extends TestCase {
 			public function getObjectUuid(): string {
 				return 'case-4';
 			}
+
+			/**
+			 * @return string The assignee.
+			 */
+			public function getAssignee(): string {
+				return 'user:admin';
+			}
+
+			/**
+			 * @return array<int, mixed>|null The checklist.
+			 */
+			public function getChecklist(): ?array {
+				return [['id' => 'i-9', 'label' => 'Stuk 9', 'checked' => true]];
+			}
 		};
 
 		$tasks = $this->service($this->inboxDouble(['results' => [$row]]))->openForAssignee('admin');
@@ -255,6 +305,7 @@ class EngineTaskInboxTest extends TestCase {
 		$this->assertSame('enabled', $tasks[0]['status']);
 		$this->assertSame('case-4', $tasks[0]['case']);
 		$this->assertSame('', $tasks[0]['dueDate']);
+		$this->assertSame([['id' => 'i-9', 'label' => 'Stuk 9', 'checked' => true]], $tasks[0]['checklist']);
 	}//end testAnEntityRowIsReadThroughItsGetters()
 
 	/**
@@ -275,6 +326,67 @@ class EngineTaskInboxTest extends TestCase {
 		$this->assertSame('admin', $criteria->uid);
 		$this->assertSame(25, $inbox->seenLimit);
 	}//end testOnlyOpenTasksAreAskedOfTheEngine()
+
+	/**
+	 * The count is the engine's total, NOT the number of rows on the page.
+	 *
+	 * The inbox pages. A dashboard tile built on `count($rows)` reads the
+	 * page size once there are more matches than the limit, so it would
+	 * have said the same number for ever no matter how the work grew.
+	 *
+	 * @return void
+	 */
+	public function testTheCountIsTheEnginesTotalNotThePageSize(): void {
+		$inbox = $this->inboxDouble(
+			[
+				'results' => [['uuid' => 'task-1'], ['uuid' => 'task-2']],
+				'total' => 87,
+			]
+		);
+
+		self::assertSame(87, $this->service($inbox)->countOpenForAssignee('admin'));
+		self::assertSame(1, $inbox->seenLimit, 'a count asks for one row and throws it away');
+	}//end testTheCountIsTheEnginesTotalNotThePageSize()
+
+	/**
+	 * A due window reaches the engine as criteria, not a client-side filter.
+	 *
+	 * @return void
+	 */
+	public function testTheDueWindowReachesTheCriteria(): void {
+		$inbox = $this->inboxDouble(['results' => [], 'total' => 0]);
+
+		$this->service($inbox)->countOpenForAssignee(
+			'admin',
+			'2026-09-10T00:00:00+00:00',
+			'2026-09-10T23:59:59+00:00'
+		);
+
+		$criteria = $inbox->seenCriteria;
+		self::assertInstanceOf(TaskInboxCriteria::class, $criteria);
+		self::assertInstanceOf(DateTime::class, $criteria->dueAfter);
+		self::assertInstanceOf(DateTime::class, $criteria->dueBefore);
+		self::assertSame('2026-09-10T00:00:00+00:00', $criteria->dueAfter->format('c'));
+		self::assertFalse($criteria->isTerminal, 'a due-window count still asks only for open work');
+	}//end testTheDueWindowReachesTheCriteria()
+
+	/**
+	 * A bound the engine cannot read is dropped, not silently made "now".
+	 *
+	 * A window reset to the current instant answers a plausible number for
+	 * the wrong question, which is worse than answering the unbounded one.
+	 *
+	 * @return void
+	 */
+	public function testABoundThatDoesNotParseIsDropped(): void {
+		$inbox = $this->inboxDouble(['results' => [], 'total' => 4]);
+
+		self::assertSame(4, $this->service($inbox)->countOpenForAssignee('admin', 'not a date'));
+
+		$criteria = $inbox->seenCriteria;
+		self::assertInstanceOf(TaskInboxCriteria::class, $criteria);
+		self::assertNull($criteria->dueAfter);
+	}//end testABoundThatDoesNotParseIsDropped()
 
 	/**
 	 * A row carrying no id is dropped rather than queued unopenable.
@@ -323,4 +435,75 @@ class EngineTaskInboxTest extends TestCase {
 		$this->assertSame([], $this->service(null)->openForAssignee('admin'));
 		$this->assertSame([], $this->service($this->inboxDouble(['results' => []]))->openForAssignee('  '));
 	}//end testNoEngineAndNoActorBothReadEmpty()
+
+	/**
+	 * A read that failed is distinguishable from one that found nothing.
+	 *
+	 * 🔴 THE CHECKLIST GUARD TURNS THIS INTO A TRANSITION DECISION. Both
+	 * answer `[]`, and "no tasks" means "nothing unticked", which PASSES.
+	 * Without `lastError()` actually being set, an unavailable engine would
+	 * wave every guarded transition through, and the guard's own test
+	 * cannot catch it: that one mocks this method.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadIsTellableFromAnEmptyOne(): void {
+		$unavailable = $this->service(null);
+		$unavailable->openForAssignee('admin');
+		$this->assertNotSame('', $unavailable->lastError(), 'an absent engine must say so');
+
+		$broken = $this->service($this->inboxDouble(new RuntimeException('engine down')));
+		$broken->openForAssignee('admin');
+		$this->assertSame('engine down', $broken->lastError());
+
+		$fine = $this->service($this->inboxDouble(['results' => []]));
+		$fine->openForAssignee('admin');
+		$this->assertSame('', $fine->lastError(), 'a genuinely empty case must NOT look like a failure');
+	}//end testAFailedReadIsTellableFromAnEmptyOne()
+
+	/**
+	 * A later read clears the earlier read's failure.
+	 *
+	 * The services holding this reader are long-lived, so one instance
+	 * makes many reads. A failure that stuck would make the checklist
+	 * guard refuse every transition for the rest of the request after one
+	 * hiccup, and it would look exactly like the engine still being down.
+	 *
+	 * @return void
+	 */
+	public function testAFailureDoesNotOutliveTheReadThatCausedIt(): void {
+		$flaky = new class {
+
+			/**
+			 * Whether the next read is the first one.
+			 *
+			 * @var boolean
+			 */
+			private bool $first = true;
+
+			/**
+			 * @param object  $criteria The read's scope and filters.
+			 * @param integer $limit    The page size.
+			 * @param integer $offset   Where the page starts.
+			 *
+			 * @return array<string, mixed> The page.
+			 */
+			public function inbox(object $criteria, int $limit, int $offset): array {
+				if ($this->first === true) {
+					$this->first = false;
+					throw new RuntimeException('engine down');
+				}
+
+				return ['results' => [], 'total' => 0];
+			}
+		};
+
+		$service = $this->service($flaky);
+
+		$service->openForAssignee('admin');
+		$this->assertSame('engine down', $service->lastError());
+
+		$service->openForAssignee('admin');
+		$this->assertSame('', $service->lastError(), 'the second read succeeded, so nothing is wrong now');
+	}//end testAFailureDoesNotOutliveTheReadThatCausedIt()
 }//end class

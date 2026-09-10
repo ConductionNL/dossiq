@@ -39,6 +39,9 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCP\IUser;
+use OCP\IUserSession;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -148,8 +151,8 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTasksAreAttachedToTheirOwnCase(): void {
-		$saved = $this->runSeed(new DateTimeImmutable('2026-09-02'));
-		$tasks = $this->savedOfSchema($saved, 'task-schema');
+		$this->runSeed(new DateTimeImmutable('2026-09-02'));
+		$tasks = $this->engineTasks;
 
 		$expectedTasks = 0;
 		foreach (($this->seedFile['cases'] ?? []) as $seedCase) {
@@ -393,6 +396,13 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * Every task payload the engine was handed, in seed order.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $engineTasks = [];
+
+	/**
 	 * The saved payloads for one schema, keyed by title.
 	 *
 	 * @param array $saved Every save.
@@ -424,6 +434,7 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	 */
 	private function service(array $existingCaseTitles, ?array &$saved): DemoCaseloadSeedDataService {
 		$saved = [];
+		$this->engineTasks = [];
 
 		$caseTypes = [];
 		foreach (self::PROCESSING_DAYS as $identifier => $days) {
@@ -580,6 +591,34 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 
 		$gateway = new DemoCaseloadGateway($appConfig, $container, new NullLogger(), $appManager);
 
-		return new DemoCaseloadSeedDataService($gateway, new NullLogger());
+		// Demo tasks are ENGINE tasks. `mirrorImport`, not `mirrorCreate`:
+		// the seed asserts completed tasks into existence to make the
+		// caseload look realistic, and the create path refuses a terminal
+		// state. The double records what it was handed so the assertions
+		// can read the payload the way they used to read a saved object.
+		$engineTask = $this->getMockBuilder(EngineTaskGateway::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$engineTask->method('mirrorImport')->willReturnCallback(
+			function (array $task, string $caseId, ?string $actor): string {
+				// The ARGUMENT wins over the payload's own `case`, and that
+				// ordering is the assertion: `toEnginePayload` anchors the
+				// task on the `caseId` argument (it becomes `objectUuid`)
+				// and never reads `$task['case']`. Merging the other way
+				// round let a mutation that passed '' for every case still
+				// pass this test.
+				$this->engineTasks[] = (['case' => $caseId] + $task);
+
+				return 'engine-task-' . count($this->engineTasks);
+			}
+		);
+		$engineTask->method('lastError')->willReturn('');
+
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+
+		return new DemoCaseloadSeedDataService($gateway, $engineTask, $userSession, new NullLogger());
 	}
 }

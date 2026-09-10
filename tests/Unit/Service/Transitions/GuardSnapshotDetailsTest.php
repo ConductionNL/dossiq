@@ -24,6 +24,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -282,7 +284,13 @@ class GuardSnapshotDetailsTest extends TestCase {
 		$userManager->method('get')->willReturn($this->createMock(IUser::class));
 
 		return new GuardRegistry(
-			new ChecklistGuard($settings, new NullLogger()),
+			// The checklist guard reads the engine now. These tests are about
+			// the REGISTRY, so it gets an inert pair rather than a fixture.
+			new ChecklistGuard(
+				$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
+				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+				new NullLogger()
+			),
 			new RequiredFieldGuard(),
 			new RequiredDocumentGuard(),
 			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
