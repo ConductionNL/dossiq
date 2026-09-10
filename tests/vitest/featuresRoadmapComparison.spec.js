@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Renders the comparison section of `FeaturesRoadmapView.vue` and checks that
- * the four things the page is not allowed to drop are still on the screen.
+ * the five things the page is not allowed to drop are still on the screen.
  *
- * Those four caveats already have e2e coverage in `tests/e2e/app-chrome.spec.ts`,
+ * Those five caveats already have e2e coverage in `tests/e2e/app-chrome.spec.ts`,
  * and that coverage needs a running Nextcloud. This suite needs a DOM and
  * nothing else, so a caveat that falls out of the template fails in seconds on
  * a laptop instead of at the end of a CI run. The failure mode is a real one:
@@ -72,7 +72,7 @@ async function mountComparison() {
 }
 
 describe('FeaturesRoadmapView comparison caveats', () => {
-	it('keeps all four mandatory caveats on the page', async () => {
+	it('keeps all five mandatory caveats on the page', async () => {
 		const text = (await mountComparison()).text()
 
 		// 1. Only open source we could install and run ourselves.
@@ -83,11 +83,70 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		expect(text).toContain('is not proof that a product does')
 		// 4. Run your own evaluation.
 		expect(text).toContain('run your own evaluation')
+		// 5. A column whose product owns no data scores low for a structural
+		//    reason, and that reason runs in our favour.
+		expect(text).toContain('owns no data')
+		expect(text).toContain('which flatters us')
+	})
+
+	it('names the column that owns no data, and the register it defers to', async () => {
+		const text = (await mountComparison()).text()
+		const deferring = data.systems.filter((system) => system.ownsNoData)
+
+		// The caveat is worthless as a generic disclaimer. It has to name the
+		// column a reader is about to compare against, and the product that
+		// holds the record instead, or they cannot act on it.
+		expect(deferring.length).toBeGreaterThan(0)
+		for (const system of deferring) {
+			expect(text).toContain(system.name)
+			expect(text).toContain(system.ownsNoData)
+		}
+	})
+
+	it('puts the column caveat above the first score, not after it', async () => {
+		// A caveat a reader meets after the totals is a caveat they meet too
+		// late. This is the assertion that fails if the note card is ever
+		// moved below the table while its wording survives intact.
+		const text = (await mountComparison()).text()
+		expect(text.indexOf('owns no data')).toBeGreaterThan(-1)
+		expect(text.indexOf('owns no data')).toBeLessThan(
+			text.indexOf('Totals over all'),
+		)
+	})
+
+	it('dates a column read on its own day, without moving the shared date', async () => {
+		const text = (await mountComparison()).text()
+		const late = data.systems.filter((system) => system.readOn)
+
+		expect(late.length).toBeGreaterThan(0)
+		// The shared sentence now counts the systems it actually covers, so a
+		// fifth column read a day later cannot make it claim the fifth.
+		expect(text).toContain(
+			`We read ${data.systems.length - late.length} of the ${data.systems.length} systems`,
+		)
+		expect(text).toContain('not on the date above')
 	})
 
 	it('dates the reading in the reader-s own language', async () => {
 		const text = (await mountComparison()).text()
 		expect(text).toContain('September 7, 2026')
+	})
+
+	it('counts only ratings it moved as corrections, not rows it added', async () => {
+		const text = (await mountComparison()).text()
+		const moved = data._rerated.filter((entry) => entry.from !== null)
+		const added = data._rerated.filter((entry) => entry.from === null)
+
+		// `_rerated` is one log with two kinds of entry in it, and the panel
+		// used to count the whole log: it claimed 25 corrections where 6 were
+		// made, and the other 19 were the added rows the next paragraph
+		// already reports. Overstating our own diligence on the page that
+		// exists to caveat itself is the one direction to get this wrong in.
+		expect(added.length).toBeGreaterThan(0)
+		expect(text).toContain(`We corrected ${moved.length} of our own ratings`)
+		expect(text).not.toContain(
+			`We corrected ${data._rerated.length} of our own ratings`,
+		)
 	})
 
 	it('says which rows a later round added, and that rivals are unrated', async () => {
@@ -106,11 +165,16 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 
 		expect(headers).toContain('Unknown')
 
-		// The three competitor columns are unrated on exactly the added rows,
-		// so their Unknown cell has to carry that number rather than a zero.
+		// Every competitor column is unrated on exactly the added rows, so
+		// each Unknown cell has to carry that number rather than a zero. That
+		// now includes the column added last: it was read before those rows
+		// existed, so it is as empty on them as the other three.
 		const added = data.capabilities.filter((row) => row.addedOn).length
 		const rows = wrapper.findAll('.features-roadmap__table tbody tr')
-		const opencase = rows.find((row) => row.text().startsWith('OpenCase'))
-		expect(opencase.findAll('td').at(3).text()).toBe(String(added))
+		for (const system of data.systems.filter((s) => !s.isSelf)) {
+			const row = rows.find((r) => r.text().startsWith(system.name))
+			expect(row, system.key).toBeTruthy()
+			expect(row.findAll('td').at(3).text(), system.key).toBe(String(added))
+		}
 	})
 })

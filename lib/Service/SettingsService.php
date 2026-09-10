@@ -262,6 +262,15 @@ class SettingsService {
 		'email_poll_interval',
 		'email_poll_batch_size',
 		'email_max_attachment_size',
+		// Outbound envelope + recipient policy (case-management REQ-103).
+		// ⚠️ email_from_address was read by CaseEmailService and settable by
+		// NOTHING: absent from this allow-list and from EmailSettings, so the
+		// error text telling the admin to set it via the admin settings named a
+		// field that did not exist. Registered here so it does.
+		'email_from_address',
+		'email_from_name',
+		// Empty means "the from-address's own domain", never "no restriction".
+		'email_recipient_allowlist',
 		// Consultation management (consultation-management spec).
 		'consultation_schema',
 		'advice_response_schema',

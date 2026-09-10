@@ -21,12 +21,18 @@
  * The assertions below are therefore about EMPTINESS as much as membership: a
  * list that omits `admin` is only a gate if it is also non-empty.
  *
+ * The list itself now lives in `src/utils/permissions.js`, because the ROUTER
+ * needs the same answer the nav needs and used to get no answer at all — see
+ * `routePermissions.spec.js`. This file still asserts that `App.vue` hands the
+ * nav that list rather than computing a second one.
+ *
  * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'
 import path from 'path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { currentPermissions } from '../../src/utils/permissions.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -34,26 +40,20 @@ const manifest = JSON.parse(
 )
 const appSource = fs.readFileSync(path.join(ROOT, 'src', 'App.vue'), 'utf8')
 
+afterEach(() => {
+	delete globalThis.window
+})
+
 /**
- * The `permissions` computed, evaluated against a stubbed admin flag.
- *
- * Read out of `App.vue` rather than imported: importing the SFC pulls in
- * `@conduction/nextcloud-vue` and the whole store layer for one pure list.
+ * The permissions the nav is given, evaluated against a stubbed admin flag.
  *
  * @param {boolean} isAdmin Whether the account is in the admin group.
  *
  * @return {Array<string>} The permissions the nav would be given.
  */
 function permissionsFor(isAdmin) {
-	const body = appSource.match(/permissions\(\) \{([\s\S]*?)\n\t\t\},/)
-	expect(body, 'App.vue still declares a permissions computed').toBeTruthy()
-
-	const fn = new Function(
-		'window',
-		`${body[1].replace(/^\t\t\t/gm, '')}`.replace(/^/, 'return (() => {\n')
-			+ '\n})()',
-	)
-	return fn({ OC: { isUserAdmin: () => isAdmin } })
+	globalThis.window = { OC: { isUserAdmin: () => isAdmin } }
+	return currentPermissions()
 }
 
 /** Every menu entry that declares a permission. @return {Array} The entries. */
@@ -84,5 +84,16 @@ describe('the nav permission gate', () => {
 				`${entry.id} is declared ${entry.permission} and must not render for an ordinary account`,
 			).not.toContain(entry.permission)
 		}
+	})
+})
+
+describe('what App.vue hands the nav', () => {
+	it('is the shared list, not a second copy of the rule', () => {
+		// A copy is how the nav and the router came to disagree in the first
+		// place. If this stops matching, check that BOTH surfaces moved.
+		expect(appSource).toMatch(/return currentPermissions\(\)/)
+		expect(appSource).toMatch(
+			/import \{ currentPermissions \} from '\.\/utils\/permissions\.js'/,
+		)
 	})
 })

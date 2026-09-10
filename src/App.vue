@@ -64,6 +64,7 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import { initializeStores } from './store/store.js'
+import { currentPermissions } from './utils/permissions.js'
 
 export default {
 	name: 'App',
@@ -170,31 +171,13 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
-			// CnAppNav's permission filter is an array-includes check, and it
-			// treats an EMPTY array as "the app did not say", so every item
-			// renders regardless of what it declares:
-			//
-			//     if (!item.permission) return true
-			//     if (!this.permissions || this.permissions.length === 0) return true
-			//     return this.permissions.includes(item.permission)
-			//
-			// This used to answer `[]` for anyone who is not an admin, because
-			// its only other source was `OC.currentUser.permissions` and
-			// `OC.currentUser` is the uid STRING, so that read has always been
-			// undefined. An ordinary handler therefore saw every entry gated on
-			// `permission: "admin"`, including Integrations and the tenant
-			// management pages. It looked right to whoever checked, because an
-			// admin gets `['admin']`, which is non-empty and filters correctly.
-			//
-			// So the list is never empty. `user` is what everyone holds and no
-			// manifest entry asks for; `admin` is the only value any entry
-			// declares, and it is added for the admin group, matching the
-			// backend `TenantService::isPlatformAdmin()` check.
-			const isAdmin =
-				typeof window.OC?.isUserAdmin === 'function'
-					? window.OC.isUserAdmin()
-					: false
-			return isAdmin ? ['user', 'admin'] : ['user']
+			// One source, shared with the router guard in `main.js`. It used
+			// to live here alone, and the router half of the same manifest
+			// field went unenforced for as long as it did: the nav hid
+			// Integrations from an ordinary account and the route rendered it
+			// in full to the same account. See `utils/permissions.js` for why
+			// the list is never empty and for what this does NOT close.
+			return currentPermissions()
 		},
 	},
 
