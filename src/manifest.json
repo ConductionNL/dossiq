@@ -1251,17 +1251,7 @@
 				"register": "dossiq",
 				"schema": "case",
 				"subtitleField": "identifier",
-				"breadcrumbs": [
-					{
-						"label": "Cases",
-						"route": "Cases",
-						"icon": "FolderAccountOutline"
-					},
-					{
-						"field": "title"
-					}
-				],
-				"_breadcrumbsNote": "Placement row A01: the way back to the list without the menu. This is the page-level declaration the host will read once CnDetailPage grows a `breadcrumbs` key; 2.41.0 has none, and the page schema is open on `config`, so the key validates and renders nothing on its own. The `case-header` widget renders the trail through CnBreadcrumbs from a copy of this array on its own `props`, and a unit test asserts the two are identical, so the day the host reads this key the widget can be emptied without the trail moving. The last crumb carries a `field` and no `route`: CnBreadcrumbs renders the final crumb unlinked with `aria-current=\"page\"` regardless, so a target on it would be dead config.",
+				"_breadcrumbsNote": "REMOVED, deliberately. The case page carried a trail whose LAST crumb was the case title, rendered one line below the page header that already printed that title: 'Cases > Dakkapel Kerkstraat 12' directly under 'Dakkapel Kerkstraat 12'. It read as a repeat rather than as a location, and it cost the top of the page a row. The way back to the list is the app menu, which is where the other detail pages in this app put it. This key stays as a note and not as config so the next reader finds out the trail was removed on purpose rather than re-adding it.",
 				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
 				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
 				"documentationUrl": "https://procest.conduction.nl",
@@ -1308,18 +1298,15 @@
 					{
 						"id": "case-terms",
 						"type": "data",
-						"title": "Terms and archive",
-						"icon": "Archive",
-						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no archive action date must show the row empty, because an absent destruction date is itself the thing a records officer is looking for.",
+						"title": "Terms and payment",
+						"icon": "CalendarClock",
+						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget into `case-archival`: `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but the page reads them from `@self._retention`, which is the one place any app can ask an object what happens to it and when. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record.",
 						"content": {
-							"title": "Terms and archive",
+							"title": "Terms and payment",
 							"columns": 2,
 							"include": [
 								"statutoryTerm",
 								"legalBasis",
-								"archiveNomination",
-								"archiveActionDate",
-								"archiveStatus",
 								"paymentIndication",
 								"lastPaymentDate"
 							],
@@ -1328,11 +1315,30 @@
 								"statutoryTerm": {
 									"readOnly": false,
 									"editable": false
-								},
-								"archiveActionDate": {
-									"editable": false
 								}
 							}
+						}
+					},
+					{
+						"id": "case-archival",
+						"type": "metadata",
+						"title": "Archiving",
+						"icon": "Archive",
+						"_note": "What happens to this file after the case closes, read from the ONE abstract answer rather than from this app's own field names. `type: metadata` is nextcloud-vue's CnObjectMetadataWidget, and `include` names keys of `@self._retention`: the resolved archival decision OpenRegister builds by merging the object's stored retention block, the ZGW archival properties the record itself declares (`archiveNomination` and friends, which dossiq derives from the resultaattype on close per zrc-021), the schema's `x-openregister-archival` evaluation, and any legal hold. Before that resolver existed the slot was declared and filled by nothing, so every app read its own fields and no shared surface could ask the question once. `legalHold` is included deliberately: a hold overrides the nomination and the date above it, and a destruction date shown without it is actively misleading. The card renders its empty state on a case with no archival obligation, which is a real answer and not a gap.",
+						"content": {
+							"layout": "horizontal",
+							"labelWidth": 130,
+							"include": [
+								"nomination",
+								"period",
+								"actionDate",
+								"status",
+								"basis",
+								"source",
+								"legalHold"
+							],
+							"title": "Archiving",
+							"emptyLabel": "No archiving rule applies to this case yet."
 						}
 					},
 					{
@@ -1391,18 +1397,8 @@
 						"type": "custom",
 						"title": "Case identity",
 						"icon": "BadgeAccountOutline",
-						"_note": "Placement row A01: the case identity, on the first row of the page, under the title (page slot widget-case-header -> CaseHeaderRow). It carries the breadcrumb back to Cases, the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. The breadcrumb and the identity line are rendered HERE rather than declared on the page because CnDetailPage 2.41.0 reads neither `breadcrumbs` nor `subtitleField` (its own `subtitle` prop is the SIDEBAR header's); both keys are declared on the page config all the same, as the shape the host will read, and a unit test pins the widget's props to them so the two cannot drift. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the row reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
+						"_note": "Placement row A01: the case identity, as a titled card at the top of the page's right-hand column (page slot widget-case-header -> CaseHeaderRow). It carries the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. IT WAS A FULL-WIDTH BAND AND IT WAS MOSTLY AIR: two grid rows tall and twelve columns wide for three to five short facts laid out in a line, so on a real case more than half of it was empty and the two rows came out of the content below. As a card in the four-column right rail the same facts stack, read as a labelled group, and the page gets its two rows back. It also rendered a breadcrumb whose last crumb repeated the page title one line above it; that trail is gone, see the page config note. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the card reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
 						"props": {
-							"breadcrumbs": [
-								{
-									"label": "Cases",
-									"route": "Cases",
-									"icon": "FolderAccountOutline"
-								},
-								{
-									"field": "title"
-								}
-							],
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
@@ -1412,9 +1408,9 @@
 					{
 						"id": "case-steps",
 						"type": "custom",
-						"title": "Steps",
+						"title": "Timeline",
 						"icon": "Timeline",
-						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
+						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It renders WITH its title (`showTitle: true`): the stepper sat in the right rail as a bare column of four labelled dots with nothing saying what the column was, so a reader had to infer that it was the case progressing rather than, say, a checklist. It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
 						"id": "case-panels",
@@ -1814,17 +1810,17 @@
 					{
 						"id": "1",
 						"widgetId": "case-header",
-						"gridX": 0,
+						"gridX": 8,
 						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
 					},
 					{
 						"id": "10",
 						"widgetId": "case-transitions",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 0,
 						"gridWidth": 8,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1833,16 +1829,16 @@
 						"id": "3",
 						"widgetId": "case-steps",
 						"gridX": 8,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 2,
-						"showTitle": false
+						"gridHeight": 3,
+						"showTitle": true
 					},
 					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 2,
 						"gridWidth": 8,
 						"gridHeight": 14,
 						"showTitle": false
@@ -1851,7 +1847,7 @@
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 4,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1860,7 +1856,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1869,7 +1865,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 9,
+						"gridY": 12,
 						"gridWidth": 4,
 						"gridHeight": 4
 					},
@@ -1877,7 +1873,16 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 8,
-						"gridY": 13,
+						"gridY": 16,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
+						"id": "12",
+						"widgetId": "case-archival",
+						"gridX": 8,
+						"gridY": 19,
 						"gridWidth": 4,
 						"gridHeight": 5,
 						"showTitle": false

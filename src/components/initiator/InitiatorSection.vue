@@ -25,10 +25,29 @@
   @spec openspec/specs/semantic-case-intake/spec.md
 -->
 <template>
-	<div
-		v-if="hasInitiator || hasHandoff"
-		class="initiator-section"
-		data-testid="initiator-section">
+	<div class="initiator-section" data-testid="initiator-section">
+		<!--
+			🔴 THE EMPTY STATE IS NOT CLUTTER, THE EMPTY BOX WAS.
+
+			This component used to render NOTHING when a case had neither a
+			requester nor a handoff source, on a rule written "no initiator, no
+			clutter". That rule assumed the component could decide whether it
+			appeared at all. It cannot: the manifest declares `initiator` as a
+			grid cell with `showTitle: true`, so the card chrome and the word
+			Initiator painted regardless and the body below them was blank. The
+			page therefore showed an empty titled box on every case with no
+			requester, which is the demo case and most real ones early in their
+			life.
+
+			A sentence saying so costs the same space and answers the question
+			the blank box raised.
+		-->
+		<p
+			v-if="!hasInitiator && !hasHandoff"
+			class="initiator-section__empty"
+			data-testid="initiator-empty">
+			{{ t('dossiq', 'No initiator has been recorded for this case.') }}
+		</p>
 		<template v-if="hasInitiator">
 			<div class="initiator-section__row">
 				<component
@@ -537,6 +556,11 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.initiator-section__empty {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+}
+
 .initiator-section {
 	display: flex;
 	flex-direction: column;
