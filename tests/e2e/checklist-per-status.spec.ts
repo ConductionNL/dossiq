@@ -15,6 +15,20 @@
  * if the handler never runs them, and a guard that fails correctly is
  * invisible if the button never reads its reason.
  *
+ * TWO STORES, AND THE TRANSITION WRITES ONLY ONE OF THEM
+ * ------------------------------------------------------
+ * A task created by a transition lives in OpenRegister's task ENGINE and
+ * nowhere else. dossiq#2363 removed the register write: `CreateTaskHandler`
+ * calls `EngineTaskGateway::mirrorImport()` and nothing more, and says so at
+ * lib/Service/Transitions/CreateTaskHandler.php:122. So the ARRIVAL half of
+ * this spec reads `/api/flow-tasks`, which is a different table with its own
+ * field names and its own lifecycle verbs.
+ *
+ * The GUARD half still seeds a `caseTask` register object, deliberately, and
+ * `seedTask()` carries the reason: the guard's own reader was never moved, so
+ * the register is the table it actually looks in. That is a defect in the app
+ * rather than in the fixture, so it is recorded there and not papered over.
+ *
  * TWO CASE TYPES, ON PURPOSE
  * --------------------------
  * A required item on a status holds every case IN that status, so a case type
@@ -40,7 +54,6 @@ import {
 	executeTransition,
 	getAvailableTransitions,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
@@ -49,6 +62,9 @@ import {
 	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
+
+/** The engine's own table. A flow task is not an OpenRegister object. */
+const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
 
 /** Transition ids the two seeded workflows declare. */
 const T = {
@@ -102,11 +118,30 @@ async function seedStatus(
 }
 
 /**
- * Seed one task as if a status had created it.
+ * Seed one task as if a status had created it, in the REGISTER.
  *
- * The engine tags what it creates with `workflowStepId`, and both the
- * de-duplication and the guard read that tag. A task seeded without it is a
- * task neither of them can see.
+ * Both the de-duplication and the guard read `workflowStepId`, so a task
+ * seeded without it is a task neither of them can see.
+ *
+ * 🔴 THIS STAYS ON `caseTask` WHILE THE ARRIVAL HALF MOVED, AND THE MISMATCH
+ * IS THE APP'S, NOT THIS FILE'S. `StatusChecklistGuard` asks
+ * `StatusChecklist::tasksFor()` which task titles are completed, and that
+ * method searches the `task_schema` register objects
+ * (lib/Service/Transitions/StatusChecklist.php:210-221). It was never moved
+ * onto the engine: `openspec/changes/remove-casetask/tasks.md` section 3 names
+ * `ChecklistGuard.php` and ticks it, and never names `StatusChecklist.php` or
+ * `StatusChecklistGuard.php` at all.
+ *
+ * So the guard reads a table that `CreateTaskHandler` no longer writes, and a
+ * handler who finishes a real checklist task can never satisfy a required
+ * item. Seeding the engine here would make the four guard tests fail on that
+ * defect, which is a change to src/ and not to a fixture, so the fixture is
+ * left pointing where the reader actually looks and the defect is reported
+ * instead of hidden by a red test.
+ *
+ * 🔑 WHEN `StatusChecklist` MOVES: this helper and `completeTask()` below
+ * move with it, to `POST /api/flow-tasks` and the engine's `complete` verb,
+ * exactly as `tasksOf()` and `completeEngineTask()` already do.
  *
  * @param onCase       The case the task belongs to.
  * @param title        The task title.
@@ -127,11 +162,15 @@ async function seedTask(
 }
 
 /**
- * Drive a task to `completed` through OpenRegister's lifecycle route.
+ * Drive a REGISTER task to `completed` through OpenRegister's object route.
  *
  * Writing `status` straight onto the object would be a claim about what the
  * store does with a lifecycle-managed field rather than a fact; this walks the
  * declared edges (available → active → completed) and reads the result back.
+ *
+ * Pairs with `seedTask()`, and only with it: this route addresses an
+ * OpenRegister OBJECT, so handing it an engine task uuid answers 404. See
+ * `completeEngineTask()` for the other table's verb.
  *
  * @param taskId The task to complete.
  */
@@ -158,14 +197,124 @@ async function completeTask(taskId: string): Promise<void> {
 }
 
 /**
- * The tasks one status put on one case.
+ * Drive an ENGINE task to `completed` through the engine's own verb.
+ *
+ * The engine's `complete` refuses a task that is already terminal and
+ * otherwise takes it straight there, so there is no `activate` step to walk:
+ * `outcome` defaults to `done` and the run's admin session clears the verb's
+ * authorization. The state is read back rather than inferred from the 200,
+ * because a verb that answered and changed nothing is exactly the failure
+ * this whole migration keeps producing.
+ *
+ * @param uuid The engine task uuid. NOT a numeric id: no route accepts one.
+ */
+async function completeEngineTask(uuid: string): Promise<void> {
+	const res = await api.post(`${FLOW_TASKS_BASE}/${uuid}/complete`, {
+		headers: {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		},
+		data: {},
+	})
+	expect(
+		res.ok(),
+		`complete ${uuid} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+
+	const stored = await api.get(`${FLOW_TASKS_BASE}/${uuid}`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
+	expect(stored.ok(), `read back ${uuid} -> ${stored.status()}`).toBeTruthy()
+	const body = await stored.json()
+	expect(String((body?.results ?? body)?.state), `${uuid} after complete`).toBe(
+		'completed',
+	)
+}
+
+/**
+ * The tasks one status put on one case, read from the ENGINE.
+ *
+ * 🔴 IT USED TO LIST `caseTask` OBJECTS AND THE TRANSITION STOPPED WRITING
+ * THEM. dossiq#2363 made the engine the only store, so this search answered
+ * `[]` on a case whose transition had just created two tasks. An empty list is
+ * how a fixture aimed at the wrong table reports itself, and it reads as "the
+ * checklist did nothing", which is a far more alarming thing than what
+ * happened.
+ *
+ * Two field names change with the table: `case` becomes `objectUuid`, and
+ * `status` becomes `state`, so every caller reads `state`. `workflowStepId`
+ * keeps its name, mapped straight through by
+ * `EngineTaskGateway::toEnginePayload()`, but the inbox route declares no
+ * filter for it (openregister's `TaskController::index`), so it is filtered in
+ * the READING rather than asked of the server.
+ *
+ * `scope=all` because the question is what work the CASE has. The default
+ * scope is `assigned`, and a checklist task whose case names no handler is
+ * assigned to nobody, so the default would answer `[]` for a case that has
+ * two.
  *
  * @param onCase       The case.
  * @param workflowStep The statusType that asked for them.
  */
 async function tasksOf(onCase: string, workflowStep: string): Promise<any[]> {
-	const rows = await listObjects(api, 'caseTask', { case: onCase })
+	const query = new URLSearchParams({
+		objectUuid: onCase,
+		scope: 'all',
+		limit: '200',
+	})
+	const res = await api.get(`${FLOW_TASKS_BASE}?${query.toString()}`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
+	expect(
+		res.ok(),
+		`list engine tasks for ${onCase} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+
+	const rows: any[] = (await res.json())?.results ?? []
 	return rows.filter((row) => String(row.workflowStepId ?? '') === workflowStep)
+}
+
+/**
+ * Cancel every engine task standing on the cases this run seeded.
+ *
+ * 🔴 THE ENGINE PUBLISHES NO DELETE. `cleanupRunObjects` cannot see these
+ * however the prefix is spelled: they are not OpenRegister objects, so no
+ * schema sweep reaches them, and `cancel` is the only removal verb the engine
+ * has, and it terminates rather than erases. Left alone they would outlive their
+ * cases and keep answering instance-wide counts on the shared instance.
+ *
+ * Failures are swallowed on purpose: a task a test already completed answers a
+ * conflict to a cancel, and a teardown that threw on that would redden a run
+ * whose assertions all passed.
+ */
+async function cancelEngineTasks(): Promise<void> {
+	for (const caseId of Object.values(cases)) {
+		try {
+			const query = new URLSearchParams({
+				objectUuid: caseId,
+				scope: 'all',
+				limit: '200',
+			})
+			const res = await api.get(`${FLOW_TASKS_BASE}?${query.toString()}`, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
+			const rows: any[] = (await res.json())?.results ?? []
+			for (const row of rows) {
+				await api.post(`${FLOW_TASKS_BASE}/${String(row.uuid)}/cancel`, {
+					headers: {
+						requesttoken: token,
+						'OCS-APIRequest': 'true',
+						'Content-Type': 'application/json',
+					},
+					data: {},
+				})
+			}
+		} catch {
+			// Teardown is best effort; the next run's residue sweep is the
+			// backstop.
+		}
+	}
 }
 
 /**
@@ -327,6 +476,9 @@ test.describe('A status brings its checklist with it', () => {
 	})
 
 	test.afterAll(async () => {
+		// The engine tasks FIRST: they are addressed by their case, and
+		// `cleanupRunObjects` is about to remove the cases.
+		await cancelEngineTasks()
 		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
@@ -350,8 +502,10 @@ test.describe('A status brings its checklist with it', () => {
 		expect(after.map((row) => String(row.title)).sort()).toEqual(
 			[ITEM.dossier, ITEM.inform].sort(),
 		)
+		// `state`, not `status`: the engine's column. Reading `status` here
+		// would compare undefined to 'available' and fail on a correct row.
 		for (const row of after) {
-			expect(String(row.status), String(row.title)).toBe('available')
+			expect(String(row.state), String(row.title)).toBe('available')
 		}
 
 		// And the handler sees them where the work is done.
@@ -397,7 +551,9 @@ test.describe('A status brings its checklist with it', () => {
 		const created = await tasksOf(cases.roundtrip, arrival.progress)
 		expect(created).toHaveLength(2)
 		const done = created.find((row) => String(row.title) === ITEM.dossier)
-		await completeTask(objectId(done))
+		// `uuid`, not `objectId()`: an engine row carries no `@self`, and the
+		// verb routes take the uuid.
+		await completeEngineTask(String(done.uuid))
 
 		const back = await executeTransition(
 			api,
@@ -414,10 +570,17 @@ test.describe('A status brings its checklist with it', () => {
 		)
 		expect(forward.status, JSON.stringify(forward.body)).toBe(200)
 
+		// 🔴 KNOWN TO FAIL, AND THE ASSERTION IS THE CORRECT ONE. The
+		// de-duplication reads `StatusChecklist::existingTitles()`, which
+		// searches the `caseTask` register objects the transition no longer
+		// writes (lib/Service/Transitions/StatusChecklist.php:210-221). It
+		// therefore sees no previous visit and re-creates both items, so this
+		// answers four. Weakening it to four would record the defect as the
+		// design. It is left naming what a second entry must do.
 		const after = await tasksOf(cases.roundtrip, arrival.progress)
 		expect(after, 'a second entry must not double the work').toHaveLength(2)
 		const stillDone = after.find((row) => String(row.title) === ITEM.dossier)
-		expect(String(stillDone.status)).toBe('completed')
+		expect(String(stillDone.state)).toBe('completed')
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#the-button-says-which-item-is-open
