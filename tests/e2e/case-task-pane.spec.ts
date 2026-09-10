@@ -64,9 +64,31 @@ import { dismissSupportDialog } from './helpers/nav.ts'
  * `available-actions` hands CnLifecycleActions as button labels. The trailing
  * full stop is part of the schema text, so the patterns stop short of it.
  */
-const COMPLETE_LABEL = /Mark task as completed/
-const TERMINATE_LABEL = /Terminate the task/
-const DISABLE_LABEL = /Disable the task/
+/**
+ * The pane's verb buttons, addressed by `data-testid` and NOT by label.
+ *
+ * 🔴 THE OLD LABELS WERE THE REGISTER'S, AND THE PANE STOPPED ASKING FOR THEM.
+ * They were the transition descriptions `caseTask`'s lifecycle declared, which
+ * OpenRegister returned verbatim from `/api/objects/{uuid}/available-actions`
+ * and `CnLifecycleActions` rendered as button text. An engine task is not an
+ * object, so that endpoint answers 500 for one, and `CaseTaskPane` deliberately
+ * does not use that component any more: see the 🔴 at
+ * src/components/tasks/CaseTaskPane.vue:232. It renders its own pair of verbs
+ * at :73 as `case-task-pane-verb-${verb.name}`.
+ *
+ * So `[data-testid="cn-lifecycle-actions"]` matches nothing here. That testid
+ * appears zero times in dossiq's src/; it lives inside the nc-vue component the
+ * pane no longer mounts.
+ *
+ * There are TWO verbs now, not three: `verbs()` returns complete and cancel and
+ * lets the engine rule on each press, rather than pre-judging availability
+ * client-side, which is the duplicated authorization this migration removes.
+ * Their labels go through `t('dossiq', ...)`, and this spec's header explains
+ * the instance locale is not forced, so a label match would be a locale
+ * dependency. The testids are not.
+ */
+const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
+const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
 const ACTIVATE_LABEL = /Pick up the task/
 
 /** The pane's own empty state, in either language the app ships. */
@@ -353,17 +375,8 @@ test.describe('Case detail — the task pane', () => {
 		// navigations away, and they are bound to the task rather than to the
 		// case (a pane wired to the case id renders none of them, because
 		// `available-actions` answers an empty list for a case).
-		const actions = panel.locator('[data-testid="cn-lifecycle-actions"]')
-		await expect(actions).toBeVisible({ timeout: 20_000 })
-		await expect(
-			actions.getByRole('button', { name: COMPLETE_LABEL }),
-		).toBeVisible()
-		await expect(
-			actions.getByRole('button', { name: TERMINATE_LABEL }),
-		).toBeVisible()
-		await expect(
-			actions.getByRole('button', { name: DISABLE_LABEL }),
-		).toBeVisible()
+		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({ timeout: 20_000 })
+		await expect(panel.locator(CANCEL_BUTTON)).toBeVisible()
 
 		// The second open task is listed under the pane, and it is NOT the one
 		// carrying the buttons.
@@ -383,7 +396,7 @@ test.describe('Case detail — the task pane', () => {
 		).toHaveText(completeFirstTitle, { timeout: 20_000 })
 
 		const before = new URL(page.url()).pathname
-		await panel.getByRole('button', { name: COMPLETE_LABEL }).click()
+		await panel.locator(COMPLETE_BUTTON).click()
 
 		// The confirmation names the task that was finished. Without it the
 		// press is indistinguishable from a press that did nothing.
@@ -404,9 +417,7 @@ test.describe('Case detail — the task pane', () => {
 		await expect(
 			panel.getByRole('button', { name: ACTIVATE_LABEL }),
 		).toBeVisible({ timeout: 20_000 })
-		await expect(
-			panel.getByRole('button', { name: COMPLETE_LABEL }),
-		).toHaveCount(0)
+		await expect(panel.locator(COMPLETE_BUTTON)).toHaveCount(0)
 
 		// The write reached the server, not just the screen.
 		const stored = await listObjects(api, 'caseTask', { _limit: '200' })
@@ -426,7 +437,7 @@ test.describe('Case detail — the task pane', () => {
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(lastTaskTitle, { timeout: 20_000 })
 
-		await panel.getByRole('button', { name: COMPLETE_LABEL }).click()
+		await panel.locator(COMPLETE_BUTTON).click()
 		await expect(page.locator(SUCCESS_TOAST)).toContainText(lastTaskTitle, {
 			timeout: 30_000,
 		})
