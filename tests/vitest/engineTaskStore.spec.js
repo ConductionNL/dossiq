@@ -122,6 +122,59 @@ describe('useEngineTaskStore', () => {
 		expect(get.mock.calls[0][0]).toContain('/flow-tasks/t1')
 	})
 
+	it('🔴 corrects the out-of-enum status four call sites were writing', async () => {
+		post.mockResolvedValue({ data: { uuid: 't1', state: 'available' } })
+		const store = useEngineTaskStore()
+
+		await store.create({
+			title: 'Advies uitbrengen',
+			case: 'case-9',
+			status: 'open',
+		})
+
+		// `open` is out of enum on BOTH stores: caseTask declared
+		// available|active|completed|terminated|disabled and Task::STATES
+		// declares the same five. Every task those four call sites created
+		// was born in a state no transition could advance. CreateTaskHandler
+		// had the same bug and was fixed in #1326; these four were missed,
+		// which is what a concept duplicated across five call sites costs.
+		expect(post.mock.calls[0][1].state).toBe('available')
+	})
+
+	it('keeps a status the engine does accept', async () => {
+		post.mockResolvedValue({ data: { uuid: 't1' } })
+		const store = useEngineTaskStore()
+
+		await store.create({ title: 'T', status: 'active' })
+		expect(post.mock.calls[0][1].state).toBe('active')
+
+		post.mockClear()
+		await store.create({ title: 'T' })
+		expect(post.mock.calls[0][1].state).toBe('available')
+	})
+
+	it('maps the dossiq shape so the call sites need not learn the engine one', async () => {
+		post.mockResolvedValue({ data: { uuid: 't1' } })
+		const store = useEngineTaskStore()
+
+		await store.create({
+			title: 'Hercontrole uitvoeren',
+			case: 'case-9',
+			description: 'Termijn verlopen',
+			assignee: 'k.dijkstra',
+			dueDate: '2026-11-02',
+		})
+
+		const sent = post.mock.calls[0][1]
+		expect(sent.objectUuid).toBe('case-9')
+		expect(sent.dueAt).toBe('2026-11-02')
+		expect(sent.assignee).toBe('k.dijkstra')
+		expect(sent.appId).toBe('dossiq')
+		// Absent properties are omitted, never sent empty: OpenRegister
+		// refuses an empty object property.
+		expect(sent).not.toHaveProperty('priority')
+	})
+
 	it('invokes a lifecycle verb and lets the engine decide', async () => {
 		post.mockResolvedValue({ data: { uuid: 't1', state: 'completed' } })
 		const store = useEngineTaskStore()

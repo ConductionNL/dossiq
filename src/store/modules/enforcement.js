@@ -5,6 +5,7 @@
  * dwangsom tracking, and begunstigingstermijn management.
  */
 import { defineStore } from 'pinia'
+import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
 /**
@@ -289,12 +290,11 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		async createBegunstigingTask(caseId, action) {
 			try {
-				const objectStore = useObjectStore()
-				return await objectStore.saveObject('caseTask', {
+				return await useEngineTaskStore().create({
 					case: caseId,
 					title: 'Hercontrole uitvoeren',
 					description: `Begunstigingstermijn van ${action.compliance_period} dagen is verlopen. Voer hercontrole uit voor ${action.intervention}.`,
-					status: 'open',
+					status: 'available',
 					relatedObject: action.id,
 				})
 			} catch (error) {

@@ -5,6 +5,7 @@
  * advice lifecycle, deadline tracking, and escalation.
  */
 import { defineStore } from 'pinia'
+import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
 export const useAdviceStore = defineStore('advice', {
@@ -126,12 +127,12 @@ export const useAdviceStore = defineStore('advice', {
 
 				// Create task for the adviseur if internal
 				if (requestData.type === 'intern' && requestData.advisor) {
-					await objectStore.saveObject('caseTask', {
+					await useEngineTaskStore().create({
 						case: requestData.case,
 						title: `Advies uitbrengen: ${requestData.subject || 'Adviesaanvraag'}`,
 						description: requestData.questions || '',
 						assignee: requestData.advisor,
-						status: 'open',
+						status: 'available',
 						dueDate: requestData.deadline,
 					})
 				}
@@ -205,11 +206,11 @@ export const useAdviceStore = defineStore('advice', {
 				})
 
 				// Create task for behandelaar
-				await objectStore.saveObject('caseTask', {
+				await useEngineTaskStore().create({
 					case: request.case,
 					title: `Advies verlopen: ${request.subject || request.advisor}`,
 					description: `Advies van ${request.advisor} is verlopen. Beoordeel of procedure kan doorgaan zonder dit advies.`,
-					status: 'open',
+					status: 'available',
 				})
 
 				const index = this.requests.findIndex((r) => r.id === requestId)

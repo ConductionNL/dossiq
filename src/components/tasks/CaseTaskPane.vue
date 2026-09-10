@@ -62,13 +62,19 @@
 					{{ currentDue }}
 				</dd>
 			</dl>
-			<CnLifecycleActions
-				ref="lifecycle"
+			<div
 				class="case-task-pane__actions"
-				:objectId="currentTaskId"
-				:object="currentTask"
-				:config="lifecycleConfig"
-				@transitioned="onTransitioned" />
+				data-testid="case-task-pane-actions">
+				<NcButton
+					v-for="verb in verbs"
+					:key="verb.name"
+					:disabled="busy"
+					:variant="verb.primary ? 'primary' : 'secondary'"
+					:data-testid="`case-task-pane-verb-${verb.name}`"
+					@click="invoke(verb)">
+					{{ verb.label }}
+				</NcButton>
+			</div>
 		</div>
 		<p v-else class="case-task-pane__empty" data-testid="case-task-pane-empty">
 			{{ t('dossiq', 'No open tasks on this case') }}
@@ -109,9 +115,9 @@
 </template>
 
 <script>
-import { CnLifecycleActions } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { useObjectStore } from '../../store/modules/object.js'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import {
 	isFinalStatus,
@@ -125,7 +131,7 @@ export default {
 	name: 'CaseTaskPane',
 
 	components: {
-		CnLifecycleActions,
+		NcButton,
 	},
 
 	// CnDetailWidgetHost spreads the widget's whole `content` blob onto the
@@ -153,6 +159,8 @@ export default {
 		return {
 			/** The open tasks of this case, earliest due first. */
 			tasks: [],
+			/** Whether a verb is in flight, so a double click cannot fire twice. */
+			busy: false,
 			/**
 			 * The last error already reported to the handler, so the watcher on
 			 * the lifecycle child's inline error does not toast it repeatedly
@@ -164,8 +172,8 @@ export default {
 
 	computed: {
 		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/**
@@ -218,6 +226,32 @@ export default {
 		 * @return {{field: string}} The lifecycle config.
 		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
 		 */
+		/**
+		 * The verbs offered on the current task.
+		 *
+		 * 🔴 NOT `CnLifecycleActions`. That component asks OpenRegister for
+		 * an OBJECT's available transitions
+		 * (`/api/objects/{uuid}/available-actions`), and an engine task is
+		 * not an object: the endpoint answers 500. Measured in the browser
+		 * after the read moved, which is the only place it shows — the unit
+		 * tests stub the component away.
+		 *
+		 * The engine decides whether a verb is legal and whether the caller
+		 * may invoke it, and refuses visibly with a message naming both. So
+		 * this offers the two a handler needs and lets the engine rule,
+		 * rather than pre-judging availability client-side, which is the
+		 * duplicated authorization this migration exists to remove.
+		 *
+		 * @return {Array<{name: string, label: string, primary: boolean}>} The verbs.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		verbs() {
+			return [
+				{ name: 'complete', label: t('dossiq', 'Complete'), primary: true },
+				{ name: 'cancel', label: t('dossiq', 'Cancel'), primary: false },
+			]
+		},
+
 		lifecycleConfig() {
 			return { field: 'status' }
 		},
@@ -318,15 +352,16 @@ export default {
 				return
 			}
 
-			try {
-				const rows = await this.objectStore.fetchCollection(
-					'caseTask',
-					openTasksQuery(caseId, this.content),
-				)
-				this.tasks = Array.isArray(rows) ? rows : []
-			} catch (error) {
-				this.tasks = []
-				this.report(error?.message)
+			const rows = await this.engineTasks.list(
+				openTasksQuery(caseId, this.content),
+			)
+			this.tasks = rows.filter((row) => !isTerminal(row))
+
+			// The store surfaces its failure rather than throwing, because an
+			// empty list with no trace of why is indistinguishable from a
+			// genuinely empty one. Report it here so the handler sees it.
+			if (this.engineTasks.error) {
+				this.report(this.engineTasks.error)
 			}
 		},
 
@@ -351,6 +386,42 @@ export default {
 
 			if (finished) {
 				showSuccess(t('dossiq', 'Task {title} finished', { title }))
+			}
+		},
+
+		/**
+		 * Invoke a verb on the current task, and let the engine rule.
+		 *
+		 * A refusal keeps the engine's own message, which names the verb and
+		 * the reason ("not the assignee"). A generic failure would throw away
+		 * the only part a handler can act on.
+		 *
+		 * @param {{name: string}} verb The verb.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		async invoke(verb) {
+			const id = this.currentTaskId
+			if (id === '' || this.busy === true) {
+				return
+			}
+
+			this.busy = true
+			const title = this.currentTitle
+			try {
+				const updated = await this.engineTasks.invoke(id, verb.name)
+				if (updated === null) {
+					this.report(this.engineTasks.error)
+					return
+				}
+
+				await this.load()
+
+				if (isTerminal(updated)) {
+					showSuccess(t('dossiq', 'Task {title} finished', { title }))
+				}
+			} finally {
+				this.busy = false
 			}
 		},
 

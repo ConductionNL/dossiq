@@ -183,6 +183,79 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		},
 
 		/**
+		 * Create a task.
+		 *
+		 * Takes the dossiq shape callers already write (`case`, `status`,
+		 * `dueDate`) and maps it, so the four call sites do not each learn
+		 * the engine's vocabulary. The mapping is the same one
+		 * `EngineTaskGateway::toEnginePayload()` does server-side.
+		 *
+		 * 🔴 `status` DEFAULTS TO `available`, AND CALLERS PASSING `'open'`
+		 * ARE CORRECTED HERE. Four call sites wrote `status: 'open'`, which
+		 * is out of enum on BOTH stores: `caseTask` declared
+		 * available|active|completed|terminated|disabled, and `Task::STATES`
+		 * declares the same five. Every task they created was born in a state
+		 * no transition could advance. `CreateTaskHandler` had the same bug
+		 * and was fixed in #1326; these four were missed, which is precisely
+		 * the cost of a concept duplicated across five call sites.
+		 *
+		 * The engine would refuse `'open'` outright (`TaskState::normalise()`
+		 * refuses an unmapped status naming itself), so without this
+		 * correction the migration would turn four silently-broken writes
+		 * into four loud failures. Correcting is right: `available` is what
+		 * they meant, and it is what #1326 chose.
+		 *
+		 * @param {object} task The task, in the dossiq shape.
+		 * @return {Promise<object|null>} The created task, or null.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		async create(task = {}) {
+			const state = String(task.status ?? '').trim()
+			const payload = {
+				title: String(task.title ?? ''),
+				appId: 'dossiq',
+				state:
+					TERMINAL_STATES.includes(state) || state === 'active'
+						? state
+						: 'available',
+			}
+
+			const caseId = String(task.case ?? task.objectUuid ?? '').trim()
+			if (caseId !== '') {
+				payload.objectUuid = caseId
+			}
+
+			for (const [from, to] of [
+				['description', 'description'],
+				['assignee', 'assignee'],
+				['dueDate', 'dueAt'],
+				['priority', 'priority'],
+			]) {
+				const value = String(task[from] ?? '').trim()
+				if (value !== '') {
+					payload[to] = value
+				}
+			}
+
+			this.loading = true
+			this.error = null
+			try {
+				const response = await axios.post(
+					generateUrl(FLOW_TASKS_URL),
+					payload,
+				)
+				this.task = response.data?.results ?? response.data ?? null
+				return this.task
+			} catch (error) {
+				this.error =
+					error?.response?.data?.message || error?.message || String(error)
+				return null
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
 		 * Invoke a lifecycle verb on a task.
 		 *
 		 * The engine decides whether the verb is legal and whether the caller
