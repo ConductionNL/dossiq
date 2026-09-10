@@ -164,10 +164,6 @@ class AskPersonTaskStore {
             return null;
         }
 
-        if ($found === null) {
-            return null;
-        }
-
         return $this->asTask(found: $found, taskId: $taskId);
 
     }//end find()

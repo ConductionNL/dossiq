@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -103,20 +104,15 @@ class WorkQueueService {
 	private const WORKLOAD_LIMIT = 1000;
 
 	/**
-	 * Task statuses considered terminal (excluded from the queue).
-	 *
-	 * @var string[]
-	 */
-	private const TASK_TERMINAL_STATUSES = ['completed', 'terminated', 'disabled'];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (register/schema config + ObjectService).
+	 * @param EngineTaskInbox $engineTasks     The engine's inbox reader.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -157,18 +153,8 @@ class WorkQueueService {
 			$items[] = $item;
 		}
 
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
-		if ($taskSchema !== '') {
-			$taskItems = $this->queueTaskItems(
-				objectService: $objectService,
-				register: $register,
-				taskSchema: $taskSchema,
-				userId: $userId,
-				now: $now
-			);
-			foreach ($taskItems as $item) {
-				$items[] = $item;
-			}
+		foreach ($this->queueTaskItems(userId: $userId, now: $now) as $item) {
+			$items[] = $item;
 		}
 
 		usort(
@@ -371,34 +357,20 @@ class WorkQueueService {
 	/**
 	 * Build scored task queue items for one user.
 	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug/id.
-	 * @param string $taskSchema Task schema slug/id.
 	 * @param string $userId User id to scope to.
 	 * @param DateTimeImmutable $now Now.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function queueTaskItems(object $objectService, string $register, string $taskSchema, string $userId, DateTimeImmutable $now): array {
-		try {
-			$tasks = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['assignee' => $userId]
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning('WorkQueue: task search failed', ['error' => $e->getMessage()]);
-			return [];
-		}
+	private function queueTaskItems(string $userId, DateTimeImmutable $now): array {
+		// The ENGINE, and the open/closed split is made THERE. Filtering a
+		// paged window client-side silently drops every open task past the
+		// boundary, which is how a queue comes to look empty on the day
+		// somebody has a hundred things to do.
+		$tasks = $this->engineTasks->openForAssignee(actor: $userId);
 
 		$items = [];
 		foreach ($tasks as $task) {
-			$status = (string)($task['status'] ?? '');
-			if (in_array($status, self::TASK_TERMINAL_STATUSES, true) === true) {
-				continue;
-			}
-
 			$priority = (string)($task['priority'] ?? 'normal');
 			$dueDate = (string)($task['dueDate'] ?? '');
 			$deadline = null;
@@ -414,7 +386,7 @@ class WorkQueueService {
 					'id' => (string)($task['id'] ?? ''),
 					'title' => (string)($task['title'] ?? ''),
 					'case' => ($task['case'] ?? null),
-					'status' => $status,
+					'status' => (string)($task['status'] ?? ''),
 					'priority' => $priority,
 					'deadline' => $deadline,
 				],
