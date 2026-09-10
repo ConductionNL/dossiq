@@ -51,7 +51,7 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 // The inline task pane on the case page (task-on-the-case A06).
-// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+// @spec openspec/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -382,7 +382,7 @@ const registry = {
 	// and logs nothing. So the registry key is the type the manifest names, which
 	// is the injection CnAppRoot provides and the shape the library documents for
 	// an app's own widget types.
-	// @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	// @spec openspec/specs/task-management/spec.md
 	'case-task-pane': {
 		// @custom-widget-ratchet exclude blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column, so a lifecycle button cannot be put inside a row from the manifest; the widget returns to type object-list and this entry is deleted the moment the library ships one (https://github.com/ConductionNL/nextcloud-vue/issues/1033)
 		kind: 'widget',

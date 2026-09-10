@@ -246,6 +246,32 @@ class EngineInboxQuery {
             return $inbox->inbox(new $criteriaClass(...$criteria), $limit, 0);
         } catch (Throwable $e) {
             $this->lastError = $e->getMessage();
+
+            // 🔴 A VERSION MISMATCH IS NOT A QUIET DAY. Every filter here is
+            // a NAMED argument on another app's class, so an OpenRegister
+            // older than the one that added a filter throws "Unknown named
+            // parameter", this catch turns it into no rows, and a count
+            // built on it answers a plausible ZERO for ever. Measured: the
+            // dashboard's "due today" tile read 0 against an instance whose
+            // OpenRegister predated the due-window filter, and the only
+            // trace was one warning among sixty.
+            //
+            // It is logged at ERROR and names the parameter, because the
+            // fix is an upgrade and nobody goes looking for one on the
+            // strength of a number that looks like "no work today".
+            if (str_contains($e->getMessage(), 'Unknown named parameter') === true) {
+                $this->logger->error(
+                    'Dossiq: the installed OpenRegister does not accept a task filter this app sends. '
+                    . 'Counts and lists using it will read empty until OpenRegister is upgraded.',
+                    [
+                        'exception' => $e->getMessage(),
+                        'criteria' => array_keys($criteria),
+                    ]
+                );
+
+                return null;
+            }
+
             $this->logger->warning($failure[0], (['exception' => $e->getMessage()] + $failure[1]));
 
             return null;

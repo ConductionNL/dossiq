@@ -581,11 +581,15 @@ test.describe('Case detail — the task pane', () => {
 			timeout: 30_000,
 		})
 
-		// Both are integration leaves on the TASK, not on the parent case.
-		// `notes` is an always-available OpenRegister built-in, so it renders
-		// unconditionally; `calendar` requires the NC Calendar app and renders
-		// its own empty state without it, which is why the assertion is on the
-		// widget being present rather than on any row inside it.
+		// Both are leaves on the TASK, not on the parent case, and neither is
+		// a `type: "integration"` widget any more. remove-casetask 2.1
+		// replaced them with TaskNotesLeaf and TaskEventsLeaf, which read
+		// openregister's task-anchored endpoints (`/api/flow-tasks/{uuid}/
+		// notes` and `/events`, openregister#3594). The library's integration
+		// widgets could not follow: both build an object URL from a register,
+		// a schema and an object id, and an engine task has none of the three.
+		// The assertion stays on the section heading rather than on a row
+		// inside it, because an empty task legitimately has neither.
 		await expect(
 			page.getByRole('heading', { name: 'Notes', exact: true }),
 		).toBeVisible({ timeout: 20_000 })

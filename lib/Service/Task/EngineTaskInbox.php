@@ -306,6 +306,15 @@ class EngineTaskInbox {
             'dueDate' => $get($row, 'dueAt', 'getDueAt'),
             'case' => $get($row, 'objectUuid', 'getObjectUuid'),
             'assignee' => $get($row, 'assignee', 'getAssignee'),
+            // Which status asked for this task. The engine spells it the
+            // same way `caseTask` did, so there is nothing to translate,
+            // but it was DROPPED here while the only reader of it still
+            // queried the register. `StatusChecklist` reads it now, and it
+            // is the field that says which phase a checklist task belongs
+            // to: without it every task on the case looks like this
+            // status's, and a required item could be ticked off by a task
+            // some other phase created.
+            'workflowStepId' => $get($row, 'workflowStepId', 'getWorkflowStepId'),
             // NOT through `$get`: the engine stores a typed list of
             // {id, label, description, checked} and casting that to a
             // string gives "Array". `caseTask` held JSON in a string,

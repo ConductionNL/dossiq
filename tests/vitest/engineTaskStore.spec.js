@@ -35,7 +35,7 @@ vi.mock('@nextcloud/axios', () => ({
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 
-const { useEngineTaskStore, isTerminal, TERMINAL_STATES } =
+const { useEngineTaskStore, isTerminal, TERMINAL_STATES, asTaskRow } =
 	await import('../../src/store/modules/engineTask.js')
 
 beforeEach(() => {
@@ -78,7 +78,9 @@ describe('useEngineTaskStore', () => {
 
 		const rows = await store.list({ limit: 1 })
 
-		expect(rows).toEqual([{ uuid: 'a' }])
+		// `id` comes along because the read path maps engine rows into the
+		// names the components read; the row itself is otherwise untouched.
+		expect(rows).toEqual([{ uuid: 'a', id: 'a' }])
 		// 42, not 1: a page of one out of forty-two is not a total of one.
 		expect(store.total).toBe(42)
 	})
@@ -274,8 +276,16 @@ describe('the task leaves', () => {
 
 		expect(outcome).toEqual({ results: [], error: 'No such task' })
 		// The task the page is rendering is untouched, and so is the error
-		// the page reports lifecycle refusals through.
-		expect(store.task).toEqual({ uuid: 't1', state: 'active' })
+		// the page reports lifecycle refusals through. The shape asserted is
+		// what `fetch()` put there, `asTaskRow` mapping included: an exact
+		// object rather than a couple of fields, so a leaf read that wrote
+		// ANY key onto the task fails this.
+		expect(store.task).toEqual({
+			uuid: 't1',
+			state: 'active',
+			id: 't1',
+			status: 'active',
+		})
 		expect(store.error).toBeNull()
 	})
 
@@ -359,5 +369,78 @@ describe('the task leaves', () => {
 		expect(post).not.toHaveBeenCalled()
 		expect(patch).not.toHaveBeenCalled()
 		expect(del).not.toHaveBeenCalled()
+	})
+})
+
+describe('the read path speaks the register vocabulary', () => {
+	/**
+	 * 🔴 THE WRITE PATH MAPPED AND THE READ PATH DID NOT.
+	 *
+	 * `create()` has translated `dueDate` to the engine's `dueAt` since the
+	 * first day. Rows came back raw, so every component asking for
+	 * `row.dueDate` got `undefined` and rendered its empty state: a task due
+	 * today showed "No due date" on the case pane. Nothing failed, because
+	 * a task without a deadline is a legitimate thing, so the surface looked
+	 * correct while telling a handler the opposite of the truth.
+	 */
+	it('gives a row the names the components read', () => {
+		const row = asTaskRow({
+			uuid: 'task-1',
+			state: 'active',
+			dueAt: '2026-09-10T00:00:00+00:00',
+			objectUuid: 'case-9',
+		})
+
+		expect(row.id).toBe('task-1')
+		expect(row.status).toBe('active')
+		expect(row.dueDate).toBe('2026-09-10T00:00:00+00:00')
+		expect(row.case).toBe('case-9')
+	})
+
+	it('keeps the engine names alongside, because isTerminal reads state', () => {
+		const row = asTaskRow({ uuid: 'task-1', state: 'completed', isTerminal: true })
+
+		expect(row.uuid).toBe('task-1')
+		expect(row.state).toBe('completed')
+		expect(isTerminal(row)).toBe(true)
+	})
+
+	it('does not invent a deadline for a task that has none', () => {
+		const row = asTaskRow({ uuid: 'task-1', state: 'active' })
+
+		// `not.toHaveProperty`, not `toBeUndefined`: the latter passes
+		// whether the key is absent or present-and-undefined, so it could
+		// not tell "no deadline" from "we wrote undefined onto every row".
+		expect(row).not.toHaveProperty('dueDate')
+		expect(row).not.toHaveProperty('case')
+	})
+
+	it('maps every row a list returns', async () => {
+		get.mockResolvedValue({
+			data: {
+				results: [
+					{ uuid: 'task-1', state: 'active', dueAt: '2026-09-10T00:00:00+00:00' },
+					{ uuid: 'task-2', state: 'available' },
+				],
+				total: 2,
+			},
+		})
+
+		const rows = await useEngineTaskStore().list({ scope: 'all' })
+
+		expect(rows[0].dueDate).toBe('2026-09-10T00:00:00+00:00')
+		expect(rows[0].status).toBe('active')
+		expect(rows[1].status).toBe('available')
+	})
+
+	it('maps the single task a fetch returns', async () => {
+		get.mockResolvedValue({
+			data: { uuid: 'task-1', state: 'active', dueAt: '2026-09-11T00:00:00+00:00', objectUuid: 'case-4' },
+		})
+
+		const task = await useEngineTaskStore().fetch('task-1')
+
+		expect(task.dueDate).toBe('2026-09-11T00:00:00+00:00')
+		expect(task.case).toBe('case-4')
 	})
 })

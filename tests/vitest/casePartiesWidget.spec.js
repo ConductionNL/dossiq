@@ -229,10 +229,15 @@ describe('the Add party action', () => {
 })
 
 describe('the Team column and the Mine chip', () => {
-	const INDEXES = [
-		['Cases', 'case', 'assignedGroup'],
-		['Tasks', 'caseTask', 'assigneeGroup'],
-	]
+	// ⚠️ TASKS LEFT THIS TABLE, it was not forgotten. The Tasks index is
+	// `entitySource: "tasks"` now: it reads the engine's inbox, declares no
+	// register or schema, and takes its columns from the source. None of the
+	// three assertions below can hold for it, and two of them would have gone
+	// on PASSING while the thing they describe no longer worked — the facet
+	// one especially, because `caseTask.assigneeGroup.facetable` is still
+	// true in a schema the page no longer queries. What the engine list does
+	// instead is asserted in its own describe below.
+	const INDEXES = [['Cases', 'case', 'assignedGroup']]
 
 	it.each(INDEXES)(
 		'%s shows a Team column reading the expanded team name',
@@ -295,6 +300,46 @@ describe('the Team column and the Mine chip', () => {
 		const scoping = { ...initial.filter }
 		delete scoping.statusHiddenInLists
 		expect(scoping, 'the index must open unfiltered').toEqual({})
+	})
+})
+
+describe('the Tasks index after it moved to the engine', () => {
+	it('shows no Team column, because the engine has no single team to show', () => {
+		// `assigneeGroup` was one $ref. The engine models the same idea as
+		// `candidateGroups`, a LIST, so there is nothing to put in a column
+		// that reads one name. Asserted rather than left implicit: the
+		// column disappearing is a visible change and this is where a
+		// reader looks for why.
+		expect(page('Tasks').config.columns).toBeUndefined()
+		expect(page('Tasks').config.extend).toBeUndefined()
+	})
+
+	it('cannot be narrowed by the Team facet any more', () => {
+		// The sidebar's facets come from OpenRegister, for a register and a
+		// schema. The page declares neither, so a facet over
+		// `caseTask.assigneeGroup` has nothing to run against — and that
+		// schema property is still `facetable: true`, which is exactly why
+		// the old parameterised assertion would have kept passing.
+		expect(page('Tasks').config.register).toBeUndefined()
+		expect(page('Tasks').config.schema).toBeUndefined()
+		expect(schema('caseTask').properties.assigneeGroup.facetable).toBe(true)
+	})
+
+	it('offers Mine as a scope, and still opens on everything', () => {
+		const chips = page('Tasks').config.quickFilters
+		const mine = chips.find((chip) => chip.label === 'Mine')
+
+		// `assignee: '@me'` became `scope: 'assigned'`. The engine resolves
+		// the caller itself, which is what lets the same lens mean the same
+		// thing for a group assignment as for a personal one.
+		expect(mine.filter.scope).toBe('assigned')
+		expect(mine.filter.assignee).toBeUndefined()
+
+		// Still unfiltered on open, but it has to SAY so now: the endpoint
+		// defaults to the caller's own tasks, so `{}` would no longer mean
+		// everything.
+		const initial = chips.find((chip) => chip.default === true) || chips[0]
+		expect(initial.filter).toEqual({ scope: 'all' })
 	})
 })
 

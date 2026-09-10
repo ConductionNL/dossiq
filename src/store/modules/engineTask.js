@@ -77,6 +77,52 @@ export function isTerminal(task) {
 	return TERMINAL_STATES.includes(String(task.state ?? '').trim())
 }
 
+/**
+ * One engine row in the vocabulary dossiq's components read.
+ *
+ * 🔴 THE WRITE PATH MAPPED AND THE READ PATH DID NOT, and the result was a
+ * task due today rendering "No due date" on the case pane. `create()` has
+ * translated `dueDate` to the engine's `dueAt` since the first day; rows
+ * came back raw, so every consumer that asked for `row.dueDate` got
+ * `undefined` and rendered its empty state. Nothing failed: an absent
+ * deadline is a legitimate value, so the surfaces looked correct.
+ *
+ * Mapped HERE rather than in each component, for the same reason
+ * `EngineTaskInbox::asArray()` does it in one place on the server: five
+ * surfaces read these rows, and a sixth is coming.
+ *
+ * The engine's own keys are KEPT alongside, not replaced. `isTerminal()`
+ * reads `state`, the row-click handlers read `uuid`, and the task page
+ * needs both spellings while it still talks to two stores.
+ *
+ * @param {object} row The engine row.
+ * @return {object} The row, plus the register's names for the same values.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function asTaskRow(row) {
+	if (!row || typeof row !== 'object') {
+		return row
+	}
+
+	// Only keys that resolve to something are added. Writing
+	// `dueDate: undefined` onto every row would make a task with no deadline
+	// carry the key anyway, which reads as "we looked and there is one" to
+	// anything doing `'dueDate' in row` and shows up in every diff.
+	const mapped = { ...row }
+	for (const [name, value] of [
+		['id', row.id ?? row.uuid],
+		['status', row.status ?? row.state],
+		['dueDate', row.dueDate ?? row.dueAt],
+		['case', row.case ?? row.objectUuid],
+	]) {
+		if (value !== undefined && value !== null) {
+			mapped[name] = value
+		}
+	}
+
+	return mapped
+}
+
 export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 	state: () => ({
 		/** @type {Array<object>} The rows of the most recent list. */
@@ -112,7 +158,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(generateUrl(FLOW_TASKS_URL), {
 					params,
 				})
-				this.tasks = response.data?.results ?? []
+				this.tasks = (response.data?.results ?? []).map(asTaskRow)
 				this.total = Number(response.data?.total ?? this.tasks.length) || 0
 				return this.tasks
 			} catch (error) {
@@ -171,7 +217,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(
 					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
 				)
-				this.task = response.data?.results ?? response.data ?? null
+				this.task = asTaskRow(response.data?.results ?? response.data ?? null)
 				return this.task
 			} catch (error) {
 				this.error = error?.message || String(error)

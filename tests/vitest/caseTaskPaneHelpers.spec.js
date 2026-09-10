@@ -10,7 +10,7 @@
  * with no buttons, and an unresolved `@objectId` token sends View all to the
  * unfiltered Tasks list.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import {

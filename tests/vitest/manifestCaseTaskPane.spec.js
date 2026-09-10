@@ -19,7 +19,7 @@
  * key that answers it, the component identifier that key binds, the import
  * that binds that identifier to a path, and the file at that path.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import fs from 'fs'
@@ -203,10 +203,11 @@ describe('the case-tasks widget after the retype', () => {
 		// tasks.
 		expect(pages.some((entry) => entry.id === 'CaseTasks')).toBe(false)
 
-		// ONE page over `caseTask` now, not two. TaskDetail reads the engine
-		// and binds no schema at all. `Tasks` is the last one and is
-		// remove-casetask 2.2, which is blocked on two nextcloud-vue PRs and
-		// a dossiq bump, so it is deliberately still here.
+		// NO page binds `caseTask` any more. The Tasks index moved to
+		// `entitySource: "tasks"` and reads the engine's inbox; TaskDetail
+		// became `type: "custom"` over TaskDetailView and reads the engine
+		// too. Both bind no schema at all, which is what remove-casetask
+		// needs before the schema can be deleted.
 		expect(
 			pages
 				.filter(
@@ -214,7 +215,7 @@ describe('the case-tasks widget after the retype', () => {
 				)
 				.map((entry) => entry.id)
 				.sort(),
-		).toEqual(['Tasks'])
+		).toEqual([])
 	})
 
 	it('names an icon src/icons.js registers', () => {

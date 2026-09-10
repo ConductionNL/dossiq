@@ -16,7 +16,7 @@
  * The spec file lives here rather than beside the component: vitest.config
  * collects `tests/vitest/**` only, so a spec under `src/` would never run.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

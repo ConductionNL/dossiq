@@ -30,15 +30,22 @@
        become 0, and what a link row with register 0 / schema 0 does to the
        calendar leaf's own lookups is not something dossiq can assert from
        here.
-    2. The endpoint is not yet on any branch of openregister — it is
-       uncommitted work in the `feat/task-anchored-leaves` tree — so the
-       request shape can still move before it lands.
+    2. There is no event UPDATE behind this uuid, deliberately: the task
+       block mirrors the object leaf verb for verb, and the object leaf has
+       none either. So a form here would be create-and-delete, not edit,
+       which is a different interaction from the one the case page offers.
+
+  The endpoint itself has landed. openregister#3594 merged on 2026-09-10 and
+  registers `taskEvents#index`, `#create`, `#link`, `#unlink` and `#destroy`
+  on `/api/flow-tasks/{uuid}/events`, together with the `taskNotes#*` block
+  the notes leaf reads. What is unsettled is the register/schema anchoring
+  above, not whether the route answers.
 
   Guessing a form against that is how a silent write ends up somewhere
   nothing reads it, which is the exact failure this whole change is undoing
   (`workflow.js`'s `dispatchCreateTaskAction`, remove-casetask section 1).
-  So the read moves now, the write moves when the endpoint lands, and this
-  comment is the marker for it.
+  So the read moves now, the write moves when the anchoring is settled, and
+  this comment is the marker for it.
 
   @spec openspec/specs/task-management/spec.md
 -->
