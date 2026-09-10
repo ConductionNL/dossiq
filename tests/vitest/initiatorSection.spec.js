@@ -214,38 +214,41 @@ describe('InitiatorSection — the requester on the case', () => {
 		)
 	})
 
-	it('says so for a case without a requester, instead of an empty box', async () => {
-		// 🔴 IT USED TO RENDER NOTHING, on a rule written "no initiator, no
-		// clutter". That rule assumed this component could decide whether it
-		// appeared at all. It cannot: the manifest declares `initiator` as a
-		// grid cell with `showTitle: true`, so the card chrome and the word
-		// Initiator painted regardless and the body below them was blank. The
-		// page therefore showed an empty titled box on every case with no
-		// requester, which is the demo case and most real ones early on.
-		//
-		// A sentence costs the same space and answers the question the blank
-		// box raised.
+	it('renders nothing at all for a case without a requester', async () => {
 		const wrapper = await mountCard({ caseObject: { id: 'case-1' } })
 
-		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(true)
-		expect(wrapper.get('[data-testid="initiator-empty"]').text()).toBe(
-			'No initiator has been recorded for this case.',
+		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(
+			false,
 		)
-		// Still no requester rows: the empty state replaces them, it does not
-		// sit above a half-rendered card.
-		expect(wrapper.find('[data-testid="initiator-name"]').exists()).toBe(false)
 	})
 
-	it('drops the empty line the moment a requester is present', async () => {
+	// The widget host draws the card whether or not this component renders, so
+	// "no initiator, no clutter" produced the opposite: a titled 240px box with
+	// nothing in it. The empty line fills the cell and answers the question the
+	// blank box raised.
+	it('says so instead of leaving the widget cell blank', async () => {
+		const wrapper = await mountCard({ caseObject: { id: 'case-1' } })
+
+		const empty = wrapper.find('[data-testid="initiator-empty"]')
+		expect(empty.exists()).toBe(true)
+		expect(empty.text()).toBe('This case has no initiator yet')
+	})
+
+	// The empty line is a SIBLING of the section, never a state of it. If it
+	// ever renders alongside a real initiator, the two e2e specs and the test
+	// above that read `initiator-section` as "this case has an initiator" would
+	// still pass while the card showed both.
+	it('drops the empty line as soon as there is an initiator', async () => {
 		const wrapper = await mountCard({
 			caseObject: {
 				id: 'case-1',
-				requester: 'uuid-person-1',
-				initiatorDisplayName: 'Jan Bakker',
+				requester: 'person-1',
+				initiatorDisplayName: 'Jansen',
 				initiatorType: 'person',
 			},
 		})
 
+		expect(wrapper.find('[data-testid="initiator-section"]').exists()).toBe(true)
 		expect(wrapper.find('[data-testid="initiator-empty"]').exists()).toBe(false)
 	})
 
