@@ -39,9 +39,6 @@ import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidg
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
-// The task half of the flow waiting relationship (case-flow-human-steps 6.1).
-// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
-import TaskWaitingCaseSection from './components/flow/TaskWaitingCaseSection.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
@@ -56,9 +53,6 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
-// The way back from a task to its case (task-on-the-case).
-// @spec openspec/specs/task-management/spec.md
-import TaskCaseCard from './components/tasks/TaskCaseCard.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -118,6 +112,12 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
+// `type: "detail"` page when remove-casetask took the caseTask schema away:
+// CnDetailPage has no entity-source mode, so a detail page can only bind a
+// register and a schema. Route and page id unchanged, so deep links resolve.
+// @spec openspec/specs/task-management/spec.md
+import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 
@@ -337,14 +337,12 @@ const registry = {
 		_note: 'CaseDetail overview widget: initiator name + type + source id deep-linking to the seeded brpPerson/kvkCompany record in OpenRegister. Renders nothing when the case has no initiator.',
 	},
 
-	// --- The task half of the flow waiting relationship (case-flow-human-steps 6.1). ---
-	// @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
-	TaskWaitingCaseSection: {
-		// @custom-widget-ratchet exclude a conditional cross-object link: it renders only when task.flowRun is set and links to the CASE, and no built-in fits (banner visibleWhen fetches by endpoint/source and its route is a page id without the case param; data/object-list cannot hide on a field)
-		kind: 'widget',
-		component: TaskWaitingCaseSection,
-		_note: 'TaskDetail section: names the case a suspended flow run is holding on this task and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. The case half (run + stage on CaseDetail) is deliberately absent: it waits on the fleet-generic subject-scoped runs widget (openregister flow-runs-subject-scope).',
-	},
+	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
+	// TaskCaseCard. Both were resolved through TaskDetail's `slots` map while
+	// that page was `type: "detail"`; the page is now `type: "custom"` and
+	// mounts them as plain child components of TaskDetailView, the same way
+	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
+	// resolves for nobody and is dead configuration.
 
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
 	// @spec openspec/specs/beschikking-generatie/spec.md
@@ -392,19 +390,12 @@ const registry = {
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
 
-	// --- The way back from a task to its case (task-on-the-case). ---
-	//
-	// Keyed by COMPONENT NAME, unlike `case-task-pane` above, because
-	// `task-case` sits in TaskDetail's `layout`: CnDetailPage renders a
-	// `widget-<id>` slot for every grid item, and `page.slots` maps that slot
-	// name to this key. The pane could not use that path because it is a tab
-	// child, which has no grid item and therefore no slot.
+	// --- The task page (`/tasks/:id`), over the engine (remove-casetask 2.1). ---
 	// @spec openspec/specs/task-management/spec.md
-	TaskCaseCard: {
-		// @custom-widget-ratchet exclude a cross-object card rendered by TITLE: `case` is a $ref and no built-in resolves a reference to its label, so a data or object-list widget shows the case uuid and reads as broken data (placement A35, the same gap the parties Role column carries); it also resolves the case's OWN caseType and status $refs, and has to render NOTHING for a task with no case, none of which a built-in widget can do
-		kind: 'widget',
-		component: TaskCaseCard,
-		_note: 'TaskDetail card above the Data widget: the case this task is on, with its identifier, title as the link, status, case type, handler and deadline. Renders for EVERY task with a case, unlike TaskWaitingCaseSection, which renders only for a task holding a flow run and would say something untrue about an ordinary to-do. A task without a case renders nothing, and its layout entry carries showTitle:false so there is no empty box either.',
+	TaskDetailView: {
+		kind: 'page',
+		component: TaskDetailView,
+		_note: "The task page reads OpenRegister's task ENGINE, which is not an OpenRegister object, and there is no typed page that can. CnDetailPage takes objectType/objectId and resolves them through the object store; it has no entitySource mode, so a type:detail page can only bind a register and a schema, and the schema it bound is the one remove-casetask deletes. The route, the page id and every deep link are unchanged. It mounts TaskCaseCard and TaskWaitingCaseSection as plain children, reads the notes, appointments and history leaves from the task-anchored endpoints (the object-anchored library widgets have no object to read), and drives the lifecycle with the engine's own verbs through invoke(uuid, verb): CnLifecycleActions asks /api/objects/{uuid}/available-actions, which 404s for a task.",
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

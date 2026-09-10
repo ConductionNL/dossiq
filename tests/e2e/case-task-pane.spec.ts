@@ -87,6 +87,9 @@ import { dismissSupportDialog } from './helpers/nav.ts'
  * the instance locale is not forced, so a label match would be a locale
  * dependency. The testids are not.
  */
+/** The task page's root, rendered by src/views/tasks/TaskDetailView.vue. */
+const TASK_PAGE = '[data-testid="task-detail-page"]'
+
 const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
 const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
 const ACTIVATE_LABEL = /Pick up the task/
@@ -464,12 +467,18 @@ test.describe('Case detail — the task pane', () => {
 
 	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
 	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
-	test('the task page names its case and following the link opens the case', async ({
+	test('TaskDetailView names its case and following the link opens the case', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
 		await dismissSupportDialog(page)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
+		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
+		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a
+		// register and a schema and the schema is going away. CnPageRenderer
+		// mounts a custom page's component and nothing else, so the library
+		// wrapper class is not in the DOM at all and a wait on it hangs for
+		// the full timeout on a page that rendered correctly.
+		await expect(page.locator(TASK_PAGE)).toBeVisible({
 			timeout: 30_000,
 		})
 
@@ -491,12 +500,18 @@ test.describe('Case detail — the task pane', () => {
 
 	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
 	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
-	test('the case card carries the case identity, and the case is not repeated as a raw row', async ({
+	test('TaskDetailView carries the case identity, and does not repeat it as a raw row', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
 		await dismissSupportDialog(page)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
+		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
+		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a
+		// register and a schema and the schema is going away. CnPageRenderer
+		// mounts a custom page's component and nothing else, so the library
+		// wrapper class is not in the DOM at all and a wait on it hangs for
+		// the full timeout on a page that rendered correctly.
+		await expect(page.locator(TASK_PAGE)).toBeVisible({
 			timeout: 30_000,
 		})
 
@@ -535,33 +550,46 @@ test.describe('Case detail — the task pane', () => {
 			).toHaveText(new Date(actualDeadline).toLocaleDateString())
 		}
 
-		// And the Data widget below must NOT restate it. `case` is hidden by
-		// a manifest override precisely because the platform would render the
-		// $ref as its uuid, and one relationship shown twice, once correctly
-		// and once as a uuid, reads as broken data.
-		const data = page.locator('[data-testid="task-case-card"] >> nth=0')
-		await expect(data).toBeVisible()
-		await expect(
-			page
-				.locator('.cn-object-data-widget')
-				.getByText('Case', { exact: true }),
-		).toHaveCount(0)
+		// And the fact list below must NOT restate it. One relationship shown
+		// twice, once as a resolved title and once as a uuid, reads as broken
+		// data. This used to be asserted as "the Data widget has no Case
+		// row", hidden by a manifest override; the Data widget is gone with
+		// the retype, so asserting its absence is an assertion that cannot
+		// fail. What CAN still go wrong is the fact list growing a case row,
+		// so that is what is asserted: the case uuid appears nowhere in the
+		// body, and the card is the only place the case is named.
+		const facts = page.locator('[data-testid="task-detail-body"]')
+		await expect(facts).toBeVisible({ timeout: 20_000 })
+		await expect(facts).not.toContainText(linkCaseId)
+		await expect(page.locator('[data-testid="task-case-card"]')).toHaveCount(1)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
 	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
-	test('the task carries its own notes and appointments', async ({ page }) => {
+	test('TaskDetailView carries the task own notes and appointments', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
 		await dismissSupportDialog(page)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
+		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
+		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a
+		// register and a schema and the schema is going away. CnPageRenderer
+		// mounts a custom page's component and nothing else, so the library
+		// wrapper class is not in the DOM at all and a wait on it hangs for
+		// the full timeout on a page that rendered correctly.
+		await expect(page.locator(TASK_PAGE)).toBeVisible({
 			timeout: 30_000,
 		})
 
-		// Both are integration leaves on the TASK, not on the parent case.
-		// `notes` is an always-available OpenRegister built-in, so it renders
-		// unconditionally; `calendar` requires the NC Calendar app and renders
-		// its own empty state without it, which is why the assertion is on the
-		// widget being present rather than on any row inside it.
+		// Both are leaves on the TASK, not on the parent case, and neither is
+		// a `type: "integration"` widget any more. remove-casetask 2.1
+		// replaced them with TaskNotesLeaf and TaskEventsLeaf, which read
+		// openregister's task-anchored endpoints (`/api/flow-tasks/{uuid}/
+		// notes` and `/events`, openregister#3594). The library's integration
+		// widgets could not follow: both build an object URL from a register,
+		// a schema and an object id, and an engine task has none of the three.
+		// The assertion stays on the section heading rather than on a row
+		// inside it, because an empty task legitimately has neither.
 		await expect(
 			page.getByRole('heading', { name: 'Notes', exact: true }),
 		).toBeVisible({ timeout: 20_000 })

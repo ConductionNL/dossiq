@@ -27,8 +27,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
 const post = vi.fn()
+const patch = vi.fn()
+const del = vi.fn()
 
-vi.mock('@nextcloud/axios', () => ({ default: { get, post } }))
+vi.mock('@nextcloud/axios', () => ({
+	default: { get, post, patch, delete: del },
+}))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 
 const { useEngineTaskStore, isTerminal, TERMINAL_STATES, asTaskRow } =
@@ -38,6 +42,8 @@ beforeEach(() => {
 	setActivePinia(createPinia())
 	get.mockReset()
 	post.mockReset()
+	patch.mockReset()
+	del.mockReset()
 })
 
 describe('isTerminal', () => {
@@ -227,6 +233,142 @@ describe('useEngineTaskStore', () => {
 
 		expect(get).not.toHaveBeenCalled()
 		expect(post).not.toHaveBeenCalled()
+	})
+})
+
+/**
+ * The task leaves (remove-casetask 2.1).
+ *
+ * The notes, appointment and history leaves are read through this store
+ * rather than through a service module of their own, because this file is
+ * dossiq's whole seam onto the engine. What has to hold about them is a
+ * property the four actions above do NOT have, and it is the reason they
+ * are separate actions rather than more of the same:
+ *
+ *   a leaf read must not write the shared `error`, `task` or `loading`.
+ *
+ * A leaf is read while the task is on screen. Writing the shared error
+ * would make an unreadable notes list look like an unreadable TASK, and the
+ * page would replace a perfectly good record with a failure screen.
+ *
+ * @spec openspec/specs/task-management/spec.md
+ */
+describe('the task leaves', () => {
+	it('reads a leaf off the task uuid and unwraps the envelope', async () => {
+		get.mockResolvedValue({ data: { results: [{ id: 1 }], total: 1 } })
+		const store = useEngineTaskStore()
+
+		const outcome = await store.readLeaf('t1', 'notes')
+
+		expect(get).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes',
+		)
+		expect(outcome).toEqual({ results: [{ id: 1 }], error: null })
+	})
+
+	it('leaves the task state alone when a leaf read fails', async () => {
+		const store = useEngineTaskStore()
+		get.mockResolvedValueOnce({ data: { uuid: 't1', state: 'active' } })
+		await store.fetch('t1')
+
+		get.mockRejectedValueOnce({ response: { data: { error: 'No such task' } } })
+		const outcome = await store.readLeaf('t1', 'notes')
+
+		expect(outcome).toEqual({ results: [], error: 'No such task' })
+		// The task the page is rendering is untouched, and so is the error
+		// the page reports lifecycle refusals through. The shape asserted is
+		// what `fetch()` put there, `asTaskRow` mapping included: an exact
+		// object rather than a couple of fields, so a leaf read that wrote
+		// ANY key onto the task fails this.
+		expect(store.task).toEqual({
+			uuid: 't1',
+			state: 'active',
+			id: 't1',
+			status: 'active',
+		})
+		expect(store.error).toBeNull()
+	})
+
+	it('posts a note as `message` and answers with the created note', async () => {
+		post.mockResolvedValue({ data: { id: 7, message: 'hello' } })
+		const store = useEngineTaskStore()
+
+		const outcome = await store.writeNote('t1', '  hello  ')
+
+		expect(post).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes',
+			{ message: 'hello' },
+		)
+		expect(outcome).toEqual({ note: { id: 7, message: 'hello' }, error: null })
+	})
+
+	it('keeps the server refusal message when a note is rejected', async () => {
+		post.mockRejectedValue({
+			response: { data: { error: 'Note message is required' } },
+		})
+		const store = useEngineTaskStore()
+
+		expect(await store.writeNote('t1', 'x')).toEqual({
+			note: null,
+			error: 'Note message is required',
+		})
+		expect(store.error).toBeNull()
+	})
+
+	it('deletes a note by id', async () => {
+		del.mockResolvedValue({ data: { success: true } })
+		const store = useEngineTaskStore()
+
+		expect(await store.removeNote('t1', 7)).toEqual({
+			removed: true,
+			error: null,
+		})
+		expect(del).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes/7',
+		)
+	})
+
+	it('toggles a checklist item with a PATCH and the flag in the query', async () => {
+		// The engine registers `task#checkItem` as a PATCH with `checked` as
+		// a request parameter, not as a verb POST with a body. A POST here
+		// would 405 and the box would silently never move.
+		patch.mockResolvedValue({ data: { uuid: 't1', state: 'active' } })
+		const store = useEngineTaskStore()
+
+		await store.checkItem('t1', 'a', true)
+
+		expect(patch).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/checklist/a',
+			null,
+			{ params: { checked: 'true' } },
+		)
+	})
+
+	it('never calls the engine for a blank id on any leaf', async () => {
+		const store = useEngineTaskStore()
+
+		expect(await store.readLeaf('', 'notes')).toEqual({
+			results: [],
+			error: null,
+		})
+		expect(await store.readLeaf('t1', '')).toEqual({
+			results: [],
+			error: null,
+		})
+		expect(await store.writeNote('t1', '   ')).toEqual({
+			note: null,
+			error: null,
+		})
+		expect(await store.removeNote('t1', '')).toEqual({
+			removed: false,
+			error: null,
+		})
+		expect(await store.checkItem('t1', '', true)).toBeNull()
+
+		expect(get).not.toHaveBeenCalled()
+		expect(post).not.toHaveBeenCalled()
+		expect(patch).not.toHaveBeenCalled()
+		expect(del).not.toHaveBeenCalled()
 	})
 })
 

@@ -69,12 +69,31 @@ upstream, and none needs a custom page:
 | `isTerminal` not on the store allowlist | Two of the six lenses ARE that filter. The server always accepted it | nextcloud-vue#1063 |
 | No due-window filter | "Due this week" had no server-side answer at all | openregister#3581, then nextcloud-vue#1063 |
 
-- [ ] 2.1 `TaskDetail` (`/tasks/:id`). Still a real change: `type: "detail"`
+- [x] 2.1 `TaskDetail` (`/tasks/:id`). Still a real change: `type: "detail"`
       binds a register and a schema, and there is no detail-page equivalent
       of `entitySource`. **The route, the page id and the deep links must not
       change**, so notification links and bookmarks survive. It keeps the
       case card, the notes and appointment leaves and the lifecycle buttons.
       Check `lib/Service/DeepLink*` and the notification templates resolve.
+
+      DONE. The page is `type: "custom"` over `TaskDetailView`, with the
+      route and the page id untouched. `lib/Service/DeepLink*` does not
+      exist in this repo and no PHP builds a task URL: the published link is
+      the manifest `deepLinks` entry `/apps/dossiq/tasks/{uuid}`, which the
+      SPA resolves by route. Two tests hold that shape,
+      `manifestCaseTaskPane.spec.js` and `searchableSchemas.spec.js`, and
+      both were mutation-checked by moving the route and by moving the
+      template.
+
+      The three leaves moved with it. Notes and appointments read
+      openregister's task-anchored endpoints from openregister#3594
+      (`/api/flow-tasks/{uuid}/notes` and `/events`); the audit sidebar tab
+      became a page section over `/api/flow-tasks/{uuid}/audit`. The
+      version-history tab is gone on purpose: an engine task is not an
+      object, so nothing writes a version of it. The lifecycle buttons are
+      the engine's verbs through `invoke(uuid, verb)`, never
+      `CnLifecycleActions`, which asks `/api/objects/{uuid}/available-actions`
+      and 404s for a task.
 - [ ] 2.2 `Tasks` (`/tasks`): add `entitySource: "tasks"` and `rowRoute:
       "TaskDetail"`, drop `register`/`schema`. Map the six lenses onto the
       engine's own filters (All -> `scope: all`, Mine -> `scope: assigned` +
