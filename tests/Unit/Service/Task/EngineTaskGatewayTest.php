@@ -231,11 +231,22 @@ class EngineTaskGatewayTest extends TestCase {
 	}//end testDropsAnUndecodableChecklistRatherThanFailingTheCreate()
 
 	/**
-	 * The flag off means nothing is written and nothing is resolved.
+	 * An UNREACHABLE engine means nothing is written and nothing is resolved.
+	 *
+	 * 🔴 THIS TEST USED TO PIN THE `task_engine_write` FLAG, AND THE FLAG IS
+	 * WHY THE TASKS PANE WENT BLANK. It gated `isEnabled()`, nothing in the
+	 * repo ever set it, and once the register write was removed the engine was
+	 * the only store: every write was refused and every read found nothing.
+	 * The flag is gone, so what is asserted here is the half that was always
+	 * the real question, reachability.
+	 *
+	 * The service double still counts its calls, because "returned '' " and
+	 * "did not touch the engine" are different claims and only the second one
+	 * rules out a write that failed silently downstream.
 	 *
 	 * @return void
 	 */
-	public function testWritesNothingWhileTheFlagIsOff(): void {
+	public function testWritesNothingWhileTheEngineIsUnreachable(): void {
 		$service = new class {
 			public bool $called = false;
 
@@ -256,11 +267,63 @@ class EngineTaskGatewayTest extends TestCase {
 			}
 		};
 
-		$gateway = $this->gatewayWith($service, '0');
+		// No service in the container: the engine cannot be reached, whatever
+		// anyone configured.
+		$gateway = new EngineTaskGateway($this->settings('', false), $this->container(null), new NullLogger());
 
 		$this->assertSame('', $gateway->mirrorCreate(task: ['title' => 'T'], caseId: 'c', actor: null));
-		$this->assertFalse($service->called, 'the engine must not be touched while the flag is off');
-	}//end testWritesNothingWhileTheFlagIsOff()
+		$this->assertFalse($service->called, 'an unreachable engine must not be touched');
+	}//end testWritesNothingWhileTheEngineIsUnreachable()
+
+	/**
+	 * A REACHABLE engine writes, with no app config set at all.
+	 *
+	 * 🔴 THE REGRESSION THIS EXISTS TO CATCH. `isEnabled()` used to require
+	 * appconfig `task_engine_write === '1'`, and `getConfigValue` defaults to
+	 * `''`. Nothing in lib, src, appinfo, the CI workflows or any migration
+	 * ever wrote that key, so on every real instance the write was off while
+	 * the six read surfaces had already moved to the engine. Cases showed "No
+	 * open tasks" whatever they contained, and once the register write went,
+	 * every status transition carrying a createTask action failed outright
+	 * with `create_task_failed`.
+	 *
+	 * The empty string here is the DEFAULT a fresh instance has, not a value
+	 * anyone chose. If this test ever needs a config value to pass, the flag
+	 * has come back and the pane is blank again.
+	 *
+	 * @return void
+	 */
+	public function testWritesWithNoAppConfigSet(): void {
+		$service = new class {
+			/** @var boolean Whether the engine was asked to create. */
+			public bool $called = false;
+
+			/**
+			 * @param array<string, mixed> $data  Payload.
+			 * @param string|null          $actor Actor.
+			 *
+			 * @return object
+			 */
+			public function create(array $data, ?string $actor): object {
+				$this->called = true;
+				return new class {
+					/** @return string */
+					public function getUuid(): string {
+						return 'engine-uuid';
+					}
+				};
+			}
+		};
+
+		$gateway = $this->gatewayWith($service, '');
+
+		$this->assertSame(
+			'engine-uuid',
+			$gateway->mirrorCreate(task: ['title' => 'T'], caseId: 'c', actor: null),
+			'an unset task_engine_write must not stop the write: it is the default on every fresh instance'
+		);
+		$this->assertTrue($service->called, 'the engine must actually be asked to create the task');
+	}//end testWritesWithNoAppConfigSet()
 
 	/**
 	 * A failing engine write returns '' and does NOT throw.
