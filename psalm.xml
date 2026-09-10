@@ -85,10 +85,10 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
-                <!-- remove-casetask: the flow resume listens to the engine's
-                     terminal event rather than to an object write, because
-                     nothing writes a caseTask object any more. -->
-                <referencedClass name="OCA\OpenRegister\Event\TaskTerminalEvent"/>
+                <!-- remove-casetask: nothing writes a caseTask object any
+                     more, so the flow reads the engine's own task entity.
+                     Its terminal event is listed with the human-step seam
+                     below. -->
                 <referencedClass name="OCA\OpenRegister\Db\Task"/>
                 <!-- flow-business-timers (termijnbewaking-op-engine-timers) -->
                 <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
