@@ -40,6 +40,15 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Transitions\StatusChecklistGuard
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ *
+ * 🔑 `StatusChecklist` IS USED FOR REAL, NOT MOCKED, by
+ * `testACompletedEngineTaskSatisfiesItsRequiredItem` and its sibling. That is
+ * the point of those two: a mocked checklist reported green right through the
+ * bug they exist to catch. Undeclared, the strict-coverage run marks them
+ * risky and phpunit exits 1 while printing OK, which reddened all six matrix
+ * cells on development.
+ *
+ * @uses \OCA\Dossiq\Service\Transitions\StatusChecklist
  */
 class StatusChecklistGuardTest extends TestCase {
 	/**
