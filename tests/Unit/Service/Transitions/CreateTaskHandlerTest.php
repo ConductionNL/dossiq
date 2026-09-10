@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\AssigneeResolver;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -40,13 +41,33 @@ use RuntimeException;
  */
 class CreateTaskHandlerTest extends TestCase {
 	/**
+	 * A gateway that is switched off, which is the default everywhere.
+	 *
+	 * Every pre-existing test in this file asserts the register write and
+	 * nothing else, and must keep asserting exactly that: the dual-run seam
+	 * is additive, so a disabled gateway is what proves it changed nothing.
+	 *
+	 * @param TestCase $test The test case, for the mock builder.
+	 *
+	 * @return EngineTaskGateway&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private static function disabledGateway(TestCase $test): EngineTaskGateway {
+		$gateway = $test->getMockBuilder(EngineTaskGateway::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$gateway->method('mirrorCreate')->willReturn('');
+
+		return $gateway;
+	}//end disabledGateway()
+
+	/**
 	 * @return void
 	 */
 	public function testFailsWhenObjectServiceUnavailable(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Doe X'],
@@ -76,7 +97,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask'],
@@ -119,7 +140,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'assignee' => 'alice'],
@@ -157,7 +178,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testWritesTheWorkflowStepIdTheActionNames(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: [
@@ -180,7 +201,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testLeavesTheWorkflowStepIdOffWhenTheActionNamesNone(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'workflowStepId' => '  '],
@@ -256,7 +277,7 @@ class CreateTaskHandlerTest extends TestCase {
 			}
 		);
 
-		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($settings, new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'createTask'],
@@ -281,7 +302,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testATemplatedAssigneeIsResolvedAgainstTheCase(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => '{{ case.assignee }}'],
@@ -304,7 +325,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheTemplateIsRenderedRatherThanFallenBackFrom(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => '{{ case.responsible }}'],
@@ -324,7 +345,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheDeclaredFallbackTakesTheTask(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: [
@@ -352,7 +373,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnActionNamingNobodyFallsBackToTheCasesHandler(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -374,7 +395,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testTheCasesTeamIsCarriedOntoTheTask(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -401,7 +422,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnExpandedTeamReferenceWritesTheUuid(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -420,7 +441,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnExpandedCaseAssigneeResolvesToItsId(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -441,7 +462,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testACaseWithNoTeamWritesNoTeamField(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id'],
@@ -462,7 +483,7 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testALiteralAssigneeSurvivesResolution(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), new NullLogger());
+		$handler = new CreateTaskHandler($this->recordingSettings($recorded), new AssigneeResolver(new NullLogger()), self::disabledGateway($this), new NullLogger());
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Check id', 'assignee' => 'behandelaars'],
