@@ -33,12 +33,35 @@ export function waitingCaseIdFrom(task) {
 		return null
 	}
 
-	const run = String(task.flowRun ?? '').trim()
+	// `runUuid` is the engine's name for it; `flowRun` was caseTask's. Both
+	// are read so a row from either store resolves during the cutover.
+	const run = String(task.runUuid ?? task.flowRun ?? '').trim()
 	if (run === '') {
 		return null
 	}
 
-	return caseIdFrom(task.case)
+	return caseIdFrom(taskCaseRef(task))
+}
+
+/**
+ * The case a task names, whichever store it came from.
+ *
+ * An engine task carries `objectUuid`, because the case IS the object and
+ * OpenRegister has no case entity. `caseTask` carried a typed `case` $ref.
+ * Reading only one of them makes every task on the other store look like a
+ * task with no case, which renders as nothing at all rather than as an
+ * error.
+ *
+ * @param {object} task The task row.
+ * @return {string|object|null} The case reference.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function taskCaseRef(task) {
+	if (!task || typeof task !== 'object') {
+		return null
+	}
+
+	return task.objectUuid ?? task.case ?? null
 }
 
 /**

@@ -47,6 +47,18 @@ vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => storeStub,
 }))
 
+// The TASK is an engine row now; the CASE it names is still an OpenRegister
+// object, so both stores are in play and both are stubbed off the same rows.
+vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	useEngineTaskStore: () => ({
+		async fetch(id) {
+			calls.push({ type: 'flow-tasks', id })
+			return rows.caseTask?.[id] ?? null
+		},
+	}),
+}))
+
 vi.mock('@conduction/nextcloud-vue', () => ({
 	CnStatusBadge: defineComponent({
 		name: 'CnStatusBadge',
@@ -92,7 +104,7 @@ beforeEach(() => {
 describe('TaskCaseCard', () => {
 	it('names the case by its title and routes to the case page', async () => {
 		rows = {
-			caseTask: { 'task-1': { id: 'task-1', case: 'case-9' } },
+			caseTask: { 'task-1': { uuid: 'task-1', objectUuid: 'case-9' } },
 			case: {
 				'case-9': { id: 'case-9', title: 'Permit for 12 Mandelaplein' },
 			},
@@ -109,7 +121,7 @@ describe('TaskCaseCard', () => {
 
 	it('carries the case identity and resolves both of the case own references', async () => {
 		rows = {
-			caseTask: { 'task-1': { id: 'task-1', case: 'case-9' } },
+			caseTask: { 'task-1': { uuid: 'task-1', objectUuid: 'case-9' } },
 			case: {
 				'case-9': {
 					id: 'case-9',
@@ -150,7 +162,7 @@ describe('TaskCaseCard', () => {
 
 	it('omits a fact it cannot read instead of showing a blank row', async () => {
 		rows = {
-			caseTask: { 'task-1': { id: 'task-1', case: 'case-9' } },
+			caseTask: { 'task-1': { uuid: 'task-1', objectUuid: 'case-9' } },
 			// No caseType, no status, no assignee, no deadline on the case, and
 			// no rows for them in the store either.
 			case: { 'case-9': { id: 'case-9', title: 'Bare case' } },
@@ -174,7 +186,7 @@ describe('TaskCaseCard', () => {
 
 	it('falls back to the planned end date when the case has no deadline', async () => {
 		rows = {
-			caseTask: { 'task-1': { id: 'task-1', case: 'case-9' } },
+			caseTask: { 'task-1': { uuid: 'task-1', objectUuid: 'case-9' } },
 			case: {
 				'case-9': {
 					id: 'case-9',
@@ -196,7 +208,7 @@ describe('TaskCaseCard', () => {
 
 		const wrapper = await mountCard({
 			objectId: 'task-1',
-			objectData: { id: 'task-1', case: { id: 'case-9' } },
+			objectData: { uuid: 'task-1', objectUuid: 'case-9' },
 		})
 
 		expect(wrapper.find('[data-testid="task-case-link-link"]').text()).toBe(

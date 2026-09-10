@@ -34,26 +34,50 @@ one starts.
       `src/components/tasks/TaskCaseCard.vue` — both read a task to find its
       case. The engine's `objectUuid` IS the case, so these get simpler.
 
-## 2. The two page rewrites
+## 2. The two pages
 
-Neither is a repoint. `type: index` and `type: detail` bind a register and a
-schema and let the platform render; the engine is not an OpenRegister object,
-so both become `type: custom`.
+**CORRECTED 2026-09-10. The index does NOT need a custom page**, and the
+first version of this plan was wrong to say so.
 
-- [ ] 2.1 `TaskDetail` (`/tasks/:id`) becomes a custom page. **The route, the
-      page id and the deep links do not change**, so notification links and
-      bookmarks survive. It keeps the case card, the notes and appointment
-      leaves and the lifecycle buttons: what changes is the store behind it.
-      Check `lib/Service/DeepLink*` and the notification templates still
-      resolve.
-- [ ] 2.2 `Tasks` (`/tasks`) becomes a custom index over the engine's inbox.
-      The six lenses (REQ-TASK-016/017) map onto the inbox's own `scope`,
-      `state`, `priority` and `overdue` filters rather than onto register
-      queries.
+`@conduction/nextcloud-vue` already ships a `tasks` **entity source**
+(`src/composables/indexSources.js`) — a third index mode for exactly this,
+"a list that is neither an OpenRegister object nor rows a parent holds". It
+supplies columns, badge rendering, scope tabs and row navigation. So the
+page stays `type: "index"` and gains `entitySource: "tasks"`.
+
+Three gaps stood between that and dossiq using it. All three are now open
+upstream, and none needs a custom page:
+
+| Gap | Why dossiq hit it | Where |
+|---|---|---|
+| The source's `openRow` always wins | It navigates to OPENREGISTER's task page, and dossiq keeps its own. `row-click` cannot recover it: `openRow` calls `window.location.assign()`, so a host's push never lands | nextcloud-vue#1063, `rowRoute` |
+| `isTerminal` not on the store allowlist | Two of the six lenses ARE that filter. The server always accepted it | nextcloud-vue#1063 |
+| No due-window filter | "Due this week" had no server-side answer at all | openregister#3581, then nextcloud-vue#1063 |
+
+- [ ] 2.1 `TaskDetail` (`/tasks/:id`). Still a real change: `type: "detail"`
+      binds a register and a schema, and there is no detail-page equivalent
+      of `entitySource`. **The route, the page id and the deep links must not
+      change**, so notification links and bookmarks survive. It keeps the
+      case card, the notes and appointment leaves and the lifecycle buttons.
+      Check `lib/Service/DeepLink*` and the notification templates resolve.
+- [ ] 2.2 `Tasks` (`/tasks`): add `entitySource: "tasks"` and `rowRoute:
+      "TaskDetail"`, drop `register`/`schema`. Map the six lenses onto the
+      engine's own filters (All -> `scope: all`, Mine -> `scope: assigned` +
+      `isTerminal: false`, Unclaimed -> `scope: pooled` + `isTerminal:
+      false`, Closed -> `isTerminal: true`, Overdue -> `overdue: true`, Due
+      this week -> `dueAfter`/`dueBefore`). **Blocked on both library PRs
+      landing and a dossiq nc-vue bump.**
 - [ ] 2.3 `Dashboard` and `CaseDetail` reference `caseTask` in widget config
       only. Repoint those widgets; the pages themselves do not change type.
 
 ## 3. The server side
+
+**The file list below was incomplete.** A grep for `task_schema` as well as
+the slug finds six more users the first pass missed: `AskPersonTaskStore`,
+`WorkQueueService`, `CaseReassignmentService`, `KpiAggregationService`,
+`DemoCaseloadReport` and `DemoCaseloadSeedDataService`. `AskPersonTaskStore`
+is the important one: it is the flow node's task storage, and it pairs with
+the resume listener that already moved.
 
 - [ ] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
@@ -66,6 +90,12 @@ so both become `type: custom`.
       before this task is started, not during it.
 - [ ] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
+- [ ] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
+      storage, reading `task_schema` directly. Pairs with the resume
+      listener, which already moved to `TaskTerminalEvent`.
+- [ ] 3.3c `lib/Service/WorkQueueService.php` and
+      `lib/Service/CaseReassignmentService.php` — both read `task_schema`;
+      reassignment writes to it, so it is a writer as well as a reader.
 - [ ] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
       documented trap in that file: `findAll()` overwrites the register and
       schema context as a side effect, so a count issued after another read

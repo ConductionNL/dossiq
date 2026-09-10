@@ -34,23 +34,40 @@ vi.mock('../../src/store/store.js', () => ({
 	initializeStores: async () => ({}),
 }))
 
-/** The rows `fetchCollection` answers with, replaced per test. */
+/** The rows the engine store answers with, replaced per test. */
 let pages = []
-/** Every `fetchCollection` call, so the query can be asserted. */
+/** Every `list()` call, so the query can be asserted. */
 let calls = []
 
+/**
+ * The engine store stub.
+ *
+ * `error` is part of the surface deliberately: the real store SURFACES a
+ * failed read rather than throwing, because an empty list with no trace of
+ * why is indistinguishable from a genuinely empty one, and the pane reports
+ * it. A stub without it would let that path go untested.
+ */
+/** What `invoke()` answers with, and every verb it was asked for. */
+let invokeResult = { uuid: 'task-1', state: 'completed', isTerminal: true }
+let invoked = []
+
 const storeStub = {
-	async fetchCollection(type, params) {
-		calls.push({ type, params })
+	error: null,
+	async list(params) {
+		calls.push({ type: 'flow-tasks', params })
 		return pages.length > 1 ? pages.shift() : (pages[0] ?? [])
+	},
+	async invoke(uuid, verb) {
+		invoked.push({ uuid, verb })
+		return invokeResult
 	},
 }
 
-vi.mock('../../src/store/modules/object.js', () => ({
-	useObjectStore: () => storeStub,
+vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	useEngineTaskStore: () => storeStub,
 }))
 
-const { CnLifecycleActions } = await import('./stubs/conduction-nextcloud-vue.js')
 const { default: CaseTaskPane } =
 	await import('../../src/components/tasks/CaseTaskPane.vue')
 
@@ -107,7 +124,6 @@ async function mountPane(responses) {
 		props: { objectId: 'case-9', content: CONTENT },
 		global: {
 			stubs: { RouterLink: RouterLinkStub },
-			components: { CnLifecycleActions },
 		},
 	})
 	await flushPromises()
@@ -118,6 +134,9 @@ beforeEach(() => {
 	showSuccess.mockClear()
 	showError.mockClear()
 	calls = []
+	invoked = []
+	invokeResult = { uuid: 'task-1', state: 'completed', isTerminal: true }
+	storeStub.error = null
 })
 
 describe('CaseTaskPane', () => {
@@ -126,10 +145,12 @@ describe('CaseTaskPane', () => {
 
 		// The query is the half a screenshot cannot show: filtered on the case
 		// and on the server-side open flag.
-		expect(calls[0].type).toBe('caseTask')
+		expect(calls[0].type).toBe('flow-tasks')
 		expect(calls[0].params).toMatchObject({
-			case: 'case-9',
-			isTerminalStatus: false,
+			// The case IS the object; the engine keeps no typed case reference.
+			objectUuid: 'case-9',
+			// The case's work, not the reader's.
+			scope: 'all',
 		})
 
 		expect(wrapper.find('[data-testid="case-task-pane-title"]').text()).toBe(
@@ -139,13 +160,16 @@ describe('CaseTaskPane', () => {
 			'hbakker',
 		)
 
-		// The buttons are bound to THIS task, not to the case: a pane wired to
-		// the case id would render the case's (empty) action set and look
-		// exactly like a task with no transitions left.
-		const actions = wrapper.findComponent(CnLifecycleActions)
-		expect(actions.exists()).toBe(true)
-		expect(actions.props('objectId')).toBe('task-1')
-		expect(actions.props('config')).toEqual({ field: 'status' })
+		// The verbs are the ENGINE's, not an object's transitions.
+		// CnLifecycleActions asks OpenRegister for
+		// /api/objects/{uuid}/available-actions, and an engine task is not an
+		// object: that endpoint answers 500. Measured in the browser.
+		expect(
+			wrapper.find('[data-testid="case-task-pane-verb-complete"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-task-pane-verb-cancel"]').exists(),
+		).toBe(true)
 
 		// The second task is listed under the pane and links to its own page.
 		const remaining = wrapper.find('[data-testid="case-task-pane-remaining"]')
@@ -169,11 +193,9 @@ describe('CaseTaskPane', () => {
 	it('confirms a completed task by name and puts the next one in the pane', async () => {
 		const wrapper = await mountPane([[FIRST, SECOND], [SECOND]])
 
-		await wrapper.findComponent(CnLifecycleActions).vm.$emit('transitioned', {
-			action: 'complete',
-			to: 'completed',
-			object: { ...FIRST, status: 'completed' },
-		})
+		await wrapper
+			.find('[data-testid="case-task-pane-verb-complete"]')
+			.trigger('click')
 		await flushPromises()
 
 		// The toast names the task that was finished, not the one that took
@@ -185,9 +207,7 @@ describe('CaseTaskPane', () => {
 		expect(wrapper.find('[data-testid="case-task-pane-title"]').text()).toBe(
 			'Send the decision',
 		)
-		expect(wrapper.findComponent(CnLifecycleActions).props('objectId')).toBe(
-			'task-2',
-		)
+		expect(invoked).toEqual([{ uuid: 'task-1', verb: 'complete' }])
 		expect(
 			wrapper.find('[data-testid="case-task-pane-remaining"]').exists(),
 		).toBe(false)
@@ -197,30 +217,32 @@ describe('CaseTaskPane', () => {
 		const activated = { ...SECOND, status: 'active' }
 		const wrapper = await mountPane([[SECOND], [activated]])
 
-		await wrapper.findComponent(CnLifecycleActions).vm.$emit('transitioned', {
-			action: 'activate',
-			to: 'active',
-			object: activated,
-		})
+		// The engine answers with a NON-terminal task: picking one up is not
+		// finishing it.
+		invokeResult = { ...activated, isTerminal: false }
+		await wrapper
+			.find('[data-testid="case-task-pane-verb-complete"]')
+			.trigger('click')
 		await flushPromises()
 
 		// Picking a task up is not finishing it: same task, no confirmation,
 		// but a refetch so the newly allowed buttons render.
 		expect(showSuccess).not.toHaveBeenCalled()
 		expect(calls).toHaveLength(2)
-		expect(wrapper.findComponent(CnLifecycleActions).props('objectId')).toBe(
-			'task-2',
-		)
+		expect(invoked).toEqual([{ uuid: 'task-2', verb: 'complete' }])
 	})
 
 	it('reports a refused transition and keeps the task in the pane', async () => {
 		const wrapper = await mountPane([[FIRST, SECOND]])
 
-		// CnLifecycleActions emits NOTHING when the server refuses: it puts the
-		// message in its own `error` state. So the pane has to watch the field,
-		// and this is the only place that can prove it does.
-		const actions = wrapper.findComponent(CnLifecycleActions)
-		actions.vm.error = 'Only the assignee may complete this task'
+		// The engine refuses by returning null and putting its own message on
+		// the store. That message names the verb and the reason, and a
+		// generic failure would throw away the only part a handler can act on.
+		invokeResult = null
+		storeStub.error = 'Only the assignee may complete this task'
+		await wrapper
+			.find('[data-testid="case-task-pane-verb-complete"]')
+			.trigger('click')
 		await flushPromises()
 
 		expect(showError).toHaveBeenCalledTimes(1)
@@ -240,7 +262,9 @@ describe('CaseTaskPane', () => {
 		expect(wrapper.find('[data-testid="case-task-pane-empty"]').text()).toBe(
 			'No open tasks on this case',
 		)
-		expect(wrapper.findComponent(CnLifecycleActions).exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-task-pane-actions"]').exists()).toBe(
+			false,
+		)
 		expect(
 			wrapper.find('[data-testid="case-task-pane-remaining"]').exists(),
 		).toBe(false)

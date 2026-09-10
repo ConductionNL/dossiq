@@ -80,6 +80,7 @@ class CaseFieldWriter {
 	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
 	 */
 	public function write(object $objectService, string $register, string $schema, array $case, array $changes): void {
+
 		if ($changes === []) {
 			return;
 		}

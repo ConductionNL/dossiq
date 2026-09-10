@@ -77,9 +77,14 @@
 
 <script>
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
-import { caseIdFrom, caseRouteFor } from '../../utils/flowTaskHelpers.js'
+import {
+	caseIdFrom,
+	caseRouteFor,
+	taskCaseRef,
+} from '../../utils/flowTaskHelpers.js'
 
 export default {
 	name: 'TaskCaseCard',
@@ -128,6 +133,17 @@ export default {
 		},
 
 		/**
+		 * The task engine. The TASK is an engine row; the CASE it names is
+		 * still an OpenRegister object, so both stores are in play here.
+		 *
+		 * @return {object} The engine task store.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		engineTasks() {
+			return useEngineTaskStore()
+		},
+
+		/**
 		 * The task to read the case reference off: the surface's copy when it
 		 * has one, otherwise the one fetched here.
 		 *
@@ -149,7 +165,7 @@ export default {
 		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
 		 */
 		caseId() {
-			return caseIdFrom(this.task?.case)
+			return caseIdFrom(taskCaseRef(this.task))
 		},
 
 		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
@@ -298,8 +314,7 @@ export default {
 				return
 			}
 			try {
-				this.fetchedTask =
-					(await this.objectStore.fetchObject('caseTask', taskId)) || null
+				this.fetchedTask = (await this.engineTasks.fetch(taskId)) || null
 			} catch {
 				// An unreadable task renders nothing, same as a task with no case.
 				this.fetchedTask = null

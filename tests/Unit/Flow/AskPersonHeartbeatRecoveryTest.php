@@ -50,6 +50,7 @@ putenv('DOSSIQ_REAL_FLOW_ENGINE=1');
 use OCA\Dossiq\Flow\DossiqAskPersonNode;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Db\FlowClaim;
 use OCA\OpenRegister\Db\FlowDefinition;
 use OCA\OpenRegister\Db\FlowDefinitionMapper;
@@ -269,48 +270,65 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 	}//end requireTheRealEngine()
 
 	/**
+	 * A session with a user, because the engine is fail-closed and refuses a
+	 * verb with no acting identity.
+	 *
+	 * @return \OCP\IUserSession The session.
+	 */
+	private function userSession(): \OCP\IUserSession {
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$session = $this->createMock(\OCP\IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return $session;
+	}//end userSession()
+
+	/**
 	 * The node under test, wired to an in-memory task store.
 	 *
 	 * @return DossiqAskPersonNode The node.
 	 */
 	private function askPersonNode(): DossiqAskPersonNode {
-		$objectService = new class($this->tasks, $this->created) {
+		// The engine gateway, over the SAME in-memory rows the object-service
+		// double used to hold. `dossiq.askPerson` stores its task in the engine
+		// now, so this is where the storage seam is; the tests' subject — does a
+		// heartbeat re-read the task, and does terminality advance the run — is
+		// unchanged.
+		$engineTasks = new class($this->tasks, $this->created) extends EngineTaskGateway {
+			/**
+			 * @param array $tasks   The in-memory rows.
+			 * @param array $created The ids created, in order.
+			 */
 			public function __construct(private array &$tasks, private array &$created) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema): ObjectEntity {
+			/**
+			 * @param array       $task   The task.
+			 * @param string      $caseId The case.
+			 * @param string|null $actor  The actor.
+			 *
+			 * @return string The new task id.
+			 */
+			public function mirrorImport(array $task, string $caseId, ?string $actor): string {
 				$uuid = 'task-' . (count($this->created) + 1);
 				$this->created[] = $uuid;
-				$this->tasks[$uuid] = $object;
+				$this->tasks[$uuid] = $task;
 
-				$entity = new ObjectEntity();
-				$entity->setUuid($uuid);
-				$entity->setObject($object);
-
-				return $entity;
+				return $uuid;
 			}
 
-			public function find(
-				int|string $id,
-				?array $_extend = [],
-				bool $files = false,
-				mixed $register = null,
-				mixed $schema = null
-			): ?ObjectEntity {
-				if (isset($this->tasks[(string)$id]) === false) {
-					throw new DoesNotExistException(sprintf('No task %s', $id));
-				}
-
-				$entity = new ObjectEntity();
-				$entity->setUuid((string)$id);
-				$entity->setObject($this->tasks[(string)$id]);
-
-				return $entity;
+			/**
+			 * @param string $taskId The task id.
+			 *
+			 * @return array|null The task, or null when it is gone.
+			 */
+			public function find(string $taskId): ?array {
+				return ($this->tasks[$taskId] ?? null);
 			}
 		};
 
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ($key === 'register' ? 'dossiq' : 'caseTask')
 		);
@@ -318,7 +336,13 @@ class AskPersonHeartbeatRecoveryTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new DossiqAskPersonNode($settings, new AssigneeResolver(new NullLogger()), $l10n, new NullLogger());
+		return new DossiqAskPersonNode(
+			new AssigneeResolver(new NullLogger()),
+			$l10n,
+			new NullLogger(),
+			$engineTasks,
+			$this->userSession()
+		);
 	}//end askPersonNode()
 
 	/**

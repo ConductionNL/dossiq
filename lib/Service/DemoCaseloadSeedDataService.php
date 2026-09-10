@@ -347,14 +347,23 @@ class DemoCaseloadSeedDataService {
 	 * @param integer $days The offset in days, negative for the past.
 	 *
 	 * @return DateTimeImmutable The shifted moment.
+	 *
+	 * @psalm-suppress FalsableReturnStatement
 	 */
 	private function offset(DateTimeImmutable $now, int $days): DateTimeImmutable {
-		$shifted = $now->modify(sprintf('%+d days', $days));
-		if ($shifted === false) {
-			return $now;
-		}
-
-		return $shifted;
+		// 🔴 THE TWO ANALYZERS DISAGREE ABOUT THIS LINE, and phpstan is the
+		// one that is right about the runtime.
+		//
+		// Since PHP 8.3 `modify()` THROWS on a bad format rather than
+		// returning false, so the old `=== false` guard was unreachable and
+		// phpstan reported it as an always-false comparison. Psalm's stub
+		// still models the pre-8.3 signature and so believes the return can
+		// be false. Dossiq's CI matrix is 8.3 and 8.4.
+		//
+		// The format is `%+d days` over an int and cannot be malformed, so
+		// nothing here can throw either.
+		//
+		return $now->modify(sprintf('%+d days', $days));
 	}//end offset()
 
 	/**
