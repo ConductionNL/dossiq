@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts.",
-        "version": "0.18.0"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.0 restricts `dossiqIntegration` reads to admins; see that schema's own description for what was open and why the block names all four actions.",
+        "version": "0.19.0"
     },
     "x-openregister": {
         "type": "application",
@@ -9474,9 +9474,23 @@
             "dossiqIntegration": {
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "title": "Integration",
-                "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
+                "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. READ IS RESTRICTED TO ADMINS, and the block below is load-bearing rather than decorative: OpenRegister treats an ABSENT authorization block as open, so without it `GET /apps/openregister/api/objects/dossiq/dossiqIntegration` answered every row to every authenticated account (measured: ten rows to an account in no groups). The Integrations page under the gear is admin-only and #2307 added a router guard, but a router guard stops the page and not the data. All four actions are named on purpose: once the block is non-empty, OpenRegister fails an unlisted action closed, so declaring only `read` would have silently changed the write posture too. Every writer is already admin-gated (`#[AuthorizedAdminSetting]` on StufController, StoreController, EmailTemplateController and SettingsController), so restricting create/update/delete to admins matches what the code already does and takes nothing away.",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [
+                        "admin"
+                    ],
+                    "update": [
+                        "admin"
+                    ],
+                    "delete": [
+                        "admin"
+                    ]
+                },
                 "type": "object",
                 "required": [
                     "key",

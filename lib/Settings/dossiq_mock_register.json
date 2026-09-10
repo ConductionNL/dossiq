@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -14691,10 +14691,24 @@
       "dossiqIntegration": {
         "slug": "dossiqIntegration",
         "icon": "PowerPlugOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Integration",
-        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
+        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, matching the schema of the same name in the application register. The demo register seeds NO rows here — `MockRegisterHasNoSeededCatalogueTest` holds that line — so this block changes nothing that exists today; it is here so that a demo instance which later grows one does not reopen what the application register just closed.",
         "type": "object",
+        "authorization": {
+          "read": [
+            "admin"
+          ],
+          "create": [
+            "admin"
+          ],
+          "update": [
+            "admin"
+          ],
+          "delete": [
+            "admin"
+          ]
+        },
         "required": [
           "key",
           "title",
