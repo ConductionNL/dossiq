@@ -41,6 +41,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	cleanupFlowTasks,
 	cleanupRunObjects,
 	createObject,
 	ensureCaseType,
@@ -49,6 +50,7 @@ import {
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	seedFlowTask,
 } from './helpers/fixtures.ts'
 import { navToRoute } from './helpers/nav.ts'
 
@@ -60,6 +62,23 @@ const OPEN_TASK = `${RUN_PREFIX} Open task`
 
 /** A COMPLETED task, which must appear nowhere that filters on open work. */
 const DONE_TASK = `${RUN_PREFIX} Completed task`
+
+/**
+ * The ENGINE task the detail page opens.
+ *
+ * 🔴 THE TWO STORES ARE BOTH REAL HERE, and this spec needs one row in each.
+ * Its first two scenarios are about OpenRegister CALCULATIONS on the
+ * `caseTask` schema (`isTerminalStatus`, `daysUntilDue`) — materialised
+ * fields of an object, which only an object has. Its last scenario opens
+ * `/tasks/{id}`, and dossiq#2411 retyped that route to a page that reads
+ * OpenRegister's task ENGINE by uuid. An object uuid resolves to no engine
+ * task, so the page rendered empty and the assertion timed out on a title
+ * that was never going to arrive.
+ *
+ * Seeding the same task twice would be worse than two rows with two names:
+ * a reader would have no way to tell which store each assertion is about.
+ */
+const ENGINE_TASK = `${RUN_PREFIX} Engine open task`
 
 /**
  * Days from today, as the ISO date-time the task schema stores.
@@ -76,7 +95,7 @@ test.describe('Demo caseload surfaces', () => {
 	let api: APIRequestContext
 	let token: string
 	let caseId: string
-	let openTaskId: string
+	let engineTaskUuid: string
 
 	test.beforeAll(async ({ browser }) => {
 		const context = await browser.newContext()
@@ -108,14 +127,13 @@ test.describe('Demo caseload surfaces', () => {
 			)
 		}
 
-		const open = await createObject(api, token, 'caseTask', {
+		await createObject(api, token, 'caseTask', {
 			title: OPEN_TASK,
 			case: caseId,
 			assignee: 'admin',
 			status: 'active',
 			dueDate: dueInDays(-2),
 		})
-		openTaskId = objectId(open)
 
 		await createObject(api, token, 'caseTask', {
 			title: DONE_TASK,
@@ -124,9 +142,23 @@ test.describe('Demo caseload surfaces', () => {
 			status: 'completed',
 			dueDate: dueInDays(-4),
 		})
+
+		// And one in the engine, for the detail page. Field names differ with
+		// the table: `case` is `objectUuid`, `status` is `state`, `dueDate` is
+		// `dueAt`, and the id is a uuid.
+		engineTaskUuid = await seedFlowTask(api, token, {
+			title: ENGINE_TASK,
+			objectUuid: caseId,
+			assignee: 'admin',
+			state: 'active',
+			dueAt: dueInDays(-2),
+		})
 	})
 
 	test.afterAll(async () => {
+		// The engine task is not an OpenRegister object, so the prefix sweep
+		// cannot see it; `cancel` is the only removal verb the engine has.
+		await cleanupFlowTasks(api, token)
 		await cleanupRunObjects(api, token)
 	})
 
@@ -187,11 +219,16 @@ test.describe('Demo caseload surfaces', () => {
 	})
 
 	test('a seeded task opens on its own detail page', async ({ page }) => {
-		await navToRoute(page, `/tasks/${openTaskId}`)
+		// THE ENGINE'S UUID, not the object's id. `/tasks/{id}` is
+		// TaskDetailView since dossiq#2411 and it reads the task engine;
+		// handed a `caseTask` object id it resolves nothing and renders an
+		// empty page, which reads as "the detail page is broken" rather than
+		// as "that id belongs to the other store".
+		await navToRoute(page, `/tasks/${engineTaskUuid}`)
 
 		await expect(
-			page.getByText(OPEN_TASK, { exact: false }).first(),
-			'the task detail page must show the seeded task',
+			page.getByText(ENGINE_TASK, { exact: false }).first(),
+			'the task detail page must show the seeded engine task',
 		).toBeVisible({ timeout: 20000 })
 	})
 })
