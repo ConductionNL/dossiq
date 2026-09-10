@@ -50,7 +50,6 @@ import { expect, test } from '@playwright/test'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
@@ -127,6 +126,8 @@ let readSecondTitle = ''
 /** A second case of the same shape, whose first task this spec completes. */
 let completeCaseId = ''
 let completeFirstTitle = ''
+/** The engine uuid of the task the completion test finishes. */
+let completeFirstUuid = ''
 let completeSecondTitle = ''
 
 /** A case with exactly one open task, which is completed to empty the pane. */
@@ -314,7 +315,12 @@ test.describe('Case detail — the task pane', () => {
 
 		await seedTask(readCaseId, readFirstTitle, EARLIER_DUE, 'active')
 		await seedTask(readCaseId, readSecondTitle, LATER_DUE)
-		await seedTask(completeCaseId, completeFirstTitle, EARLIER_DUE, 'active')
+		completeFirstUuid = await seedTask(
+			completeCaseId,
+			completeFirstTitle,
+			EARLIER_DUE,
+			'active',
+		)
 		await seedTask(completeCaseId, completeSecondTitle, LATER_DUE)
 		await seedTask(lastCaseId, lastTaskTitle, EARLIER_DUE, 'active')
 		linkTaskId = await seedTask(
@@ -422,12 +428,23 @@ test.describe('Case detail — the task pane', () => {
 		).toBeVisible({ timeout: 20_000 })
 		await expect(panel.locator(COMPLETE_BUTTON)).toHaveCount(0)
 
-		// The write reached the server, not just the screen.
-		const stored = await listObjects(api, 'caseTask', { _limit: '200' })
-		const completed = stored.find(
-			(row) => String(row.title ?? '') === completeFirstTitle,
-		)
-		expect(String(completed?.status)).toBe('completed')
+		// The write reached the server, not just the screen — READ FROM THE
+		// TABLE THE PANE WRITES. This asked
+		// `/api/objects/dossiq/caseTask` for a row seeded in the engine, so
+		// `find()` answered undefined and `String(undefined)` compared
+		// "undefined" to "completed": a real failure, but pointing at the
+		// completion rather than at the read. The engine's states are CMMN's
+		// and its own terminal flag is the claim.
+		const stored = await api.get(`${FLOW_TASKS_BASE}/${completeFirstUuid}`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(
+			stored.ok(),
+			`read back task ${completeFirstUuid} -> ${stored.status()}`,
+		).toBeTruthy()
+		const completed = await stored.json()
+		expect(String(completed?.state)).toBe('completed')
+		expect(completed?.isTerminal).toBe(true)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#the-last-task-leaves-an-empty-pane
