@@ -29,6 +29,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -64,7 +66,7 @@ class CreateTaskHandlerTest extends TestCase {
 		$gateway->method('lastError')->willReturn('the engine said no');
 		$gateway->method('mirrorImport')->willReturnCallback(
 			static function (array $task, string $caseId, ?string $actor) use (&$recorded, $taskId): string {
-				$recorded = ['object' => $task, 'case' => $caseId];
+				$recorded = ['object' => $task, 'case' => $caseId, 'actor' => $actor];
 
 				return $taskId;
 			}
@@ -78,6 +80,95 @@ class CreateTaskHandlerTest extends TestCase {
 	/**
 	 * @return void
 	 */
+	/**
+	 * The transition's user is who the engine write is authorized as.
+	 *
+	 * 🔴 THIS WAS HARDCODED TO null AND NOTHING COULD BE CREATED.
+	 * `TaskService::import()` passes its actor to
+	 * `TaskAuthorizationService::assertMay()`, whose first guard rejects a
+	 * blank uid with "Verb 'create' denied: no acting identity". So every
+	 * checklist task on every transition was refused, the gateway swallowed
+	 * the throw, and the only trace was "the engine refused the task".
+	 *
+	 * @return void
+	 */
+	public function testTheTransitionsUserIsTheActor(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this),
+			new NullLogger()
+		);
+
+		$result = $handler->handle(
+			['title' => 'T'],
+			['id' => 'case-1'],
+			['userId' => 'jan']
+		);
+
+		$this->assertTrue($result->succeeded);
+		$this->assertSame('jan', $recorded['actor']);
+	}//end testTheTransitionsUserIsTheActor()
+
+	/**
+	 * A context carrying no user falls back to the session.
+	 *
+	 * `DossiqFlowNodeBase` hands this handler the flow RUN's context, which
+	 * need not carry a `userId` at all. Without the fallback that path writes
+	 * with no identity and is refused, which is the bug above wearing a
+	 * different hat.
+	 *
+	 * @return void
+	 */
+	public function testTheSessionAnswersWhenTheContextCarriesNoUser(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('piet');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this),
+			new NullLogger(),
+			$session
+		);
+
+		$result = $handler->handle(['title' => 'T'], ['id' => 'case-1'], []);
+
+		$this->assertTrue($result->succeeded);
+		$this->assertSame('piet', $recorded['actor']);
+	}//end testTheSessionAnswersWhenTheContextCarriesNoUser()
+
+	/**
+	 * The context wins over the session, rather than the other way round.
+	 *
+	 * Both can resolve at once on an ordinary UI transition. The person who
+	 * moved the case is the one the work is attributed to; preferring the
+	 * session would attribute it to whoever the request happened to run as,
+	 * which is the same identity today and need not stay so.
+	 *
+	 * @return void
+	 */
+	public function testTheContextOutranksTheSession(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('piet');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		$recorded = null;
+		$handler = new CreateTaskHandler(
+			new AssigneeResolver(new NullLogger()),
+			self::recordingGateway($recorded, $this),
+			new NullLogger(),
+			$session
+		);
+
+		$handler->handle(['title' => 'T'], ['id' => 'case-1'], ['userId' => 'jan']);
+
+		$this->assertSame('jan', $recorded['actor']);
+	}//end testTheContextOutranksTheSession()
+
 	/**
 	 * An unreachable engine fails the transition and names the reason.
 	 *

@@ -349,7 +349,7 @@ class StatusTransitionService {
 		// the transition itself does with them — a notification that lists the
 		// case's open tasks is otherwise sent one dispatch too early.
 		$actions = array_merge(
-			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case),
+			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case, actor: $userId),
 			$this->specReader->extractActions(transition: $transition),
 		);
 		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
@@ -605,7 +605,7 @@ class StatusTransitionService {
 		// into it, so an admin's move brings the tasks too. Only the checklist
 		// actions run here: there is no transition whose actions could.
 		$dispatched = $this->sideEffectDispatcher->dispatch(
-			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case),
+			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case, actor: $userId),
 			case: $case,
 			transitionContext: [
 				'fromStatus' => $currentId,

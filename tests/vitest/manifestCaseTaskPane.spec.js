@@ -19,7 +19,7 @@
  * key that answers it, the component identifier that key binds, the import
  * that binds that identifier to a path, and the file at that path.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import fs from 'fs'
@@ -182,6 +182,10 @@ describe('the case-tasks widget after the retype', () => {
 		// no page renders the case's tasks, and the two pages over `caseTask`
 		// are the index and the task detail that existed before.
 		expect(pages.some((entry) => entry.id === 'CaseTasks')).toBe(false)
+		// ONE page over `caseTask` now, not two. The Tasks index moved to
+		// `entitySource: "tasks"` and reads the engine's inbox, so it binds
+		// no schema at all. TaskDetail is the last one, and it goes when
+		// the schema does.
 		expect(
 			pages
 				.filter(
@@ -189,7 +193,7 @@ describe('the case-tasks widget after the retype', () => {
 				)
 				.map((entry) => entry.id)
 				.sort(),
-		).toEqual(['TaskDetail', 'Tasks'])
+		).toEqual(['TaskDetail'])
 	})
 
 	it('names an icon src/icons.js registers', () => {
