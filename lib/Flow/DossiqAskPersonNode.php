@@ -18,7 +18,6 @@ namespace OCA\Dossiq\Flow;
 
 use DateTime;
 use OCA\Dossiq\Service\AssigneeResolver;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\OpenRegister\Service\Flow\FlowNodeResumeState;
 use OCA\OpenRegister\Service\Flow\FlowRunContext;
@@ -143,7 +142,6 @@ class DossiqAskPersonNode implements IFlowNode {
      * container, and the suites that build it by hand — keeps working. It
      * needs nothing this node was not already given.
      *
-     * @param SettingsService   $settingsService Resolves the object service and configured schemas.
      * @param AssigneeResolver  $assignees       The app's one answer to who work goes to.
      * @param IL10N             $l10n            The localisation service.
      * @param LoggerInterface   $logger          The logger.
@@ -155,7 +153,6 @@ class DossiqAskPersonNode implements IFlowNode {
      * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
-        SettingsService $settingsService,
         private readonly AssigneeResolver $assignees,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
