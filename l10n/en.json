@@ -3649,6 +3649,7 @@
         "Pick a template. The letter is rendered with this case and filed on the Documents tab as a draft.": "Pick a template. The letter is rendered with this case and filed on the Documents tab as a draft.",
         "The document could not be generated.": "The document could not be generated.",
         "The template library is unavailable.": "The template library is unavailable.",
+        "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.": "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.",
         "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.": "Free-text keywords you tag a document with, so you can find it back. A type is one per document and carries a confidentiality default; a keyword is many per document and carries nothing. The property name is English (decisions D13); the Dutch label lives in nl.json only.",
         "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
         "Unclaimed": "Unclaimed",

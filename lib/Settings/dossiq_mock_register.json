@@ -1286,7 +1286,8 @@
           "templateVersion": {
             "type": "string",
             "title": "Template Version",
-            "description": "The version of the template that produced this decision, resolved from filinq's version chain at compose time. Recorded so an appeal against a decision is read against the text that was actually issued, not the template as it stands today."
+            "description": "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.",
+            "x-notes": "Resolved by TemplateEngineAdapterInterface::resolveVersion() at compose time and stored by BeschikkingService::compose(), which used to compute it and drop it. The filinq adapter reads it from filinq's TemplateVersionService chain, so the value is 'v<n>' for a versioned template and the template object's own OpenRegister version otherwise. Unrelated to draftVersion, which counts re-renders of this beschikking."
           },
           "draftVersion": {
             "type": "integer",
