@@ -83,6 +83,25 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	private const TEMPLATE_SERVICE = 'Service\TemplateService';
 
 	/**
+	 * Filinq's template version chain, below its app namespace root.
+	 *
+	 * @var string
+	 */
+	private const TEMPLATE_VERSION_SERVICE = 'Service\TemplateVersionService';
+
+	/**
+	 * How many chain entries to read when resolving the version in force.
+	 *
+	 * Filinq returns them newest first, so this is a ceiling on how far back a
+	 * beschikking's effective date may reach, not a page to iterate. A template
+	 * with more than this many revisions before the date falls through to the
+	 * template's own version rather than reporting a wrong one.
+	 *
+	 * @var integer
+	 */
+	private const VERSION_PAGE_SIZE = 100;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves filinq's services across the rename.
@@ -164,18 +183,42 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	/**
 	 * Resolve the template version effective on a given date.
 	 *
-	 * Filinq's template model carries a monotonic `version` and no effective
-	 * dating, so the version effective on any date is the one the template
-	 * currently holds. The date is echoed back rather than used to select,
-	 * which is what filinq can actually answer — the mock's constant `v1` was
-	 * not a version at all.
+	 * 🔴 THIS USED TO ANSWER `v1`, ALWAYS, ON EVERY INSTANCE. It read
+	 * `$template['version']` and coalesced to 1. Filinq's `getTemplate()`
+	 * returns `ObjectEntity::jsonSerialize()`, which keeps the OpenRegister
+	 * version under `@self`, and filinq's `template` schema declares no
+	 * `version` property of its own — so that key is never set and the
+	 * coalesce always fired. The value was the mock's constant with a call in
+	 * front of it, which is worse than the mock, because it looked like a
+	 * query. Filinq #1063 records the same three facts from the other side.
+	 *
+	 * What answers it instead is filinq's OWN version chain, which already
+	 * ships: `TemplateVersionService::getVersions()` returns every stored
+	 * version of a template, newest first, each with a monotonic `version`
+	 * number and its own creation timestamp. The version in force on a date is
+	 * the highest one created on or before that date, so `$effectiveDate` now
+	 * selects rather than being echoed back. A beschikking issued in March can
+	 * therefore name the template that produced it rather than the one that
+	 * happens to be current when someone appeals.
+	 *
+	 * Two fallbacks, in order, and neither of them invents a number:
+	 *
+	 *   - No chain entry at or before the date (a template saved once and never
+	 *     edited has no chain at all): the template object's own OpenRegister
+	 *     version, verbatim, lifted from `@self`.
+	 *   - Neither available: a refusal. `v1` is not a safe default when the
+	 *     answer is on an appealable decision.
+	 *
+	 * When filinq gains a first-class effective-version query (#1063), this
+	 * method becomes a call to it and the chain walk below moves out.
 	 *
 	 * @param string $templateId The filinq template UUID.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
 	 *
 	 * @return array{templateId: string, version: string, effectiveDate: string} The resolved version.
 	 *
-	 * @throws RuntimeException When filinq is absent or does not know the template.
+	 * @throws RuntimeException When filinq is absent, does not know the template,
+	 *                          or holds no version for it.
 	 *
 	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
 	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
@@ -203,12 +246,124 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 			throw new RuntimeException('filinq_template_unknown: ' . $templateId, 0, $e);
 		}
 
+		$version = $this->versionInForce(templateId: $templateId, effectiveDate: $effectiveDate);
+		if ($version === null) {
+			$version = $this->templateOwnVersion(template: $template);
+		}
+
+		if ($version === null) {
+			throw new RuntimeException(
+				'filinq_template_unversioned: filinq holds no version for template ' . $templateId
+			);
+		}
+
 		return [
 			'templateId' => $templateId,
-			'version' => 'v' . (string)((int)($template['version'] ?? 1)),
+			'version' => $version,
 			'effectiveDate' => $effectiveDate,
 		];
 	}//end resolveVersion()
+
+	/**
+	 * The highest chain version created on or before the effective date.
+	 *
+	 * A version whose creation timestamp cannot be read is skipped rather than
+	 * treated as ancient: an unreadable date must not win a comparison it never
+	 * took part in.
+	 *
+	 * @param string $templateId The filinq template UUID.
+	 * @param string $effectiveDate The ISO date the beschikking is effective.
+	 *
+	 * @return string|null The version, as `v<n>`, or null when the chain
+	 *                     answers nothing for that date.
+	 *
+	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
+	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
+	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
+	 */
+	private function versionInForce(string $templateId, string $effectiveDate): ?string {
+		$versionService = FleetAppId::getService($this->container, 'filinq', self::TEMPLATE_VERSION_SERVICE);
+		if ($versionService === null) {
+			return null;
+		}
+
+		$cutoff = strtotime($effectiveDate . ' 23:59:59');
+		if ($cutoff === false) {
+			return null;
+		}
+
+		try {
+			$page = (array)$versionService->getVersions($templateId, self::VERSION_PAGE_SIZE);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Filinq could not list the versions of a beschikking template',
+				['app' => Application::APP_ID, 'templateId' => $templateId, 'exception' => $e->getMessage()]
+			);
+			return null;
+		}
+
+		$highest = $this->highestVersionAtOrBefore(rows: (array)($page['results'] ?? []), cutoff: $cutoff);
+		if ($highest === null) {
+			return null;
+		}
+
+		return 'v' . $highest;
+	}//end versionInForce()
+
+	/**
+	 * The highest version number among the chain rows at or before a moment.
+	 *
+	 * @param array<int, mixed> $rows Filinq's chain rows.
+	 * @param integer $cutoff The last second of the effective date, as a timestamp.
+	 *
+	 * @return integer|null The version number, or null when no row qualifies.
+	 */
+	private function highestVersionAtOrBefore(array $rows, int $cutoff): ?int {
+		$highest = null;
+
+		foreach ($rows as $row) {
+			$row = (array)$row;
+			$created = strtotime((string)(((array)($row['@self'] ?? []))['created'] ?? ''));
+			if ($created === false || $created > $cutoff) {
+				continue;
+			}
+
+			$number = (int)($row['version'] ?? 0);
+			if ($number > 0 && ($highest === null || $number > $highest)) {
+				$highest = $number;
+			}
+		}
+
+		return $highest;
+	}//end highestVersionAtOrBefore()
+
+	/**
+	 * The template object's own OpenRegister version, if it carries one.
+	 *
+	 * This is the fallback for a template that has never been versioned, and it
+	 * is a real value read off the object rather than a default. It is returned
+	 * verbatim, so an OpenRegister version (`0.0.3`) stays distinguishable from
+	 * a chain version (`v3`) in everything that stores it.
+	 *
+	 * @param array<string, mixed> $template Filinq's serialised template object.
+	 *
+	 * @return string|null The version, or null when the object carries none.
+	 */
+	private function templateOwnVersion(array $template): ?string {
+		$version = (((array)($template['@self'] ?? []))['version'] ?? ($template['version'] ?? null));
+
+		if (is_int($version) === true && $version > 0) {
+			return 'v' . $version;
+		}
+
+		if (is_string($version) === true && $version !== '') {
+			return $version;
+		}
+
+		return null;
+	}//end templateOwnVersion()
 
 	/**
 	 * The OpenRegister references filinq should resolve into the render context.

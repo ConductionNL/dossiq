@@ -52,6 +52,23 @@ class WOORedactionService {
 	private const DOCUMENT_APP = 'filinq';
 
 	/**
+	 * Why a document filinq ran on still needs a person, per reported outcome.
+	 *
+	 * Keyed by the status {@see FilinqRedactionClient::redact()} reports. The
+	 * two are different repairs: `no_entities_detected` is a detection backend
+	 * that answered nothing on a document a person judged to hold something
+	 * worth withholding; `no_output_produced` is filinq finding entities and
+	 * naming no redacted file. Collapsing them into one sentence would send a
+	 * Woo officer to look at the wrong half.
+	 *
+	 * @var array<string, string>
+	 */
+	private const MANUAL_REASONS = [
+		'no_entities_detected' => 'filinq_detected_no_entities',
+		'no_output_produced' => 'filinq_produced_no_redacted_file',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection
@@ -171,13 +188,19 @@ class WOORedactionService {
 			$outcome['caseId'] = $caseId;
 			$outcome['mode'] = 'filinq';
 
-			if (($outcome['status'] ?? '') !== 'redacted') {
-				// Filinq ran and removed nothing. The document still needs a
-				// person, so it belongs on the manual list carrying what filinq
-				// reported, not on the redacted one carrying an outcome word
-				// that would close the task.
+			$reported = (string)($outcome['status'] ?? '');
+			if ($reported !== 'redacted') {
+				// Filinq ran and removed nothing, or removed something and
+				// produced no file to show for it. Either way the document
+				// still needs a person, so it belongs on the manual list
+				// carrying what filinq reported, not on the redacted one
+				// carrying an outcome word that would close the task. The
+				// reason is the outcome filinq's run actually had, because
+				// "no entities" and "no output" call for different repairs:
+				// one is a detection backend that answered nothing, the other
+				// is a redaction that produced no document.
 				$outcome['status'] = 'awaiting_manual_redaction';
-				$outcome['reason'] = 'filinq_detected_no_entities';
+				$outcome['reason'] = (self::MANUAL_REASONS[$reported] ?? 'filinq_returned_' . $reported);
 				$outcome['instruction'] = 'Upload a redacted version to replace this document.';
 				$manual[] = $outcome;
 				continue;

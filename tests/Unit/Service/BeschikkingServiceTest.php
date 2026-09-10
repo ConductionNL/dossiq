@@ -251,6 +251,29 @@ class BeschikkingServiceTest extends TestCase {
 	}//end testComposeCreatesDraft()
 
 	/**
+	 * The resolved template version is stored on the beschikking.
+	 *
+	 * 🔴 IT WAS RESOLVED AND DROPPED. `compose()` called the adapter's
+	 * `resolveVersion()` and then used only its `templateId`, so every
+	 * beschikking recorded which template made it and never which version of
+	 * it. Editing a template after a decision issued left the appeal against
+	 * that decision reading text nobody ever sent. This asserts the effect —
+	 * the value on the STORED object — and not the adapter's return value,
+	 * which was already correct and already going nowhere.
+	 *
+	 * @return void
+	 */
+	public function testComposeStoresTheResolvedTemplateVersion(): void {
+		$decision = $this->composeWmo();
+
+		$this->assertArrayHasKey('templateVersion', $decision, 'the version must be on the object');
+		$this->assertSame('v1', $decision['templateVersion']);
+
+		$stored = $this->service->find($decision['id']);
+		$this->assertSame('v1', ($stored['templateVersion'] ?? null), 'and must survive the round trip');
+	}//end testComposeStoresTheResolvedTemplateVersion()
+
+	/**
 	 * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
 	 *
 	 * @return void
