@@ -122,10 +122,18 @@ programme and the reason wave 1 goes first.
       | `flowNode` | `node_id` | 1:1 |
       | `blocksCase` | a `TaskRelation` row | No column by design: OR keeps typed relations out of the task row |
 
-      **The one real defect to carry across:** `CreateTaskHandler.php:76`
-      writes `'open'`, which is out of enum on BOTH sides. It must be
-      refused, not translated. OpenRegister's `flow-task-entity` change
-      already has a test case for exactly this string.
+      **The `'open'` defect is already fixed here, and the citation is
+      stale.** OpenRegister's `flow-task-entity` proposal cites
+      `procest/lib/Service/Transitions/CreateTaskHandler.php:76` for writing
+      an out-of-enum `'open'`. Dossiq fixed that in #1326
+      (`fix(transitions): create tasks with a status the schema allows`); the
+      line now writes `'available'` and only the explanatory comment mentions
+      the old value. Nothing to carry across.
+
+      Keep OpenRegister's refusal test anyway: `TaskState::normalise()`
+      refuses an unmapped status naming itself, and that guard is what stops
+      the next app reintroducing it. Tell the openregister side their
+      citation is fixed so the proposal stops describing a live bug.
 
       **Forty Task columns have no caseTask source**, all optional, and they
       are what dossiq gains: `responses` and `template_snapshot` (the task

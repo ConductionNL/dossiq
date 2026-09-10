@@ -49,6 +49,11 @@ largest of these. From `openregister/openspec/changes/flow-task-entity/proposal.
 and at line 61 it cites `procest/lib/Service/Transitions/CreateTaskHandler.php:76`
 by name, for writing a task status that is out of its own enum.
 
+That particular citation is now stale: dossiq fixed it in #1326 and the line
+writes `'available'`. The inventory's point stands, and the fix is the
+argument for it rather than against it. One app found and fixed its own copy
+of a defect the other twenty-two still carry, and nobody else benefited.
+
 ## The cost is not tidiness
 
 Three failures, each already observed in this codebase or its siblings.
