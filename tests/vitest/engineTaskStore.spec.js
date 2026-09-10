@@ -35,8 +35,13 @@ vi.mock('@nextcloud/axios', () => ({
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 
-const { useEngineTaskStore, isTerminal, TERMINAL_STATES, asTaskRow } =
-	await import('../../src/store/modules/engineTask.js')
+const {
+	useEngineTaskStore,
+	isTerminal,
+	TERMINAL_STATES,
+	asTaskRow,
+	signedDaysUntilDue,
+} = await import('../../src/store/modules/engineTask.js')
 
 beforeEach(() => {
 	setActivePinia(createPinia())
@@ -68,6 +73,38 @@ describe('isTerminal', () => {
 		// Same vocabulary, deliberately. If this ever needs a mapping table
 		// the migration has gone wrong.
 		expect([...TERMINAL_STATES]).toEqual(['completed', 'terminated', 'disabled'])
+	})
+})
+
+describe('signedDaysUntilDue', () => {
+	/**
+	 * The engine reports the two directions in two fields and never both.
+	 * `TaskInboxService::row()` attaches `daysUntilDue` (counts down, null
+	 * once the deadline has passed) and `daysOverdue` (counts up, null
+	 * before it). A "days left" column reads one signed number.
+	 */
+	it('reads a countdown straight through', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: 4, daysOverdue: null })).toBe(4)
+	})
+
+	it('reads an overdue count as a negative number', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: null, daysOverdue: 9 })).toBe(-9)
+	})
+
+	it('answers null when the task has no deadline at all', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: null, daysOverdue: null })).toBe(
+			null,
+		)
+		expect(signedDaysUntilDue({})).toBe(null)
+		expect(signedDaysUntilDue(null)).toBe(null)
+	})
+
+	it('keeps zero days a plain zero, never a negative zero', () => {
+		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
+		// less than a day would be rendered as due today and coloured red.
+		const zero = signedDaysUntilDue({ daysUntilDue: null, daysOverdue: 0 })
+		expect(zero).toBe(0)
+		expect(Object.is(zero, -0)).toBe(false)
 	})
 })
 
@@ -407,6 +444,36 @@ describe('the read path speaks the register vocabulary', () => {
 		expect(row.uuid).toBe('task-1')
 		expect(row.state).toBe('completed')
 		expect(isTerminal(row)).toBe(true)
+	})
+
+	/**
+	 * 🔴 THE ROW ALREADY HAD AN `id`, SO THE `id` MAPPING NEVER FIRED.
+	 *
+	 * `Task::jsonSerialize()` emits `id` (the database primary key) beside
+	 * `uuid`, so the original `row.id ?? row.uuid` took the number on every
+	 * real row and the uuid on none of them. The test above could not see
+	 * it: its fixture carries no `id`, which is the shape that agrees with
+	 * the reader rather than the shape the API returns.
+	 *
+	 * What it cost: `/tasks/:id` and every `/api/flow-tasks/{uuid}/…` verb
+	 * take the uuid, so three surfaces built a deep link to `…/tasks/153`
+	 * that resolves to nothing. No error, no empty state, just a dead row.
+	 */
+	it('takes the identity from uuid even when the numeric id sits beside it', () => {
+		const row = asTaskRow({
+			id: 153,
+			uuid: '232e2433-26a5-45f9-a71f-d9a3f2cdfddf',
+			state: 'active',
+		})
+
+		expect(row.id).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
+		expect(row.uuid).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
+	})
+
+	it('falls back to the numeric id only when there is no uuid', () => {
+		// Not a shape the engine returns, but the fallback is what keeps a
+		// row read before the cutover resolving to something.
+		expect(asTaskRow({ id: 153, state: 'active' }).id).toBe(153)
 	})
 
 	it('does not invent a deadline for a task that has none', () => {

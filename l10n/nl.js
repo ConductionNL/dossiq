@@ -3901,7 +3901,10 @@ OC.L10N.register(
         "Nothing has happened to this task yet": "Er is nog niets met deze taak gebeurd",
         "Pick up": "Oppakken",
         "This task is not there": "Deze taak is er niet",
-        "What did you find, who did you call?": "Wat heb je gevonden, wie heb je gebeld?"
+        "What did you find, who did you call?": "Wat heb je gevonden, wie heb je gebeld?",
+        "{n} days overdue": "{n} dagen te laat",
+        "{n} days remaining": "Nog {n} dagen",
+        "Could not load your tasks: {reason}": "Kon uw taken niet laden: {reason}"
     },
     "nplurals=2; plural=(n != 1);"
 )

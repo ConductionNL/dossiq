@@ -3901,7 +3901,10 @@ OC.L10N.register(
         "Nothing has happened to this task yet": "Nothing has happened to this task yet",
         "Pick up": "Pick up",
         "This task is not there": "This task is not there",
-        "What did you find, who did you call?": "What did you find, who did you call?"
+        "What did you find, who did you call?": "What did you find, who did you call?",
+        "{n} days overdue": "{n} days overdue",
+        "{n} days remaining": "{n} days remaining",
+        "Could not load your tasks: {reason}": "Could not load your tasks: {reason}"
     },
     "nplurals=2; plural=(n != 1);"
 )
