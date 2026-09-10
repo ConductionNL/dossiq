@@ -143,6 +143,16 @@ test.describe('Queue', () => {
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 			timeout: 60_000,
 		})
+		// 🔴 COUNT ONLY ONCE THE LIST HAS ANSWERED. `before` used to be read the
+		// moment the page shell appeared, while the first fetch was still in
+		// flight, so it could capture a half-filled or empty table. Narrowing
+		// then produced MORE rows than the baseline and the assertion below
+		// failed reporting that a filter had widened the set — a race in the
+		// test reported as a defect in the product.
+		await expect(
+			page.locator('.cn-index-page__empty, table tbody tr').first(),
+			'the queue must answer before its rows are counted',
+		).toBeVisible({ timeout: 30_000 })
 		const before = await page.locator('table tbody tr').count()
 
 		// The folder sidebar is the same control the Cases index carries; picking

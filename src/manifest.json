@@ -1810,17 +1810,17 @@
 					{
 						"id": "1",
 						"widgetId": "case-header",
-						"gridX": 8,
+						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
 					},
 					{
 						"id": "10",
 						"widgetId": "case-transitions",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 2,
 						"gridWidth": 8,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1829,7 +1829,7 @@
 						"id": "3",
 						"widgetId": "case-steps",
 						"gridX": 8,
-						"gridY": 4,
+						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1838,16 +1838,16 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 4,
 						"gridWidth": 8,
-						"gridHeight": 22,
+						"gridHeight": 18,
 						"showTitle": false
 					},
 					{
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 5,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1856,7 +1856,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 10,
+						"gridY": 8,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1865,7 +1865,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 12,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4
 					},
@@ -1873,7 +1873,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 8,
-						"gridY": 16,
+						"gridY": 14,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1882,7 +1882,7 @@
 						"id": "12",
 						"widgetId": "case-archival",
 						"gridX": 8,
-						"gridY": 19,
+						"gridY": 17,
 						"gridWidth": 4,
 						"gridHeight": 5,
 						"showTitle": false

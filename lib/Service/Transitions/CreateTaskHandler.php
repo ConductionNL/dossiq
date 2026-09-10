@@ -40,7 +40,6 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
-use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -52,13 +51,11 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Bridge to OpenRegister + config
 	 * @param AssigneeResolver  $assignees       The app's one answer to who work goes to
 	 * @param EngineTaskGateway $engineTasks     The dual-run seam onto OpenRegister's task engine
 	 * @param LoggerInterface   $logger          Logger
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
 		private readonly AssigneeResolver $assignees,
 		private readonly EngineTaskGateway $engineTasks,
 		private readonly LoggerInterface $logger,
@@ -78,15 +75,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
-			$objectService = $this->settingsService->getObjectService();
-			if ($objectService === null) {
-				return new ActionResult(succeeded: false, error: 'storage_unavailable');
-			}
+			// The engine, not a register schema. Its own reachability check
+			// names the reason, including the namespace-rename case a
+			// duck-typed lookup would otherwise hide.
+			$unavailable = $this->engineTasks->unavailableReason();
+			if ($unavailable !== '') {
+				$this->logger->error('CreateTaskHandler: the task engine is unavailable', ['reason' => $unavailable]);
 
-			$register = $this->settingsService->getConfigValue(key: 'register');
-			$taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-			if ($register === '' || $taskSchema === '') {
-				return new ActionResult(succeeded: false, error: 'task_schema_not_configured');
+				return new ActionResult(succeeded: false, error: 'storage_unavailable');
 			}
 
 			$caseId = $this->assignees->caseId(case: $case);
@@ -123,35 +119,41 @@ class CreateTaskHandler implements ActionHandlerInterface {
 				$task['workflowStepId'] = $workflowStepId;
 			}
 
-			// On the flow path the engine's RegistryStepDispatcher already runs
-			// this handler inside `ObjectService::runAs()` as the run's acting
-			// identity (openregister#3332); on the interactive path the ambient
-			// session user answers the permission checks. No local wrap needed.
-			$created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
-			$taskId = '';
-			if (is_array($created) === true) {
-				$taskId = (string)($created['id'] ?? '');
-			}
-
-			// Dual-run (dossiq-duplication-to-abstractions, D-1 step 3): the
-			// register object above is still the record. This mirrors it into
-			// OpenRegister's task engine so the two stores can be compared on
-			// live data before the read moves. Off unless `task_engine_write`
-			// is set, and it cannot fail this handler: the transition has
-			// already done its job, and refusing it because a shadow write
-			// failed would turn a migration into an outage.
-			$engineTaskId = $this->engineTasks->mirrorCreate(
+			// THE ENGINE IS THE RECORD NOW, and the register write is gone.
+			// The dual-run has served its purpose: every read surface moved
+			// (#2357), the flow's own write and resume moved (#2337, #2362),
+			// and 33 existing tasks were backfilled and reconciled. Keeping
+			// the register write would leave a second store that nothing
+			// reads, drifting quietly until somebody trusted it.
+			//
+			// `mirrorImport` rather than `mirrorCreate`: on the flow path the
+			// engine's RegistryStepDispatcher runs this handler inside
+			// `ObjectService::runAs()` as the run's acting identity
+			// (openregister#3332), which is a trusted in-process caller, not
+			// an HTTP one.
+			//
+			// A FAILURE NOW FAILS THE TRANSITION, deliberately. Under the
+			// dual-run a failed mirror was swallowed because the register
+			// task already existed; with no register task there is nothing
+			// left, and a transition that silently created no task is the
+			// worse outcome. A checklist step whose task never appeared
+			// looks like a case that needs no work.
+			$taskId = $this->engineTasks->mirrorImport(
 				task: $task,
 				caseId: $caseId,
 				actor: null
 			);
 
-			$result = ['taskId' => $taskId];
-			if ($engineTaskId !== '') {
-				$result['engineTaskId'] = $engineTaskId;
+			if ($taskId === '') {
+				$this->logger->error(
+					'CreateTaskHandler: the engine refused the task',
+					['reason' => $this->engineTasks->lastError(), 'case' => $caseId]
+				);
+
+				return new ActionResult(succeeded: false, error: 'create_task_failed');
 			}
 
-			return new ActionResult(succeeded: true, data: $result);
+			return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CreateTaskHandler failed',

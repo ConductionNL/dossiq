@@ -394,9 +394,15 @@ export default {
 	padding: 4px 0;
 }
 
+/* A wrapping ROW of cards, not a stacked list. This strip used to sit in the
+   4-wide right column, where a column was the only thing that fitted; it is a
+   full-width row above the tabs now, so the facts read across at a glance
+   instead of down. Wrapping rather than scrolling: a narrow viewport moves the
+   last card onto a second line, where a scroll would hide it behind an edge
+   with nothing to say it is there. */
 .case-header__identity {
 	display: flex;
-	flex-direction: column;
+	flex-wrap: wrap;
 	gap: 8px;
 	margin: 0;
 }
@@ -406,11 +412,20 @@ export default {
  * baseline-aligned `dt`/`dd` pair wraps a long case type onto its own line
  * anyway, leaving the label stranded beside white space.
  */
+/* Each fact is its own card, matching the dashboard's stat tiles so the two
+   surfaces read as one system. `flex: 1 1 0` divides the row evenly and lets a
+   long case type wrap inside its own card rather than pushing its neighbours
+   off the line; `min-width` keeps a card from collapsing to its label. */
 .case-header__field {
+	background-color: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
 	display: flex;
+	flex: 1 1 0;
 	flex-direction: column;
 	gap: 2px;
-	min-width: 0;
+	min-width: 140px;
+	padding: calc(var(--default-grid-baseline) * 3);
 }
 
 .case-header__field dt {
