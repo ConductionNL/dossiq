@@ -3877,7 +3877,8 @@ OC.L10N.register(
         "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.": "List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.",
         "Sender address": "Sender address",
         "Sender name": "Sender name",
-        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "The address dossiq sends from. Leave it empty and dossiq refuses to send at all."
+        "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.": "The address dossiq sends from. Leave it empty and dossiq refuses to send at all.",
+        "Case deadline": "Case deadline"
     },
     "nplurals=2; plural=(n != 1);"
 )
