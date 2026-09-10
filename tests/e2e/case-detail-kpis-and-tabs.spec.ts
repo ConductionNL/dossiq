@@ -324,20 +324,33 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
-	test('the identity row carries no widget chrome of its own', async ({
+	test('the identity card carries its title and no actions menu', async ({
 		page,
 	}) => {
-		// The identity row's cell carries `showTitle: false`, because the row
-		// already labels every fact it shows. Without the flag the grid draws a
-		// CnWidgetWrapper header on top: the widget title above a row that names
-		// itself, plus an Actions menu on read-only content, which the
-		// Cards-vs-Widgets split says a card must not have.
+		// This assertion used to read the other way, and it flipped on purpose.
 		//
-		// This regressed once already on the tiles this row replaced: rebuilding
-		// the layout from a list of tuples silently dropped the flag from five
-		// cells, and nothing failed. Every gate passed and the E2E passed,
-		// because no assertion described what the cell is supposed to look like.
-		// This is that assertion.
+		// The identity block was a full-width band carrying `showTitle: false`,
+		// because facts laid out in a line label themselves and a heading over
+		// them printed the same word twice. dossiq#2322 rebuilt it as a titled
+		// card in the four-column rail, where the same facts stack instead: a
+		// stacked group with no heading says nothing about what the group is,
+		// so the cell now carries `showTitle: true` and the heading is the
+		// design rather than the defect.
+		//
+		// The second half did NOT flip, and the reason is worth keeping. This
+		// is a consumer slot widget (`#widget-case-header`), so CnDetailPage
+		// renders a bare grid `<h3 class="cn-detail-page__widget-title">` for
+		// it — not a CnWidgetWrapper header. Only the wrapper carries the
+		// overflow Actions menu, and it nests that menu inside its own
+		// `v-if="showTitle"` header, so a titled slot widget gains the heading
+		// without gaining the menu. Read-only content still must not offer one.
+		//
+		// The absence half regressed once already on the tiles this row
+		// replaced: rebuilding the layout from a list of tuples silently
+		// dropped the flag from five cells, and nothing failed. Every gate
+		// passed and the E2E passed, because no assertion described what the
+		// cell is supposed to look like. This is still that assertion, pointed
+		// at the shape the page has now.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -351,11 +364,11 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			.filter({ has: page.getByTestId('case-header') })
 			.first()
 
-		// The widget title does not print above a row that labels itself.
+		// The card names the group it stacks, exactly once.
 		expect(
 			await cell.getByText(/^(Case identity|Zaakgegevens)$/).count(),
-			'the identity row must not carry a grid heading',
-		).toBe(0)
+			'the identity card must carry exactly one grid heading',
+		).toBe(1)
 
 		// And read-only content carries no Actions menu of its own.
 		await expect(
