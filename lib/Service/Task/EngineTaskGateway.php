@@ -117,44 +117,35 @@ class EngineTaskGateway {
      *
      * @return array<string, true> The keys already present, as a set.
      *
+     * @psalm-suppress UndefinedClass `OCA\OpenRegister\Db\TaskInboxCriteria`
+     *   is another APP's class, reached by name. It exists, in
+     *   openregister/lib/Db/TaskInboxCriteria.php, but dossiq's psalm run has
+     *   openregister nowhere on its include path and never will -- OpenRegister
+     *   is a separate app that need not be installed at all. `class_exists()`
+     *   and `container->get()` further down take the same kind of name as a
+     *   plain string and psalm never resolves them; `new $criteriaClass(...)`
+     *   is different, because psalm folds the literal back into a class
+     *   reference and demands it at ANALYSIS time. That is the tool being
+     *   wrong about a deliberately runtime-resolved binding, not a finding.
+     *   The catch below is what actually handles the class being absent.
+     *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     public function existingKeysFor(string $caseId, string $actor): array {
+        // NOTE: no `class_exists` guard here, deliberately. The catch below
+        // already handles an absent class -- a missing class throws `Error`,
+        // which is a `Throwable` -- and it LOGS, where a guard would return
+        // silently. It also cost a decision point this class cannot afford:
+        // phpmd already scores it at the ExcessiveClassComplexity threshold
+        // of 50, so any added branch reddens `development`.
         $inbox = $this->resolveInbox();
         if ($inbox === null || $caseId === '') {
             return [];
         }
 
         $criteriaClass = 'OCA\OpenRegister\Db\TaskInboxCriteria';
-        if (class_exists($criteriaClass) === false) {
-            // The same guard resolveInbox() applies to its own class, and for
-            // the same reason: this is another APP's class, reached by name.
-            // OpenRegister can be present while this particular class is not
-            // (an older release), and a missing dedup read must degrade to
-            // "no keys known", never to a fatal.
-            return [];
-        }
 
         try {
-            /*
-             * @psalm-suppress UndefinedClass
-             *
-             * 🔴 PSALM CANNOT SEE ACROSS APPS, AND THAT IS THE POINT OF THIS
-             * BINDING. `class_exists()` and `container->get()` two methods down
-             * take the same name as a plain string, so psalm never resolves
-             * them and never complains. `new $criteriaClass(...)` is different:
-             * psalm folds the literal back into a class reference and demands
-             * it exist at ANALYSIS time, which for an optional cross-app class
-             * it never will — dossiq's psalm run has openregister nowhere on
-             * its include path.
-             *
-             * So this is the tool being wrong about a deliberately
-             * runtime-resolved dependency, not a finding: the class DOES exist,
-             * in openregister/lib/Db/TaskInboxCriteria.php, and the
-             * `class_exists` gate above is what actually decides whether we
-             * touch it. Left unsuppressed it fails psalm on `development`
-             * itself, so every unrelated PR inherits a red gate.
-             */
             $criteria = new $criteriaClass(
                 uid: $actor,
                 isAdmin: true,
