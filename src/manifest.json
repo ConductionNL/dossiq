@@ -1347,7 +1347,7 @@
 						"integrationId": "humaniq-hours",
 						"title": "Hours booked",
 						"icon": "History",
-						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The Log hours header action stays as it is: it WRITES a TimeEntry through `open-form` and never reads one. The leaf offers that same booking plus a start and stop timer, so the action can be dropped once the leaf ships and is seen working."
+						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
 					},
 					{
 						"id": "initiator",
@@ -2026,22 +2026,6 @@
 							"open": true
 						},
 						"successMessage": "Document added to the case."
-					},
-					{
-						"id": "log-hours",
-						"type": "open-form",
-						"label": "Log hours",
-						"icon": "ClockPlusOutline",
-						"register": "humaniq",
-						"schema": "TimeEntry",
-						"successMessage": "Hours logged on this case.",
-						"props": {
-							"domainObjectRef": "@objectId",
-							"domainObjectType": "dossiq:case"
-						},
-						"visibleWhen": {
-							"appInstalled": "humaniq"
-						}
 					},
 					{
 						"id": "case-suspend",

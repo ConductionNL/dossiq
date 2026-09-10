@@ -23,6 +23,10 @@ task; the criteria under a task are plain bullets.
 
 ## 2. Verification
 
+- [x] 1.5 Remove the `log-hours` header action from `CaseDetail`, and every
+  reference the removal made false: the widget note, two in-flight design docs
+  citing it as a live `props`-prefill precedent, and a capability-comparison row
+  claiming it ships.
 - [ ] 2.1 Re-run the greps as gates, with the searched-file count asserted
   non-zero: no widget declares `"register": "humaniq"`, no `"type":
   "integration"` widget declares `requiredApp`, and no line added by this change
@@ -33,7 +37,7 @@ task; the criteria under a task are plain bullets.
 - [ ] 2.3 [blocked: humaniq `hours-leaf-for-any-object` shipping the
   `humaniq-hours` bundle] Verify on a live instance with humaniq enabled: the
   widget renders the leaf in its cell, the total matches hours booked through the
-  Log hours action, and the same instance with humaniq disabled renders no hours
+  leaf's own dialog, and the same instance with humaniq disabled renders no hours
   surface rather than `0`.
 - [x] 2.4 Add the e2e coverage the delta scenarios name. It landed in a file of
   its own, `tests/e2e/case-hours-leaf.spec.ts`, rather than beside the tile

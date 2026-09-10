@@ -14,9 +14,10 @@ humaniq.
 The `case-kpis-hours` widget on the `CaseDetail` page in `src/manifest.json` MUST
 be declared as `{"type": "integration", "integrationId": "humaniq-hours"}`. It
 MUST NOT declare `content.entries`, a `register`, a `schema` or a `filter`, and
-no widget anywhere in `src/manifest.json` MAY query the `humaniq` register. The
-`open-form` header action `log-hours`, which writes a time entry and reads none,
-is out of scope of this prohibition.
+no part of `src/manifest.json` MAY name the `humaniq` register at all. The
+`open-form` header action `log-hours` was the last one that did, and it goes with
+the query: the leaf's own booking dialog writes the same time entry, seeded from
+the same case, beside the total those hours land in.
 
 #### Scenario: Hours render on a case with humaniq installed
 
@@ -35,8 +36,7 @@ is out of scope of this prohibition.
 #### Scenario: No cross-app register query survives
 
 - **WHEN** `src/manifest.json` is searched for `"register": "humaniq"`
-- **THEN** the only match SHALL be the `log-hours` header action, and no widget
-  SHALL match
+- **THEN** there SHALL be no match at all, in a widget or anywhere else
 
 ### Requirement: REQ-HRS-002, the host object context is derived, never declared
 
@@ -50,8 +50,9 @@ the leaf derives the `<app>:<schema>` literal itself.
 - **WHEN** the leaf is mounted on the detail page of a case with uuid U
 - **THEN** it SHALL filter time entries on `domainObjectType` = `dossiq:case` and
   `domainObjectRef` = U
-- **AND** that literal SHALL match the one the `log-hours` action seeds, so hours
-  booked from the action appear in the widget
+- **AND** it SHALL derive that literal from the page config rather than read it
+  from the widget definition, so a page whose register or schema is renamed cannot
+  keep pointing at the old one
 
 ### Requirement: REQ-HRS-003, the widget keeps its identity and its cell
 

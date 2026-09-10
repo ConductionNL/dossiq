@@ -49,17 +49,20 @@ The widget id does not change, so its layout cell (`gridX: 8`, `gridY: 8`,
 The host object context is derived rather than declared. The host forwards
 `register`, `schema` and `objectId` to every leaf it mounts, and `CaseDetail`
 carries `dossiq` and `case`, so the leaf builds `domainObjectType` as
-`dossiq:case`. That is the same literal the Log hours header action seeds today.
+`dossiq:case`, which is the literal humaniq documents for a host object.
 
 ## What this change does not do
 
 It does not ship the leaf. That is humaniq's `hours-leaf-for-any-object`, and
 until its bundle lands the placement renders nothing on this page.
 
-It does not touch the Log hours header action. That action is an `open-form` over
-`humaniq`/`TimeEntry`: it writes a time entry and reads none, so ADR-113 does not
-apply to it. The leaf offers the same booking plus a timer, so the action becomes
-a candidate for removal once the leaf is seen working. That is a separate change.
+It does not add a second way to book hours. The `log-hours` header action is
+removed here rather than left beside the leaf. It was an `open-form` over
+`humaniq`/`TimeEntry` that wrote a time entry and read none, so ADR-113 never
+applied to it, but the leaf's Book hours dialog writes the same entry from the
+same case and sits beside the total those hours land in. Two booking paths on one
+page is one more than a reader needs, and the header one was the further from the
+figure it changes.
 
 ## Capabilities
 
