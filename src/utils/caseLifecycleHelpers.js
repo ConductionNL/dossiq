@@ -323,3 +323,37 @@ export function transitionBlockReason(transition) {
 export function transitionIsBlocked(transition) {
 	return transition?.guardsPassed === false
 }
+
+/**
+ * The offered transition that lands the case on a given status.
+ *
+ * The case page names a transition directly: the handler pressed its button,
+ * so its id is already in hand. A board move names only a destination column,
+ * so the id has to be looked up in the engine's own answer before the move can
+ * be posted. Matching on `toStatus` is what makes the two paths the same
+ * gesture: the board does not decide what a move means, it asks which of the
+ * moves already on offer ends where the card was dropped.
+ *
+ * `getAvailableTransitions` has already dropped whatever the caller's role
+ * hides and already filtered on the case's current status, so an answer with
+ * no match means the move is not on offer, never that the lookup was wrong.
+ *
+ * @param {Array<object>} transitions The `/available-transitions` answer's `transitions`.
+ * @param {string} toStatusId The statusType id the card was dropped on.
+ * @return {object|null} The matching transition, or null when none is offered.
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+export function findTransitionToStatus(transitions, toStatusId) {
+	const wanted = String(toStatusId ?? '')
+	if (wanted === '' || Array.isArray(transitions) === false) {
+		return null
+	}
+	return (
+		transitions.find(
+			(transition) =>
+				transition
+				&& typeof transition === 'object'
+				&& String(transition.toStatus ?? '') === wanted,
+		) ?? null
+	)
+}

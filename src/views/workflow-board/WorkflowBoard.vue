@@ -4,9 +4,12 @@
 	Workflow Board — a Kanban board with one column per non-final status type,
 	open cases grouped into their current status, and status transitions
 	operable by both drag-and-drop AND keyboard alone (each CaseCard's "Move
-	to…" menu). Both paths call the same onDrop() -> saveObject('case', …),
-	which is RBAC-enforced server-side; on failure the card reverts and an
-	error toast shows. Also holds the column-scoped bulk-selection state: a
+	to…" menu). Both paths call the same onDrop(), which posts the case's
+	offered transition to the status-transition engine — the single write-path
+	for case.status, and the one the case page uses — so a board move is role
+	checked, guard evaluated and side-effecting exactly as the same move made
+	from the case page. On a refusal the card goes back and the engine's own
+	reason is toasted. Also holds the column-scoped bulk-selection state: a
 	case card's checkbox toggles selection via toggleSelection() (cross-column
 	selection resets), and a bulk-actions bar opens BulkTransitionDialog to
 	preview/execute one status transition across every selected case.
@@ -109,7 +112,9 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
 import { showError } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import BoardColumn from './BoardColumn.vue'
@@ -120,6 +125,13 @@ import {
 	emptySelection,
 	toggleSelection,
 } from '../../utils/bulkTransitionHelpers.js'
+import {
+	buildTransitionPayload,
+	findTransitionToStatus,
+	refusalMessage,
+	transitionBlockReason,
+	transitionIsBlocked,
+} from '../../utils/caseLifecycleHelpers.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
 
 export default {
@@ -432,9 +444,30 @@ export default {
 		},
 
 		/**
-		 * Move a case card to a new status column. Optimistically moves the card
-		 * in local state, persists via saveObject('case', …) (RBAC-enforced),
-		 * and reverts + toasts on failure.
+		 * Move a case card to a new status column, through the same transition
+		 * engine the case page posts to.
+		 *
+		 * WHY THIS IS NOT A saveObject. It used to be. `saveObject('case', …)`
+		 * with a new `status` writes the field and stops there: no role check,
+		 * no guard evaluation, no dispatched actions and no statusRecord. The
+		 * comment that stood here called that write "RBAC-enforced", and OR
+		 * does enforce a transition declaratively — but only for a schema
+		 * carrying `x-openregister-lifecycle.transitions`, and dossiq's `case`
+		 * schema deliberately carries none, because a case's status is a
+		 * per-caseType state machine this app owns. So the enforcement OR was
+		 * being credited with was enforcement nobody was doing, and a card
+		 * dragged across the board skipped every gate the identical move made
+		 * from the case page passes through.
+		 *
+		 * The board therefore does not decide what a move means. It asks the
+		 * engine which moves are on offer, picks the one that ends on the
+		 * dropped column, and posts that. Everything else — who may move it,
+		 * which guards hold it, which emails and notifications the move sends
+		 * — is the engine's answer, identical on both surfaces.
+		 *
+		 * A refused move SAYS SO. The drag has already happened by the time
+		 * the engine answers, so the card is put back and the reason is
+		 * toasted: a card that silently slides home reads as a broken board.
 		 *
 		 * @param {string} caseId The dropped case id
 		 * @param {string} newColumn The target column's name (merged status name)
@@ -488,28 +521,102 @@ export default {
 			]
 
 			try {
-				const result = await this.objectStore.saveObject('case', movedCase)
-				if (!result) {
-					throw new Error('save returned no result')
+				const offered = await this.offeredTransitions(caseId)
+				const transition = findTransitionToStatus(offered, targetStatusId)
+
+				// Nothing on offer ends here. Either the workflow has no such
+				// move from this status, or the caller's role hides it —
+				// `getAvailableTransitions` drops both, and the case page shows
+				// no button in either case. The board says the same thing.
+				if (transition === null) {
+					this.refuseMove(caseId, caseObj, fromColumn, newColumn)
+					showError(
+						this.t(
+							'dossiq',
+							'You cannot move this case to {status} from here.',
+							{ status: newColumn },
+						),
+					)
+					return
 				}
+
+				// A guard is holding the case. Reading it off the offer costs
+				// no round trip, and the engine re-evaluates it server-side
+				// anyway if the offer went stale between the two requests.
+				if (transitionIsBlocked(transition)) {
+					this.refuseMove(caseId, caseObj, fromColumn, newColumn)
+					showError(
+						transitionBlockReason(transition)
+							|| this.t('dossiq', 'Something is holding this case here.'),
+					)
+					return
+				}
+
+				await axios.post(
+					generateUrl(
+						`/apps/dossiq/api/case/${encodeURIComponent(caseId)}/transition`,
+					),
+					buildTransitionPayload({ transitionId: transition.id }),
+				)
+
+				// The engine writes more than the status: a statusRecord, and
+				// whatever actions the transition dispatches. Re-read the board
+				// rather than leave the optimistic card standing for the truth.
+				await this.fetchData({ background: true })
 			} catch (err) {
 				console.error('[dossiq] failed to advance case status', err)
-				// Revert: pull from the new column, restore in the old one.
-				const revertedNew = (this.casesByStatus[newColumn] || []).filter(
-					(c) => String(c.id) !== String(caseId),
-				)
-				this.casesByStatus[newColumn] = revertedNew
-				this.casesByStatus[fromColumn] = [
-					...this.casesByStatus[fromColumn],
-					caseObj,
-				]
+				this.refuseMove(caseId, caseObj, fromColumn, newColumn)
+				// The same sentence the case page's confirm dialog shows, from
+				// the same refusal body: a guard's own words when it named one,
+				// the coded reason otherwise.
 				showError(
-					this.t(
-						'dossiq',
-						'Could not move the case. You may not have permission, or the change failed.',
+					refusalMessage(err?.response?.data ?? {}, (s) =>
+						this.t('dossiq', s),
 					),
 				)
 			}
+		},
+
+		/**
+		 * Ask the engine which moves this case has on offer.
+		 *
+		 * Split out so the failure is a thrown error the caller reverts on,
+		 * rather than an empty list that would read as "no move available" and
+		 * refuse the drag for the wrong reason.
+		 *
+		 * @param {string} caseId The case being moved
+		 * @return {Promise<Array<object>>} The offered transitions
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 */
+		async offeredTransitions(caseId) {
+			const { data } = await axios.get(
+				generateUrl(
+					`/apps/dossiq/api/case/${encodeURIComponent(caseId)}/available-transitions`,
+				),
+			)
+			return Array.isArray(data?.transitions) ? data.transitions : []
+		},
+
+		/**
+		 * Put a card back where it was dragged from.
+		 *
+		 * @param {string} caseId The case that did not move
+		 * @param {object} caseObj The card as it stood before the drag
+		 * @param {string} fromColumn The column it came from
+		 * @param {string} newColumn The column it was optimistically put in
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 */
+		refuseMove(caseId, caseObj, fromColumn, newColumn) {
+			this.casesByStatus[newColumn] = (
+				this.casesByStatus[newColumn] || []
+			).filter((c) => String(c.id) !== String(caseId))
+			this.casesByStatus[fromColumn] = [
+				...(this.casesByStatus[fromColumn] || []),
+				caseObj,
+			]
 		},
 
 		/**
