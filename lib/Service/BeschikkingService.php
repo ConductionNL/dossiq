@@ -56,21 +56,6 @@ use RuntimeException;
 class BeschikkingService {
 
 	/**
-	 * Fields that may NOT be edited once a beschikking is immutable.
-	 *
-	 * @var array<int, string>
-	 */
-	private const CONTENT_FIELDS = [
-		'rationale',
-		'decision',
-		'addressee',
-		'decisionType',
-		'legalRemediesClause',
-		'feeAmount',
-		'templateId',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param StateMachineService $stateMachine The state-machine guard.
@@ -325,15 +310,8 @@ class BeschikkingService {
 	 */
 	public function updateFields(string $decisionId, array $updates): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$status = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->isImmutable($status) === true) {
-			foreach (array_keys($updates) as $field) {
-				if (in_array($field, self::CONTENT_FIELDS, true) === true) {
-					throw new RuntimeException('immutable');
-				}
-			}
-		}
+		$this->stateMachine->assertMutable(stored: $decision, changed: $updates);
 
 		foreach ($updates as $field => $value) {
 			$decision[$field] = $value;
