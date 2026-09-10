@@ -75,7 +75,7 @@ export function taskCaseRef(task) {
  * @param {string|object|null|undefined} ref The task's case reference.
  * @return {string|null} The case id, or null when unreadable.
  * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function caseIdFrom(ref) {
 	if (typeof ref === 'string') {

@@ -2557,9 +2557,10 @@
 			"type": "index",
 			"title": "Tasks",
 			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"allowSavedViews": true,
+				"entitySource": "tasks",
+				"rowRoute": "TaskDetail",
+				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
+				"allowSavedViews": false,
 				"showViewAction": false,
 				"actions": [
 					{
@@ -2571,48 +2572,52 @@
 						"type": "handler"
 					}
 				],
-				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
-				"extend": ["case", "assigneeGroup"],
-				"_quickFiltersNote": "one-case-list: the same lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases. lists-that-answer added Closed, Overdue and Due this week, which finishes the parallel: the six labels are now identical on both pages and only the field underneath differs, `dueDate` here against `deadline` there. `dueDate` is `format: date-time` while `deadline` is `format: date`, and the comparison is a plain string comparison on a string column (MagicSearchHandler casts only numeric columns), so `2026-09-08T09:00:00+00:00` sorts AFTER the prefix `2026-09-08`. That is the behaviour these windows need: a task due at nine this morning is due today, not overdue, and it belongs to Due this week. The boundary is asserted in tests/e2e/case-list-lenses.spec.ts rather than left to the reader to re-derive.",
+				"_quickFiltersNote": "one-case-list: the same six lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. Only what sits underneath changed: `isTerminalStatus` was `caseTask`'s materialised boolean and `isTerminal` is the engine's own, and the two due windows are `dueAfter`/`dueBefore` predicates the engine answers (openregister#3581) rather than string comparisons against a `dueDate` column. 🔴 `scope` IS SET EXPLICITLY ON EVERY LENS. The task endpoint defaults to `scope: assigned`, so a lens that left it off would quietly answer 'my closed tasks' where this list has always meant 'closed tasks'. Only Mine and Unclaimed are person-scoped, and they now say so rather than inheriting it. The `@today` tokens resolve because nextcloud-vue#1071 taught a named source's filters the same sentinel grammar self-fetch has always had; before that they went over the wire as literal strings and the window was silently wrong.",
 				"quickFilters": [
-					{ "label": "All", "filter": {}, "default": true },
+					{
+						"label": "All",
+						"filter": {
+							"scope": "all"
+						},
+						"default": true
+					},
 					{
 						"label": "Mine",
-						"filter": { "assignee": "@me", "isTerminalStatus": false }
+						"filter": {
+							"scope": "assigned",
+							"isTerminal": false
+						}
 					},
 					{
 						"label": "Unclaimed",
-						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+						"filter": {
+							"scope": "pooled",
+							"isTerminal": false
+						}
 					},
 					{
 						"label": "Closed",
-						"filter": { "isTerminalStatus": true }
+						"filter": {
+							"scope": "all",
+							"isTerminal": true
+						}
 					},
 					{
 						"label": "Overdue",
 						"filter": {
-							"isTerminalStatus": false,
-							"dueDate[lt]": "@today"
+							"scope": "all",
+							"overdue": true
 						}
 					},
 					{
 						"label": "Due this week",
 						"filter": {
-							"isTerminalStatus": false,
-							"dueDate[gte]": "@today",
-							"dueDate[lt]": "@today+7d"
+							"scope": "all",
+							"isTerminal": false,
+							"dueAfter": "@today",
+							"dueBefore": "@today+7d"
 						}
 					}
-				],
-				"_priorityColumnNote": "REQ-TASK-004's first scenario has always required the task row to show priority, and the column was never declared. `caseTask.priority` is a `facetable` enum (low, normal, high, urgent) with a default of normal, so it was reachable through the sidebar facet and invisible in the row a handler actually reads. It sits after `dueDate` because the two answer the same question in order: when is this due, and does it jump the queue.",
-				"columns": [
-					"title",
-					{ "key": "case.title", "label": "Case", "sortable": false },
-					"assignee",
-					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
-					"status",
-					"dueDate",
-					"priority"
 				],
 				"sidebar": {
 					"enabled": true,
