@@ -71,6 +71,8 @@ const PROCESSING_DAYS = 10
 let api: APIRequestContext
 let token: string
 let caseTypeId = ''
+/** The seeded caseType's exact title, read back from the fixture. */
+let caseTypeTitle = ''
 let statusReceived = ''
 let statusDone = ''
 
@@ -174,12 +176,18 @@ function row(page: Page, key: string): Locator {
 }
 
 /**
- * The case type `seedStateMachine` creates for this run, by title.
- *
  * The index sidebar offers one filter button per case type, so this run's own
  * type is a control that narrows the list to exactly the rows it seeded.
+ *
+ * 🔴 THE TITLE IS READ BACK FROM THE FIXTURE, NEVER REBUILT FROM `RUN_PREFIX`.
+ * `seedStateMachine` appends a per-call suffix (`RUN_PREFIX` is per-process, so
+ * a second call in the same worker would otherwise collide), which means the
+ * stored title is `<prefix> Vergunning 1`, `… 2`, and so on. A locator built
+ * from the prefix alone matched EVERY machine this worker had seeded, and a
+ * second spec file sharing the worker was enough to make it two — a strict-mode
+ * violation that reads as "the sidebar should offer a case-type filter named …"
+ * while two perfectly good buttons sit in the snapshot. See `caseTypeTitle`.
  */
-const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
 
 /**
  * Narrow the Cases index to the rows this run seeded.
@@ -214,23 +222,28 @@ const RUN_CASE_TYPE = `${RUN_PREFIX} Vergunning`
 async function narrowToThisRun(page: Page): Promise<void> {
 	// 🔴 THE FACET'S ACCESSIBLE NAME CARRIES ITS COUNT. A sidebar entry with
 	// matches renders as "<case type> <n>", so the accessible name of this
-	// run's type is `E2EZAAK-… Vergunning 1`, not `E2EZAAK-… Vergunning`, and
-	// `exact: true` on the bare title matched nothing. The failure reads "the
-	// sidebar should offer a case-type filter named …" while the button is
-	// right there in the snapshot, one character group longer.
+	// run's type is one character group longer than the stored title, and
+	// `exact: true` on the title alone matched nothing. A type with NO matches
+	// renders without the count, so the suffix is optional rather than
+	// required.
 	//
-	// A type with NO matches renders without the count, which is why the
-	// suffix is optional here rather than required. Anchored at both ends and
-	// including the run prefix, so it still cannot match another run's type or
-	// the `… Bare` type this same fixture seeds alongside it.
+	// 🔴 THE TITLE IS THE FIXTURE'S, NOT A REBUILT ONE, AND THAT IS THE WHOLE
+	// FIX. This used to anchor on `${RUN_PREFIX} Vergunning` and absorb the
+	// trailing digits as the count. They are not only the count: the stored
+	// title ENDS in a per-call suffix, so `… Vergunning 1` and `… Vergunning 2`
+	// both matched and Playwright refused the ambiguity. One spec file per
+	// worker hid it; a second one sharing the worker seeded the second machine
+	// and every lens test failed inside this helper rather than on its own
+	// assertion. Anchored on the exact title, the run's own type is the only
+	// button that can match.
 	const facet = page.getByRole('button', {
 		name: new RegExp(
-			`^${RUN_CASE_TYPE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
+			`^${caseTypeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+)?$`,
 		),
 	})
 	await expect(
 		facet,
-		`the sidebar should offer a case-type filter named ${RUN_CASE_TYPE}`,
+		`the sidebar should offer a case-type filter named ${caseTypeTitle}`,
 	).toBeVisible({ timeout: 30_000 })
 	await facet.click()
 
@@ -262,6 +275,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		const machine = await seedStateMachine(api, token)
 		caseTypeId = machine.caseTypeId
+		caseTypeTitle = machine.caseTypeTitle
 		statusReceived = machine.statusReceived
 		statusDone = machine.statusDone
 

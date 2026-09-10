@@ -526,6 +526,16 @@ export async function seedCase(
 /** A seeded state machine: a caseType, three statusTypes, an active template. */
 export interface StateMachine {
 	caseTypeId: string
+	/**
+	 * The caseType's TITLE, exactly as stored.
+	 *
+	 * Returned because a caller cannot reconstruct it. The title carries a
+	 * per-call suffix (`RUN_PREFIX` is per-process, so a second call in the
+	 * same worker would otherwise reuse the first call's identifier), and a
+	 * spec that rebuilt it from `RUN_PREFIX` alone matched EVERY machine this
+	 * worker seeded rather than its own.
+	 */
+	caseTypeTitle: string
 	statusReceived: string
 	statusInProgress: string
 	statusDone: string
@@ -564,8 +574,9 @@ export async function seedStateMachine(
 	// `RUN_PREFIX` is per-process, so without it the second call reuses the
 	// first call's identifier.
 	const machineSuffix = nextFixtureSuffix()
+	const caseTypeTitle = `${RUN_PREFIX} Vergunning ${machineSuffix}`
 	const caseType = await createObject(api, token, 'caseType', {
-		title: `${RUN_PREFIX} Vergunning ${machineSuffix}`,
+		title: caseTypeTitle,
 		identifier: `${RUN_PREFIX.toLowerCase()}-verg-${machineSuffix}`,
 		description: 'Throwaway caseType for the dossiq state-machine e2e layer.',
 		// See `ensureCaseType`: the schema defaults this to true and
@@ -622,7 +633,7 @@ export async function seedStateMachine(
 	})
 	add('workflowTemplate', wf)
 
-	return { caseTypeId, statusReceived, statusInProgress, statusDone, created }
+	return { caseTypeId, caseTypeTitle, statusReceived, statusInProgress, statusDone, created }
 }
 
 const DOSSIQ_API = '/index.php/apps/dossiq/api'
