@@ -217,6 +217,15 @@ test.describe('app chrome (ADR-114)', () => {
 			'a guessed rating is worse than an empty cell',
 		)
 
+		// A column whose product owns no data loses rows to its architecture
+		// on a list written in our shape, so its score is low for a reason
+		// that is not about the product. That bias runs in our favour, which
+		// is exactly why it has to be on the page beside the column.
+		await expect(comparison).toContainText('owns no data')
+		await expect(comparison).toContainText('which flatters us')
+		// And that column was read on its own day, not on the shared one.
+		await expect(comparison).toContainText('not on the date above')
+
 		// Thirteen areas, collapsed. The rows live behind the disclosure so
 		// the landing view is readable; if a change flattens 225 rows onto the
 		// page, this count is what notices.
