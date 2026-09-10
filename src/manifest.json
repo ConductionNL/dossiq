@@ -2682,15 +2682,15 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseTask",
-				"_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
+				"_note": "ACTION-ITEM archetype: a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available -> active -> completed / terminated). The case this task sits on is a CARD at the top (task-case), not a data row: `case` is a $ref and the platform renders a $ref as its uuid. The card resolves it, so `case` is hidden from the Data widget below rather than shown twice. Notes and appointments are leaves ON the task since the task-page-widgets change: a handler answering a task records the answer against the task that asked, and books the site visit against it too. Documents stay on the parent case. Audit history (status transitions) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
-						"id": "task-case-link",
+						"id": "task-case",
 						"type": "custom",
 						"title": "Case",
 						"icon": "FolderOutline",
-						"_note": "task-on-the-case REQ-TASK-015: names the case this task is on, by its title, and links to it. Resolved via page slots (widget-task-case-link -> TaskCaseLink). It renders for EVERY task with a case, which is what separates it from task-waiting-case below: that one renders only for a task holding a flow run, and saying a case is waiting on an ordinary to-do would not be true. A task without a case renders nothing, and showTitle stays false so there is no empty titled box either. Not a data widget over the case field: case is a $ref and the platform renders a $ref as its uuid, which reads as broken data rather than as a way back."
+						"_note": "task-on-the-case REQ-TASK-015: the case this task is on, as a card. Resolved via page slots (widget-task-case -> TaskCaseCard). Carries the case identifier, title as the link, status badge, case type, handler and case deadline, because a handler who opened the task from a notification needs those before deciding whether to act. It renders for EVERY task with a case, which is what separates it from task-waiting-case below: that one renders only for a task holding a flow run, and saying a case is waiting on an ordinary to-do would not be true. A task without a case renders nothing, and showTitle stays false so there is no empty titled box either. Not a data widget over the case field: case is a $ref and the platform renders a $ref as its uuid, which reads as broken data rather than as a way back."
 					},
 					{
 						"id": "task-data",
@@ -2699,7 +2699,12 @@
 						"icon": "ClipboardCheckOutline",
 						"content": {
 							"title": "Task",
-							"columns": 2
+							"columns": 2,
+							"overrides": {
+								"case": {
+									"hidden": true
+								}
+							}
 						}
 					},
 					{
@@ -2708,23 +2713,39 @@
 						"title": "Waiting case",
 						"icon": "CheckboxMarkedCircleOutline",
 						"_note": "The task half of the flow waiting relationship (case-flow-human-steps 6.1). Resolved via page slots (widget-task-waiting-case -> TaskWaitingCaseSection); names the case whose suspended run this task blocks and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. showTitle stays false: an empty titled box on every ordinary task would be exactly the clutter the null render avoids."
+					},
+					{
+						"id": "task-notes",
+						"type": "integration",
+						"integrationId": "notes",
+						"title": "Notes",
+						"icon": "CommentTextOutline",
+						"_note": "The notes leaf, on the task. A handler working a task writes down what they found, who they called, why they are waiting. Before this that went on the parent case, where it was filed against the whole case rather than against the question that prompted it, and a case with twenty tasks collected twenty unattributed notes. `notes` is one of OpenRegister's five always-available built-in providers (no requiredApp), so this needs no dependency and renders for every task. ObjectIntegrationsController::index does NOT gate on the schema's linkedTypes, so the widget works without a schema change; caseTask declares it anyway because LinkedEntityService and the related widget read that list, and LogDanglingLinkedTypes scans it."
+					},
+					{
+						"id": "task-calendar",
+						"type": "integration",
+						"integrationId": "calendar",
+						"title": "Appointments",
+						"icon": "Calendar",
+						"_note": "The calendar leaf, on the task, the same component the case page's Appointments panel uses. A task that asks someone to inspect a site or call an objector is the thing the appointment belongs to, and booking it against the case lost which task it settled. requiredApp is `calendar`: without the Nextcloud Calendar app the leaf renders its own empty state rather than failing, which is why this is safe to ship unconditionally."
 					}
 				],
 				"layout": [
 					{
 						"id": "3",
-						"widgetId": "task-case-link",
+						"widgetId": "task-case",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 1,
+						"gridHeight": 3,
 						"showTitle": false
 					},
 					{
 						"id": "1",
 						"widgetId": "task-data",
 						"gridX": 0,
-						"gridY": 1,
+						"gridY": 3,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": false
@@ -2733,10 +2754,28 @@
 						"id": "2",
 						"widgetId": "task-waiting-case",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 9,
 						"gridWidth": 12,
 						"gridHeight": 2,
 						"showTitle": false
+					},
+					{
+						"id": "4",
+						"widgetId": "task-notes",
+						"gridX": 0,
+						"gridY": 11,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "task-calendar",
+						"gridX": 6,
+						"gridY": 11,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
 				"lifecycleActions": {
@@ -2766,7 +2805,7 @@
 				}
 			},
 			"slots": {
-				"widget-task-case-link": "TaskCaseLink",
+				"widget-task-case": "TaskCaseCard",
 				"widget-task-waiting-case": "TaskWaitingCaseSection"
 			}
 		},
