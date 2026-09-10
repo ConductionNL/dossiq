@@ -83,6 +83,21 @@ Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
 `caseTask` (1 schema, 15 properties, 154 references across 57 files) onto
 OpenRegister's `Task`. Everything in wave 2 depends on this.
 
+**The target is not a plan, it is deployed.** Verified on the running
+instance 2026-09-10:
+
+- `oc_openregister_tasks` exists with **57 columns** and **18 rows**, beside
+  `task_audit`, `task_candidates`, `task_projections`, `task_relations` and
+  `task_sequences`.
+- `GET /apps/openregister/api/flow-tasks` answers **200** with real rows.
+- The full verb surface is routed: `claim`, `unclaim`, `assign`, `reassign`,
+  `delegate`, `offer`, `resolve`, `complete`, `cancel`, `audit`, and
+  `PATCH /checklist/{itemId}`.
+
+So this migration is an integration against a working API, not a wait on
+somebody else's roadmap. That is the single biggest de-risking fact in this
+programme and the reason wave 1 goes first.
+
 - [ ] 2.1 Pin: tests over `CreateTaskHandler`, `TaskCompletionResumeListener`,
       `DossiqAskPersonNode` and the three task widgets, against current
       behaviour, each mutation-checked.
