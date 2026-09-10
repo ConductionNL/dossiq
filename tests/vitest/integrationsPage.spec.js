@@ -140,6 +140,28 @@ describe('the dossiqIntegration schema', () => {
 		)
 	})
 
+	// THE DECLARATION THAT KEEPS THE ROWS OFF AN ORDINARY ACCOUNT.
+	//
+	// OpenRegister treats an ABSENT `authorization` block as open, and this
+	// schema had none: `GET /apps/openregister/api/objects/dossiq/
+	// dossiqIntegration` answered ten rows to an account in no groups. The
+	// e2e suite measures the live endpoint; this asserts the declaration the
+	// import carries, because the e2e run needs an instance and a deleted
+	// block would otherwise reach `development` with nothing red.
+	//
+	// ALL FOUR ACTIONS, not just `read`. Once the block is non-empty
+	// OpenRegister fails an UNLISTED action closed, so trimming this to
+	// `read` alone would silently move create/update/delete to owner-only —
+	// a different change wearing this one's clothes.
+	it('restricts every action to admins, because an absent block is open', () => {
+		expect(schema.authorization).toEqual({
+			read: ['admin'],
+			create: ['admin'],
+			update: ['admin'],
+			delete: ['admin'],
+		})
+	})
+
 	it('leaves settingsUrl free of format: uri, which rejects a relative path', () => {
 		expect(schema.properties.settingsUrl.format).toBeUndefined()
 	})
