@@ -34,20 +34,30 @@ vi.mock('../../src/store/store.js', () => ({
 	initializeStores: async () => ({}),
 }))
 
-/** The rows `fetchCollection` answers with, replaced per test. */
+/** The rows the engine store answers with, replaced per test. */
 let pages = []
-/** Every `fetchCollection` call, so the query can be asserted. */
+/** Every `list()` call, so the query can be asserted. */
 let calls = []
 
+/**
+ * The engine store stub.
+ *
+ * `error` is part of the surface deliberately: the real store SURFACES a
+ * failed read rather than throwing, because an empty list with no trace of
+ * why is indistinguishable from a genuinely empty one, and the pane reports
+ * it. A stub without it would let that path go untested.
+ */
 const storeStub = {
-	async fetchCollection(type, params) {
-		calls.push({ type, params })
+	error: null,
+	async list(params) {
+		calls.push({ type: 'flow-tasks', params })
 		return pages.length > 1 ? pages.shift() : (pages[0] ?? [])
 	},
 }
 
-vi.mock('../../src/store/modules/object.js', () => ({
-	useObjectStore: () => storeStub,
+vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	useEngineTaskStore: () => storeStub,
 }))
 
 const { CnLifecycleActions } = await import('./stubs/conduction-nextcloud-vue.js')
@@ -126,10 +136,12 @@ describe('CaseTaskPane', () => {
 
 		// The query is the half a screenshot cannot show: filtered on the case
 		// and on the server-side open flag.
-		expect(calls[0].type).toBe('caseTask')
+		expect(calls[0].type).toBe('flow-tasks')
 		expect(calls[0].params).toMatchObject({
-			case: 'case-9',
-			isTerminalStatus: false,
+			// The case IS the object; the engine keeps no typed case reference.
+			objectUuid: 'case-9',
+			// The case's work, not the reader's.
+			scope: 'all',
 		})
 
 		expect(wrapper.find('[data-testid="case-task-pane-title"]').text()).toBe(

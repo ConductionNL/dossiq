@@ -111,7 +111,7 @@
 <script>
 import { CnLifecycleActions } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { useObjectStore } from '../../store/modules/object.js'
+import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import {
 	isFinalStatus,
@@ -164,8 +164,8 @@ export default {
 
 	computed: {
 		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/**
@@ -318,15 +318,16 @@ export default {
 				return
 			}
 
-			try {
-				const rows = await this.objectStore.fetchCollection(
-					'caseTask',
-					openTasksQuery(caseId, this.content),
-				)
-				this.tasks = Array.isArray(rows) ? rows : []
-			} catch (error) {
-				this.tasks = []
-				this.report(error?.message)
+			const rows = await this.engineTasks.list(
+				openTasksQuery(caseId, this.content),
+			)
+			this.tasks = rows.filter((row) => !isTerminal(row))
+
+			// The store surfaces its failure rather than throwing, because an
+			// empty list with no trace of why is indistinguishable from a
+			// genuinely empty one. Report it here so the handler sees it.
+			if (this.engineTasks.error) {
+				this.report(this.engineTasks.error)
 			}
 		},
 
