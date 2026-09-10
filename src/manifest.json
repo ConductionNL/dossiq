@@ -1324,15 +1324,16 @@
 						"type": "metadata",
 						"title": "Archiving",
 						"icon": "Archive",
-						"_note": "What happens to this file after the case closes, read from the ONE abstract answer rather than from this app's own field names. `type: metadata` is nextcloud-vue's CnObjectMetadataWidget, and `include` names keys of `@self._retention`: the resolved archival decision OpenRegister builds by merging the object's stored retention block, the ZGW archival properties the record itself declares (`archiveNomination` and friends, which dossiq derives from the resultaattype on close per zrc-021), the schema's `x-openregister-archival` evaluation, and any legal hold. Before that resolver existed the slot was declared and filled by nothing, so every app read its own fields and no shared surface could ask the question once. `legalHold` is included deliberately: a hold overrides the nomination and the date above it, and a destruction date shown without it is actively misleading. The card renders its empty state on a case with no archival obligation, which is a real answer and not a gap. ⚠️ IT ALSO RENDERS THAT EMPTY STATE UNTIL nextcloud-vue SHIPS THE READER: the `_retention` keys named in `include` are resolved by CnObjectMetadataWidget only from the release that carries nextcloud-vue#1054, and 2.43.0 does not (checked against the installed package, not the range). On an older library every key filters out and the card reads its emptyLabel, which is degraded but not wrong. Bump the dependency when that release lands.",
+						"_note": "What happens to this file after the case closes, read from the ONE abstract answer rather than from this app's own field names. `type: metadata` is nextcloud-vue's CnObjectMetadataWidget, and `include` names keys of `@self._retention`: the resolved archival decision OpenRegister builds by merging the object's stored retention block, the ZGW archival properties the record itself declares (`archiveNomination` and friends, which dossiq derives from the resultaattype on close per zrc-021), the schema's `x-openregister-archival` evaluation, and any legal hold. Before that resolver existed the slot was declared and filled by nothing, so every app read its own fields and no shared surface could ask the question once. `legalHold` is included deliberately: a hold overrides the appraisal and the disposal date above it, and a destruction date shown without it is actively misleading. The card renders its empty state on a case with no archival obligation, which is a real answer and not a gap. ⚠️ THESE KEY NAMES MOVED ONCE ALREADY: openregister#3584 renamed the resolved decision to MDTO concepts, `nomination` to `appraisal`, `period` to `retentionPeriod`, `actionDate` to `disposalDate`, `classification` to `disposalCategory`, and `status` to the Archiefwet `recordState`. CnObjectMetadataWidget intersects `include` against its own whitelist of those keys, so a name this manifest gets wrong does not render blank with a warning, it filters out and the card reads its emptyLabel on a case that carries a full retention decision. The reader landed in nextcloud-vue#1069 and ships from 2.46.0 (checked against the published package, not the range).",
 						"content": {
 							"layout": "horizontal",
 							"labelWidth": 130,
 							"include": [
-								"nomination",
-								"period",
-								"actionDate",
-								"status",
+								"appraisal",
+								"retentionPeriod",
+								"disposalDate",
+								"recordState",
+								"disposalCategory",
 								"basis",
 								"source",
 								"legalHold"
