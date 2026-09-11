@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/vth-module/tasks.md#task-4
+ * @spec openspec/specs/inspection-checklists/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,6 @@ use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
-use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -47,7 +46,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/vth-module/tasks.md#task-4
+ * @spec openspec/specs/inspection-checklists/spec.md
  */
 class InspectionChecklistController extends Controller {
 	/**
@@ -57,18 +56,21 @@ class InspectionChecklistController extends Controller {
 	 * @param IRequest $request The request
 	 * @param InspectionChecklistService $checklistService Checklist service
 	 * @param IUserSession $userSession User session
-	 * @param IGroupManager $groupManager Group manager
 	 * @param LoggerInterface $logger Logger
-	 * @param CaseAccessGuard $caseAccessGuard Per-case read-access guard
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * `IGroupManager` is deliberately NOT injected any more (#799). The only
+	 * thing it did here was the admin bypass in front of a guard that could
+	 * never refuse, and `CaseAccessGuard` performs that same bypass itself, in
+	 * one place, next to the per-case check it belongs to.
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly InspectionChecklistService $checklistService,
 		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
@@ -82,7 +84,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function index(): JSONResponse {
@@ -98,7 +100,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -132,7 +134,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
@@ -163,7 +165,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function destroy(string $id): JSONResponse {
@@ -181,13 +183,47 @@ class InspectionChecklistController extends Controller {
 	/**
 	 * Submit an inspection result for a case.
 	 *
+	 * Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`.
+	 *
+	 * WHAT THIS REPLACED, AND WHY THE REPLACEMENT IS A DIFFERENT KIND OF THING
+	 * (#799). The previous guard read:
+	 *
+	 *     $params = $this->request->getParams();
+	 *     if ($this->groupManager->isAdmin($user->getUID()) === false) {
+	 *         $assignedUid = $params['assignedInspector'] ?? '';
+	 *         if ($assignedUid !== '' && $assignedUid !== $user->getUID()) {
+	 *             throw new OCSForbiddenException('Not authorized ...');
+	 *         }
+	 *     }
+	 *
+	 * `$params` is the REQUEST BODY, so the value the guard compared the
+	 * caller against was supplied by the caller it was meant to constrain.
+	 * There was no input for which it threw: omit `assignedInspector` and
+	 * `$assignedUid` is `''`, so the `!== ''` conjunct is false and the branch
+	 * is skipped; send your own uid and the second conjunct is false too.
+	 * `assignedInspector` is not a property of the `inspectionResult` schema
+	 * either, so nothing server-side was ever going to be compared against it.
+	 *
+	 * The replacement asks a question the caller cannot answer: the case is
+	 * READ back through OpenRegister and the acting uid is compared against
+	 * the stored `assignee`. Admin still bypasses, as it does on every other
+	 * per-case surface in this app; everything else denies, including an
+	 * absent OpenRegister and an unresolvable case, because
+	 * `CaseAccessGuard` fails closed at every branch.
+	 *
+	 * MUTATION access, not read access, and the asymmetry with `getResults()`
+	 * below is deliberate: submitting an inspection result writes an
+	 * enforcement finding against a named address onto the case, so the
+	 * narrower predicate (`assignee`) is the defensible one. Reading the
+	 * results is granted to the wider `assignees` set that works the case.
+	 *
 	 * @param string $id UUID of the case
 	 *
 	 * @return JSONResponse Saved inspectionResult object
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[NoAdminRequired]
 	public function submitResult(string $id): JSONResponse {
@@ -196,21 +232,21 @@ class InspectionChecklistController extends Controller {
 			throw new OCSForbiddenException('Not authenticated');
 		}
 
+		// Per-object authorization, decided ENTIRELY from stored state: the
+		// case is loaded through OpenRegister and its `assignee` compared with
+		// the acting uid. Placed before the payload is read at all, so no part
+		// of the request can influence it.
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
+		}
+
 		$params = $this->request->getParams();
-		$checklistId = $params['checklistId'] ?? '';
+		$checklistId = (string)($params['checklistId'] ?? '');
 		if ($checklistId === '') {
 			return new JSONResponse(
 				['message' => 'checklistId is required'],
 				Http::STATUS_BAD_REQUEST
 			);
-		}
-
-		// Per-object authorization: only the assigned inspector or admin may submit.
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
-			$assignedUid = $params['assignedInspector'] ?? '';
-			if ($assignedUid !== '' && $assignedUid !== $user->getUID()) {
-				throw new OCSForbiddenException('Not authorized to submit this inspection result');
-			}
 		}
 
 		try {
@@ -256,7 +292,7 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[NoAdminRequired]
 	public function getResults(string $id): JSONResponse {
