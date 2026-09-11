@@ -22,6 +22,7 @@ import { BASE_URL } from './base-url.ts'
 import { captureStorageState, STORAGE_STATE } from './helpers/auth.ts'
 import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
 import { assertOccReachable } from './helpers/occ.ts'
+import { residueMinAgeMs, sweepsAllResidue } from './helpers/residue.ts'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
@@ -137,6 +138,11 @@ async function globalSetup(config: FullConfig): Promise<void> {
  * pointed at is what made `spec-coverage/ui-pages.spec.ts:55` fail on a second
  * run for a reason no change had introduced.
  *
+ * It removes only residue OLDER than any running suite's fixtures can be (see
+ * `sweepFixtureResidue` and `helpers/residue.ts`). Several sessions run this
+ * suite against the same shared developer instance, and a family-wide sweep
+ * here used to delete another session's fixtures mid-run.
+ *
  * Failure here is reported, not thrown: a residue sweep that cannot reach the
  * API should not stop the suite from running and saying so itself.
  *
@@ -149,6 +155,11 @@ async function clearFixtureResidue(baseURL: string): Promise<void> {
 	})
 	try {
 		const token = await getRequestToken(api)
+		console.log(
+			sweepsAllResidue()
+				? '[playwright globalSetup] residue sweep: ALL fixture residue, trash included (DOSSIQ_E2E_SWEEP_ALL_RESIDUE is set)'
+				: `[playwright globalSetup] residue sweep: fixture residue older than ${residueMinAgeMs() / 60_000} minutes; newer rows may be another run's and are left alone`,
+		)
 		const survivors = await sweepFixtureResidue(api, token)
 		if (survivors.length > 0) {
 			console.warn(
