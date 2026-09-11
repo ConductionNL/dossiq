@@ -311,10 +311,17 @@ jobs:
       # Integration Tests (Newman) stays OFF here, deliberately. The
       # `enable-newman: false` further up is not a default nobody chose: it
       # records that the ZGW compliance collections fail at 95%+ because the ZGW
-      # API implementation is still in progress. Four collections are committed
-      # under `data/` and would all meet that same known cause — a guaranteed
-      # red that teaches nothing the comment does not already say. Flipped back
-      # on in the commit that gets the core CRUD assertions passing.
+      # API implementation is still in progress. Two collections are committed
+      # under `data/`, the ZGW OAS and business rules suites, and both would
+      # meet that known cause: a guaranteed red that teaches nothing this
+      # comment does not already say. Flipped back on in the commit that gets
+      # the core CRUD assertions passing.
+      #
+      # This used to say FOUR, and two of those four were never ZGW at all:
+      # the leges and zaakportaal collections called controllers that had
+      # been removed, so they could not have passed for any reason. They are
+      # deleted. Every collection left carries an `@newman exclude` reason in
+      # its own info.description, which is where hydra gate-112 reads it.
 
       # ── Frontend Check legs ──────────────────────────────────────────────
       # `frontend-checks` defaults to `[]`, and an empty list means the shared
