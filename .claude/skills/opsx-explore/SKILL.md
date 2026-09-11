@@ -125,7 +125,7 @@ Also silently check for app design documents — if present, load them as backgr
 |------|----------------------|
 | `openspec/changes/<name>/context-brief.md` | Specter intelligence brief — features, stories, stakeholders, journeys. Use as primary context when exploring a specific change |
 | `openspec/architecture/` | Repo-specific ADRs — ADR-000 is always the data model |
-| `.claude/openspec/architecture/` | Check company-wide ADRs that constrain options |
+| `hydra/openspec/architecture/` | Company-wide ADRs, in the hydra repo, that constrain options |
 | `docs/ARCHITECTURE.md` | Understand app-specific technology decisions |
 | `docs/FEATURES.md` | Reference feature tiers and roadmap when discussing what to build |
 
