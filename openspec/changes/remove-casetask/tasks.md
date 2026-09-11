@@ -281,6 +281,26 @@ the matching READS on `caseTask`.
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
 
+## 7. Follow-up: `tenantOnboardingTask`
+
+Re-filed from `tenancy-onto-openregister-organisation` (decision 2c,
+2026-09-11). It is a follow-up to this change, not part of it.
+
+- [ ] 7.1 Move `tenantOnboardingTask` onto the engine `Task`. The fields
+      have homes: `step` becomes the `taskKey`, `completedBy` and
+      `completedAt` map by name, `blockedReason` maps by name, and
+      `tenantRef` becomes the task's `organisation`. The status does not
+      map by name, so decide it before starting: `pending` to `available`,
+      `in_progress` to `active` and `completed` to `completed` read
+      naturally, but `skipped` could be `disabled` or `terminated` with an
+      `outcome`, and those mean different things to an inbox.
+      **Waits on the tenancy move.** `TenantOnboardingService::activate()`
+      ends by setting the tenant `active`, and what a tenant's status becomes
+      on `Organisation` is still undecided (tenancy decisions 2e and 2f).
+      Measured on the dev instance 2026-09-11: 7 rows, all for tenant id
+      `00000000-0000-0000-0000-00000000000d`, which does not exist. Test
+      fixture residue, not data to migrate.
+
 ## What the server side learned on the way
 
 Three things came out of 3.1 to 3.4 that the plan did not anticipate, and

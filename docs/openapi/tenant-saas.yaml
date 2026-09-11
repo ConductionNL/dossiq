@@ -34,11 +34,8 @@ components:
         displayName: { type: string, maxLength: 255 }
         legalName: { type: string }
         kvkNumber: { type: string }
-        contractRef: { type: string }
         status: { type: string, enum: [onboarding, active, suspended, terminated] }
         tier: { type: string, enum: [basic, standard, enterprise] }
-        isolationMode: { type: string, enum: [schema, database] }
-        dataResidency: { type: string, enum: [nl, eu] }
         createdAt: { type: string, format: date-time }
         activatedAt: { type: string, format: date-time }
         terminatedAt: { type: string, format: date-time }
