@@ -177,6 +177,14 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
     definition is static in the manifest, so a fixed route still fails the
     second, while a shared filter would return every other case of the same
     type and could push either row onto a second page.
+
+    Both seeded cases name `requester` and nothing else about the initiator.
+    Writing `initiatorType` and `initiatorDisplayName` by hand, which a first
+    version of the spec did, left `initiatorSourceId` EMPTY: with it empty
+    `InitiatorSection.resolveSource()` returns before its lookup, the initiator
+    card renders no link, and 3.5's own e2e failed twice while passing on
+    `development` with the same application code. The projections are derived
+    from the reference, and writing one by hand is not a neutral act.
   - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment

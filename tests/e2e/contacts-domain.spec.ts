@@ -178,29 +178,31 @@ test.describe('Contacts', () => {
 		emptyPersonId = await seedPerson(EMPTY_NAME, '999993653')
 		companyId = await seedCompany(COMPANY_NAME, COMPANY_KVK)
 
-		// `initiatorType` and `initiatorDisplayName` are written EXPLICITLY.
-		// They are display projections of `requester` and the picker writes
-		// them in the UI; an API create names the reference only. The Requester
-		// column routes on `initiatorType` and renders `initiatorDisplayName`,
-		// so leaving them to be derived would make the column assertion below a
-		// test of OpenRegister's derivation rather than of the column.
+		// A case names its `requester` and NOTHING ELSE about the initiator.
+		// `initiatorType`, `initiatorDisplayName` and `initiatorSourceId` are
+		// display projections OpenRegister derives from the reference.
+		//
+		// An earlier version of this file wrote `initiatorType` and
+		// `initiatorDisplayName` explicitly, on the assumption that an API create
+		// names the reference only. That assumption was wrong and it cost a
+		// neighbouring test: with them written by hand, `initiatorSourceId` came
+		// back EMPTY, so `InitiatorSection.resolveSource()` returned before its
+		// lookup, the initiator card rendered no link, and "the case links back"
+		// failed twice while passing on `development` with the same code. Writing
+		// a projection by hand is not a neutral act here.
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Dormer window`,
 			caseType: caseTypeId,
 			requester: personId,
-			initiatorType: 'person',
-			initiatorDisplayName: PERSON_NAME,
 		})
 		seededCaseId = objectId(seeded)
 
 		// A second case, requested by the COMPANY. The Requester column has to
-		// resolve two different pages in one render, so one row cannot prove it.
+		// resolve two different pages, so one row cannot prove it.
 		await seedCase(api, token, {
 			title: `${RUN_PREFIX} Roof terrace`,
 			caseType: caseTypeId,
 			requester: companyId,
-			initiatorType: 'company',
-			initiatorDisplayName: COMPANY_NAME,
 		})
 
 		await createObject(api, token, 'contactmoment', {
