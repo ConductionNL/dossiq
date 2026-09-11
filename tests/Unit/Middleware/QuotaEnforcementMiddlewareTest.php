@@ -41,14 +41,38 @@ use OCA\Dossiq\Middleware\QuotaEnforcementMiddleware;
 use OCA\Dossiq\Middleware\QuotaExceededException;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantQuotaService;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCP\App\IAppManager;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+
+/**
+ * The `findAll()` seam the real quota service calls.
+ *
+ * Declared here rather than as `\stdClass` + `addMethods()`, which PHPUnit 10
+ * deprecates.
+ */
+interface QuotaEnforcementObjectServiceStub {
+	/**
+	 * Find objects.
+	 *
+	 * @param array<string, mixed> $config        Query configuration.
+	 * @param bool                 $_rbac         Whether RBAC applies.
+	 * @param bool                 $_multitenancy Whether multitenancy applies.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array;
+}
 
 /**
  * @covers \OCA\Dossiq\Middleware\QuotaEnforcementMiddleware
  *
  * @uses \OCA\Dossiq\Service\TenantContext
+ * @uses \OCA\Dossiq\Service\TenantQuotaService
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class QuotaEnforcementMiddlewareTest extends TestCase {
 	/**
@@ -212,5 +236,61 @@ class QuotaEnforcementMiddlewareTest extends TestCase {
 			->willReturn(['decision' => 'allow', 'soft' => false]);
 
 		$middleware->beforeController(new \stdClass(), 'index');
+	}
+
+	/**
+	 * A tenant over its quota is refused, through the real quota service.
+	 *
+	 * The other cases here mock `consume()`, so they show what the middleware
+	 * does with a decision, not that a decision is ever reached. This one runs
+	 * the real `TenantQuotaService` over a `findAll()` that answers the way
+	 * OpenRegister does, with an `ObjectEntity`. Until 2026-09-11 the service
+	 * returned that entity from a method typed `?array`, caught the
+	 * `TypeError` as "no quota row", and allowed: every tenant could exceed
+	 * every quota. The case mirrors the spec's "Block at limit" scenario.
+	 *
+	 * @return void
+	 */
+	public function testATenantOverItsQuotaIsRefused(): void {
+		$row = new ObjectEntity();
+		$row->setUuid('quota-1');
+		$row->setObject(
+			[
+				'tenantRef' => 'tenant-a',
+				'quotaType' => 'cases_per_month',
+				'limit' => 100,
+				'currentUsage' => 100,
+				'enforcement' => TenantQuotaService::DECISION_BLOCK,
+			]
+		);
+
+		$objectService = $this->createMock(QuotaEnforcementObjectServiceStub::class);
+		$objectService->method('findAll')->willReturn([$row]);
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getInstalledApps')->willReturn(['openregister']);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objectService);
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getMethod')->willReturn('POST');
+		$request->method('getRequestUri')->willReturn('/api/cases');
+
+		$context = new TenantContext();
+		$context->bind(['uuid' => 'tenant-a', 'slug' => 'tenant-a'], 'tenant_tenant-a');
+
+		$middleware = new QuotaEnforcementMiddleware(
+			request: $request,
+			context: $context,
+			quota: new TenantQuotaService(
+				appManager: $appManager,
+				container: $container,
+				logger: $this->createMock(LoggerInterface::class),
+			),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$this->expectException(QuotaExceededException::class);
+		$this->expectExceptionCode(429);
+		$middleware->beforeController(new \stdClass(), 'create');
 	}
 }

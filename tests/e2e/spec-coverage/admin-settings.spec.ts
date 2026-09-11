@@ -224,6 +224,12 @@ test.describe('Admin Settings spec coverage', () => {
 	 * names, and the `isDraft = true` default is asserted where it is decided:
 	 * on the STORED object.
 	 *
+	 * Unparking is safe by measurement, not by argument: the old
+	 * FIXME(#719) said this form never surfaces its Save control and
+	 * overran even a tripled 180s budget. Run unparked on CI run
+	 * 34578033755 it passed first time, so whatever hung has been fixed
+	 * (measured by #2480, which unparked the same test independently).
+	 *
 	 * That default is dossiq's own, declared on `caseType.isDraft` in
 	 * `lib/Settings/dossiq_register.json`. Flip it to `false` there, re-import
 	 * the register, and this test must go red — a case type that publishes

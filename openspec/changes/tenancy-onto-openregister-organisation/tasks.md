@@ -32,10 +32,10 @@ is the accurate signal. Do not silence it with a placeholder capability.
   schemas. NOT STARTED. The irreversible act this note used to name, the
   three field drops, turned out to be done already (see 2a). What blocks it
   now is 2e and 2f: every part of the move runs through the tenant becoming
-  an Organisation, and that needs a status to become. It also inherits 2g:
-  the four lookups that read OpenRegister rows as arrays have to be fixed in
-  the same step, together, and the pins in 2h are what shows the re-pointed
-  filters still scope. The upstream half,
+  an Organisation, and that needs a status to become. It no longer inherits
+  2g: the four lookups that read OpenRegister rows as arrays were fixed
+  together ahead of the move (see 2g). The pins in 2h are still what shows
+  the re-pointed filters scope. The upstream half,
   `legalName` on `Organisation` (openregister#3603), does not depend on the
   status question and is not held by it.
 - [ ] 5 **Remove the surface.** The `Tenants` and `TenantDetail` pages are
@@ -268,6 +268,23 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
       the membership lookup alone would bind tenants and then deny every
       write by every member through the other two. The three move together,
       in step 4.
+      **Fixed 2026-09-11, ahead of step 4, in one change.** Membership, role,
+      mandate matrix and quota now read each row through
+      `OpenRegisterRowNormaliser`, the helper `AwbProceedingScanner` already
+      used for the same return shape. `ResetMonthlyQuotasJob` moved with them:
+      it indexed the same entities outside any catch, so it died on every run,
+      and a quota that enforces but never resets would have kept a `block`
+      quota refusing past its window. The pinning test
+      `testAMembershipRowInTheShapeOpenRegisterReturnsIsDropped` turned red as
+      expected and now asserts the row resolves; entity-shaped tests pin the
+      other three lookups, a member allowed exactly what the matrix grants,
+      a tenant over quota refused with 429, and the job resetting in place.
+      The test stub's `getObject()` now puts the uuid in front as `id`, as the
+      real class does. Found on the way and not fixed here: the same defect
+      in `TenantOnboardingService` (`getProgress()`, `markStepComplete()`),
+      `TenantConfigurationService::getConfig()`, `TenantBillingService`'s
+      monthly listing, `BezwaarDecisionListener::containsDecidedDecision()`
+      and `BerichtenboxReadStatusJob`.
 - [x] 2h Mutation survey of the scoping checks step 4 re-points, run
       2026-09-11 against the whole tenancy suite. Sixteen mutations, each
       disabling one comparison or filter. Before this change 7 of the 16

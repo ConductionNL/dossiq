@@ -76,6 +76,34 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   page (`folderSidebarFacetValues` / `folderSidebarPartial`), which this
   page does not use.
 
+  **RE-MEASURED 2026-09-11 against nextcloud-vue `development`, ahead of
+  2.47.0. STILL BLOCKED, and now with the size of the fix measured rather than
+  guessed.** Nothing in #1083, #1084 or #1090 touches `folderSidebarFolders()`,
+  `CnFolderTree` or `onFolderSelect()`, so all three counts above stand.
+
+  The seam this task needs is a folder that carries its own **schema**, not
+  only its own columns. `index-columns-per-scope` (nextcloud-vue, opened by
+  PR #1031 as B10) specifies `columns`, `defaultSort` and `searchFields` per
+  scope and is the right home for the columns half — but it does NOT specify a
+  per-folder `schema`, and the columns half alone does not unblock this page:
+  People and Organisations are different schemas, and a filter is not what
+  tells them apart.
+
+  Why the schema half is bigger than it reads. `CnIndexPage`'s self-fetch binds
+  its store slice at setup:
+  `useSelfFetchList.js` computes `const objectType = \`${props.register}-${props.schema}\``
+  as a PLAIN STRING and hands it to `useListView(objectType, …)` and
+  `useObjectSubscription(…)`, neither of which watches it. Switching the
+  queried schema at runtime therefore means making `objectType` reactive
+  through both composables, in the component every index page in the fleet
+  renders. That is a real change with real blast radius, and it should be its
+  own openspec change with its own mutation-checked tests — not a rushed edit
+  bolted onto this one.
+
+  Until then 2.1 stays as shipped: no `folderSidebar`, and organisations are
+  reached through the separate Organisations index that `contacts-you-can-find`
+  added.
+
 ## 3. The contact pages
 
 - [x] 3.1 `src/manifest.json` page `ContactDetail` (`route: /contacts/:id`,
@@ -119,23 +147,76 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   hard-coded prefix falls outside the base on a pretty-URL instance and the
   catch-all quietly redirects to the Dashboard.
   - `@spec openspec/specs/initiator-display/spec.md`
-- [ ] 3.6 [blocked: nextcloud-vue `CnIndexPage` column `link` naming a route,
-  a param field and a route chosen by a sibling field] `src/manifest.json`
-  page `Cases`: the Requester column links to `ContactDetail` or
-  `OrganisationDetail` by `initiatorType`; until then the column stays text
-  and 3.5 carries the link.
+- [x] 3.6 `src/manifest.json` page `Cases`: the Requester column links to
+  `ContactDetail` or `OrganisationDetail` by `initiatorType`.
 
-  RE-MEASURED 2026-09-10 against 2.42.0. HALF of the ask shipped and the
-  half this task turns on did not. `CnCellRenderer` has a built-in
-  `widget: "link"` whose `widgetProps.route` names a manifest page id and
-  whose `widgetProps.params` maps route params to row fields, so a column
-  CAN link to one route. `linkRoute()` reads a single fixed `route`, so
-  there is no way to pick `ContactDetail` or `OrganisationDetail` off
-  `initiatorType`. The `linkHref` branch interpolates `{field}` placeholders
-  into a URL but is equally fixed in its shape. An app-side cell widget in
-  `src/cellWidgets.js` could branch, and is deliberately NOT the answer
-  here: it would reimplement in dossiq the seam every fleet app needs, which
-  is what this task exists to ask the library for.
+  **UNBLOCKED AND DONE 2026-09-11.** The seam shipped in nextcloud-vue #1083
+  and reaches this app in **2.47.0**. `CnCellRenderer`'s built-in
+  `widget: "link"` now takes `widgetProps.routeField` (a sibling field on the
+  row) and `widgetProps.routeMap` (that field's values → page ids), so one
+  column resolves two pages. `params` maps the route's `:id` to the case's
+  `requester` uuid and applies to every page in the map.
+
+  `contact` is deliberately absent from the map. A Nextcloud contact is not a
+  register row and has no detail page here, so such a row falls back to plain
+  text — the same answer `InitiatorSection.contactRouteBase()` already gives by
+  returning null. A value the map does not hold is never used as a route name
+  itself, so row data cannot link to a page the manifest did not name.
+
+  The app-side cell widget in `src/cellWidgets.js` stayed rejected, for the
+  reason this task recorded: it would have reimplemented in dossiq the seam
+  every fleet app needs.
+  - `npm run check:manifest` exits 0
+  - e2e in `tests/e2e/contacts-domain.spec.ts`: the Cases index is opened twice,
+    once per seeded case, by exact `?title=` deep link, and the Requester cell
+    is asserted to link to `/contacts/:id` for the person and
+    `/organisations/:id` for the company. The company link is then followed, so
+    an href that reads right and resolves to nothing fails here. TWO rows are
+    needed because one cannot tell a working `routeMap` apart from a fixed
+    `route`; two NAVIGATIONS rather than one shared filter because the column
+    definition is static in the manifest, so a fixed route still fails the
+    second, while a shared filter would return every other case of the same
+    type and could push either row onto a second page.
+
+    Both seeded cases carry the WHOLE initiator projection: `initiatorType`,
+    `initiatorDisplayName` and `initiatorSourceId`. It took two CI runs to learn
+    why all three, and the lesson is not about the test:
+
+    - The projection is NOT derived by OpenRegister. `InitiatorSection`
+      back-fills it in the browser the first time a case's detail page opens,
+      so an API-seeded case has none until somebody visits it.
+    - Seeding `requester` alone left the COMPANY row with an empty Requester
+      cell, because no test opens that case. The person row only passed by the
+      accident of an earlier test visiting its case.
+    - Seeding `initiatorType` and `initiatorDisplayName` without
+      `initiatorSourceId` is worse: `fillProjectionFromRequester()` skips any
+      case that already has a display name, so the source id is never
+      supplied, `resolveSource()` returns before its lookup, and 3.5's
+      initiator-card link disappeared while passing on `development` with the
+      same application code.
+
+    That last point is a latent PRODUCT defect, recorded here rather than fixed
+    under this task: the back-fill keys on `initiatorDisplayName` alone, so any
+    case written with a name but no source id is never repaired and its card
+    link stays dead.
+
+    A third run found the cause that made the WHOLE projection fail too: the
+    spec's person used BSN `999990627`, which the shipped register already holds
+    as the seeded persona "Stephan Janssen" (`25-brp-kvk.json`). With
+    `initiatorSourceId` supplied up front, the card resolves its row BY NUMBER
+    with `_limit: 1`, found Stephan Janssen, and linked the card to him. The
+    back-fill path never showed it, because it takes the row's id straight from
+    `requester` and never searches by number. The organisation's KvK
+    `90004760` was seeded as well, under a comment calling it unique to the run.
+    Both now use numbers absent from every seed file and every other spec:
+    BSN `999990019` (valid under the 11-proef) and KvK `90004800`.
+
+    A second latent PRODUCT defect sits in the same place, also recorded rather
+    than fixed here: `InitiatorSection.resolveSource()` takes the FIRST row
+    matching an identifying number. A real BSN is unique per person, so this
+    holds in production; it does not hold for any register that carries a
+    duplicate, and when it fails it links to a stranger without a warning.
+  - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment
 

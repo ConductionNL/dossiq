@@ -38,6 +38,16 @@ import {
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
 import {
+	// WHY THESE TESTS USED TO SKIP ON EVERY RUN, diagnosed by #2480 and kept here
+	// because the reason was not what the skip said. The old guards waited for a
+	// heading matching /Substitution|Vervanging|Waarneming/ and stood down when
+	// none appeared. None ever appears: `SubstitutionSettings.vue` renders no
+	// heading of its own, and the only heading on this page comes from Nextcloud's
+	// settings framework, which prints `PersonalSection::getName()`, the string
+	// "Dossiq". So the guard could never pass, on any instance, in any language,
+	// and the skip reason's note about Dutch locators answered a question nobody
+	// had asked. The tests below assert the actions the page offers instead.
+
 	SubstitutionAdmin,
 	SubstitutionPersonalSettings,
 } from '../helpers/page-components.ts'
@@ -361,25 +371,25 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('substitution renders under personal settings with a register action', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php${SubstitutionPersonalSettings}`)
+		await page.goto(`/index.php${SubstitutionPersonalSettings}`, {
+			timeout: 60_000,
+		})
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitution|Vervanging|Waarneming/i })
-			.first()
-		if (await becomesVisible(heading)) {
-			await expect(
-				page
-					.getByRole('button', {
-						name: /Register substitution|Waarneming registreren/i,
-					})
-					.first(),
-			).toBeVisible()
-		} else {
-			test.skip(
-				true,
-				'the substitution settings heading did not appear. NOT a deploy gap — SubstitutionAdmin.vue is registered in src/registry.js and this commit ships it. Note the locators above accept the Dutch strings too: l10n/nl.json translates Substitution -> Vervanging and Register substitution -> Waarneming registreren, so an English-only locator could never match a Dutch instance.',
-			)
-		}
+		// The mount point the template declares. Asserting it first separates
+		// "the section did not load" from "the section loaded without the
+		// button", which is the distinction the old guard erased.
+		await expect(
+			page.locator('#dossiq-personal-settings'),
+			'the personal-settings mount point must be on the page',
+		).toBeAttached({ timeout: 30_000 })
+		await expect(
+			page
+				.getByRole('button', {
+					name: /Register substitution|Waarneming registreren/i,
+				})
+				.first(),
+			'the Vue app mounted and rendered its register action',
+		).toBeVisible({ timeout: 30_000 })
 	})
 
 	/**
