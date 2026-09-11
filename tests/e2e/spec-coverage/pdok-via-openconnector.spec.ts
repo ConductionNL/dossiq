@@ -288,7 +288,7 @@ test.describe('PDOK via openconnector — OR address fixtures (live)', () => {
 			const available = await addressesRegisterAvailable(ctx)
 			test.skip(
 				!available,
-				'OR addresses register not installed (add-addresses-register sibling change not shipped)',
+				'OR addresses register not installed: the add-addresses-register sibling change has not shipped, and dossiq cannot seed the register itself. Tracked by dossiq#2454.',
 			)
 
 			const token = await getRequestToken(ctx)

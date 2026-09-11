@@ -126,19 +126,29 @@ test.describe('Subsidies intake page', () => {
 			timeout: 30_000,
 		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		// The page's OWN column set, from the manifest fragment. The generic
-		// Cases index declares a different one, so these headers are what
-		// distinguishes this page from a redirect onto /cases.
-		for (const header of ['Identifier', 'Title', 'Status', 'Deadline']) {
+		// Its own page, by its own title.
+		await expect(
+			page.getByRole('heading', { name: /^Subsidies$/i }).first(),
+		).toBeVisible({ timeout: 30_000 })
+		// 🔴 THE NARROWING IS THE CLAIM, AND AN ABSENCE IS HOW IT READS.
+		// `Subsidies` declares `config.filter.caseType` and NO `quickFilters`,
+		// while `Cases` declares six of them (All, Mine, Unclaimed, Closed,
+		// Overdue, Due this week) and no filter. So the chip strip is present
+		// on exactly one of the two pages, and its absence here is what says
+		// this is the narrowed subsidy list rather than the Cases index under
+		// another route. Measured rather than assumed: the column headers this
+		// used to assert are not on the page at all, because the seeded
+		// register holds no case of this caseType and the table renders its
+		// empty state instead.
+		for (const chip of ['All', 'Unclaimed', 'Overdue']) {
 			await expect(
-				page
-					.getByRole('columnheader', { name: header, exact: true })
-					.first(),
-				`the subsidies index declares a ${header} column`,
-			).toBeVisible({ timeout: 30_000 })
+				page.getByRole('tab', { name: chip, exact: true }),
+				`the subsidies index declares no quick filters, so there is no ${chip} chip`,
+			).toHaveCount(0)
 		}
-		// Narrowed, not the whole register: the create control carries the
-		// `case` schema's label because a subsidie-aanvraag is a case.
+		// The create control carries the `case` schema's label, because a
+		// subsidie-aanvraag IS a case. This is the assertion the old FIXME was
+		// waiting to see inverted.
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case)$/ }).first(),
 		).toBeVisible({ timeout: 30_000 })
