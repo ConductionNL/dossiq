@@ -53,6 +53,7 @@ import { expect, request as playwrightRequest, test } from '@playwright/test'
 import {
 	captureStorageState,
 	ensureUser,
+	provisioningContext,
 	STORAGE_STATE,
 	storageStatePath,
 } from './helpers/auth.ts'
@@ -206,8 +207,29 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 			'the seeding session must be the admin, or nothing below can provision',
 		).toBe(process.env.ADMIN_USER ?? 'admin')
 
-		await ensureUser(adminApi, adminToken, INSPECTOR, INSPECTOR_PASSWORD)
-		await ensureUser(adminApi, adminToken, OUTSIDER, OUTSIDER_PASSWORD)
+		// PROVISIONING GETS ITS OWN, SESSION-FREE CONTEXT. The captured admin
+		// session is fine for seeding but cannot create accounts once it is
+		// half an hour old: Nextcloud answers `OCS 403 Password confirmation
+		// is required`, and this file sorts late enough in the run to hit that
+		// every time. See `provisioningContext` for the measurement.
+		const provisioning = await provisioningContext(playwright, String(baseURL))
+
+		// Prove the basic-auth context IS the admin before anything asks it to
+		// provision. Without this, a wrong or rejected credential surfaces as
+		// `ensureUser`'s "could not provision" error, which reads as a broken
+		// provisioning API rather than as a failed authentication.
+		const provWhoami = await provisioning.get(
+			'/ocs/v2.php/cloud/user?format=json',
+		)
+		expect(
+			String((await provWhoami.json())?.ocs?.data?.id ?? ''),
+			'the basic-auth provisioning context must resolve to the admin; got '
+				+ `HTTP ${provWhoami.status()}`,
+		).toBe(process.env.ADMIN_USER ?? 'admin')
+
+		await ensureUser(provisioning, '', INSPECTOR, INSPECTOR_PASSWORD)
+		await ensureUser(provisioning, '', OUTSIDER, OUTSIDER_PASSWORD)
+		await provisioning.dispose()
 
 		// The case is seeded by the ADMIN and handed to INSPECTOR through the
 		// stored `assignee`. That is the only thing that makes INSPECTOR the
