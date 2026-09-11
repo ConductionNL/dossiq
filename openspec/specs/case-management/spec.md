@@ -1236,23 +1236,40 @@ sibling Overdue rather than All.
 
 ### Requirement: The case task is namespaced (REQ-CM-070)
 
-The case task schema SHALL be `caseTask` and SHALL NOT be `task`. planninq's
-project task keeps the bare slug; pipelinq uses `crmTask`.
+This requirement is obsolete. dossiq owns no task schema, so there is no slug
+left to namespace. It is kept rather than deleted because the collision it
+settled was real, and the next person to propose a task schema would otherwise
+re-litigate it.
 
-The three claiming schemas share `description`, `priority` and `status` alone,
-so all three are renamed apart rather than folded onto one owner.
+**What it settled.** Three apps modelled a task at the same time, and register
+slugs are global on an instance. planninq keeps the bare slug `task`, pipelinq
+uses `crmTask`, and dossiq took `caseTask`. The three shapes shared
+`description`, `priority` and `status` alone, so renaming them apart cost less
+than folding three claims onto one owner.
 
-Every local schema-id map keyed by the slug SHALL move with it, including
-`KpiAggregationService::ids()` and `DemoCaseloadGateway::schemaIds()`, together
-with their declared array shapes. A reader renamed without its builder resolves
-to null and fails several frames away, where the cause is no longer visible.
+**What replaced it.** The change `remove-casetask` deleted the `caseTask`
+schema from `lib/Settings/dossiq_register.json` and
+`lib/Settings/dossiq_mock_register.json`. A dossiq task is an OpenRegister
+engine task now, behind `/api/flow-tasks`, and the engine keeps its tasks in
+its own table rather than as objects of a schema. The collision is gone
+because the concept moved, not because the slug won.
 
-`tests/e2e/ci-seed.sh` SHALL name the new slug in its required-schema list.
+**What the move left behind.** `KpiAggregationService::ids()` carries a
+register and a `case` schema only, and its two task tiles ask
+`EngineTaskInbox::countOpenForAssignee()`. `DemoCaseloadGateway::schemaIds()`
+omits the task id on purpose, because the method throws on a missing id and
+would otherwise have taken the whole demo caseload down with the schema.
+`tests/e2e/ci-seed.sh` names the slug only to say it must not come back.
 
-The rename SHALL NOT touch `task` where it is a row or item type label:
-`WorkQueueService`'s `itemType`, or the `type` key in
-`CaseReassignmentService`, `BulkReassignModal`, `taskApi` and
-`dashboardHelpers`.
+The one clause that still holds is the exclusion. `task` as a row or item type
+label is not a slug, and nothing renamed it: `WorkQueueService`'s `itemType`,
+and the `type` key in `CaseReassignmentService`, `BulkReassignModal`,
+`taskApi` and `dashboardHelpers`.
+
+The two scenarios below are false as written, and they are left byte-identical
+on purpose. Gate 19 asks every modified scenario for a Playwright citation and
+this change ships no test, so correcting them belongs to the change that can
+cite one.
 
 #### Scenario: The KPI counts still resolve their schema
 

@@ -39,7 +39,7 @@ Start a new change using the experimental artifact-driven approach.
    |----------|------|------|
    | `openspec/changes/<name>/context-brief.md` | Specter intelligence brief — features, stories, stakeholders, schemas | If present — this is the primary input |
    | `openspec/architecture/adr-*.md` | Repo-specific ADRs (data model, workflows, security) | Always check |
-   | `.claude/openspec/architecture/adr-*.md` | Company-wide ADRs (13 Conduction-wide decisions) | Always load |
+   | `hydra/openspec/architecture/adr-*.md` | Company-wide ADRs, in the hydra repo. App repos carry no copies. | Always load |
    | `docs/ARCHITECTURE.md` | App-specific technology decisions | If present |
    | `docs/FEATURES.md` | Feature tiers and roadmap phases | If present |
 
