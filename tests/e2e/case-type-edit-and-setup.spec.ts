@@ -424,6 +424,24 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	// declared and reported step sets in both directions. So the spec moved:
 	// the step list it mandates is now the one the manifest ships, and the
 	// retirement of `seed` is stated rather than contradicted.
+	//
+	// MUTATION CHECKED 2026-09-11 against a live instance. `status()` was made
+	// to report `'seed' => ['done' => true]` again. Settled rather than
+	// outstanding on purpose, so the wizard never opened over anyone else's
+	// page loads while the mutation was live. This test reddened on its first
+	// assertion:
+	//
+	//   Error: a step the wizard cannot render is one it can never prompt for
+	//   Expected value: not "seed"
+	//   Received array: ["demo-data", "load-demo-data", "register-check",
+	//                    "seed", "dwangsom-secret"]
+	//
+	// 🔴 OPCACHE. The instance serves PHP with `opcache.revalidate_freq=60`, so
+	// an edit is on disk for up to a minute before it is served. The mutation
+	// was only run once the LIVE payload reported `seed`, and the restore was
+	// only trusted once the live payload stopped reporting it (24 seconds after
+	// the file was clean). A mutation check that trusts the file instead can
+	// run against the unmutated code and report a guard as unable to fail.
 	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
