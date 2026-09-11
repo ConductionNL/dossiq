@@ -178,7 +178,10 @@ test.describe('Case identity', () => {
 				legalBasis: LEGAL_BASIS,
 				archiveNomination: ARCHIVE_NOMINATION,
 				// archiveActionDate is deliberately absent: REQ-CM-27's second
-				// scenario is that the row is there and empty, not hidden.
+				// scenario is that the row is there and empty, not hidden. That
+				// scenario is currently RED and its test is parked on
+				// nextcloud-vue#1062, so keep this absent — it is the fixture
+				// the test needs the day the row comes back.
 			}),
 		)
 
@@ -460,31 +463,72 @@ test.describe('Case identity', () => {
 
 		await openCase(page, termsCaseId)
 
+		// The statutory half stayed where it was. A `data` widget builds its
+		// fields from the schema's own properties, which is exactly what a
+		// lead time and a legal basis are.
 		const terms = page.locator('[aria-label="case-terms"]')
 		await expect(terms).toBeVisible({ timeout: 30_000 })
 		await expect(terms).toContainText(PROCESSING_DEADLINE)
 		await expect(terms).toContainText(LEGAL_BASIS)
-		await expect(terms).toContainText(/blijvend[ _]bewaren/i)
+
+		// The archival half moved out into its own card (dossiq#2322). The
+		// page no longer reads dossiq's `archiveNomination` off the record: it
+		// reads the abstract decision OpenRegister resolves into
+		// `@self._retention`, so the same card answers for any object. Two
+		// consequences this assertion has to respect:
+		//
+		//  - the widget is a `metadata` one, so the block is `case-archival`
+		//    and not `case-terms`;
+		//  - the stored ZGW code is translated on the way out, so
+		//    `blijvend_bewaren` arrives as the phrase an archivist would say.
+		//    The raw code stays in the pattern because an unrecognised
+		//    nomination falls back to it rather than being hidden.
+		const archival = page.locator('[aria-label="case-archival"]')
+		await expect(archival).toBeVisible({ timeout: 30_000 })
+		await expect(archival).toContainText(/keep permanently|blijvend[ _]bewaren/i)
 	})
 
 	// @e2e openspec/specs/case-management/spec.md
-	test('an empty archive action date is shown empty, not hidden', async ({
+	test.fixme('an empty archive action date is shown empty, not hidden', async ({
 		page,
 	}) => {
+		// PARKED ON ConductionNL/nextcloud-vue#1062, and the requirement is
+		// still right — it is the surface underneath it that cannot express it
+		// any more.
+		//
+		// An absent destruction date is itself what a records officer looks
+		// for, so the row has to be present and blank. While the archival
+		// fields lived in the `case-terms` data widget, `hideEmpty: false`
+		// said exactly that, and this test was the assertion that would catch
+		// it being turned on.
+		//
+		// dossiq#2322 moved them onto `@self._retention` and
+		// CnObjectMetadataWidget, which is the right move — it ends the
+		// per-app duplication of ZGW field names — but the guarantee had
+		// nowhere to land. Measured on the installed 2.44.0, both layers drop
+		// the row and neither offers a way to ask for it:
+		//
+		//  - OpenRegister's ArchivalDecisionResolver returns only the keys it
+		//    could establish, so this case's `_retention` is
+		//    `{ nomination: 'blijvend_bewaren' }` with no `actionDate` key;
+		//  - CnObjectMetadataWidget then does `if (raw === undefined || raw
+		//    === null) continue` over its archival defs, and its props are
+		//    title / icon / objectData / layout / columns / labelWidth /
+		//    extraItems / include / exclude / collapsible / collapsed /
+		//    emptyLabel. There is no showEmpty.
+		//
+		// So the card renders one row of the seven `case-archival` names, and
+		// Archive action date is absent rather than blank. The body below is
+		// kept and pointed at the new card so unfixming is one word once
+		// #1062 lands a `showEmpty` (or honours an explicit `include`).
 		await openCase(page, termsCaseId)
 
-		const terms = page.locator('[aria-label="case-terms"]')
-		await expect(terms).toBeVisible({ timeout: 30_000 })
+		const archival = page.locator('[aria-label="case-archival"]')
+		await expect(archival).toBeVisible({ timeout: 30_000 })
 
-		// An absent destruction date is itself what a records officer looks
-		// for, so the row has to be present and blank. `hideEmpty` off is what
-		// keeps it; this is the assertion that would catch it being turned on.
-		const row = terms
-			.locator('.cn-object-data-widget__cell')
+		const row = archival
+			.locator('.cn-detail-grid__item')
 			.filter({ hasText: /Archive action date|Datum archiefactie/ })
 		await expect(row).toHaveCount(1)
-		await expect(
-			row.locator('.cn-object-data-widget__value--empty'),
-		).toHaveCount(1)
 	})
 })

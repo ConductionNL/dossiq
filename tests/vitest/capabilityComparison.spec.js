@@ -36,15 +36,30 @@ import {
 // of infonl/dimpact-zaakafhandelcomponent taken on 2026-09-08. That reading
 // covered the 206 rows round 2 produced, so ZAC is `unknown` on the same 19
 // rows the other three are: it was never read against them either.
+//
+// Round 4 added 104 more on 2026-09-10, from 19 systems examined and three
+// installed and driven. It read Odoo, iTop, EspoCRM and sixteen others, NONE of
+// which is a column here, so all four rivals are `unknown` on all 104 and their
+// counts did not move again. Ours moved a long way down: 87/92/46 over 225
+// became 96/126/107 over 329. Our `no` count more than doubled in one round.
+// That is the instrument widening, and the number is meant to be uncomfortable:
+// a list that only asks questions we can answer measures nothing.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 87, partial: 92, no: 46, unknown: 0 },
-	opencase: { yes: 62, partial: 46, no: 98, unknown: 19 },
-	gzac: { yes: 86, partial: 55, no: 65, unknown: 19 },
-	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 19 },
-	zac: { yes: 69, partial: 61, no: 76, unknown: 19 },
+	dossiq: { yes: 96, partial: 126, no: 107, unknown: 0 },
+	opencase: { yes: 62, partial: 46, no: 98, unknown: 123 },
+	gzac: { yes: 86, partial: 55, no: 65, unknown: 123 },
+	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 123 },
+	zac: { yes: 69, partial: 61, no: 76, unknown: 123 },
 }
 
-const ROW_COUNT = 225
+const ROW_COUNT = 329
+
+// Thirteen areas came from the audit. Round 4 added four more, because four of
+// its rows had nowhere to go: a case plan of arranged services, money on the
+// case, offline field work, and one instance serving several organisations. An
+// area with no home for a capability is the instrument failing quietly, so the
+// areas grew rather than the rows being filed somewhere approximate.
+const AREA_COUNT = 17
 
 // The day the first four columns were read. Pinned, because the honest way to
 // add a fifth column read on another day is a second date, never a quiet nudge
@@ -62,7 +77,7 @@ const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
 // 7.1.3 driven locally. They are logged in `_rerated` with `cause: 'added'`
 // and a null `from`, because there was no previous rating to move.
-const ADDED_IDS = [
+const ROUND3_ADDED_IDS = [
 	'2.23',
 	'2.24',
 	'2.25',
@@ -83,6 +98,125 @@ const ADDED_IDS = [
 	'13.17',
 	'13.18',
 ]
+
+// Rows round 4 added on 2026-09-10, from 19 systems examined. Pinned the
+// same way, and listed per round rather than in one heap: `addedOn` differs
+// between them, and a single list would hide a row dated to the wrong round.
+const ROUND4_ADDED_IDS = [
+	'1.14',
+	'1.15',
+	'2.28',
+	'2.29',
+	'2.30',
+	'2.31',
+	'2.32',
+	'2.33',
+	'2.34',
+	'2.35',
+	'2.36',
+	'2.37',
+	'2.38',
+	'2.39',
+	'2.40',
+	'2.41',
+	'2.42',
+	'2.43',
+	'2.44',
+	'2.45',
+	'3.21',
+	'3.22',
+	'3.23',
+	'3.24',
+	'3.25',
+	'3.26',
+	'3.27',
+	'3.28',
+	'3.29',
+	'4.24',
+	'4.25',
+	'4.26',
+	'5.14',
+	'5.15',
+	'5.16',
+	'5.17',
+	'5.18',
+	'5.19',
+	'6.17',
+	'6.18',
+	'6.19',
+	'6.20',
+	'6.21',
+	'6.22',
+	'6.23',
+	'6.24',
+	'7.8',
+	'7.9',
+	'8.16',
+	'8.17',
+	'8.18',
+	'8.19',
+	'8.20',
+	'8.21',
+	'8.22',
+	'9.14',
+	'9.15',
+	'10.12',
+	'10.13',
+	'10.14',
+	'10.15',
+	'11.27',
+	'11.28',
+	'11.29',
+	'11.30',
+	'11.31',
+	'11.32',
+	'11.33',
+	'11.34',
+	'11.35',
+	'11.36',
+	'11.37',
+	'11.38',
+	'11.39',
+	'11.40',
+	'11.41',
+	'11.42',
+	'11.43',
+	'11.44',
+	'11.45',
+	'11.46',
+	'13.19',
+	'13.20',
+	'13.21',
+	'13.22',
+	'13.23',
+	'13.24',
+	'13.25',
+	'13.26',
+	'13.27',
+	'13.28',
+	'13.29',
+	'13.30',
+	'13.31',
+	'13.32',
+	'13.33',
+	'13.34',
+	'13.35',
+	'13.36',
+	'13.37',
+	'14.1',
+	'15.1',
+	'16.1',
+	'17.1',
+]
+
+const ADDED_IDS = [...ROUND3_ADDED_IDS, ...ROUND4_ADDED_IDS]
+
+// The date each batch above was added, so the guard can check a row against
+// its OWN round instead of against whichever round happened to be last.
+const ADDED_ON = {
+	...Object.fromEntries(ROUND3_ADDED_IDS.map((id) => [id, '2026-09-09'])),
+	...Object.fromEntries(ROUND4_ADDED_IDS.map((id) => [id, '2026-09-10'])),
+}
 
 // The rows where every rival has the capability and we do not. Pinned
 // rather than asserted empty, because it is NOT empty and a plan that said so
@@ -109,10 +243,19 @@ const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
 const IDENTICAL_BY_DESIGN = new Set(['12.4'])
 
 describe('capabilityComparison data', () => {
-	it('carries the 225 rows and 13 areas the audit produced', () => {
+	it('carries the 329 rows, 17 areas and 5 columns the rounds produced', () => {
 		expect(data.capabilities).toHaveLength(ROW_COUNT)
-		expect(data.areas).toHaveLength(13)
+		expect(data.areas).toHaveLength(AREA_COUNT)
 		expect(data.systems).toHaveLength(5)
+	})
+
+	it('gives every declared area at least one row', () => {
+		// An area with no rows is a heading over nothing. Round 4 added four
+		// areas at once, and the way to get that wrong is to declare the area
+		// and file its row under the old one, which reads as a rendering bug.
+		const filled = new Set(data.capabilities.map((c) => c.area))
+		const empty = data.areas.filter((a) => !filled.has(a.key))
+		expect(empty.map((a) => a.key)).toEqual([])
 	})
 
 	it('gives every row a unique id', () => {
@@ -168,14 +311,27 @@ describe('capabilityComparison data', () => {
 		expect(guessed.map((c) => c.id)).toEqual([])
 	})
 
-	it('dates every added row on the day the rows were added', () => {
+	it('dates every added row on the round that added it', () => {
+		// This used to assert every added row carried `rowsAddedOn`, which held
+		// only while exactly one round had ever added rows. A second round made
+		// that assertion a liar in the helpful direction: it would have forced
+		// round 3's 19 rows to be re-dated to round 4's day, silently claiming
+		// we asked those questions a day later than we did. Each row is now
+		// checked against its own round, and `rowsAddedOn` is asserted to be
+		// the most recent of them rather than the only one.
 		const added = data.capabilities.filter((c) => c.addedOn)
 		expect(added.map((c) => c.id).sort()).toEqual([...ADDED_IDS].sort())
 		expect(data.rowsAddedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 		for (const row of added) {
-			expect(row.addedOn, row.id).toBe(data.rowsAddedOn)
-			expect(row.addedOn >= data.comparedOn, row.id).toBe(true)
+			expect(row.addedOn, row.id).toBe(ADDED_ON[row.id])
+			expect(row.addedOn > data.comparedOn, row.id).toBe(true)
+			expect(row.addedOn <= data.rowsAddedOn, row.id).toBe(true)
 		}
+		const latest = added
+			.map((row) => row.addedOn)
+			.sort()
+			.at(-1)
+		expect(data.rowsAddedOn).toBe(latest)
 	})
 
 	it('reproduces the audit tallies for every system', () => {
@@ -269,11 +425,14 @@ describe('capabilityComparison data', () => {
 		// A row that never had a rating cannot have been corrected. Recording
 		// one as `built` would tell a reader we shipped something, when what
 		// happened is that we started asking a question we had ducked.
+		const byId = new Map(data.capabilities.map((c) => [c.id, c]))
 		const added = data._rerated.filter((e) => e.cause === 'added')
 		expect(added.map((e) => e.id).sort()).toEqual([...ADDED_IDS].sort())
 		for (const entry of added) {
 			expect(entry.from, entry.id).toBeNull()
-			expect(entry.on, entry.id).toBe(data.rowsAddedOn)
+			// Dated from the row, not from `rowsAddedOn`, for the same reason
+			// as the guard above: two rounds have added rows now.
+			expect(entry.on, entry.id).toBe(byId.get(entry.id).addedOn)
 		}
 	})
 
@@ -374,10 +533,15 @@ describe('tally', () => {
 })
 
 describe('groupByArea', () => {
-	it('keeps the audit ordering, Intake first and Access and privacy last', () => {
+	it('keeps the declared ordering, Intake first and the newest area last', () => {
+		// The areas render in the order the file declares them, which is the
+		// audit's numbering. Round 4's four areas are numbered 14 to 17 and
+		// therefore append; sorting the areas here would put 13.1 above 1.1 on
+		// a page whose first column is the row number.
 		const groups = groupByArea(data, 'en')
 		expect(groups[0].label).toBe('Intake')
-		expect(groups[groups.length - 1].label).toBe('Access and privacy')
+		expect(groups[12].label).toBe('Access and privacy')
+		expect(groups[groups.length - 1].label).toBe('Multi-organisation')
 	})
 
 	it('places every row in exactly one area group', () => {
@@ -396,8 +560,8 @@ describe('groupByArea', () => {
 	it('tallies each area per system', () => {
 		const groups = groupByArea(data, 'en')
 		const intake = groups.find((g) => g.key === 'intake')
-		expect(intake.capabilities).toHaveLength(13)
-		expect(intake.tallies.dossiq.total).toBe(13)
+		expect(intake.capabilities).toHaveLength(15)
+		expect(intake.tallies.dossiq.total).toBe(15)
 	})
 })
 

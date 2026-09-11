@@ -11,35 +11,40 @@
  * task, and where the remaining rows link to are all decisions that can be
  * made from data alone, so they live here.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
+import { TERMINAL_STATES } from '../store/modules/engineTask.js'
+
 /**
- * The statuses `caseTask`'s lifecycle declares final
- * (`lib/Settings/dossiq_register.json`,
- * `configuration.x-openregister-lifecycle.final`). Reaching one of these is
- * what takes a task out of the pane and puts the next one in its place.
+ * The states that take a task out of the pane and put the next one in its
+ * place.
+ *
+ * RE-EXPORTED from the engine store rather than declared here. These used to
+ * be read off `caseTask`'s own `x-openregister-lifecycle.final`, and they are
+ * the SAME three the engine calls terminal, which is exactly why a second
+ * copy is a liability: it can drift, and nothing would say so. The name is
+ * kept so the existing callers and their tests do not churn.
  *
  * @type {string[]}
  */
-export const FINAL_TASK_STATUSES = Object.freeze([
-	'completed',
-	'terminated',
-	'disabled',
-])
+export const FINAL_TASK_STATUSES = TERMINAL_STATES
 
 /**
  * The id of an OpenRegister row, in either shape the store returns it.
  *
  * @param {object|null|undefined} row The object row.
  * @return {string} The id, or an empty string when unreadable.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function taskIdOf(row) {
 	if (!row || typeof row !== 'object') {
 		return ''
 	}
-	return String(row.id ?? row['@self']?.id ?? '').trim()
+	// `uuid` first: an engine task is keyed by uuid, and its numeric `id` is
+	// a database primary key that no route or verb accepts. The register
+	// shapes are kept so a row read before the cutover still resolves.
+	return String(row.uuid ?? row.id ?? row['@self']?.id ?? '').trim()
 }
 
 /**
@@ -51,7 +56,7 @@ export function taskIdOf(row) {
  *
  * @param {string|null|undefined} to The transition's target status.
  * @return {boolean} True when the target status is terminal.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isFinalStatus(to) {
 	return FINAL_TASK_STATUSES.includes(String(to ?? '').trim())
@@ -60,23 +65,28 @@ export function isFinalStatus(to) {
 /**
  * The query that fetches the open tasks of one case, earliest due first.
  *
- * `isTerminalStatus` is a materialised calculation on `caseTask`, so the
- * open/closed split is made SERVER-side. Filtering client-side over a paged
- * window would silently drop every open task past the page boundary and show
- * an empty pane on a case that has work left.
+ * The open/closed split is still made SERVER-side, by the engine's inbox
+ * rather than by `caseTask`'s materialised `isTerminalStatus`. Filtering
+ * client-side over a paged window would silently drop every open task past
+ * the page boundary and show an empty pane on a case that has work left.
  *
  * @param {string} objectId The case id.
  * @param {object} [content] The widget content blob (`limit` is honoured).
- * @return {object} Params for `useObjectStore().fetchCollection('caseTask', …)`.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @return {object} Params for `useEngineTaskStore().list(…)`.
+ * @spec openspec/specs/task-management/spec.md
  */
 export function openTasksQuery(objectId, content = {}) {
 	const limit = Number(content?.limit)
 	return {
-		case: String(objectId ?? ''),
-		isTerminalStatus: false,
-		_order: { dueDate: 'asc' },
-		_limit: Number.isFinite(limit) && limit > 0 ? limit : 25,
+		// The case IS the object: the engine stores `objectUuid` and has no
+		// typed case reference, because OpenRegister has no case entity.
+		objectUuid: String(objectId ?? ''),
+		// `all`, not the caller's assigned set. The case page shows the
+		// case's work, not the reader's, and scoping to the reader hides a
+		// colleague's task and makes the case look finished when it is not.
+		scope: 'all',
+		sort: 'dueAt',
+		limit: Number.isFinite(limit) && limit > 0 ? limit : 25,
 	}
 }
 
@@ -86,7 +96,7 @@ export function openTasksQuery(objectId, content = {}) {
  * @param {object} row The task row.
  * @param {object} [content] The widget content blob (`rowRoute`).
  * @return {{name: string, params: {id: string}}|null} The route, or null.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function taskRouteFor(row, content = {}) {
 	const name = String(content?.rowRoute ?? '').trim()
@@ -105,7 +115,7 @@ export function taskRouteFor(row, content = {}) {
  * @param {string} objectId The case id.
  * @param {object} [content] The widget content blob.
  * @return {{name: string, query: object}|null} The route, or null.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function viewAllRouteFor(objectId, content = {}) {
 	const name = String(content?.viewAllRoute ?? '').trim()

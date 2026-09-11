@@ -208,10 +208,10 @@ test.describe('app chrome (ADR-114)', () => {
 		// on its own.
 		await expect(comparison).toContainText('run your own evaluation')
 
-		// Round 3 added rows without re-reading the other three products, so
-		// their cells on those rows say Unknown. The panel has to account for
-		// that, or a reader sees three systems scored over a shorter list than
-		// ours and no reason why.
+		// Rounds 3 and 4 added rows without re-reading the other four
+		// products, so their cells on those rows say Unknown. The panel has to
+		// account for that, or a reader sees four systems scored over a much
+		// shorter list than ours and no reason why.
 		await expect(comparison).toContainText('capabilities to the list')
 		await expect(comparison).toContainText(
 			'a guessed rating is worse than an empty cell',
@@ -226,10 +226,13 @@ test.describe('app chrome (ADR-114)', () => {
 		// And that column was read on its own day, not on the shared one.
 		await expect(comparison).toContainText('not on the date above')
 
-		// Thirteen areas, collapsed. The rows live behind the disclosure so
-		// the landing view is readable; if a change flattens 225 rows onto the
-		// page, this count is what notices.
-		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(13)
+		// Seventeen areas, collapsed. Thirteen came from the audit and round 4
+		// added four more, for capabilities that had nowhere to go: a case
+		// plan of services, money on the case, offline field work, and one
+		// instance serving several organisations. The rows live behind the
+		// disclosure so the landing view stays readable; if a change flattens
+		// 329 rows onto the page, this count is what notices.
+		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(17)
 	})
 
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({

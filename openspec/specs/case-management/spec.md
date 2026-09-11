@@ -1025,28 +1025,47 @@ that lists cases carrying the chosen tag.
 ### Requirement: The case shows its lead time, archive and payment data (REQ-CM-27)
 
 You read the case's legal lead time, archive nomination and destruction date
-on the case. `CaseDetail` SHALL show a Terms and archive block with the type's
-processing deadline, the case's legal basis, archive nomination, archive
-action date, archive status, payment indication and last payment date. The
-`case` schema SHALL carry `legalBasis` as text.
+on the case. `CaseDetail` SHALL show a Terms and payment block with the type's
+processing deadline, the case's legal basis, payment indication and last
+payment date, and an Archiving block with the nomination, retention period,
+archive action date, archive status, its basis and source, and any legal
+hold. The `case` schema SHALL carry `legalBasis` as text.
+
+The two blocks are split by where the answer comes from, not by topic. The
+statutory and payment fields are the case's own schema properties. The
+archival ones SHALL be read from the resolved `@self._retention` decision
+rather than from this app's field names, so that the same surface answers for
+any object; the case still writes `archiveNomination` and its siblings for its
+ZGW consumers, and the resolver reads them from there.
 
 **Feature tier**: MVP
 
-#### Scenario: The block reads the type and the case
+#### Scenario: The blocks read the type and the case
 @e2e tests/e2e/case-identity.spec.ts
 
 - **GIVEN** a case of a type with a processing deadline of 8 weeks
 - **AND** the case carries archive nomination blijvend bewaren and legal basis Awb 4:13
 - **WHEN** you open the case page
-- **THEN** Terms and archive SHALL show 8 weeks as the statutory lead time
-- **AND** SHALL show blijvend bewaren and Awb 4:13
+- **THEN** Terms and payment SHALL show 8 weeks as the statutory lead time
+- **AND** SHALL show Awb 4:13
+- **AND** Archiving SHALL name the nomination as the phrase it stands for, not the stored code
 
 #### Scenario: Empty fields stay visible
 @e2e tests/e2e/case-identity.spec.ts
 
 - **GIVEN** a case with no archive action date
 - **WHEN** you open the case page
-- **THEN** the Terms and archive block SHALL show the archive action date row as empty, not hide it
+- **THEN** the Archiving block SHALL show the archive action date row as empty, not hide it
+
+⚠️ This scenario is RED and its test is parked on
+[nextcloud-vue#1062](https://github.com/ConductionNL/nextcloud-vue/issues/1062).
+It held while the archival fields sat in a data widget, where `hideEmpty:
+false` expressed it. They now render through `CnObjectMetadataWidget`, which
+drops an archival key that has no value even when `include` names it, and
+exposes no prop to ask for it back. The requirement stays as written because
+it is still the behaviour a records officer needs: an absent destruction date
+is the thing being looked for, and a hidden row and a blank row say different
+things.
 
 ### Requirement: The case page lists its objects (REQ-CM-28)
 

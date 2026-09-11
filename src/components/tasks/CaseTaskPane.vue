@@ -41,7 +41,7 @@
   own widgets. No page is added or retyped either way, so the ADR-100 page
   ratchet is untouched.
 
-  @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<div class="case-task-pane" data-testid="case-task-pane">
@@ -62,13 +62,19 @@
 					{{ currentDue }}
 				</dd>
 			</dl>
-			<CnLifecycleActions
-				ref="lifecycle"
+			<div
 				class="case-task-pane__actions"
-				:objectId="currentTaskId"
-				:object="currentTask"
-				:config="lifecycleConfig"
-				@transitioned="onTransitioned" />
+				data-testid="case-task-pane-actions">
+				<NcButton
+					v-for="verb in verbs"
+					:key="verb.name"
+					:disabled="busy"
+					:variant="verb.primary ? 'primary' : 'secondary'"
+					:data-testid="`case-task-pane-verb-${verb.name}`"
+					@click="invoke(verb)">
+					{{ verb.label }}
+				</NcButton>
+			</div>
 		</div>
 		<p v-else class="case-task-pane__empty" data-testid="case-task-pane-empty">
 			{{ t('dossiq', 'No open tasks on this case') }}
@@ -109,9 +115,9 @@
 </template>
 
 <script>
-import { CnLifecycleActions } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { useObjectStore } from '../../store/modules/object.js'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import {
 	isFinalStatus,
@@ -125,7 +131,7 @@ export default {
 	name: 'CaseTaskPane',
 
 	components: {
-		CnLifecycleActions,
+		NcButton,
 	},
 
 	// CnDetailWidgetHost spreads the widget's whole `content` blob onto the
@@ -153,6 +159,8 @@ export default {
 		return {
 			/** The open tasks of this case, earliest due first. */
 			tasks: [],
+			/** Whether a verb is in flight, so a double click cannot fire twice. */
+			busy: false,
 			/**
 			 * The last error already reported to the handler, so the watcher on
 			 * the lifecycle child's inline error does not toast it repeatedly
@@ -163,38 +171,38 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
-		objectStore() {
-			return useObjectStore()
+		/** @spec openspec/specs/task-management/spec.md */
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/**
 		 * The task the pane acts on: the first open one.
 		 *
 		 * @return {object|null} The task row, or null when none is open.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		currentTask() {
 			return this.tasks[0] ?? null
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentTaskId() {
 			return taskIdOf(this.currentTask)
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentTitle() {
 			return this.titleOf(this.currentTask)
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentAssignee() {
 			const assignee = String(this.currentTask?.assignee ?? '').trim()
 			return assignee === '' ? t('dossiq', 'Unassigned') : assignee
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentDue() {
 			return this.formatDate(this.currentTask?.dueDate)
 		},
@@ -203,7 +211,7 @@ export default {
 		 * The open tasks after the one in the pane, listed underneath.
 		 *
 		 * @return {object[]} The remaining rows.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		remainingTasks() {
 			return this.tasks.slice(1)
@@ -216,13 +224,39 @@ export default {
 		 * shows for the same task.
 		 *
 		 * @return {{field: string}} The lifecycle config.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
+		/**
+		 * The verbs offered on the current task.
+		 *
+		 * 🔴 NOT `CnLifecycleActions`. That component asks OpenRegister for
+		 * an OBJECT's available transitions
+		 * (`/api/objects/{uuid}/available-actions`), and an engine task is
+		 * not an object: the endpoint answers 500. Measured in the browser
+		 * after the read moved, which is the only place it shows — the unit
+		 * tests stub the component away.
+		 *
+		 * The engine decides whether a verb is legal and whether the caller
+		 * may invoke it, and refuses visibly with a message naming both. So
+		 * this offers the two a handler needs and lets the engine rule,
+		 * rather than pre-judging availability client-side, which is the
+		 * duplicated authorization this migration exists to remove.
+		 *
+		 * @return {Array<{name: string, label: string, primary: boolean}>} The verbs.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		verbs() {
+			return [
+				{ name: 'complete', label: t('dossiq', 'Complete'), primary: true },
+				{ name: 'cancel', label: t('dossiq', 'Cancel'), primary: false },
+			]
+		},
+
 		lifecycleConfig() {
 			return { field: 'status' }
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		viewAllRoute() {
 			return viewAllRouteFor(this.objectId, this.content)
 		},
@@ -239,7 +273,7 @@ export default {
 			 * resolved and query a type the store has not registered.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+			 * @spec openspec/specs/task-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -256,7 +290,7 @@ export default {
 	 * TaskWaitingCaseSection and InitiatorSection do.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	async mounted() {
 		await initializeStores()
@@ -274,7 +308,7 @@ export default {
 		 *
 		 * @param {object|null} task The task row.
 		 * @return {string} The title.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		titleOf(task) {
 			const title = String(task?.title ?? '').trim()
@@ -287,7 +321,7 @@ export default {
 		 *
 		 * @param {string|null|undefined} value The ISO date-time.
 		 * @return {string} The formatted date.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		formatDate(value) {
 			const raw = String(value ?? '').trim()
@@ -309,7 +343,7 @@ export default {
 		 * buttons is the one state worse than an empty pane.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
 			const caseId = String(this.objectId ?? '').trim()
@@ -318,15 +352,16 @@ export default {
 				return
 			}
 
-			try {
-				const rows = await this.objectStore.fetchCollection(
-					'caseTask',
-					openTasksQuery(caseId, this.content),
-				)
-				this.tasks = Array.isArray(rows) ? rows : []
-			} catch (error) {
-				this.tasks = []
-				this.report(error?.message)
+			const rows = await this.engineTasks.list(
+				openTasksQuery(caseId, this.content),
+			)
+			this.tasks = rows.filter((row) => !isTerminal(row))
+
+			// The store surfaces its failure rather than throwing, because an
+			// empty list with no trace of why is indistinguishable from a
+			// genuinely empty one. Report it here so the handler sees it.
+			if (this.engineTasks.error) {
+				this.report(this.engineTasks.error)
 			}
 		},
 
@@ -341,7 +376,7 @@ export default {
 		 *
 		 * @param {{action: string, to: string, object: object}} payload The event.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async onTransitioned(payload) {
 			const finished = isFinalStatus(payload?.to)
@@ -351,6 +386,42 @@ export default {
 
 			if (finished) {
 				showSuccess(t('dossiq', 'Task {title} finished', { title }))
+			}
+		},
+
+		/**
+		 * Invoke a verb on the current task, and let the engine rule.
+		 *
+		 * A refusal keeps the engine's own message, which names the verb and
+		 * the reason ("not the assignee"). A generic failure would throw away
+		 * the only part a handler can act on.
+		 *
+		 * @param {{name: string}} verb The verb.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		async invoke(verb) {
+			const id = this.currentTaskId
+			if (id === '' || this.busy === true) {
+				return
+			}
+
+			this.busy = true
+			const title = this.currentTitle
+			try {
+				const updated = await this.engineTasks.invoke(id, verb.name)
+				if (updated === null) {
+					this.report(this.engineTasks.error)
+					return
+				}
+
+				await this.load()
+
+				if (isTerminal(updated)) {
+					showSuccess(t('dossiq', 'Task {title} finished', { title }))
+				}
+			} finally {
+				this.busy = false
 			}
 		},
 
@@ -368,7 +439,7 @@ export default {
 		 * the follow-up issue this change files.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		watchLifecycleError() {
 			this.$watch(
@@ -382,7 +453,7 @@ export default {
 		 *
 		 * @param {string|null|undefined} message The message.
 		 * @return {void}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		report(message) {
 			const text = String(message ?? '').trim()

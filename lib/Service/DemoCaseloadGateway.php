@@ -65,7 +65,12 @@ class DemoCaseloadGateway {
 	/**
 	 * The register and schema ids the demo caseload reads and writes.
 	 *
-	 * @return array{register: string, case: string, caseTask: string, caseType: string, statusType: string} The ids.
+	 * 🔴 `caseTask` IS DELIBERATELY ABSENT. It was required here, and this
+	 * method THROWS on a missing id, so retiring the task schema would have
+	 * taken the whole demo caseload down with it. Demo tasks are engine
+	 * tasks now and need no schema.
+	 *
+	 * @return array{register: string, case: string, caseType: string, statusType: string} The ids.
 	 *
 	 * @throws RuntimeException When the app is not configured against a register yet.
 	 *
@@ -75,7 +80,6 @@ class DemoCaseloadGateway {
 		$ids = [
 			'register' => $this->config(key: 'register'),
 			'case' => $this->config(key: 'case_schema'),
-			'caseTask' => $this->config(key: 'task_schema'),
 			'caseType' => $this->config(key: 'case_type_schema'),
 			'statusType' => $this->config(key: 'status_type_schema'),
 		];

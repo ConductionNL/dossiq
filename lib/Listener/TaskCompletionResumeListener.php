@@ -3,11 +3,16 @@
 /**
  * A completed task wakes the run that asked for it.
  *
- * Tasks are ordinary OpenRegister objects edited through the generic object
- * API, so "completing a task" is an object update — there is no dossiq task
- * endpoint to hang this on. This listener is therefore where the human step
- * closes: it sees the update, recognises a task that a flow is waiting on, and
- * signals the run.
+ * A task is an OpenRegister `Task` row owned by the flow engine, and the
+ * engine announces terminality itself: `TaskService` dispatches one
+ * {@see TaskTerminalEvent} after the terminal write commits. This listener is
+ * therefore where the human step closes: it sees that announcement,
+ * recognises a task that a flow is waiting on, and signals the run.
+ *
+ * It listens to the ENGINE event rather than `ObjectUpdatedEvent` because
+ * nothing writes a `caseTask` object any more, so an object-update listener
+ * would never fire again and the run would only resume on
+ * DossiqAskPersonNode's 30-minute heartbeat.
  *
  * THE GUARD IS THE ENGINE'S NOW. This path used to consult the assignee rule
  * itself, because `FlowRunService::signal()` delivers unconditionally and the
@@ -42,7 +47,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Exception\FlowSignalRefused;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
 use OCP\EventDispatcher\Event;
@@ -92,7 +97,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 * @spec openspec/changes/adopt-flow-engine-consumer-seams/specs/task-management/spec.md
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectUpdatedEvent) === false) {
+		if (($event instanceof TaskTerminalEvent) === false) {
 			return;
 		}
 
@@ -170,71 +175,52 @@ class TaskCompletionResumeListener implements IEventListener {
 	/**
 	 * The task this event just completed, when it is one a flow is waiting on.
 	 *
-	 * Returns null for everything else — an update to a non-task object, a task
-	 * belonging to no run, an unrelated field change, or a re-save of a task
-	 * that was already completed. Each of those is an ordinary thing to do and
-	 * must resume nothing.
+	 * Returns null for everything else: a write whose transaction has not
+	 * committed and may still roll back, a task belonging to no run, a task
+	 * naming no node, and a terminal state that is not a completion. Each of
+	 * those is an ordinary thing to happen and must resume nothing.
 	 *
-	 * @param ObjectUpdatedEvent $event The update.
+	 * @param TaskTerminalEvent $event The engine's terminal event.
 	 *
 	 * @return array|null The task, or null when nothing should be resumed.
 	 *
 	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
 	 */
-	private function completedFlowTask(ObjectUpdatedEvent $event): ?array {
-		try {
-			$new = $event->getNewObject()->getObject();
-			$old = $event->getOldObject()?->getObject();
-		} catch (Throwable $e) {
+	private function completedFlowTask(TaskTerminalEvent $event): ?array {
+		// UNCOMMITTED means the transaction may still roll back. Signalling a
+		// run on it would resume a flow over a completion that never happened.
+		if ($event->isCommitted() === false) {
 			return null;
 		}
 
-		if (is_array($new) === false) {
+		try {
+			$entity = $event->getTask();
+			$task = [
+				'flowRun'  => (string)($entity->getRunUuid() ?? ''),
+				'flowNode' => (string)($entity->getNodeId() ?? ''),
+				'status'   => (string)($entity->getState() ?? ''),
+				'id'       => (string)($entity->getUuid() ?? ''),
+			];
+		} catch (Throwable $e) {
 			return null;
 		}
 
 		// Both are required. A task naming a run but no node cannot say WHICH
 		// of that run's awaiting nodes it answers, so it resumes nothing rather
 		// than guessing.
-		if (trim((string)($new['flowRun'] ?? '')) === '' || trim((string)($new['flowNode'] ?? '')) === '') {
+		if ($task['flowRun'] === '' || $task['flowNode'] === '') {
 			return null;
 		}
 
-		if ($this->justCompleted(new: $new, old: $old) === false) {
+		// Only a COMPLETION answers the question. `terminated` and `disabled`
+		// are the question being withdrawn, and a run that carried on past a
+		// cancelled ask would proceed as though somebody had answered it.
+		// The engine fires this event for all three.
+		if ($task['status'] !== self::STATUS_COMPLETED) {
 			return null;
 		}
 
-		return $new;
+		return $task;
 	}//end completedFlowTask()
 
-	/**
-	 * Whether this update is the moment the task became completed.
-	 *
-	 * The transition matters, not the state. Any later edit of an
-	 * already-completed task — a typo fixed in its description — is still an
-	 * update whose status reads `completed`, and resuming on that would advance
-	 * the run a second time.
-	 *
-	 * A missing previous state is treated as NOT a transition. Resuming on it
-	 * would mean every unrelated write to a completed task re-signals the run,
-	 * which is the more damaging of the two possible mistakes.
-	 *
-	 * @param array      $new The task after the update.
-	 * @param array|null $old The task before it, when known.
-	 *
-	 * @return boolean True when the task has just become completed.
-	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
-	 */
-	private function justCompleted(array $new, ?array $old): bool {
-		if (strtolower(trim((string)($new['status'] ?? ''))) !== self::STATUS_COMPLETED) {
-			return false;
-		}
-
-		if (is_array($old) === false) {
-			return false;
-		}
-
-		return strtolower(trim((string)($old['status'] ?? ''))) !== self::STATUS_COMPLETED;
-	}//end justCompleted()
 }//end class

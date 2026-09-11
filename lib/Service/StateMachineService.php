@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Guards beschikking state transitions and logs them immutably.
@@ -68,6 +69,44 @@ class StateMachineService {
 		'received-confirmation',
 		'archived',
 	];
+
+	/**
+	 * Fields that may NOT be edited once a beschikking is frozen.
+	 *
+	 * Lives beside IMMUTABLE_STATUSES because the two halves of the same rule
+	 * drift when they live apart, and the drift is silent.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CONTENT_FIELDS = [
+		'rationale',
+		'decision',
+		'addressee',
+		'decisionType',
+		'legalRemediesClause',
+		'feeAmount',
+		'templateId',
+	];
+
+	/**
+	 * The exception message a refused mutation carries.
+	 *
+	 * `BeschikkingController` maps it to HTTP 409.
+	 *
+	 * @var string
+	 */
+	public const IMMUTABLE_ERROR = 'immutable';
+
+	/**
+	 * What a handler is told when a frozen beschikking refuses a write.
+	 *
+	 * REQ-BES-008 requires the refusal to name the way forward, so a handler
+	 * who is told no is also told what to do instead.
+	 *
+	 * @var string
+	 */
+	public const IMMUTABLE_MESSAGE = 'This beschikking has been signed and cannot be edited. '
+		. 'Issue a wijzigingsbeschikking or an intrekkingsbeschikking instead.';
 
 	/**
 	 * Constructor.
@@ -163,6 +202,58 @@ class StateMachineService {
 			return [];
 		}
 	}//end logTransition()
+
+	/**
+	 * Refuse a content edit on a beschikking that has been signed.
+	 *
+	 * The STORED status decides. A payload that claims `draft` over a row that
+	 * is `sent` must be refused, and it is, because `$changed` is only ever
+	 * consulted for which fields the caller means to touch.
+	 *
+	 * Process events stay allowed at every status: `dispatch`, the bezwaar
+	 * link and `archive` are not content, and a beschikking that could not
+	 * record its own delivery would be unusable.
+	 *
+	 * @param array<string, mixed> $stored The beschikking as it is in the store.
+	 * @param array<string, mixed> $changed The fields the caller intends to change, keyed by name.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException 'immutable' when the stored status is frozen and a content field is touched.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function assertMutable(array $stored, array $changed): void {
+		if ($this->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === false) {
+			return;
+		}
+
+		foreach (array_keys($changed) as $field) {
+			if (in_array($field, self::CONTENT_FIELDS, true) === true) {
+				throw new RuntimeException(self::IMMUTABLE_ERROR);
+			}
+		}
+	}//end assertMutable()
+
+	/**
+	 * Refuse a delete on a beschikking that has been signed.
+	 *
+	 * A signed beschikking is evidence. Correcting it is a successor
+	 * (REQ-BES-012); removing it is never an answer.
+	 *
+	 * @param array<string, mixed> $stored The beschikking as it is in the store.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException 'immutable' when the stored status is frozen.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function assertDeletable(array $stored): void {
+		if ($this->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === true) {
+			throw new RuntimeException(self::IMMUTABLE_ERROR);
+		}
+	}//end assertDeletable()
 
 	/**
 	 * Normalise an ObjectService return value to an array.

@@ -324,20 +324,38 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
-	test('the identity row carries no widget chrome of its own', async ({
+	test('the identity row carries no heading and no actions menu', async ({
 		page,
 	}) => {
-		// The identity row's cell carries `showTitle: false`, because the row
-		// already labels every fact it shows. Without the flag the grid draws a
-		// CnWidgetWrapper header on top: the widget title above a row that names
-		// itself, plus an Actions menu on read-only content, which the
-		// Cards-vs-Widgets split says a card must not have.
+		// THIS ASSERTION HAS NOW FLIPPED TWICE, so both turns are recorded.
 		//
-		// This regressed once already on the tiles this row replaced: rebuilding
-		// the layout from a list of tuples silently dropped the flag from five
-		// cells, and nothing failed. Every gate passed and the E2E passed,
-		// because no assertion described what the cell is supposed to look like.
-		// This is that assertion.
+		// It began as a full-width band with `showTitle: false`, because facts
+		// laid out in a line label themselves and a heading over them printed
+		// the same word twice. dossiq#2322 rebuilt it as a titled card in the
+		// four-column rail, where the same facts STACK: a stacked group with no
+		// heading says nothing about what the group is, so the heading became
+		// the design and this assertion flipped to require it.
+		//
+		// dossiq#2360 moved it back to full width, and the reason the first
+		// objection does not return is that the facts are no longer a line of
+		// text: each is a card with `flex: 1 1 0`, so the row divides evenly
+		// across twelve columns instead of ending in dead space. Cards label
+		// themselves, so `showTitle` is false again and the heading is gone.
+		//
+		// The second half did NOT flip, and the reason is worth keeping. This
+		// is a consumer slot widget (`#widget-case-header`), so CnDetailPage
+		// renders a bare grid `<h3 class="cn-detail-page__widget-title">` for
+		// it — not a CnWidgetWrapper header. Only the wrapper carries the
+		// overflow Actions menu, and it nests that menu inside its own
+		// `v-if="showTitle"` header, so a titled slot widget gains the heading
+		// without gaining the menu. Read-only content still must not offer one.
+		//
+		// The absence half regressed once already on the tiles this row
+		// replaced: rebuilding the layout from a list of tuples silently
+		// dropped the flag from five cells, and nothing failed. Every gate
+		// passed and the E2E passed, because no assertion described what the
+		// cell is supposed to look like. This is still that assertion, pointed
+		// at the shape the page has now.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -351,16 +369,140 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			.filter({ has: page.getByTestId('case-header') })
 			.first()
 
-		// The widget title does not print above a row that labels itself.
+		// A row of self-labelling cards names nothing above itself.
 		expect(
 			await cell.getByText(/^(Case identity|Zaakgegevens)$/).count(),
-			'the identity row must not carry a grid heading',
+			'the identity row must carry no grid heading',
 		).toBe(0)
+
+		// The facts themselves are still there, which is what makes the absent
+		// heading a design rather than a widget that failed to render.
+		await expect(header.getByTestId('case-header-casetype')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(header.getByTestId('case-header-status')).toBeVisible()
 
 		// And read-only content carries no Actions menu of its own.
 		await expect(
 			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)
+	})
+
+	// @e2e openspec/specs/case-dashboard-view/spec.md
+	test('the Data panel holds its content directly, with no card inside the card', async ({
+		page,
+	}) => {
+		// The tabs card already draws the border, and the open tab already
+		// names the panel, so a widget card inside it repeats both: a second
+		// border around the fields and a "Data" heading under the "Data" tab.
+		//
+		// That heading was never a choice. `CnObjectDataWidget.title` carries a
+		// DEFAULT of "Data", so the `undefined` bare mode passed became the
+		// default. nextcloud-vue 2.45.0 lets a host ask for no title while
+		// keeping the actions, which is what previously blocked it: the Save
+		// button for an inline edit lives in that same header, so hiding the
+		// header hid Save with it.
+		//
+		// So the panel keeps a header when there are controls in it. A control
+		// is not chrome, and a panel that silently cannot be saved is a worse
+		// outcome than a row of buttons.
+		//
+		// Asserted in a browser because it is chrome: jsdom computes no layout
+		// and a unit test can only see the props, not the card.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// `openCasePanel(page, 'data')` returns the OPEN tabpanel itself, which
+		// is the handle this needs. Scoping matters: the sidebar has tabpanels
+		// of its own and a panel can contain another panel, so a page-wide
+		// query would count the wrong node.
+		const panel = await openCasePanel(page, 'data')
+		await expect(panel).toBeVisible({ timeout: 20_000 })
+
+		// The fields are there, so an absent card is a decision and not a
+		// widget that failed to mount.
+		await expect(panel).toContainText(/Case type|Zaaktype/, { timeout: 20_000 })
+
+		// No widget card of its own inside the panel — and "no card" is about
+		// what is DRAWN, not about which elements exist.
+		//
+		// This used to assert `.cn-widget-wrapper` had a count of zero, which
+		// asked for the wrong thing. That element is load-bearing:
+		// `CnObjectDataWidget` finds `.cn-widget-wrapper__content` with
+		// `closest()` to measure whether its field grid overflows and to
+		// observe the cell resizing, and nextcloud-vue's table and detail-page
+		// CSS size their content areas through the same node. Deleting it takes
+		// the whole-row clip and the "Show all N fields" affordance out
+		// silently, because a `closest()` that finds nothing returns null and
+		// the widget reads null as "nothing overflows" rather than as an error.
+		//
+		// So the contract is: the wrapper renders, and draws nothing. Asserted
+		// on computed style, which is the only place a border width is a real
+		// number, and which fails on a card whatever the class names are called
+		// that day.
+		const wrappers = panel.locator('.cn-widget-wrapper')
+		const wrapperCount = await wrappers.count()
+		expect(
+			wrapperCount,
+			'the data widget must still render its wrapper: it measures its own overflow against that node',
+		).toBeGreaterThan(0)
+
+		for (let i = 0; i < wrapperCount; i++) {
+			const chrome = await wrappers.nth(i).evaluate((el) => {
+				const card = getComputedStyle(el)
+				const content = el.querySelector(
+					':scope > .cn-widget-wrapper__content',
+				)
+				const inner = content ? getComputedStyle(content) : null
+				return {
+					border: [
+						card.borderTopWidth,
+						card.borderRightWidth,
+						card.borderBottomWidth,
+						card.borderLeftWidth,
+					],
+					background: card.backgroundColor,
+					padding: inner
+						? [
+								inner.paddingTop,
+								inner.paddingRight,
+								inner.paddingBottom,
+								inner.paddingLeft,
+							]
+						: null,
+					title:
+						el
+							.querySelector('.cn-widget-wrapper__title')
+							?.textContent?.trim() ?? null,
+				}
+			})
+
+			expect(
+				chrome.border,
+				'a widget in a tab panel draws no border of its own: the strip drew it',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.background,
+				'a widget in a tab panel paints no card behind itself',
+			).toBe('rgba(0, 0, 0, 0)')
+			expect(
+				chrome.padding,
+				'the panel supplies the inset, so the widget adds none of its own',
+			).toEqual(['0px', '0px', '0px', '0px'])
+			expect(
+				chrome.title,
+				'the open tab already names the panel, so the widget prints no heading',
+			).toBeNull()
+		}
+
+		// And no second heading repeating the open tab's label. Scoped to the
+		// panel, because the tab itself says "Data" and is outside it.
+		expect(
+			await panel.getByText(/^(Data|Gegevens)$/).count(),
+			'the panel must not repeat the label its own tab already carries',
+		).toBe(0)
 	})
 
 	test('the tabs widget renders one tab per configured panel', async ({

@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case identity row, the breadcrumb and the tab order (placement A01, A33).
+ * The case identity card, the absent breadcrumb and the tab order (A01, A33).
  *
  * Everything here is a seam a unit test cannot reach. The manifest spec
  * already pins the declarations; this spec asks whether the page built from
@@ -10,8 +10,8 @@
  *
  *  - the row turns a stored uuid into a status NAME and a stored date into a
  *    number of days, both of which need a live register;
- *  - the breadcrumb's last crumb is the current page, which is a rendered
- *    ARIA property and not a manifest key;
+ *  - the breadcrumb is GONE, and only a rendered page can show that the title
+ *    is now stated once rather than twice;
  *  - the tab strip's geometry at 1024 is the whole point of row A33, and
  *    geometry only exists in a browser.
  *
@@ -59,7 +59,7 @@ const WORK_TABS = [
 	'Objects and locations',
 ]
 
-test.describe('Case header — identity, breadcrumb and tab order', () => {
+test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test.setTimeout(180_000)
 
 	/** The case with a status, an assignee and a deadline behind it. */
@@ -229,48 +229,38 @@ test.describe('Case header — identity, breadcrumb and tab order', () => {
 		await expect(page.getByTestId('case-header-countdown')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-current-crumb-is-not-a-link
-	test('the breadcrumb ends on the case, unlinked and marked current', async ({
-		page,
-	}) => {
+	// @e2e openspec/specs/case-dashboard-view/spec.md#no-trail-is-rendered
+	test('renders no breadcrumb trail above the case title', async ({ page }) => {
+		// The trail's LAST crumb was the case title, one line under the page
+		// header that already printed it: `Cases > Dakkapel Kerkstraat 12`
+		// directly below `Dakkapel Kerkstraat 12`. A repeat, not a location, and
+		// it cost the top of the page a row.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)
 		await expect(page.getByTestId('case-header')).toBeVisible({
 			timeout: 30_000,
 		})
 
-		const trail = page.getByTestId('case-header-breadcrumbs')
-		await expect(trail).toBeVisible({ timeout: 20_000 })
+		await expect(page.getByTestId('case-header-breadcrumbs')).toHaveCount(0)
 
-		const current = trail.locator('[aria-current="page"]')
-		await expect(current).toHaveCount(1)
-		await expect(current).toContainText(caseTitle)
-		// The current location is not somewhere to navigate to.
-		expect(await current.getAttribute('href')).toBeNull()
-	})
-
-	// @e2e openspec/specs/case-dashboard-view/spec.md#cases-is-one-click-away
-	test('the first crumb opens the case list, carrying the query it had', async ({
-		page,
-	}) => {
-		// The Cases lenses are chip state rather than a query parameter today,
-		// so there is no `?lens=` to preserve. What IS assertable, and what
-		// keeps the crumb honest the day a lens lands on the URL, is that a
-		// query on the case route survives the trip back.
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}?lens=mine`)
-		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-header')).toBeVisible({
-			timeout: 30_000,
-		})
-
-		const trail = page.getByTestId('case-header-breadcrumbs')
-		await trail.getByRole('link').first().click()
-
-		await expect(page).toHaveURL(/\/cases(\?|$)/, { timeout: 20_000 })
-		await expect(page).toHaveURL(/lens=mine/)
-		// The list, not an empty shell: an unknown subpath answers 200 with the
-		// SPA shell, so the URL alone is not evidence the page rendered.
-		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
+		// 🔑 THE TRAIL'S SIGNATURE, NOT A GLOBAL COUNT OF THE TITLE.
+		//
+		// This asserted `getByText(caseTitle, { exact: true })` had count 1, on
+		// the reasoning that the title should now be stated once. That is a
+		// claim about the WHOLE PAGE, and the whole page is not this test's
+		// business: `CnObjectSidebar` renders `:name="sidebarTitle"`, so an open
+		// sidebar prints the case title a second time and the count is 2 with
+		// the breadcrumb correctly absent. The assertion would have failed for a
+		// reason that has nothing to do with the breadcrumb.
+		//
+		// What the removed trail actually contributed was a node carrying BOTH
+		// the title and `aria-current="page"` — CnBreadcrumbs marks its last
+		// crumb that way. Nothing else on the page does. Asserting that exact
+		// pair is gone is the regression, and it cannot be confounded by a
+		// sidebar, a tab panel or the browser tab title.
+		await expect(
+			page.locator('[aria-current="page"]').filter({ hasText: caseTitle }),
+		).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more

@@ -2,37 +2,35 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  The case identity, on the first row of the case page.
+  The case identity, as a card in the page's right-hand column.
 
   The page used to render the eyebrow CASE and the title and nothing else:
   which case you were on was a fact you had to go looking for, in a data
   widget whose Identifier field hid behind Show all 12 fields. Every
-  competitor puts that fact under the title. This row is it — the case
-  number, the case type, the status, the handler, the deadline and the way
-  back to the list, all above the fold.
+  competitor puts that fact near the title. This card is it: the case number,
+  the case type, the status, the handler and the deadline.
 
   It is a `custom` widget rather than the built-in `header` one because that
   built-in is a dashboard banner (title, subtitle, call to action): it binds
   neither a $ref status nor a countdown.
 
-  The breadcrumb and the identity line are RENDERED here rather than declared
-  on the page, because CnDetailPage 2.41.0 reads neither a `breadcrumbs` page
-  key nor `subtitleField` (its own `subtitle` prop is the sidebar header's).
-  Both keys are declared on the page config anyway, as the shape the host will
-  read once it exists, and this widget takes the breadcrumb trail from that
-  same declaration through `widget.props` so the two cannot drift.
+  🔴 IT USED TO BE A FULL-WIDTH BAND UNDER THE TITLE, AND IT WAS MOSTLY AIR.
+  Two grid rows tall, twelve columns wide, holding three to five short facts
+  laid out in a row: on a real case the band was more than half empty, and the
+  two rows it cost came out of the content below. As a card in the narrow
+  right column the same facts stack, read as a labelled group, and the page
+  gets its two rows back.
+
+  It also used to render a breadcrumb whose LAST crumb was the case title,
+  directly under the page header that already printed that title. The trail
+  said "Cases > Dakkapel Kerkstraat 12" one line below "Dakkapel Kerkstraat
+  12". That crumb is gone with the rest of the trail; the way back to the list
+  is the app menu, which is where every other page in the fleet puts it.
 
   @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 -->
 <template>
 	<div class="case-header" data-testid="case-header">
-		<CnBreadcrumbs
-			v-if="crumbs.length > 0"
-			class="case-header__crumbs"
-			data-testid="case-header-breadcrumbs"
-			:crumbs="crumbs"
-			:ariaLabel="t('dossiq', 'Case breadcrumb')" />
-
 		<dl class="case-header__identity">
 			<div v-if="identifier" class="case-header__field">
 				<dt>{{ t('dossiq', 'Case number') }}</dt>
@@ -80,7 +78,7 @@
 </template>
 
 <script>
-import { CnBreadcrumbs, CnStatusBadge } from '@conduction/nextcloud-vue'
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
@@ -98,13 +96,12 @@ const DEFAULT_THRESHOLDS = { warn: 14, danger: 5 }
 export default {
 	name: 'CaseHeaderRow',
 
-	components: { CnBreadcrumbs, CnStatusBadge },
+	components: { CnStatusBadge },
 
 	props: {
 		/**
 		 * The manifest widget definition, handed to every `widget-<id>` slot
-		 * by CnDetailPage. Its `props` carry the breadcrumb trail and the
-		 * countdown thresholds.
+		 * by CnDetailPage. Its `props` carry the countdown thresholds.
 		 */
 		widget: {
 			type: Object,
@@ -272,59 +269,6 @@ export default {
 			}
 			return ''
 		},
-
-		/**
-		 * The breadcrumb trail in CnBreadcrumbs' own shape.
-		 *
-		 * The manifest declares it as `{ label, route }` for a named page and
-		 * `{ field }` for a value off the record — the shape a `breadcrumbs`
-		 * page key would take. This maps that onto `{ label, to, icon }`, and
-		 * drops the LAST crumb's target, because CnBreadcrumbs renders the
-		 * final crumb unlinked with `aria-current="page"` regardless and a
-		 * `to` on it would only be dead config.
-		 *
-		 * @return {Array<object>} The crumbs, root first, current location last.
-		 */
-		/**
-		 * The query the crumb back to the list carries.
-		 *
-		 * The Cases lenses are chip state today, not a query parameter, so
-		 * there is nothing on the URL to carry back and this is usually empty.
-		 * It is passed through anyway: the moment a lens (or a search, or a
-		 * page number) becomes a query parameter, the trip out to a case and
-		 * back keeps it, rather than dropping the reader on a reset list.
-		 *
-		 * @return {object} The route query to hand the list.
-		 *
-		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
-		 */
-		listQuery() {
-			const query = this.$route?.query
-			return query && typeof query === 'object' ? { ...query } : {}
-		},
-
-		/** @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md */
-		crumbs() {
-			const declared = this.widget?.props?.breadcrumbs
-			if (!Array.isArray(declared)) {
-				return []
-			}
-			return declared
-				.map((crumb, index) => {
-					const label = crumb.field
-						? String(this.caseObject[crumb.field] ?? '')
-						: t('dossiq', String(crumb.label ?? ''))
-					const isLast = index === declared.length - 1
-					return {
-						label,
-						...(crumb.icon ? { icon: crumb.icon } : {}),
-						...(crumb.route && !isLast
-							? { to: { name: crumb.route, query: this.listQuery } }
-							: {}),
-					}
-				})
-				.filter((crumb) => crumb.label !== '' || crumb.icon)
-		},
 	},
 
 	watch: {
@@ -427,59 +371,61 @@ export default {
 
 <style scoped>
 /*
- * `safe center`, not `center`.
+ * A stacked card, not a fixed-height scroll box.
  *
- * This box is a fixed-height grid cell (`gridHeight: 2`) that is also a
- * scroll container: `overflow-x: auto` leaves the other axis `visible`, and
- * CSS resolves that pair by computing `overflow-y` to `auto` as well. A
- * column flex box that overflows and centres its content pushes the overflow
- * out of BOTH ends, and the half above the box is unreachable, because
- * `scrollTop` cannot go below zero.
+ * The previous rule set solved a problem this layout no longer has. The row
+ * was a `gridHeight: 2` cell whose `overflow-x: auto` coerced `overflow-y` to
+ * `auto` as well, making it a scroll container; a column flex box that centred
+ * its content then pushed the overflow out of BOTH ends, and the half above
+ * the box was unreachable because `scrollTop` cannot go below zero. The
+ * breadcrumb was the first child, so it was the half that was lost: painted,
+ * hit-tested against whatever sat behind it, and impossible to click.
  *
- * The breadcrumb trail is the first child, so it is the half that was lost.
- * Measured on a running instance at 860px, before the change: the box starts
- * at y=147 and the trail renders at y=135 — twelve pixels above its own
- * container — with `scrollHeight` 152 against `clientHeight` 136 and a scroll
- * range of 0 to 16 that only ever reveals the BOTTOM. So the Cases crumb was
- * painted, hit-tested against whatever sat behind it, and could not be
- * clicked. `case-header.spec.ts` reported it as fifteen seconds of "element
- * is visible, enabled and stable" followed by three different elements
- * intercepting the click, which reads as a flaky test rather than a control
- * that is out of reach.
- *
- * `safe center` is the keyword for exactly this: it centres while the content
- * fits and falls back to start-alignment the moment it does not. Measured on
- * the same instance, same case: content that fits is centred identically
- * (4px above, 4px below, unchanged), and content that overflows now starts
- * 4px INSIDE the top with the whole 31px of overflow at the bottom, where the
- * scroll range can reach it.
- *
- * Growing the box instead (`height: auto; min-height: 100%`) also frees the
- * crumb, and was rejected: it spills 47px over the widget in the cell below,
- * which has `overflow: visible`.
+ * `safe center` fixed that by falling back to start-alignment on overflow.
+ * The card does not need it: the fields stack, the cell is sized to the stack
+ * rather than the stack squeezed into the cell, and there is no horizontal
+ * axis to scroll. Keeping the workaround would only make the next reader
+ * wonder what it was guarding.
  */
 .case-header {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-	justify-content: safe center;
-	height: 100%;
-	padding: 4px 12px;
-	overflow-x: auto;
+	gap: 2px;
+	padding: 4px 0;
 }
 
+/* A wrapping ROW of cards, not a stacked list. This strip used to sit in the
+   4-wide right column, where a column was the only thing that fitted; it is a
+   full-width row above the tabs now, so the facts read across at a glance
+   instead of down. Wrapping rather than scrolling: a narrow viewport moves the
+   last card onto a second line, where a scroll would hide it behind an edge
+   with nothing to say it is there. */
 .case-header__identity {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 4px 24px;
-	align-items: baseline;
+	gap: 8px;
 	margin: 0;
 }
 
+/*
+ * Label above value, not beside it. The column is four of twelve wide, and a
+ * baseline-aligned `dt`/`dd` pair wraps a long case type onto its own line
+ * anyway, leaving the label stranded beside white space.
+ */
+/* Each fact is its own card, matching the dashboard's stat tiles so the two
+   surfaces read as one system. `flex: 1 1 0` divides the row evenly and lets a
+   long case type wrap inside its own card rather than pushing its neighbours
+   off the line; `min-width` keeps a card from collapsing to its label. */
 .case-header__field {
+	background-color: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
 	display: flex;
-	gap: 6px;
-	align-items: baseline;
+	flex: 1 1 0;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 140px;
+	padding: calc(var(--default-grid-baseline) * 3);
 }
 
 .case-header__field dt {
@@ -490,6 +436,7 @@ export default {
 .case-header__field dd {
 	margin: 0;
 	font-weight: 500;
+	overflow-wrap: anywhere;
 }
 
 .case-header__countdown.is-warning {

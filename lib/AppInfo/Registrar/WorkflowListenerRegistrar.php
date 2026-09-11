@@ -32,8 +32,8 @@ use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
+use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -152,11 +152,15 @@ class WorkflowListenerRegistrar {
 	/**
 	 * Register the listener that resumes a run when its task is completed.
 	 *
-	 * A task is an ordinary OpenRegister object, so completing one is an object
-	 * UPDATE — there is no dossiq task endpoint this could hang on instead.
+	 * A task is an OpenRegister `Task` row owned by the flow engine, and the
+	 * engine announces its own terminality: `TaskService` dispatches
+	 * `TaskTerminalEvent` once the terminal write has committed.
 	 *
-	 * Registered unconditionally: unlike the decision events, `ObjectUpdatedEvent`
+	 * Registered unconditionally: unlike the decision events, `TaskTerminalEvent`
 	 * is OpenRegister's own and OpenRegister is a hard dependency of this app.
+	 * The class ships from openregister v2.0.13 onward (openregister#3269), and
+	 * `FlowRunSignalService::signalAs()`, which the listener signals through,
+	 * from openregister#3332.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
@@ -165,8 +169,13 @@ class WorkflowListenerRegistrar {
 	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
 	 */
 	private function registerHumanStepListeners(IRegistrationContext $context): void {
+		// The ENGINE's terminal event, not an object update. Tasks are
+		// OpenRegister `Task` rows now, so nothing writes a `caseTask` object
+		// and an ObjectUpdatedEvent listener would never fire again: the run
+		// would only resume on DossiqAskPersonNode's 30-minute heartbeat, and
+		// a wedge that recovers half an hour late still reads as a wedge.
 		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
+			event: TaskTerminalEvent::class,
 			listener: TaskCompletionResumeListener::class
 		);
 

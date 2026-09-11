@@ -194,7 +194,9 @@ class TemplateLibraryService {
 
 		// Create the case type.
 		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-		$caseTypeData = $template['caseType'] ?? [];
+		// No `?? []`: the refusal above already proved this is an array, so
+		// the coalesce was dead and phpstan said so.
+		$caseTypeData = $template['caseType'];
 		$caseType = $objectService->saveObject(
 			object: $caseTypeData,
 			register: $register,

@@ -154,41 +154,76 @@ describe('Tasks index lenses', () => {
 	})
 
 	it('keeps completed tasks out of Mine and Unclaimed', () => {
+		// The two person-scoped lenses, and the only two. `scope` says so
+		// rather than relying on the default, which is the point of the
+		// test below.
 		expect(chip('Tasks', 'Mine').filter).toEqual({
-			assignee: '@me',
-			isTerminalStatus: false,
+			scope: 'assigned',
+			isTerminal: false,
 		})
 		expect(chip('Tasks', 'Unclaimed').filter).toEqual({
-			assignee: 'IS NULL',
-			isTerminalStatus: false,
+			scope: 'pooled',
+			isTerminal: false,
 		})
 	})
 
 	it('shows completed tasks under Closed only', () => {
-		expect(chip('Tasks', 'Closed').filter).toEqual({ isTerminalStatus: true })
+		expect(chip('Tasks', 'Closed').filter).toEqual({
+			scope: 'all',
+			isTerminal: true,
+		})
 	})
 
-	it('spells the two dueDate windows as flat bracket keys', () => {
+	/**
+	 * 🔴 EVERY LENS NAMES ITS SCOPE, and four of the six name `all`.
+	 *
+	 * The task endpoint defaults to `scope: assigned`. A lens that left
+	 * `scope` off would therefore answer "my closed tasks" where this list
+	 * has always meant "closed tasks", and it would do it quietly: the
+	 * table renders, the count is plausible, and only somebody who knows
+	 * what their colleagues are working on would notice the rows missing.
+	 * That is why this is asserted per lens rather than left to the reader
+	 * of the manifest note.
+	 */
+	it('names a scope on every lens, so none inherits the assigned default', () => {
+		for (const entry of chips('Tasks')) {
+			expect(
+				entry.filter.scope,
+				`${entry.label} declares no scope`,
+			).toBeTruthy()
+		}
+
+		const personal = chips('Tasks')
+			.filter((entry) => entry.filter.scope !== 'all')
+			.map((entry) => entry.label)
+			.sort()
+		expect(personal).toEqual(['Mine', 'Unclaimed'])
+	})
+
+	it('asks the engine for the two due windows rather than deriving them', () => {
+		// `overdue` is the engine's own derived filter, so dossiq stops
+		// comparing a date string against a `dueDate` column that no longer
+		// exists. The week window is a real pair of instants.
 		expect(chip('Tasks', 'Overdue').filter).toEqual({
-			isTerminalStatus: false,
-			'dueDate[lt]': '@today',
+			scope: 'all',
+			overdue: true,
 		})
 		expect(chip('Tasks', 'Due this week').filter).toEqual({
-			isTerminalStatus: false,
-			'dueDate[gte]': '@today',
-			'dueDate[lt]': '@today+7d',
+			scope: 'all',
+			isTerminal: false,
+			dueAfter: '@today',
+			dueBefore: '@today+7d',
 		})
 	})
 
-	it('shows the priority the task list has always been specified to show', () => {
-		// REQ-TASK-004's first scenario names priority in the row, and the
-		// column was never declared. `priority` is `facetable`, so it was
-		// reachable through the sidebar facet and absent from the row.
-		const keys = page('Tasks').config.columns.map((column) =>
-			typeof column === 'string' ? column : column.key,
-		)
-		expect(keys).toContain('priority')
-		expect(keys.indexOf('priority')).toBeGreaterThan(keys.indexOf('dueDate'))
+	it('takes its columns from the source, priority included', () => {
+		// REQ-TASK-004's first scenario names priority in the row. The page
+		// no longer declares columns at all: the `tasks` source supplies
+		// six, and its state and priority columns are badges whose colour
+		// maps are built from the same t() calls as their labels. A copy
+		// here would be a divergent one, which is what this change removes.
+		expect(page('Tasks').config.columns).toBeUndefined()
+		expect(page('Tasks').config.entitySource).toBe('tasks')
 	})
 })
 

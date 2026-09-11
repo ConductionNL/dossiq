@@ -10,7 +10,7 @@
  * with no buttons, and an unresolved `@objectId` token sends View all to the
  * unfiltered Tasks list.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -35,6 +35,12 @@ const CONTENT = {
 }
 
 describe('taskIdOf', () => {
+	it('prefers the engine uuid, which is what routes and verbs accept', () => {
+		// An engine task's numeric `id` is a database primary key. Routing on
+		// it produces a plausible-looking URL that resolves to nothing.
+		expect(taskIdOf({ uuid: 'engine-uuid', id: 42 })).toBe('engine-uuid')
+	})
+
 	it('reads a bare id', () => {
 		expect(taskIdOf({ id: 'task-1' })).toBe('task-1')
 	})
@@ -69,19 +75,30 @@ describe('isFinalStatus', () => {
 })
 
 describe('openTasksQuery', () => {
-	it('filters on the case and on the SERVER-side open flag', () => {
+	it('asks the engine for the whole case, soonest due first', () => {
 		expect(openTasksQuery('case-9', CONTENT)).toEqual({
-			case: 'case-9',
-			isTerminalStatus: false,
-			_order: { dueDate: 'asc' },
-			_limit: 25,
+			// The case IS the object. The engine keeps no typed case
+			// reference, because OpenRegister has no case entity.
+			objectUuid: 'case-9',
+			// `all`, not the reader's assigned set: the case page shows the
+			// case's work. Scoping to the caller hides a colleague's task and
+			// makes the case look finished when it is not.
+			scope: 'all',
+			sort: 'dueAt',
+			limit: 25,
 		})
 	})
 
 	it('falls back to a limit when the manifest names none', () => {
-		expect(openTasksQuery('case-9', {})._limit).toBe(25)
-		expect(openTasksQuery('case-9', { limit: 0 })._limit).toBe(25)
-		expect(openTasksQuery('case-9', { limit: 5 })._limit).toBe(5)
+		expect(openTasksQuery('case-9', {}).limit).toBe(25)
+		expect(openTasksQuery('case-9', { limit: 0 }).limit).toBe(25)
+		expect(openTasksQuery('case-9', { limit: 5 }).limit).toBe(5)
+	})
+
+	it('never asks for the reader own tasks on a case surface', () => {
+		// Mutation guard: flipping this to 'assigned' is the one change that
+		// makes the pane wrong in a way no other assertion notices.
+		expect(openTasksQuery('case-9', CONTENT).scope).toBe('all')
 	})
 })
 

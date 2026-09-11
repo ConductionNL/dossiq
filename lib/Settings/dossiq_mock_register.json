@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -1282,6 +1282,12 @@
             "type": "string",
             "title": "Template ID",
             "description": "BeschikkingTemplate identifier (Docudesk-bound)"
+          },
+          "templateVersion": {
+            "type": "string",
+            "title": "Template Version",
+            "description": "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.",
+            "x-notes": "Resolved by TemplateEngineAdapterInterface::resolveVersion() at compose time and stored by BeschikkingService::compose(), which used to compute it and drop it. The filinq adapter reads it from filinq's TemplateVersionService chain, so the value is 'v<n>' for a versioned template and the template object's own OpenRegister version otherwise. Unrelated to draftVersion, which counts re-renders of this beschikking."
           },
           "draftVersion": {
             "type": "integer",
@@ -14691,10 +14697,24 @@
       "dossiqIntegration": {
         "slug": "dossiqIntegration",
         "icon": "PowerPlugOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Integration",
-        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand.",
+        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, matching the schema of the same name in the application register. The demo register seeds no rows here, and MockRegisterHasNoSeededCatalogueTest holds that line, so this block changes nothing that exists today. It is here so a demo instance that later grows a row does not reopen what the application register just closed.",
         "type": "object",
+        "authorization": {
+          "read": [
+            "admin"
+          ],
+          "create": [
+            "admin"
+          ],
+          "update": [
+            "admin"
+          ],
+          "delete": [
+            "admin"
+          ]
+        },
         "required": [
           "key",
           "title",

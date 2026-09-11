@@ -45,6 +45,7 @@
 
 <script>
 import CheckboxMarkedCircleOutline from 'vue-material-design-icons/CheckboxMarkedCircleOutline.vue'
+import { useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { caseRouteFor, waitingCaseIdFrom } from '../../utils/flowTaskHelpers.js'
@@ -66,6 +67,17 @@ export default {
 		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
 		objectStore() {
 			return useObjectStore()
+		},
+
+		/**
+		 * The task engine. The TASK is an engine row; the CASE it names is
+		 * still an OpenRegister object, so both stores are in play here.
+		 *
+		 * @return {object} The engine task store.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
@@ -115,8 +127,7 @@ export default {
 			}
 
 			try {
-				this.task =
-					(await this.objectStore.fetchObject('caseTask', taskId)) || null
+				this.task = (await this.engineTasks.fetch(taskId)) || null
 			} catch {
 				// An unreadable task renders nothing, same as a non-flow task.
 				this.task = null

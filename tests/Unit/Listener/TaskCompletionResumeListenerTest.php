@@ -29,7 +29,8 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Db\Task;
+use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Exception\FlowSignalRefused;
 use OCA\OpenRegister\Service\Flow\FlowRunSignalService;
 use OCP\IUser;
@@ -78,26 +79,32 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	}//end task()
 
 	/**
-	 * An update event carrying a before and after state.
+	 * The engine's terminal event for one task.
 	 *
-	 * @param array      $new The task after.
-	 * @param array|null $old The task before.
+	 * The second argument used to be the task's PREVIOUS state, because the
+	 * listener read `ObjectUpdatedEvent` and had to work out whether this
+	 * update was the moment of completion. The engine fires
+	 * `TaskTerminalEvent` ONCE, when the task reaches a terminal state, so
+	 * that question is answered by the event's existence and the parameter is
+	 * gone. What replaces it is `committed`: an uncommitted event may still
+	 * roll back, and resuming a run over a completion that never happened is
+	 * the worse of the two mistakes.
 	 *
-	 * @return ObjectUpdatedEvent The event.
+	 * @param array   $task      The task's fields.
+	 * @param boolean $committed Whether the transaction committed.
+	 *
+	 * @return TaskTerminalEvent The event.
 	 */
-	private function event(array $new, ?array $old): ObjectUpdatedEvent {
-		$newEntity = $this->createMock(ObjectEntity::class);
-		$newEntity->method('getObject')->willReturn($new);
+	private function event(array $task, bool $committed = true): TaskTerminalEvent {
+		$entity = $this->createMock(Task::class);
+		$entity->method('getRunUuid')->willReturn(($task['flowRun'] ?? null));
+		$entity->method('getNodeId')->willReturn(($task['flowNode'] ?? null));
+		$entity->method('getState')->willReturn(($task['status'] ?? null));
+		$entity->method('getUuid')->willReturn(($task['id'] ?? 'task-1'));
 
-		$oldEntity = null;
-		if ($old !== null) {
-			$oldEntity = $this->createMock(ObjectEntity::class);
-			$oldEntity->method('getObject')->willReturn($old);
-		}
-
-		$event = $this->createMock(ObjectUpdatedEvent::class);
-		$event->method('getNewObject')->willReturn($newEntity);
-		$event->method('getOldObject')->willReturn($oldEntity);
+		$event = $this->createMock(TaskTerminalEvent::class);
+		$event->method('getTask')->willReturn($entity);
+		$event->method('isCommitted')->willReturn($committed);
 
 		return $event;
 	}//end event()
@@ -152,7 +159,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	 */
 	public function testCompletingAFlowTaskResumesItsRun(): void {
 		$this->listener()->handle(
-			$this->event($this->task(), $this->task(['status' => 'active']))
+			$this->event($this->task())
 		);
 
 		$this->assertCount(1, $this->signals);
@@ -169,7 +176,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	 */
 	public function testTheSeamIsHandedTheActorAndTheAddressedNode(): void {
 		$this->listener(uid: 'alice')->handle(
-			$this->event($this->task(), $this->task(['status' => 'active']))
+			$this->event($this->task())
 		);
 
 		$this->assertCount(1, $this->signals);
@@ -193,7 +200,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 		);
 
 		$this->listener(uid: 'mallory')->handle(
-			$this->event($this->task(), $this->task(['status' => 'active']))
+			$this->event($this->task())
 		);
 
 		$this->assertSame([], $this->signals, 'The run must not advance for somebody who was not asked.');
@@ -201,10 +208,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 
 	public function testATaskWithNoRunResumesNothing(): void {
 		$this->listener()->handle(
-			$this->event(
-				$this->task(['flowRun' => '', 'flowNode' => '']),
-				$this->task(['flowRun' => '', 'flowNode' => '', 'status' => 'active'])
-			)
+			$this->event($this->task(['flowRun' => '', 'flowNode' => '']))
 		);
 
 		$this->assertSame([], $this->signals);
@@ -216,57 +220,47 @@ class TaskCompletionResumeListenerTest extends TestCase {
 	 */
 	public function testATaskWithARunButNoNodeResumesNothing(): void {
 		$this->listener()->handle(
-			$this->event(
-				$this->task(['flowNode' => '']),
-				$this->task(['flowNode' => '', 'status' => 'active'])
-			)
+			$this->event($this->task(['flowNode' => '']))
 		);
 
 		$this->assertSame([], $this->signals);
 	}//end testATaskWithARunButNoNodeResumesNothing()
 
 	/**
-	 * 🔴 Editing an ALREADY-completed task does not resume the run again.
+	 * 🔴 An UNCOMMITTED terminal event resumes nothing.
 	 *
-	 * Any later edit — a typo fixed in the description — is still an update
-	 * whose status reads `completed`. Resuming on the state rather than on the
-	 * transition would advance the run a second time.
+	 * This replaces the old "editing an already-completed task" guard, and it
+	 * guards a different hazard. `ObjectUpdatedEvent` fired on every write, so
+	 * the listener had to work out whether THIS write was the moment of
+	 * completion; `TaskTerminalEvent` fires once, when the task reaches a
+	 * terminal state, so that question is settled by the event existing.
+	 *
+	 * What the engine's event brings instead is a transaction that may still
+	 * roll back. Signalling a run on an uncommitted completion resumes a flow
+	 * over something that never happened, and no later event undoes it.
 	 */
-	public function testEditingAnAlreadyCompletedTaskDoesNotResumeAgain(): void {
-		$this->listener()->handle(
-			$this->event(
-				$this->task(['title' => 'fixed a typo']),
-				$this->task()
-			)
-		);
+	public function testAnUncommittedTerminalEventResumesNothing(): void {
+		$this->listener()->handle($this->event($this->task(), committed: false));
 
-		$this->assertSame([], $this->signals);
-	}//end testEditingAnAlreadyCompletedTaskDoesNotResumeAgain()
+		$this->assertSame([], $this->signals, 'An uncommitted completion may still roll back.');
+	}//end testAnUncommittedTerminalEventResumesNothing()
 
 	/**
-	 * An update that does not complete the task resumes nothing.
+	 * 🔴 Only a COMPLETION answers the question.
+	 *
+	 * The engine fires this event for all three terminal states.
+	 * `terminated` and `disabled` are the question being WITHDRAWN, and a run
+	 * that carried on past a cancelled ask would proceed as though somebody
+	 * had answered it. Nobody did.
 	 */
-	public function testAnUnrelatedUpdateResumesNothing(): void {
-		$this->listener()->handle(
-			$this->event(
-				$this->task(['status' => 'active']),
-				$this->task(['status' => 'available'])
-			)
-		);
+	public function testAWithdrawnTaskResumesNothing(): void {
+		foreach (['terminated', 'disabled'] as $state) {
+			$this->signals = [];
+			$this->listener()->handle($this->event($this->task(['status' => $state])));
 
-		$this->assertSame([], $this->signals);
-	}//end testAnUnrelatedUpdateResumesNothing()
-
-	/**
-	 * With no previous state the transition cannot be established, so nothing
-	 * is resumed — the safer of the two possible mistakes, since the other one
-	 * re-signals on every write to a completed task.
-	 */
-	public function testAnUpdateWithNoPreviousStateResumesNothing(): void {
-		$this->listener()->handle($this->event($this->task(), null));
-
-		$this->assertSame([], $this->signals);
-	}//end testAnUpdateWithNoPreviousStateResumesNothing()
+			$this->assertSame([], $this->signals, sprintf('%s is the ask being withdrawn, not answered', $state));
+		}
+	}//end testAWithdrawnTaskResumesNothing()
 
 	/**
 	 * A vanished run is not an error for the person completing the task: the
@@ -281,7 +275,7 @@ class TaskCompletionResumeListenerTest extends TestCase {
 			actorUid: 'alice'
 		);
 
-		$this->listener()->handle($this->event($this->task(), $this->task(['status' => 'active'])));
+		$this->listener()->handle($this->event($this->task()));
 
 		$this->assertSame([], $this->signals);
 	}//end testATaskWhoseRunHasGoneStillCompletesQuietly()

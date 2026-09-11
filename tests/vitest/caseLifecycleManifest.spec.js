@@ -89,18 +89,23 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 	}
 
 	it('puts the transition strip straight under the identity row', () => {
-		// The strip used to lead the page at full width. case-header (row A01)
-		// put the case identity above it, because a handler reads WHICH case
-		// they are on before they read what they may do to it, and the two KPI
-		// tiles the strip used to sit above are gone: their facts fold into
-		// that identity row. The strip keeps the whole left column beside the
-		// stepper, so the controls did not narrow to make room.
+		// The identity row leads the page full width, as KPI cards, and the
+		// strip sits directly under it.
+		//
+		// It has been both ways. The row was once a full-width band, moved into
+		// the right rail as a card because a line of three to five short facts
+		// left more than half of twelve columns empty, and moved back out once
+		// each fact became a card that divides the row evenly. What survived
+		// both moves is the reading order: a handler sees WHICH case they are
+		// on before WHAT they may do to it.
 		const header = cells('case-header')[0]
 		const strip = cells('case-transitions')[0]
 		expect(header.gridY).toBe(0)
+		expect(header.gridX).toBe(0)
+		expect(header.gridWidth).toBe(12)
+		// Directly under, with no gutter row between them.
 		expect(strip.gridY).toBe(header.gridY + header.gridHeight)
 		expect(strip.gridX).toBe(0)
-		expect(strip.gridWidth + cells('case-steps')[0].gridWidth).toBe(12)
 	})
 
 	it('gives the stepper the cell the milestone tile had', () => {

@@ -77,14 +77,25 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 		expect(entry.type).toBe('custom')
 	})
 
-	it('places it on the first layout row, full width', () => {
+	it('leads the page as a full-width row of KPI cards', () => {
+		// THIS REVERSES A DELIBERATE MOVE, so the reason it is safe this time is
+		// written down. The strip was pulled OUT of full width because it was
+		// mostly air: twelve columns and two rows for three to five short facts
+		// laid out in a line, more than half of it empty on a real case. That
+		// objection was about the LAYOUT of the facts, not their placement.
+		//
+		// Each fact is its own card now, with `flex: 1 1 0` in
+		// CaseHeaderRow.vue, so the row divides evenly across the full width
+		// instead of ending in dead space. The rail card it replaced is gone,
+		// so the same facts are read once, across the top, where a handler
+		// looks first.
 		const placed = cells('case-header')
 		expect(placed).toHaveLength(1)
 		expect(placed[0].gridY).toBe(0)
 		expect(placed[0].gridX).toBe(0)
 		expect(placed[0].gridWidth).toBe(12)
-		// A KPI-style cell draws its own label, so the grid heading would
-		// print the title a second time above it.
+		// A KPI strip, not a titled panel: the cards carry their own labels, so
+		// a heading above them would name the group twice.
 		expect(placed[0].showTitle).toBe(false)
 		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
 	})
@@ -100,12 +111,9 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 
 	it('names only icons that src/icons.js registers', () => {
 		// An unregistered name renders NO icon, not a fallback glyph (gate-60).
-		const names = [
-			widget('case-header').icon,
-			...widget('case-header')
-				.props.breadcrumbs.map((crumb) => crumb.icon)
-				.filter(Boolean),
-		]
+		// The trail's crumb icon used to be in this list; the trail is gone, so
+		// the card's own icon is the only one this widget names.
+		const names = [widget('case-header').icon]
 		for (const name of names) {
 			expect(iconsSource, `icon ${name} is not registered`).toContain(
 				`import ${name} from 'vue-material-design-icons/${name}.vue'`,
@@ -146,30 +154,21 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 	})
 })
 
-describe('CaseDetail — the breadcrumb back to Cases (task 3.1)', () => {
-	it('declares two crumbs, Cases first and the case title last', () => {
-		const crumbs = caseDetail().config.breadcrumbs
-		expect(crumbs).toHaveLength(2)
-		expect(crumbs[0].route).toBe('Cases')
-		// The last crumb IS the current page, so it carries no target:
-		// CnBreadcrumbs renders it unlinked with aria-current either way.
-		expect(crumbs[1].route).toBeUndefined()
-		expect(crumbs[1].field).toBe('title')
+describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)', () => {
+	it('declares no breadcrumb trail on the page or the widget', () => {
+		// The trail's LAST crumb was the case title, rendered one line below the
+		// page header that already printed that title. It read as a repeat
+		// rather than as a location, and it cost the top of the page a row.
+		//
+		// This asserts the ABSENCE because the removal is a decision, not an
+		// oversight: without it, the next reader finds a `_breadcrumbsNote`
+		// explaining a key that is not there and re-adds the key.
+		expect(caseDetail().config.breadcrumbs).toBeUndefined()
+		expect(widget('case-header').props.breadcrumbs).toBeUndefined()
 	})
 
-	it('routes the first crumb at a page the manifest actually declares', () => {
-		const routes = new Set(manifest.pages.map((page) => page.id))
-		expect(routes).toContain(caseDetail().config.breadcrumbs[0].route)
-	})
-
-	it('hands the widget the same trail the page declares', () => {
-		// Two declarations of one trail is a drift machine. CnDetailPage 2.41.0
-		// reads no `breadcrumbs` key, so the widget renders it; the page key is
-		// the shape the host will read. This is what keeps them equal until the
-		// day the widget's copy can be deleted.
-		expect(widget('case-header').props.breadcrumbs).toEqual(
-			caseDetail().config.breadcrumbs,
-		)
+	it('keeps the note that says why, so the removal is not re-litigated', () => {
+		expect(caseDetail().config._breadcrumbsNote).toMatch(/REMOVED/)
 	})
 })
 

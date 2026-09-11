@@ -43,7 +43,6 @@ import {
 	storageStatePath,
 } from './helpers/auth.ts'
 import {
-	cleanupRunObjects,
 	createObject,
 	getRequestToken,
 	listObjects,
@@ -159,6 +158,12 @@ const FAR_CASE = `${RUN_PREFIX} deadline far out`
 const MET_CASE = `${RUN_PREFIX} closed on time this month`
 /** One filler title per row, so a failure names the row it could not find. */
 const FILLER_CASE = (n: number) => `${RUN_PREFIX} deadline filler ${n}`
+/** The engine's own table. A flow task is not an OpenRegister object. */
+const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/** Every task this file seeds, so teardown can cancel each one. */
+const seededTaskUuids: string[] = []
+
 const TASK_SOON = `${RUN_PREFIX} task due tomorrow`
 const TASK_MID = `${RUN_PREFIX} task due next week`
 const TASK_LATE = `${RUN_PREFIX} task due next month`
@@ -397,16 +402,39 @@ test.describe('Dashboard tiles', () => {
 			[TASK_MID, isoDay(7)],
 			[TASK_LATE, isoDay(30)],
 		]) {
-			// Assigned to the dedicated account, not to whoever seeded them: it
-			// is `assignee` that `my-work`'s `@me` filter compares against, and
-			// the whole point of that account is that nothing else is on it.
-			await createObject(api, token, 'caseTask', {
-				title,
-				case: onCase,
-				assignee: WORK_USER,
-				status: 'available',
-				dueDate: `${due}T09:00:00+00:00`,
+			// IN THE ENGINE, not as a `caseTask` object. remove-casetask 2.3
+			// moved the tile onto `/api/flow-tasks`, and a fixture writing the
+			// old store would put rows in a table nothing reads: the tile then
+			// shows nothing and the three tests below time out waiting for a
+			// title that was never going to arrive. Three field names change
+			// with the table, `case` to `objectUuid`, `status` to `state` and
+			// `dueDate` to `dueAt`.
+			//
+			// Assigned to the dedicated account, not to whoever seeded them:
+			// the engine scopes `scope: assigned` to the session, and the whole
+			// point of that account is that nothing else is on it.
+			const res = await api.post(FLOW_TASKS_BASE, {
+				headers: {
+					requesttoken: token,
+					'OCS-APIRequest': 'true',
+					'Content-Type': 'application/json',
+				},
+				data: {
+					title,
+					objectUuid: onCase,
+					assignee: WORK_USER,
+					state: 'available',
+					dueAt: `${due}T09:00:00+00:00`,
+					appId: 'dossiq',
+				},
 			})
+			expect(
+				res.status(),
+				`seed task "${title}" -> ${res.status()} ${await res.text()}`,
+			).toBe(201)
+			const created = await res.json()
+			expect(created.uuid, `seeded task "${title}" has no uuid`).toBeTruthy()
+			seededTaskUuids.push(String(created.uuid))
 		}
 
 		// The picker fixtures. The draft one carries the schema default for
@@ -431,7 +459,28 @@ test.describe('Dashboard tiles', () => {
 		// deleting the case type would leave those cases pointing at a type
 		// that is gone. Both carry RUN_PREFIX, so global-setup's residue sweep
 		// takes them before the next run.
-		await cleanupRunObjects(api, token, ['caseTask'])
+		//
+		// One verb at a time, because an engine task is NOT an OpenRegister
+		// object: `cleanupRunObjects` cannot see it however the prefix is
+		// spelled, and the engine publishes no delete. `cancel` is its only
+		// removal verb and it terminates rather than erases. Failures are
+		// swallowed: a task already terminated answers 409 to a second cancel,
+		// and a teardown that throws on that reddens a run whose assertions
+		// all passed.
+		for (const uuid of seededTaskUuids) {
+			try {
+				await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+					headers: {
+						requesttoken: token,
+						'OCS-APIRequest': 'true',
+						'Content-Type': 'application/json',
+					},
+					data: {},
+				})
+			} catch {
+				// Best effort; the next run's residue sweep is the backstop.
+			}
+		}
 		await api.dispose()
 	})
 
@@ -509,13 +558,17 @@ test.describe('Dashboard tiles', () => {
 			const soon = rows(table).filter({ hasText: TASK_SOON })
 			await expect(soon).toContainText(/1 days remaining|Due today/)
 
-			// The case is named, not its uuid. `case.title` only resolves because
-			// the widget extends `case`; without the extend this cell renders a
-			// 36-character uuid, which is what this pattern refuses.
+			// No uuid anywhere in the row. The tile used to carry a Case
+			// column, and the assertion here was that it named the case rather
+			// than printing its 36-character uuid. remove-casetask 2.3 dropped
+			// that column: the engine answers the case in a `subject` block
+			// that resolves to null on every row today, so the column would be
+			// blank on all of them. The uuid pattern stays, because the Task
+			// column reading a raw identifier is the same failure in a
+			// different cell, and the case name comes back with the column.
 			await expect(soon).not.toContainText(
 				/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 			)
-			await expect(soon).toContainText(OVERDUE_CASE)
 		})
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
@@ -523,10 +576,12 @@ test.describe('Dashboard tiles', () => {
 		test('a My work row opens the task, which is where Pick up and Complete are', async ({
 			page,
 		}) => {
-			// Row actions are blocked on nextcloud-vue: the object-table vocabulary
-			// has no `rowActions` key, so the declared interim is the row route.
-			// This test holds the interim, so the day the key lands and the route
-			// is dropped, it says so.
+			// Row actions are blocked on nextcloud-vue, so the declared interim
+			// is the row route. This test holds the interim, so the day a row
+			// action lands and the route is dropped, it says so. It also holds
+			// the row's IDENTITY: the engine's `uuid` is what `/tasks/:id`
+			// accepts, and its numeric `id`, which sits beside it in the same
+			// response, is not.
 			await openDashboard(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
