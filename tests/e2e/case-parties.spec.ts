@@ -78,6 +78,15 @@ const DELEGATE_UNTIL = '2026-07-31T00:00:00+00:00'
  */
 const MINE_MARKER = `${RUN_PREFIX}-mine`
 
+/**
+ * The same trick for the Team facet test, for a second reason. OpenRegister
+ * caches a facet response per query for an hour and does not drop it when an
+ * object changes (`FacetHandler::FACET_CACHE_TTL`), so the unfiltered Cases
+ * index can show a Team facet computed before this run assigned anything. A
+ * query no earlier request has made is computed fresh.
+ */
+const TEAM_MARKER = `${RUN_PREFIX}-team`
+
 /** The user the E2E session is signed in as, read from the instance. */
 let currentUser = ''
 
@@ -536,6 +545,14 @@ test.describe('Case detail — the Parties tab', () => {
 	test.describe('the team on a case and on a task', () => {
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		//
+		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
+		// citation is unverified. Each line names the break and the assertion
+		// that must redden; restore after.
+		//   src/manifest.json `case-core` include: drop "assignedGroup"
+		//     -> "the Data panel offers a Team field"
+		//   src/manifest.json Cases Team column: key "assignedGroup.roleName" -> "assignedGroup.x"
+		//     -> "the Team column must show the team picked on the case page, by name"
 		test('a team picked on the case page is stored and shows in the Team column', async ({
 			page,
 		}) => {
@@ -579,12 +596,10 @@ test.describe('Case detail — the Parties tab', () => {
 				.filter({ hasText: new RegExp(`${teamName}|${teamId}`) })
 				.first()
 				.click({ timeout: 30_000 })
-			// Confirming the field IS the save: see case-identity.spec.ts for
-			// why there is no second, header-level Save to press.
-			await editor
-				.locator('.cn-object-data-widget__editor-actions button')
-				.first()
-				.click()
+			// Choosing the option IS the save: a relation field commits on
+			// selection and closes its editor, so there is no confirm button to
+			// press. Whether it saved is read off the stored case below, which
+			// is also what fails if a later widget version starts to need one.
 
 			// The stored reference, not the rendered label.
 			await expect
@@ -660,20 +675,32 @@ test.describe('Case detail — the Parties tab', () => {
 
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		//
+		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
+		// citation is unverified. Break, then the assertion that must redden:
+		//   lib/Settings/dossiq_register.json `case.assignedGroup.facetable: false`,
+		//   imported with `version` pinned on both the break and the restore
+		//     -> "the Team facet must list the team with a count of one"
 		test('the Team facet lists the team with a count of one', async ({
 			page,
 		}) => {
 			// Self-contained rather than relying on the test above having run:
 			// a retry re-runs `beforeAll`, which seeds a fresh case and team.
+			//
+			// TWO cases carry the marker and only one carries the team, so a
+			// count of one is the facet counting cases per team, not the list
+			// being one row long.
 			await updateObject(api, token, 'case', teamCaseId, {
 				assignedGroup: teamId,
+				competentAuthority: TEAM_MARKER,
+			})
+			await updateObject(api, token, 'case', emptyCaseId, {
+				competentAuthority: TEAM_MARKER,
 			})
 
-			// The facet as OpenRegister computed it for the page. The team is
-			// seeded by this run and set on exactly one case, so its bucket must
-			// count one. This test used to assert only that a label reading Team
-			// was attached to a collapsed sidebar, which survives a facet that
-			// lists nothing.
+			// The facet as OpenRegister computed it for the page. This test
+			// used to assert only that a label reading Team was attached to a
+			// collapsed sidebar, which survives a facet that lists nothing.
 			const buckets: any[] = []
 			page.on('response', async (r) => {
 				if (!r.url().includes(`/objects/${REGISTER}/case?`)) return
@@ -687,7 +714,11 @@ test.describe('Case detail — the Parties tab', () => {
 				}
 			})
 
-			await openIndex(page, '/cases', {})
+			await openIndex(page, '/cases', { competentAuthority: TEAM_MARKER })
+			await expect(
+				indexRows(page),
+				'both marked cases are listed, so the facet is counted over two',
+			).toHaveCount(2, { timeout: 30_000 })
 
 			// OpenRegister answers `results`, and nextcloud-vue's store
 			// normalises that to `count`; the listener sees whichever shape the

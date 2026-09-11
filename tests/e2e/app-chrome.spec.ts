@@ -200,6 +200,24 @@ test.describe('app chrome (ADR-114)', () => {
 	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-accounts-for-rows-a-later-round-added
+	//
+	// MUTATION CHECK, NOT YET RUN. The permission to break the product for
+	// these checks is pending, so the two clauses below are unverified. Each
+	// line names the break and the assertion that must redden; restore after.
+	//   areas-summarise-before-they-expand
+	//     FeaturesRoadmapView.vue: add `open` to `<details class="features-roadmap__area">`
+	//       -> "area intake must start collapsed"
+	//     areaSummary(): `total: area.capabilities.length + 1`
+	//       -> "area intake must state its capability count and how dossiq scored"
+	//   the-panel-accounts-for-rows-a-later-round-added
+	//     addedRowsText(): `count: added.length + 1`
+	//       -> "the panel must say how many rows later rounds added"
+	//     addedRowsText(): `date: formatComparedOn(comparison.comparedOn, ...)`
+	//       -> "the panel must say when the most recent rows were added"
+	//     addedRowsText(): `others: comparison.systems.length - 2`
+	//       -> "the panel must say every competitor column is unrated on the added rows"
+	//     capabilityComparison.json row 1.14: `"opencase": "yes"`
+	//       -> "an added row must read Unknown for every competitor, never a guess"
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
