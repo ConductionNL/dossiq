@@ -85,13 +85,11 @@ async function pickRelation(
 	const combo = field.getByRole('combobox')
 	await combo.click()
 
-	const option = page
-		.getByRole('option')
-		.filter({
-			hasText: new RegExp(
-				`^\\s*${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
-			),
-		})
+	const option = page.getByRole('option').filter({
+		hasText: new RegExp(
+			`^\\s*${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
+		),
+	})
 	if (!(await option.isVisible().catch(() => false))) {
 		await combo.pressSequentially(RUN_PREFIX, { delay: 30 })
 	}
