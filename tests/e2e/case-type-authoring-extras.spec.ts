@@ -468,6 +468,17 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	// publish path: the authoring page writes a case type straight to
 	// OpenRegister's object API with no dossiq code in between, so there is no
 	// dossiq-owned moment at which the SAVE can be refused.
+	//
+	// MUTATION CHECKED 2026-09-11 against a live instance, because moving a
+	// scenario to match the product is only honest if the test then pins the
+	// product. `CaseTypeResolver::assertNoCycle()` was made to return early,
+	// so the guard fails open. This test reddened on the first new assertion:
+	//
+	//   Error: a cycle must be reported as a finding, and the findings were []
+	//
+	// Restored, and the assertions pass again. Before the repair the same
+	// mutation left this test GREEN, because all it asserted was that
+	// blueprint traversal terminates, which it does either way.
 	// @e2e openspec/specs/case-types/spec.md#a-cycle-is-refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
 		await updateObject(api, token, 'caseType', parent.caseType, {
