@@ -101,6 +101,15 @@ Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
       `tests/components/CnObjectListWidgetExtendActionsDrop.spec.js`.
       Mutation-checked on 2026-09-11: dropping the `_extend` forwarding reddened
       `forwards content.extend as OpenRegister _extend` at line 57, alone.
+
+      **It does NOT retire `DossierTab`, so documents-on-the-case 2.2 stays
+      open.** Measured 2026-09-11: `DossierTab` now groups rows by
+      `informatieobjecttype`, multi-selects, sorts, facets on keywords and
+      carries its own upload button, none of which `CnObjectListWidget`
+      expresses. Swapping it would remove shipped capability, including the
+      keyword filter documents-on-the-case 2.3 exists to deliver, while looking
+      correct. The two options are written out on that task; the choice is
+      Ruben's, not the library's.
 - [x] 1.3 `CnIndexPage`: let a column's `link` name a route. Unblocks
       contacts-domain 3.6.
 
@@ -145,6 +154,16 @@ Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
       endpoint, a separate vocabulary the dispatcher never sees. And the
       `agent` type is the nearest shape in the action family, but it runs a
       hermiq agent, not a flow node.
+
+      **And it is not a library gap alone.** OpenRegister has no endpoint that
+      runs ONE registered node out of graph: `POST /api/flows/{id}/run` takes
+      a flow uuid and 404s `No such flow` otherwise, and
+      `GET /api/flow/node-catalog` answers no parameter metadata a `@pick:`
+      could read its options from. So a `run-action` type in this library would
+      have no server to call. Four decisions (the endpoint, what `@pick:`
+      names, whether a suspending token belongs in the closed vocabulary at
+      all, and the `run-action` name collision) are written out on
+      documents-on-the-case 3.3. This item should probably leave section 1.
 - [ ] 1.5 Docs page + JSDoc per changed prop, `check:docs` and `check:jsdoc`
       green, baseline bumped only if coverage genuinely improved.
 
