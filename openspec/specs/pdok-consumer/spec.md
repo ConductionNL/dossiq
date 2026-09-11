@@ -26,6 +26,8 @@ MUST remain pure utility functions with no network calls.
 
 #### Scenario: suggest call reaches openconnector instead of api.pdok.nl
 
+@e2e exclude no UI surface reaches the shim, so no browser journey can exercise it: `suggest()` is imported only by `src/components/map/AddressSearch.vue`, which is used only by `src/components/map/LocationPicker.vue`, which nothing in `src/` mounts. The bundle exports no global either, so a Playwright page cannot call the function. Verified instead by vitest `tests/vitest/pdokService.spec.js`, which calls the real `suggest()` and asserts both the openconnector URL and that no call reaches api.pdok.nl. Mutation checked 2026-09-11: pointing `suggest()` at api.pdok.nl reddens that test and only that test.
+
 - GIVEN the dossiq frontend is loaded and openconnector is installed
 - WHEN a dossiq component calls `suggest("Lauriergracht")`
 - THEN the shim SHALL send

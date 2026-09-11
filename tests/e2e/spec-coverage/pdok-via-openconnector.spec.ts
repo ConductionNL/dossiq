@@ -108,7 +108,32 @@ async function openDossiq(page: Page): Promise<void> {
 }
 
 test.describe('PDOK via openconnector — shim routing', () => {
-	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-suggest-call-reaches-openconnector-instead-of-api-pdok-nl
+	// NO `@e2e` CITATION, DELIBERATELY, AND THE TEST STAYS.
+	//
+	// This used to carry
+	// `#scenario-suggest-call-reaches-openconnector-instead-of-api-pdok-nl`,
+	// an anchor that resolves nowhere: every slugifier drops the dots in
+	// `api.pdok.nl` rather than turning them into hyphens, so the scenario was
+	// reported as missing and the requirement looked deleted. It is not. It
+	// lives where it always did, under "Frontend Shim Routes All PDOK Calls
+	// Through openconnector" in `openspec/specs/pdok-consumer/spec.md`.
+	//
+	// The citation goes anyway, because repointing it would have made a
+	// tautology creditable. The body below does not call `suggest()`: it
+	// fetches the openconnector URL directly and then asserts that the
+	// openconnector URL was fetched. Whatever the shim does, that passes.
+	//
+	// And it cannot be repaired here. `suggest()` is imported only by
+	// `src/components/map/AddressSearch.vue`, which is used only by
+	// `src/components/map/LocationPicker.vue`, which nothing in `src/` mounts,
+	// and the webpack bundle exports no global, so there is no journey and no
+	// handle by which a page could reach the function. The scenario now
+	// carries a reason-bearing `@e2e exclude` naming its real coverage,
+	// `tests/vitest/pdokService.spec.js`, which calls the real `suggest()`.
+	//
+	// What stays is what this test actually proves, which is worth keeping:
+	// that the service worker does not claim `/apps/*/api/pdok/*` out of its
+	// tile cache, and that no request leaves this page for api.pdok.nl.
 	test('suggest reaches the openconnector endpoint, never api.pdok.nl', async ({
 		page,
 	}) => {
