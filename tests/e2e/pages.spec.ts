@@ -49,7 +49,7 @@ test.describe('Dashboard', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#kpi-tiles-render-on-a-fresh-load
+	// @e2e openspec/specs/dashboard/spec.md#fresh-session-lands-on-the-dashboard
 	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
 		page,
 	}) => {
