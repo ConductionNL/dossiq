@@ -28,8 +28,10 @@ is the accurate signal. Do not silence it with a placeholder capability.
 - [x] 3 **Decide the fail-open.** The session leads; neither the header nor
   the claim binds the tenant. Recorded in the proposal under "Decided: the PHP
   session is the source of truth for tenant".
-- [ ] 4 **Move.** Repoint the five middlewares, migrate the data, retire the
-  schemas. NOT STARTED. The irreversible act this note used to name, the
+- [~] 4 **Move.** Repoint the five middlewares, migrate the data, retire the
+  schemas. THE REVERSIBLE HALF IS DONE, 2026-09-11. What remains is the
+  destructive half, listed under "What step 4 left for step 5" at the end of
+  this file. Was, before that: The irreversible act this note used to name, the
   three field drops, turned out to be done already (see 2a). What blocks it
   now is 2e and 2f: every part of the move runs through the tenant becoming
   an Organisation, and that needs a status to become. It no longer inherits
@@ -242,17 +244,31 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
       `archived` is terminal in openregister and a live termination cannot
       reach it without passing `deprovisioning`. Recorded here and left
       alone: changing it would be choosing a mapping.
-- [ ] 2e Decide what `terminated` becomes. The options, not chosen:
-      (a) `archived` with `deprovisionedAt` left null, so the purge never
-      fires and retention stays dossiq's, at the cost of bypassing
-      openregister's lifecycle for every termination; (b) through
-      `deprovision()` then `archive()`, accepting the purge, with
-      `tenantRetentionDays` set to dossiq's retention; (c) openregister grows
-      a terminal state that is not purged. Blocks step 4.
-- [ ] 2f Decide whether a tenant in `onboarding` may be `provisioning` in
-      openregister, given the 403 above, or whether onboarding needs the
-      Organisation to be `active` with dossiq's onboarding state kept beside
-      it. Blocks step 4.
+- [x] 2e Decided by option (c), and it is no longer hypothetical: openregister
+      GREW the terminal state. Measured 2026-09-11 on
+      `ConductionNL/openregister@development`,
+      `lib/Service/TenantLifecycleService.php`. `STATUS_RETAINED = 'retained'`
+      is entered from `active` or `suspended`, the same two states
+      `deprovisioning` is entered from, and its only exit is
+      `deprovisioning`, taken on purpose when retention ends.
+      `PURGEABLE_STATUS` is `STATUS_ARCHIVED` alone, declared beside the
+      transitions so deletability is a property of the lifecycle rather than
+      of the job, and `TenantPurgeJob` re-checks every row against it. So a
+      retained organisation is never purged. `retain()` stamps `retainedAt`
+      and leaves `deprovisionedAt` untouched, which is the column the purge
+      window is measured from.
+      The migration maps `terminated` to `retained`, stamps `retainedAt` from
+      the tenant's own `terminatedAt` so an old retention period is not reset
+      to today, and writes no `deprovisionedAt`. No longer blocks step 4.
+- [x] 2f Decided 2026-09-11: the Organisation stays `active` and dossiq's
+      onboarding state is kept beside it, in `tenantOnboardingTask`. Not
+      `provisioning`, for exactly the 403 recorded in 2d: while a user's
+      active Organisation is `provisioning`, openregister's
+      `TenantQuotaMiddleware` answers 403 to every request that user makes on
+      openregister's routes unless they are an instance admin, and dossiq's
+      frontend reads and writes through those routes. A dossiq tenant in
+      `onboarding` is one whose tenant admin is still working through the
+      onboarding steps, so it must be able to work. No longer blocks step 4.
 - [x] 2g Found while mutation-checking, 2026-09-11: **the tenant lookups
       read OpenRegister rows in a shape OpenRegister does not return.**
       `ObjectService::findAll()` returns `ObjectEntity` objects (measured on
@@ -294,3 +310,57 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
       `isMemberOf()` answering true. `TenantScopedLookupsTest` and three new
       `MandateValidationMiddlewareTest` cases close all seven; all 16 now
       redden a named test, and so does fixing the pinned 2g defect.
+
+## What step 4 did, 2026-09-11
+
+The reversible half, in six commits on `step4/tenancy-onto-organisation`
+(PR #2523). Each commit records the mutation it ran and the assertion that
+reddened, and every scoping filter this step re-points now has one.
+
+1. The five satellites keep the property name `tenantRef` and reference
+   `nc-organisation`. Both register descriptors.
+2. `TenantOrganisationResolver` resolves the tenant as an Organisation and
+   falls back to the legacy `tenant` row, in that order.
+   `TenantContextMiddleware` is the chain's only resolution point and now
+   calls it.
+3. `QuotaEnforcementMiddleware` retired.
+4. The migration is keyed by uuid and refuses a slug collision.
+5. `TenantMigrationService::reportOrphans()` reports satellite rows whose
+   `tenantRef` resolves to nothing, and never maps one.
+6. `storage_gb` and `api_calls_per_hour` read their limit from the
+   Organisation, through `OrganisationQuotaLimits`.
+
+### Three things this file said that turned out not to hold
+
+- **2b calls the 12 zero-ish `tenantQuota` rows "test fixture ids written
+  into the shared instance on 2026-08-30".** They are not fixtures. They are
+  the shipped tier quota templates in `lib/Settings/dossiq_register.json`:
+  three tiers, four quota types each, `tenantRef` `...0000`, `...0001` and
+  `...0002`, one sentinel per tier. Every install has them. The orphan report
+  counts them apart as `templates` rather than opening with twelve false
+  alarms. The 7 `tenantOnboardingTask` rows at `...000d` are likewise the
+  shipped default onboarding template.
+- **A SEVENTH schema references `tenant`, and no part of this change names
+  it:** `automaticAction.tenantId`, in both register descriptors. It is not a
+  satellite and it was left alone, but retiring the `tenant` schema in step 5
+  breaks its `$ref` as surely as it breaks `tenantOnboardingTask`'s.
+- **Retiring `QuotaEnforcementMiddleware` stops more than the request
+  quota.** It was the ONLY caller of `TenantQuotaService::consume()`, so
+  `cases_per_month` is no longer counted either, although 2b keeps it as a
+  row. `active_users` never had a counting path at all. The service keeps
+  `consume()`, `decide()` and `setLimit()`.
+
+## What step 4 left for step 5, the destructive half
+
+Nothing below has been done, and none of it is reversible by a revert alone.
+
+- Retire the `tenant` schema. Blocked on the two references above,
+  `tenantOnboardingTask.tenantRef` and `automaticAction.tenantId`, which
+  resolve to nothing once it goes.
+- Remove the legacy fallback in `TenantOrganisationResolver::resolve()`, and
+  `TenantSaasService`'s reads and writes of the `tenant` schema with it.
+- Run the migration against real data, act on the collision and orphan
+  reports, and only then delete stored `tenant` rows.
+- Remove the `Tenants` and `TenantDetail` pages from `src/manifest.json`.
+- Decide what happens to `TenantSaasService::LIFECYCLE_TRANSITIONS`, which is
+  still dossiq's own four-state vocabulary and still drives the admin surface.
