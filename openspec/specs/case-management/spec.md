@@ -1050,22 +1050,31 @@ ZGW consumers, and the resolver reads them from there.
 - **AND** SHALL show Awb 4:13
 - **AND** Archiving SHALL name the nomination as the phrase it stands for, not the stored code
 
-#### Scenario: Empty fields stay visible
+#### Scenario: An archival fact the case does not carry stays visible
 @e2e tests/e2e/case-identity.spec.ts
 
-- **GIVEN** a case with no archive action date
-- **WHEN** you open the case page
-- **THEN** the Archiving block SHALL show the archive action date row as empty, not hide it
+- **GIVEN** a case whose archival decision leaves a fact unset, such as its record state
+- **WHEN** you open the case page and read the object metadata panel
+- **THEN** the Archiving section SHALL show that fact as an empty row, not hide it
 
-⚠️ This scenario is RED and its test is parked on
-[nextcloud-vue#1062](https://github.com/ConductionNL/nextcloud-vue/issues/1062).
-It held while the archival fields sat in a data widget, where `hideEmpty:
-false` expressed it. They now render through `CnObjectMetadataWidget`, which
-drops an archival key that has no value even when `include` names it, and
-exposes no prop to ask for it back. The requirement stays as written because
-it is still the behaviour a records officer needs: an absent destruction date
-is the thing being looked for, and a hidden row and a blank row say different
-things.
+An absent archival fact is itself what a records officer came to read, so a
+hidden row and a blank row say different things.
+
+This scenario used to name the archive action date, and it could not be
+satisfied as written. Measured 2026-09-11: `case` declares
+`x-openregister-archival` with a retention default of P10Y, so OpenRegister
+resolves `@self._retention.disposalDate` to the start date plus ten years
+whenever a case carries no `archiveActionDate`. No case in this register
+therefore lacks a disposal date, and the row was never blank. The guarantee was
+right; the field it named was the one field that is always populated. It now
+stands over any archival fact, and the test reads the record state, which does
+resolve to nothing until something happens to the record.
+
+The widget side was the other half, and it is fixed:
+[nextcloud-vue#1084](https://github.com/ConductionNL/nextcloud-vue/pull/1084)
+keeps the four core archival rows whenever a decision exists and marks a blank
+one with `cn-detail-grid__value--empty`. On 2.46.0 the Archiving section had 13
+rows and no record state row at all; on 2.47.0 it has 14, the last one blank.
 
 ### Requirement: The case page lists its objects (REQ-CM-28)
 
