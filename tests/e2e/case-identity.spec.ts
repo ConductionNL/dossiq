@@ -160,7 +160,9 @@ async function openMetadataPanel(page: Page): Promise<Locator> {
 
 	await page.getByRole('menuitem', { name: /^(Metadata|Metagegevens)$/ }).click()
 
-	const dialog = page.getByRole('dialog').filter({ hasText: /Metadata|Metagegevens/ })
+	const dialog = page
+		.getByRole('dialog')
+		.filter({ hasText: /Metadata|Metagegevens/ })
 	await expect(dialog).toBeVisible({ timeout: 15_000 })
 	return dialog
 }

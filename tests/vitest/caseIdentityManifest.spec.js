@@ -167,9 +167,10 @@ describe('CaseDetail: terms and archive', () => {
 		// still ends where it ended. So walk each column: every widget has to
 		// start exactly where the one above it finished.
 		const layout = caseDetail().config.layout
-		const column = (x) => layout
-			.filter((w) => w.gridX === x && w.gridWidth < 12)
-			.sort((a, b) => a.gridY - b.gridY)
+		const column = (x) =>
+			layout
+				.filter((w) => w.gridX === x && w.gridWidth < 12)
+				.sort((a, b) => a.gridY - b.gridY)
 
 		const walk = (x) => {
 			let cursor = Math.min(...column(x).map((w) => w.gridY))
