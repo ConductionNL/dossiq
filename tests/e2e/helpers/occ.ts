@@ -298,8 +298,20 @@ export async function occPurge(
 /** The worker's class, exactly as Nextcloud stores it in the jobs table. */
 const FLOW_RUN_WORKER = 'OCA\\OpenRegister\\BackgroundJob\\FlowRunWorker'
 
-/** The worker's job id, resolved once per process. */
-let flowRunWorkerJobId: number | undefined
+/**
+ * The worker's job id, resolved once per process, and kept as TEXT.
+ *
+ * 🔴 A NUMBER CANNOT HOLD IT. Nextcloud 34 gives background jobs 64-bit
+ * snowflake ids, around 1.28e17, and a JavaScript number is exact only up to
+ * 2^53 (about 9.0e15). At that size a double can only land on multiples of 16,
+ * so `JSON.parse` silently rounds: measured, 17 distinct real ids from
+ * ...360 to ...376 all parse to 128102179729338370. The first CI run sent that
+ * rounded id to `background-job:execute`, which answered "Job with ID ...
+ * could not be found in the database", and the test failed on an id the
+ * helper had corrupted itself. The id is read out of occ's raw output as a
+ * string and never passes through Number.
+ */
+let flowRunWorkerJobId: string | undefined
 
 /**
  * Perform ONE pass of OpenRegister's flow worker: what cron would do next.
@@ -333,16 +345,14 @@ export async function occFlowWorkerPass(): Promise<{
 			`--class=${FLOW_RUN_WORKER}`,
 			'--output=json',
 		])
-		// No initialiser: both branches below assign it, so a starting `[]` would
-		// be a value nothing reads (eslint no-useless-assignment).
-		let rows: Array<{ id?: unknown }>
-		try {
-			rows = JSON.parse(listed.stdout.trim() || '[]')
-		} catch {
-			rows = []
-		}
-		const id = Number(Array.isArray(rows) ? rows[0]?.id : Number.NaN)
-		if (!Number.isInteger(id) || id <= 0) {
+		// The FIRST job's id, read as TEXT out of the raw JSON, never parsed into
+		// a number (see flowRunWorkerJobId). The listing is an array of flat job
+		// objects, so the first top-level `"id":` is the first job's. An `id`
+		// nested inside a job's `argument` is an escaped string (`\"id\"`) and
+		// does not match, because the regex needs a bare quote before `id`.
+		const match = /"id"\s*:\s*"?(\d+)"?/.exec(listed.stdout)
+		const id = match === null ? '' : match[1].replace(/^0+/, '')
+		if (id === '') {
 			throw new Error(
 				`occ background-job:list found no ${FLOW_RUN_WORKER} job, so no flow `
 					+ 'run on this instance can move past its first wait. OpenRegister '
@@ -356,7 +366,7 @@ export async function occFlowWorkerPass(): Promise<{
 
 	return run(invocation, [
 		'background-job:execute',
-		String(flowRunWorkerJobId),
+		flowRunWorkerJobId,
 		'--force-execute',
 	])
 }
