@@ -95,6 +95,49 @@ class Organisation {
 	 */
 	private ?string $qualityStatus = null;
 
+	/**
+	 * Eight more, added for the move onto the Organisation, each verified
+	 * present on OCA\OpenRegister\Db\Organisation on `development`.
+	 *
+	 * @var integer|null
+	 */
+	private ?int $requestQuota = null;
+
+	/**
+	 * @var integer|null
+	 */
+	private ?int $bandwidthQuota = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $description = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $kvk = null;
+
+	/**
+	 * @var string|null
+	 */
+	private ?string $legalName = null;
+
+	/**
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $provisionedAt = null;
+
+	/**
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $deprovisionedAt = null;
+
+	/**
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $retainedAt = null;
+
 	// phpcs:disable Squiz.Commenting.FunctionComment.Missing
 
 	public function getUuid(): ?string {
@@ -273,6 +316,134 @@ class Organisation {
 	 */
 	public function setQualityStatus(?string $qualityStatus): void {
 		$this->qualityStatus = $qualityStatus;
+	}
+
+	/**
+	 * @return integer|null The request quota.
+	 */
+	public function getRequestQuota(): ?int {
+		return $this->requestQuota;
+	}
+
+	/**
+	 * @param integer|null $requestQuota The request quota.
+	 *
+	 * @return void
+	 */
+	public function setRequestQuota(?int $requestQuota): void {
+		$this->requestQuota = $requestQuota;
+	}
+
+	/**
+	 * @return integer|null The bandwidth quota.
+	 */
+	public function getBandwidthQuota(): ?int {
+		return $this->bandwidthQuota;
+	}
+
+	/**
+	 * @param integer|null $bandwidthQuota The bandwidth quota.
+	 *
+	 * @return void
+	 */
+	public function setBandwidthQuota(?int $bandwidthQuota): void {
+		$this->bandwidthQuota = $bandwidthQuota;
+	}
+
+	/**
+	 * @return string|null The description.
+	 */
+	public function getDescription(): ?string {
+		return $this->description;
+	}
+
+	/**
+	 * @param string|null $description The description.
+	 *
+	 * @return void
+	 */
+	public function setDescription(?string $description): void {
+		$this->description = $description;
+	}
+
+	/**
+	 * @return string|null The KVK number.
+	 */
+	public function getKvk(): ?string {
+		return $this->kvk;
+	}
+
+	/**
+	 * @param string|null $kvk The KVK number.
+	 *
+	 * @return void
+	 */
+	public function setKvk(?string $kvk): void {
+		$this->kvk = $kvk;
+	}
+
+	/**
+	 * @return string|null The legal name.
+	 */
+	public function getLegalName(): ?string {
+		return $this->legalName;
+	}
+
+	/**
+	 * @param string|null $legalName The legal name.
+	 *
+	 * @return void
+	 */
+	public function setLegalName(?string $legalName): void {
+		$this->legalName = $legalName;
+	}
+
+	/**
+	 * @return \DateTime|null When the organisation was provisioned.
+	 */
+	public function getProvisionedAt(): ?\DateTime {
+		return $this->provisionedAt;
+	}
+
+	/**
+	 * @param \DateTime|null $provisionedAt When the organisation was provisioned.
+	 *
+	 * @return void
+	 */
+	public function setProvisionedAt(?\DateTime $provisionedAt): void {
+		$this->provisionedAt = $provisionedAt;
+	}
+
+	/**
+	 * @return \DateTime|null When the organisation was deprovisioned.
+	 */
+	public function getDeprovisionedAt(): ?\DateTime {
+		return $this->deprovisionedAt;
+	}
+
+	/**
+	 * @param \DateTime|null $deprovisionedAt When the organisation was deprovisioned.
+	 *
+	 * @return void
+	 */
+	public function setDeprovisionedAt(?\DateTime $deprovisionedAt): void {
+		$this->deprovisionedAt = $deprovisionedAt;
+	}
+
+	/**
+	 * @return \DateTime|null When retention began.
+	 */
+	public function getRetainedAt(): ?\DateTime {
+		return $this->retainedAt;
+	}
+
+	/**
+	 * @param \DateTime|null $retainedAt When retention began.
+	 *
+	 * @return void
+	 */
+	public function setRetainedAt(?\DateTime $retainedAt): void {
+		$this->retainedAt = $retainedAt;
 	}
 
 	// phpcs:enable
