@@ -146,10 +146,31 @@ export default defineConfig({
 	// a clean run is a weak argument, so the measurement wins over the caution.
 	// Raise it further only the same way: behind a run, not behind arithmetic.
 	//
-	// ⚠️ FOUR WORKERS DOES NOT MAKE THE SUITE FIT, and nothing here should be read
-	// as claiming it does. It still truncates with ~60 tests unreached. The rest
-	// of the gap is the failures, which cost ~32 of the 38 minutes because each
-	// is retried; that closes as they are fixed, not by adding workers.
+	//        5           measured by run 34585313834, see below
+	//
+	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
+	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
+	// it still truncated with 26 never reached and 1 interrupted at the 38
+	// minute stop. The note below used to say the gap was the failures being
+	// retried, and that was true when 25 tests were red; with one red test the
+	// remaining gap is throughput, and the suite is roughly 10 percent short of
+	// fitting.
+	//
+	// The suite also grew, deliberately: the skip-discipline work gave about a
+	// dozen previously skipped tests real bodies, and decidiq is installed now,
+	// so three decision journeys execute instead of standing down. More tests
+	// reaching a verdict is the point; the budget has to follow.
+	//
+	// ⚠️ WATCH FOR `SQLSTATE[53200] out of shared memory /
+	// max_locks_per_transaction`. That is the failure this count was held back
+	// from, seen once under four and never since. If it reappears, put this
+	// back to 4 and take the time out of the suite instead, rather than
+	// re-measuring hopefully.
+	//
+	// ⚠️ FIVE WORKERS MAY STILL NOT MAKE THE SUITE FIT, and nothing here should
+	// be read as claiming it does. The next lever is the wall clock inside the
+	// heavy specs, not more workers: `globalTimeout` cannot rise much without
+	// eating the margin that guarantees a verdict at all.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where four workers seeding and tearing down at once is both
@@ -157,7 +178,7 @@ export default defineConfig({
 	//
 	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
 	// code change.
-	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 5 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
