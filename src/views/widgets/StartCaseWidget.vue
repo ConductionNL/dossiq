@@ -90,6 +90,7 @@ export default {
 		},
 	},
 
+	/** @spec openspec/specs/signalering-widgets/spec.md */
 	async mounted() {
 		// 🔴 THE STORES MUST BE REGISTERED BEFORE THE FETCH, OR THE WIDGET SAYS
 		// "No case types configured" ON EVERY INSTANCE.
