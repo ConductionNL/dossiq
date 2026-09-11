@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTime;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
@@ -550,13 +551,13 @@ class TenantMigrationService {
 	 *
 	 * @param array<string, mixed> $row Legacy tenant object.
 	 *
-	 * @return \DateTime When retention began.
+	 * @return DateTime When retention began.
 	 */
-	private function resolveRetainedAt(array $row): \DateTime {
+	private function resolveRetainedAt(array $row): DateTime {
 		$terminatedAt = trim((string)($row['terminatedAt'] ?? ''));
 		if ($terminatedAt !== '') {
 			try {
-				return new \DateTime($terminatedAt);
+				return new DateTime($terminatedAt);
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'Dossiq: tenant migration could not read terminatedAt, stamping retention from now',
@@ -565,7 +566,7 @@ class TenantMigrationService {
 			}
 		}
 
-		return new \DateTime();
+		return new DateTime();
 	}//end resolveRetainedAt()
 
 	/**

@@ -13521,7 +13521,7 @@
           },
           "limit": {
             "type": "integer",
-            "description": "Hard limit value (NULL = unlimited)",
+            "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
             "title": "Limit"
           },
           "currentUsage": {
