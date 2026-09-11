@@ -38,7 +38,7 @@
  * enabled the leaf mounts, reads and books. First run 2026-09-11.
  *
  * That first run found a defect in this file rather than in the leaf, which is
- * the usual result of running a test nobody has run: see `tryReadFigure`.
+ * the usual result of running a test nobody has run: see `pollFigure`.
  *
  * 🔴 IT STILL DOES NOT RUN IN CI. The journey half registers only under
  * `DOSSIQ_E2E_HUMANIQ=1`, and nothing in this repo or in the shared workflow
@@ -62,6 +62,7 @@ import {
 	adoptableCaseTypes,
 	getRequestToken,
 	objectId,
+	purgeObject,
 	REGISTER,
 	seedCase,
 } from './helpers/fixtures.ts'
@@ -89,6 +90,9 @@ const HOOK = {
 	own: 'hq-hours-own',
 	timer: 'hq-hours-timer',
 	running: 'hq-hours-running',
+	// ONE action button whose menu holds Book hours and View hours (humaniq#418).
+	// Those two are not on the card until the menu is open.
+	actions: 'hq-hours-actions',
 	book: 'hq-hours-book',
 	view: 'hq-hours-view',
 	dialog: 'hq-hours-booking-dialog',
@@ -227,6 +231,109 @@ async function enabledHumaniqApp(api: APIRequestContext): Promise<string | null>
  * @param api An authenticated request context.
  * @return The seeded case uuid.
  */
+/**
+ * Remove the case a half seeded, and fail loudly if it stays.
+ *
+ * `dossiq/case` is archival, so every HTTP delete is refused (openregister#3428)
+ * and `purgeObject` falls through to `occ openregister:objects:purge`. That path
+ * did not exist when this file was written, which is why it once said a seeded
+ * case could never be removed and left one behind on every run. A teardown that
+ * swallows a failed purge would report a clean instance it did not observe, so a
+ * leak throws.
+ *
+ * @param baseURL The instance under test.
+ * @param caseId  The seeded case, or '' when setup never got that far.
+ */
+async function purgeHoursCase(
+	playwright: {
+		request: {
+			newContext: (o: { baseURL?: string }) => Promise<APIRequestContext>
+		}
+	},
+	baseURL: string | undefined,
+	caseId: string,
+): Promise<void> {
+	if (caseId === '') return
+	const api = await playwright.request.newContext({ baseURL })
+	try {
+		const token = await getRequestToken(api)
+		if ((await purgeObject(api, token, 'case', caseId)) === false) {
+			throw new Error(
+				'e2e teardown left the seeded hours case behind, so the next run on this '
+					+ `instance starts dirty: case ${caseId}`,
+			)
+		}
+	} finally {
+		await api.dispose()
+	}
+}
+
+/**
+ * Stop any running timer, then delete every TimeEntry booked against a case.
+ *
+ * Filters on the BARE key `domainObjectRef`. OpenRegister's objects endpoint
+ * reads `filter[x]` as a filter on a property literally named `filter[x]`, so
+ * that spelling returns the empty set and a cleanup written with it would
+ * report success having removed nothing (openregister#3611).
+ *
+ * A leftover entry is a failure, for the same reason a leftover case is: it is
+ * hours on a real person's timesheet that nobody worked.
+ *
+ * @param baseURL The instance under test.
+ * @param caseId  The seeded case, or '' when setup never got that far.
+ */
+async function purgeHoursEntries(
+	playwright: {
+		request: {
+			newContext: (o: { baseURL?: string }) => Promise<APIRequestContext>
+		}
+	},
+	baseURL: string | undefined,
+	caseId: string,
+): Promise<void> {
+	if (caseId === '') return
+	const api = await playwright.request.newContext({ baseURL })
+	const headers = { 'OCS-APIRequest': 'true', 'Content-Type': 'application/json' }
+	try {
+		await api.post('/index.php/apps/humaniq/api/time-entries/timer/stop', {
+			headers,
+			data: {},
+		})
+
+		const list = async (): Promise<Array<Record<string, unknown>>> => {
+			const res = await api.get(
+				`/index.php/apps/openregister/api/objects/humaniq/TimeEntry?_limit=200&domainObjectRef=${caseId}`,
+				{ headers },
+			)
+			const body = await res.json()
+			return Array.isArray(body) ? body : body.results || []
+		}
+
+		for (const row of await list()) {
+			const self = (row['@self'] || {}) as Record<string, unknown>
+			const id = String(self.id || row.id || '')
+			if (id !== '') {
+				await api.delete(
+					`/index.php/apps/openregister/api/objects/humaniq/TimeEntry/${id}`,
+					{
+						headers,
+					},
+				)
+			}
+		}
+
+		const left = await list()
+		if (left.length > 0) {
+			throw new Error(
+				`e2e teardown left ${left.length} time entr${left.length === 1 ? 'y' : 'ies'} `
+					+ `on case ${caseId}, which stay on the acting user's real timesheet`,
+			)
+		}
+	} finally {
+		await api.dispose()
+	}
+}
+
 async function seedHoursCase(api: APIRequestContext): Promise<string> {
 	const token = await getRequestToken(api)
 	const caseTypes = await adoptableCaseTypes(api)
@@ -251,7 +358,10 @@ async function seedHoursCase(api: APIRequestContext): Promise<string> {
  * @param caseId The seeded case uuid.
  */
 async function openCase(page: Page, caseId: string): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, {
+		waitUntil: 'domcontentloaded',
+		timeout: 60_000,
+	})
 	await expect(
 		page.locator('.cn-detail-page'),
 		'the case detail page must render, or nothing below is an observation about the hours surface',
@@ -261,47 +371,60 @@ async function openCase(page: Page, caseId: string): Promise<void> {
 }
 
 /**
- * Read the number a leaf figure prints, or null while it prints none.
- *
- * The leaf formats its own figures and may print a unit or a Dutch decimal
- * comma, so the number is extracted rather than compared as text.
- *
- * NULL RATHER THAN A THROW, because this is what a poll calls. The tile
- * prints an en-dash placeholder while it refetches after a write, and that
- * state is transient by design. `readFigure` throws on it, and a throw inside
- * `expect.poll`'s function ABORTS the poll instead of retrying it, so the
- * first ever run of this spec died on a placeholder that would have been a
- * number a moment later. Returning null lets the matcher fail and the poll
- * retry; a placeholder that never resolves still fails, on the budget.
- *
- * @param figure The locator holding the figure.
- * @return The number, or null when the figure prints no digits yet.
- */
-async function tryReadFigure(figure: Locator): Promise<number | null> {
-	const text = (await figure.innerText()).trim()
-	const match = text.match(/-?\d+(?:[.,]\d+)?/)
-	return match === null ? null : Number(String(match[0]).replace(',', '.'))
-}
-
-/**
  * Read the number a leaf figure prints, failing when it does not print one.
  *
  * For ONE-SHOT reads, where a placeholder is a real failure. Inside an
- * `expect.poll` use `tryReadFigure`: this one throws, and a throw inside the
+ * `expect.poll` use `pollFigure`: this one throws, and a throw inside the
  * polled function aborts the poll rather than retrying it.
  *
  * @param figure The locator holding the figure.
  * @param what   What the figure is, for the failure message.
  * @return The number.
  */
-async function readFigure(figure: Locator, what: string): Promise<number> {
-	const text = (await figure.innerText()).trim()
+/**
+ * Read a figure for use INSIDE `expect.poll`, where a throw is fatal.
+ *
+ * `readFigure` asserts, and an assertion that throws inside a poll callback ends
+ * the poll on its first try instead of letting it retry. That defeated the only
+ * reason the poll was there: the leaf refetches after a write, and on a case
+ * with no prior hours it prints `–` while the read is in flight, which is its
+ * rule for "not known yet" rather than a zero it cannot vouch for. The first
+ * poll caught exactly that transient state and failed the booking as lost.
+ *
+ * Returns NaN for a figure that is not a number yet, which matches no
+ * `toBeCloseTo` or `toBeGreaterThanOrEqual`, so the poll keeps trying until the
+ * real figure lands or its timeout says it never did.
+ *
+ * @param figure The locator holding the figure.
+ * @return The number, or NaN while the leaf prints no number.
+ */
+async function pollFigure(figure: Locator): Promise<number> {
+	const text = (await figure.innerText().catch(() => '')).trim()
 	const match = text.match(/-?\d+(?:[.,]\d+)?/)
-	expect(
-		match,
-		`${what} must print a number, and it printed "${text}"`,
-	).not.toBeNull()
-	return Number(String(match?.[0]).replace(',', '.'))
+	return match === null ? Number.NaN : Number(match[0].replace(',', '.'))
+}
+
+async function readFigure(figure: Locator, what: string): Promise<number> {
+	// WAIT for a number, then return it. The leaf prints `–` while its read is
+	// in flight, which is its rule for "not known yet" rather than a zero it
+	// cannot vouch for. A single read right after mount races that fetch, and on
+	// a loaded instance it lost: the first figure read `–` and the test failed
+	// on timing rather than on the leaf. A figure that never becomes a number
+	// still fails, with this message, once the timeout says it never arrived.
+	let value = Number.NaN
+	await expect
+		.poll(
+			async () => {
+				value = await pollFigure(figure)
+				return Number.isNaN(value) ? null : value
+			},
+			{
+				timeout: 30_000,
+				message: `${what} must print a number, and it printed none within 30 s`,
+			},
+		)
+		.not.toBeNull()
+	return value
 }
 
 /**
@@ -343,8 +466,10 @@ if (!HUMANIQ_DECLARED) {
 			await api.dispose()
 		})
 
-		// No afterAll: the case is archival and cannot be deleted, and the case
-		// type is adopted rather than owned. Nothing is left dangling either.
+		// The case type is adopted rather than owned, so only the case goes.
+		test.afterAll(async ({ playwright, baseURL }) => {
+			await purgeHoursCase(playwright, baseURL, caseId)
+		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-surface-is-absent-when-humaniq-is
 		test('the page renders its own widgets and no hours surface at all', async ({
@@ -385,7 +510,7 @@ if (!HUMANIQ_DECLARED) {
 			).toHaveCount(0)
 
 			// The booking affordances belong to the leaf, so they go with it.
-			for (const hook of [HOOK.book, HOOK.view, HOOK.timer]) {
+			for (const hook of [HOOK.actions, HOOK.book, HOOK.view, HOOK.timer]) {
 				await expect(
 					page.getByTestId(hook),
 					`${hook} belongs to humaniq's leaf, which is not registered here`,
@@ -446,6 +571,19 @@ if (!HUMANIQ_DECLARED) {
 			await api.dispose()
 		})
 
+		// The booking and the stopped timer are rows in humaniq's register, and
+		// they are NOT harmless: humaniq files every TimeEntry onto the acting
+		// user's monthly timesheet and recomputes its total from them. Measured
+		// on the shared dev instance 2026-09-11, four earlier runs had left 10
+		// hours on admin's real September timesheet (12.5 h, of which 2.5 real),
+		// each pointing at a case that no longer existed. So the entries go
+		// first, then the case. A running timer is stopped before that, or the
+		// next run's stopwatch is disabled and the timer test fails on state.
+		test.afterAll(async ({ playwright, baseURL }) => {
+			await purgeHoursEntries(playwright, baseURL, caseId)
+			await purgeHoursCase(playwright, baseURL, caseId)
+		})
+
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
 		test("the tile leads with the hours on the case and the caller's own beneath", async ({
 			page,
@@ -488,14 +626,35 @@ if (!HUMANIQ_DECLARED) {
 			await readFigure(widget.getByTestId(HOOK.total), 'the total')
 			await readFigure(widget.getByTestId(HOOK.own), "the caller's own hours")
 
-			// The three affordances the leaf places on the tile.
+			// The card lists NO bookings (humaniq#418). A KPI answers one question
+			// and the rows behind the total are one press away through View hours.
+			await expect(
+				widget.locator('li'),
+				'the hours card must not list the bookings behind its total',
+			).toHaveCount(0)
+
+			// Two controls in the card header: the stopwatch and ONE action
+			// button. Book hours and View hours are menu items, not tile buttons,
+			// so they must NOT be on the card until the menu opens. Asserting them
+			// visible without opening it would fail; asserting them absent first
+			// proves the menu is what reveals them.
 			await expect(
 				widget.getByTestId(HOOK.timer),
-				'the timer button must be on the tile',
+				'the stopwatch must be on the card',
+			).toBeVisible()
+			await expect(
+				widget.getByTestId(HOOK.actions),
+				'the card must carry one action button',
 			).toBeVisible()
 			await expect(
 				widget.getByTestId(HOOK.book),
-				'Book hours must be on the tile',
+				'Book hours lives in the action menu, not on the card',
+			).toHaveCount(0)
+
+			await widget.getByTestId(HOOK.actions).click()
+			await expect(
+				widget.getByTestId(HOOK.book),
+				'Book hours must be in the action menu',
 			).toBeVisible()
 			// `administrationUrl()` in humaniq's `src/integrations/hoursApi.js`
 			// builds this as `/apps/humaniq/time-entries` with the filter query
@@ -507,21 +666,24 @@ if (!HUMANIQ_DECLARED) {
 				'View hours must link out to humaniq',
 			).toHaveAttribute('href', /\/apps\/(humaniq|hrmq)\/time-entries/)
 
-			// The timer sits LEFT of the two buttons, which is the placement, not
-			// a detail: it is the one affordance a caseworker reaches for mid
-			// call, and reading it out of the DOM order would pass on a tile that
+			// The stopwatch sits LEFT of the action button, which is the placement,
+			// not a detail: it is the one affordance a caseworker reaches for mid
+			// call, and reading it out of the DOM order would pass on a card that
 			// paints it anywhere.
 			const timerBox = await widget.getByTestId(HOOK.timer).boundingBox()
-			const bookBox = await widget.getByTestId(HOOK.book).boundingBox()
+			const actionsBox = await widget.getByTestId(HOOK.actions).boundingBox()
 			expect(
 				timerBox,
-				'the timer button must be painted somewhere',
+				'the stopwatch must be painted somewhere',
 			).not.toBeNull()
-			expect(bookBox, 'Book hours must be painted somewhere').not.toBeNull()
+			expect(
+				actionsBox,
+				'the action button must be painted somewhere',
+			).not.toBeNull()
 			expect(
 				Number(timerBox?.x),
-				'the timer button sits left of Book hours on the tile',
-			).toBeLessThan(Number(bookBox?.x))
+				'the stopwatch sits left of the action button on the card',
+			).toBeLessThan(Number(actionsBox?.x))
 		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
@@ -589,6 +751,7 @@ if (!HUMANIQ_DECLARED) {
 				'the total before booking',
 			)
 
+			await widget.getByTestId(HOOK.actions).click()
 			await widget.getByTestId(HOOK.book).click()
 			const dialog = page.getByTestId(HOOK.dialog)
 			await expect(
@@ -636,7 +799,7 @@ if (!HUMANIQ_DECLARED) {
 			// than read once: the tile refetches after the write, and reading
 			// between the two is a race that reports the booking as lost.
 			await expect
-				.poll(async () => tryReadFigure(widget.getByTestId(HOOK.total)), {
+				.poll(async () => pollFigure(widget.getByTestId(HOOK.total)), {
 					timeout: 20_000,
 					message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
 				})
@@ -669,7 +832,10 @@ if (!HUMANIQ_DECLARED) {
 			// THE POINT OF THE FEATURE. A timer held in component state looks
 			// identical to one held on the server until the page is reloaded, and
 			// a caseworker who reloads is the whole reason it is stored.
-			await page.reload()
+			// Same budget and wait condition as openCase: `load` waits for every
+			// asset on a heavy page, and on a shared instance that outruns 30 s while
+			// the DOM is long ready. The widget expect below proves the render.
+			await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
 			await dismissSupportDialog(page)
 			const reloaded = page.getByTestId(HOOK.widget)
 			await expect(reloaded).toBeVisible({ timeout: 30_000 })
@@ -691,14 +857,10 @@ if (!HUMANIQ_DECLARED) {
 				'the headline must read again once the timer stops',
 			).toBeVisible({ timeout: 15_000 })
 			await expect
-				.poll(
-					async () =>
-						readFigure(reloaded.getByTestId(HOOK.total), 'the total'),
-					{
-						timeout: 20_000,
-						message: `stopping the timer books the run, so the total may not fall below the ${before} it showed before`,
-					},
-				)
+				.poll(async () => pollFigure(reloaded.getByTestId(HOOK.total)), {
+					timeout: 20_000,
+					message: `stopping the timer books the run, so the total may not fall below the ${before} it showed before`,
+				})
 				.toBeGreaterThanOrEqual(before)
 		})
 	})

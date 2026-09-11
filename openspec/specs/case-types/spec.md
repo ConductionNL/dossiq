@@ -961,28 +961,27 @@ parent's. A chain that returns to itself SHALL be refused on save.
 - **THEN** its Statuses tab SHALL list the four statuses marked Inherited
 
 #### Scenario: A child overrides one deadline
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** Bezwaar has a processing deadline of 12 weeks
 - **AND** Bezwaar (verkort) sets its own deadline to 6 weeks
 - **WHEN** you file a case of Bezwaar (verkort)
 - **THEN** the case's deadline SHALL be 6 weeks after its start date
 
-#### Scenario: A cycle is refused
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+#### Scenario: A child inherits a deadline it does not declare
+@e2e tests/e2e/case-type-parent-chain.spec.ts
 
-The refusal sits on the publish path, not on the write. The authoring page
-writes a case type straight to OpenRegister's object API and no dossiq code
-runs in between, so there is no dossiq-owned moment at which a save can be
-refused. Publishing is the one write dossiq does own, and it is where a chain
-that returns to itself is stopped. `chainFor()` degrades safely on a chain
-already stored that way, so a mis-saved type stays readable while it is
-unpublished.
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (standaard) names Bezwaar as its parent and sets no deadline of its own
+- **WHEN** you file a case of Bezwaar (standaard)
+- **THEN** the case's deadline SHALL be 12 weeks after its start date
+
+#### Scenario: A cycle is refused
+@e2e tests/e2e/case-type-parent-chain.spec.ts
 
 - **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
-- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and try to publish Bezwaar
-- **THEN** the publish SHALL be refused, changing nothing, and report a finding naming the cycle: both titles, in the order that closes it
-- **AND** validating the publish SHALL report the same finding without publishing anything, so a person about to be refused is told before being made to write a change note
+- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
+- **THEN** the save SHALL fail with a message naming the cycle
 
 ### Requirement: You configure everything a status is, on the page (REQ-CT-10)
 
@@ -997,7 +996,7 @@ back any property the schema does not declare.
 **Feature tier**: MVP
 
 #### Scenario: A functional administrator gives a status a colour and a role
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a case type with a status called In behandeling
 - **WHEN** the administrator edits it, picks the colour orange and the role in progress, and saves
@@ -1005,7 +1004,7 @@ back any property the schema does not declare.
 - **AND** a flow addressing the in-progress role SHALL resolve to this status
 
 #### Scenario: A status asks for a checklist
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a status being edited
 - **WHEN** the administrator adds the checklist item Check identity and marks it required

@@ -1,6 +1,18 @@
 # Tasks: repair the misleading e2e citations, worst first
 
-**Nothing here is done. This change measured; it did not repair.** Each row below names citations by their `audit.csv` line, so the fix can be checked against the verdict that produced it.
+**Ruled 2026-09-11 by Ruben: repair all 149, not only the safety-relevant ones.** The audit offered a safety-first subset as the cheaper option and it was declined, so groups 1 through 5 are all in scope. Group order still holds, because it orders by what a false proof costs.
+
+**This change measured; the repair is running against it.** Each row below names citations by their `audit.csv` line, so the fix can be checked against the verdict that produced it.
+
+## Execution, started 2026-09-11
+
+Group 1 went out in three parallel streams, split by file so that no two touch the same spec file:
+
+- `spec-coverage/deelzaak-support.spec.ts` and `spec-coverage/document-zaakdossier.spec.ts` (10 citations, rows 1.4 to 1.8 and 1.13)
+- `spec-coverage/handler-vervanging-waarneming.spec.ts` and `spec-coverage/admin-settings.spec.ts` (8 citations, rows 1.1, 1.2, 1.3 and 1.12)
+- the six scattered singletons (rows 1.9 to 1.11 and the `case-hours-leaf` line in 3.4)
+
+Group 5's anchor defect went out beside them, as a change to the gate rather than to this repo. See the note under group 5.
 
 Ordering is by what a false proof costs, not by how easy the fix is. Group 1 holds citations that read as evidence that a protection works. A reviewer who sees `@e2e …#self-substitution-is-rejected` on a green suite concludes the validation holds; nothing in the suite says it does. Group 2 holds the rest of the smoke, group 3 the partials, group 4 the broken anchors, group 5 the structural defects that let all of it through.
 
@@ -61,6 +73,21 @@ Mechanical, and the cheapest wins in the set. Fix the pointer, do not rewrite th
 Without these, the same 149 come back. Each is a hydra-side or convention-side decision, not a dossiq test fix, so they are listed last and separately.
 
 - [ ] 5.1 **42 citations use a GitHub anchor the gate cannot read.** `#scenario-req-zak-004b-…` resolves when a human clicks it and credits zero in gate-19, whose slug has no `scenario-` prefix. Zero of the 42 are credited today. Either normalise the prefix in the gate, or rewrite all 42. A defect that is correct by the human check and wrong by the machine check will keep recurring until one of the two moves.
+
+      **Ruled 2026-09-11: the gate moves, not the citations.** Confirmed
+      against `document-zaakdossier/spec.md:179`, whose heading is
+      `#### Scenario: REQ-ZAK-004b Empty dossier shows upload CTA with
+      drag-and-drop zone`. GitHub slugifies the whole heading and keeps the
+      leading word; `_SCENARIO_RE` in `check_e2e_coverage.py` captures only
+      the text after `Scenario:` and slugifies that. The two differ by
+      exactly the prefix.
+
+      Rewriting the 42 would fix dossiq and leave the trap armed for every
+      other repo, because copying the anchor out of the rendered spec is the
+      natural gesture and it will keep producing this form. Teaching the gate
+      to accept both is also the safe direction: it can only turn a
+      non-credit into a credit, never a pass into a block. Out for review as
+      a change to `.github`.
 - [ ] 5.2 **79 citations carry no anchor.** `@e2e openspec/specs/<x>/spec.md` with no `#` names a file, not a requirement, and credits nothing. Propose that gate-19 reject an anchorless citation rather than ignore it, since ignoring it is what makes it survive review.
 - [ ] 5.3 **23 citations point into `openspec/changes/**`.** Delta specs, `tasks.md`, `proposal.md`. The gate parses only `openspec/specs/`. Archiving a change silently breaks every one of them, which is how group 4 was created. Either teach the gate to resolve change-local specs, or require citations to name the canonical spec.
 - [ ] 5.4 **26 citations claim a scenario the spec itself marks `@e2e exclude`.** Two statements contradict, nothing detects it, and the gate silently discards the test's claim. Add a check that flags a scenario carrying both.

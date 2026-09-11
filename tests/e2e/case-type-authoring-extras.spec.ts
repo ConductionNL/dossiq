@@ -456,118 +456,70 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
-	// NOW CITED, because the test now asserts the refusal rather than working
-	// around its absence. It used to carry an anchorless `@e2e` naming the
-	// whole spec file, with a comment explaining that the scenario says the
-	// save fails while the test saves the cycle successfully — a citation that
-	// reads as proof of a guard and asserts only that blueprint traversal
-	// terminates. Gate-19 could not credit it either: it slugs `#### Scenario:`
-	// headings, and an anchorless citation names a file, not a requirement.
-	//
-	// The scenario now says where the refusal actually lives, which is the
-	// publish path: the authoring page writes a case type straight to
-	// OpenRegister's object API with no dossiq code in between, so there is no
-	// dossiq-owned moment at which the SAVE can be refused.
-	//
-	// MUTATION CHECKED 2026-09-11 against a live instance, because moving a
-	// scenario to match the product is only honest if the test then pins the
-	// product. `CaseTypeResolver::assertNoCycle()` was made to return early,
-	// so the guard fails open. This test reddened on the first new assertion:
-	//
-	//   Error: a cycle must be reported as a finding, and the findings were []
-	//
-	// Restored, and the assertions pass again. Before the repair the same
-	// mutation left this test GREEN, because all it asserted was that
-	// blueprint traversal terminates, which it does either way.
-	// @e2e openspec/specs/case-types/spec.md#a-cycle-is-refused
+	// NOT cited to case-types::a-cycle-is-refused. That scenario is about the
+	// save a PERSON makes, in the Edit dialog, and is cited where that is
+	// driven: case-type-parent-chain.spec.ts. This one sends the same save
+	// through the object API, the path a script or an import takes.
+	// @e2e openspec/specs/case-types/spec.md
+	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: child.caseType,
-		})
-
-		// THE REFUSAL, read off the endpoint that produces it. `validate` is
-		// the non-mutating half — the Publish dialog asks it before it asks
-		// for a change note — and it runs the same `CaseTypeResolver::
-		// assertNoCycle` the publish itself runs.
-		const check = await api.get(
-			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/publish/validate`,
-			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
-		)
-		expect(
-			check.ok(),
-			`publish/validate -> ${check.status()} ${await check.text()}`,
-		).toBeTruthy()
-		const findings: string[] = (await check.json()).findings ?? []
-
-		// NAMING THE CYCLE, not just refusing. The author of a three-deep
-		// chain cannot see from the form which link closes it, which is why
-		// `assertNoCycle` builds the chain into its message rather than saying
-		// "invalid parent". Both titles have to be in it.
-		const cycle = findings.find((f) => /cannot inherit from itself/i.test(f))
-		expect(
-			cycle,
-			`a cycle must be reported as a finding, and the findings were ${JSON.stringify(findings)}`,
-		).toBeTruthy()
-		expect(String(cycle)).toContain(`${RUN_PREFIX} Bezwaar`)
-		expect(String(cycle)).toContain(`${RUN_PREFIX} Bezwaar (verkort)`)
-
-		// And the publish itself is refused, changing nothing. 422 with the
-		// findings, not a 500 and not a partial publish: a type whose draft
-		// flag was cleared while its workflow template stayed a draft is worse
-		// than no publish, because nothing afterwards says which half ran.
-		const published = await api.post(
-			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/publish`,
+		// Since CaseTypeParentCycleListener the loop is refused ON SAVE, on
+		// every write path. This is the one a script or an import uses,
+		// OpenRegister's object API; the Edit dialog a person uses is
+		// case-type-parent-chain.spec.ts, which is where the scenario is
+		// cited. What this keeps from its old self is the other half: the
+		// refusal leaves the stored chain as it was, so the blueprint still
+		// reads as a finite chain.
+		const current = await showObject(api, 'caseType', parent.caseType)
+		const refused = await api.put(
+			`/index.php/apps/openregister/api/objects/${REGISTER}/caseType/${parent.caseType}`,
 			{
-				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-				data: { changeNote: 'E2E: this publish must be refused.' },
+				headers: {
+					requesttoken: token,
+					'OCS-APIRequest': 'true',
+					'Content-Type': 'application/json',
+				},
+				data: { ...current, parentCaseType: child.caseType },
 			},
 		)
-		expect(
-			published.status(),
-			`publish of a cyclical type -> ${published.status()} ${await published.text()}`,
-		).toBe(422)
-		const outcome = await published.json()
-		expect(outcome.published).toBe(false)
-		expect(
-			(outcome.findings ?? []).some((f: string) =>
-				/cannot inherit from itself/i.test(f),
-			),
-			`the refusal must carry the cycle finding, and it carried ${JSON.stringify(outcome.findings)}`,
-		).toBeTruthy()
-		const stillDraft = await showObject(api, 'caseType', parent.caseType)
-		expect(
-			stillDraft.isDraft,
-			'a refused publish must leave the type a draft',
-		).not.toBe(false)
+		try {
+			expect(refused.status(), await refused.text()).toBe(422)
+			// The loop, by the titles this spec seeded, in either locale.
+			expect(String((await refused.json()).error)).toContain(
+				`${RUN_PREFIX} Bezwaar -> ${RUN_PREFIX} Bezwaar (verkort) -> ${RUN_PREFIX} Bezwaar`,
+			)
 
-		// The blueprint still terminates, which is what a reader of a
-		// mis-saved chain actually meets. Kept as the second assertion it
-		// always was, not as the one standing in for the refusal.
-		const res = await api.get(
-			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
-			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
-		)
-		// With the status and the body in the message, because a bare
-		// `toBeTruthy()` here reported only "expected true, got false" and
-		// said nothing about the 412 that caused it.
-		expect(
-			res.ok(),
-			`blueprint -> ${res.status()} ${await res.text()}`,
-		).toBeTruthy()
+			const stored = await showObject(api, 'caseType', parent.caseType)
+			expect(String(stored.parentCaseType ?? '')).toBe('')
 
-		const blueprint = await res.json()
-		// Three levels at most, and never the same type twice.
-		const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
-			objectId(row),
-		)
-		expect(new Set(ids).size).toBe(ids.length)
+			const res = await api.get(
+				`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
+				{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+			)
+			// With the status and the body in the message, because a bare
+			// `toBeTruthy()` here reported only "expected true, got false" and
+			// said nothing about the 412 that caused it.
+			expect(
+				res.ok(),
+				`blueprint -> ${res.status()} ${await res.text()}`,
+			).toBeTruthy()
 
-		// Put the parent back, so the tests that follow read an ordinary chain.
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: null,
-		})
-		const restored = await showObject(api, 'caseType', parent.caseType)
-		expect(String(restored.parentCaseType ?? '')).toBe('')
+			const blueprint = await res.json()
+			// Three levels at most, and never the same type twice.
+			const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
+				objectId(row),
+			)
+			expect(new Set(ids).size).toBe(ids.length)
+		} finally {
+			// Only when the guard let the loop through: put the parent back so
+			// the tests that follow read an ordinary chain, and the failure
+			// above stays the one that is reported.
+			if (refused.ok()) {
+				await updateObject(api, token, 'caseType', parent.caseType, {
+					parentCaseType: null,
+				})
+			}
+		}
 	})
 
 	// ── REQ-PDM-01 / REQ-PDM-02: folders and shared attributes ─────────────

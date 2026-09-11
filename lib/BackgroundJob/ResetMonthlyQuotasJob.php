@@ -75,8 +75,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
 	 * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
 	 *
-	 * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
-	 *       dropped the resulting always-false `is_array()` guard; no behavioural change.
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
 	 */
 	protected function run($argument): void {
 		// IAppManager::getInstalledApps() declares its array return in PHPDoc
@@ -118,8 +117,33 @@ class ResetMonthlyQuotasJob extends TimedJob {
 			return;
 		}
 
+		$resetCount = $this->resetDueQuotas(rows: $rows);
+		if ($resetCount > 0) {
+			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
+		}
+	}//end run()
+
+	/**
+	 * Reset every quota row whose window has passed.
+	 *
+	 * `findAll()` returns ObjectEntity objects. This loop used to index them as
+	 * arrays, outside any catch, so the job died on the first row of every run
+	 * and no quota was ever reset. Each row is read as an array first: once the
+	 * quota lookup reads rows too, a counter that is never reset keeps a `block`
+	 * quota refusing long after its window has passed.
+	 *
+	 * @param array<int, mixed> $rows The tenantQuota rows as findAll() returned them.
+	 *
+	 * @return int How many quotas went from some usage back to zero.
+	 */
+	private function resetDueQuotas(array $rows): int {
 		$resetCount = 0;
-		foreach ($rows as $row) {
+		foreach ($rows as $entity) {
+			$row = $this->quotaService->quotaRowAsArray(row: $entity);
+			if ($row === null) {
+				continue;
+			}
+
 			$before = (int)($row['currentUsage'] ?? 0);
 			$after = $this->quotaService->resetIfDue($row);
 			if ((int)($after['currentUsage'] ?? 0) === 0 && $before > 0) {
@@ -127,8 +151,6 @@ class ResetMonthlyQuotasJob extends TimedJob {
 			}
 		}
 
-		if ($resetCount > 0) {
-			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
-		}
-	}//end run()
+		return $resetCount;
+	}//end resetDueQuotas()
 }//end class

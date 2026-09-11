@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -85,12 +86,14 @@ class TenantBillingService {
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
 	 * @param ShillinqIntegrationService $shillinq Shillinq invoice exporter.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ShillinqIntegrationService $shillinq,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -308,6 +311,12 @@ class TenantBillingService {
 	/**
 	 * Fetch all events for a given month for a tenant.
 	 *
+	 * `findAll()` returns `ObjectEntity` objects. The month filter below used
+	 * to index them as arrays, outside any catch, so every billing figure and
+	 * every invoice run for a tenant with events died on the first row. Each
+	 * row is read as an array first, and a row that carries nothing readable
+	 * has no `occurredAt` and so falls outside every month.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $month YYYY-MM.
 	 *
@@ -345,7 +354,14 @@ class TenantBillingService {
 			$rows = [];
 		}
 
-		return array_values(array_filter($rows, fn ($r) => str_starts_with((string)($r['occurredAt'] ?? ''), $month)));
+		$events = array_map(
+			fn (mixed $row): array => $this->rowNormaliser->normalise(row: $row)['data'],
+			$rows
+		);
+
+		return array_values(
+			array_filter($events, static fn (array $e): bool => str_starts_with((string)($e['occurredAt'] ?? ''), $month))
+		);
 	}//end fetchEventsForMonth()
 
 	/**

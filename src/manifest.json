@@ -1146,7 +1146,19 @@
 					"title",
 					{
 						"key": "initiatorDisplayName",
-						"label": "Requester"
+						"label": "Requester",
+						"widget": "link",
+						"widgetProps": {
+							"routeField": "initiatorType",
+							"routeMap": {
+								"person": "ContactDetail",
+								"company": "OrganisationDetail"
+							},
+							"params": {
+								"id": "requester"
+							}
+						},
+						"_note": "contacts-domain 3.6. The requester is a person OR an organisation, and the two have separate detail pages, so the column needs a route chosen per row. `routeField` + `routeMap` on the built-in `link` cell widget (nextcloud-vue 2.47) read `initiatorType` off the row and pick the page; `params` maps the route's `:id` to the case's `requester` uuid. `contact` is deliberately absent from the map: a Nextcloud contact is not a register row and has no detail page here, so such a row falls back to plain text, which is what InitiatorSection.contactRouteBase() already returns null for. An app-side cell widget in src/cellWidgets.js could branch too, and was rejected: it would reimplement in dossiq the seam every fleet app needs."
 					},
 					{
 						"key": "caseType",
