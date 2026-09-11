@@ -20,7 +20,6 @@ Displays application metadata:
 Register and schema settings that link Dossiq to OpenRegister:
 - **Register** -- The OpenRegister register ID used for case data.
 - **Case schema** -- Schema ID for case objects.
-- **Task schema** -- Schema ID for task objects.
 - **Status schema** -- Schema ID for status objects.
 - **Role schema** -- Schema ID for role objects.
 - **Result schema** -- Schema ID for result objects.

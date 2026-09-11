@@ -53,7 +53,7 @@ class EngineTaskGatewayTest extends TestCase {
 	/**
 	 * A settings double with the flag and availability dialled in.
 	 *
-	 * @param string  $flag      The `task_engine_write` value.
+	 * @param string  $flag      The value every getConfigValue call answers with.
 	 * @param boolean $available Whether OpenRegister reports installed.
 	 * @param object|null $service The service the container hands back.
 	 *
@@ -88,14 +88,14 @@ class EngineTaskGatewayTest extends TestCase {
 	 * need a LIVE engine are reachable in a runtime where OpenRegister is not
 	 * autoloadable.
 	 *
-	 * Without this every assertion on `mirrorCreate()` passes vacuously:
+	 * Without this every assertion on `mirrorImport()` passes vacuously:
 	 * `class_exists()` is false here, `isEnabled()` short-circuits, and the
 	 * method returns '' before it runs any of the code under test. That was
 	 * not a hypothesis. The rethrow mutation below was applied and the suite
 	 * stayed green until this seam existed.
 	 *
 	 * @param object|null $service The engine service double, or null.
-	 * @param string      $flag    The `task_engine_write` value.
+	 * @param string      $flag    The value every getConfigValue call answers with.
 	 *
 	 * @return EngineTaskGateway The gateway.
 	 */
@@ -256,7 +256,7 @@ class EngineTaskGatewayTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function create(array $data, ?string $actor): object {
+			public function import(array $data, ?string $actor): object {
 				$this->called = true;
 				return new class {
 					/** @return string */
@@ -271,7 +271,7 @@ class EngineTaskGatewayTest extends TestCase {
 		// anyone configured.
 		$gateway = new EngineTaskGateway($this->settings('', false), $this->container(null), new NullLogger());
 
-		$this->assertSame('', $gateway->mirrorCreate(task: ['title' => 'T'], caseId: 'c', actor: null));
+		$this->assertSame('', $gateway->mirrorImport(task: ['title' => 'T'], caseId: 'c', actor: null));
 		$this->assertFalse($service->called, 'an unreachable engine must not be touched');
 	}//end testWritesNothingWhileTheEngineIsUnreachable()
 
@@ -304,7 +304,7 @@ class EngineTaskGatewayTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function create(array $data, ?string $actor): object {
+			public function import(array $data, ?string $actor): object {
 				$this->called = true;
 				return new class {
 					/** @return string */
@@ -319,7 +319,7 @@ class EngineTaskGatewayTest extends TestCase {
 
 		$this->assertSame(
 			'engine-uuid',
-			$gateway->mirrorCreate(task: ['title' => 'T'], caseId: 'c', actor: null),
+			$gateway->mirrorImport(task: ['title' => 'T'], caseId: 'c', actor: null),
 			'an unset task_engine_write must not stop the write: it is the default on every fresh instance'
 		);
 		$this->assertTrue($service->called, 'the engine must actually be asked to create the task');
@@ -342,7 +342,7 @@ class EngineTaskGatewayTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function create(array $data, ?string $actor): object {
+			public function import(array $data, ?string $actor): object {
 				throw new RuntimeException('engine exploded');
 			}
 		};
@@ -351,7 +351,7 @@ class EngineTaskGatewayTest extends TestCase {
 
 		// Reached the engine, the engine threw, and the caller still gets a
 		// value rather than an exception.
-		$this->assertSame('', $gateway->mirrorCreate(task: ['title' => 'T'], caseId: 'c', actor: null));
+		$this->assertSame('', $gateway->mirrorImport(task: ['title' => 'T'], caseId: 'c', actor: null));
 	}//end testSwallowsAnEngineFailureSoTheCallerSurvives()
 
 	/**
@@ -410,7 +410,7 @@ class EngineTaskGatewayTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function create(array $data, ?string $actor): object {
+			public function import(array $data, ?string $actor): object {
 				$this->seen = $data;
 				return new class {
 					/** @return string */
@@ -425,7 +425,7 @@ class EngineTaskGatewayTest extends TestCase {
 
 		$this->assertSame(
 			'engine-uuid-1',
-			$gateway->mirrorCreate(task: ['title' => 'T', 'status' => 'available'], caseId: 'case-1', actor: 'admin')
+			$gateway->mirrorImport(task: ['title' => 'T', 'status' => 'available'], caseId: 'case-1', actor: 'admin')
 		);
 
 		// And the payload the engine actually received is the mapped one.

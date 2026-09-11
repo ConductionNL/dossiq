@@ -94,14 +94,14 @@ upstream, and none needs a custom page:
       the engine's verbs through `invoke(uuid, verb)`, never
       `CnLifecycleActions`, which asks `/api/objects/{uuid}/available-actions`
       and 404s for a task.
-- [ ] 2.2 `Tasks` (`/tasks`): add `entitySource: "tasks"` and `rowRoute:
+- [x] 2.2 `Tasks` (`/tasks`): add `entitySource: "tasks"` and `rowRoute:
       "TaskDetail"`, drop `register`/`schema`. Map the six lenses onto the
       engine's own filters (All -> `scope: all`, Mine -> `scope: assigned` +
       `isTerminal: false`, Unclaimed -> `scope: pooled` + `isTerminal:
       false`, Closed -> `isTerminal: true`, Overdue -> `overdue: true`, Due
       this week -> `dueAfter`/`dueBefore`). **Blocked on both library PRs
       landing and a dossiq nc-vue bump.**
-- [ ] 2.3 `Dashboard` and `CaseDetail` reference `caseTask` in widget config
+- [x] 2.3 `Dashboard` and `CaseDetail` reference `caseTask` in widget config
       only. Repoint those widgets; the pages themselves do not change type.
 
 ## 3. The server side
@@ -116,6 +116,13 @@ the resume listener that already moved.
 - [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
+- [ ] 3.2 **The migration half is done; the retirement question is open.**
+      The node writes and re-reads through `AskPersonTaskStore`, which is the
+      engine since 3.3b, so no `caseTask` object is created or read on any
+      path. What is still open is whether the node should exist at all beside
+      OpenRegister's `UserTaskNode`, and that is a decision about duplication
+      rather than about this schema. Section 4 does not wait on it.
+
 - [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
       re-reads it on heartbeat. Both move to the engine. **Consider retiring
       the node entirely** in favour of OpenRegister's `UserTaskNode`
@@ -134,12 +141,12 @@ the resume listener that already moved.
       documented trap in that file: `findAll()` overwrites the register and
       schema context as a side effect, so a count issued after another read
       silently counts the WRONG schema and answers 0.
-- [ ] 3.5 `lib/Service/Settings/SchemaSlugMap.php` and `SchemaSlugResolver.php`
+- [x] 3.5 `lib/Service/Settings/SchemaSlugMap.php` and `SchemaSlugResolver.php`
       — drop the slug.
-- [ ] 3.6 `lib/Service/Support/JsonEncodedStringProperties.php` — the
+- [x] 3.6 `lib/Service/Support/JsonEncodedStringProperties.php` — the
       `checklist` JSON-string handling. The engine stores real JSON, so this
       entry goes.
-- [ ] 3.7 `lib/Repair/RenameCollidingSchemaSlugs.php` — remove the slug from
+- [x] 3.7 `lib/Repair/RenameCollidingSchemaSlugs.php` — remove the slug from
       the collision list.
 - [x] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
       `DemoCaseloadSeedDataService` and the 64 `tasks` rows in the seed files.
@@ -150,20 +157,20 @@ the resume listener that already moved.
 
 Only after 1 to 3 are green.
 
-- [ ] 4.1 Reconcile or accept the `completedDate` loss. `TaskBuilder` reads no
+- [x] 4.1 Reconcile or accept the `completedDate` loss. `TaskBuilder` reads no
       `completedAt` (openregister#3575), so 13 of 33 backfilled tasks keep
       their state and lose their date. Read it off the register row while the
       schema still exists, or record the decision to drop it.
-- [ ] 4.2 Remove `caseTask` from `lib/Settings/dossiq_register.json` and
+- [x] 4.2 Remove `caseTask` from `lib/Settings/dossiq_register.json` and
       `lib/Settings/dossiq_mock_register.json`, as a TEXT deletion. Do not
       re-serialise: regenerating the mock descriptor destroys 36 hand-written
       demo objects (measured: 2933 insertions, 18011 deletions to change three
       rows).
-- [ ] 4.3 Retire `EngineTaskGateway`'s dual-run scaffolding: the
+- [x] 4.3 Retire `EngineTaskGateway`'s dual-run scaffolding: the
       `task_engine_write` flag, `mirrorCreate`'s trusted path, and
       `TaskBackfillService` with `occ dossiq:tasks:mirror`. They exist for the
       migration and should not outlive it.
-- [ ] 4.4 `git grep -i casetask` over the WHOLE repo returns nothing. Not
+- [x] 4.4 `git grep -i casetask` over the WHOLE repo returns nothing. Not
       `lib src tests`: seed data, `tests/e2e/ci-seed.sh`, demo data and
       fixtures all carry it, and a miss in `ci-seed.sh` exits before
       Playwright starts, which reports every spec as NOT RUN rather than as
@@ -181,9 +188,15 @@ Only after 1 to 3 are green.
       completed through the engine's verb, resuming a suspended flow run. That
       is the path `TaskCompletionResumeListener` now serves and no existing
       spec covers it end to end.
-- [ ] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
+- [x] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
+
+      DONE, and it landed as a rename rather than an edit. There is no
+      `seedTask()` in `helpers/fixtures.ts`: `seedFlowTask()` replaced it and
+      posts `/api/flow-tasks`. The two specs that still spell a helper
+      `seedTask` (`checklist-per-status`, `case-task-pane`) each define their
+      own local one, and both already post to the engine.
 
 ### What 5.1 left standing on purpose
 
@@ -247,23 +260,23 @@ the matching READS on `caseTask`.
       checkout predated the due-window filter: the dashboard's due-today tile
       read 0 and looked like a quiet morning. Logged at ERROR now, naming the
       parameter.
-- [ ] 6.5 `src/manifest.json` metrics `tasks_total` and `tasks_overdue_total`
+- [x] 6.5 `src/manifest.json` metrics `tasks_total` and `tasks_overdue_total`
       (`kind: objectCount`, `schema: caseTask`) and the `deepLinks[]` entry
       with `schemaSlug: caseTask`. Neither is in section 4; both dangle when
       the schema goes. The deep link is paired with
       `tests/vitest/searchableSchemas.spec.js`, whose own comment warns the
       pairing "fails silently" when broken.
-- [ ] 6.6 `src/views/settings/Settings.vue` — a visible admin form field bound
+- [x] 6.6 `src/views/settings/Settings.vue` — a visible admin form field bound
       to `form.task_schema`, offering a picker for a schema that will not
       exist.
-- [ ] 6.7 `lib/Service/Settings/ConfigKeys.php` carries `task_schema`. Decide
+- [x] 6.7 `lib/Service/Settings/ConfigKeys.php` carries `task_schema`. Decide
       explicitly whether to drop it or leave it as an orphan appconfig row.
       Dropping it also touches four LIVE openspec specs whose MUST-clauses
       enumerate the key, plus `SettingsServiceTest` and `VthSettingsServiceTest`.
-- [ ] 6.8 `lib/Settings/dossiq_mock_register.json` holds THREE seeded objects
+- [x] 6.8 `lib/Settings/dossiq_mock_register.json` holds THREE seeded objects
       with `@self.schema: "caseTask"`, not just the schema block section 4.2
       names. Orphan demo rows pointing at a dead schema.
-- [ ] 6.9 `tests/vitest/casePartiesWidget.spec.js` reads
+- [x] 6.9 `tests/vitest/casePartiesWidget.spec.js` reads
       `schema('caseTask').properties.assigneeGroup.facetable` off the shipped
       register and will fail outright. Two further e2e specs navigate to a
       task surface without naming the slug and are not in 5.1:
@@ -274,6 +287,118 @@ the matching READS on `caseTask`.
       (`CaseTaskPane.vue` 18, `TaskCaseCard.vue` 15, `registry.js` 4,
       `caseTaskPaneHelpers.js` 6, and four vitest specs), so repoint them in
       the same commit rather than leaving the debt behind.
+
+
+## Section 4, as built
+
+Six calls were made while deleting the schema. Each is recorded here with what
+it cost, because the cheap half of a deletion is the code and the expensive
+half is the decisions nobody wrote down.
+
+**4.1, the `completedDate` loss is ACCEPTED, and it could not have been
+avoided from here.** Reading the date off the register row was the plan, and
+there is nowhere to put it: `completedAt` is writable only by the `complete`
+verb, which stamps `new DateTime()`, and by OpenRegister's own repair step,
+which reaches the entity directly. `TaskBuilder::fromData()` still sets no
+`completedAt` (openregister#3575 is open), so a re-import would drop it again.
+A leaf app cannot write another app's column.
+
+The loss is also smaller than it reads. Deleting a schema from the descriptor
+deletes nothing on a provisioned instance: `ConfigurationService::importFromApp`
+creates and updates, and prunes nothing. The `caseTask` rows and their
+`completedDate` are still there, orphaned under an orphan schema, and the
+engine rows they became still carry `taskKey = dossiq:caseTask:<uuid>`. So the
+thirteen dates are recoverable the day openregister#3575 lands, by whoever
+wants them. `EngineTaskGateway::sourceKey()` is kept for exactly that: it is
+the only place the key format is written down.
+
+**6.7, `task_schema` STAYS in `ConfigKeys::ALL`, as an inert row.** Nothing in
+`lib/` resolves it any more, so `SchemaKeyCoverageTest` (which sweeps `lib/`
+for resolved keys) stays green without a recorded exception. The slug left
+`SchemaSlugMap`, so `SchemaKeyReconciler` never writes the key again and it
+reads `''` on a fresh instance.
+
+Dropping it would have cost five MUST-clause edits across three LIVE specs
+(`dossiq-app-scaffold`, `dossiq-case-management`, `dossiq-object-store`) plus
+`SettingsServiceTest` and `VthSettingsServiceTest`. Those clauses describe the
+SETTINGS contract, gate 19 then wants an `@e2e` citation for each scenario the
+edit touches, and none of that is about a schema. It also buys nothing on a
+live instance: removing a key from the list does not remove the appconfig row.
+The admin form field is gone (6.6), so nothing offers a picker for a schema
+that does not exist.
+
+**6.5, both metrics are REMOVED and the gap is named.** `dossiq_tasks_total`
+and `dossiq_tasks_overdue_total` were `kind: objectCount` over the deleted
+schema, and a counter over a schema nothing declares reports 0 for ever. On a
+task gauge that reads as a quiet week. An `objectCount` source cannot reach the
+engine's table, so there is nothing dossiq can declare instead. OpenRegister is
+exporting them itself in openregister#3597.
+
+**The `deepLinks` entry is REMOVED, and engine tasks now have no unified-search
+provider.** The entry was keyed on `schemaSlug: caseTask` and fed one consumer,
+OpenRegister's schema-scoped unified search, which resolves a hit on an OBJECT
+to a URL. With no objects it matched nothing. The gap is OpenRegister's: engine
+tasks live in their own table, outside the object index the search reads, and
+no `deepLinks` shape addresses them. The route `/tasks/:id` is unchanged, so
+the page is ready the day such a shape exists, and
+`manifestCaseTaskPane.spec.js` asserts both halves.
+
+**`FIXTURE_SCHEMAS` DROPS `caseTask`.** It was cleanup order for the objects
+`demo-caseload` wrote, and `demo-caseload` writes engine tasks now, so nothing
+the suite creates lands there. One consequence is stated rather than
+discovered: on an instance upgraded from a version that had the schema, rows
+earlier runs left behind are no longer swept. They are orphan rows under an
+orphan schema and removing them is an administrative act.
+
+**`demo-caseload`'s two calculation scenarios CHANGED STORES rather than
+going.** They asserted `isTerminalStatus` and `daysUntilDue`, materialised
+calculations on the deleted schema. The engine answers both itself: `isTerminal`
+is a real column the lifecycle verbs maintain, and the deadline is a per-row
+projection `TaskInboxService::row()` attaches at read time. Both scenarios ask
+the same two questions of `/api/flow-tasks` and assert exact numbers. The
+fixture clock gained an hour of slack in each direction, because the projection
+is `intdiv(abs(deadline - now), 86400)` on an instant and a deadline set
+exactly two days back reports 1 after one second of runtime.
+
+### What section 4 did NOT do
+
+Five live specs still name the schema, measured by `git grep -i casetask --
+openspec/specs` after this change:
+
+| Spec | What it still says |
+|---|---|
+| `task-management` | the Tasks page is `type: index` over `caseTask`; lifecycle, priority facet and `caseTask.case` |
+| `case-management` | "The case task schema SHALL be `caseTask` and SHALL NOT be `task`" (line 1230) |
+| `case-search-via-or-unified-search` | flags `caseTask` as searchable |
+| `role-routing-via-or-rbac` | `caseTask` gains an `assigneeGroup` property |
+| `case-types`, `case-management` (twice) | `CMMN CaseTask`: the CMMN standard's element, unrelated to the schema, and correct as it stands |
+
+The first four are a spec delta over a capability that still exists, not
+deletion work: the task surfaces are all still there and all read the engine. Rewriting those
+clauses touches live specs and pulls gate 19's `@e2e` requirement into a
+change that ships none, so it is left for a follow-up whose subject is the
+spec rather than the schema.
+
+The same holds for the two metrics. `openspec/specs/apphost-adoption/spec.md`
+and `openspec/specs/prometheus-metrics/spec.md` still carry MUST-clauses naming
+`dossiq_tasks_total` and `dossiq_tasks_overdue_total`, and those series are gone.
+No test asserts them, so nothing reddens; the specs simply describe output the
+app no longer produces. Their follow-up belongs with openregister#3597, which is
+where task counts are now exported.
+
+The admin tutorial's screenshot `03-admin-settings-03.png` still shows a Task
+schema field. The prose beside it is corrected; the image is regenerated by the
+journeydoc capture, which does not run on a PR.
+
+`blocksCase` is gone with the schema and had NO consumer anywhere in `lib`,
+`src`, the manifest or the e2e suite. The engine has no column for it. A task
+blocking a case is therefore a capability dossiq declared, materialised and
+never used; `CaseFlowDeclarationTest` now asserts no schema re-declares it.
+
+Component and file names keep the word: `CaseTaskPane.vue`, `CaseTasksTab.vue`,
+`caseTaskPaneHelpers.js`, and the `caseTasks` parameters in `workflow.js`.
+Those name the CONCEPT, a task on a case, which the app still has. Renaming
+them is a refactor with no functional change and is out of scope here.
 
 ## Not in this change
 
