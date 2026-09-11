@@ -46,7 +46,7 @@ import {
 	showObject,
 	updateObject,
 } from '../helpers/fixtures.ts'
-import { navToRoute } from '../helpers/nav.ts'
+import { journeyBudget, navToRoute } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
@@ -132,6 +132,10 @@ test.describe('Complaint-family workflow: bezwaren (objections)', () => {
 	test('changing the bezwaar workflow status persists and re-renders', async ({
 		page,
 	}) => {
+		// The bezwaar's page is loaded twice, before and after, and each wait
+		// below has its own 15s. The budget holds all of them, so the step
+		// that runs out is the one named. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2, 60_000))
 		const awb = `${RUN_PREFIX}-AWB-STATUS`
 		const bz = await seedBezwaar(awb, 'Received')
 		const bzId = objectId(bz)

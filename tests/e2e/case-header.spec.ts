@@ -34,7 +34,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
  * The tab order placement row A33 asks for, which is now the WHOLE strip.
@@ -147,7 +147,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('the case number, type, status and assignee read under the title', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const header = page.getByTestId('case-header')
@@ -176,7 +176,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('the status badge and the overdue countdown sit in the row', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.getByTestId('case-header')).toBeVisible({
 			timeout: 30_000,
@@ -208,7 +208,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('a case with no status and no deadline still has a header', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const header = page.getByTestId('case-header')
@@ -235,7 +235,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// header that already printed it: `Cases > Dakkapel Kerkstraat 12`
 		// directly below `Dakkapel Kerkstraat 12`. A repeat, not a location, and
 		// it cost the top of the page a row.
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.getByTestId('case-header')).toBeVisible({
 			timeout: 30_000,
@@ -267,7 +267,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const strip = page.locator('.cn-tabs-widget')
@@ -295,7 +295,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// one the handler actually loses when this breaks: a tab that is clipped,
 		// off-screen, or below the fold.
 		await page.setViewportSize({ width: 1024, height: 768 })
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const strip = page.locator('.cn-tabs-widget')

@@ -81,6 +81,7 @@ import {
 	purgeObject,
 	RUN_PREFIX,
 } from './helpers/fixtures.ts'
+import { PAGE_LOAD } from './helpers/nav.ts'
 import { occFlowWorkerPass } from './helpers/occ.ts'
 
 // 180s a test, the budget the root config's `live-journeys` project always
@@ -427,7 +428,7 @@ async function openCasesListFilteredByTitle(
 ): Promise<void> {
 	const url = `/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`
 	for (let attempt = 0; attempt < 3; attempt++) {
-		await page.goto(url, { waitUntil: 'domcontentloaded' })
+		await page.goto(url, { ...PAGE_LOAD, waitUntil: 'domcontentloaded' })
 		const nav = page
 			.getByRole('link', { name: /^(All cases|Alle zaken)$/ })
 			.first()
@@ -439,6 +440,7 @@ async function openCasesListFilteredByTitle(
 
 async function openCase(page: Page, caseId: string, title: string): Promise<void> {
 	await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, {
+		...PAGE_LOAD,
 		waitUntil: 'domcontentloaded',
 	})
 	await expect(page.locator('body')).toContainText(title, { timeout: 20_000 })
@@ -686,6 +688,7 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 		await expect(page.locator(STATUS_BADGE)).toContainText('Wacht op aanvulling')
 
 		await page.goto(`/index.php/apps/dossiq/tasks/${applicantTask}`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await expect(page.locator('body')).toContainText(
@@ -904,6 +907,7 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 		expect(String(tasks[0].assignee)).toBe('behandelaars')
 
 		await page.goto(`/index.php/apps/dossiq/tasks/${tasks[0].uuid}`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await expect(page.locator('body')).toContainText(

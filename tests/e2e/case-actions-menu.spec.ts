@@ -43,6 +43,7 @@ import {
 import {
 	clickHeaderAction,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 	tickCheckbox,
 	trackDossiqErrors,
 } from './helpers/nav.ts'
@@ -183,7 +184,7 @@ test.describe('The case Actions menu', () => {
 	 * @param key Which seeded case to open.
 	 */
 	const openCase = async (page: any, key: string) => {
-		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`)
+		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`, PAGE_LOAD)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
