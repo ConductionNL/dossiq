@@ -7,6 +7,7 @@
 			:objects="caseTypes"
 			:loading="loading"
 			:selectable="true"
+			:rowClickToView="true"
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
 			@rowClick="selectCaseType">
