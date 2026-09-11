@@ -49,11 +49,17 @@ const tables = dashboard.config.widgets.filter(
 
 describe('dashboard object-table viewAllRoute', () => {
 	it('has tables to check', () => {
-		// Four since `dashboard-tiles` merged `my-tasks` + `task-reminders`
+		// Four after `dashboard-tiles` merged `my-tasks` + `task-reminders`
 		// into `my-work` and `overdue-cases` + `deadline-alerts` into
-		// `deadlines`. The floor guards against the list emptying out and
-		// this file passing over nothing at all.
-		expect(tables.length).toBeGreaterThanOrEqual(4)
+		// `deadlines`. Three since remove-casetask 2.3 moved `my-work` onto
+		// the task engine: an engine task has no register and no schema, so
+		// the tile is no longer an `object-table` and this file's premise,
+		// that the route query reproduces `source.filter`, does not apply to
+		// it. Its own View all is asserted in `dashboardWorkTables.spec.js`.
+		// The floor guards against the list emptying out and this file
+		// passing over nothing at all.
+		expect(tables.length).toBeGreaterThanOrEqual(3)
+		expect(tables.map((w) => w.id)).not.toContain('my-work')
 	})
 
 	for (const widget of tables) {

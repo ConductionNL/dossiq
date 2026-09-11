@@ -130,17 +130,32 @@ class WorkflowEngineSchemaTest extends TestCase {
 	 * These schemas must not be accidentally removed when adding new workflow
 	 * engine schemas.
 	 *
+	 * 🔴 `caseTask` IS NOT ON THIS LIST ANY MORE, AND ITS ABSENCE IS ASSERTED.
+	 * remove-casetask moved every task onto OpenRegister's task engine and
+	 * deleted the schema. Dropping the name from `$required` would have left
+	 * the test green whether the schema came back or not; the second loop is
+	 * what makes the deletion hold, so a descriptor that re-declares the slug
+	 * fails here rather than at the next `occ upgrade`.
+	 *
 	 * @return void
 	 */
 	public function testCoreSchemasPresentAfterWorkflowEngineMigration(): void {
 		$schemas = $this->registerData['components']['schemas'];
-		$required = ['case', 'caseTask', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
+		$required = ['case', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
 
 		foreach ($required as $schemaName) {
 			$this->assertArrayHasKey(
 				$schemaName,
 				$schemas,
 				"Core schema '{$schemaName}' must be present in dossiq_register.json"
+			);
+		}
+
+		foreach (['caseTask', 'task'] as $retired) {
+			$this->assertArrayNotHasKey(
+				$retired,
+				$schemas,
+				"Schema '{$retired}' was retired by remove-casetask; tasks live in OpenRegister's task engine"
 			);
 		}
 

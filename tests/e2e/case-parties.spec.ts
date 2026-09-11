@@ -99,8 +99,6 @@ let emptyCaseId = ''
 let formCaseId = ''
 /** A case that gets a team. */
 let teamCaseId = ''
-/** A task on that case, which gets a team of its own. */
-let teamTaskId = ''
 
 /**
  * Seed one role through the object API.
@@ -320,28 +318,15 @@ test.describe('Case detail — the Parties tab', () => {
 			handlerTypeId,
 			OTHER_PARTICIPANT,
 		)
-
-		const task = await createObject(api, token, 'caseTask', {
-			title: `${RUN_PREFIX} Parties task`,
-			case: teamCaseId,
-			assignee: currentUser,
-			status: 'available',
-		})
-		teamTaskId = objectId(task)
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
-		// Roles, role types, the task and the team. The cases are archival and
+		// Roles, role types and the team. The cases are archival and
 		// cannot be removed by a user; they carry the family prefix, so
 		// global-setup's residue sweep takes them before the next run rather
 		// than this teardown failing on a 403 it was never going to win.
-		await cleanupRunObjects(api, token, [
-			'role',
-			'caseTask',
-			'roleType',
-			'organisatieRol',
-		])
+		await cleanupRunObjects(api, token, ['role', 'roleType', 'organisatieRol'])
 		await api.dispose()
 	})
 
@@ -613,30 +598,23 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeAttached({ timeout: 20_000 })
 		})
 
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-task-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-task-to-a-team
-		test('a task with a team shows it on its row and keeps its assignee', async ({
-			page,
-		}) => {
-			await updateObject(api, token, 'caseTask', teamTaskId, {
-				assigneeGroup: teamId,
-			})
-
-			const stored = await showObject(api, 'caseTask', teamTaskId)
-			expect(
-				String(stored.assignee),
-				'assigning a team must not clear the personal assignee',
-			).toBe(currentUser)
-
-			await openIndex(page, '/tasks', { case: teamCaseId })
-
-			const row = indexRows(page).filter({
-				hasText: `${RUN_PREFIX} Parties task`,
-			})
-			await expect(row).toHaveCount(1, { timeout: 30_000 })
-			await expect(row).toContainText(teamName, { timeout: 20_000 })
-			await expect(row).toContainText(currentUser)
-		})
+		// 🔴 REMOVED 2026-09-11: `a task with a team shows it on its row and
+		// keeps its assignee` (remove-casetask 5.1).
+		//
+		// Its subject no longer exists. The test wrote `caseTask.assigneeGroup`
+		// and read a Team column off the Tasks index. dossiq#2408 retyped that
+		// index to OpenRegister's task engine (`entitySource: "tasks"`), and
+		// the engine has no `assigneeGroup` to write or to read: it models a
+		// pool as candidate group LISTS (`candidateGroups`), so there is no
+		// single group a column could bind to and the source ships no Team
+		// column. The scenario's other half — assigning a team to a CASE and
+		// seeing it in the Cases Team column — is untouched and still covered
+		// by the two tests above.
+		//
+		// This leaves `role-routing-via-or-rbac::assign-a-task-to-a-team` with
+		// no browser coverage. Rewriting it against the engine would be a new
+		// claim about candidate pools rather than this one restored, and the
+		// spec has to decide what team routing MEANS on the engine first.
 
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#mine-shows-only-my-cases
 		// @e2e role-routing-via-or-rbac::mine-shows-only-my-cases

@@ -81,6 +81,14 @@ class EngineTaskGateway {
      * Namespaced, because `task_key` is a shared external-reference column
      * and a bare uuid would collide with whatever another app stamps there.
      *
+     * 🔴 IT OUTLIVES THE BACKFILL DELIBERATELY, AND THE STRING IS FROZEN. The
+     * backfill that wrote these keys is gone with remove-casetask 4.3, but the
+     * rows it wrote are still in `oc_openregister_tasks` and still carry
+     * `dossiq:caseTask:<register uuid>`. This is the only place that format is
+     * written down, and it is what a reconciliation against the surviving
+     * register rows would have to match on. Changing the literal orphans every
+     * task the migration already moved.
+     *
      * @param string $registerTaskId The register task's uuid.
      *
      * @return string The key.
@@ -94,13 +102,6 @@ class EngineTaskGateway {
 
 
 
-
-    /**
-     * The inbox reader, or null until first use.
-     *
-     * @var EngineTaskInbox|null
-     */
-    private ?EngineTaskInbox $inboxReader = null;
 
     /**
      * The most recent engine failure, for callers that report rather than log.
@@ -140,43 +141,6 @@ class EngineTaskGateway {
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
-    /**
-     * The source keys the engine already holds for one case.
-     *
-     * Delegates to {@see EngineTaskInbox}, which is where the inbox service,
-     * the row shapes and the key extraction now live. Kept on this class so
-     * every existing caller and test keeps working — the split was made to get
-     * this class off phpmd's complexity threshold, not to move its API.
-     *
-     * @param string $caseId The case (object) uuid.
-     * @param string $actor  The acting identity.
-     *
-     * @return array<string, true> The keys already present, as a set.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    public function existingKeysFor(string $caseId, string $actor): array {
-        return $this->inbox()->existingKeysFor(caseId: $caseId, actor: $actor);
-    }//end existingKeysFor()
-
-    /**
-     * The inbox reader, built on first use.
-     *
-     * Constructed rather than injected so this class's constructor signature —
-     * and therefore every test that builds it — is unchanged by the split.
-     *
-     * @return EngineTaskInbox The reader.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    private function inbox(): EngineTaskInbox {
-        if ($this->inboxReader === null) {
-            $this->inboxReader = new EngineTaskInbox($this->settings, $this->container, $this->logger);
-        }
-
-        return $this->inboxReader;
-    }//end inbox()
 
     /**
      * Whether a task written here will reach the engine.
@@ -247,28 +211,6 @@ class EngineTaskGateway {
     }//end unavailableReason()
 
     /**
-     * The engine verb for a trusted import.
-     *
-     * @var string
-     */
-    private const VERB_IMPORT = 'import';
-
-    /**
-     * Mirror a task the engine should VALIDATE, the ordinary path.
-     *
-     * @param array<string, mixed> $task   The dossiq task, in `caseTask` shape.
-     * @param string               $caseId The case this task is on.
-     * @param string|null          $actor  The acting user, or null.
-     *
-     * @return string The engine task uuid, or '' when not written.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    public function mirrorCreate(array $task, string $caseId, ?string $actor): string {
-        return $this->mirror(task: $task, caseId: $caseId, actor: $actor, verb: 'create');
-    }//end mirrorCreate()
-
-    /**
      * Mirror a task through the engine's TRUSTED import path.
      *
      * 🔴 A BACKFILL IS THE EXCEPTION THE ENGINE ALREADY ACCOUNTS FOR. Most of
@@ -277,11 +219,14 @@ class EngineTaskGateway {
      * state 'completed'". `import()` is the engine's own documented path for
      * "a completed approval carried over from a legacy shape".
      *
-     * A separate method rather than a `$trusted` flag, because the two are not
-     * one operation with a switch: one asks the engine to validate and the
-     * other asks it not to. A caller should have to name which it wants.
+     * 🔴 IT IS THE ONLY WRITE PATH NOW. There was a `mirrorCreate()` beside it
+     * that asked the engine to VALIDATE, for the dual-run when a task was
+     * written to both the register object and the engine. Nothing in lib/
+     * called it once `CreateTaskHandler` moved to the trusted path, so it was
+     * a second way in that only the tests used, and remove-casetask 4.3
+     * retires the dual-run rather than leaving one half of it standing.
      *
-     * @param array<string, mixed> $task   The dossiq task, in `caseTask` shape.
+     * @param array<string, mixed> $task   The task fields, in the shape the register task carried.
      * @param string               $caseId The case this task is on.
      * @param string|null          $actor  The acting user, or null.
      *
@@ -290,7 +235,7 @@ class EngineTaskGateway {
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     public function mirrorImport(array $task, string $caseId, ?string $actor): string {
-        return $this->mirror(task: $task, caseId: $caseId, actor: $actor, verb: self::VERB_IMPORT);
+        return $this->mirror(task: $task, caseId: $caseId, actor: $actor);
     }//end mirrorImport()
 
     /**
@@ -303,16 +248,15 @@ class EngineTaskGateway {
      * why that handler's failure path fired on every instance. Failures are
      * logged here as well as returned.
      *
-     * @param array<string, mixed> $task     The dossiq task, in `caseTask` shape.
+     * @param array<string, mixed> $task     The task fields, in the shape the register task carried.
      * @param string               $caseId   The case this task is on.
      * @param string|null          $actor    The acting user, or null.
-     * @param string               $verb     `create` (the engine validates) or `import` (trusted).
      *
      * @return string The engine task uuid, or '' when not written.
      *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
-    private function mirror(array $task, string $caseId, ?string $actor, string $verb): string {
+    private function mirror(array $task, string $caseId, ?string $actor): string {
         if ($this->isEnabled() === false) {
             $reason = $this->unavailableReason();
             if ($reason !== '') {
@@ -344,10 +288,7 @@ class EngineTaskGateway {
             // 'completed'". `import()` is the engine's own trusted path,
             // documented for "a completed approval carried over from a legacy
             // shape", which is exactly this.
-            $created = match ($verb) {
-                self::VERB_IMPORT => $service->import(data: $payload, actor: $actor),
-                default => $service->create(data: $payload, actor: $actor),
-            };
+            $created = $service->import(data: $payload, actor: $actor);
 
             return (string)$created->getUuid();
         } catch (Throwable $e) {

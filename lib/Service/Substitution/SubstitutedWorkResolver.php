@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Substitution;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -48,11 +49,13 @@ class SubstitutedWorkResolver {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config + ObjectService bridge.
+	 * @param EngineTaskInbox $engineTasks The engine's task reader.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
 	) {
 	}//end __construct()
 
@@ -81,7 +84,6 @@ class SubstitutedWorkResolver {
 		}
 
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
 		$finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
 
 		$seenCases = [];
@@ -107,18 +109,10 @@ class SubstitutedWorkResolver {
 				);
 			}
 
-			if ($taskSchema !== '') {
-				$result['tasks'] = array_merge(
-					$result['tasks'],
-					$this->collectTasks(
-						objectService: $objectService,
-						register: $register,
-						taskSchema: $taskSchema,
-						sub: $sub,
-						seen: $seenTasks
-					)
-				);
-			}
+			$result['tasks'] = array_merge(
+				$result['tasks'],
+				$this->collectTasks(sub: $sub, seen: $seenTasks)
+			);
 		}//end foreach
 
 		return $result;
@@ -184,42 +178,31 @@ class SubstitutedWorkResolver {
 	/**
 	 * Collect the absentee's open tasks for one substitution.
 	 *
-	 * @param object $objectService The ObjectService.
-	 * @param string $register Register id.
-	 * @param string $taskSchema Task schema id.
-	 * @param array<string, mixed> $sub The substitution record.
-	 * @param array<string, bool> $seen Dedup map, mutated in place.
+	 * 🔴 THE TASKS MOVED AND THIS READ DID NOT, which is why it is being
+	 * rewritten rather than tidied. `task_schema` was read, found, and
+	 * queried, and it returned steadily fewer rows as every writer moved to
+	 * the engine, until the substitution screen showed an absentee's cases
+	 * with no tasks at all. Nothing failed: the guard `if ($taskSchema !==
+	 * '')` was TRUE the whole time, so there was no branch to notice.
 	 *
-	 * @return array<int, array<string, mixed>> The newly collected tasks.
+	 * The terminal filter is the engine's now (`openForAssignee` asks for
+	 * `isTerminal: false`), so the three state names are gone from here too.
+	 *
+	 * @param array<string, mixed> $sub  The substitution record.
+	 * @param array<string, bool>  $seen Dedup map, mutated in place.
+	 *
+	 * @return array<int, array<string, mixed>> The tasks.
 	 *
 	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function collectTasks(
-		object $objectService,
-		string $register,
-		string $taskSchema,
-		array $sub,
-		array &$seen,
-	): array {
+	private function collectTasks(array $sub, array &$seen): array {
 		$absentee = (string)($sub['absentee'] ?? '');
 		$subId = (string)($sub['id'] ?? ($sub['uuid'] ?? ''));
 		$scope = (string)($sub['scope'] ?? 'all');
 		$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
 
-		$tasks = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $taskSchema,
-			filters: ['assignee' => $absentee]
-		);
-
 		$collected = [];
-		foreach ($tasks as $task) {
-			$tStatus = (string)($task['status'] ?? '');
-			if (in_array($tStatus, ['completed', 'terminated', 'disabled'], true) === true) {
-				continue;
-			}
-
+		foreach ($this->engineTasks->openForAssignee(actor: $absentee) as $task) {
 			if ($scope === 'cases' && in_array((string)($task['case'] ?? ''), $scopeRefs, true) === false) {
 				continue;
 			}

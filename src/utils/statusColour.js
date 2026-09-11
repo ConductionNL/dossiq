@@ -134,10 +134,21 @@ export function statusColourStyle(colour) {
  * The Workflow board merges every non-final status that shares a NAME into one
  * column, because statuses are defined per case type and the board would
  * otherwise draw one near-empty column per type. Two types can give the same
- * status name two different colours, and the column can only be one of them:
- * the FIRST configured colour wins, in the order the board already sorts by.
- * Ignoring the later one is the honest outcome — blending two hues would give
- * the column a colour neither case type asked for.
+ * status name two different colours, and the column can only be one of them.
+ *
+ * 🔴 GREY NEVER OUTRANKS A CHOSEN HUE, and that is the whole point of this
+ * function. `statusType.colour` carries `"default": "grey"` in the schema, so a
+ * status whose author never picked a colour is STORED as grey and reads back
+ * exactly like one somebody deliberately made grey. Treating that stored grey
+ * as a configured colour let it win the merge on nothing but iteration order:
+ * the board walks the statusType collection in the order the API answers, not
+ * in the order it later sorts the columns, so which case type happened to be
+ * created first decided whether an authored orange reached the screen at all.
+ * That is what made a board column grey while its status page badge was
+ * orange, and it is why this takes a chosen hue over grey in either position.
+ *
+ * Between two CHOSEN hues the first still wins and the later one is ignored:
+ * blending would give the column a colour neither case type asked for.
  *
  * @param {unknown} current The colour the column already took, if any.
  * @param {unknown} candidate The colour of another status with the same name.
@@ -146,6 +157,11 @@ export function statusColourStyle(colour) {
  * @spec openspec/specs/case-types/spec.md
  */
 export function mergeColumnColour(current, candidate) {
+	const chosen = (colour) =>
+		isStatusColour(colour) && colour !== DEFAULT_STATUS_COLOUR
+
+	if (chosen(current)) return current
+	if (chosen(candidate)) return candidate
 	if (isStatusColour(current)) return current
 	if (isStatusColour(candidate)) return candidate
 	return null

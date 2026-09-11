@@ -18,6 +18,9 @@ const axios = {
 	get: vi.fn(),
 	post: vi.fn(),
 	delete: vi.fn(),
+	// The engine's checklist toggle is a PATCH with the flag in the query
+	// string (`task#checkItem`), which has no POST equivalent.
+	patch: vi.fn(),
 	// `request` carries the WebDAV verbs: the version panel PROPFINDs the
 	// versions endpoint and a restore MOVEs onto it, and neither has an axios
 	// convenience method.

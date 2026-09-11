@@ -2,14 +2,15 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	cleanupFlowTasks,
 	cleanupRunObjects,
-	createObject,
 	ensureCaseType,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedFlowTask,
 } from './helpers/fixtures.ts'
 import {
 	dismissSupportDialog,
@@ -148,6 +149,20 @@ test.describe('Tasks page', () => {
 	let token = ''
 	let taskCaseId = ''
 	let taskCaseTitle = ''
+	let taskTitle = ''
+
+	/**
+	 * A due date far enough out that the inbox's `-dueAt` sort keeps this
+	 * file's own task on page one.
+	 *
+	 * ⚠️ IT IS TOLERANCE, NOT A GUARANTEE. The engine orders by `due_at`
+	 * alone and the page is 25 rows, so where an UNDATED task sorts is the
+	 * datastore's business: sqlite and MySQL put nulls last on a DESC,
+	 * Postgres puts them first. An instance holding more than a page of
+	 * undated tasks is the one case this does not survive, and it fails as
+	 * "the seeded row is not in the table" rather than silently passing.
+	 */
+	const FAR_FUTURE_DUE = '2099-12-31T09:00:00+00:00'
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {
 		// The signed-in storage state, explicitly. `playwright.request` is the
@@ -169,21 +184,38 @@ test.describe('Tasks page', () => {
 				caseType: caseType.id,
 			}),
 		)
-		await createObject(api, token, 'caseTask', {
-			title: `${RUN_PREFIX} Tasks page task`,
-			case: taskCaseId,
-			status: 'available',
+		// IN THE ENGINE. The Tasks index is `entitySource: "tasks"` since
+		// dossiq#2408, so a `caseTask` object is a row this page cannot see.
+		//
+		// A far-future `dueAt` is not decoration: the inbox sorts `-dueAt`
+		// and pages at 25, and the page offers no way to narrow to one case
+		// (a named source takes its config from the manifest and the active
+		// tab, never from the URL query — CnPageRenderer builds `sourceConfig`
+		// from the manifest config before route params are merged). Dating
+		// the fixture past everything else is what keeps it on page one
+		// without asserting a position.
+		taskTitle = `${RUN_PREFIX} Tasks page task`
+		await seedFlowTask(api, token, {
+			title: taskTitle,
+			objectUuid: taskCaseId,
+			state: 'available',
+			dueAt: FAR_FUTURE_DUE,
 		})
 	})
 
 	test.afterAll(async () => {
 		if (api === undefined) return
+		// A flow task is not an OpenRegister object, so it is cancelled
+		// through the engine's own verb rather than swept by prefix.
+		await cleanupFlowTasks(api, token)
 		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
-	test('renders list view with search and filters', async ({ page }) => {
+	test('renders list view with search and filters, and offers no Add', async ({
+		page,
+	}) => {
 		// "Tasks" is no longer a top-level sidebar leaf (dropped by the
 		// nav-dedup pass); the /tasks page route stays reachable, so navigate
 		// to it client-side rather than via a (non-existent) nav link.
@@ -193,9 +225,16 @@ test.describe('Tasks page', () => {
 			timeout: 15000,
 		})
 		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible()
+		// 🔴 NO ADD BUTTON, AND THAT IS THE CLAIM. The tasks source sets
+		// `showAdd: false` because a task is raised by a flow, never by a
+		// person: an Add here would open the index's schema form and build an
+		// object the engine's inbox does not read. `toHaveCount(0)` rather
+		// than `not.toBeVisible()` on purpose — nc-vue renders plenty of
+		// zero-size chrome that is still in the accessibility tree, so
+		// "invisible" would pass against a button that is merely collapsed.
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
-		).toBeVisible()
+		).toHaveCount(0)
 		await expect(
 			page.getByRole('button', { name: 'Actions' }).first(),
 		).toBeVisible()
@@ -207,19 +246,22 @@ test.describe('Tasks page', () => {
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
-	test('the Case column shows the case title, not its uuid', async ({ page }) => {
-		// Deep-linked to THIS spec's own case, so the list holds the one task
-		// seeded above and nothing else. A non-underscore query param is a
-		// field filter on CnIndexPage, the same one the sidebar applies.
+	test('the Subject column shows the case title, not its uuid', async ({
+		page,
+	}) => {
+		// 🔴 THE HEADER IS `Subject`, NOT `Case`. The tasks source supplies
+		// its own six columns (Task, Subject, State, Priority, Due,
+		// Assignee) and the subject cell reads the engine's resolved
+		// `subject.title` for the object the task hangs off — which for
+		// dossiq is the case, because OpenRegister has no case entity.
 		//
-		// Narrowing matters twice over. It stops the assertion depending on a
-		// task another spec seeded and tore down — which is how this arrived
-		// at "No items found" and reported a missing table — and it keeps the
-		// seeded row on page one of a bounded list rather than off the end of
-		// it.
-		await page.goto(
-			`/apps/${REGISTER}/tasks?case=${encodeURIComponent(taskCaseId)}`,
-		)
+		// THE URL NO LONGER NARROWS THE LIST. `?case=<id>` was a field filter
+		// on a self-fetching CnIndexPage; a named source takes its config
+		// from the manifest and the active tab and nothing else, so the query
+		// string reaches no filter at all. The fixture is dated far into the
+		// future instead, which puts it at the top of the `-dueAt` sort — the
+		// row is still found BY ITS TITLE, never by position.
+		await page.goto(`/apps/${REGISTER}/tasks`)
 		await dismissSupportDialog(page)
 
 		// The list has to have ANSWERED before the view is switched. The view
@@ -227,9 +269,7 @@ test.describe('Tasks page', () => {
 		// not any rows exist, and CnDataTable renders its `<table>` only once
 		// it has rows — so switching too early leaves the page in Table view
 		// with nothing to show, and the assertion below reads as "this page
-		// has no table" rather than "the list had not loaded yet". Measured on
-		// a running instance: after the switch there IS a `<table>`, with `th`
-		// headers Title, Case, Assignee, Team, Status, Due Date.
+		// has no table" rather than "the list had not loaded yet".
 		await expect(
 			page.locator('[data-testid="cn-object-row"]').first(),
 		).toBeVisible({ timeout: 30_000 })
@@ -237,7 +277,9 @@ test.describe('Tasks page', () => {
 		await page.getByRole('button', { name: 'Table' }).click()
 		const table = page.locator('table').first()
 		await expect(table).toBeVisible({ timeout: 30_000 })
-		const header = table.getByRole('columnheader', { name: /^(Case|Zaak)$/ })
+		const header = table.getByRole('columnheader', {
+			name: /^(Subject|Onderwerp)$/,
+		})
 		await expect(header).toBeVisible()
 		const index = await header.evaluate((th) =>
 			Array.from(th.parentElement!.children).indexOf(th),
@@ -245,23 +287,19 @@ test.describe('Tasks page', () => {
 		const cells = table.locator(`tbody tr td:nth-child(${index + 1})`)
 		await expect(cells.first()).toBeVisible({ timeout: 15000 })
 		// A uuid, truncated or not, is what the column used to show. The
-		// expanded case carries a title; a task without a case shows nothing.
+		// resolved subject carries a title; a task without one shows nothing.
 		for (const text of await cells.allInnerTexts()) {
 			expect(text.trim()).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}/i)
 		}
 
 		// And the cell of THIS spec's own task carries its case's TITLE. The
 		// row is found by the task title rather than taken as the first one,
-		// so the claim holds whether or not the query filter narrowed the list
-		// — a filter that silently did nothing would otherwise put another
-		// spec's task in row one and the assertion would be about that.
+		// so the claim is about the seeded row and no other.
 		//
 		// "Not empty" is not enough on its own: a column rendering any
 		// placeholder satisfies the loop above, and what the requirement asks
 		// is that a reader sees which case the task belongs to.
-		const seededRow = table
-			.locator('tbody tr')
-			.filter({ hasText: `${RUN_PREFIX} Tasks page task` })
+		const seededRow = table.locator('tbody tr').filter({ hasText: taskTitle })
 		await expect(seededRow).toHaveCount(1, { timeout: 20_000 })
 		await expect(seededRow.locator(`td:nth-child(${index + 1})`)).toHaveText(
 			taskCaseTitle,
@@ -368,11 +406,16 @@ test.describe('Settings page', () => {
 			form.getByText('Case schema', { exact: true }).first(),
 		).toBeVisible()
 		await expect(
-			form.getByText('Task schema', { exact: true }).first(),
-		).toBeVisible()
-		await expect(
 			form.getByText('Status schema', { exact: true }).first(),
 		).toBeVisible()
+		// 🔴 NO TASK SCHEMA FIELD, AND ITS ABSENCE IS THE ASSERTION.
+		// remove-casetask deleted the schema, so a field here would offer a
+		// picker for something the register no longer declares, and an admin
+		// who filled it in would configure nothing. Tasks live in OpenRegister's
+		// task engine, which needs no schema id. Asserted AFTER the fields that
+		// must render, so a form that failed to load cannot pass this by
+		// showing nothing at all.
+		await expect(form.getByText('Task schema', { exact: true })).toHaveCount(0)
 	})
 
 	// FIXME(#719): same gap — no "Case Type Management" heading renders on the

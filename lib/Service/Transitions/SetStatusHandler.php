@@ -53,7 +53,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -67,7 +67,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Handles the `setStatus` action: move a case to a status named by the flow.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class SetStatusHandler implements ActionHandlerInterface {
 	/**
@@ -91,7 +91,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The action type.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function type(): string {
 		return 'setStatus';
@@ -108,7 +108,7 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {

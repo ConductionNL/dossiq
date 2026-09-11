@@ -37,13 +37,18 @@ import type { APIRequestContext, Page } from '@playwright/test'
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 import { expect, request, test } from '@playwright/test'
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { BASE_URL } from './base-url.ts'
+import {
+	getRequestToken,
+	invokeFlowTask,
+	listFlowTasks,
+} from './helpers/fixtures.ts'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -153,30 +158,44 @@ async function updateObject(
 }
 
 /**
- * Complete a task the dossiq way: an object update that walks the CMMN
- * lifecycle the task schema enforces (x-openregister-lifecycle on
- * dossiq/task).
+ * Complete a task through the ENGINE's own verb.
  *
- * The walk is available → active → completed. A one-step PUT to `completed`
- * is refused with 422 lifecycle-invalid-transition, and that refusal is the
- * contract: REQ-TASK-002 (openspec/specs/task-management/spec.md) requires a
- * task to be `active` before it can be `completed`. So this helper claims the
- * task first when it is still `available`. The intermediate update resumes
- * nothing; TaskCompletionResumeListener fires only on the transition INTO
- * `completed`, so the run is still signalled exactly once.
+ * 🔴 IT USED TO PUT A `caseTask` OBJECT, AND BY THE TIME IT WAS CHANGED IT
+ * COULD NOT HAVE WORKED. `AskPersonTaskStore::create()` writes the engine
+ * (`EngineTaskGateway::mirrorImport`), not the register, so the object this
+ * helper read and updated was never created: the read answered 404 and the
+ * spec failed on the fixture rather than on the journey. The ADR-098
+ * follow-up this helper's old note deferred to has LANDED — dossiq tasks are
+ * openregister `Task` rows now, so `/api/flow-tasks/{uuid}/complete` is the
+ * completion API, and it is the endpoint `TaskCompletionResumeListener`
+ * listens behind (it takes `TaskTerminalEvent`, not `ObjectUpdatedEvent`).
  *
- * KNOWN FOLLOW-UP (ADR-098): dossiq tasks are OR objects in dossiq's own
- * register, so openregister's POST /api/flow-tasks/{uuid}/complete answers
- * 404 for them. When dossiq migrates onto openregister's task entity,
- * completion moves to that endpoint; until then this object update IS the
- * completion API.
+ * There is no available → active walk left to perform. The register schema's
+ * CMMN lifecycle refused a one-step move to `completed`; the engine's
+ * `complete` verb takes a non-terminal task straight there and refuses only a
+ * task that is ALREADY terminal.
+ *
+ * The state is read back rather than inferred from the 200. A verb that
+ * answered and changed nothing is the exact failure this migration keeps
+ * producing, and here it would surface two worker passes later as a case
+ * stuck in the wrong status.
+ *
+ * @param api   The API view.
+ * @param token CSRF request-token for the write.
+ * @param uuid  The ENGINE task uuid. Not a numeric id: no route accepts one.
  */
-async function completeTask(api: APIRequestContext, taskId: string): Promise<void> {
-	const current = await getJson(api, `${OR}/objects/dossiq/task/${taskId}`)
-	if (String(current.status ?? '') === 'available') {
-		await updateObject(api, 'caseTask', taskId, { status: 'active' })
-	}
-	await updateObject(api, 'caseTask', taskId, { status: 'completed' })
+async function completeTask(
+	api: APIRequestContext,
+	token: string,
+	uuid: string,
+): Promise<void> {
+	await invokeFlowTask(api, token, uuid, 'complete')
+
+	const stored = await getJson(api, `${OR}/flow-tasks/${uuid}`)
+	expect(
+		String((stored?.results ?? stored)?.state ?? ''),
+		`task ${uuid} answered the complete verb but did not store the state`,
+	).toBe('completed')
 }
 
 async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json[]> {
@@ -184,11 +203,38 @@ async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json
 	return runs.filter((r) => String(r.subjectUuid ?? '') === caseId)
 }
 
+/**
+ * Every task standing on one case, read from the ENGINE.
+ *
+ * 🔴 IT USED TO LIST `/objects/dossiq/task`, WHICH IS NOT A SCHEMA THIS APP
+ * SHIPS. The slug was `caseTask`, so the read 404'd; and even spelled right it
+ * would have answered `[]`, because the flow's human step writes the engine
+ * and stopped writing register objects. Both wrong spellings fail the same
+ * silent way — an empty list reads as "the flow created no task", which is a
+ * far more alarming thing than what happened.
+ *
+ * `scope=all` because the question is what work the CASE carries. The inbox
+ * defaults to `assigned`, and the shipped flow assigns one of these steps to
+ * the `behandelaars` group rather than to the reader, so the default would
+ * answer `[]` for a case that has one.
+ *
+ * Three field names change with the table and every caller reads the new
+ * ones: the id is `uuid`, `flowRun` is `runUuid` and `flowNode` is `nodeId`.
+ * (`EngineTaskGateway::find()` translates them back into the register's
+ * vocabulary for PHP callers; the HTTP rows here are untranslated.)
+ *
+ * @param api    The API view.
+ * @param caseId The case.
+ */
 async function tasksForCase(
 	api: APIRequestContext,
 	caseId: string,
 ): Promise<Json[]> {
-	return results(api, `${OR}/objects/dossiq/task?_limit=50&case=${caseId}`)
+	return listFlowTasks(api, {
+		objectUuid: caseId,
+		scope: 'all',
+		limit: '50',
+	})
 }
 
 /** One worker pass: what cron would do. */
@@ -263,6 +309,16 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 	let api: APIRequestContext
 	let caseType = ''
 	let names = new Map<string, string>()
+	/**
+	 * CSRF request-token for the engine's verbs.
+	 *
+	 * The OpenRegister object writes in this spec need none — `OCS-APIRequest`
+	 * on the context short-circuits the check — but the shared
+	 * `invokeFlowTask` helper sends the standard write headers, and a spec
+	 * that special-cased its way around them would be the fourth way this
+	 * repo drives a task.
+	 */
+	let token = ''
 
 	// Journey state, carried across the serial tests.
 	let incompleteCase = ''
@@ -273,6 +329,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 
 	test.beforeAll(async () => {
 		api = await apiContext()
+		token = await getRequestToken(api)
 		caseType = await caseTypeId(api)
 		names = await statusNames(api, caseType)
 
@@ -394,10 +451,12 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 			'The incomplete case must have exactly one supplement task.',
 		).toHaveLength(1)
 		const task = tasks[0]
-		applicantTask = String(task.id)
+		// The ENGINE's id is its uuid, and `/apps/dossiq/tasks/{id}` resolves
+		// by uuid since dossiq#2411. A numeric primary key is one no route takes.
+		applicantTask = String(task.uuid)
 		expect(String(task.title)).toBe('Vraag de indiener om aanvulling')
-		expect(String(task.flowRun ?? '')).toBe(incompleteRun)
-		expect(String(task.flowNode ?? '')).toBe('ask-aanvulling')
+		expect(String(task.runUuid ?? '')).toBe(incompleteRun)
+		expect(String(task.nodeId ?? '')).toBe('ask-aanvulling')
 		// The flow names `{{ case.assignee }}`; the task must carry the PERSON,
 		// not the placeholder, or nobody is allowed to answer it.
 		expect(String(task.assignee ?? '')).toBe(ADMIN_USER)
@@ -431,7 +490,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await updateObject(api, 'case', incompleteCase, {
 			description: SUPPLIED_DESCRIPTION,
 		})
-		await completeTask(api, applicantTask)
+		await completeTask(api, token, applicantTask)
 
 		workerPass()
 
@@ -600,7 +659,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		).toHaveLength(1)
 		expect(String(tasks[0].assignee)).toBe('behandelaars')
 
-		await page.goto(`/index.php/apps/dossiq/tasks/${tasks[0].id}`, {
+		await page.goto(`/index.php/apps/dossiq/tasks/${tasks[0].uuid}`, {
 			waitUntil: 'domcontentloaded',
 		})
 		await expect(page.locator('body')).toContainText(
@@ -610,7 +669,7 @@ test.describe('Case flow — live journeys on an adopted flow', () => {
 		await shoot(page, '06-employee-task.png')
 
 		// The admin is a member of `behandelaars`, so may complete it.
-		await completeTask(api, String(tasks[0].id))
+		await completeTask(api, token, String(tasks[0].uuid))
 		workerPass()
 
 		await openCase(page, completeCase, 'Dakkapel Kerkstraat 14')

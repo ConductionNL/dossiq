@@ -11,7 +11,7 @@
  * in the node environment with no Vue mount harness (see
  * caseListExportAction.spec.js), so the extracted logic is what is tested.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import { describe, expect, it } from 'vitest'

@@ -321,7 +321,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-19: a status has a colour and a list visibility ─────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-coloured-status-shows-on-the-board
 	// Scenario: A coloured status shows on the board
 	test('a coloured status draws its board column in that colour', async ({
 		page,
@@ -330,8 +330,15 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await dismissSupportDialog(page)
 
 		// The board merges every non-final status sharing a NAME into one
-		// column, and the seeded names carry RUN_PREFIX, so this column is
-		// this spec's own and no other run can colour it.
+		// column. RUN_PREFIX keeps another RUN out of this column, but not
+		// another SPEC: it is per process, and a Playwright worker runs several
+		// spec files in one process, so `seedStateMachine` in fixtures.ts seeds
+		// its own `<prefix> In behandeling` under the same prefix. That status
+		// names no colour and the schema stores the default grey for it, which
+		// is why `mergeColumnColour` has to take a chosen hue over grey rather
+		// than the first row the API answers with: before it did, this column
+		// came out grey whenever the fixture machine happened to be created
+		// first, and green on the retry that reseeded from an empty worker.
 		const column = page
 			.locator('.board-column')
 			.filter({ hasText: `${RUN_PREFIX} In behandeling` })
@@ -342,7 +349,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toHaveAttribute('data-colour', 'orange')
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-hidden-status-keeps-its-cases-out-of-the-list
 	// Scenario: A hidden status keeps its cases out of the list
 	test('a hidden status keeps its cases off the list, and Closed brings them back', async ({
 		page,
@@ -397,7 +404,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-20: a type derives from a parent ────────────────────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-child-shows-its-parents-statuses
 	// Scenario: A child shows its parent's statuses
 	test('a child that declares nothing shows its parent’s four statuses, marked Inherited', async ({
 		page,
@@ -449,6 +456,10 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
+	// NOT cited to case-types::a-cycle-is-refused. That scenario says the SAVE
+	// fails with a message naming the cycle; this test saves the cycle
+	// successfully and asserts only that the blueprint then terminates. The
+	// refusal lives on the publish path (CaseTypeResolver::assertNoCycle).
 	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {

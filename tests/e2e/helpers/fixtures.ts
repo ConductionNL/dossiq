@@ -73,7 +73,19 @@ const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
-	'caseTask',
+	// 🔴 `caseTask` IS GONE FROM THIS LIST, and it was here as cleanup order
+	// rather than as a thing most specs made. remove-casetask deleted the
+	// schema and `demo-caseload`, the last spec that created one, now seeds the
+	// engine instead, so nothing this suite writes lands there. A name kept
+	// here would cost a listing round trip per sweep against a schema that
+	// answers nothing: `sweepPrefix` swallows a failed list, so it would be
+	// silent as well as useless.
+	//
+	// One consequence is stated rather than discovered: on an instance
+	// UPGRADED from a version that had the schema, rows earlier runs left
+	// behind are no longer swept, because the import does not delete a schema
+	// it stops declaring. They are orphan rows under an orphan schema and
+	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
@@ -90,8 +102,8 @@ export const FIXTURE_SCHEMAS = [
 	'role',
 	'case',
 	'roleType',
-	// The team a case or a task names. After `case` and `caseTask` for the
-	// same reason `caseType` is: they reference it.
+	// The team a case names. After `case` for the same reason `caseType` is:
+	// it references it.
 	'organisatieRol',
 	'workflowTemplate',
 	'statusType',
@@ -730,6 +742,166 @@ export async function updateObject(
 		`update ${schema}/${id} -> ${res.status()} ${await res.text()}`,
 	).toBeTruthy()
 	return unwrapObject(await res.json())
+}
+
+/**
+ * OpenRegister's task ENGINE. A flow task is not an OpenRegister object, so it
+ * has its own table, its own field names and its own verbs — `/api/objects/…`
+ * cannot see it and `cleanupRunObjects` cannot sweep it.
+ */
+export const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/**
+ * The fields a seeded engine task takes.
+ *
+ * Three names change from the `caseTask` schema this replaced, and they are
+ * the three that silently seed nothing when written the old way: `case`
+ * becomes `objectUuid` (OpenRegister has no case entity — the case IS the
+ * object), `status` becomes `state`, and `dueDate` becomes `dueAt`.
+ */
+export interface FlowTaskSeed {
+	/** The task title. Carry RUN_PREFIX so a row locator can find it. */
+	title: string
+	/** The object the task hangs off — a case uuid, for dossiq. */
+	objectUuid?: string
+	/** The uid the task is assigned to. Omit to leave it in the pool. */
+	assignee?: string
+	/** available | enabled | active. A terminal state needs the verb. */
+	state?: string
+	/** ISO instant. `overdue` is `dueAt < now`, an INSTANT comparison. */
+	dueAt?: string
+	/** low | normal | high | urgent. */
+	priority?: string
+	/** The uids that may claim an unassigned task, i.e. its pool. */
+	candidateUsers?: string[]
+	/** The group ids that may claim an unassigned task. */
+	candidateGroups?: string[]
+}
+
+/** Every engine task this process seeded, newest last, for teardown. */
+const seededFlowTasks: string[] = []
+
+/**
+ * Seed one task IN THE ENGINE and return its uuid.
+ *
+ * 🔴 SEEDING A `caseTask` OBJECT SEEDS SOMETHING NO SURFACE READS. dossiq#2357
+ * moved every task read onto the engine and #2408 moved the Tasks index with
+ * it, so a fixture that still posts `/api/objects/dossiq/caseTask` writes a
+ * different table: the list then shows nothing and the spec times out on a
+ * title that was never going to arrive, which reads as a broken list rather
+ * than as a fixture pointing at the wrong store.
+ *
+ * The uuid is the id. The numeric primary key is one no route accepts.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param seed  The task's fields.
+ */
+export async function seedFlowTask(
+	api: APIRequestContext,
+	token: string,
+	seed: FlowTaskSeed,
+): Promise<string> {
+	const res = await api.post(FLOW_TASKS_BASE, {
+		headers: writeHeaders(token),
+		data: { appId: REGISTER, state: 'available', ...seed },
+	})
+	expect(
+		res.status(),
+		`seed engine task "${seed.title}" -> ${res.status()} ${await res.text()}`,
+	).toBe(201)
+
+	const created = await res.json()
+	const uuid = String(created?.uuid ?? '')
+	expect(uuid, `seeded task "${seed.title}" came back without a uuid`).not.toBe('')
+	// Read back what the engine STORED, not what was asked for. A state the
+	// engine declined would otherwise be discovered by a lens assertion three
+	// screens away from the cause.
+	expect(
+		String(created.state),
+		`seeded task "${seed.title}" did not take the state asked for`,
+	).toBe(String(seed.state ?? 'available'))
+	seededFlowTasks.push(uuid)
+	return uuid
+}
+
+/**
+ * Drive one lifecycle verb on an engine task and assert it was accepted.
+ *
+ * A terminal task cannot be CREATED by an ordinary caller — the engine
+ * refuses a task born closed — so a spec that needs a completed task drives
+ * it there through the verb, which is also the transition a person makes.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param uuid  The task.
+ * @param verb  claim | complete | cancel | …
+ * @param body  The verb's payload, when it takes one.
+ */
+export async function invokeFlowTask(
+	api: APIRequestContext,
+	token: string,
+	uuid: string,
+	verb: string,
+	body: Record<string, unknown> = {},
+): Promise<any> {
+	const res = await api.post(`${FLOW_TASKS_BASE}/${uuid}/${verb}`, {
+		headers: writeHeaders(token),
+		data: body,
+	})
+	expect(
+		res.ok(),
+		`${verb} task ${uuid} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	return await res.json()
+}
+
+/**
+ * Read the engine inbox with explicit query parameters.
+ *
+ * @param api    Authenticated request context.
+ * @param params The inbox query, as the endpoint takes it.
+ */
+export async function listFlowTasks(
+	api: APIRequestContext,
+	params: Record<string, string>,
+): Promise<any[]> {
+	const query = new URLSearchParams(params).toString()
+	const res = await api.get(`${FLOW_TASKS_BASE}?${query}`)
+	expect(
+		res.ok(),
+		`list engine tasks (${query}) -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	const body = await res.json()
+	return Array.isArray(body?.results) ? body.results : []
+}
+
+/**
+ * Cancel every engine task this process seeded.
+ *
+ * `cancel` is the only removal verb the engine publishes — it TERMINATES
+ * rather than erases — and failures are swallowed on purpose: a task a test
+ * already completed answers 409 to a cancel, and a teardown that threw on
+ * that would redden a run whose assertions all passed.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ */
+export async function cleanupFlowTasks(
+	api: APIRequestContext,
+	token: string,
+): Promise<void> {
+	while (seededFlowTasks.length > 0) {
+		const uuid = seededFlowTasks.pop() as string
+		try {
+			await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+				headers: writeHeaders(token),
+				data: {},
+			})
+		} catch {
+			// Best effort; the next run's residue sweep is the backstop.
+		}
+	}
 }
 
 /**

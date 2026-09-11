@@ -17,7 +17,7 @@
  * render exists to avoid, and no e2e can seed it here because `case` is
  * required on `caseTask`.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
