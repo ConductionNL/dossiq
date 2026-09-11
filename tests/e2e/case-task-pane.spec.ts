@@ -50,7 +50,6 @@ import { expect, test } from '@playwright/test'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
-	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
@@ -92,7 +91,6 @@ const TASK_PAGE = '[data-testid="task-detail-page"]'
 
 const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
 const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
-const ACTIVATE_LABEL = /Pick up the task/
 
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
@@ -127,6 +125,8 @@ let readSecondTitle = ''
 /** A second case of the same shape, whose first task this spec completes. */
 let completeCaseId = ''
 let completeFirstTitle = ''
+/** The engine uuid of the task the completion test finishes. */
+let completeFirstUuid = ''
 let completeSecondTitle = ''
 
 /** A case with exactly one open task, which is completed to empty the pane. */
@@ -314,7 +314,12 @@ test.describe('Case detail — the task pane', () => {
 
 		await seedTask(readCaseId, readFirstTitle, EARLIER_DUE, 'active')
 		await seedTask(readCaseId, readSecondTitle, LATER_DUE)
-		await seedTask(completeCaseId, completeFirstTitle, EARLIER_DUE, 'active')
+		completeFirstUuid = await seedTask(
+			completeCaseId,
+			completeFirstTitle,
+			EARLIER_DUE,
+			'active',
+		)
 		await seedTask(completeCaseId, completeSecondTitle, LATER_DUE)
 		await seedTask(lastCaseId, lastTaskTitle, EARLIER_DUE, 'active')
 		linkTaskId = await seedTask(
@@ -411,23 +416,46 @@ test.describe('Case detail — the task pane', () => {
 		// would satisfy every other assertion here and defeat the point.
 		expect(new URL(page.url()).pathname).toBe(before)
 
-		// The next open task takes its place, with the buttons ITS status
-		// allows: it was never picked up, so it offers Pick up rather than
-		// Mark as completed.
+		// The next open task takes its place.
+		//
+		// 🔴 THE BUTTONS NO LONGER FOLLOW THE TASK'S STATE, and this used to
+		// assert that they did: a Pick up button on a task never claimed, and
+		// no Complete beside it. The pane reads the engine now (dossiq#2408)
+		// and offers Complete and Cancel unconditionally, on purpose — the
+		// engine decides whether a verb is legal and whether the caller may
+		// invoke it, and refuses visibly with a message naming both, so
+		// pre-judging availability client-side would be exactly the
+		// duplicated authorization this migration removes. There is no
+		// "Pick up the task" button on this surface at all, which is why the
+		// old assertion could not pass and could not be repaired in place.
+		//
+		// The succession is the claim that survives: a DIFFERENT task, named,
+		// with the pane's verbs on it.
 		await expect(
 			panel.locator('[data-testid="case-task-pane-title"]'),
 		).toHaveText(completeSecondTitle, { timeout: 30_000 })
-		await expect(
-			panel.getByRole('button', { name: ACTIVATE_LABEL }),
-		).toBeVisible({ timeout: 20_000 })
-		await expect(panel.locator(COMPLETE_BUTTON)).toHaveCount(0)
+		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({
+			timeout: 20_000,
+		})
+		await expect(panel.locator(CANCEL_BUTTON)).toBeVisible()
 
-		// The write reached the server, not just the screen.
-		const stored = await listObjects(api, 'caseTask', { _limit: '200' })
-		const completed = stored.find(
-			(row) => String(row.title ?? '') === completeFirstTitle,
-		)
-		expect(String(completed?.status)).toBe('completed')
+		// The write reached the server, not just the screen — READ FROM THE
+		// TABLE THE PANE WRITES. This asked
+		// `/api/objects/dossiq/caseTask` for a row seeded in the engine, so
+		// `find()` answered undefined and `String(undefined)` compared
+		// "undefined" to "completed": a real failure, but pointing at the
+		// completion rather than at the read. The engine's states are CMMN's
+		// and its own terminal flag is the claim.
+		const stored = await api.get(`${FLOW_TASKS_BASE}/${completeFirstUuid}`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(
+			stored.ok(),
+			`read back task ${completeFirstUuid} -> ${stored.status()}`,
+		).toBeTruthy()
+		const completed = await stored.json()
+		expect(String(completed?.state)).toBe('completed')
+		expect(completed?.isTerminal).toBe(true)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#the-last-task-leaves-an-empty-pane
