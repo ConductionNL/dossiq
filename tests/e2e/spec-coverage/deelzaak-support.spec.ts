@@ -28,6 +28,7 @@ import {
 	ensureCaseType,
 	getRequestToken,
 	objectId,
+	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
 import { dismissSupportDialog } from '../helpers/nav.ts'
@@ -96,10 +97,12 @@ async function ensureCaseId(page): Promise<string | null> {
  *
  * @param  options            Seeding options.
  * @param  options.withChild  Seed a sub-case referencing the parent.
+ * @param  options.title      Title for the parent, when the caller has to find
+ *                            its row in a list.
  * @return The seeded ids.
  */
 async function seedParentWithSubCase(
-	options: { withChild?: boolean } = {},
+	options: { withChild?: boolean; title?: string } = {},
 ): Promise<{ parentId: string; childId: string | null }> {
 	const withChild = options.withChild !== false
 	const api = await request.newContext({ storageState: STORAGE_STATE })
@@ -107,7 +110,9 @@ async function seedParentWithSubCase(
 		const token = await getRequestToken(api)
 		const caseType = await ensureCaseType(api, token)
 		const parent = await seedCase(api, token, {
-			title: `E2E deelzaak parent ${withChild ? 'with' : 'without'} sub-case`,
+			title:
+				options.title
+				?? `E2E deelzaak parent ${withChild ? 'with' : 'without'} sub-case`,
 			caseType: caseType.id,
 			description:
 				'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
@@ -234,6 +239,23 @@ async function openSubCasesSectionOrSkip(page) {
 	return true
 }
 
+/**
+ * Open the Cases list narrowed to one seeded title.
+ *
+ * @param page  The page.
+ * @param title The exact seeded title to narrow to.
+ */
+async function visitCases(page, title: string): Promise<void> {
+	await page.goto(
+		`/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`,
+		{ timeout: 90_000 },
+	)
+	await dismissSupportDialog(page).catch(() => {})
+	await expect(
+		page.locator('table, .viewTable, [role="table"]').first(),
+	).toBeVisible({ timeout: 60_000 })
+}
+
 test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () => {
 	// @e2e deelzaak-support::case-list-shows-sub-case-count
 	// @e2e deelzaak-support::case-without-sub-cases-has-no-badge
@@ -252,14 +274,22 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 	// 23 seconds, so that overran the 60s test budget before it asserted
 	// anything: measured on CI run 34578033755 as `page.goto: Test timeout of
 	// 60000ms exceeded`. One navigation now, and `test.slow()` for the budget.
-	test('the case list shows an "N deelzaken" badge, and only on a parent', async ({
+	test('the case list shows a sub-case badge, and only on a parent', async ({
 		page,
 	}) => {
 		test.slow()
-		const { parentId } = await seedParentWithSubCase()
-		const { parentId: loneId } = await seedParentWithSubCase({
-			withChild: false,
-		})
+		// 🔴 THE OLD LOCATOR WAS DUTCH AND THE INSTANCE IS ENGLISH.
+		// It matched `/\d+ deelzaken/i`. `subCaseCountBadge()` in
+		// src/utils/deelzaakHelpers.js returns `t('dossiq', '{count}
+		// sub-cases')`, and "N deelzaken" is only what l10n/nl.json renders
+		// that into. So on the English CI instance the badge is on the page and
+		// the assertion could not see it, which is why the old body could only
+		// ever take its own "no badge present" branch. Both spellings now.
+		const BADGE = /\d+ (sub-cases|deelzaken)/i
+		const withTitle = `${RUN_PREFIX} DZ badge parent`
+		const loneTitle = `${RUN_PREFIX} DZ badge lone`
+		await seedParentWithSubCase({ title: withTitle })
+		await seedParentWithSubCase({ withChild: false, title: loneTitle })
 
 		// Counted BEFORE the navigation, so the render's own fetches are the
 		// ones observed. `deelzaken/counts` is the batch endpoint: the claim is
@@ -270,29 +300,16 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 				countCalls.push(req.url())
 		})
 
-		await page.goto('/index.php/apps/dossiq/cases', { timeout: 90_000 })
-		await dismissSupportDialog(page).catch(() => {})
-		const table = page.locator('table, .viewTable, [role="table"]').first()
-		await expect(table).toBeVisible({ timeout: 60_000 })
-
-		// The parent WITH a sub-case carries the badge …
-		const withChild = page
-			.getByRole('row')
-			.filter({ has: page.locator(`a[href*="${parentId}"]`) })
+		// Narrowed by title rather than paged through. Fixtures accumulate
+		// across runs, so the row this test seeded need not be on page one of
+		// an unfiltered list, and a `getByRole('row')` filter would then be
+		// asserting an absence it had not earned.
+		await visitCases(page, withTitle)
+		const withChild = page.getByRole('row').filter({ hasText: withTitle })
 		await expect(
-			withChild.getByText(/\d+ deelzaken/i).first(),
-			'a case with one sub-case shows the deelzaken badge',
+			withChild.getByText(BADGE).first(),
+			'a case with one sub-case shows the sub-case badge',
 		).toBeVisible({ timeout: 60_000 })
-
-		// … and the one without does not. BOTH halves, because a badge
-		// rendered on every row would satisfy the first assertion alone.
-		const withoutChild = page
-			.getByRole('row')
-			.filter({ has: page.locator(`a[href*="${loneId}"]`) })
-		await expect(
-			withoutChild.getByText(/\d+ deelzaken/i),
-			'a case with no sub-cases shows no badge',
-		).toHaveCount(0)
 
 		// Batched, not N+1. The endpoint is asked once for the page, twice at
 		// most when the list re-renders after its first data arrives.
@@ -300,6 +317,17 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 			countCalls.length,
 			`deelzaken counts must be batched per page, saw ${countCalls.length} requests`,
 		).toBeLessThanOrEqual(2)
+
+		// THE OTHER HALF. `subCaseCountBadge()` returns '' for a count of zero
+		// (REQ-DZS-005-B), so a badge stamped on every row would satisfy the
+		// assertion above on its own.
+		await visitCases(page, loneTitle)
+		const withoutChild = page.getByRole('row').filter({ hasText: loneTitle })
+		await expect(withoutChild.first()).toBeVisible({ timeout: 60_000 })
+		await expect(
+			withoutChild.getByText(BADGE),
+			'a case with no sub-cases shows no badge',
+		).toHaveCount(0)
 		await expect(page.locator('body')).not.toContainText('TypeError')
 	})
 })
