@@ -516,7 +516,7 @@ test.describe('Case identity', () => {
 		const metadata = await openMetadataPanel(page)
 
 		await expect(
-			metadata.getByText('Archiving', { exact: true }),
+			metadata.getByText(/^(Archiving|Archivering)$/),
 			'the panel groups the archival facts under their own heading',
 		).toBeVisible({ timeout: 15_000 })
 		await expect(metadata).toContainText(
@@ -528,43 +528,35 @@ test.describe('Case identity', () => {
 	test.fixme('an empty archive action date is shown empty, not hidden', async ({
 		page,
 	}) => {
-		// PARKED ON ConductionNL/nextcloud-vue#1062, and the requirement is
-		// still right — it is the surface underneath it that cannot express it
-		// any more.
+		// PARKED UNTIL nextcloud-vue SHIPS #1084, which fixes #1062. Delete the
+		// `fixme` when dossiq takes a release that carries it; nothing else
+		// in this body needs to change.
 		//
-		// An absent destruction date is itself what a records officer looks
-		// for, so the row has to be present and blank. While the archival
-		// fields lived in the `case-terms` data widget, `hideEmpty: false`
-		// said exactly that, and this test was the assertion that would catch
-		// it being turned on.
+		// An absent disposal date is itself what a records officer looks for,
+		// so the row has to be present and blank (REQ-CM-27). Two things had
+		// to happen for that to be expressible at all:
 		//
-		// dossiq#2322 moved them onto `@self._retention` and
-		// CnObjectMetadataWidget, which is the right move — it ends the
-		// per-app duplication of ZGW field names — but the guarantee had
-		// nowhere to land. Measured on the installed 2.44.0, both layers drop
-		// the row and neither offers a way to ask for it:
+		//  - dossiq#2428 dropped the separate `case-archival` card and reads
+		//    archiving from the object metadata panel, so the row now lives
+		//    there, under its Archiving category;
+		//  - nextcloud-vue#1084 makes that panel keep the four MDTO core rows
+		//    whenever an object HAS a decision, with a dash for a missing fact
+		//    and the `cn-detail-grid__value--empty` modifier on the blank one.
+		//    Until then the panel drops any key without a value, so this case,
+		//    whose `_retention` holds an appraisal and no disposal date, shows
+		//    no Disposal date row at all.
 		//
-		//  - OpenRegister's ArchivalDecisionResolver returns only the keys it
-		//    could establish, so this case's `_retention` is
-		//    `{ nomination: 'blijvend_bewaren' }` with no `actionDate` key;
-		//  - CnObjectMetadataWidget then does `if (raw === undefined || raw
-		//    === null) continue` over its archival defs, and its props are
-		//    title / icon / objectData / layout / columns / labelWidth /
-		//    extraItems / include / exclude / collapsible / collapsed /
-		//    emptyLabel. There is no showEmpty.
-		//
-		// So the card renders one row of the seven `case-archival` names, and
-		// Archive action date is absent rather than blank. The body below is
-		// kept and pointed at the new card so unfixming is one word once
-		// #1062 lands a `showEmpty` (or honours an explicit `include`).
+		// The assertion is on the MODIFIER, not only on the row: a row reading
+		// "-" and a row reading a real date look alike to `toHaveCount(1)`,
+		// and the whole point is that this one is blank.
 		await openCase(page, termsCaseId)
 
-		const archival = page.locator('[aria-label="case-archival"]')
-		await expect(archival).toBeVisible({ timeout: 30_000 })
-
-		const row = archival
+		const metadata = await openMetadataPanel(page)
+		const row = metadata
 			.locator('.cn-detail-grid__item')
-			.filter({ hasText: /Archive action date|Datum archiefactie/ })
+			.filter({ hasText: /Disposal date|Archiefactiedatum/ })
+
 		await expect(row).toHaveCount(1)
+		await expect(row.locator('.cn-detail-grid__value--empty')).toHaveCount(1)
 	})
 })
