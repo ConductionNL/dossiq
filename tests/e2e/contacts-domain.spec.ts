@@ -19,12 +19,16 @@
  * addressed by href and rows by data this spec wrote. The one place an English
  * label is unavoidable — the header action buttons — matches both locales.
  *
- * Two scenarios of the delta specs are deliberately absent and are `@e2e
- * exclude`d in the spec itself: the Requester COLUMN link (blocked on
- * nextcloud-vue choosing a route from a sibling field) and the KCC panel
- * (Tier B). A third, the Organisations folder, is asserted here as ABSENT —
- * see `contacts-domain.spec` in tests/vitest for the measurement of why it
- * cannot ship.
+ * One scenario of the delta specs is deliberately absent and is `@e2e
+ * exclude`d in the spec itself: the KCC panel (Tier B). Another, the
+ * Organisations folder, is asserted here as ABSENT — see `contacts-domain.spec`
+ * in tests/vitest for the measurement of why it cannot ship.
+ *
+ * The Requester COLUMN link was the third, and stopped being blocked in
+ * nextcloud-vue 2.47.0: a column can now choose its route from a sibling
+ * field. It is asserted here, and asserted on TWO rows in one render, because
+ * a person and an organisation going to the same page is exactly what a fixed
+ * route would look like.
  *
  * EXTENDED by `contacts-you-can-find`, which is the change that made this
  * file run at all: its first ever execution, 2026-09-08, failed in
@@ -174,12 +178,30 @@ test.describe('Contacts', () => {
 		emptyPersonId = await seedPerson(EMPTY_NAME, '999993653')
 		companyId = await seedCompany(COMPANY_NAME, COMPANY_KVK)
 
+		// `initiatorType` and `initiatorDisplayName` are written EXPLICITLY.
+		// They are display projections of `requester` and the picker writes
+		// them in the UI; an API create names the reference only. The Requester
+		// column routes on `initiatorType` and renders `initiatorDisplayName`,
+		// so leaving them to be derived would make the column assertion below a
+		// test of OpenRegister's derivation rather than of the column.
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Dormer window`,
 			caseType: caseTypeId,
 			requester: personId,
+			initiatorType: 'person',
+			initiatorDisplayName: PERSON_NAME,
 		})
 		seededCaseId = objectId(seeded)
+
+		// A second case, requested by the COMPANY. The Requester column has to
+		// resolve two different pages in one render, so one row cannot prove it.
+		await seedCase(api, token, {
+			title: `${RUN_PREFIX} Roof terrace`,
+			caseType: caseTypeId,
+			requester: companyId,
+			initiatorType: 'company',
+			initiatorDisplayName: COMPANY_NAME,
+		})
 
 		await createObject(api, token, 'contactmoment', {
 			contact: personId,
@@ -336,6 +358,47 @@ test.describe('Contacts', () => {
 			'href',
 			new RegExp(`/apps/dossiq/contacts/${personId}$`),
 		)
+	})
+
+	test('the Requester column sends a person and an organisation to different pages', async ({
+		page,
+	}) => {
+		// contacts-domain 3.6. The point of the assertion is that ONE column
+		// resolves TWO routes: a fixed `widgetProps.route` would pass a
+		// single-row check and still be wrong, so both rows are asserted in the
+		// same render, and they must differ.
+		await page.goto(
+			`/apps/${REGISTER}/cases?title=${encodeURIComponent(RUN_PREFIX)}`,
+		)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-index-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const personRow = page.getByRole('row', {
+			name: new RegExp(`${RUN_PREFIX} Dormer window`, 'i'),
+		})
+		await expect(personRow).toBeVisible({ timeout: 30_000 })
+		await expect(
+			personRow.getByRole('link', { name: PERSON_NAME }),
+		).toHaveAttribute('href', new RegExp(`/contacts/${personId}$`))
+
+		const companyRow = page.getByRole('row', {
+			name: new RegExp(`${RUN_PREFIX} Roof terrace`, 'i'),
+		})
+		await expect(companyRow).toBeVisible({ timeout: 30_000 })
+		const companyLink = companyRow.getByRole('link', { name: COMPANY_NAME })
+		await expect(companyLink).toHaveAttribute(
+			'href',
+			new RegExp(`/organisations/${companyId}$`),
+		)
+
+		// And it is a real in-app route, not a href that reads right and 404s.
+		await companyLink.click()
+		await expect(page).toHaveURL(new RegExp(`/organisations/${companyId}$`))
+		await expect(page.getByText(COMPANY_KVK).first()).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	test("shows a person's contact moments", async ({ page }) => {

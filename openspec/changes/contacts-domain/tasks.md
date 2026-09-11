@@ -119,23 +119,32 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   hard-coded prefix falls outside the base on a pretty-URL instance and the
   catch-all quietly redirects to the Dashboard.
   - `@spec openspec/specs/initiator-display/spec.md`
-- [ ] 3.6 [blocked: nextcloud-vue `CnIndexPage` column `link` naming a route,
-  a param field and a route chosen by a sibling field] `src/manifest.json`
-  page `Cases`: the Requester column links to `ContactDetail` or
-  `OrganisationDetail` by `initiatorType`; until then the column stays text
-  and 3.5 carries the link.
+- [x] 3.6 `src/manifest.json` page `Cases`: the Requester column links to
+  `ContactDetail` or `OrganisationDetail` by `initiatorType`.
 
-  RE-MEASURED 2026-09-10 against 2.42.0. HALF of the ask shipped and the
-  half this task turns on did not. `CnCellRenderer` has a built-in
-  `widget: "link"` whose `widgetProps.route` names a manifest page id and
-  whose `widgetProps.params` maps route params to row fields, so a column
-  CAN link to one route. `linkRoute()` reads a single fixed `route`, so
-  there is no way to pick `ContactDetail` or `OrganisationDetail` off
-  `initiatorType`. The `linkHref` branch interpolates `{field}` placeholders
-  into a URL but is equally fixed in its shape. An app-side cell widget in
-  `src/cellWidgets.js` could branch, and is deliberately NOT the answer
-  here: it would reimplement in dossiq the seam every fleet app needs, which
-  is what this task exists to ask the library for.
+  **UNBLOCKED AND DONE 2026-09-11.** The seam shipped in nextcloud-vue #1083
+  and reaches this app in **2.47.0**. `CnCellRenderer`'s built-in
+  `widget: "link"` now takes `widgetProps.routeField` (a sibling field on the
+  row) and `widgetProps.routeMap` (that field's values → page ids), so one
+  column resolves two pages. `params` maps the route's `:id` to the case's
+  `requester` uuid and applies to every page in the map.
+
+  `contact` is deliberately absent from the map. A Nextcloud contact is not a
+  register row and has no detail page here, so such a row falls back to plain
+  text — the same answer `InitiatorSection.contactRouteBase()` already gives by
+  returning null. A value the map does not hold is never used as a route name
+  itself, so row data cannot link to a page the manifest did not name.
+
+  The app-side cell widget in `src/cellWidgets.js` stayed rejected, for the
+  reason this task recorded: it would have reimplemented in dossiq the seam
+  every fleet app needs.
+  - `npm run check:manifest` exits 0
+  - e2e in `tests/e2e/contacts-domain.spec.ts`: one render of the Cases index
+    carries a person row linking to `/contacts/:id` and a company row linking
+    to `/organisations/:id`, and the company link is followed to prove it is a
+    route and not a plausible href. One row could not have told a working
+    `routeMap` apart from a fixed `route`, so both are asserted together.
+  - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment
 
