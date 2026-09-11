@@ -1274,26 +1274,11 @@
 					},
 					{
 						"id": "case-kpis-hours",
-						"type": "stats-block",
+						"type": "integration",
+						"integrationId": "humaniq-hours",
 						"title": "Hours booked",
 						"icon": "History",
-						"requiredApp": "humaniq",
-						"_note": "The Log hours header action books time against THIS case; its `props` are seed values rather than fields a person fills in, because humaniq keeps domainObjectRef and domainObjectType out of every includeFields allowlist on purpose (they are written by integrations, not typed by an employee). Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' This tile used to sum shillinq UrenRegistratie on subjectApp/subjectId, which contradicted that ADR and, worse, could only ever read zero: a fleet-wide grep found NO writer for subjectApp anywhere, so the tile reported 0 hours on every case in every install and looked correct doing it. The retirement of the shillinq path is tracked in shillinq openspec/changes/hours-to-humaniq. `dossiq:case` is the `<app>:<schema>` literal humaniq documents; it is the app <id> in appinfo/info.xml, and dossiq is the first writer of it in the fleet.",
-						"content": {
-							"entries": [
-								{
-									"title": "Hours booked",
-									"register": "humaniq",
-									"schema": "TimeEntry",
-									"metric": "sum",
-									"field": "hours",
-									"filter": {
-										"domainObjectType": "dossiq:case",
-										"domainObjectRef": "@objectId"
-									}
-								}
-							]
-						}
+						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
 					},
 					{
 						"id": "initiator",
@@ -1961,22 +1946,6 @@
 							"open": true
 						},
 						"successMessage": "Document added to the case."
-					},
-					{
-						"id": "log-hours",
-						"type": "open-form",
-						"label": "Log hours",
-						"icon": "ClockPlusOutline",
-						"register": "humaniq",
-						"schema": "TimeEntry",
-						"successMessage": "Hours logged on this case.",
-						"props": {
-							"domainObjectRef": "@objectId",
-							"domainObjectType": "dossiq:case"
-						},
-						"visibleWhen": {
-							"appInstalled": "humaniq"
-						}
 					},
 					{
 						"id": "case-suspend",
@@ -4263,6 +4232,39 @@
 						"type": "handler"
 					}
 				],
+				"formSize": "large",
+				"formColumns": 2,
+				"_formNote": "The Add dialog on this page asked all 41 of caseType's properties, in one column, at default dialog width. Nothing was wrong with the dialog: CnFormDialog has taken `size` and `columns` since two-column forms shipped, but CnIndexPage passed neither, so the built-in Add form had no way to ask. The `case` create form on the Dashboard and the two contact pages is two columns already because it is an `open-form` HEADER ACTION, and CnActionButtons did forward both keys. Same app, same kind of record, two different forms, and no manifest key that explained the difference. nextcloud-vue 2.46.0 adds `formSize`/`formColumns` to CnIndexPage, CnDetailPage, CnObjectListWidget and CnObjectDataWidget, which is what these two keys reach.",
+				"includeFields": [
+					"title",
+					"identifier",
+					"category",
+					"handlingModel",
+					"confidentiality",
+					"processingDeadline",
+					"validFrom",
+					"isDraft",
+					"parentCaseType",
+					"description",
+					"purpose",
+					"trigger"
+				],
+				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
+				"fieldOverrides": {
+					"title": { "order": 1 },
+					"identifier": { "order": 2 },
+					"category": { "order": 3 },
+					"handlingModel": { "order": 4 },
+					"confidentiality": { "order": 5 },
+					"processingDeadline": { "order": 6 },
+					"validFrom": { "order": 7 },
+					"isDraft": { "order": 8 },
+					"parentCaseType": { "order": 9 },
+					"description": { "order": 10, "widget": "textarea" },
+					"purpose": { "order": 11, "widget": "textarea" },
+					"trigger": { "order": 12, "widget": "textarea" }
+				},
+				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
 				"folderSidebar": {
 					"source": "field",
