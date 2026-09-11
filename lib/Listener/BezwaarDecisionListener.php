@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -51,6 +52,9 @@ use Throwable;
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
 class BezwaarDecisionListener implements IEventListener {
+
+	use SearchesObjects;
+
 	/**
 	 * Target status the guard protects.
 	 */
@@ -281,11 +285,12 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		try {
-			$objectService->saveObject(
-				object: ['status' => $previous],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $objectionSchema,
-				uuid: (string)$objectionId
+				id: (string)$objectionId,
+				changes: ['status' => $previous]
 			);
 			$this->logger->warning(
 				'Dossiq bezwaar-decision: blocked transition into "'

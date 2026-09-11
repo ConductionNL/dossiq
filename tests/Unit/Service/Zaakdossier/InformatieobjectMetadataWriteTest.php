@@ -18,7 +18,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
-use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
@@ -35,8 +34,6 @@ use Psr\Log\LoggerInterface;
  * A metadata edit keeps the rest of the document.
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
- *
- * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
@@ -121,10 +118,9 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 			$settings,
 			$this->createMock(ZgwDocumentService::class),
 			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger),
-			new InformatieobjectStatusLifecycle($settings, $logger, new CaseFieldWriter()),
+			new InformatieobjectStatusLifecycle($settings, $logger),
 			new InformatieobjectMetadataNormaliser(),
 			$logger,
-			new CaseFieldWriter(),
 		);
 
 	}//end service()

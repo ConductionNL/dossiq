@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
@@ -106,7 +105,6 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
- * @uses \OCA\Dossiq\Service\CaseFieldWriter
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -173,13 +171,11 @@ class ZaakdossierServiceTest extends TestCase {
 			statusLifecycle: new InformatieobjectStatusLifecycle(
 				settingsService: $this->settings,
 				logger: $this->createMock(LoggerInterface::class),
-				fieldWriter: new CaseFieldWriter(),
 			),
 			// A REAL normaliser, so the keyword/direction assertions below
 			// exercise the production coercion rather than a mock's answers.
 			normaliser: new InformatieobjectMetadataNormaliser(),
 			logger: $this->createMock(LoggerInterface::class),
-			fieldWriter: new CaseFieldWriter(),
 		);
 
 	}//end setUp()

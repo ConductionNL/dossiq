@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
-use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
@@ -39,8 +38,6 @@ use Psr\Log\LoggerInterface;
  * Status transitions keep the document whole.
  *
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
- *
- * @uses \OCA\Dossiq\Service\CaseFieldWriter
  */
 class InformatieobjectStatusLifecycleTest extends TestCase {
 
@@ -187,7 +184,6 @@ class InformatieobjectStatusLifecycleTest extends TestCase {
 		return new InformatieobjectStatusLifecycle(
 			$settings,
 			$this->createMock(LoggerInterface::class),
-			new CaseFieldWriter(),
 		);
 
 	}//end lifecycle()

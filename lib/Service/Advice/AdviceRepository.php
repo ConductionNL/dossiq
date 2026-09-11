@@ -204,11 +204,12 @@ class AdviceRepository {
 		}
 
 		try {
-			$advice = $objectService->saveObject(
-				object: $update,
+			$advice = $this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				uuid: (string)$adviceId
+				id: (string)$adviceId,
+				changes: $update
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

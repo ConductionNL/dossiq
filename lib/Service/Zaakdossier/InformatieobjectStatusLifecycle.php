@@ -37,7 +37,6 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -81,12 +80,10 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param LoggerInterface $logger Logger.
-	 * @param CaseFieldWriter $fieldWriter Applies ONLY the transition's own fields to the stored document.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly CaseFieldWriter $fieldWriter,
 	) {
 	}//end __construct()
 
@@ -160,13 +157,13 @@ class InformatieobjectStatusLifecycle {
 		// left out was dropped, and because four of them are required
 		// OpenRegister refused the write, so no document status change ever
 		// completed and the bulk run failed every document it was given.
-		// CaseFieldWriter is the fleet's partial-write seam: `patchObject()`
+		// patchObjectAsArray() is the app's partial-write seam: `patchObject()`
 		// where OpenRegister has it, a fresh read-then-save where it does not.
-		$this->fieldWriter->write(
+		$this->patchObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $infoSchema,
-			case: ['id' => $infoObjectId],
+			id: $infoObjectId,
 			changes: $updateData,
 		);
 

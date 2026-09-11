@@ -148,24 +148,30 @@ class BezwaarDecisionListenerTest extends TestCase {
 			/**
 			 * Capture a revert write.
 			 *
-			 * @param array<string, mixed> $object The patch payload.
+			 * The revert owns one field, so it PATCHES it. It used to hand
+			 * `saveObject()` the status alone with the uuid, which replaces
+			 * the bezwaar and is refused for the case and receipt date it
+			 * drops; this double's saveObject() was the only witness, and it
+			 * accepted the partial payload as if it merged.
+			 *
+			 * @param string $objectId The object uuid.
+			 * @param array<string, mixed> $data The fields to change.
 			 * @param string $register The register slug.
 			 * @param string $schema The schema slug.
-			 * @param string $uuid The object uuid.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
 				$this->test->recordSave(
 					save: [
-						'object' => $object,
+						'object' => $data,
 						'register' => $register,
 						'schema' => $schema,
-						'uuid' => $uuid,
+						'uuid' => $objectId,
 					]
 				);
-				return $object;
-			}//end saveObject()
+				return $data;
+			}//end patchObject()
 		};
 	}//end objectService()
 

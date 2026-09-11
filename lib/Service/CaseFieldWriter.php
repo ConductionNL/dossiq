@@ -52,6 +52,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
 
 /**
@@ -60,6 +61,8 @@ use RuntimeException;
  * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class CaseFieldWriter {
+
+	use SearchesObjects;
 
 	/**
 	 * Apply these changes to the stored case.
@@ -98,31 +101,16 @@ class CaseFieldWriter {
 			throw new RuntimeException('case_snapshot_has_no_id');
 		}
 
-		if (method_exists($objectService, 'patchObject') === true) {
-			$objectService->patchObject(objectId: $caseId, data: $changes, register: $register, schema: $schema);
-
-			return;
-		}
-
-		if (method_exists($objectService, 'find') === false) {
-			// Neither seam exists: this object service cannot be written to
-			// without clobbering, so refusing beats saving the stale snapshot.
-			throw new RuntimeException('object_service_cannot_write_partially');
-		}
-
-		$stored = $this->toArray(value: $objectService->find($caseId, register: $register, schema: $schema));
-		if ($stored === []) {
-			throw new RuntimeException('case_not_found_for_partial_write');
-		}
-
-		// Address the save at the stored case explicitly: the fresh read is the
-		// base, the handler's fields are the only delta.
-		$stored['id'] = $caseId;
-		foreach ($changes as $field => $value) {
-			$stored[$field] = $value;
-		}
-
-		$objectService->saveObject(object: $stored, register: $register, schema: $schema);
+		// The PATCH seam every partial write in lib/ shares:
+		// `patchObject()` where OpenRegister has it, otherwise a fresh read
+		// with only these fields applied. See SearchesObjects.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $caseId,
+			changes: $changes,
+		);
 	}//end write()
 
 
@@ -146,30 +134,4 @@ class CaseFieldWriter {
 
 		return '';
 	}//end caseId()
-
-
-	/**
-	 * Coerce an ObjectService read result to an array.
-	 *
-	 * Same coercion CaseStatusStore uses: the service answers with an
-	 * ObjectEntity, and its jsonSerialize() is the case payload.
-	 *
-	 * @param mixed $value The raw read result.
-	 *
-	 * @return array<string, mixed> The case data, empty when uncoercible.
-	 */
-	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
-	}//end toArray()
 }//end class

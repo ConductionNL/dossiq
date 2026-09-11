@@ -159,15 +159,15 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 		}
 
 		try {
-			$this->saveObjectAsArray(
+			$this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: [
+				id: $id,
+				changes: [
 					'status' => 'afwezig',
 					'lastUpdate' => date('c'),
 				],
-				uuid: $id,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
