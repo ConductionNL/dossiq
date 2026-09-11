@@ -260,7 +260,20 @@ export default defineConfig({
 		// after 65 of 122 tests. A bounded action fails in 15s with the same
 		// diagnostic and leaves the remaining budget for the real assertions.
 		actionTimeout: 15_000,
-		navigationTimeout: 30_000,
+		// 45s, not 30s and not 60s. A hard load on this rig costs 13 to 23
+		// seconds under five workers, and the tail runs past 30: measured on
+		// 2026-09-11, once sharding let the whole suite reach a verdict, two of
+		// six sharded runs failed on `page.goto: Timeout 30000ms exceeded`,
+		// one of them on a PR that changed only a markdown file. 30s was
+		// cutting off loads that would have finished.
+		//
+		// It must stay BELOW the 60s test budget, for the same reason
+		// `actionTimeout` above is bounded: a navigation allowed the whole
+		// budget hangs until the test dies and reports a bare timeout naming
+		// the test, not the load. 45s covers the measured tail and still leaves
+		// 15s for the assertions. Raise it again only behind a run that shows
+		// loads needing it, not behind arithmetic.
+		navigationTimeout: 45_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
 		storageState: path.resolve(__dirname, '.auth', 'user.json'),
