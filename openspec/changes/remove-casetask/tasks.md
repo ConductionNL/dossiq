@@ -362,10 +362,19 @@ exactly two days back reports 1 after one second of runtime.
 
 ### What section 4 did NOT do
 
-`openspec/specs/task-management/spec.md` and `openspec/specs/case-types/spec.md`
-still describe task lists in terms of `caseTask` and `isTerminalStatus`. That
-is a spec delta over a capability that still exists, not deletion work: the
-task surfaces are all still there and all read the engine. Rewriting those
+Five live specs still name the schema, measured by `git grep -i casetask --
+openspec/specs` after this change:
+
+| Spec | What it still says |
+|---|---|
+| `task-management` | the Tasks page is `type: index` over `caseTask`; lifecycle, priority facet and `caseTask.case` |
+| `case-management` | "The case task schema SHALL be `caseTask` and SHALL NOT be `task`" (line 1230) |
+| `case-search-via-or-unified-search` | flags `caseTask` as searchable |
+| `role-routing-via-or-rbac` | `caseTask` gains an `assigneeGroup` property |
+| `case-types`, `case-management` (twice) | `CMMN CaseTask`: the CMMN standard's element, unrelated to the schema, and correct as it stands |
+
+The first four are a spec delta over a capability that still exists, not
+deletion work: the task surfaces are all still there and all read the engine. Rewriting those
 clauses touches live specs and pulls gate 19's `@e2e` requirement into a
 change that ships none, so it is left for a follow-up whose subject is the
 spec rather than the schema.
