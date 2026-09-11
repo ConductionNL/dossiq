@@ -48,6 +48,7 @@ import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 import { isCaseTypeUsable } from '../../utils/caseValidation.js'
 
 export default {
@@ -89,7 +90,22 @@ export default {
 		},
 	},
 
-	mounted() {
+	async mounted() {
+		// 🔴 THE STORES MUST BE REGISTERED BEFORE THE FETCH, OR THE WIDGET SAYS
+		// "No case types configured" ON EVERY INSTANCE.
+		//
+		// This widget mounts standalone on the Nextcloud Dashboard, in its own
+		// bundle with its own pinia, where the object store starts with an
+		// EMPTY type registry. `fetchCollection('caseType')` then throws "not
+		// registered", `fetchCaseTypes()` catches it and answers [], and the
+		// widget renders its empty state however many case types exist. The
+		// person/company picker's search and Skip's `saveObject('case')` fail
+		// the same way, so the widget could never start a case.
+		//
+		// The sibling widgets (CasesOverviewWidget, MyTasksWidget) already
+		// await this, with the same reason in their comments; this one was the
+		// one that did not.
+		await initializeStores()
 		this.fetchCaseTypes()
 	},
 
