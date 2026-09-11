@@ -1253,7 +1253,7 @@
 						"type": "data",
 						"title": "Terms and payment",
 						"icon": "CalendarClock",
-						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget into `case-archival`: `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but the page reads them from `@self._retention`, which is the one place any app can ask an object what happens to it and when. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record.",
+						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget and no longer has a card of its own. `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but they are read from `@self._retention`, the one place any app can ask an object what happens to it and when, and they surface in the object metadata panel under its Archiving category alongside every other `@self` fact. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record. The separate `case-archival` card that briefly held them is gone: it duplicated a category the metadata panel already groups, and it spent five rows of the right column saying what the panel says in five.",
 						"content": {
 							"title": "Terms and payment",
 							"columns": 2,
@@ -1270,28 +1270,6 @@
 									"editable": false
 								}
 							}
-						}
-					},
-					{
-						"id": "case-archival",
-						"type": "metadata",
-						"title": "Archiving",
-						"icon": "Archive",
-						"_note": "What happens to this file after the case closes, read from the ONE abstract answer rather than from this app's own field names. `type: metadata` is nextcloud-vue's CnObjectMetadataWidget, and `include` names keys of `@self._retention`: the resolved archival decision OpenRegister builds by merging the object's stored retention block, the ZGW archival properties the record itself declares (`archiveNomination` and friends, which dossiq derives from the resultaattype on close per zrc-021), the schema's `x-openregister-archival` evaluation, and any legal hold. Before that resolver existed the slot was declared and filled by nothing, so every app read its own fields and no shared surface could ask the question once. `legalHold` is included deliberately: a hold overrides the nomination and the date above it, and a destruction date shown without it is actively misleading. The card renders its empty state on a case with no archival obligation, which is a real answer and not a gap. 🔴 THE KEY NAMES WERE THE OLD ONES AND SIX OF SEVEN RESOLVED TO NOTHING. `include` was `nomination, period, actionDate, status, basis, source, legalHold`. OpenRegister's ArchivalDecisionResolver does not emit four of those: it emits `appraisal`, `retentionPeriod`, `disposalDate` and `recordState`, and it is the resolver that aliases the record's own ZGW fields onto them (`archiveNomination` and `archiefnominatie` become `appraisal`, `archiveActionDate` becomes `disposalDate`, `archiveStatus` becomes `recordState`; see declaredArchivalFields()). So `basis` was the only key of the four that survived, the card rendered one row reading `Basis: record`, and the archive nomination, the retention period and the disposal date were absent from the case page entirely while still being written on the record. Measured 2026-09-10 from an e2e trace: the case's `@self._retention` carried `appraisal: retain_permanently` and `retentionPeriod: P10Y` while the card showed neither. The names here now match the resolver's own output. ⚠️ IT ALSO RENDERS THAT EMPTY STATE UNTIL nextcloud-vue SHIPS THE READER: the `_retention` keys named in `include` are resolved by CnObjectMetadataWidget only from the release that carries nextcloud-vue#1054, and 2.43.0 does not (checked against the installed package, not the range). On an older library every key filters out and the card reads its emptyLabel, which is degraded but not wrong. Bump the dependency when that release lands.",
-						"content": {
-							"layout": "horizontal",
-							"labelWidth": 130,
-							"include": [
-								"appraisal",
-								"retentionPeriod",
-								"disposalDate",
-								"recordState",
-								"basis",
-								"source",
-								"legalHold"
-							],
-							"title": "Archiving",
-							"emptyLabel": "No archiving rule applies to this case yet."
 						}
 					},
 					{
@@ -1782,7 +1760,7 @@
 						"gridX": 8,
 						"gridY": 2,
 						"gridWidth": 4,
-						"gridHeight": 3,
+						"gridHeight": 5,
 						"showTitle": true
 					},
 					{
@@ -1798,7 +1776,7 @@
 						"id": "9",
 						"widgetId": "initiator",
 						"gridX": 8,
-						"gridY": 5,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1807,7 +1785,7 @@
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 8,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1816,27 +1794,18 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 10,
+						"gridY": 12,
 						"gridWidth": 4,
-						"gridHeight": 4
+						"gridHeight": 7
 					},
 					{
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 8,
-						"gridY": 14,
+						"gridY": 19,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
-					},
-					{
-						"id": "12",
-						"widgetId": "case-archival",
-						"gridX": 8,
-						"gridY": 17,
-						"gridWidth": 4,
-						"gridHeight": 5,
-						"showTitle": false
 					}
 				],
 				"sidebar": {
@@ -4294,6 +4263,39 @@
 						"type": "handler"
 					}
 				],
+				"formSize": "large",
+				"formColumns": 2,
+				"_formNote": "The Add dialog on this page asked all 41 of caseType's properties, in one column, at default dialog width. Nothing was wrong with the dialog: CnFormDialog has taken `size` and `columns` since two-column forms shipped, but CnIndexPage passed neither, so the built-in Add form had no way to ask. The `case` create form on the Dashboard and the two contact pages is two columns already because it is an `open-form` HEADER ACTION, and CnActionButtons did forward both keys. Same app, same kind of record, two different forms, and no manifest key that explained the difference. nextcloud-vue 2.46.0 adds `formSize`/`formColumns` to CnIndexPage, CnDetailPage, CnObjectListWidget and CnObjectDataWidget, which is what these two keys reach.",
+				"includeFields": [
+					"title",
+					"identifier",
+					"category",
+					"handlingModel",
+					"confidentiality",
+					"processingDeadline",
+					"validFrom",
+					"isDraft",
+					"parentCaseType",
+					"description",
+					"purpose",
+					"trigger"
+				],
+				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
+				"fieldOverrides": {
+					"title": { "order": 1 },
+					"identifier": { "order": 2 },
+					"category": { "order": 3 },
+					"handlingModel": { "order": 4 },
+					"confidentiality": { "order": 5 },
+					"processingDeadline": { "order": 6 },
+					"validFrom": { "order": 7 },
+					"isDraft": { "order": 8 },
+					"parentCaseType": { "order": 9 },
+					"description": { "order": 10, "widget": "textarea" },
+					"purpose": { "order": 11, "widget": "textarea" },
+					"trigger": { "order": 12, "widget": "textarea" }
+				},
+				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
 				"folderSidebar": {
 					"source": "field",
