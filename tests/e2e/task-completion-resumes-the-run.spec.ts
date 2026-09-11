@@ -4,31 +4,33 @@ import type { APIRequestContext } from '@playwright/test'
  * The cutover, on the one seam nothing else isolates: a task created by a flow
  * step, completed through the ENGINE's verb, waking the run that asked for it.
  *
- * WHY THIS IS NOT ALREADY COVERED. `case-flow-live-journeys` walks the shipped
- * flow end to end and does complete a task, but it drives the worker after
- * every step, so a run that woke because `TaskCompletionResumeListener`
- * signalled it and a run that woke because its own 30-minute heartbeat came due
- * look identical from there. The heartbeat is the SAFETY NET
- * (`DossiqAskPersonNode` re-reads the task on re-entry, deliberately, so a lost
- * signal still delivers the answer eventually), which means the normal path can
- * be completely broken while every journey assertion stays green — just slower
- * by up to half an hour, on an instance where nobody is watching the clock.
+ * ⚠️ READ THIS BEFORE ADDING AN ASSERTION ON `resumeAt`. An earlier version of
+ * this file claimed to isolate dossiq's `TaskCompletionResumeListener` by
+ * watching `resumeAt` move from parked to due. **It cannot, and neither can
+ * anything else here**, because dossiq's listener is not the only one on the
+ * event.
  *
- * So this spec asserts the WAKE ITSELF, and it asserts it the only way that
- * separates the two: `resumeAt`. `FlowRunService::signal()` sets it to NOW;
- * `DossiqAskPersonNode::heartbeatAt()` sets it minutes into the future. A run
- * parked on a person carries a future `resumeAt`, and the instant after the
- * completion it must carry a past one. Nothing else about the run changes in
- * between, which is what makes the field the evidence.
+ * OpenRegister registers `UserTaskTerminalListener` on the SAME
+ * `TaskTerminalEvent`. It filters on nothing but "committed" and "carries a
+ * run uuid" — no state check at all — and hands the task to
+ * `FlowTaskBridge::continueRun()`, which calls `signal(run, payload: [])` and
+ * sets `resumeAt` to now. So the run is made due on EVERY terminal state,
+ * completion and cancellation alike, whether or not dossiq's listener does
+ * anything. An assertion that a cancelled task leaves the run parked can never
+ * pass, and an assertion that a completed one makes it due can never fail.
+ * Both were written here and both were wrong.
  *
- * AND THE REFUSAL, WHICH IS THE HALF THAT FAILS QUIETLY.
- * `TaskCompletionResumeListener` fires on every terminal state — the engine
- * dispatches `TaskTerminalEvent` for `completed`, `terminated` and `disabled`
- * alike — and only a COMPLETION is an answer. The other two are the question
- * being withdrawn, and a run that carried on past a cancelled ask would proceed
- * as though somebody had answered it. A guard that let them through would be
- * invisible in any journey that never cancels anything, so a cancelled task
- * gets its own case and its own run here.
+ * What this file pins instead is what a PERSON gets, which is real and was
+ * genuinely uncovered end to end: an answered ask advances its run to the end,
+ * and a WITHDRAWN ask fails the step instead of advancing it. The second is the
+ * one that fails quietly — a run that walked past a retracted question would be
+ * proceeding as though somebody had answered it, and any journey that never
+ * cancels anything stays green with that broken.
+ *
+ * The listener's own refusal — that it delivers no ANSWER for a terminated
+ * task — is unit-pinned in `TaskCompletionResumeListenerTest`, and that is the
+ * right level for it: two listeners share the event, so the refusal has no
+ * signature of its own in the run.
  *
  * THE RUN IS THIS SPEC'S OWN. It authors a two-step flow rather than using the
  * shipped `Case behandeling`: the shipped one reaches its ask through a
@@ -395,16 +397,21 @@ test.describe('A completed task wakes the run that asked for it', () => {
 		await invokeFlowTask(api, token, tasks.answered, 'complete')
 
 		const after = await readFlowRun(api, seeded.answeredRun)
-		// The wake, and the whole point of the file. A run still parked minutes
-		// out means TaskCompletionResumeListener did not signal — which is
-		// invisible in any test that drives the worker afterwards, because the
-		// node's heartbeat re-reads the task and delivers the same answer late.
+		// WHAT THIS DOES AND DOES NOT PROVE. It proves the case moves in
+		// seconds rather than on the node's 30-minute heartbeat, which is the
+		// difference a person waiting on the case actually experiences, and it
+		// is worth a test.
+		//
+		// It does NOT prove that dossiq's TaskCompletionResumeListener did it.
+		// OpenRegister's UserTaskTerminalListener signals the same run on the
+		// same event, so this would pass with dossiq's listener deleted. See
+		// the header: no assertion on a run can separate the two.
 		expect(
 			parkedForMs(after),
-			`The completion must make the run due. It is still parked ${Math.round(
-				parkedForMs(after) / 1000,
-			)}s out, where it was ${Math.round(parkedFor / 1000)}s out before — so `
-				+ 'nothing signalled it and only the heartbeat is left to deliver the answer.',
+			`Completing the task must make the run due rather than leaving it to the `
+				+ `heartbeat. It is still parked ${Math.round(
+					parkedForMs(after) / 1000,
+				)}s out, where it was ${Math.round(parkedFor / 1000)}s out before.`,
 		).toBeLessThanOrEqual(0)
 	})
 
@@ -441,43 +448,49 @@ test.describe('A completed task wakes the run that asked for it', () => {
 })
 
 test.describe('A withdrawn ask wakes nothing', () => {
-	test('cancelling the task leaves its run parked on the heartbeat', async () => {
+	test('cancelling the task fails the step instead of advancing it', async () => {
 		seeded.withdrawnRun = await startRunOn(seeded.withdrawnCase)
 		tasks.withdrawn = await askedTaskOn(
 			seeded.withdrawnCase,
 			seeded.withdrawnRun,
 		)
 
-		const before = await readFlowRun(api, seeded.withdrawnRun)
-		expect(parkedForMs(before)).toBeGreaterThan(60_000)
-
 		// `cancel` takes the task to `terminated`, and the engine dispatches
-		// TaskTerminalEvent for that exactly as it does for a completion. The
-		// listener sees both and must act on only one of them.
+		// TaskTerminalEvent for that exactly as it does for a completion. Both
+		// reach the same listeners; only one of them is an answer.
 		const cancelled = await invokeFlowTask(api, token, tasks.withdrawn, 'cancel')
 		expect(
 			String(cancelled.state ?? ''),
 			'The cancel verb must take the task to a terminal state that is NOT a '
-				+ 'completion, or this test proves nothing about the guard.',
+				+ 'completion, or this test proves nothing.',
 		).toBe('terminated')
 
-		const after = await readFlowRun(api, seeded.withdrawnRun)
+		const run = await advanceFlowRun(api, seeded.withdrawnRun)
+		const steps = (run.log ?? []) as Array<Record<string, unknown>>
+		const advanced = steps.filter(
+			(step) =>
+				String(step.transition ?? '') === ASK_NODE
+				&& String(step.status ?? '') === 'completed',
+		)
+
+		// THE assertion. A withdrawn ask is the question being retracted, and a
+		// run that walked on would be proceeding as though somebody had answered
+		// it. Nobody did.
 		expect(
-			String(after.status ?? ''),
-			'A withdrawn ask must leave the run suspended.',
-		).toBe('suspended')
+			advanced.length,
+			`A withdrawn ask must NOT advance its step. Log: ${JSON.stringify(run.log ?? [])}`,
+		).toBe(0)
 		expect(
-			parkedForMs(after),
-			'A cancelled task must NOT make the run due. A run resumed here would '
-				+ 'walk past the ask as though somebody had answered it, and nobody did.',
-		).toBeGreaterThan(60_000)
+			String(run.status ?? ''),
+			`A withdrawn ask must fail the run rather than let it reach its end. Log: ${JSON.stringify(run.log ?? [])}`,
+		).toBe('failed')
 	})
 
-	test("and the run that was woken is not disturbed by the other run's withdrawal", async () => {
-		// One listener serves every task on the instance, and it addresses the
-		// signal to the node the task names. A cancel that woke the wrong run
-		// would show here as the finished run being alive again.
+	test("and the run that was answered is not disturbed by the other run's withdrawal", async () => {
+		// The listeners serve every task on the instance and address the signal
+		// to the node the task names. A cancel that woke the wrong run would
+		// show here as the finished run being alive again, or walking further.
 		const run = await readFlowRun(api, seeded.answeredRun)
-		expect(String(run.status ?? '')).toBe('completed')
+		expect(['completed', 'stopped']).toContain(String(run.status ?? ''))
 	})
 })

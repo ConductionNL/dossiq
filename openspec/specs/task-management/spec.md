@@ -803,22 +803,30 @@ withdrawn ask would proceed as though somebody had answered it.
 - **WHEN** the task transitions to completed
 - **THEN** the run is signalled through `signalAs` with the completer as actor and the task's node addressed
 
-`@e2e task-completion-resumes-the-run.spec.ts` isolates the wake: the run is
-read before and after the completion, and the resume is what makes it due
-ahead of its heartbeat. `@e2e case-flow-live-journeys.spec.ts` drives the same
-resume inside the shipped journey. The seam call shape is pinned by
+`@e2e task-completion-resumes-the-run.spec.ts` pins that a completed ask makes
+its run due ahead of the heartbeat and advances it to the end. It does NOT
+attribute the wake to this listener: OpenRegister's `UserTaskTerminalListener`
+signals the same run on the same event, so no assertion on a run can separate
+them. `@e2e case-flow-live-journeys.spec.ts` drives the same resume inside the
+shipped journey. The seam call shape is pinned by
 TaskCompletionResumeListenerTest.
 
-#### Scenario: A withdrawn ask wakes nothing
+#### Scenario: A withdrawn ask advances nothing
 
 - **GIVEN** a suspended run awaiting a task
 - **WHEN** the task is cancelled rather than completed, so it reaches a terminal state that is not a completion
-- **THEN** no signal is delivered and the run stays parked on its own heartbeat
+- **THEN** the listener delivers no answer, the step does not advance, and the run fails rather than reaching its end
+
+⚠️ The run is still WOKEN, and that is correct: OpenRegister's own
+`UserTaskTerminalListener` signals on every terminal state so the run can
+re-enter the step and fail it promptly. A test that asserts a cancelled task
+leaves the run parked is measuring that listener, not this guard, and can
+never pass.
 
 `@e2e task-completion-resumes-the-run.spec.ts` cancels the task of a second
-run and reads that run's `resumeAt` back unchanged. Without this, the guard
-could be missing and every journey that only ever completes its tasks would
-stay green.
+run and asserts the ask never advances and the run fails. The listener's own
+refusal has no signature of its own in the run, because two listeners share
+the event, so it is unit-pinned in TaskCompletionResumeListenerTest.
 
 #### Scenario: A refusal from the seam withholds the resume
 

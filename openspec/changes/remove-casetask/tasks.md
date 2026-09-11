@@ -253,6 +253,91 @@ Only after 1 to 3 are green.
       second case has its task CANCELLED, and its run's `resumeAt` must not
       move.
 
+      🔴 **THE MUTATION CHECK RECORDED HERE EARLIER WAS NOT ONE, AND THE
+      CORRECTION IS THE MOST USEFUL THING IN THIS ENTRY.**
+
+      Two runs were made. The first went red on the wrong test (a fourth
+      assertion wrongly expected a run ending on `openregister.end` to finish
+      `completed`, where it finishes `stopped`), and because the file is
+      `serial`, the cancel test never executed and reported as SKIPPED. The
+      second, after that fix, went red on exactly the cancel test with its own
+      message, and was recorded here as clean.
+
+      **It was not clean. The cancel test fails identically WITHOUT the
+      mutation** — `-801ms` on the unmutated PR head against `-1073ms` under
+      the mutation. It had never passed on the branch. A mutation check has
+      two halves, red-with and green-without, and only the first was done:
+      what was actually measured was a test that always fails, which is the
+      mirror image of a test that cannot fail.
+
+      **Why it always failed, established from the code rather than by
+      re-running.** `resumeAt` cannot measure dossiq's listener, because
+      dossiq's listener is not the only one on the event. OpenRegister
+      registers `UserTaskTerminalListener` on the same `TaskTerminalEvent`; it
+      filters on nothing but "committed" and "carries a run uuid" — no state
+      check — and calls `FlowTaskBridge::continueRun()`, which calls
+      `signal(run, payload: [])`. So the run is made due on EVERY terminal
+      state, cancellation included, whatever dossiq does.
+
+      That is CORRECT behaviour, not a defect: the run has to re-enter so the
+      node can fail the step, which is this repo's own scenario "A withdrawn
+      ask fails the step ... WHEN the run next re-enters the step". Waking it
+      is how that happens in seconds instead of thirty minutes.
+
+      So the assertion was measuring another app's listener and calling it
+      dossiq's guard. The withdrawn-ask test now asserts what is real and was
+      genuinely uncovered: **a withdrawn ask does not advance its step, and its
+      run fails rather than reaching the end.** Dossiq's own refusal — that it
+      delivers no ANSWER for a terminated task — stays unit-pinned in
+      `TaskCompletionResumeListenerTest`, which is the right level, because two
+      listeners share the event and the refusal has no signature of its own in
+      the run.
+
+      The same correction applies to the completion half: "makes the run due at
+      once" would pass with dossiq's listener deleted. It is kept because the
+      behaviour matters to whoever is waiting on the case, and the comment now
+      says plainly what it does and does not prove.
+
+## 5. e2e
+
+- [x] 5.1 The nine specs that name the slug:
+      `case-flow-live-journeys`, `case-list-lenses`, `case-parties`,
+      `case-task-pane`, `checklist-per-status`, `dashboard-tiles`,
+      `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
+      Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
+      / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
+- [x] 5.2 One new spec for the cutover itself: a task created by a transition,
+      completed through the engine's verb, resuming a suspended flow run. That
+      is the path `TaskCompletionResumeListener` now serves and no existing
+      spec covers it end to end.
+
+      DONE as `tests/e2e/task-completion-resumes-the-run.spec.ts`, and what it
+      asserts is narrower than this line asked for, on purpose.
+
+      **The transition half was already covered and re-asserting it would have
+      proved nothing.** `checklist-per-status` drives a real transition, reads
+      the tasks it created out of `/api/flow-tasks`, and completes one through
+      the engine's verb. What no spec covered was the WAKE, and the reason it
+      went uncovered is the reason it needed its own file:
+      `case-flow-live-journeys` completes a task and then drives the flow
+      worker, so a run woken by `TaskCompletionResumeListener` and a run woken
+      by its own heartbeat are indistinguishable from there. The heartbeat is
+      the safety net by design (`DossiqAskPersonNode` re-reads the task on
+      re-entry), which means the listener can be entirely dead while every
+      journey assertion stays green and the only symptom is a case that moves
+      up to half an hour late.
+
+      So the new spec asserts the wake through the one field that separates
+      them. `FlowRunService::signal()` sets `resumeAt` to now;
+      `DossiqAskPersonNode::heartbeatAt()` sets it minutes out. The run is read
+      before and after the completion and must go from parked to due.
+
+      It also covers the half that fails SILENTLY and had no test at any level
+      above the unit: the engine announces terminality for `completed`,
+      `terminated` and `disabled` alike, and only a completion is an answer. A
+      second case has its task CANCELLED, and its run's `resumeAt` must not
+      move.
+
       **The first mutation run proved nothing, and it is worth recording why.**
       `proof/task-resume-withdrawn-guard` widened the listener's guard to
       accept all three terminal states, and the job went red — on the WRONG
@@ -544,47 +629,48 @@ on the archive, not on the work.
       first (the follow-up "Section 4 did NOT do" already names, whose subject
       is the spec rather than the schema), THEN repoint, THEN archive.
 
-### 7.2 🔴 THE WAKE ARRIVES AND ITS PAYLOAD DOES NOT
+### 7.2 🔴 TWO LISTENERS SIGNAL THE SAME RUN AND THE EMPTY PAYLOAD WINS
 
-Found 2026-09-11 by the spec 5.2 added, on its first CI run, and it is the
-kind of thing only that spec could have found: it is invisible unless you look
-at the wake and the answer separately.
+Found 2026-09-11 by the spec 5.2 added. The first filing of this blamed
+`RegistryStepDispatcher::scopeSignal()`; that was wrong, and the real cause is
+both simpler and worse.
 
-- [ ] 7.2 Establish why `DossiqAskPersonNode` records `recovered: true` on a
-      run the listener DID signal, and either fix it or correct what the flag
-      means.
+- [ ] 7.2 Stop OpenRegister's empty signal payload from overwriting dossiq's.
 
-      **The evidence, from the run's own log** (dossiq run 34577859220, the
-      answered case, both the first attempt and its retry):
+      **Two listeners are registered on `TaskTerminalEvent` and both signal
+      the run:**
 
-          "answer": { "decision": "completed", "taskId": "…",
-                      "node": "ask-the-handler", "recovered": true }
+      | Listener | Payload |
+      |---|---|
+      | dossiq `TaskCompletionResumeListener` | `decision`, `node`, `taskId`, `completedBy` |
+      | openregister `UserTaskTerminalListener` -> `FlowTaskBridge::continueRun()` | **`[]`** |
 
-      and in the same run, `resumeAt` moved from ~30 minutes out to due at the
-      instant the task was completed. Only `FlowRunService::signal()` does
-      that. So the signal WAS delivered.
+      `FlowRunService::signal()` assigns `$context['signal'] = $payload`
+      outright, so this is last-writer-wins, and the empty one is a legitimate
+      winner. That is exactly what the run log shows: the answer carries
+      `recovered: true`, which is `DossiqAskPersonNode::answerFor()`'s name for
+      `$signal === []`.
 
-      But `recovered` is `answerFor()`'s name for
-      `$context[FlowRunService::SIGNAL_CONTEXT_KEY]` being absent or empty —
-      the heartbeat path, where the node recovers an answer whose signal never
-      arrived. Both cannot be true of one wake.
-
-      **What it costs if the flag is the honest half.** `completedBy` is the
-      one thing the payload carries that the task row does not, so it never
-      reaches the answer bag and no step after the ask can route on who
+      **What it costs.** `completedBy` is the one thing the payload carries
+      that the task row does not, so nothing after the ask can route on who
       answered. And the node logs "a heartbeat delivered the answer to task X;
-      its completion signal never reached the run" at INFO on what is actually
-      the normal path — an alarm that fires every time, which is an alarm
-      nobody will read the day it is true.
+      its completion signal never reached the run" at INFO on the normal path,
+      every time — an alarm that always fires is an alarm nobody reads the day
+      it is true.
 
-      Where to look first: `RegistryStepDispatcher::scopeSignal()` strips the
-      signal from every node whose resume slot is not `isResuming()`, so the
-      question is whether the ask's slot reports resuming on a worker-driven
-      wake. That is OpenRegister's code, so this may be an openregister issue
-      rather than a dossiq one — establish which before writing a fix.
+      **It also makes dossiq's listener very nearly redundant.** Waking the
+      run is done by OpenRegister's listener already; the payload is dossiq's
+      only distinctive contribution, and it is discarded. Worth asking whether
+      the right fix is for dossiq to stop signalling and instead have
+      OpenRegister carry the outcome bag — `FlowTaskBridge::outcomeBagFor()`
+      already assembles exactly those fields, `completedBy` included, and
+      passes `[]` anyway.
 
-      NOT asserted in the spec. Pinning `recovered: false` would ship a red
-      test; pinning `recovered: true` would freeze what looks like the defect.
+      Likely an openregister issue rather than a dossiq one. Establish
+      ownership before writing a fix.
+
+      NOT asserted in the spec: pinning `recovered: false` ships a red test,
+      pinning `recovered: true` freezes the defect.
 
 ### 7.1 Follow-up: `tenantOnboardingTask`
 
