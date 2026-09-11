@@ -23,6 +23,21 @@
  * (`x-openregister-processing.logReads`), then finds that read again: in the
  * processing log, attributed to the catalogue row the schema declares, and in
  * the data subject's inzage export.
+ *
+ * NOT YET WATCHED FAILING. Everything these two tests guard is enforced in
+ * OpenRegister's PHP, so the only honest mutation is a server-side one, and
+ * that needs a change to the shared dev instance still awaiting approval. The
+ * mutation points, and the assertion each must redden:
+ *
+ *  - openregister lib/Controller/ProcessingLogController.php, involvedParty():
+ *    replace the findBySubject() result with `[]`. The export test must fail
+ *    on "the inzage export for <subject> lists the read of role <uuid>".
+ *  - openregister lib/Db/Verwerkingsactiviteit.php, jsonSerialize(): drop the
+ *    `status` key. The catalogue test must fail on "the catalogue row carries a
+ *    review status".
+ *  - openregister lib/Service/ProcessingLogService.php, logRead(): return
+ *    before the entry is buffered. Both tests must fail on their processing-log
+ *    poll ("is recorded in OpenRegister's processing log" and the export poll).
  */
 import type { APIRequestContext } from '@playwright/test'
 
