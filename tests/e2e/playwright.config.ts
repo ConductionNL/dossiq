@@ -161,7 +161,16 @@ export default defineConfig({
 	// a clean run is a weak argument, so the measurement wins over the caution.
 	// Raise it further only the same way: behind a run, not behind arithmetic.
 	//
-	//        5           measured below: FEWER results per minute, not more
+	//        5            405             392         0            0
+	//
+	// The five row is run 34601685356 on `development` (cd5e61bf), measured
+	// BEFORE sharding (#2497) merged: one instance, five workers, every test
+	// reached a verdict, 13 skipped by reason, finished in 29.6 of 38 minutes.
+	// That run is real and is not overturned below — a fast runner absorbs a
+	// fifth worker fine, which is exactly what "results per minute differs by
+	// single digits on a fast runner" predicts. It is one run on one runner
+	// speed, not a rate, so it cannot settle whether five is faster in
+	// general; the table below answers that with 100 jobs instead of one.
 	//
 	// 🔴 FOUR, AND FIVE WAS MEASURED AND MADE IT WORSE. #2485 raised this to
 	// five on the reasoning that the gap had become throughput. The runs it
@@ -279,13 +288,28 @@ export default defineConfig({
 		// after 65 of 122 tests. A bounded action fails in 15s with the same
 		// diagnostic and leaves the remaining budget for the real assertions.
 		actionTimeout: 15_000,
-		// 30s is held because it is measured to fit at four workers. Every
-		// `page.goto` in the slowest run's report (354 of them, run
-		// 34585313834, a slow runner) finished in at most 27.4s, p99 25.6s,
-		// and not one of the 87 four-worker jobs logged a goto timeout. At five
-		// workers the same loads ran 1.3x longer and 13 jobs logged 18 of them.
-		// When a load does overrun, this is the budget that names its URL.
-		navigationTimeout: 30_000,
+		// 45s, KEPT ACROSS THE WORKER REVERSION BELOW RATHER THAN LOWERED BACK
+		// TO 30s WITH IT. #2517 raised this from 30s after two of six sharded
+		// runs failed on `page.goto: Timeout 30000ms exceeded`, measured while
+		// this file still ran five workers per shard — the same contention the
+		// worker count above is now reverted for. Reverting workers to four
+		// removes most of the pressure that made 45s necessary, but nothing
+		// below is a fresh measurement AT four workers post-sharding: the
+		// four-worker page-load numbers this file cites (p99 25.6s, no goto
+		// timeout in 87 jobs) predate sharding, and #2513's own verification
+		// run still hit an unrelated 30s `page.goto` timeout that passed clean
+		// on re-run. So 45s stays as the measured margin until a run on THIS
+		// config says 30s holds; lowering it on arithmetic alone would repeat
+		// the mistake this comment exists to avoid. `helpers/nav.ts`'s
+		// `PAGE_LOAD_MS` equals this on purpose and moves with it.
+		//
+		// It must stay BELOW the 60s test budget, for the same reason
+		// `actionTimeout` above is bounded: a navigation allowed the whole
+		// budget hangs until the test dies and reports a bare timeout naming
+		// the test, not the load. 45s leaves 15s for the assertions. Lower it
+		// again only behind a run that shows loads finishing well inside it,
+		// not behind arithmetic.
+		navigationTimeout: 45_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
 		storageState: path.resolve(__dirname, '.auth', 'user.json'),

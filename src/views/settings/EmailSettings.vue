@@ -140,6 +140,52 @@
 		</div>
 
 		<div class="setting-row">
+			<NcCheckboxRadioSwitch
+				v-model="caseMatchingEnabled"
+				type="switch"
+				:disabled="!writable || loading"
+				data-testid="email-case-matching-enabled">
+				{{ t('dossiq', 'Link mail to cases by case number') }}
+			</NcCheckboxRadioSwitch>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Each user still switches it on for their own mailbox. Until then, nothing is linked.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_case_matching_pattern">{{
+				t('dossiq', 'Case number pattern')
+			}}</label>
+			<NcInputField
+				id="email_case_matching_pattern"
+				v-model="matching.email_case_matching_pattern"
+				:disabled="!writable || loading"
+				:placeholder="defaultCasePattern"
+				data-testid="email-case-matching-pattern" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.',
+					)
+				}}
+			</p>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Only the subject and the start of each message are read. A case number further down is missed.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
 			<label for="email_from_address">{{
 				t('dossiq', 'Sender address')
 			}}</label>
@@ -225,6 +271,7 @@
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
@@ -243,7 +290,15 @@ import { useObjectStore } from '../../store/modules/object.js'
  */
 export default {
 	name: 'EmailSettings',
-	components: { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcSelect },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcInputField,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcSelect,
+	},
+
 	data() {
 		return {
 			loading: true,
@@ -266,6 +321,18 @@ export default {
 				email_from_name: '',
 				email_recipient_allowlist: '',
 			},
+
+			// Email-to-case matching has its own endpoint, which validates the
+			// pattern before anything is stored.
+			matching: {
+				email_case_matching_enabled: 'no',
+				email_case_matching_pattern: '',
+			},
+
+			// Shown as the placeholder, so an empty field says what it means.
+			// Mirrors CaseNumberRecognizer::DEFAULT_PATTERN.
+			defaultCasePattern:
+				'/(?<![\\w-])(?:\\[)?(?:[A-Z]{2,10}-)?((?:19|20)\\d{2}-\\d{4,6})(?:\\])?(?![\\w-])/u',
 
 			caseTypes: [],
 			caseTypesLoading: false,
@@ -336,6 +403,30 @@ export default {
 			},
 		},
 
+		/**
+		 * The instance toggle as a switch; stored as `yes` or `no`.
+		 *
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		caseMatchingEnabled: {
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @return {boolean} Whether matching is on.
+			 */
+			get() {
+				return this.matching.email_case_matching_enabled === 'yes'
+			},
+
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @param {boolean} value Whether matching is on.
+			 * @return {void}
+			 */
+			set(value) {
+				this.matching.email_case_matching_enabled = value ? 'yes' : 'no'
+			},
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
@@ -352,6 +443,7 @@ export default {
 	 */
 	async mounted() {
 		await this.load()
+		await this.loadMatching()
 		await this.loadCaseTypes()
 	},
 
@@ -379,6 +471,74 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Read the email-to-case matching switch and pattern.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async loadMatching() {
+			try {
+				const response = await fetch(
+					generateUrl(
+						'/apps/dossiq/api/settings/email-case-matching/instance',
+					),
+					{ headers: { requesttoken: OC.requestToken } },
+				)
+				if (response.ok) {
+					const data = await response.json()
+					Object.keys(this.matching).forEach((key) => {
+						if (data[key] !== undefined && data[key] !== null) {
+							this.matching[key] = String(data[key])
+						}
+					})
+				}
+			} catch {
+				// Non-fatal: the switch stays off, which is the stored default.
+			}
+		},
+
+		/**
+		 * Save the matching switch and pattern first, so a refused pattern
+		 * stops the whole save before anything is written.
+		 *
+		 * @return {Promise<boolean>} Whether the matching settings were saved.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async saveMatching() {
+			const response = await fetch(
+				generateUrl(
+					'/apps/dossiq/api/settings/email-case-matching/instance',
+				),
+				{
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: OC.requestToken,
+					},
+					body: JSON.stringify(this.matching),
+				},
+			)
+			if (response.status === 400) {
+				this.testResult = {
+					type: 'error',
+					message: t(
+						'dossiq',
+						'This pattern cannot find case numbers. Check that it is valid and has a capture group.',
+					),
+				}
+				return false
+			}
+			if (!response.ok) {
+				this.testResult = {
+					type: 'error',
+					message: t('dossiq', 'Could not save mailbox settings.'),
+				}
+				return false
+			}
+			return true
 		},
 
 		/**
@@ -411,6 +571,9 @@ export default {
 			this.saving = true
 			this.testResult = null
 			try {
+				if ((await this.saveMatching()) === false) {
+					return
+				}
 				const payload = { ...this.form }
 				// Never resend the mask back as a real password.
 				if (payload.email_imap_password === '') {
