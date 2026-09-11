@@ -298,12 +298,16 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 			}),
 		)
 
+		// `description` carries the display name on this schema, and the
+		// catalogue picker labels its options with it. There is no `title`
+		// field here, and a missing `description` is a 400 at seed time.
+		documentTypeTitle = `${RUN_PREFIX} Aanvraag`
 		const documentType = await createObject(api, token, 'informatieobjecttype', {
-			title: `${RUN_PREFIX} Aanvraag`,
+			description: documentTypeTitle,
 			informatieobjectcategorie: 'incoming',
+			vertrouwelijkheidaanduiding: 'openbaar',
 		})
 		documentTypeId = objectId(documentType)
-		documentTypeTitle = String(documentType.title)
 
 		uploadCaseId = objectId(
 			await seedCase(api, token, {
@@ -353,88 +357,80 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 	test('an executable is refused before storage, by extension and by magic bytes alike', async ({
 		page,
 	}) => {
-		// THE CONTROL FIRST. Without a successful upload through the same
-		// endpoint with the same metadata, every rejection below would also be
-		// explained by a malformed request, and the test would "prove" the
-		// guard while proving only that the call was wrong.
-		const accepted = await page.request.post(uploadUrl(uploadCaseId), {
-			headers: writeHeaders(),
-			multipart: {
-				metadata: JSON.stringify({
-					informatieobjecttype: documentTypeId,
-					title: `${RUN_PREFIX} legitimate upload`,
-				}),
+		/**
+		 * Post one file to the dossier endpoint and return its per-file result.
+		 *
+		 * @param name   The filename as the browser would send it.
+		 * @param buffer The bytes.
+		 * @return The HTTP status and the single per-file result entry.
+		 */
+		const upload = async (name: string, buffer: Buffer) => {
+			const res = await page.request.post(uploadUrl(uploadCaseId), {
+				headers: writeHeaders(),
+				multipart: {
+					metadata: JSON.stringify({
+						informatieobjecttype: documentTypeId,
+						title: `${RUN_PREFIX} ${name}`,
+					}),
 
-				files: {
-					name: 'aanvraag.pdf',
-					mimeType: 'application/pdf',
-					buffer: PDF_BYTES,
+					files: { name, mimeType: 'application/octet-stream', buffer },
 				},
-			},
-		})
+			})
+			const body = await res.json()
+			return { status: res.status(), result: body.results[0] }
+		}
+
+		// THE CONTROL FIRST, and it is about the MESSAGE rather than the status.
+		// Without it every rejection below would also be explained by a malformed
+		// request, and the test would "prove" the guard while proving only that
+		// the call was wrong. It deliberately does not require a 201: whether the
+		// downstream ZGW listener accepts the document varies by which apps an
+		// instance has installed, and that is not what this scenario is about.
+		// What must be true everywhere is that a plain PDF is never refused AS AN
+		// EXECUTABLE.
+		const control = await upload('aanvraag.pdf', PDF_BYTES)
 		expect(
-			accepted.status(),
-			'a plain PDF must upload, so a rejection below is about the content',
-		).toBe(201)
+			String(control.result.error ?? ''),
+			'a plain PDF must not be screened out as an executable, or the two '
+				+ 'refusals below say nothing about the content',
+		).not.toMatch(/[Ee]xecutable/)
 
 		// 1. The extension half.
-		const byExtension = await page.request.post(uploadUrl(uploadCaseId), {
-			headers: writeHeaders(),
-			multipart: {
-				metadata: JSON.stringify({
-					informatieobjecttype: documentTypeId,
-					title: `${RUN_PREFIX} blocked by extension`,
-				}),
-
-				files: {
-					name: 'malware.exe',
-					mimeType: 'application/octet-stream',
-					buffer: Buffer.from('harmless text, blocked on its name'),
-				},
-			},
-		})
-		// 422, not 201: the controller answers UNPROCESSABLE when no file of
-		// the request was created. A 201 here would mean the executable landed.
-		expect(byExtension.status()).toBe(422)
-		const extensionBody = await byExtension.json()
-		expect(extensionBody.results[0].success).toBe(false)
+		const byExtension = await upload(
+			'malware.exe',
+			Buffer.from('harmless text, blocked on its name'),
+		)
+		// 422, not 201: the controller answers UNPROCESSABLE when no file of the
+		// request was created. A 201 here would mean the executable landed.
+		expect(byExtension.status).toBe(422)
+		expect(byExtension.result.success).toBe(false)
 		// The requirement asks the error to state the filename AND the reason.
-		expect(String(extensionBody.results[0].error)).toContain('malware.exe')
-		expect(String(extensionBody.results[0].error)).toMatch(/[Ee]xecutable/)
+		expect(String(byExtension.result.error)).toContain('malware.exe')
+		expect(String(byExtension.result.error)).toMatch(/[Ee]xecutable/)
 
 		// 2. The magic-byte half, on a file whose extension is allowed. This is
 		// the clause an extension-only check passes while failing the
 		// requirement, so it is asserted separately rather than assumed.
-		const byMagic = await page.request.post(uploadUrl(uploadCaseId), {
-			headers: writeHeaders(),
-			multipart: {
-				metadata: JSON.stringify({
-					informatieobjecttype: documentTypeId,
-					title: `${RUN_PREFIX} blocked by magic bytes`,
-				}),
-
-				files: {
-					name: 'besluit.pdf',
-					mimeType: 'application/pdf',
-					buffer: DISGUISED_EXE_BYTES,
-				},
-			},
-		})
+		const byMagic = await upload('besluit.pdf', DISGUISED_EXE_BYTES)
 		expect(
-			byMagic.status(),
+			byMagic.status,
 			'an MZ header under a .pdf name must be refused too, or the '
 				+ "requirement's magic-byte clause is unenforced",
 		).toBe(422)
-		const magicBody = await byMagic.json()
-		expect(magicBody.results[0].success).toBe(false)
-		expect(String(magicBody.results[0].error)).toContain('besluit.pdf')
+		expect(byMagic.result.success).toBe(false)
+		expect(String(byMagic.result.error)).toContain('besluit.pdf')
+		expect(String(byMagic.result.error)).toMatch(/[Ee]xecutable/)
 
 		// "MUST be rejected before the file is written to disk": the register is
-		// the only witness to that, and it must hold exactly the control upload.
+		// the only witness to that, and neither name may appear in it.
 		const stored = await documentsOnCase(uploadCaseId)
-		expect(stored).toHaveLength(1)
-		const survivor = await showObject(api, 'informatieobject', stored[0])
-		expect(String(survivor.fileName)).toBe('aanvraag.pdf')
+		const names: string[] = []
+		for (const id of stored) {
+			const row = await showObject(api, 'informatieobject', id)
+			names.push(String(row.fileName ?? ''))
+		}
+		expect(names).not.toContain('malware.exe')
+		expect(names).not.toContain('besluit.pdf')
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005a-drag-drop-triggers-metadata-dialog-before-upload
