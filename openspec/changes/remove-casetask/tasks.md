@@ -251,8 +251,24 @@ Only after 1 to 3 are green.
       above the unit: the engine announces terminality for `completed`,
       `terminated` and `disabled` alike, and only a completion is an answer. A
       second case has its task CANCELLED, and its run's `resumeAt` must not
-      move. Mutation-checked on `proof/task-resume-withdrawn-guard`, which
-      widens the listener's guard to accept all three terminal states.
+      move.
+
+      **The first mutation run proved nothing, and it is worth recording why.**
+      `proof/task-resume-withdrawn-guard` widened the listener's guard to
+      accept all three terminal states, and the job went red — on the WRONG
+      test. A fourth assertion in the same file expected the finished run's
+      status to be `completed`, where a run ending on `openregister.end`
+      finishes as `stopped`. That failure had nothing to do with the mutation,
+      and because the file runs `serial`, the cancel test never ran at all: it
+      reported as skipped, which is not a result.
+
+      Two lessons, both already in the fleet memory and both re-earned here:
+      a red job is not a mutation check until you have read WHICH test failed
+      and with what message, and a `serial` file can only be mutation-checked
+      one assertion at a time, because the first failure hides every test
+      after it.
+
+      The status vocabulary is fixed and the mutation re-run.
 - [x] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
@@ -505,6 +521,48 @@ on the archive, not on the work.
       So the order is fixed: bring `task-management/spec.md` up to the engine
       first (the follow-up "Section 4 did NOT do" already names, whose subject
       is the spec rather than the schema), THEN repoint, THEN archive.
+
+### 7.2 🔴 THE WAKE ARRIVES AND ITS PAYLOAD DOES NOT
+
+Found 2026-09-11 by the spec 5.2 added, on its first CI run, and it is the
+kind of thing only that spec could have found: it is invisible unless you look
+at the wake and the answer separately.
+
+- [ ] 7.2 Establish why `DossiqAskPersonNode` records `recovered: true` on a
+      run the listener DID signal, and either fix it or correct what the flag
+      means.
+
+      **The evidence, from the run's own log** (dossiq run 34577859220, the
+      answered case, both the first attempt and its retry):
+
+          "answer": { "decision": "completed", "taskId": "…",
+                      "node": "ask-the-handler", "recovered": true }
+
+      and in the same run, `resumeAt` moved from ~30 minutes out to due at the
+      instant the task was completed. Only `FlowRunService::signal()` does
+      that. So the signal WAS delivered.
+
+      But `recovered` is `answerFor()`'s name for
+      `$context[FlowRunService::SIGNAL_CONTEXT_KEY]` being absent or empty —
+      the heartbeat path, where the node recovers an answer whose signal never
+      arrived. Both cannot be true of one wake.
+
+      **What it costs if the flag is the honest half.** `completedBy` is the
+      one thing the payload carries that the task row does not, so it never
+      reaches the answer bag and no step after the ask can route on who
+      answered. And the node logs "a heartbeat delivered the answer to task X;
+      its completion signal never reached the run" at INFO on what is actually
+      the normal path — an alarm that fires every time, which is an alarm
+      nobody will read the day it is true.
+
+      Where to look first: `RegistryStepDispatcher::scopeSignal()` strips the
+      signal from every node whose resume slot is not `isResuming()`, so the
+      question is whether the ask's slot reports resuming on a worker-driven
+      wake. That is OpenRegister's code, so this may be an openregister issue
+      rather than a dossiq one — establish which before writing a fix.
+
+      NOT asserted in the spec. Pinning `recovered: false` would ship a red
+      test; pinning `recovered: true` would freeze what looks like the defect.
 
 ### 7.1 Follow-up: `tenantOnboardingTask`
 

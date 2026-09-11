@@ -408,13 +408,35 @@ test.describe('A completed task wakes the run that asked for it', () => {
 		).toBeLessThanOrEqual(0)
 	})
 
-	test('and one worker pass then carries the run to the end', async () => {
+	test('and one worker pass then carries the run past the ask to a terminal state', async () => {
 		const run = await advanceFlowRun(api, seeded.answeredRun)
 
+		// 🔴 NOT `completed`. This assertion said `toBe('completed')` and failed
+		// on a run that had walked its whole graph correctly: a run that ends on
+		// `openregister.end` finishes as **`stopped`** ("Flow stopped"), and
+		// `FlowRun::STATUS_COMPLETED` is a different terminal state. Guessing a
+		// vocabulary is how a fixture bug gets read as a product bug — the run
+		// was fine and the test was wrong.
+		//
+		// So the assertion is on what this file is actually about: the run is no
+		// longer waiting on anybody, and the step that was waiting advanced.
 		expect(
-			String(run.status ?? ''),
-			`The woken run must walk on past the ask to its end. Log: ${JSON.stringify(run.log ?? [])}`,
-		).toBe('completed')
+			['completed', 'stopped'],
+			`The woken run must reach a terminal state, not still be waiting. Log: ${JSON.stringify(run.log ?? [])}`,
+		).toContain(String(run.status ?? ''))
+
+		// The ask itself advanced, rather than the run ending some other way.
+		const steps = (run.log ?? []) as Array<Record<string, unknown>>
+		const advanced = steps.filter(
+			(step) =>
+				String(step.transition ?? '') === ASK_NODE
+				&& String(step.status ?? '') === 'completed',
+		)
+		expect(
+			advanced.length,
+			'The ask must have advanced exactly once. Never is the wake lost; twice '
+				+ 'is the run walking the same question a second time.',
+		).toBe(1)
 	})
 })
 
