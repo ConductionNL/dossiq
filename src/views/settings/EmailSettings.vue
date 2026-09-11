@@ -298,6 +298,7 @@ export default {
 		NcNoteCard,
 		NcSelect,
 	},
+
 	data() {
 		return {
 			loading: true,

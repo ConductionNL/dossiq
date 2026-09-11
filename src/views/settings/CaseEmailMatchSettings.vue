@@ -109,7 +109,7 @@ const SETTINGS_URL = '/apps/dossiq/api/settings/email-case-matching'
  * What each refusal code the matcher records means to the user.
  *
  * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
- * @return {object<string, string>} The messages, by code.
+ * @return {{[key: string]: string}} The messages, by code.
  */
 export function refusalMessages() {
 	return {
