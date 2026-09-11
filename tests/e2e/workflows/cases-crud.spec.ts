@@ -142,19 +142,18 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(row).toContainText(assignedIdentifier)
 	})
 
-	// FIXME(#719): the case DETAIL page never displays the zaaknummer. A case
-	// with assigned identifier 2026-0001 renders CASE / title / Assignee /
-	// Case type / Confidentiality, with the identifier absent from the page
-	// text entirely. It DOES render in the case LIST, which is why the
-	// list-view assertion above passes.
+	// UNPARKED. The old FIXME(#719) said the case detail page never displays
+	// the zaaknummer, and at the time it was right: the page had no line for
+	// it. `CaseDetail` in src/manifest.json now declares
+	// `config.subtitleField: "identifier"`, whose own `_subtitleNote` records
+	// why ("the case page did not say which case you are on. `identifier` is
+	// the case number, and it reads under the title"). So the gap this test
+	// pinned was closed by the page gaining the field, and the test can hold
+	// it there.
 	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): the case DETAIL page never displays the zaaknummer. A case with assigned identifier 2026-0001 renders CASE / title / Assignee / Case type / Confidentiality, with the identifier absent from the page text entirely. It DOES render in the case LIST, which is why the list-view assertion above passes.',
-		)
 		const title = `${RUN_PREFIX} Detail case`
 		const identifier = `${RUN_PREFIX}-DETAIL`
 		const kase = await seedCase(api, token, {
@@ -324,19 +323,31 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await dismissSupportDialog(page)
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 
-		const customDialog = page.locator('.case-create-dialog')
-		const isCustom = await customDialog.isVisible().catch(() => false)
-		test.fixme(
-			!isCustom,
-			'BUG #427: Cases "Add" opens the generic empty CnFormDialog instead of CaseCreateDialog — case fields do not resolve, cannot create via UI.',
-		)
+		// UNPARKED, AND THE CONDITION IT STOOD DOWN ON COULD NEVER BECOME TRUE.
+		// `test.fixme(!isCustom, …)` waited for `.case-create-dialog` to
+		// appear. `CaseCreateDialog` does not exist — neither that class nor
+		// the component name occurs anywhere under src/ — so the guard read as
+		// an environment condition while being permanently satisfied, which is
+		// the shape the skip-discipline gate exists to catch. The generic
+		// CnFormDialog the FIXME called a bug IS the shipped create form; the
+		// `friendly-case-create-form` spec is the one that says so.
+		const dialog = page.getByRole('dialog').filter({
+			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
+		})
+		await expect(dialog).toBeVisible({ timeout: 30_000 })
 
 		const newTitle = `${RUN_PREFIX} UI created case`
-		await customDialog.getByPlaceholder('Enter case title').fill(newTitle)
-		// Pick the first available case type in the combobox.
-		await customDialog.getByRole('combobox').first().click()
+		// `data-cn-field` is the form's per-field hook; the input inside it is
+		// what takes the text. Addressing the wrapper alone fills nothing.
+		await dialog.locator('[data-cn-field="title"] input').first().fill(newTitle)
+		// Case type is required by the create form; pick the first offered.
+		await dialog
+			.locator('[data-cn-field="caseType"]')
+			.getByRole('combobox')
+			.first()
+			.click()
 		await page.getByRole('option').first().click()
-		await customDialog.getByRole('button', { name: 'Create case' }).click()
+		await dialog.getByRole('button', { name: 'Create' }).click()
 
 		// Persistence: the new case shows up in the API listing and the list.
 		await expect

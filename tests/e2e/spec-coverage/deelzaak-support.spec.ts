@@ -214,10 +214,7 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
-		)
+		// PROBE: fixme removed to measure the current behaviour on CI.
 		const opened = await openCasesListOrSkip(page)
 		if (!opened) return
 
