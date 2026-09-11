@@ -46,10 +46,11 @@ import type { APIRequestContext, Page } from '@playwright/test'
  *   FLOW_WORKER_CMD='docker exec -u www-data dossiq-proof-nextcloud-1 \
  *     php occ background-job:execute <FlowRunWorker job id> --force-execute'
  *
- * WHAT IS GENUINELY ABSENT ON CI: decidiq. The CI job installs openregister
- * and nothing else beside dossiq, so `dossiq.requestDecision` fails closed
- * there, which is its specified behaviour. The three journeys that conclude a
- * decision skip naming that; the supplement loop, the complete case and the
+ * WHAT CAN BE GENUINELY ABSENT: decidiq. It is an optional peer, and without it
+ * `dossiq.requestDecision` fails closed, which is its specified behaviour. The
+ * three journeys that conclude a decision skip naming that where decidiq is
+ * not installed; CI installs it (additional-apps in code-quality.yml), so
+ * there they run. The supplement loop, the complete case and the
  * traceability read run on every instance.
  *
  * 🔴 IT REFUSES TO PASS ON AN ABSENT PRECONDITION. A missing flow, a missing
@@ -97,6 +98,15 @@ const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin
 const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
 const OR = '/index.php/apps/openregister/api'
 
+/**
+ * The case header's status badge, the one place the CURRENT status is shown.
+ *
+ * A status name cannot be asserted on `body`: the steps widget lists every
+ * status of the case type, so "In behandeling" is on the page whatever the case
+ * is in, and "Wacht op aanvulling" is never absent from it.
+ */
+const STATUS_BADGE = '[data-testid="case-header-status"]'
+
 /** Copy the applicant supplies when asked to complete their case. */
 const SUPPLIED_DESCRIPTION =
 	'Aanvulling: bouwtekening, constructieberekening en situatieschets zijn nu bijgevoegd.'
@@ -104,8 +114,8 @@ const SUPPLIED_DESCRIPTION =
 /**
  * Why the three decision journeys stand down without decidiq.
  *
- * decidiq is an optional peer of dossiq, not a dependency, and the CI job
- * does not install it. `dossiq.requestDecision` then FAILS CLOSED
+ * decidiq is an optional peer of dossiq, not a dependency, so an instance can
+ * lack it. `dossiq.requestDecision` then FAILS CLOSED
  * (ContractDecisionDelegationService throws "the decision app is not
  * installed"), so the run stops on its first decision and there is nothing in
  * decidiq to conclude. That is a real absence the app does not control, not a
@@ -113,8 +123,8 @@ const SUPPLIED_DESCRIPTION =
  */
 const DECIDIQ_ABSENT =
 	'decidiq is not installed, so dossiq.requestDecision fails closed and raises no '
-	+ 'decision to conclude. The CI job installs only openregister beside dossiq '
-	+ '(additional-apps in .github/workflows/code-quality.yml).'
+	+ 'decision to conclude. Install decidiq beside dossiq to run these journeys '
+	+ '(CI does, through additional-apps in .github/workflows/code-quality.yml).'
 
 type Json = Record<string, any>
 
@@ -673,7 +683,7 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 			),
 		)
 		expect(status).toBe('Wacht op aanvulling')
-		await expect(page.locator('body')).toContainText('Wacht op aanvulling')
+		await expect(page.locator(STATUS_BADGE)).toContainText('Wacht op aanvulling')
 
 		await page.goto(`/index.php/apps/dossiq/tasks/${applicantTask}`, {
 			waitUntil: 'domcontentloaded',
@@ -712,7 +722,7 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 			status,
 			`Completing the supplement task must resume the run at the step that asked and re-check completeness. ${await describeRun(api, incompleteRun)}`,
 		).toBe('In behandeling')
-		await expect(page.locator('body')).toContainText('In behandeling')
+		await expect(page.locator(STATUS_BADGE)).toContainText('In behandeling')
 
 		// It is the SAME run that continues, on to the first decision.
 		const run = await getJson(api, `${OR}/flow-runs/${incompleteRun}`)
@@ -780,7 +790,12 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 			status,
 			`A complete case must pass the completeness check. ${await describeRun(api, completeRun)}`,
 		).toBe('In behandeling')
-		await expect(page.locator('body')).not.toContainText('Wacht op aanvulling')
+		// Positive first: `not.toContainText` on a badge that failed to render
+		// would pass, so the badge must be shown to hold the right status.
+		await expect(page.locator(STATUS_BADGE)).toContainText('In behandeling')
+		await expect(page.locator(STATUS_BADGE)).not.toContainText(
+			'Wacht op aanvulling',
+		)
 	})
 
 	test('Then two decisions are raised in decidiq, and concluding each moves the run on', async () => {
@@ -970,7 +985,7 @@ test.describe('Case flow, live: the shipped flow walked on cases this spec files
 			`The case must carry its decision document before it closes. ${await describeRun(api, completeRun)}`,
 		).toContain('Besluit op de aanvraag')
 		expect(names.get(String(closed.status))).toBe('Afgehandeld')
-		await expect(page.locator('body')).toContainText('Afgehandeld')
+		await expect(page.locator(STATUS_BADGE)).toContainText('Afgehandeld')
 
 		// `stopped` is the platform's word for a run that reached its end
 		// node: `openregister.end` (EndNode) throws FlowStop when items reach
