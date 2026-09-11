@@ -189,7 +189,14 @@ async function openIndex(
 ): Promise<void> {
 	const qs = new URLSearchParams(query).toString()
 	for (const base of [`/apps/${REGISTER}`, `/index.php/apps/${REGISTER}`]) {
-		await page.goto(`${base}${route}?${qs}`)
+		// `domcontentloaded`, NOT the default `load`. Nextcloud's notification
+		// poll keeps the network busy, so the load event waits for something
+		// that does not settle on a loaded rig: every test in this file died
+		// here at load average 50 while the page itself rendered. The SPA
+		// mounts after DOM ready and the list assertion below proves the mount.
+		await page.goto(`${base}${route}?${qs}`, {
+			waitUntil: 'domcontentloaded',
+		})
 		await dismissSupportDialog(page)
 		if (new URL(page.url()).pathname.endsWith(route)) {
 			await expect(
