@@ -26,7 +26,7 @@
 			<p>
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.',
 					)
 				}}
@@ -125,7 +125,7 @@ export default {
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		goToSettings() {
-			window.location.href = '/settings/admin/procest'
+			window.location.href = '/settings/admin/dossiq'
 		},
 	},
 }

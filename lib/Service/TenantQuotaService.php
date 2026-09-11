@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -80,11 +81,13 @@ class TenantQuotaService {
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -141,6 +144,12 @@ class TenantQuotaService {
 	/**
 	 * Get the quota row for (tenant, type).
 	 *
+	 * `findAll()` returns `ObjectEntity` objects. This method used to return
+	 * one from a method typed `?array`; the `TypeError` was caught below and
+	 * read as "no quota row", and `consume()` allows a tenant with no row. So
+	 * every quota allowed everything. The row is read as an array first, and
+	 * the array keeps the object's `id`, which `persistQuota()` updates by.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $quotaType Type.
 	 *
@@ -172,7 +181,7 @@ class TenantQuotaService {
 				]
 			);
 			if (is_array($rows) === true && count($rows) > 0) {
-				return $rows[0];
+				return $this->quotaRowAsArray(row: $rows[0]);
 			}
 
 			return null;
@@ -180,6 +189,27 @@ class TenantQuotaService {
 			return null;
 		}//end try
 	}//end getQuota()
+
+	/**
+	 * Read one tenantQuota row as an array, whatever shape it arrives in.
+	 *
+	 * Public because `ResetMonthlyQuotasJob` reads the same rows through
+	 * `findAll()` and hands each one to `resetIfDue()`, which takes an array.
+	 *
+	 * @param mixed $row One findAll() row: an `ObjectEntity` or an array.
+	 *
+	 * @return array<string,mixed>|null The row, or null when it carries nothing readable.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-real-time-quota-enforcement-req-005-b-req-005-c
+	 */
+	public function quotaRowAsArray(mixed $row): ?array {
+		$data = $this->rowNormaliser->normalise(row: $row)['data'];
+		if ($data === []) {
+			return null;
+		}
+
+		return $data;
+	}//end quotaRowAsArray()
 
 	/**
 	 * Decide what to do for the next request — given the current quota row

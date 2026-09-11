@@ -150,8 +150,9 @@ class MandateValidationMiddlewareTest extends TestCase {
 	 * With no tenant bound the middleware returns before it asks anything, so
 	 * the mandate matrix applies only to requests some earlier middleware
 	 * bound. Named for what it is so a green suite cannot be read as "every
-	 * write is mandate-checked": see TenantScopedLookupsTest for why, on a real
-	 * install today, no request is bound.
+	 * write is mandate-checked". Until 2026-09-11 that was every request on a
+	 * real install, because the membership lookup dropped every row
+	 * OpenRegister returned; TenantScopedLookupsTest holds it to the fix.
 	 *
 	 * @return void
 	 */

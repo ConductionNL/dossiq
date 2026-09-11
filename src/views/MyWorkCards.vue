@@ -21,6 +21,7 @@
 		:columns="columns"
 		:sidebar="sidebar"
 		:showViewAction="false"
+		:rowClickToView="true"
 		:sortKey="sortConfig.key"
 		:sortOrder="sortConfig.order"
 		@view="openCase"

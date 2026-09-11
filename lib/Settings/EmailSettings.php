@@ -66,6 +66,8 @@ class EmailSettings implements IDelegatedSettings {
 		'email_from_address',
 		'email_from_name',
 		'email_recipient_allowlist',
+		'email_case_matching_enabled',
+		'email_case_matching_pattern',
 	];
 
 	/**
