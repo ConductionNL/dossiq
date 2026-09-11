@@ -225,10 +225,7 @@ async function orPost(
  * @param api    Authenticated request context.
  * @param caseId The case uuid, which the engine stores as `objectUuid`.
  */
-async function tasksOnCase(
-	api: APIRequestContext,
-	caseId: string,
-): Promise<Json[]> {
+async function tasksOnCase(api: APIRequestContext, caseId: string): Promise<Json[]> {
 	return listFlowTasks(api, { scope: 'all', objectUuid: caseId, limit: '50' })
 }
 
@@ -438,7 +435,10 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		])
 		seeded.transitionCase = objectId(transitionCase)
 		seeded.flowCase = objectId(flowCase)
-		expect(seeded.transitionCase, 'The transition case must carry an id.').not.toBe('')
+		expect(
+			seeded.transitionCase,
+			'The transition case must carry an id.',
+		).not.toBe('')
 		expect(seeded.flowCase, 'The flow case must carry an id.').not.toBe('')
 
 		// start -> ask a person -> mark the case -> end.
@@ -606,7 +606,7 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		).toBeFalsy()
 	})
 
-	test('completing a suspended run\'s task through the engine verb resumes the run and moves the case', async () => {
+	test("completing a suspended run's task through the engine verb resumes the run and moves the case", async () => {
 		// The seed, the completion and a worker pass, on a rig where a page
 		// load is not the slow part but a flow walk can be.
 		test.setTimeout(180_000)
@@ -623,7 +623,10 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 			sync: true,
 		})
 		seeded.runUuid = String(run.uuid ?? '')
-		expect(seeded.runUuid, 'The run endpoint must answer with the run it made.').not.toBe('')
+		expect(
+			seeded.runUuid,
+			'The run endpoint must answer with the run it made.',
+		).not.toBe('')
 
 		expect(
 			String(run.status ?? ''),
