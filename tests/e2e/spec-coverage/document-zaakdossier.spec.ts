@@ -262,8 +262,14 @@ async function seedDocument(
  * @return The linked informatieobject ids.
  */
 async function documentsOnCase(onCase: string): Promise<string[]> {
+	// A BARE key, not `filter[case]`. OpenRegister's objects endpoint reads
+	// bare keys and treats a `filter[...]` key as the empty set, so the wrong
+	// grammar here would answer "no documents" and make every count assertion
+	// below pass for the wrong reason. The client-side filter after it is the
+	// belt to that brace.
 	const joins = await listObjects(api, 'zaakinformatieobject', {
-		_limit: '200',
+		case: onCase,
+		_limit: '500',
 	})
 	return joins
 		.filter((row: any) => String(row.case ?? '') === onCase)

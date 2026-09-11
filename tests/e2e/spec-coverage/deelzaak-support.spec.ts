@@ -483,7 +483,11 @@ async function openSubCasesPage(page, id: string): Promise<void> {
 	).toBeVisible({ timeout: 30_000 })
 
 	await expect(
-		page.getByRole('button', { name: /Delete case|Zaak verwijderen/i }).first(),
+		page
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
+			.first(),
 		'DeelzaakList must render its Delete case action once the parent has '
 			+ 'loaded — the second half of the proof that this page painted',
 	).toBeVisible({ timeout: 15_000 })
@@ -644,7 +648,10 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		// register, and only the register can answer it.
 		let created: any
 		await expect(async () => {
-			const rows = await listObjects(api, 'case', { _limit: '200' })
+			const rows = await listObjects(api, 'case', {
+				parentCase: eligibleParentId,
+				_limit: '500',
+			})
 			created = rows.find((row: any) => String(row.title ?? '') === subTitle)
 			expect(created, `no case titled ${subTitle} was stored`).toBeTruthy()
 		}).toPass({ timeout: 30_000 })
@@ -734,7 +741,9 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		await expect(page.locator('table.viewTable tbody tr')).toHaveCount(2)
 
 		await page
-			.getByRole('button', { name: /Delete case|Zaak verwijderen/i })
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
 			.first()
 			.click()
 
@@ -776,7 +785,9 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		).toBeVisible({ timeout: 15_000 })
 
 		await page
-			.getByRole('button', { name: /Delete case|Zaak verwijderen/i })
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
 			.first()
 			.click()
 
