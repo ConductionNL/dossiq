@@ -26,6 +26,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
+import { PAGE_LOAD } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
@@ -51,7 +52,7 @@ test.describe('Queue', () => {
 	test('the queue page renders for a deep link', async ({ page }) => {
 		// A PATH, not `#/queue`: dossiq runs on createWebHistory, so a hash deep
 		// link navigates nowhere and lands on the dashboard without throwing.
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 
 		await expect(
 			page.locator('[data-testid="cn-page"]'),
@@ -93,7 +94,7 @@ test.describe('Queue', () => {
 		})
 
 		const rowsMatching = async (path: string): Promise<number> => {
-			await page.goto(`${path}?title=${encodeURIComponent(title)}`)
+			await page.goto(`${path}?title=${encodeURIComponent(title)}`, PAGE_LOAD)
 			await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 				timeout: 60_000,
 			})
@@ -126,7 +127,7 @@ test.describe('Queue', () => {
 		// Drive the filter to a slice that cannot match. The page must answer with
 		// its empty state rather than a blank region: "mounted and empty" and
 		// "never mounted" look identical without a marker to probe.
-		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__')
+		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__', PAGE_LOAD)
 
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 			timeout: 60_000,
@@ -139,7 +140,7 @@ test.describe('Queue', () => {
 
 	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-narrows-by-case-type
 	test('the case-type sidebar narrows the queue', async ({ page }) => {
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 			timeout: 60_000,
 		})

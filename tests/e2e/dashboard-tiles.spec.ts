@@ -39,6 +39,7 @@ import { expect, test } from '@playwright/test'
 import {
 	captureStorageState,
 	ensureUser,
+	provisioningContext,
 	STORAGE_STATE,
 	storageStatePath,
 } from './helpers/auth.ts'
@@ -256,10 +257,8 @@ test.describe('Dashboard tiles', () => {
 		})
 		token = await getRequestToken(api)
 
-		// Prove the seeding session is an admin BEFORE anything asks it to
-		// provision an account, the same way the WORK_USER session is proved
-		// below. `ensureUser` documents that it needs an admin context; this
-		// is where that requirement gets checked rather than assumed.
+		// Prove the seeding session is the admin before it seeds anything, the
+		// same way the WORK_USER session is proved below.
 		const seedWhoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
 			headers: { 'OCS-APIRequest': 'true' },
 		})
@@ -269,12 +268,45 @@ test.describe('Dashboard tiles', () => {
 		).toBeTruthy()
 		expect(
 			String((await seedWhoami.json())?.ocs?.data?.id ?? ''),
-			'the seeding session must be the admin, or nothing below can provision',
+			'the seeding session must be the admin, or nothing below can seed',
 		).toBe(process.env.ADMIN_USER ?? 'admin')
 
-		// The account the My work scenarios run as, and its session. See
-		// `WORK_USER` for why they cannot run as the admin.
-		await ensureUser(api, token, WORK_USER, WORK_PASSWORD)
+		// 🔴 PROVISIONING GETS ITS OWN, SESSION-FREE CONTEXT. Creating an
+		// account through the captured admin session is password-confirmation
+		// protected, and that confirmation expires thirty minutes after
+		// `global-setup.ts` logged in. Across 101 runs on 2026-09-10 and 11
+		// this file's first result landed 6.8 to 25.3 minutes into the run, so
+		// it has not failed yet. It would the day the suite grows, a shard
+		// reorders it or a runner is slow enough, and then as `OCS 403 Password
+		// confirmation is required`, which names neither the session nor the
+		// clock. `provisioningContext` sends basic
+		// auth and no session cookie, so there is no confirmation to expire.
+		// See it for the measurement on vth-inspection-result-authz.spec.ts.
+		const provisioning = await provisioningContext(playwright, String(baseURL))
+		try {
+			// Prove the basic-auth context IS the admin before anything asks it
+			// to provision. Without this a wrong or refused credential surfaces
+			// as `ensureUser`'s "could not provision" error, which reads as a
+			// broken provisioning API rather than a failed authentication.
+			const provWhoami = await provisioning.get(
+				'/ocs/v2.php/cloud/user?format=json',
+			)
+			expect(
+				String(
+					(await provWhoami.json().catch(() => ({})))?.ocs?.data?.id ?? '',
+				),
+				'the basic-auth provisioning context must resolve to the admin; got '
+					+ `HTTP ${provWhoami.status()}`,
+			).toBe(process.env.ADMIN_USER ?? 'admin')
+
+			// The account the My work scenarios run as. See `WORK_USER` for why
+			// they cannot run as the admin.
+			await ensureUser(provisioning, '', WORK_USER, WORK_PASSWORD)
+		} finally {
+			await provisioning.dispose()
+		}
+
+		// And its session.
 		await captureStorageState(browser, {
 			baseURL: String(baseURL),
 			user: WORK_USER,

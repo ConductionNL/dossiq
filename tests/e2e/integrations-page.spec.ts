@@ -28,7 +28,11 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { captureStorageState, storageStatePath } from './helpers/auth.ts'
+import {
+	captureStorageState,
+	STORAGE_STATE,
+	storageStatePath,
+} from './helpers/auth.ts'
 import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
@@ -112,14 +116,33 @@ async function openIntegrations(page: any) {
 test.describe('Integrations', () => {
 	test.setTimeout(180_000)
 
-	test.beforeAll(async ({ browser, playwright, baseURL }) => {
-		const context = await browser.newContext()
+	test.beforeAll(async ({ playwright, baseURL }) => {
+		// 🔴 THE ADMIN SESSION IS NAMED, NOT INHERITED — the same fix
+		// `dashboard-tiles.spec.ts` and `vth-inspection-result-authz.spec.ts`
+		// needed. This used to build the context from `browser.newContext()`,
+		// which merges the project's `use` block and therefore resolves
+		// whatever the default storage state happens to be at that moment
+		// rather than naming the admin's explicitly. This file provisions no
+		// account of its own — `PLAIN_USER` below comes from `ci-seed.sh`, for
+		// the password-confirmation reason `provisioningContext` documents —
+		// but every test in it saves app settings and posts a probe as this
+		// `api`, and an ambiguous session would let those writes silently run
+		// as whichever account the config's default happened to be.
 		api = await playwright.request.newContext({
 			baseURL,
-			storageState: await context.storageState(),
+			storageState: STORAGE_STATE,
 		})
-		await context.close()
 		token = await getRequestToken(api)
+
+		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(whoami.ok(), `whoami -> ${whoami.status()}`).toBeTruthy()
+		expect(
+			String((await whoami.json())?.ocs?.data?.id ?? ''),
+			'the seeding session must be the admin, or the settings writes below '
+				+ 'run as whoever the default session resolved to',
+		).toBe(process.env.ADMIN_USER ?? 'admin')
 	})
 
 	test.afterAll(async () => {

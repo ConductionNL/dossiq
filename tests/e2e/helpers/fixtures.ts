@@ -30,7 +30,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { occPurge, OccUnavailableError } from './occ.ts'
+import { occPurge } from './occ.ts'
 import { isStaleResidue, residueMinAgeMs, sweepsAllResidue } from './residue.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
@@ -345,34 +345,71 @@ export async function purgeObject(
 ): Promise<boolean> {
 	if (!id) return true
 
-	/**
-	 * Whether the object still answers. An unreadable answer counts as "still
-	 * there": a teardown may only report a clean sweep it actually observed.
-	 */
-	const stillResolves = async (): Promise<boolean> => {
-		for (let attempt = 0; attempt < 2; attempt++) {
-			const check = await api
-				.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
-				.catch(() => null)
-			if (check !== null) return check.status() !== 404
-		}
-		return true
-	}
+	if ((await httpPurge(api, token, schema, id)) === true) return true
 
-	await api
+	await occPurge([id])
+
+	return (await stillResolves(api, schema, id)) === false
+}
+
+/**
+ * Whether an object still answers. An unreadable answer counts as "still
+ * there": a teardown may only report a clean sweep it actually observed.
+ *
+ * @param api    Authenticated request context.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ */
+async function stillResolves(
+	api: APIRequestContext,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	for (let attempt = 0; attempt < 2; attempt++) {
+		const check = await api
+			.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
+			.catch(() => null)
+		if (check !== null) return check.status() !== 404
+	}
+	return true
+}
+
+/**
+ * The HTTP half of `purgeObject`: delete, then destroy the trashed row.
+ *
+ * Returns `true` only when a re-read says the object is gone. A `403` on the
+ * object delete returns `false` at once, without the trash delete or the
+ * re-read: that is `SCHEMA_ARCHIVAL_IMMUTABLE` (or a permission the CLI does
+ * not need), the row is certainly still there, and both calls were measured
+ * answering `403` and `200` respectively on every archival case, costing two
+ * round trips per row and telling the sweep nothing. The caller hands such
+ * rows to `occPurge` and re-reads them afterwards, so nothing is trusted here
+ * that was not trusted before.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `true` when the object no longer resolves.
+ */
+async function httpPurge(
+	api: APIRequestContext,
+	token: string,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	const deleted = await api
 		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
 			headers: writeHeaders(token),
 		})
-		.catch(() => undefined)
+		.catch(() => null)
+	if (deleted !== null && deleted.status() === 403) return false
+
 	await api
 		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
 		.catch(() => undefined)
 
-	if ((await stillResolves()) === false) return true
-
-	await occPurge([id])
-
-	return (await stillResolves()) === false
+	return (await stillResolves(api, schema, id)) === false
 }
 
 /**
@@ -927,6 +964,15 @@ export async function cleanupRunObjects(
 	// Raised here rather than in playwright.config.ts on purpose: the config
 	// timeout also governs every TEST, and loosening that would hide a genuinely
 	// slow test. This widens only the teardown that is genuinely slow.
+	//
+	// 120 SECONDS IS KEPT, AND THE WORK WAS CUT TO FIT IT INSTEAD. Measured
+	// from the HTML reports, the slowest two teardowns took 88s and 90s on a
+	// green run (34581297676) and 120s-and-cut-off and 118s on a slower runner
+	// (34585313834): within one budget of the limit, so the runner's speed
+	// decided the verdict. Most of that was one `occ` process per archival
+	// case, which `sweepPrefix` now spends once per schema. Each phase is a
+	// named `teardown:` step, so a teardown that still runs out says which
+	// schema it was on.
 	try {
 		test.setTimeout(120_000)
 	} catch {
@@ -1078,9 +1124,14 @@ async function sweepPrefix(
 	const survivors: string[] = []
 
 	// Case ids first, so the child sweep below knows what to orphan-hunt for.
+	// The listing is kept and reused when the loop reaches `case` itself: the
+	// rows removed in between are children, so it is still exact, and it saves
+	// paging through every case on the instance a second time.
+	let caseRows: any[] | null = null
 	const caseIds = new Set<string>()
 	if (schemas.includes('case') === true) {
-		for (const row of await listAllObjects(api, 'case').catch(() => [])) {
+		caseRows = await listAllObjects(api, 'case').catch(() => null)
+		for (const row of caseRows ?? []) {
 			if (
 				JSON.stringify(row).includes(prefix)
 				&& isStaleResidue(row, minAgeMs)
@@ -1093,11 +1144,15 @@ async function sweepPrefix(
 	for (const schema of schemas) {
 		let rows: any[]
 		try {
-			rows = await listAllObjects(api, schema)
+			rows =
+				schema === 'case' && caseRows !== null
+					? caseRows
+					: await listAllObjects(api, schema)
 		} catch {
 			continue
 		}
 
+		const matched: string[] = []
 		for (const row of rows) {
 			const id = objectId(row)
 			if (id === '') continue
@@ -1107,19 +1162,66 @@ async function sweepPrefix(
 				caseIds.has(String(row.case ?? '')) === true
 				|| caseIds.has(String(row.parentCase ?? '')) === true
 			if (matchesPrefix === false && matchesCase === false) continue
+			matched.push(id)
+		}
+		if (matched.length === 0) continue
+
+		// 🔴 ONE `occ` PER SCHEMA, NOT ONE PER ROW. Every archival row used to
+		// cost its own `occ openregister:objects:purge` process, and each one
+		// boots Nextcloud: measured in the trace of case-list-lenses' teardown
+		// on run 34585313834, 17 cases took 75 of the hook's 120 seconds, 1.3
+		// to 3.9 seconds of that per case in the spawn alone. Across 106 E2E
+		// jobs on 2026-09-10 and 11, `"afterAll" hook timeout of 120000ms` was
+		// logged 50 times in 31 of them, and each time the failure was pinned
+		// on whichever test happened to finish last in the file. `occPurge` has always taken a list, so the rows the HTTP pair
+		// cannot remove are collected and handed over in ONE call per schema.
+		// Per schema rather than per sweep, so the child-first order above
+		// still holds across schemas.
+		await teardownStep(`remove ${matched.length} ${schema} row(s)`, async () => {
+			const refused: string[] = []
+			for (const id of matched) {
+				if ((await httpPurge(api, token, schema, id)) === false) {
+					refused.push(id)
+				}
+			}
+			if (refused.length === 0) return
 
 			// An OccUnavailableError is NOT a survivor: it means no row can be
 			// removed at all, so it must abort here rather than be reported once
 			// per fixture as though each one had individually resisted.
-			const gone = await purgeObject(api, token, schema, id).catch(
-				(error: unknown) => {
-					if (error instanceof OccUnavailableError) throw error
-					return false
-				},
+			await teardownStep(
+				`occ purge of ${refused.length} ${schema} row(s) in one call`,
+				() => occPurge(refused),
 			)
-			if (gone === false) survivors.push(`${schema}/${id}`)
-		}
+
+			// NO status is trusted, exit code included: each row is re-read.
+			for (const id of refused) {
+				if ((await stillResolves(api, schema, id)) === true) {
+					survivors.push(`${schema}/${id}`)
+				}
+			}
+		})
 	}
 
 	return survivors
+}
+
+/**
+ * Run a teardown phase as a named `test.step`, so the report and the trace
+ * say which phase a slow or timed-out teardown was in, rather than only that
+ * the hook ran out of time.
+ *
+ * `sweepFixtureResidue` also reaches here from `global-setup.ts`, where there
+ * is no test and `test.step` throws, so the body then simply runs.
+ *
+ * @param title What the phase does, as the report should show it.
+ * @param body  The phase.
+ */
+async function teardownStep<T>(title: string, body: () => Promise<T>): Promise<T> {
+	try {
+		test.info()
+	} catch {
+		return body()
+	}
+	return test.step(`teardown: ${title}`, body)
 }

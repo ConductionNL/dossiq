@@ -164,34 +164,58 @@ export default defineConfig({
 	//        5            405             392         0            0
 	//
 	// The five row is run 34601685356 on `development` (cd5e61bf), measured
-	// BEFORE sharding (#2497) merged, so it is one instance with five workers:
-	// every test reached a verdict, 13 were skipped by reason, and the suite
-	// finished in 29.6 of its 38 minutes. The run that motivated it, on four
-	// workers, stopped at 38 minutes with 26 never reached.
+	// BEFORE sharding (#2497) merged: one instance, five workers, every test
+	// reached a verdict, 13 skipped by reason, finished in 29.6 of 38 minutes.
+	// That run is real and is not overturned below — a fast runner absorbs a
+	// fifth worker fine, which is exactly what "results per minute differs by
+	// single digits on a fast runner" predicts. It is one run on one runner
+	// speed, not a rate, so it cannot settle whether five is faster in
+	// general; the table below answers that with 100 jobs instead of one.
 	//
-	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
-	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
-	// it still truncated with 26 never reached and 1 interrupted at the 38
-	// minute stop. The note below used to say the gap was the failures being
-	// retried, and that was true when 25 tests were red; with one red test the
-	// remaining gap is throughput, and the suite is roughly 10 percent short of
-	// fitting.
+	// 🔴 FOUR, AND FIVE WAS MEASURED AND MADE IT WORSE. #2485 raised this to
+	// five on the reasoning that the gap had become throughput. The runs it
+	// produced say the fifth worker buys no throughput and costs timeouts.
+	// Measured over every E2E job on 2026-09-10 and 11 that ran the whole
+	// suite (87 at four workers, 13 at five), read off the job logs:
 	//
-	// The suite also grew, deliberately: the skip-discipline work gave about a
-	// dozen previously skipped tests real bodies, and decidiq is installed now,
-	// so three decision journeys execute instead of standing down. More tests
-	// reaching a verdict is the point; the budget has to follow.
+	//     THE RUNNER DECIDES FIRST. Identical code took 96.8 test-minutes on
+	//     run 34581297676 and 123.0 on 34585313834, 35 minutes apart, with
+	//     every spec slower by the same factor. GitHub's runners come in
+	//     speeds about 1.3x apart, and the time the runner spends building
+	//     decidiq (second `webpack ... compiled in` line of the job) sorts
+	//     them: under 72s fast, 72 to 88s medium, over 90s slow. Of the 45
+	//     four-worker jobs that line exists for, 29 landed on a slow runner:
+	//     21 were stopped by the 38 minute globalTimeout and 5 more ended in
+	//     its last half minute. The 16 fast or medium ones ended by 33.2.
+	//     So workers are compared within a runner speed, never across one.
+	//
+	//     EVERY TEST GETS SLOWER, NOT JUST THE PAGE LOADS. Matching each test
+	//     to itself on runners of the same speed, a fifth worker made its
+	//     median duration 1.22 to 1.42 times longer, in every duration band
+	//     from sub-second API tests to 30-second journeys (366 tests on fast
+	//     runners, 338 on slow). A four-vCPU runner holding four Chromes, eight
+	//     PHP workers and Postgres is already saturated; a fifth Chrome only
+	//     divides the same CPU finer.
+	//
+	//                                   4 workers   5 workers
+	//     results per minute, fast       15.9        14.7
+	//     results per minute, slow        9.5         9.4
+	//     flaky tests per slow run        1.2         4.8
+	//     test timeouts per job           0.36        1.08
+	//     page.goto timeouts per job      0           1.38
+	//     hook timeouts per job           0.32        1.69
+	//
+	// So five did not close the gap and could not have: it turned time into
+	// failures. Sharding (#2497) closes the gap, by giving each shard its own
+	// runner; the count below is per shard, and the same arithmetic applies
+	// to every one of them.
 	//
 	// ⚠️ WATCH FOR `SQLSTATE[53200] out of shared memory /
-	// max_locks_per_transaction`. That is the failure this count was held back
-	// from, seen once under four and never since. If it reappears, put this
-	// back to 4 and take the time out of the suite instead, rather than
-	// re-measuring hopefully.
+	// max_locks_per_transaction`. That is the failure three was held back to
+	// before four was measured, seen once under four and never since.
 	//
-	// ⚠️ FIVE WORKERS MAY STILL NOT MAKE THE SUITE FIT, and nothing here should
-	// be read as claiming it does. The next lever is the wall clock inside the
-	// heavy specs, not more workers: `globalTimeout` cannot rise much without
-	// eating the margin that guarantees a verdict at all.
+	// Raise this again only the way it was lowered: compare results per minute
+	// within one runner speed, not the wall clock of one run.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where four workers seeding and tearing down at once is both
@@ -199,7 +223,7 @@ export default defineConfig({
 	//
 	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
 	// code change.
-	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 5 : 1)),
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
@@ -243,6 +267,10 @@ export default defineConfig({
 			{ outputFile: path.resolve(__dirname, 'test-results', 'results.xml') },
 		],
 		['list'],
+		// Last, so its lines follow the list reporter's tally. It fails the run
+		// by name when any test did not run or was interrupted, and names the
+		// step every timeout happened in. See the file for why both are needed.
+		[path.resolve(__dirname, 'helpers', 'verdict-reporter.ts')],
 	],
 	outputDir: path.resolve(__dirname, 'test-results'),
 
@@ -260,19 +288,27 @@ export default defineConfig({
 		// after 65 of 122 tests. A bounded action fails in 15s with the same
 		// diagnostic and leaves the remaining budget for the real assertions.
 		actionTimeout: 15_000,
-		// 45s, not 30s and not 60s. A hard load on this rig costs 13 to 23
-		// seconds under five workers, and the tail runs past 30: measured on
-		// 2026-09-11, once sharding let the whole suite reach a verdict, two of
-		// six sharded runs failed on `page.goto: Timeout 30000ms exceeded`,
-		// one of them on a PR that changed only a markdown file. 30s was
-		// cutting off loads that would have finished.
+		// 45s, KEPT ACROSS THE WORKER REVERSION BELOW RATHER THAN LOWERED BACK
+		// TO 30s WITH IT. #2517 raised this from 30s after two of six sharded
+		// runs failed on `page.goto: Timeout 30000ms exceeded`, measured while
+		// this file still ran five workers per shard — the same contention the
+		// worker count above is now reverted for. Reverting workers to four
+		// removes most of the pressure that made 45s necessary, but nothing
+		// below is a fresh measurement AT four workers post-sharding: the
+		// four-worker page-load numbers this file cites (p99 25.6s, no goto
+		// timeout in 87 jobs) predate sharding, and #2513's own verification
+		// run still hit an unrelated 30s `page.goto` timeout that passed clean
+		// on re-run. So 45s stays as the measured margin until a run on THIS
+		// config says 30s holds; lowering it on arithmetic alone would repeat
+		// the mistake this comment exists to avoid. `helpers/nav.ts`'s
+		// `PAGE_LOAD_MS` equals this on purpose and moves with it.
 		//
 		// It must stay BELOW the 60s test budget, for the same reason
 		// `actionTimeout` above is bounded: a navigation allowed the whole
 		// budget hangs until the test dies and reports a bare timeout naming
-		// the test, not the load. 45s covers the measured tail and still leaves
-		// 15s for the assertions. Raise it again only behind a run that shows
-		// loads needing it, not behind arithmetic.
+		// the test, not the load. 45s leaves 15s for the assertions. Lower it
+		// again only behind a run that shows loads finishing well inside it,
+		// not behind arithmetic.
 		navigationTimeout: 45_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
