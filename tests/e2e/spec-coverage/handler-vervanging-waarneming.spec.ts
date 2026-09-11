@@ -139,13 +139,39 @@ async function postDossiq(
 }
 
 /**
+ * GET a dossiq controller route.
+ *
+ * ⚠️ THE REQUEST-TOKEN IS REQUIRED ON READS TOO. None of the substitution
+ * controller methods declares `#[NoCSRFRequired]`, and Nextcloud's CSRF check
+ * does not exempt GET, so a token-less read is answered `412 CSRF check failed`
+ * by the framework. Measured against localhost:8080 on 2026-09-11: the first
+ * run of this file failed all three read-based tests that way. That 412 is a
+ * FRAMEWORK refusal, not the controller's, so a refusal test written without
+ * the token would be green on a build with no guard at all.
+ *
+ * @param ctx  The request context making the call.
+ * @param csrf That context's own request-token.
+ * @param path Route path below `/index.php/apps/dossiq/api`.
+ * @return The raw response.
+ */
+async function getDossiq(ctx: APIRequestContext, csrf: string, path: string) {
+	return ctx.get(`${DOSSIQ_API}${path}`, {
+		headers: { requesttoken: csrf, 'OCS-APIRequest': 'true' },
+	})
+}
+
+/**
  * The substitutions the given context can see.
  *
- * @param ctx The request context.
+ * @param ctx  The request context.
+ * @param csrf That context's own request-token.
  * @return The `results` array, or an empty array.
  */
-async function listSubstitutions(ctx: APIRequestContext): Promise<any[]> {
-	const res = await ctx.get(`${DOSSIQ_API}/substitutions`)
+async function listSubstitutions(
+	ctx: APIRequestContext,
+	csrf: string,
+): Promise<any[]> {
+	const res = await getDossiq(ctx, csrf, '/substitutions')
 	expect(
 		res.ok(),
 		`GET /api/substitutions -> ${res.status()} ${await res.text()}`,
@@ -373,7 +399,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#self-substitution-is-rejected
 	test('a substitution naming one user as both absentee and substitute is refused, and writes nothing', async () => {
 		const marker = `${RUN_PREFIX} self-substitution probe`
-		const before = await listSubstitutions(api)
+		const before = await listSubstitutions(api, token)
 
 		const res = await postDossiq(api, token, '/substitutions', {
 			absentee: ADMIN_USER,
@@ -397,7 +423,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 
 		// AND no object created. Asserted on the STORE, by the marker this call
 		// wrote, so an unrelated row cannot satisfy or break it.
-		const after = await listSubstitutions(api)
+		const after = await listSubstitutions(api, token)
 		expect(
 			after.filter((row) => String(row?.comment ?? '') === marker),
 			'the rejected submission must not have left a substitution behind',
@@ -585,7 +611,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#scope-limited-substitution-only-routes-matching-items
 	test('a caseTypes-scoped substitution routes the covered type and withholds the rest', async () => {
-		const res = await api.get(`${DOSSIQ_API}/substitutions/work`)
+		const res = await getDossiq(api, token, '/substitutions/work')
 		expect(
 			res.status(),
 			`substituted work -> ${res.status()} ${await res.text()}`,
@@ -621,8 +647,10 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#all-actions-under-a-substitution-are-queryable
 	test('every capacity-stamped action under a substitution is returned, in chronological order', async () => {
-		const res = await api.get(
-			`${DOSSIQ_API}/substitutions/${scopedSubstitutionId}/actions`,
+		const res = await getDossiq(
+			api,
+			token,
+			`/substitutions/${scopedSubstitutionId}/actions`,
 		)
 		expect(
 			res.status(),
