@@ -28,9 +28,10 @@ import {
 	ensureCaseType,
 	getRequestToken,
 	objectId,
+	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
@@ -86,18 +87,52 @@ async function ensureCaseId(page): Promise<string | null> {
 	}
 }
 
-/** Open the Cases list, or skip when it does not render. */
-async function openCasesListOrSkip(page) {
-	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
-	// this suite has to notice, and swallowing it here would run every test
-	// below against whatever the Dashboard happens to render — green, and
-	// asserting nothing. The skip below is for absent DATA, not a broken menu.
-	await navTo(page, /^(All cases|Alle zaken)$/)
-	await dismissSupportDialog(page).catch(() => {})
-	const caseId = await ensureCaseId(page)
-	if (!caseId) return false
-	await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	return true
+/**
+ * Seed a parent case, and by default one sub-case hanging off it.
+ *
+ * The orphan-deletion branch is decided by how many sub-cases the parent has
+ * (`requiresOrphanWarning` in src/utils/deelzaakHelpers.js), so a test that
+ * reads whatever the register happens to hold asserts whichever branch it
+ * lands on. Each side seeds its own shape instead.
+ *
+ * @param  options            Seeding options.
+ * @param  options.withChild  Seed a sub-case referencing the parent.
+ * @param  options.title      Title for the parent, when the caller has to find
+ *                            its row in a list.
+ * @return The seeded ids.
+ */
+async function seedParentWithSubCase(
+	options: { withChild?: boolean; title?: string } = {},
+): Promise<{ parentId: string; childId: string | null }> {
+	const withChild = options.withChild !== false
+	const api = await request.newContext({ storageState: STORAGE_STATE })
+	try {
+		const token = await getRequestToken(api)
+		const caseType = await ensureCaseType(api, token)
+		const parent = await seedCase(api, token, {
+			title:
+				options.title
+				?? `E2E deelzaak parent ${withChild ? 'with' : 'without'} sub-case`,
+			caseType: caseType.id,
+			description:
+				'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+		})
+		const parentId = objectId(parent)
+		let childId: string | null = null
+		if (withChild) {
+			const child = await seedCase(api, token, {
+				title: 'E2E deelzaak child',
+				caseType: caseType.id,
+				parentCase: parentId,
+				description:
+					'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+			})
+			childId = objectId(child)
+		}
+		return { parentId, childId }
+	} finally {
+		await api.dispose()
+	}
 }
 
 /**
@@ -204,51 +239,95 @@ async function openSubCasesSectionOrSkip(page) {
 	return true
 }
 
+/**
+ * Open the Cases list narrowed to one seeded title.
+ *
+ * @param page  The page.
+ * @param title The exact seeded title to narrow to.
+ */
+async function visitCases(page, title: string): Promise<void> {
+	await page.goto(
+		`/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`,
+		{ timeout: 90_000 },
+	)
+	await dismissSupportDialog(page).catch(() => {})
+	await expect(
+		page.locator('table, .viewTable, [role="table"]').first(),
+	).toBeVisible({ timeout: 60_000 })
+}
+
 test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () => {
 	// @e2e deelzaak-support::case-list-shows-sub-case-count
 	// @e2e deelzaak-support::case-without-sub-cases-has-no-badge
 	// @e2e deelzaak-support::sub-case-counts-batch-loaded-per-page
-	// FIXME(#719): data-dependent. Measured on /cases with an unseeded list:
-	// table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body
-	// renders an empty state, so there is no table to assert against.
-	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
+	// UNPARKED, AND IT SEEDS THE ROW IT MEANS TO READ.
+	//
+	// The old FIXME(#719) said "data-dependent … the body renders an empty
+	// state, so there is no table to assert against", which was true of the
+	// register it was measured on and is a reason to seed, not to stand down.
+	// The old body also annotated the no-badge outcome as a note instead of
+	// asserting it, so a run where nothing had sub-cases passed while proving
+	// neither branch.
+	//
+	// It also navigated three times inside one test (navTo, reload, navTo) and
+	// then slept 1500ms. Six workers on one `php -S` put a page load at 13 to
+	// 23 seconds, so that overran the 60s test budget before it asserted
+	// anything: measured on CI run 34578033755 as `page.goto: Test timeout of
+	// 60000ms exceeded`. One navigation now, and `test.slow()` for the budget.
+	test('the case list shows a sub-case badge, and only on a parent', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
-		)
-		const opened = await openCasesListOrSkip(page)
-		if (!opened) return
+		test.slow()
+		// 🔴 THE OLD LOCATOR WAS DUTCH AND THE INSTANCE IS ENGLISH.
+		// It matched `/\d+ deelzaken/i`. `subCaseCountBadge()` in
+		// src/utils/deelzaakHelpers.js returns `t('dossiq', '{count}
+		// sub-cases')`, and "N deelzaken" is only what l10n/nl.json renders
+		// that into. So on the English CI instance the badge is on the page and
+		// the assertion could not see it, which is why the old body could only
+		// ever take its own "no badge present" branch. Both spellings now.
+		const BADGE = /\d+ (sub-cases|deelzaken)/i
+		const withTitle = `${RUN_PREFIX} DZ badge parent`
+		const loneTitle = `${RUN_PREFIX} DZ badge lone`
+		await seedParentWithSubCase({ title: withTitle })
+		await seedParentWithSubCase({ withChild: false, title: loneTitle })
 
-		// Capture network calls to assert the batch query (one /counts request).
+		// Counted BEFORE the navigation, so the render's own fetches are the
+		// ones observed. `deelzaken/counts` is the batch endpoint: the claim is
+		// one request per rendered page, not one per row.
 		const countCalls: string[] = []
 		page.on('request', (req) => {
 			if (req.url().includes('/api/deelzaken/counts'))
 				countCalls.push(req.url())
 		})
-		await page.reload().catch(() => {})
-		await openCasesListOrSkip(page)
-		await page.waitForTimeout(1500)
 
+		// Narrowed by title rather than paged through. Fixtures accumulate
+		// across runs, so the row this test seeded need not be on page one of
+		// an unfiltered list, and a `getByRole('row')` filter would then be
+		// asserting an absence it had not earned.
+		await visitCases(page, withTitle)
+		const withChild = page.getByRole('row').filter({ hasText: withTitle })
 		await expect(
-			page.locator('table, .viewTable, [role="table"]').first(),
-		).toBeVisible({ timeout: 10000 })
-		// Badge shown only for cases WITH sub-cases; absent otherwise (no-badge branch).
-		const badge = page.getByText(/\d+ deelzaken/i).first()
-		if ((await badge.count()) > 0) {
-			await expect(badge).toBeVisible()
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No badge present — seeded deelzaak demo not deployed (no-badge branch).',
-			})
-		}
-		// Batch (not N+1): if counts were fetched, they collapse to a single call per render.
-		if (countCalls.length > 0) {
-			expect(countCalls.length).toBeLessThanOrEqual(2)
-		}
+			withChild.getByText(BADGE).first(),
+			'a case with one sub-case shows the sub-case badge',
+		).toBeVisible({ timeout: 60_000 })
+
+		// Batched, not N+1. The endpoint is asked once for the page, twice at
+		// most when the list re-renders after its first data arrives.
+		expect(
+			countCalls.length,
+			`deelzaken counts must be batched per page, saw ${countCalls.length} requests`,
+		).toBeLessThanOrEqual(2)
+
+		// THE OTHER HALF. `subCaseCountBadge()` returns '' for a count of zero
+		// (REQ-DZS-005-B), so a badge stamped on every row would satisfy the
+		// assertion above on its own.
+		await visitCases(page, loneTitle)
+		const withoutChild = page.getByRole('row').filter({ hasText: loneTitle })
+		await expect(withoutChild.first()).toBeVisible({ timeout: 60_000 })
+		await expect(
+			withoutChild.getByText(BADGE),
+			'a case with no sub-cases shows no badge',
+		).toHaveCount(0)
 		await expect(page.locator('body')).not.toContainText('TypeError')
 	})
 })
@@ -256,51 +335,97 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion protection)', () => {
 	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
 	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
-	test('the sub-cases page delete control warns about orphans for a parent with sub-cases', async ({
+	//
+	// UNPARKED, AND POINTED AT THE PAGE THE CONTROL IS ON.
+	//
+	// This skipped on every run, and its reason was right that nothing was
+	// missing and wrong about where to look. The delete control is declared in
+	// `src/views/cases/DeelzaakList.vue`, which the manifest mounts as the
+	// `type: "custom"` page at `/cases/:id/deelzaken`. The old body reached
+	// CaseDetail's Related tab instead, where the `case-sub-cases` object-list
+	// widget renders the sub-case LIST and no delete action at all. So the
+	// control could never attach, on any build, and the five-second wait was
+	// measuring the wrong page.
+	//
+	// BOTH BRANCHES, NOT WHICHEVER THE INSTANCE HAPPENED TO HOLD. The old body
+	// took whatever the first case in the register gave it and annotated the
+	// other outcome as a note, so a run where no case had sub-cases asserted
+	// the orphan warning never appeared. Each branch now seeds the shape it
+	// needs: `requiresOrphanWarning(count)` in src/utils/deelzaakHelpers.js is
+	// the fork, and the two scenarios are its two sides.
+	test('the sub-cases page warns about orphans for a parent with sub-cases', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
+		const { parentId } = await seedParentWithSubCase()
+
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`, {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
+		await dismissSupportDialog(page).catch(() => {})
 
 		const deleteBtn = page
 			.getByRole('button', {
-				name: /Delete case|Zaak verwijderen|Delete parent case|Hoofdzaak verwijderen/i,
+				name: /Delete parent case|Hoofdzaak verwijderen/i,
 			})
 			.first()
-		// `count()` takes ONE snapshot and cannot retry, so this fired before
-		// the section had painted and then blamed a deployment for it.
-		const present = await deleteBtn
-			.waitFor({ state: 'attached', timeout: 5_000 })
-			.then(() => true)
-			.catch(() => false)
-		if (!present) {
-			test.skip(
-				true,
-				'the delete-case control did not attach within 5s. NOT a deploy gap — "Delete case" appears in 3 files under src/ and "Delete parent case" in 1, so the control ships in this commit. The locator already accepts the Dutch strings. Debug why it does not render on the sub-cases section rather than waiting for a build.',
-			)
-			return
-		}
-		await expect(deleteBtn).toBeVisible({ timeout: 10000 })
-		// Auto-dismiss the standard window.confirm taken on the no-sub-cases branch.
-		page.on('dialog', (d) => d.dismiss().catch(() => {}))
+		await expect(
+			deleteBtn,
+			'DeelzaakList renders the parent delete control once the parent loads',
+		).toBeVisible({ timeout: 30_000 })
 		await deleteBtn.click()
-		await page.waitForTimeout(600)
-		const warning = page
-			.getByText(/unlink the sub-cases|losgekoppeld van hun hoofdzaak/i)
+
+		// The orphan dialog, by its own title and its own sentence. Asserting
+		// the sentence alone would also match the plain confirm dialog if the
+		// copy ever converged; asserting both pins the branch.
+		await expect(
+			page.getByText('Delete case with sub-cases').first(),
+			'a parent with sub-cases takes the orphan-warning branch, not the plain confirm',
+		).toBeVisible({ timeout: 15_000 })
+		await expect(
+			page.getByText(/unlink the sub-cases from their parent/i).first(),
+		).toBeVisible()
+		// Cancel — this test proves the warning, not the deletion.
+		await page
+			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
 			.first()
-		if ((await warning.count()) > 0) {
-			await expect(warning).toBeVisible({ timeout: 5000 })
-			const cancel = page
-				.getByRole('button', { name: /Cancel|Annuleren/i })
-				.first()
-			if ((await cancel.count()) > 0) await cancel.click().catch(() => {})
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No orphan warning — case has no sub-cases (standard-delete branch).',
+			.click()
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+
+	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
+	test('a parent with no sub-cases takes the plain delete confirmation', async ({
+		page,
+	}) => {
+		const { parentId } = await seedParentWithSubCase({ withChild: false })
+
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`, {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
+		await dismissSupportDialog(page).catch(() => {})
+
+		const deleteBtn = page
+			.getByRole('button', {
+				name: /Delete parent case|Hoofdzaak verwijderen/i,
 			})
-		}
+			.first()
+		await expect(deleteBtn).toBeVisible({ timeout: 30_000 })
+		await deleteBtn.click()
+
+		// The OTHER side of requiresOrphanWarning(): the plain CnConfirmDialog.
+		await expect(
+			page.getByText('Are you sure you want to delete this case?').first(),
+		).toBeVisible({ timeout: 15_000 })
+		// And NOT the orphan copy — a case with nothing hanging off it must not
+		// be told its sub-cases will be unlinked.
+		await expect(
+			page.getByText(/unlink the sub-cases from their parent/i),
+		).toHaveCount(0)
+		await page
+			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
+			.first()
+			.click()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
