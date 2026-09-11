@@ -205,6 +205,15 @@ test.describe('Case flow — human steps', () => {
 	test('a deep link to a case survives a hard reload, under both URL forms', async ({
 		page,
 	}) => {
+		// THREE hard loads, and that is the test rather than an accident: the
+		// index, then the deep link, then the deep link under the other URL
+		// form. On this rig a hard load costs 13-23s, so the default budget
+		// holds about two of them and this test flaked on the third for
+		// reasons that had nothing to do with deep links. Every `goto` below
+		// carries its own timeout as well, because a bare `Test timeout`
+		// names the test and not the load that ran out of room.
+		test.setTimeout(180_000)
+
 		// The RELOAD of a deep link is the test. Sidebar navigation stays
 		// inside the loaded SPA and never re-derives the router base, so it
 		// worked even while every hard load of `/apps/dossiq/cases/<id>`
@@ -213,7 +222,7 @@ test.describe('Case flow — human steps', () => {
 		// came from generateUrl() while the page was served under the other
 		// URL form. Reach a case the supported way first, then hard-load the
 		// URL the browser ended up on.
-		await page.goto('/index.php/apps/dossiq/cases')
+		await page.goto('/index.php/apps/dossiq/cases', { timeout: 60_000 })
 		await expect(
 			page.locator('body'),
 			`The seeded case "${INCOMPLETE_CASE}" is missing.`,
@@ -225,7 +234,7 @@ test.describe('Case flow — human steps', () => {
 
 		// Form 1: exactly the URL the browser shows. A hard load must land on
 		// the case, not the dashboard.
-		await page.goto(deepLink.pathname)
+		await page.goto(deepLink.pathname, { timeout: 60_000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
@@ -240,7 +249,7 @@ test.describe('Case flow — human steps', () => {
 		const altPath = deepLink.pathname.includes('/index.php/')
 			? deepLink.pathname.replace('/index.php', '')
 			: deepLink.pathname.replace('/apps/dossiq', '/index.php/apps/dossiq')
-		await page.goto(altPath)
+		await page.goto(altPath, { timeout: 60_000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
