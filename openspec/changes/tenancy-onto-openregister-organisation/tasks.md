@@ -41,8 +41,24 @@ is the accurate signal. Do not silence it with a placeholder capability.
   lookups that read OpenRegister rows as arrays have to be fixed in the same
   step, together, because fixing the membership lookup alone would bind
   tenants and then have the other two deny every write by every member.
-  That fix is dossiq#2449, open at the time of writing. The pins in 2h are
-  what shows the re-pointed filters still scope once it lands.
+  That fix is dossiq#2436, which touches exactly the four 2g names:
+  `listTenantsForUser()`, `resolveUserRole()` and `loadActiveMatrix()` in
+  `TenantAuthenticationService`, and `getQuota()` in `TenantQuotaService`.
+  The pins in 2h are what shows the re-pointed filters still scope once it
+  lands.
+
+  Do not confuse it with dossiq#2449, which fixes the same reading defect in
+  five OTHER services (`BerichtenboxReadStatusJob`,
+  `BezwaarDecisionListener`, `TenantBillingService`,
+  `TenantConfigurationService`, `TenantOnboardingService`). #2449 is
+  worth having and does not gate this step.
+
+  **#2436 is being held on purpose**, which is the thing to settle. It makes
+  dossiq's tenant layer genuinely enforce, and that layer is the one step 4
+  retires, so merging it turns on enforcement in a layer due for removal.
+  Holding it leaves the layer inert. Step 4 needs it merged; the hold says
+  not yet. That tension is a decision, not an oversight, and it is the only
+  thing between here and starting step 4.
 - [ ] 5 **Remove the surface.** The `Tenants` and `TenantDetail` pages are
   both still in `src/manifest.json`. They go once the store they administer is
   gone, not before.
