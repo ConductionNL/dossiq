@@ -342,10 +342,11 @@ test.describe('The requester on the case', () => {
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
 		// The tab strip, not a KPI card. This is only a load signal, and
-		// `.cn-kpi-card` was a poor one: the page's single stats-block is
-		// `case-kpis-hours`, which renders nothing when no hours are booked,
-		// so the wait timed out on a page that had loaded perfectly. The
-		// strip is `case-panels`, which is on every case page unconditionally.
+		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
+		// no stat tile at all. `case-kpis-hours` is an integration widget that
+		// places humaniq's leaf, so where humaniq is absent it renders nothing,
+		// heading included, and the identity row prints its facts as plain
+		// fields. The strip is `case-panels`, on every case page unconditionally.
 		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -470,10 +471,11 @@ test.describe('The requester on the case', () => {
 	test('a case without a requester shows no card', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
 		// The tab strip, not a KPI card. This is only a load signal, and
-		// `.cn-kpi-card` was a poor one: the page's single stats-block is
-		// `case-kpis-hours`, which renders nothing when no hours are booked,
-		// so the wait timed out on a page that had loaded perfectly. The
-		// strip is `case-panels`, which is on every case page unconditionally.
+		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
+		// no stat tile at all. `case-kpis-hours` is an integration widget that
+		// places humaniq's leaf, so where humaniq is absent it renders nothing,
+		// heading included, and the identity row prints its facts as plain
+		// fields. The strip is `case-panels`, on every case page unconditionally.
 		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})

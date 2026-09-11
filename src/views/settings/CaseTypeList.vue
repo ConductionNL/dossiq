@@ -1,5 +1,18 @@
 <template>
 	<div>
+		<!--
+			`rowClickToView` IS WHAT MAKES A ROW OPEN ITS CASE TYPE.
+
+			With `selectable` set and `rowClickToView` absent, nextcloud-vue's
+			CnIndexPage and CnDataTable both treat a row-body click as a
+			selection toggle and RETURN before emitting `row-click`
+			(CnDataTable.onRowClick: `if (this.selectable && !this.rowClickToView)
+			{ this.toggleSelect(row); return }`). So `@rowClick="selectCaseType"`
+			below could never fire, and an admin had no way to open a case type
+			from this list: clicking a row only ticked its checkbox. With it set,
+			the body click opens the row and selection moves to the checkbox
+			column, which is exactly the split the library documents.
+		-->
 		<CnIndexPage
 			:title="t('dossiq', 'Case Types')"
 			:description="t('dossiq', 'Configure case types')"

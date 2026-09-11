@@ -18,6 +18,15 @@
  * command on the instance they are testing, and this module is the only place
  * that knows how.
  *
+ * The SECOND CLI-only capability is one pass of OpenRegister's flow worker.
+ * A flow run that has been queued, or woken by a completed task, is advanced
+ * by `FlowRunWorker` on cron and by nothing else: `POST /api/flow-runs/{uuid}/
+ * resume` answers with the parked run and says "the worker advances it on its
+ * next pass". A spec cannot wait for cron, so `occFlowWorkerPass()` performs
+ * that pass the way an operator would, through `occ background-job:execute`.
+ * It resolves `occ` exactly as the purge does, so a rig that can clean up can
+ * also drive a flow.
+ *
  * ── Resolution order ─────────────────────────────────────────────────────────
  *
  *  1. `DOSSIQ_E2E_OCC` — a complete command prefix, e.g.
@@ -154,13 +163,16 @@ function candidates(): OccInvocation[] {
 /**
  * Run one occ invocation and return its exit code and combined output.
  *
+ * `stdout` is also returned on its own, for the one caller that parses it:
+ * a PHP notice on stderr must not land inside the JSON it reads.
+ *
  * @param invocation The resolved invocation.
  * @param args       Arguments to append after the occ prefix.
  */
 async function run(
 	invocation: OccInvocation,
 	args: string[],
-): Promise<{ code: number; output: string }> {
+): Promise<{ code: number; output: string; stdout: string }> {
 	const [bin, ...prefix] = invocation.argv
 	try {
 		const { stdout, stderr } = await execFileAsync(bin, [...prefix, ...args], {
@@ -168,14 +180,18 @@ async function run(
 			timeout: OCC_TIMEOUT_MS,
 			maxBuffer: 16 * 1024 * 1024,
 		})
-		return { code: 0, output: `${stdout}${stderr}` }
+		return { code: 0, output: `${stdout}${stderr}`, stdout: String(stdout) }
 	} catch (error: any) {
 		const output = `${error?.stdout ?? ''}${error?.stderr ?? ''}${
 			error?.stdout === undefined && error?.stderr === undefined
 				? String(error?.message ?? error)
 				: ''
 		}`
-		return { code: typeof error?.code === 'number' ? error.code : 1, output }
+		return {
+			code: typeof error?.code === 'number' ? error.code : 1,
+			output,
+			stdout: String(error?.stdout ?? ''),
+		}
 	}
 }
 
@@ -247,6 +263,32 @@ export async function assertOccReachable(): Promise<string> {
 }
 
 /**
+ * Run one arbitrary occ command against the instance under test.
+ *
+ * The second sanctioned CLI use, and it exists for the same shape of reason as
+ * the purge above: some behaviour the suite has to exercise simply has no HTTP
+ * entry point. OpenRegister's flow worker is a background job, so a run parked
+ * for resumption only moves when cron fires, and a test cannot wait for cron.
+ *
+ * The exit code is RETURNED, never thrown on. Callers decide: a job listing
+ * that finds nothing and a job that ran and did nothing are different answers,
+ * and both are more useful read than raised.
+ *
+ * @param args Arguments appended after the resolved occ prefix.
+ * @return The command's exit code and combined output.
+ */
+export async function occRun(
+	args: string[],
+): Promise<{ code: number; output: string }> {
+	const invocation = await resolveOcc()
+	if (invocation === null) {
+		throw new OccUnavailableError(unavailableMessage())
+	}
+
+	return run(invocation, args)
+}
+
+/**
  * Permanently destroy the named objects through the sanctioned CLI purge.
  *
  * `--force` is required and passed deliberately: it is what makes the suite say
@@ -276,5 +318,81 @@ export async function occPurge(
 		...ids,
 		'--force',
 		'--apply',
+	])
+}
+
+/** The worker's class, exactly as Nextcloud stores it in the jobs table. */
+const FLOW_RUN_WORKER = 'OCA\\OpenRegister\\BackgroundJob\\FlowRunWorker'
+
+/**
+ * The worker's job id, resolved once per process, and kept as TEXT.
+ *
+ * 🔴 A NUMBER CANNOT HOLD IT. Nextcloud 34 gives background jobs 64-bit
+ * snowflake ids, around 1.28e17, and a JavaScript number is exact only up to
+ * 2^53 (about 9.0e15). At that size a double can only land on multiples of 16,
+ * so `JSON.parse` silently rounds: measured, 17 distinct real ids from
+ * ...360 to ...376 all parse to 128102179729338370. The first CI run sent that
+ * rounded id to `background-job:execute`, which answered "Job with ID ...
+ * could not be found in the database", and the test failed on an id the
+ * helper had corrupted itself. The id is read out of occ's raw output as a
+ * string and never passes through Number.
+ */
+let flowRunWorkerJobId: string | undefined
+
+/**
+ * Perform ONE pass of OpenRegister's flow worker: what cron would do next.
+ *
+ * `--force-execute` is what makes a pass happen on demand. It resets the job's
+ * `last_run` before starting it, so the worker's 60-second interval does not
+ * turn a second pass a few seconds after the first into a silent no-op.
+ *
+ * The exit code is REPORTED, not trusted, for the reason `occPurge` gives:
+ * Nextcloud logs a job that throws and still exits 0. Callers read the run
+ * back to learn what the pass did.
+ *
+ * @return The command's exit code and combined output.
+ * @throws OccUnavailableError When occ cannot be reached.
+ * @throws Error When the instance has no FlowRunWorker job registered.
+ */
+export async function occFlowWorkerPass(): Promise<{
+	code: number
+	output: string
+}> {
+	const invocation = await resolveOcc()
+	if (invocation === null) {
+		throw new OccUnavailableError(unavailableMessage())
+	}
+
+	if (flowRunWorkerJobId === undefined) {
+		// `--class` is an exact match on the stored class name, and `execFile`
+		// passes the backslashes through untouched because no shell is involved.
+		const listed = await run(invocation, [
+			'background-job:list',
+			`--class=${FLOW_RUN_WORKER}`,
+			'--output=json',
+		])
+		// The FIRST job's id, read as TEXT out of the raw JSON, never parsed into
+		// a number (see flowRunWorkerJobId). The listing is an array of flat job
+		// objects, so the first top-level `"id":` is the first job's. An `id`
+		// nested inside a job's `argument` is an escaped string (`\"id\"`) and
+		// does not match, because the regex needs a bare quote before `id`.
+		const match = /"id"\s*:\s*"?(\d+)"?/.exec(listed.stdout)
+		const id = match === null ? '' : match[1].replace(/^0+/, '')
+		if (id === '') {
+			throw new Error(
+				`occ background-job:list found no ${FLOW_RUN_WORKER} job, so no flow `
+					+ 'run on this instance can move past its first wait. OpenRegister '
+					+ 'registers the job from its appinfo/info.xml when it is enabled. '
+					+ `The listing exited ${listed.code}: `
+					+ listed.output.trim().split('\n').slice(0, 3).join(' / '),
+			)
+		}
+		flowRunWorkerJobId = id
+	}
+
+	return run(invocation, [
+		'background-job:execute',
+		flowRunWorkerJobId,
+		'--force-execute',
 	])
 }
