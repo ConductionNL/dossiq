@@ -140,6 +140,52 @@
 		</div>
 
 		<div class="setting-row">
+			<NcCheckboxRadioSwitch
+				v-model="caseMatchingEnabled"
+				type="switch"
+				:disabled="!writable || loading"
+				data-testid="email-case-matching-enabled">
+				{{ t('dossiq', 'Link mail to cases by case number') }}
+			</NcCheckboxRadioSwitch>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Each user still switches it on for their own mailbox. Until then, nothing is linked.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_case_matching_pattern">{{
+				t('dossiq', 'Case number pattern')
+			}}</label>
+			<NcInputField
+				id="email_case_matching_pattern"
+				v-model="form.email_case_matching_pattern"
+				:disabled="!writable || loading"
+				:placeholder="defaultCasePattern"
+				data-testid="email-case-matching-pattern" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.',
+					)
+				}}
+			</p>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Only the subject and the start of each message are read. A case number further down is missed.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
 			<label for="email_from_address">{{
 				t('dossiq', 'Sender address')
 			}}</label>
@@ -225,6 +271,7 @@
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
@@ -243,7 +290,14 @@ import { useObjectStore } from '../../store/modules/object.js'
  */
 export default {
 	name: 'EmailSettings',
-	components: { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcSelect },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcInputField,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcSelect,
+	},
 	data() {
 		return {
 			loading: true,
@@ -265,7 +319,14 @@ export default {
 				email_from_address: '',
 				email_from_name: '',
 				email_recipient_allowlist: '',
+				email_case_matching_enabled: 'no',
+				email_case_matching_pattern: '',
 			},
+
+			// Shown as the placeholder, so an empty field says what it means.
+			// Mirrors CaseEmailMatchService::DEFAULT_PATTERN.
+			defaultCasePattern:
+				'/(?<![\\w-])(?:\\[)?(?:[A-Z]{2,10}-)?((?:19|20)\\d{2}-\\d{4,6})(?:\\])?(?![\\w-])/u',
 
 			caseTypes: [],
 			caseTypesLoading: false,
@@ -333,6 +394,30 @@ export default {
 			 */
 			set(option) {
 				this.form.email_fallback_case_type = option ? option.id : ''
+			},
+		},
+
+		/**
+		 * The instance toggle as a switch; stored as `yes` or `no`.
+		 *
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		caseMatchingEnabled: {
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @return {boolean} Whether matching is on.
+			 */
+			get() {
+				return this.form.email_case_matching_enabled === 'yes'
+			},
+
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @param {boolean} value Whether matching is on.
+			 * @return {void}
+			 */
+			set(value) {
+				this.form.email_case_matching_enabled = value ? 'yes' : 'no'
 			},
 		},
 
@@ -433,6 +518,16 @@ export default {
 						message: t('dossiq', 'Mailbox settings saved.'),
 					}
 					await this.load()
+				} else if (response.status === 400) {
+					// The only field the server refuses on its own is the
+					// case number pattern; nothing was saved.
+					this.testResult = {
+						type: 'error',
+						message: t(
+							'dossiq',
+							'This pattern cannot find case numbers. Check that it is valid and has a capture group.',
+						),
+					}
 				} else {
 					this.testResult = {
 						type: 'error',

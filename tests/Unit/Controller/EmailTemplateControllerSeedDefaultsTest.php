@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
@@ -105,6 +106,7 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase {
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			caseEmailMatch: $this->createMock(CaseEmailMatchService::class),
 		);
 	}//end setUp()
 
@@ -136,6 +138,7 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase {
 			userSession: $this->userSession,
 			groupManager: $groupManager,
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			caseEmailMatch: $this->createMock(CaseEmailMatchService::class),
 		);
 
 		$response = $controller->seedDefaults(caseTypeId: 'ct-1');

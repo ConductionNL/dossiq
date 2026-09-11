@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
@@ -107,6 +108,13 @@ class EmailTemplateControllerContractTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The matcher that validates a case-number pattern.
+	 *
+	 * @var CaseEmailMatchService|MockObject
+	 */
+	private CaseEmailMatchService $caseEmailMatch;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var EmailTemplateController
@@ -128,6 +136,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$this->caseEmailMatch = $this->createMock(CaseEmailMatchService::class);
 
 		$this->controller = new EmailTemplateController(
 			request: $this->request,
@@ -137,6 +146,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			caseAccessGuard: $this->caseAccessGuard,
+			caseEmailMatch: $this->caseEmailMatch,
 		);
 	}//end setUp()
 
@@ -428,6 +438,64 @@ class EmailTemplateControllerContractTest extends TestCase {
 		);
 		$this->assertSame(['email_imap_folder' => 'INBOX/Zaken'], $written);
 	}//end testSaveSettingsTreatsTheMaskedPasswordAsUnchanged()
+
+	/**
+	 * A case-number pattern the matcher cannot use is refused with 400 before
+	 * anything is written, including the fields saved beside it. Stored, it
+	 * would only surface later as a refused run in a log the admin never reads.
+	 *
+	 * @return void
+	 */
+	public function testSaveSettingsRefusesAnUnusableCaseNumberPatternAndWritesNothing(): void {
+		$this->signIn(uid: 'admin');
+		$this->withRequestParams(
+			[
+				'email_case_matching_enabled' => 'yes',
+				'email_case_matching_pattern' => '/\d{4}-\d{4}/',
+			]
+		);
+		$this->caseEmailMatch->method('validatePattern')
+			->with('/\d{4}-\d{4}/')
+			->willReturn('The pattern has no capture group for the case number.');
+		$this->appConfig->expects($this->never())->method('setValueString');
+
+		$response = $this->controller->saveSettings();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('email_case_matching_pattern', $response->getData()['field']);
+	}//end testSaveSettingsRefusesAnUnusableCaseNumberPatternAndWritesNothing()
+
+	/**
+	 * A usable pattern and the instance toggle are both stored.
+	 *
+	 * @return void
+	 */
+	public function testSaveSettingsStoresTheMatchingToggleAndAUsablePattern(): void {
+		$this->signIn(uid: 'admin');
+		$this->withRequestParams(
+			[
+				'email_case_matching_enabled' => 'yes',
+				'email_case_matching_pattern' => '/(\d{4}-\d{4})/',
+			]
+		);
+		$this->caseEmailMatch->method('validatePattern')->willReturn(null);
+
+		$written = [];
+		$this->appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$written): bool {
+				$written[$key] = $value;
+				return true;
+			}
+		);
+
+		$response = $this->controller->saveSettings();
+
+		$this->assertSame(['saved' => true], $response->getData());
+		$this->assertSame(
+			['email_case_matching_enabled' => 'yes', 'email_case_matching_pattern' => '/(\d{4}-\d{4})/'],
+			$written
+		);
+	}//end testSaveSettingsStoresTheMatchingToggleAndAUsablePattern()
 
 	/**
 	 * variables answers the backend's catalogue verbatim for the caseType on

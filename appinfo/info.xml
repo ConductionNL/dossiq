@@ -166,6 +166,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             See openspec/changes/termijnbewaking-op-engine-timers.
         -->
         <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
+        <job>OCA\Dossiq\BackgroundJob\CaseEmailMatchJob</job>
         <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
