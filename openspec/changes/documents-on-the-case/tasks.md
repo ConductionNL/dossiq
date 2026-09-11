@@ -62,6 +62,51 @@ criteria under a task are plain bullets.
   THREE, and decisively, `CnObjectListWidget` matches neither `dropZone` nor
   `rowActions` at all, so it cannot host the `DossierTab` drop handler or the
   Versions row action this task also requires. 2.1 stays the shipped form.
+
+  **RE-MEASURED 2026-09-11. THE LIBRARY BLOCKER IS GONE AND THE TASK IS NOW
+  BLOCKED ON A DECISION INSTEAD, so it is left unticked rather than moved.**
+
+  All three counts above were lifted in nextcloud-vue and reach this app in
+  **2.47.0**: `content.extend` sends OpenRegister's `_extend[]` so the dotted
+  columns resolve off the inlined `informatieobject`, `content.rowActions[]`
+  renders per-row actions through `CnRowActions`, and `content.dropZone`
+  dispatches a declared action with the dropped `File[]`. That is the seam this
+  task asked for, named as `dossiq-duplication-to-abstractions` 1.2.
+
+  What the recheck found instead is that THIS TASK'S PREMISE HAS EXPIRED.
+  2.2 was written when `DossierTab` was a thin list, and 2.3 and the work after
+  it grew it into a surface `CnObjectListWidget` cannot express. Read out of
+  `src/views/cases/components/DossierTab.vue` today, the interim ships:
+
+  - rows GROUPED by `informatieobjecttype`, rendered through `DossierGroup`,
+    not one flat table;
+  - a multi-select (`selectedIds`) over those rows;
+  - a sort dropdown and a keyword multi-filter faceted on the keywords actually
+    in use, both added by 2.3, which is TICKED;
+  - an Upload document button and file picker beside the drop overlay;
+  - open-in-Files, version history and delete per row;
+  - the document count in the tab title.
+
+  Swapping in `type: object-list` would therefore REMOVE shipped capability —
+  including the keyword filter that 2.3 exists to deliver — and would do it
+  silently, because a flat table of the right rows looks like a working
+  Documents tab. That is a regression dressed as an abstraction, and it is the
+  opposite of what this task was for.
+
+  So the decision is Ruben's, and it is not a library question any more:
+
+  **(a) Close 2.2 as superseded.** Keep `DossierTab`, record that the
+  abstraction was built and that the surface outgrew it. The three new library
+  keys still pay for themselves elsewhere in the fleet.
+
+  **(b) Grow `CnObjectListWidget` further** — row grouping, a facet control and
+  multi-select — and then swap. That is a much larger library ask than the one
+  this task raised, and it should be its own change with its own measurement,
+  not a silent widening of this one.
+
+  Recorded rather than chosen, because picking (a) quietly would retire a
+  capability nobody agreed to retire, and picking (b) quietly would commit the
+  library to three more seams on one app's say-so.
 - [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on
   `keywords`) beside the sort dropdown, and the empty state "No documents
@@ -116,6 +161,57 @@ criteria under a task are plain bullets.
   `run-action`, and no `@pick:` token in the sentinel grammar. The `agent`
   type added since is the closest shape in the family and runs a hermiq
   agent, not a flow node.
+
+  **RE-MEASURED 2026-09-11 against nextcloud-vue `development`. STILL BLOCKED,
+  and this is NOT one library seam. It is four decisions, and it stops here
+  until they are taken.** Written out so the next recheck does not have to
+  find them again.
+
+  **D-1. There is no server to talk to.** OpenRegister routes
+  `POST /api/flows/{id}/run`, where `{id}` is a FLOW uuid: `FlowController::run`
+  calls `$this->flows->run(uuid: $id, …)` and 404s with `No such flow`
+  otherwise. Nothing anywhere executes ONE registered node out of graph with a
+  subject and a config blob. `GET /api/flow/node-catalog` answers only
+  `{id, displayName, description, icon}` per node — no config-key schema, no
+  parameter metadata. So `run-action` would need OpenRegister to grow an
+  endpoint first, and this change's own `design.md` already rejects the
+  neighbouring shape for the same reason: "a route that runs a Flow node by
+  name is engine work and a second way to run an action next to the Flow
+  runtime". That objection applies to OpenRegister growing the route too.
+  Sub-questions it drags in: does an out-of-graph run get a run log? which RBAC
+  action gates it, given `flow.run` is graph-scoped? does a node an app
+  contributes become directly HTTP-invokable by anyone who can name it?
+
+  **D-2. `@pick:template` names nothing.** Nothing in the manifest says where
+  the options come from, and the one server surface that describes a node
+  returns no parameter metadata, so the option source, the label field, the
+  value field and the dialog title would all be new manifest fields. It is a
+  new product surface, not a token spelling.
+
+  **D-3. A suspending token is a new resolver contract.** Every token in
+  `src/utils/sentinelTokens.js` resolves SYNCHRONOUSLY from ambient context —
+  the clock, the signed-in user, route params, the page object, app config.
+  `@pick:` would be the first that opens UI and waits for a person: async
+  resolution, a cancel path, and a decision about whether the closed vocabulary
+  admits interactive tokens at all — or whether "ask, then run" stays what it
+  is today, a dialog, which is exactly what 3.2 shipped.
+
+  **D-4. The name is taken.** `run-action` is already a setup-wizard STEP type
+  in the same schema file, posting to `/api/setup/action/{action}`, and is
+  surfaced in the editor as "Run action (call an endpoint)". A second
+  `run-action` with flow-node semantics needs either a rename or a deliberate
+  overload.
+
+  One path IS open today and does not finish the task: `type: api-call` against
+  `POST /api/cases/{caseId}/dossier/generate`, which exists, is authorized and
+  is what 3.2's dialog already calls. `design.md` rejects it, and it would not
+  drop the dialog anyway, because `api-call` has no picker — so the template
+  choice would have to be hardcoded per action. Noted so it is not
+  re-discovered as an escape hatch.
+
+  Also worth carrying to whoever takes D-1: the dialog sends `templateId`
+  while `DossiqMergeTemplateNode::requiredConfigKeys()` demands `templateSlug`.
+  Those two names have to be reconciled by any migration.
 
 ## 4. Seed
 

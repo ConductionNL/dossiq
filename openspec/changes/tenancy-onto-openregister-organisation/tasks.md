@@ -29,36 +29,42 @@ is the accurate signal. Do not silence it with a placeholder capability.
   the claim binds the tenant. Recorded in the proposal under "Decided: the PHP
   session is the source of truth for tenant".
 - [ ] 4 **Move.** Repoint the five middlewares, migrate the data, retire the
-  schemas. NOT STARTED, but no longer blocked. The irreversible act this note
-  used to name, the three field drops, turned out to be done already (see 2a).
-  2e and 2f, which held it, were both decided on 2026-09-11, and neither
-  needs anything upstream: `retained` and `retainedAt` are already on
-  `TenantLifecycleService` with `PURGEABLE_STATUS` pinned to `archived`, and
-  `legalName` landed in openregister#3603 beside the `kvk` column that was
-  always there.
+  schemas. NOT STARTED, and no longer blocked by anything.
 
-  One thing still gates the move, and it is dossiq's own: 2g. The four
-  lookups that read OpenRegister rows as arrays have to be fixed in the same
-  step, together, because fixing the membership lookup alone would bind
-  tenants and then have the other two deny every write by every member.
-  That fix is dossiq#2436, which touches exactly the four 2g names:
-  `listTenantsForUser()`, `resolveUserRole()` and `loadActiveMatrix()` in
-  `TenantAuthenticationService`, and `getQuota()` in `TenantQuotaService`.
-  The pins in 2h are what shows the re-pointed filters still scope once it
-  lands.
+  The irreversible act this note used to name, the three field drops, turned
+  out to be done already (see 2a). Everything else that held it has since
+  cleared:
 
-  Do not confuse it with dossiq#2449, which fixes the same reading defect in
-  five OTHER services (`BerichtenboxReadStatusJob`,
-  `BezwaarDecisionListener`, `TenantBillingService`,
-  `TenantConfigurationService`, `TenantOnboardingService`). #2449 is
-  worth having and does not gate this step.
+  - **2e and 2f, decided 2026-09-11.** Neither needs anything upstream:
+    `retained` and `retainedAt` are already on `TenantLifecycleService` with
+    `PURGEABLE_STATUS` pinned to `archived`, and `legalName` landed in
+    openregister#3603 beside the `kvk` column that was always there.
+  - **2g, fixed and merged.** dossiq#2436 repaired all four lookups together,
+    `listTenantsForUser()`, `resolveUserRole()` and `loadActiveMatrix()` in
+    `TenantAuthenticationService` plus `getQuota()` in `TenantQuotaService`.
+    It was held on purpose for a while, because it makes a layer step 4
+    retires actually enforce, and Ruben ruled on 2026-09-11 to merge it and
+    then start step 4. Do not confuse it with dossiq#2449, which fixed the
+    same reading defect in five other services and never gated this step.
+  - The pins in 2h are what shows the re-pointed filters still scope.
 
-  **#2436 is being held on purpose**, which is the thing to settle. It makes
-  dossiq's tenant layer genuinely enforce, and that layer is the one step 4
-  retires, so merging it turns on enforcement in a layer due for removal.
-  Holding it leaves the layer inert. Step 4 needs it merged; the hold says
-  not yet. That tension is a decision, not an oversight, and it is the only
-  thing between here and starting step 4.
+  **Decided 2026-09-11 by Ruben, and it belongs to this step: dossiq stops
+  counting request quota, and OpenRegister alone enforces it.** 2b found that
+  one shared limit was being counted twice, by OpenRegister's
+  `TenantQuotaMiddleware` on its own routes and by dossiq's
+  `QuotaEnforcementMiddleware` on dossiq's, so a tenant could spend the full
+  limit on each. Measured: OpenRegister registers its middleware through
+  `$context->registerMiddleware()` with no `global` flag, so it guards only
+  OpenRegister's own controllers.
+
+  So step 4 retires dossiq's `QuotaEnforcementMiddleware` rather than teaching
+  it to share a counter. **State the consequence plainly rather than leaving
+  it to be discovered: dossiq's own routes then carry no request quota at
+  all.** The alternative considered and rejected was making OpenRegister's
+  middleware global, which would have closed that gap and started counting
+  every app's routes fleet-wide. If the unguarded routes later matter, that is
+  the change to make, and it belongs upstream in OpenRegister rather than in a
+  second dossiq middleware.
 - [ ] 5 **Remove the surface.** The `Tenants` and `TenantDetail` pages are
   both still in `src/manifest.json`. They go once the store they administer is
   gone, not before.
@@ -318,6 +324,23 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
       the membership lookup alone would bind tenants and then deny every
       write by every member through the other two. The three move together,
       in step 4.
+      **Fixed 2026-09-11, ahead of step 4, in one change.** Membership, role,
+      mandate matrix and quota now read each row through
+      `OpenRegisterRowNormaliser`, the helper `AwbProceedingScanner` already
+      used for the same return shape. `ResetMonthlyQuotasJob` moved with them:
+      it indexed the same entities outside any catch, so it died on every run,
+      and a quota that enforces but never resets would have kept a `block`
+      quota refusing past its window. The pinning test
+      `testAMembershipRowInTheShapeOpenRegisterReturnsIsDropped` turned red as
+      expected and now asserts the row resolves; entity-shaped tests pin the
+      other three lookups, a member allowed exactly what the matrix grants,
+      a tenant over quota refused with 429, and the job resetting in place.
+      The test stub's `getObject()` now puts the uuid in front as `id`, as the
+      real class does. Found on the way and not fixed here: the same defect
+      in `TenantOnboardingService` (`getProgress()`, `markStepComplete()`),
+      `TenantConfigurationService::getConfig()`, `TenantBillingService`'s
+      monthly listing, `BezwaarDecisionListener::containsDecidedDecision()`
+      and `BerichtenboxReadStatusJob`.
 - [x] 2h Mutation survey of the scoping checks step 4 re-points, run
       2026-09-11 against the whole tenancy suite. Sixteen mutations, each
       disabling one comparison or filter. Before this change 7 of the 16
