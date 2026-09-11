@@ -21,6 +21,14 @@
  * page's own Save button, and reads the values back from GET /api/settings,
  * then puts the originals back. Rendering alone proves only half the scenario:
  * a save that silently drops a key leaves every field on screen.
+ *
+ * Watched failing on the CLIENT half only. With the served settings bundle
+ * rewritten so the form posts only `identification_method` and the trigger
+ * words, both tests redden on their "the ... the admin typed is the one
+ * stored" assertion. The SERVER half has not been seen red: that mutation
+ * needs a change to the shared dev instance still awaiting approval. The
+ * point is lib/Service/SettingsService.php, updateSettings(): skip the four
+ * keys inside the CONFIG_KEYS loop, and the same assertions must redden.
  */
 
 import type { Page } from '@playwright/test'
