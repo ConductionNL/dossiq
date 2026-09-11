@@ -198,7 +198,22 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate', 'caseTask',
+    #
+    # `caseTask` IS DELIBERATELY NOT HERE, and the reason is about where a
+    # failure lands rather than about the schema. This list is a hard gate:
+    # a name it cannot find exits 1 before Playwright starts, and the run then
+    # reports every spec as NOT RUN. That is the loudest possible signal
+    # attached to the least informative message — "the suite did not run" says
+    # nothing about which surface broke.
+    #
+    # remove-casetask deletes the schema. One spec still needs an object of it
+    # (demo-caseload, whose first two scenarios assert OpenRegister
+    # CALCULATIONS — isTerminalStatus, daysUntilDue — which only an object
+    # materialises). Keeping the name here would turn that one spec's
+    # dependency into a whole-suite outage on the day the schema goes; leaving
+    # it out lets demo-caseload fail on its own, naming the schema it could not
+    # create, while the other ~330 specs still run and still report.
+    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate',
                 'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
 }[kind]
 with open(path) as fh:
