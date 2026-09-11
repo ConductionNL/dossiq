@@ -81,6 +81,9 @@ const HOOK = {
 	own: 'hq-hours-own',
 	timer: 'hq-hours-timer',
 	running: 'hq-hours-running',
+	// ONE action button whose menu holds Book hours and View hours (humaniq#418).
+	// Those two are not on the card until the menu is open.
+	actions: 'hq-hours-actions',
 	book: 'hq-hours-book',
 	view: 'hq-hours-view',
 	dialog: 'hq-hours-booking-dialog',
@@ -280,7 +283,7 @@ if (!HUMANIQ_DECLARED) {
 			).toHaveCount(0)
 
 			// The booking affordances belong to the leaf, so they go with it.
-			for (const hook of [HOOK.book, HOOK.view, HOOK.timer]) {
+			for (const hook of [HOOK.actions, HOOK.book, HOOK.view, HOOK.timer]) {
 				await expect(
 					page.getByTestId(hook),
 					`${hook} belongs to humaniq's leaf, which is not registered here`,
@@ -383,14 +386,35 @@ if (!HUMANIQ_DECLARED) {
 			await readFigure(widget.getByTestId(HOOK.total), 'the total')
 			await readFigure(widget.getByTestId(HOOK.own), "the caller's own hours")
 
-			// The three affordances the leaf places on the tile.
+			// The card lists NO bookings (humaniq#418). A KPI answers one question
+			// and the rows behind the total are one press away through View hours.
+			await expect(
+				widget.locator('li'),
+				'the hours card must not list the bookings behind its total',
+			).toHaveCount(0)
+
+			// Two controls in the card header: the stopwatch and ONE action
+			// button. Book hours and View hours are menu items, not tile buttons,
+			// so they must NOT be on the card until the menu opens. Asserting them
+			// visible without opening it would fail; asserting them absent first
+			// proves the menu is what reveals them.
 			await expect(
 				widget.getByTestId(HOOK.timer),
-				'the timer button must be on the tile',
+				'the stopwatch must be on the card',
+			).toBeVisible()
+			await expect(
+				widget.getByTestId(HOOK.actions),
+				'the card must carry one action button',
 			).toBeVisible()
 			await expect(
 				widget.getByTestId(HOOK.book),
-				'Book hours must be on the tile',
+				'Book hours lives in the action menu, not on the card',
+			).toHaveCount(0)
+
+			await widget.getByTestId(HOOK.actions).click()
+			await expect(
+				widget.getByTestId(HOOK.book),
+				'Book hours must be in the action menu',
 			).toBeVisible()
 			// `administrationUrl()` in humaniq's `src/integrations/hoursApi.js`
 			// builds this as `/apps/humaniq/time-entries` with the filter query
@@ -402,21 +426,24 @@ if (!HUMANIQ_DECLARED) {
 				'View hours must link out to humaniq',
 			).toHaveAttribute('href', /\/apps\/(humaniq|hrmq)\/time-entries/)
 
-			// The timer sits LEFT of the two buttons, which is the placement, not
-			// a detail: it is the one affordance a caseworker reaches for mid
-			// call, and reading it out of the DOM order would pass on a tile that
+			// The stopwatch sits LEFT of the action button, which is the placement,
+			// not a detail: it is the one affordance a caseworker reaches for mid
+			// call, and reading it out of the DOM order would pass on a card that
 			// paints it anywhere.
 			const timerBox = await widget.getByTestId(HOOK.timer).boundingBox()
-			const bookBox = await widget.getByTestId(HOOK.book).boundingBox()
+			const actionsBox = await widget.getByTestId(HOOK.actions).boundingBox()
 			expect(
 				timerBox,
-				'the timer button must be painted somewhere',
+				'the stopwatch must be painted somewhere',
 			).not.toBeNull()
-			expect(bookBox, 'Book hours must be painted somewhere').not.toBeNull()
+			expect(
+				actionsBox,
+				'the action button must be painted somewhere',
+			).not.toBeNull()
 			expect(
 				Number(timerBox?.x),
-				'the timer button sits left of Book hours on the tile',
-			).toBeLessThan(Number(bookBox?.x))
+				'the stopwatch sits left of the action button on the card',
+			).toBeLessThan(Number(actionsBox?.x))
 		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
@@ -432,6 +459,7 @@ if (!HUMANIQ_DECLARED) {
 				'the total before booking',
 			)
 
+			await widget.getByTestId(HOOK.actions).click()
 			await widget.getByTestId(HOOK.book).click()
 			const dialog = page.getByTestId(HOOK.dialog)
 			await expect(
