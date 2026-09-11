@@ -13581,7 +13581,7 @@
           },
           "role": {
             "type": "string",
-            "description": "Role within the tenant (admin, manager, behandelaar, viewer, ...)",
+            "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the three roles TenantProvisioningService creates and the only three the mandate matrix recognises; a member holding any other value is refused on every write.",
             "title": "Role"
           },
           "joinedAt": {

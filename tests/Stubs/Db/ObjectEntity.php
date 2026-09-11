@@ -114,12 +114,19 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	}//end setObject()
 
 	/**
-	 * Get the raw object data (excl. `@self`).
+	 * Get the object data (excl. `@self`), with the uuid as `id` in front.
+	 *
+	 * The real `ObjectEntity::getObject()` does
+	 * `array_merge(['id' => $this->uuid], $this->object ?? [])`. This stub used
+	 * to return the raw data alone, so a caller that reads a `findAll()` row
+	 * through `getObject()` and writes it back by its `id` (tenant quotas do)
+	 * saw no `id` under test and would have created a new row instead of
+	 * updating the one it read, while the real class never did.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public function getObject(): array {
-		return $this->object;
+		return array_merge(['id' => $this->uuid], $this->object);
 	}//end getObject()
 
 	/**
