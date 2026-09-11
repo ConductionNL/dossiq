@@ -205,6 +205,21 @@ test.describe('Case flow — human steps', () => {
 	test('a deep link to a case survives a hard reload, under both URL forms', async ({
 		page,
 	}) => {
+		// FOUR HARD PAGE LOADS, SO FOUR TIMES THE DEFAULT BUDGET.
+		//
+		// This test navigates four times: the list, the click into a case,
+		// the deep link, and the same resource under the other URL spelling.
+		// Three of those are full document loads, which is the point of the
+		// test and cannot be shortcut through the SPA without testing nothing.
+		//
+		// The suite runs four workers against one PHP server, where a page
+		// load costs 13-23s under load, so four loads do not fit the default
+		// 60s. Measured: on a green run of an unrelated PR this test took
+		// 47.8s, four fifths of its budget, and on the next run it exceeded
+		// 60s twice in a row. A test that passes only when the runner is
+		// quiet reports the runner's mood, not the router's behaviour.
+		test.setTimeout(150_000)
+
 		// The RELOAD of a deep link is the test. Sidebar navigation stays
 		// inside the loaded SPA and never re-derives the router base, so it
 		// worked even while every hard load of `/apps/dossiq/cases/<id>`
