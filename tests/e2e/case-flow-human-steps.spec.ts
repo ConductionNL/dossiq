@@ -205,6 +205,17 @@ test.describe('Case flow — human steps', () => {
 	test('a deep link to a case survives a hard reload, under both URL forms', async ({
 		page,
 	}) => {
+		// 🔴 FOUR PAGE LOADS, AND THE DEFAULT BUDGET HOLDS ABOUT TWO.
+		//
+		// The index, the click into the case, and then the same case hard
+		// loaded under both URL spellings. On CI four workers share one
+		// `php -S`, where a load costs 13 to 23 seconds, so the 60 second
+		// default cannot fit this test and it timed out on `development`
+		// (run 34578124024) while passing everywhere quieter. `test.slow()`
+		// triples the budget, which is the honest size of this journey rather
+		// than a retry until it fits.
+		test.slow()
+
 		// The RELOAD of a deep link is the test. Sidebar navigation stays
 		// inside the loaded SPA and never re-derives the router base, so it
 		// worked even while every hard load of `/apps/dossiq/cases/<id>`
@@ -213,7 +224,10 @@ test.describe('Case flow — human steps', () => {
 		// came from generateUrl() while the page was served under the other
 		// URL form. Reach a case the supported way first, then hard-load the
 		// URL the browser ended up on.
-		await page.goto('/index.php/apps/dossiq/cases')
+		// Named budgets on every navigation below. Without one, a slow load
+		// spends the whole test budget and Playwright reports a bare
+		// "Test timeout exceeded" that names neither the URL nor the step.
+		await page.goto('/index.php/apps/dossiq/cases', { timeout: 45000 })
 		await expect(
 			page.locator('body'),
 			`The seeded case "${INCOMPLETE_CASE}" is missing.`,
@@ -225,7 +239,7 @@ test.describe('Case flow — human steps', () => {
 
 		// Form 1: exactly the URL the browser shows. A hard load must land on
 		// the case, not the dashboard.
-		await page.goto(deepLink.pathname)
+		await page.goto(deepLink.pathname, { timeout: 45000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
@@ -240,7 +254,7 @@ test.describe('Case flow — human steps', () => {
 		const altPath = deepLink.pathname.includes('/index.php/')
 			? deepLink.pathname.replace('/index.php', '')
 			: deepLink.pathname.replace('/apps/dossiq', '/index.php/apps/dossiq')
-		await page.goto(altPath)
+		await page.goto(altPath, { timeout: 45000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
