@@ -968,8 +968,16 @@ parent's. A chain that returns to itself SHALL be refused on save.
 - **WHEN** you file a case of Bezwaar (verkort)
 - **THEN** the case's deadline SHALL be 6 weeks after its start date
 
+#### Scenario: A child inherits a deadline it does not declare
+@e2e tests/e2e/case-type-parent-chain.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (standaard) names Bezwaar as its parent and sets no deadline of its own
+- **WHEN** you file a case of Bezwaar (standaard)
+- **THEN** the case's deadline SHALL be 12 weeks after its start date
+
 #### Scenario: A cycle is refused
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-parent-chain.spec.ts
 
 - **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
 - **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
