@@ -48,11 +48,26 @@ import type { APIRequestContext } from '@playwright/test'
  * `DossiqAskPersonNode` beside `UserTaskNode`, and it is a decision about
  * duplication rather than something a test can settle.
  *
- * 🔑 MUTATION-CHECKED by removing `flowRun` and `flowNode` from
- * `DossiqAskPersonNode::buildTask()`, which is the provenance both listeners
- * read. Tests 2 and 3 both went red: the task carried no run, so nothing
- * signalled, the run stayed suspended past a worker pass and the case kept its
- * empty description. Restored, all three pass.
+ * 🔑 MUTATION-CHECKED THREE WAYS, 2026-09-11, each break applied to a live
+ * instance and each followed by a restore that went green again.
+ *
+ *   a. Dossiq's listener registration commented out of
+ *      `WorkflowListenerRegistrar`. BOTH TESTS STILL PASSED. That is the
+ *      finding above, not a hole in the assertions: OpenRegister's listener
+ *      does the same work, so no assertion on the run or the case can tell the
+ *      two apart.
+ *   b. `flowRun` and `flowNode` blanked in `DossiqAskPersonNode::buildTask()`,
+ *      which is the provenance BOTH listeners read. The resume test went red on
+ *      the provenance assertion, which is where it should: a task naming no run
+ *      is refused by both listeners, so nothing downstream would have run
+ *      either.
+ *   c. `DossiqAskPersonNode::execute()` made to read every task as
+ *      non-terminal, so the resumed node re-suspends instead of accepting the
+ *      answer. The resume test went red on the assertion that matters most —
+ *      "the run must have left `suspended`" — with the run still parked after a
+ *      worker pass and the case still carrying no description. This is the
+ *      break that proves the end-of-chain assertions are load-bearing rather
+ *      than decorative.
  *
  * THE THREE TESTS, AND WHAT EACH ONE PINS.
  *
