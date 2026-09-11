@@ -107,6 +107,76 @@ The system SHALL display an inspection panel on the case dashboard for Toezicht 
 - **THEN** the panel SHALL show all rapporten for that phase in chronological order
 - **THEN** the most recent rapport SHALL determine the current phase status
 
+### Requirement: Inspection result submission is authorized from stored state
+
+The system SHALL decide who may submit an inspection result for a case from
+data it has stored, never from the submitted request. `POST
+/api/vth/cases/{id}/inspection-result` SHALL admit only the case's stored
+assignee and members of the admin group, and SHALL refuse every other
+authenticated caller.
+
+This requirement exists because the endpoint shipped with a guard that read
+the permitted inspector out of the request body (issue #799). A caller who
+omitted the field, or who named themselves, passed. The rule below is written
+down so the next implementation cannot quietly choose a different one.
+
+**Feature tier**: V1
+
+#### Scenario: The case's assignee submits a result
+
+- **GIVEN** case `2026-089` whose stored `assignee` is `inspecteur-a`
+- **WHEN** `inspecteur-a` posts an inspection result to that case
+- **THEN** the system SHALL accept the submission and store an
+  `inspectionResult` whose `case` is `2026-089` and whose `completedBy` is
+  `inspecteur-a`
+
+#### Scenario: Another authenticated account is refused
+
+- **GIVEN** the same case, and an authenticated account `buitenstaander` that
+  is neither its `assignee` nor a member of the admin group
+- **WHEN** `buitenstaander` posts an inspection result to that case
+- **THEN** the system SHALL respond `403 Forbidden`
+- **THEN** no `inspectionResult` SHALL be written
+
+#### Scenario: Omitting the inspector field does not skip the check
+
+- **GIVEN** the same case and the same account `buitenstaander`
+- **WHEN** `buitenstaander` posts an inspection result carrying no inspector
+  field of any kind
+- **THEN** the system SHALL still respond `403 Forbidden`, because the decision
+  is taken before the payload is read and no absent field can influence it
+
+#### Scenario: The case cannot be resolved
+
+- **WHEN** a submission names a case that does not exist, or OpenRegister is
+  unavailable, or the case schema is not configured
+- **THEN** the system SHALL refuse the submission
+- **THEN** an unresolvable case SHALL never be treated as an unrestricted one
+
+#### Scenario: Creating an advice request is authorized the same way
+
+- **GIVEN** case `2026-089` whose stored `assignee` is `inspecteur-a`
+- **WHEN** an authenticated account that is neither that assignee nor an admin
+  posts to `/api/vth/cases/2026-089/advice-requests`
+- **THEN** the system SHALL respond `403 Forbidden` and SHALL send no adviseur
+  notification
+
+### Requirement: Inspection results are stored under the schema's own property names
+
+The system SHALL write an `inspectionResult` using the property names the
+schema declares. `case` and `checklist` are required properties of that
+schema, so a payload spelling them `caseRef` and `checklistRef` is rejected by
+OpenRegister's validator and no result is ever recorded. Reads SHALL filter on
+the same names.
+
+**Feature tier**: V1
+
+#### Scenario: A submitted result is readable back
+
+- **WHEN** a permitted caller submits an inspection result for a case
+- **THEN** `GET /api/vth/cases/{id}/inspection-results` SHALL return that
+  result for the same case
+
 <!-- BEGIN retrofit-2026-05-24-inspection-checklists -->
 
 ## Execution Surface (retrofit)

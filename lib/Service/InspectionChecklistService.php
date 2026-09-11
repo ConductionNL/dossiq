@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/vth-module/tasks.md#task-4
+ * @spec openspec/specs/inspection-checklists/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,7 +40,7 @@ use Throwable;
  * manages the template lifecycle: create/read/update/delete of
  * `inspectionChecklist` objects and submission of `inspectionResult` records.
  *
- * @spec openspec/changes/vth-module/tasks.md#task-4
+ * @spec openspec/specs/inspection-checklists/spec.md
  */
 class InspectionChecklistService {
 
@@ -52,7 +52,7 @@ class InspectionChecklistService {
 	 * @param SettingsService $settingsService Settings bridge to OpenRegister
 	 * @param LoggerInterface $logger Logger
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -67,7 +67,7 @@ class InspectionChecklistService {
 	 *
 	 * @return array<int, array<string, mixed>> List of checklist objects
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function listChecklists(?string $caseTypeRef = null): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -108,7 +108,7 @@ class InspectionChecklistService {
 	 *
 	 * @throws RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function createChecklist(array $data): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -151,7 +151,7 @@ class InspectionChecklistService {
 	 *
 	 * @throws RuntimeException If OpenRegister is unavailable
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function updateChecklist(string $id, array $data): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -230,7 +230,7 @@ class InspectionChecklistService {
 	 *
 	 * @throws RuntimeException If validation fails or OpenRegister unavailable
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function submitResult(
 		string $caseId,
@@ -252,9 +252,17 @@ class InspectionChecklistService {
 		// Calculate overall result.
 		$overallResult = $this->calculateOverallResult(answers: $answers);
 
+		// SCHEMA PROPERTY NAMES, not `caseRef`/`checklistRef` (#799). The
+		// `inspectionResult` schema declares `case` and `checklist` and lists
+		// both as REQUIRED, so every submission this method ever made was
+		// rejected by OpenRegister's validator — the probe on the issue got
+		// `The required properties (case, checklist) are missing`, which is
+		// also why the reporter could demonstrate the guard failing open
+		// without ever landing a forged record. Read and write now agree with
+		// the schema, so `getResultsForCase()` below finds what this wrote.
 		$payload = [
-			'caseRef' => $caseId,
-			'checklistRef' => $checklistId,
+			'case' => $caseId,
+			'checklist' => $checklistId,
 			'completedBy' => $completedBy,
 			'completedAt' => date(format: 'c'),
 			'answers' => $answers,
@@ -286,7 +294,7 @@ class InspectionChecklistService {
 	 *
 	 * @return array<int, array<string, mixed>> List of inspectionResult objects
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
+	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function getResultsForCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -301,7 +309,7 @@ class InspectionChecklistService {
 				objectService: $objectService,
 				register: $register,
 				schema: 'inspectionResult',
-				filters: ['caseRef' => $caseId, '_limit' => 50, '_order' => 'completedAt']
+				filters: ['case' => $caseId, '_limit' => 50, '_order' => 'completedAt']
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
