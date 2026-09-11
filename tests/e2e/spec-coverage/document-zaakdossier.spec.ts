@@ -416,15 +416,49 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 		// downstream. Counting stored rows would therefore confuse "the dialog
 		// refused to send" with "it sent and storage said no", which are opposite
 		// outcomes for this requirement.
-		const uploads: string[] = []
+		let uploads = 0
 		page.on('request', (req) => {
 			if (
 				req.method() === 'POST'
 				&& req.url().includes(`/api/cases/${dialogCaseId}/dossier`)
 			) {
-				uploads.push(req.postDataBuffer()?.toString('latin1') ?? '')
+				uploads++
 			}
 		})
+
+		// What each request CARRIED is read from the form as it is built, not
+		// off the wire. Chromium does not expose the body of a multipart request
+		// that contains a File, so `request.postData()` answers an empty string
+		// for exactly the requests this test is about. Recording each
+		// `FormData.append` observes the app's own payload without changing it.
+		await page.addInitScript(() => {
+			const record: Array<{ name: string; value: string }> = []
+			;(window as any).__dossierForm = record
+			const append = FormData.prototype.append
+			FormData.prototype.append = function (
+				this: FormData,
+				name: string,
+				value: any,
+				...rest: any[]
+			) {
+				record.push({
+					name,
+					value:
+						typeof value === 'string'
+							? value
+							: String(value?.name ?? ''),
+				})
+				return (append as any).call(this, name, value, ...rest)
+			}
+		})
+		const appended = () =>
+			page.evaluate(
+				() =>
+					(window as any).__dossierForm as Array<{
+						name: string
+						value: string
+					}>,
+			)
 
 		await page.goto(`/apps/${REGISTER}/cases/${dialogCaseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
@@ -469,7 +503,7 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 		expect(
 			uploads,
 			'no upload may be sent while the dialog is still incomplete',
-		).toHaveLength(0)
+		).toBe(0)
 
 		// Filling the required fields releases it, which is what tells a working
 		// refusal apart from a dialog that is simply broken. Choosing the type
@@ -483,12 +517,18 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 		// "a single informatieobjecttype selection MUST apply to both files".
 		// `performUpload` posts once per file with the shared metadata, so both
 		// requests must carry the one type that was picked.
-		await expect.poll(() => uploads.length, { timeout: 60_000 }).toBe(2)
-		for (const body of uploads) {
-			expect(body).toContain(`"informatieobjecttype":"${documentTypeId}"`)
+		await expect.poll(() => uploads, { timeout: 60_000 }).toBe(2)
+		const form = await appended()
+		const metadata = form.filter((entry) => entry.name === 'metadata')
+		expect(metadata).toHaveLength(2)
+		for (const entry of metadata) {
+			expect(JSON.parse(entry.value).informatieobjecttype).toBe(documentTypeId)
 		}
-		expect(uploads.join('\n')).toContain('aanvraag.pdf')
-		expect(uploads.join('\n')).toContain('bijlage.pdf')
+		expect(
+			form
+				.filter((entry) => entry.name === 'files')
+				.map((entry) => entry.value),
+		).toEqual(['aanvraag.pdf', 'bijlage.pdf'])
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008c-bulk-status-transition-returns-per-document-result
