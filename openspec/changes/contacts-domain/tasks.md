@@ -76,6 +76,34 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   page (`folderSidebarFacetValues` / `folderSidebarPartial`), which this
   page does not use.
 
+  **RE-MEASURED 2026-09-11 against nextcloud-vue `development`, ahead of
+  2.47.0. STILL BLOCKED, and now with the size of the fix measured rather than
+  guessed.** Nothing in #1083, #1084 or #1090 touches `folderSidebarFolders()`,
+  `CnFolderTree` or `onFolderSelect()`, so all three counts above stand.
+
+  The seam this task needs is a folder that carries its own **schema**, not
+  only its own columns. `index-columns-per-scope` (nextcloud-vue, opened by
+  PR #1031 as B10) specifies `columns`, `defaultSort` and `searchFields` per
+  scope and is the right home for the columns half — but it does NOT specify a
+  per-folder `schema`, and the columns half alone does not unblock this page:
+  People and Organisations are different schemas, and a filter is not what
+  tells them apart.
+
+  Why the schema half is bigger than it reads. `CnIndexPage`'s self-fetch binds
+  its store slice at setup:
+  `useSelfFetchList.js` computes `const objectType = \`${props.register}-${props.schema}\``
+  as a PLAIN STRING and hands it to `useListView(objectType, …)` and
+  `useObjectSubscription(…)`, neither of which watches it. Switching the
+  queried schema at runtime therefore means making `objectType` reactive
+  through both composables, in the component every index page in the fleet
+  renders. That is a real change with real blast radius, and it should be its
+  own openspec change with its own mutation-checked tests — not a rushed edit
+  bolted onto this one.
+
+  Until then 2.1 stays as shipped: no `folderSidebar`, and organisations are
+  reached through the separate Organisations index that `contacts-you-can-find`
+  added.
+
 ## 3. The contact pages
 
 - [x] 3.1 `src/manifest.json` page `ContactDetail` (`route: /contacts/:id`,

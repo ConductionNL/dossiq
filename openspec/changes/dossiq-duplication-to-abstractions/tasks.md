@@ -66,17 +66,47 @@ Do not silence it with a placeholder capability.
 Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
 `development` there is gated: merge needs `--admin`.
 
-- [ ] 1.1 `cnFormFieldRenderer.js`: add `field.type === 'file'`. Needed by the
-      task form's upload; no other field type is missing.
-- [ ] 1.2 `CnObjectListWidget`: a column that resolves a `$ref` to a label
-      instead of rendering the uuid. Unblocks documents-on-the-case 2.2 and
-      retires dossiq's `DossierTab` workaround.
-- [ ] 1.3 `CnIndexPage`: let a column's `link` name a route. Unblocks
-      contacts-domain 3.6.
+- [x] 1.1 `cnFormFieldRenderer.js`: `field.type === 'file'` renders
+      `CnFileField`. nextcloud-vue #1083, in 2.47.0. The field holds the picked
+      file as a `data:` URL and never builds a path, so whoever receives the
+      payload decides where it is stored; valid on form pages only, because a
+      settings page saves to app config and app config has no place for file
+      content.
+- [x] 1.2 `CnObjectListWidget`: nextcloud-vue #1090, in 2.47.0. **Delivered
+      wider than written, because the written ask would not have worked.** A
+      `$ref` resolved to ONE label is `fkResolve`, which already shipped in
+      2.42.0 and did not unblock documents-on-the-case 2.2: that task needs SIX
+      fields off the same referenced `informatieobject`, and it needs a drop
+      zone and a row action the widget matched at all. So what landed is
+      `content.extend` (OpenRegister `_extend[]`, which makes a dotted column
+      key resolve), `content.rowActions[]` and `content.dropZone`.
+
+      It does NOT retire `DossierTab`. Measured 2026-09-11: that component now
+      groups rows by `informatieobjecttype`, multi-selects, sorts, facets on
+      keywords and carries its own upload button, none of which
+      `CnObjectListWidget` expresses. Swapping it would remove shipped
+      capability while looking correct. The decision is recorded on
+      documents-on-the-case 2.2 and is Ruben's, not the library's.
+- [x] 1.3 `CnIndexPage`: a column's `link` names a route, and picks it PER ROW.
+      nextcloud-vue #1083, in 2.47.0. `widgetProps.routeField` names a sibling
+      field and `widgetProps.routeMap` maps its values to page ids, so one
+      column sends a person to `ContactDetail` and an organisation to
+      `OrganisationDetail`. Consumed by contacts-domain 3.6, which is now done.
 - [ ] 1.4 `actionsDispatcher.js`: dispatch a declared action by name.
       Unblocks documents-on-the-case 3.3.
+
+      **NOT a library gap, measured 2026-09-11.** It needs an OpenRegister
+      endpoint that runs one flow node out of graph (none exists — only
+      `POST /api/flows/{id}/run` over a whole flow), plus a new interactive
+      token class for `@pick:`, which would be the first token in the closed
+      vocabulary that suspends a dispatch and waits for a person. Four
+      decisions, written out in full on documents-on-the-case 3.3. This item
+      cannot be lifted here and should probably move out of section 1.
 - [ ] 1.5 Docs page + JSDoc per changed prop, `check:docs` and `check:jsdoc`
       green, baseline bumped only if coverage genuinely improved.
+      Done for 1.2 (`docs/components/cn-object-list-widget.md`, the regenerated
+      `_generated` reference, both checks exit 0); 1.1 and 1.3 shipped with
+      #1083 and are not re-verified here.
 
 ## 2. Wave 1 — the task spine
 
