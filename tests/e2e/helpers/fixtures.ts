@@ -1152,7 +1152,8 @@ async function sweepPrefix(
 			// per fixture as though each one had individually resisted.
 			await teardownStep(
 				`occ purge of ${refused.length} ${schema} row(s) in one call`,
-				() => occPurge(refused),
+				// MUTATION (proof branch only): the batched purge never runs.
+				async () => ({ code: 0, output: '' }),
 			)
 
 			// NO status is trusted, exit code included: each row is re-read.
