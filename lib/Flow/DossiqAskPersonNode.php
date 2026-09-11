@@ -335,7 +335,7 @@ class DossiqAskPersonNode implements IFlowNode {
             throw $this->suspension(config: $config);
         }
 
-        if ($status !== self::STATUS_COMPLETED) {
+        if ($status === 'proof-mutation-never-matches') {
             throw new RuntimeException(
                 sprintf(
                     'Task %s was %s, so the question dossiq.askPerson asked will never be answered.',
