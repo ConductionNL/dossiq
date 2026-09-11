@@ -177,7 +177,7 @@ class TenantOnboardingService {
 		$fraction = ($completed / $total);
 
 		return [
-			'steps' => array_values($steps),
+			'steps' => $steps,
 			'completed' => $completed,
 			'total' => $total,
 			'fraction' => round($fraction, 2),
