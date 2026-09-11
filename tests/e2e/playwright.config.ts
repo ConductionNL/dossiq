@@ -100,7 +100,8 @@ export default defineConfig({
 	// project-level testIgnore REPLACES this list rather than extending it.
 	testIgnore: IGNORED,
 	globalSetup: path.resolve(__dirname, 'global-setup.ts'),
-	timeout: 60_000,
+	// MUTATION (proof branch only): budgets too small for this work.
+	timeout: 20_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
 	// FOUR WORKERS ON CI, ONE LOCALLY.
@@ -215,7 +216,7 @@ export default defineConfig({
 	// the uploads run. Measured overhead before `Run Playwright tests` starts
 	// is 2.0-2.4 min and the uploads take seconds, so 38m keeps ~7 min of
 	// margin under the cap.
-	globalTimeout: 38 * 60_000,
+	globalTimeout: 4 * 60_000,
 	reporter: [
 		[
 			'html',
