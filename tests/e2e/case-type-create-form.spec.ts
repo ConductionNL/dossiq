@@ -147,7 +147,9 @@ test.describe('New case type dialog', () => {
 
 		const keys = await dialog
 			.locator('[data-cn-field]')
-			.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-cn-field')))
+			.evaluateAll((nodes) =>
+				nodes.map((n) => n.getAttribute('data-cn-field')),
+			)
 
 		expect(keys).toEqual(AUTHORING_FIELDS)
 		// Spelled out because it is the whole point of the override map: sorted
@@ -180,25 +182,27 @@ test.describe('New case type dialog', () => {
 	test('gives the three prose fields the full width', async ({ page }) => {
 		const dialog = await openDialog(page)
 
-		const widths = await dialog.evaluate(
-			(root, prose) => {
-				const box = (sel: string) => {
-					const el = root.querySelector(sel)
-					return el ? el.getBoundingClientRect().width : 0
-				}
-				return {
-					form: box('[data-testid-modal="cn-form-dialog"]'),
-					title: box('[data-cn-field="title"]'),
-					prose: prose.map((k: string) => ({ key: k, width: box(`[data-cn-field="${k}"]`) })),
-				}
-			},
-			PROSE_FIELDS,
-		)
+		const widths = await dialog.evaluate((root, prose) => {
+			const box = (sel: string) => {
+				const el = root.querySelector(sel)
+				return el ? el.getBoundingClientRect().width : 0
+			}
+			return {
+				form: box('[data-testid-modal="cn-form-dialog"]'),
+				title: box('[data-cn-field="title"]'),
+				prose: prose.map((k: string) => ({
+					key: k,
+					width: box(`[data-cn-field="${k}"]`),
+				})),
+			}
+		}, PROSE_FIELDS)
 
 		// Measured, not inferred from the class: the class is what ASKS for the
 		// span, the width is whether it happened.
 		for (const { key, width } of widths.prose) {
-			expect(width, `${key} should span both columns`).toBeGreaterThan(widths.title * 1.5)
+			expect(width, `${key} should span both columns`).toBeGreaterThan(
+				widths.title * 1.5,
+			)
 		}
 	})
 
@@ -214,6 +218,8 @@ test.describe('New case type dialog', () => {
 		}
 		// The counterpart: a short field is still a one-line input, so the
 		// override map has not simply turned everything into a textarea.
-		await expect(dialog.locator('[data-cn-field="title"] textarea')).toHaveCount(0)
+		await expect(dialog.locator('[data-cn-field="title"] textarea')).toHaveCount(
+			0,
+		)
 	})
 })
