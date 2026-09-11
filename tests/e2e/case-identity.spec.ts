@@ -567,8 +567,7 @@ test.describe('Case identity', () => {
 		// date by accident if it is ever unparked.
 		test.fixme(
 			true,
-			'REQ-CM-27 "Empty fields stay visible" cannot be seeded (tracked by '
-				+ 'dossiq#2453): no case in '
+			'REQ-CM-27 "Empty fields stay visible" cannot be seeded: no case in '
 				+ 'this register lacks a disposal date. The case schema declares '
 				+ 'x-openregister-archival with a P10Y default, and OpenRegister '
 				+ 'falls back to that for _retention.disposalDate whenever a case '
