@@ -194,10 +194,17 @@ page-level container, with the chart/table data-shaping logic extracted to a
 pure helper module (`chartShaping.js`). Decomposition MUST NOT change the
 rendered behaviour, the data fetched, or the displayed strings.
 
+RETITLED 2026-09-11. The heading is the manifest page title, "Processing time",
+and has been since page-topology-cleanup (A3) made this a real `type: dashboard`
+page whose header comes from the manifest. The scenario below asked for
+"Processing Time Analytics", a string no component renders any more: it survives
+only as an l10n key. Three tests cited this scenario and all three asserted the
+title the page carries, so the requirement was the stale half, not the tests.
+
 #### Scenario: Doorlooptijd page renders heading
 - **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the doorlooptijd page
-- **THEN** the main content MUST render a "Processing Time Analytics" page heading
+- **THEN** the main content MUST render the page heading "Processing time"
 - **AND** the page MUST NOT show an Internal Server Error
 
 #### Scenario: Dashboard is composed of focused sub-components
