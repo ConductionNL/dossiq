@@ -25,7 +25,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 
 class CaseFlowDeclarationTest extends TestCase {
 	/**
@@ -656,67 +660,50 @@ class CaseFlowDeclarationTest extends TestCase {
 	}//end testTheSeedExercisesBothSidesOfTheCompletenessCheck()
 
 	/**
-	 * 🔴 THE `blocksCase` CALCULATION USES OPERATORS THE ENGINE ACTUALLY HAS.
+	 * 🔴 NOTHING RE-DECLARES THE `blocksCase` CALCULATION.
 	 *
-	 * A calculation whose expression form the engine does not understand is
-	 * INERT — it is not rejected, it simply never produces a value. This schema
-	 * already carries a scar from exactly that: `objectionProceeding`'s
-	 * decisionDeadline shipped for months as an array-form string DSL
-	 * "which OpenRegister's calculation engine never honoured".
+	 * This test used to read `caseTask.x-openregister-calculations.blocksCase`
+	 * and check every operator in its expression against the list
+	 * `OpenRegister\Service\Calculation\CalculationEvaluator::apply()`
+	 * implements, because an operator the evaluator does not know is INERT: it
+	 * is not rejected, it simply never produces a value. That schema is gone
+	 * (remove-casetask) and the field went with it.
 	 *
-	 * The operator list below is copied from
-	 * `OpenRegister\Service\Calculation\CalculationEvaluator::apply()`. It is a
-	 * cheap structural check, not a substitute for evaluating: the expression was
-	 * additionally run through the real evaluator during development, and returns
-	 * true only for a task that names a run and is neither completed nor
-	 * terminated.
+	 * It went WITHOUT A CONSUMER, which is the finding worth keeping. Nothing
+	 * in `lib`, `src`, the manifest or the e2e suite ever read `blocksCase`,
+	 * and the engine has no column for it: {@see EngineTaskGateway::toEnginePayload}
+	 * says so and drops it. So a task blocking a case is a capability dossiq
+	 * declared, materialised and never used, and re-adding the field to a
+	 * fragment would recreate exactly that. Hence an absence assertion rather
+	 * than a deleted test.
 	 *
 	 * @return void
 	 */
-	public function testTheBlocksCaseCalculationUsesSupportedOperatorsOnly(): void {
+	public function testNoShippedSchemaDeclaresTheBlocksCaseCalculation(): void {
 		$register = json_decode(
 			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
 			true
 		);
+		$this->assertIsArray($register, 'The register file must be valid JSON.');
 
-		$calc = ($register['components']['schemas']['caseTask']['x-openregister-calculations']['blocksCase'] ?? null);
-		$this->assertIsArray($calc, 'The task must declare when it is blocking a case.');
-		$this->assertTrue(($calc['materialise'] ?? false), 'It must be materialised, or it cannot be filtered server-side.');
+		$schemas = (array)($register['components']['schemas'] ?? []);
+		$this->assertNotSame([], $schemas, 'The sweep found no schemas at all, so it checked nothing.');
 
-		$supported = [
-			'abs', 'and', 'coalesce', 'concat', 'dateAdd', 'dateDiff', 'days', 'diffDays',
-			'eq', 'formatDate', 'global', 'gt', 'gte', 'hours', 'if', 'lit', 'lt', 'lte',
-			'max', 'min', 'minutes', 'monthly', 'months', 'monthsElapsed', 'ne', 'not',
-			'now', 'or', 'prop', 'round', 'seconds', 'sequence', 'weeks', 'year',
-			'yearly', 'years',
-		];
-
-		$operators = [];
-		$walk = static function (mixed $node) use (&$walk, &$operators): void {
-			if (is_array($node) === false) {
-				return;
+		$declaring = [];
+		foreach ($schemas as $slug => $schema) {
+			$calculations = (array)(((array)$schema)['x-openregister-calculations'] ?? []);
+			if (array_key_exists('blocksCase', $calculations) === true) {
+				$declaring[] = (string)$slug;
 			}
-
-			foreach ($node as $key => $value) {
-				if (is_string($key) === true) {
-					$operators[] = $key;
-				}
-
-				$walk($value);
-			}
-		};
-		$walk($calc['expression']);
-
-		$this->assertNotEmpty($operators, 'An expression with no operators computes nothing.');
-
-		foreach (array_unique($operators) as $operator) {
-			$this->assertContains(
-				$operator,
-				$supported,
-				sprintf('"%s" is not an operator the calculation engine implements, so the field would be inert.', $operator)
-			);
 		}
-	}//end testTheBlocksCaseCalculationUsesSupportedOperatorsOnly()
+
+		$this->assertSame(
+			[],
+			$declaring,
+			'blocksCase is a materialised field no reader ever had and the task engine has no column for. '
+			. 'Re-declaring it ships a calculation nothing consumes: ' . implode(', ', $declaring)
+		);
+	}//end testNoShippedSchemaDeclaresTheBlocksCaseCalculation()
 
 	/**
 	 * Every path ends at an end node rather than simply stopping.
@@ -920,35 +907,128 @@ class CaseFlowDeclarationTest extends TestCase {
 	}//end testTheCaseSchemaDeclaresEveryFieldTheFlowWrites()
 
 	/**
-	 * The task schema declares the two fields that tie a task to its run.
+	 * The two fields that tie a task to its run survive the trip to the engine.
 	 *
 	 * DossiqAskPersonNode stamps `flowRun` and `flowNode` onto the task it
 	 * creates, and TaskCompletionResumeListener reads them back to wake the
-	 * run. Both sides are tested against doubles, so dropping the fields from
-	 * the schema would break the round-trip while every other test stayed
-	 * green: the object store strips what the schema does not declare.
+	 * run. Both sides are tested against doubles, so whatever actually stores
+	 * them has to be pinned somewhere or the round trip breaks while every
+	 * other test stays green.
+	 *
+	 * 🔴 WHAT STORES THEM MOVED. It used to be `caseTask`'s own properties, and
+	 * the risk was the object store stripping what the schema did not declare.
+	 * remove-casetask deleted that schema: the engine holds the pair in its own
+	 * `runUuid` / `nodeId` columns, and the thing that can now break silently is
+	 * {@see EngineTaskGateway}'s TRANSLATION, which is asymmetric by
+	 * construction (dossiq's vocabulary out, the engine's in). A map that lost
+	 * one direction would leave the node stamping a run nobody reads back.
 	 *
 	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 *
+	 * @return void
 	 */
-	public function testTheTaskSchemaDeclaresItsRunAndNodeFields(): void {
-		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
-		$register = json_decode((string)file_get_contents($path), true);
+	public function testTheRunAndNodeSurviveTheRoundTripThroughTheEngine(): void {
+		$gateway = new EngineTaskGateway(
+			$this->createMock(SettingsService::class),
+			$this->createMock(ContainerInterface::class),
+			new NullLogger()
+		);
 
-		$properties = ($register['components']['schemas']['caseTask']['properties'] ?? []);
+		// Outbound: dossiq's names become the engine's columns.
+		$payload = $gateway->toEnginePayload(
+			task: ['title' => 'T', 'flowRun' => 'run-abc', 'flowNode' => 'node-7'],
+			caseId: 'case-1'
+		);
+		$this->assertSame('run-abc', ($payload['runUuid'] ?? null), 'flowRun must reach the engine as runUuid.');
+		$this->assertSame('node-7', ($payload['nodeId'] ?? null), 'flowNode must reach the engine as nodeId.');
+		$this->assertArrayNotHasKey('flowRun', $payload, 'the register name must not be sent as well.');
+		$this->assertArrayNotHasKey('flowNode', $payload, 'the register name must not be sent as well.');
 
-		foreach (['flowRun', 'flowNode'] as $field) {
-			$this->assertArrayHasKey(
-				$field,
-				$properties,
-				sprintf(
-					'task.%s is missing: the ask node would stamp a field the store strips, '
-					. 'and no completed task could ever resume its run.',
-					$field
-				)
-			);
-			$this->assertSame('string', ($properties[$field]['type'] ?? null));
-		}
-	}//end testTheTaskSchemaDeclaresItsRunAndNodeFields()
+		// Inbound: the engine's columns come back under the names the node and
+		// the resume listener speak.
+		$entity = new class {
+			/** @return string */
+			public function getUuid(): string {
+				return 'task-1';
+			}
+
+			/** @return string */
+			public function getTitle(): string {
+				return 'T';
+			}
+
+			/** @return string */
+			public function getState(): string {
+				return 'completed';
+			}
+
+			/** @return string */
+			public function getRunUuid(): string {
+				return 'run-abc';
+			}
+
+			/** @return string */
+			public function getNodeId(): string {
+				return 'node-7';
+			}
+
+			/** @return string */
+			public function getAssignee(): string {
+				return 'admin';
+			}
+
+			/** @return array<int, mixed> */
+			public function getChecklist(): array {
+				return [];
+			}
+		};
+
+		$service = new class ($entity) {
+			/**
+			 * @param object $entity The task entity double.
+			 */
+			public function __construct(private readonly object $entity) {
+			}
+
+			/**
+			 * @param string $uuid The task uuid.
+			 *
+			 * @return object
+			 */
+			public function get(string $uuid): object {
+				return $this->entity;
+			}
+		};
+
+		$reader = new class ($this->createMock(SettingsService::class), $this->createMock(ContainerInterface::class), new NullLogger(), $service) extends EngineTaskGateway {
+			/**
+			 * @param SettingsService    $settings  Settings double.
+			 * @param ContainerInterface $container Container double.
+			 * @param NullLogger         $logger    Logger.
+			 * @param object             $service   Engine double.
+			 */
+			public function __construct(
+				SettingsService $settings,
+				ContainerInterface $container,
+				NullLogger $logger,
+				private readonly object $service,
+			) {
+				parent::__construct($settings, $container, $logger);
+			}
+
+			/**
+			 * @return object|null The injected double.
+			 */
+			protected function resolveService(): ?object {
+				return $this->service;
+			}
+		};
+
+		$read = $reader->find('task-1');
+		$this->assertIsArray($read, 'the gateway must read the task back');
+		$this->assertSame('run-abc', $read['flowRun'], 'runUuid must come back as flowRun.');
+		$this->assertSame('node-7', $read['flowNode'], 'nodeId must come back as flowNode.');
+	}//end testTheRunAndNodeSurviveTheRoundTripThroughTheEngine()
 
 	/**
 	 * Every status step says what the status MEANS, not only what it is called.

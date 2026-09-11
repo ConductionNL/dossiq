@@ -316,13 +316,18 @@ describe('the Tasks index after it moved to the engine', () => {
 
 	it('cannot be narrowed by the Team facet any more', () => {
 		// The sidebar's facets come from OpenRegister, for a register and a
-		// schema. The page declares neither, so a facet over
-		// `caseTask.assigneeGroup` has nothing to run against — and that
-		// schema property is still `facetable: true`, which is exactly why
-		// the old parameterised assertion would have kept passing.
+		// schema. The page declares neither, so there is nothing for a facet
+		// to run against.
+		//
+		// This used to also read `schema('caseTask').properties.assigneeGroup
+		// .facetable` and assert it was still true, to show the facet was lost
+		// to the PAGE rather than to the property. remove-casetask deleted the
+		// schema, so the second half is now the stronger claim: no shipped
+		// schema declares a facetable team property a task could be narrowed
+		// by, and the register cannot quietly grow one back.
 		expect(page('Tasks').config.register).toBeUndefined()
 		expect(page('Tasks').config.schema).toBeUndefined()
-		expect(schema('caseTask').properties.assigneeGroup.facetable).toBe(true)
+		expect(schema('caseTask')).toBeUndefined()
 	})
 
 	it('offers Mine as a scope, and still opens on everything', () => {
