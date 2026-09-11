@@ -17898,54 +17898,6 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-1-1",
-          "id": "370a7d6d-1e97-4e90-8719-f1943c92e871"
-        },
-        "key": "zgw",
-        "title": "ZGW API's",
-        "description": "Zaken, documenten en catalogi uitwisselen met de landelijke ZGW-standaard.",
-        "status": "configured",
-        "statusMessage": "Laatste probe: alle vier de API's antwoordden binnen de tijdslimiet.",
-        "checkedAt": "2026-03-03T09:00:00+00:00",
-        "settingsUrl": "/index.php/apps/dossiq/settings/zgw",
-        "order": 1
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-2-2",
-          "id": "3b54da90-c077-4928-973e-1db25102ddf5"
-        },
-        "key": "brp",
-        "title": "BRP bevragen",
-        "description": "Persoonsgegevens opvragen bij de Basisregistratie Personen.",
-        "status": "unconfigured",
-        "statusMessage": "Nog geen endpoint en certificaat ingesteld.",
-        "checkedAt": "2026-03-03T09:00:00+00:00",
-        "settingsUrl": "/index.php/apps/dossiq/settings/brp",
-        "order": 2
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-dossiqintegration-3-3",
-          "id": "3bb1d159-0d40-4e35-a3dd-64b6602798d7"
-        },
-        "key": "kcc",
-        "title": "KCC werkplek",
-        "description": "Klantcontacten en doorverbindingen vanuit het klantcontactcentrum.",
-        "status": "simulated",
-        "statusMessage": "Draait op gesimuleerde data omdat er geen koppeling is geconfigureerd.",
-        "checkedAt": "2026-03-03T09:00:00+00:00",
-        "settingsUrl": "/index.php/apps/dossiq/settings/kcc",
-        "order": 3
-      },
-      {
-        "@self": {
-          "register": "dossiq",
           "schema": "dwangsomUitbetaling",
           "slug": "dwangsomuitbetaling-dwangsomuitbetaling-1-1",
           "id": "1de29ee9-d6f9-494c-92cd-4bf39cdcbbce"
