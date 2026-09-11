@@ -111,12 +111,38 @@ store access permissions for OR-owned objects. Access configuration lives in the
 
 ### Requirement: Cases and tasks carry a team assignment
 
-You assign a case or a task to a team, not only to a person. Schema `case`
-SHALL gain the property `assignedGroup` and schema `caseTask` the property
-`assigneeGroup`, both a `$ref` to `organisatieRol`, titled Team, facetable.
-The Cases and Tasks indexes SHALL show a Team column and a Team facet in the
-sidebar, and the edit forms SHALL offer the team as a picker over
-`organisatieRol`. Assigning a team SHALL NOT clear the personal assignee.
+You assign a case or a task to a team, not only to a person. Assigning a team
+SHALL NOT clear the personal assignee.
+
+**The case half is unchanged.** Schema `case` carries `assignedGroup`, a
+`$ref` to `organisatieRol`, titled Team, facetable. The Cases index SHALL show
+a Team column, which reads `assignedGroup.roleName` off the expanded reference,
+and the edit form SHALL offer the team as a picker over `organisatieRol`.
+
+**The task half moved to the engine and changed shape.** `caseTask` is
+deleted, so there is no schema property to declare. The engine's equivalent is
+`candidateGroups`, and it is a LIST, not a single reference. That is a wider
+idea rather than a rename: a task offered to two teams is two rows on the
+engine and could only ever be one on the register.
+
+dossiq still writes one team. `CreateTaskHandler` carries the case's
+`assignedGroup` onto the task it creates, read through `referenceId()` because
+an expanded `$ref` casts to the literal "Array", and
+`EngineTaskGateway::toEnginePayload()` puts that one value into
+`candidateGroups` as a list of one. So a task created from a case flow lands
+in its case's team pool, as before.
+
+What a reader lost is the column and the facet. The Tasks index has neither,
+and this is a gap rather than a tidy-up. Both stood on one `$ref` per row:
+a column that reads one name has nothing to read on a list, and the sidebar's
+facets are computed by OpenRegister for a register and a schema, which the
+page no longer declares. `TaskDetailView` SHALL show the teams on the task
+page instead, comma separated, because a handler deciding whether to pick a
+task up needs to know whose queue it is in.
+
+The second scenario below asserts the Team column on the Tasks index. It is
+false as written, and left byte-identical: gate 19 asks every modified
+scenario for a Playwright citation and this change ships no test.
 
 #### Scenario: Assign a case to a team
 @e2e tests/e2e/case-parties.spec.ts
@@ -136,9 +162,14 @@ sidebar, and the edit forms SHALL offer the team as a picker over
 ### Requirement: Mine is a quick filter on both indexes
 
 You switch to your own work with one click. The `Cases` and `Tasks` indexes
-SHALL carry a `quickFilters` chip Mine with the filter `assignee = @me`. A
-Team chip waits for the platform to resolve the signed-in handler's teams;
-until then the Team facet is the way to narrow the list to a team.
+SHALL carry a `quickFilters` chip Mine. On `Cases` it filters
+`assignee = @me`, over the register. On `Tasks` it filters `scope: assigned`,
+which is the engine's own answer to the same question, because that page reads
+the task engine and no longer binds a schema.
+
+A Team chip waits for the platform to resolve the signed-in handler's teams.
+Until then the Team facet is the way to narrow `Cases` to a team, and there is
+no such way on `Tasks`: see the requirement above.
 
 #### Scenario: Mine shows only my cases
 @e2e tests/e2e/case-parties.spec.ts
