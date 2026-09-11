@@ -204,11 +204,12 @@ test.describe('Case identity', () => {
 				startDate: '2026-03-02',
 				legalBasis: LEGAL_BASIS,
 				archiveNomination: ARCHIVE_NOMINATION,
-				// archiveActionDate is deliberately absent: REQ-CM-27's second
-				// scenario is that the row is there and empty, not hidden. That
-				// scenario is currently RED and its test is parked on
-				// nextcloud-vue#1062, so keep this absent — it is the fixture
-				// the test needs the day the row comes back.
+				// archiveActionDate is deliberately absent, for the parked
+				// "Empty fields stay visible" test at the end of this file.
+				// Leaving it out no longer yields an empty date, though:
+				// OpenRegister derives `_retention.disposalDate` from the case
+				// schema's retention default instead. That test says why it
+				// therefore stays parked.
 			}),
 		)
 
@@ -525,37 +526,71 @@ test.describe('Case identity', () => {
 	})
 
 	// @e2e openspec/specs/case-management/spec.md
-	test.fixme('an empty archive action date is shown empty, not hidden', async ({
+	test('an empty archive action date is shown empty, not hidden', async ({
 		page,
 	}) => {
-		// PARKED UNTIL nextcloud-vue SHIPS #1084, which fixes #1062. Delete the
-		// `fixme` when dossiq takes a release that carries it; nothing else
-		// in this body needs to change.
+		// PARKED, AND THE SCENARIO IS WHAT HAS TO MOVE, NOT THIS TEST.
 		//
-		// An absent disposal date is itself what a records officer looks for,
-		// so the row has to be present and blank (REQ-CM-27). Two things had
-		// to happen for that to be expressible at all:
+		// The reason goes through `test.fixme(true, reason)` rather than
+		// `test.fixme(title, body)`. The second form records no description,
+		// so the run report carried this as an exclusion with no reason, and
+		// the skip gate is right to reject that.
 		//
-		//  - dossiq#2428 dropped the separate `case-archival` card and reads
-		//    archiving from the object metadata panel, so the row now lives
-		//    there, under its Archiving category;
-		//  - nextcloud-vue#1084 makes that panel keep the four MDTO core rows
-		//    whenever an object HAS a decision, with a dash for a missing fact
-		//    and the `cn-detail-grid__value--empty` modifier on the blank one.
-		//    Until then the panel drops any key without a value, so this case,
-		//    whose `_retention` holds an appraisal and no disposal date, shows
-		//    no Disposal date row at all.
+		// Two things stand between this scenario and a green run, and the
+		// first one is not a bug:
 		//
-		// The assertion is on the MODIFIER, not only on the row: a row reading
-		// "-" and a row reading a real date look alike to `toHaveCount(1)`,
-		// and the whole point is that this one is blank.
-		await openCase(page, termsCaseId)
+		//  1. THE GIVEN CANNOT BE SEEDED. "A case with no archive action date"
+		//     does not exist in this register. The `case` schema declares
+		//     `x-openregister-archival` with a retention default of P10Y, and
+		//     OpenRegister's render layer evaluates it on every case into
+		//     `retention.annotation.expiresAt` (`_created` plus the period).
+		//     ArchivalDecisionResolver then falls back to that value for
+		//     `disposalDate` whenever the record carries no
+		//     `archiveActionDate`. So `termsCaseId`, seeded without one, still
+		//     shows a disposal date ten years out. A blank row cannot be
+		//     arranged from a spec: only a schema without the annotation
+		//     would produce one.
+		//
+		//  2. EVEN THEN THE ROW WOULD BE DROPPED. CnObjectMetadataWidget in
+		//     the pinned @conduction/nextcloud-vue 2.46.0 still skips an
+		//     archival key whose value is null (`if (raw === undefined ||
+		//     raw === null) continue`), and ConductionNL/nextcloud-vue#1062,
+		//     which asks for a way to keep it, is open.
+		//
+		// What changed since this was first parked, so the next reader does
+		// not re-measure it: the key is `disposalDate`, not `actionDate`
+		// (openregister#3584 moved the archival keys to MDTO names), its row
+		// is labelled "Disposal date", and since dossiq#2428 there is no
+		// `case-archival` card. The archival facts are read in the object
+		// metadata panel. The body below is pointed at that panel and asserts
+		// a row that is present AND blank, so it cannot pass on the derived
+		// date by accident if it is ever unparked.
+		test.fixme(
+			true,
+			'REQ-CM-27 "Empty fields stay visible" cannot be seeded: no case in '
+				+ 'this register lacks a disposal date. The case schema declares '
+				+ 'x-openregister-archival with a P10Y default, and OpenRegister '
+				+ 'falls back to that for _retention.disposalDate whenever a case '
+				+ 'has no archiveActionDate. Separately, CnObjectMetadataWidget in '
+				+ 'nextcloud-vue 2.46.0 drops a null archival key '
+				+ '(ConductionNL/nextcloud-vue#1062, open). The scenario needs '
+				+ 'amending before this test can run.',
+		)
 
+		await openCase(page, termsCaseId)
 		const metadata = await openMetadataPanel(page)
+
+		// The label is matched in both languages. nextcloud-vue#1084 makes
+		// CnObjectMetadataWidget translate its archival labels, which it did
+		// not do when this body was written, so "Disposal date" alone would
+		// pass on an English instance and fail on a Dutch one.
+		//
+		// The assertion is on the --empty MODIFIER, not on the text: a row
+		// reading "-" and a row reading a real date are both one row, and the
+		// whole point of this scenario is that this one is blank.
 		const row = metadata
 			.locator('.cn-detail-grid__item')
 			.filter({ hasText: /Disposal date|Archiefactiedatum/ })
-
 		await expect(row).toHaveCount(1)
 		await expect(row.locator('.cn-detail-grid__value--empty')).toHaveCount(1)
 	})

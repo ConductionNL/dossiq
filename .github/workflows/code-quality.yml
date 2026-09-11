@@ -205,7 +205,20 @@ jobs:
       # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
       # needs the `settings#load` route it ships — `development` is where that
       # plumbing lands first.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
+      #
+      # decidiq is here so the e2e suite can reach the surfaces that need it.
+      # Without it, `retired-surfaces.spec.ts` ("decidiq registers the
+      # decisions leaf") and the three live-journeys tests that raise and
+      # conclude decisions skipped on EVERY run: the skip-discipline gate
+      # classed the first a V2, a state CI decides and should not stand down
+      # on. It goes in `additional-apps` and not `e2e-additional-apps` because
+      # the shared quality.yml only runs `occ app:enable` for this list; apps
+      # under `e2e-additional-apps` are cloned and built but never enabled,
+      # which looks like a shared-workflow bug and is tracked separately. The
+      # cost is that decidiq also loads during PHPUnit. `app` is the `<id>` in
+      # decidiq's appinfo/info.xml on `development` (verified: `decidiq`, NC
+      # 32-34); the repo was renamed from decidesk, which still redirects.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"}]'
       # SBOM was disabled here until @conduction/nextcloud-vue's dependency
       # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
       # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
