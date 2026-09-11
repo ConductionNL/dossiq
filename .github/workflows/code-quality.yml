@@ -151,6 +151,10 @@ permissions:
 jobs:
   quality:
     if: (github.event_name != 'pull_request' || github.head_ref != 'development')
+    # `e2e-shards` below is declared by ConductionNL/.github#758 (merged
+    # 2026-09-11). This call must stay at @main: an input the called workflow
+    # does not declare makes the whole call fail, so pinning to a ref that
+    # predates #758 breaks every run.
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: dossiq
@@ -286,6 +290,23 @@ jobs:
       # and `visual` (whose own README records that a CI Linux runner cannot
       # byte-match a dev-container PNG baseline).
       playwright-test-path: tests/e2e
+      # ── THREE SHARDS, EACH ON ITS OWN RUNNER ─────────────────────────────
+      #
+      # One job no longer fits. Run 34591162181 on `development`, the first
+      # at five workers (#2485): 336 passed, 5 flaky, 19 skipped, 34 did not
+      # run, stopped by the 38 minute globalTimeout. The job took 44m09s
+      # against a 45 minute cap. The run before it, at four workers, left 33
+      # unrun. More workers did not close the gap, and #2485 names the
+      # ceiling: `SQLSTATE[53200] out of shared memory` under four workers,
+      # against one Nextcloud and one Postgres. A shard gets its own
+      # Nextcloud and its own Postgres, so sharding sidesteps that ceiling
+      # instead of pushing against it.
+      #
+      # Each shard runs the config's own worker count (E2E_WORKERS, default 5
+      # on CI) and its own 25 minute globalTimeout. See
+      # tests/e2e/playwright.config.ts for both, and for why the
+      # instance-mutating specs become a teardown that runs on every shard.
+      e2e-shards: 3
       # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
       # that has never run here; enable it in a follow-up once this job has a
       # measured baseline. The threshold below is inert while this is false.
