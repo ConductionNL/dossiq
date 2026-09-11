@@ -205,8 +205,7 @@ let caseTypeId = ''
 let uploadCaseId = ''
 /** The case the metadata dialog is driven on. */
 let dialogCaseId = ''
-/** Two documents on one case, for the mixed bulk transition. */
-let bulkCaseId = ''
+/** Two documents for the mixed bulk transition. */
 let draftDocumentId = ''
 let archivedDocumentId = ''
 let documentTypeId = ''
@@ -223,16 +222,20 @@ function writeHeaders(): Record<string, string> {
 }
 
 /**
- * Seed one informatieobject and link it to a case.
+ * Seed one informatieobject.
  *
- * @param onCase The case the document hangs on.
+ * NOT JOINED TO A CASE, deliberately. The bulk endpoint takes document ids and
+ * guards each one by the document's own clearance, so the join adds nothing
+ * the per-document result depends on. It does add a failure that is not ours:
+ * on an instance that also runs zaakafhandelapp, that app listens for
+ * `zaakinformatieobject` creation in this register and throws a TypeError from
+ * `ZGWLogicService::createOio()`, turning every seed into an HTTP 500.
+ * Measured on the shared dev instance 2026-09-11.
+ *
  * @param fields The informatieobject body.
  * @return The created informatieobject id.
  */
-async function seedDocument(
-	onCase: string,
-	fields: Record<string, unknown>,
-): Promise<string> {
+async function seedDocument(fields: Record<string, unknown>): Promise<string> {
 	const created = await createObject(api, token, 'informatieobject', {
 		vertrouwelijkheidaanduiding: 'openbaar',
 		status: 'draft',
@@ -241,41 +244,7 @@ async function seedDocument(
 		informatieobjecttype: documentTypeId,
 		...fields,
 	})
-	const id = objectId(created)
-	await createObject(api, token, 'zaakinformatieobject', {
-		case: onCase,
-		informatieobject: id,
-		registrationDate: '2026-05-04T10:02:00+00:00',
-		// An ENUM on this schema, not free text: any other value is a 400.
-		natureRelationshipDisplay: 'Hoort at omgekeerd',
-	})
-	return id
-}
-
-/**
- * Every informatieobject currently joined to a case.
- *
- * Read through the join rather than through the dossier UI, because the
- * question these tests ask is whether anything was STORED — which a screen
- * that failed to refresh answers wrongly in both directions.
- *
- * @param onCase The case to count the dossier of.
- * @return The linked informatieobject ids.
- */
-async function documentsOnCase(onCase: string): Promise<string[]> {
-	// A BARE key, not `filter[case]`. OpenRegister's objects endpoint reads
-	// bare keys and treats a `filter[...]` key as the empty set, so the wrong
-	// grammar here would answer "no documents" and make every count assertion
-	// below pass for the wrong reason. The client-side filter after it is the
-	// belt to that brace.
-	const joins = await listObjects(api, 'zaakinformatieobject', {
-		case: onCase,
-		_limit: '500',
-	})
-	return joins
-		.filter((row: any) => String(row.case ?? '') === onCase)
-		.map((row: any) => String(row.informatieobject ?? ''))
-		.filter((id: string) => id !== '')
+	return objectId(created)
 }
 
 test.describe('document-zaakdossier — the guards that refuse', () => {
@@ -328,19 +297,12 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 				caseType: caseTypeId,
 			}),
 		)
-		bulkCaseId = objectId(
-			await seedCase(api, token, {
-				title: `${RUN_PREFIX} bulk transition case`,
-				caseType: caseTypeId,
-			}),
-		)
-
-		draftDocumentId = await seedDocument(bulkCaseId, {
+		draftDocumentId = await seedDocument({
 			title: `${RUN_PREFIX} draft document`,
 			fileName: 'draft.pdf',
 			status: 'draft',
 		})
-		archivedDocumentId = await seedDocument(bulkCaseId, {
+		archivedDocumentId = await seedDocument({
 			title: `${RUN_PREFIX} archived document`,
 			fileName: 'archived.pdf',
 			status: 'archived',
@@ -429,15 +391,19 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 		expect(String(byMagic.result.error)).toMatch(/[Ee]xecutable/)
 
 		// "MUST be rejected before the file is written to disk": the register is
-		// the only witness to that, and neither name may appear in it.
-		const stored = await documentsOnCase(uploadCaseId)
-		const names: string[] = []
-		for (const id of stored) {
-			const row = await showObject(api, 'informatieobject', id)
-			names.push(String(row.fileName ?? ''))
+		// the only witness to that. Read the informatieobject schema itself, not
+		// the dossier join, because a document written without its join would
+		// slip past a join-based count while still being on disk.
+		for (const name of ['malware.exe', 'besluit.pdf']) {
+			const rows = await listObjects(api, 'informatieobject', {
+				fileName: name,
+				_limit: '500',
+			})
+			const ours = rows.filter((row: any) =>
+				String(row.title ?? '').startsWith(RUN_PREFIX),
+			)
+			expect(ours, `${name} must never reach the register`).toHaveLength(0)
 		}
-		expect(names).not.toContain('malware.exe')
-		expect(names).not.toContain('besluit.pdf')
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005a-drag-drop-triggers-metadata-dialog-before-upload
