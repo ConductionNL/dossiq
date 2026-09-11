@@ -637,7 +637,12 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(rows).toHaveCount(2, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-006b-restore-is-disabled-for-definitief-documents
+	// The anchor carries no `scenario-` prefix, which is the form gate-19
+	// slugs and the form the sibling citation in
+	// `spec-coverage/document-zaakdossier.spec.ts` already uses for this same
+	// scenario. The prefixed spelling resolves when a human clicks it on
+	// GitHub and credits nothing in the gate.
+	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
 	}) => {
@@ -712,9 +717,42 @@ test.describe('Case detail — the Documents tab', () => {
 		const restore = versionPanel.getByRole('button', {
 			name: /Restore|Herstellen/,
 		})
-		for (let index = 0; index < (await restore.count()); index++) {
-			await expect(restore.nth(index)).toBeDisabled()
+
+		// THE BUTTON HAS TO BE THERE BEFORE IT CAN BE REFUSED. This loop used
+		// to run over `restore.count()` alone, so a panel rendering zero
+		// Restore buttons ran the body zero times and reported green — the
+		// requirement "the Herstellen button MUST be visibly disabled on all
+		// versions" was satisfied by there being no button to disable, which
+		// is also what a panel that failed to render at all looks like.
+		//
+		// Asserted as a count against the listed versions, the same invariant
+		// the download assertion above uses: every version offers a Restore
+		// control, and every one of them is refused. Hiding the control
+		// instead of disabling it now reddens, and so does a panel that lists
+		// versions but paints no actions.
+		const versionCount = await entries.count()
+		expect(
+			versionCount,
+			'the version panel must list at least one version, or there is nothing to refuse restoring',
+		).toBeGreaterThan(0)
+		await expect(
+			restore,
+			'every listed version must offer a Restore control, so the refusal is visible rather than absent',
+		).toHaveCount(versionCount)
+		for (let index = 0; index < versionCount; index++) {
+			await expect(
+				restore.nth(index),
+				`version ${index + 1} of a final document must refuse restore`,
+			).toBeDisabled()
 		}
+
+		// STILL UNASSERTED, NAMED RATHER THAN QUIETLY SKIPPED: the scenario's
+		// third clause, that hovering the disabled control explains why.
+		// `VersionHistoryPanel` binds that sentence as `:title` on `NcButton`,
+		// and whether NcButton forwards it onto the `<button>` this locator
+		// resolves to has not been verified against a running instance. An
+		// assertion nobody has watched fail is the defect this change is
+		// repairing, so it is not added on a guess.
 		const stored = await showObject(api, 'informatieobject', versionedDocumentId)
 		expect(String(stored.status)).toBe('final')
 	})
