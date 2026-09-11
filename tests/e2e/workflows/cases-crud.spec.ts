@@ -316,7 +316,16 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// the real create flow and asserts the new case persists + lists; it is
 	// guarded so the suite stays green where the generic-dialog regression is
 	// present. Re-enable verification once #427 is resolved.
-	// @e2e openspec/specs/case-management/spec.md#create-a-case
+	// @e2e exclude #create-a-case has never existed in case-management/spec.md.
+	// The governing scenario is CM-01a, and it requires the auto-generated
+	// identifier, the defaulted startDate, the deadline computed from the case
+	// type's processingDeadline, the inherited confidentiality and the first
+	// status by order. This test reads none of the five: it proves that a case
+	// with the typed title exists afterwards and shows up in the list. Citing
+	// CM-01a would report those five as verified. CM-01a is also spelled
+	// "Scenario CM-01a:", which gate-19 does not slug, so nothing there can be
+	// credited until the heading is rewritten as "Scenario:". Note too that the
+	// body below is fixme'd whenever #427 leaves the generic dialog in place.
 	test('creating a case via the UI form persists and lists it', async ({
 		page,
 	}) => {
