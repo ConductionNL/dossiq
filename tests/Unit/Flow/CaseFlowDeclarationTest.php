@@ -18,7 +18,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -742,7 +742,7 @@ class CaseFlowDeclarationTest extends TestCase {
 	 * undeclared fields on save — the merge would succeed while the document
 	 * silently never persisted.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testTheDocumentStepConfigMatchesItsNodeAndItsSchema(): void {
 		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
@@ -818,7 +818,7 @@ class CaseFlowDeclarationTest extends TestCase {
 	 * A new node writing a new field fails here before it fails silently in
 	 * production.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testTheCaseSchemaDeclaresEveryFieldTheFlowWrites(): void {
 		$path = __DIR__ . '/../../../lib/Settings/dossiq_register.json';
@@ -923,7 +923,7 @@ class CaseFlowDeclarationTest extends TestCase {
 	 * construction (dossiq's vocabulary out, the engine's in). A map that lost
 	 * one direction would leave the node stamping a run nobody reads back.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 *
 	 * @return void
 	 */

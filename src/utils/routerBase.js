@@ -28,7 +28,7 @@
  *
  * @return {string} The history base for `createWebHistory()`.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 export function routerBase(pathname, fallback) {
 	const marker = '/apps/dossiq'
