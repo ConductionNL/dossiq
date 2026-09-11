@@ -441,9 +441,25 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005a-drag-drop-triggers-metadata-dialog-before-upload
-	test('the metadata dialog lists every selected file and refuses to upload while required fields are empty', async ({
+	test('the metadata dialog lists every selected file and issues no upload while required fields are empty', async ({
 		page,
 	}) => {
+		// WATCH THE WIRE, not the register. "MUST NOT close or upload" is a claim
+		// about whether a request is made, and `DossierTab.performUpload()` keeps
+		// the dialog open and shows "Upload failed" when a POST is refused
+		// downstream. Counting stored rows would therefore confuse "the dialog
+		// refused to send" with "it sent and storage said no", which are opposite
+		// outcomes for this requirement.
+		const uploads: string[] = []
+		page.on('request', (req) => {
+			if (
+				req.method() === 'POST'
+				&& req.url().includes(`/api/cases/${dialogCaseId}/dossier`)
+			) {
+				uploads.push(req.postDataBuffer()?.toString('latin1') ?? '')
+			}
+		})
+
 		await page.goto(`/apps/${REGISTER}/cases/${dialogCaseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -452,7 +468,7 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 
 		// The drop zone and the upload button share `openMetadataDialog()`, so
 		// driving the hidden file input exercises the same handler a real drop
-		// does — and unlike a synthetic DataTransfer it works everywhere.
+		// does, and unlike a synthetic DataTransfer it works everywhere.
 		await panel.locator('input[type="file"]').setInputFiles([
 			{ name: 'aanvraag.pdf', mimeType: 'application/pdf', buffer: PDF_BYTES },
 			{ name: 'bijlage.pdf', mimeType: 'application/pdf', buffer: PDF_BYTES },
@@ -466,46 +482,47 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 
 		const upload = dialog.getByRole('button', { name: /^(Upload|Uploaden)$/ })
 		// PRESENT, THEN DISABLED. Asserting only `toBeDisabled()` on a locator
-		// that matches nothing is the shape this audit kept finding: a dialog
-		// with no Upload button at all would satisfy it.
+		// that matches nothing is the shape this audit kept finding: a dialog with
+		// no Upload button at all would satisfy it.
 		await expect(upload).toHaveCount(1)
 		await expect(
 			upload,
-			'the dialog must refuse to upload while informatieobjecttype and '
+			'the dialog must refuse to upload while the document type and the '
 				+ 'confidentiality are unset',
 		).toBeDisabled()
 
 		// And it must not act on being pressed anyway. `force` skips the
 		// actionability wait, so this genuinely delivers the click rather than
-		// timing out on a disabled control — which means a build that enabled
-		// the button early would upload here and redden the two assertions after.
+		// timing out on a disabled control, which means a build that enabled the
+		// button early would send here and redden the two assertions after it.
 		await upload.click({ force: true })
 		await expect(
 			dialog,
 			'the dialog MUST NOT close until the required fields are filled',
 		).toBeVisible()
 		expect(
-			await documentsOnCase(dialogCaseId),
-			'nothing may be stored while the dialog is still incomplete',
+			uploads,
+			'no upload may be sent while the dialog is still incomplete',
 		).toHaveLength(0)
 
-		// Filling the required fields releases it — which is what tells a
-		// working refusal apart from a dialog that is simply broken.
+		// Filling the required fields releases it, which is what tells a working
+		// refusal apart from a dialog that is simply broken. Choosing the type
+		// also defaults the confidentiality from it, so this one pick satisfies
+		// both required fields.
 		await dialog.getByRole('combobox').first().click()
 		await page.getByRole('option').filter({ hasText: documentTypeTitle }).click()
 		await expect(upload).toBeEnabled({ timeout: 15_000 })
 		await upload.click()
-		await expect(dialog).toBeHidden({ timeout: 60_000 })
 
 		// "a single informatieobjecttype selection MUST apply to both files".
-		await expect(async () => {
-			const ids = await documentsOnCase(dialogCaseId)
-			expect(ids).toHaveLength(2)
-			for (const id of ids) {
-				const stored = await showObject(api, 'informatieobject', id)
-				expect(String(stored.informatieobjecttype)).toBe(documentTypeId)
-			}
-		}).toPass({ timeout: 60_000 })
+		// `performUpload` posts once per file with the shared metadata, so both
+		// requests must carry the one type that was picked.
+		await expect.poll(() => uploads.length, { timeout: 60_000 }).toBe(2)
+		for (const body of uploads) {
+			expect(body).toContain(`"informatieobjecttype":"${documentTypeId}"`)
+		}
+		expect(uploads.join('\n')).toContain('aanvraag.pdf')
+		expect(uploads.join('\n')).toContain('bijlage.pdf')
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008c-bulk-status-transition-returns-per-document-result
