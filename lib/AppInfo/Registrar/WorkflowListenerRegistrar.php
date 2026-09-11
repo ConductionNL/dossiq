@@ -166,7 +166,7 @@ class WorkflowListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function registerHumanStepListeners(IRegistrationContext $context): void {
 		// The ENGINE's terminal event, not an object update. Tasks are

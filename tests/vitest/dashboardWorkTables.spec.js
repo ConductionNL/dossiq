@@ -34,10 +34,27 @@ export function dashboardPage() {
 /**
  * Every `object-table` widget on the Dashboard.
  *
+ * `my-work` is deliberately NOT one of them since remove-casetask 2.3. Its
+ * rows are engine tasks behind `/api/flow-tasks`, which have no register and
+ * no schema, and `object-table` takes exactly those two. What that costs this
+ * file is the duplication sweep over the task tile, and the sweep is over
+ * `source.schema` so it had nothing to say about a widget with no source. The
+ * tile's own contract moved to `myWorkWidget.spec.js`.
+ *
  * @return {Array<object>} The widget entries, in manifest order.
  */
 export function objectTables() {
 	return dashboardPage().config.widgets.filter((w) => w.type === 'object-table')
+}
+
+/**
+ * One Dashboard widget by id, whatever its type.
+ *
+ * @param {string} id The manifest widget id.
+ * @return {object|undefined} The widget entry.
+ */
+export function widgetById(id) {
+	return dashboardPage().config.widgets.find((w) => w.id === id)
 }
 
 /**
@@ -110,7 +127,7 @@ export function cellsFor(widgetId) {
 
 describe('dashboard work tables', () => {
 	it('shows one My work table and one Deadlines table', () => {
-		const ids = objectTables().map((w) => w.id)
+		const ids = dashboardPage().config.widgets.map((w) => w.id)
 		expect(ids).toContain('my-work')
 		expect(ids).toContain('deadlines')
 		// The four tiles these two replace are gone, not merely hidden.
@@ -122,6 +139,12 @@ describe('dashboard work tables', () => {
 		]) {
 			expect(ids, `retired widget ${retired}`).not.toContain(retired)
 		}
+		// Exactly one of each, counted over the whole page rather than over
+		// one widget type: since `my-work` stopped being an `object-table`, a
+		// count taken from `objectTables()` would not see a second copy of it
+		// added back as a custom widget.
+		expect(ids.filter((id) => id === 'my-work')).toHaveLength(1)
+		expect(ids.filter((id) => id === 'deadlines')).toHaveLength(1)
 	})
 
 	it('recognises the shape the retired tiles had', () => {
@@ -175,47 +198,69 @@ describe('dashboard work tables', () => {
 		}
 	})
 
-	it('my-work reads your open tasks, soonest due first', () => {
-		const w = objectTables().find((t) => t.id === 'my-work')
-		expect(w.content.source.schema).toBe('caseTask')
-		expect(w.content.source.filter).toEqual({
-			assignee: '@me',
-			isTerminalStatus: false,
-		})
-		expect(w.content.source.order).toEqual({ dueDate: 'asc' })
-		expect(w.content.source.limit).toBe(10)
+	it('my-work reads the task engine, and names no register or schema', () => {
+		// remove-casetask 2.3. The tile used to be an `object-table` over
+		// `register: dossiq, schema: caseTask`. That read answered 200 while
+		// the store behind it had stopped being written, so the failure was
+		// invisible: a full table of rows nothing updates.
+		const w = widgetById('my-work')
+		expect(w.type).toBe('custom')
+		expect(
+			Object.hasOwn(w.content, 'source'),
+			'a custom widget declares no object source',
+		).toBe(false)
+		expect(JSON.stringify(w.content)).not.toContain('caseTask')
 	})
 
-	it('my-work names the case, not its uuid', () => {
-		const w = objectTables().find((t) => t.id === 'my-work')
-		// A $ref column renders the stored uuid unless the referenced object
-		// is extended AND the column reads through to a label field.
-		expect(w.content.source.extend).toContain('case')
-		const keys = w.content.columns.map((c) => c.key)
-		expect(keys).toEqual(['title', 'case.title', 'daysUntilDue'])
-		expect(keys).not.toContain('case')
+	it('no Dashboard widget reads caseTask any more', () => {
+		// The whole page, not just this tile: `content` is where a retired
+		// slug survives a migration, and every other widget on the page is
+		// declared the same way.
+		for (const w of dashboardPage().config.widgets) {
+			expect(
+				JSON.stringify(w.content ?? {}),
+				`widget ${w.id} still reads caseTask`,
+			).not.toContain('caseTask')
+		}
 	})
 
-	it('my-work shows days left on every row', () => {
-		const w = objectTables().find((t) => t.id === 'my-work')
-		expect(w.content.source.extend).toContain('calculations')
-		const col = w.content.columns.find((c) => c.key === 'daysUntilDue')
-		expect(col.formatter).toBe('conditionalPhrase')
-		// All three branches, or a task due today reads as a bare number.
-		expect(Object.keys(col.formatterOptions).sort()).toEqual([
-			'negative',
-			'positive',
-			'zero',
-		])
+	it('my-work resolves through the page slot, or it renders a placeholder', () => {
+		// A `type: "custom"` widget with no `slots` entry renders the
+		// "Widget not available" placeholder and reports nothing. The map has
+		// to be a SIBLING of `config`: CnPageRenderer reads `page.slots`, and
+		// one nested under `config` is accepted by the schema and never read.
+		const page = dashboardPage()
+		expect(page.slots).toBeTypeOf('object')
+		expect(page.slots['widget-my-work']).toBe('MyWorkWidget')
+		expect(
+			Object.hasOwn(page.config, 'slots'),
+			'slots must not be nested under config',
+		).toBe(false)
+	})
+
+	it('my-work keeps the config the component reads', () => {
+		// Every key here is read by MyWorkWidget.vue, and every key here is
+		// what a generic widget takes back the day nextcloud-vue grows a task
+		// source for widgets. A key dropped from the manifest turns the swap
+		// back into a rewrite.
+		const w = widgetById('my-work')
+		expect(w.content.limit).toBe(10)
+		expect(w.content.emptyText).toBe('You have no open tasks')
+		expect(w.content.viewAllLabel).toBe('View all')
+		expect(w.content.viewAllRoute.name).toBe('Tasks')
 	})
 
 	it('my-work opens the task, which is where Pick up and Complete live', () => {
-		// rowActions is blocked on nextcloud-vue: the 2.40.0 object-table
-		// vocabulary has no such key, so declaring it would render nothing and
-		// report nothing. The interim is the row route.
-		const w = objectTables().find((t) => t.id === 'my-work')
+		// Row actions are blocked on nextcloud-vue, so the interim is the row
+		// route. `rowRoute` names a route, and the route name is the page id.
+		const w = widgetById('my-work')
 		expect(w.content.rowRoute).toBe('TaskDetail')
-		expect(w.content.rowActions).toBeUndefined()
+		// Absence, not an `undefined` value: `toBeUndefined()` and
+		// `toBe(undefined)` both pass on a key that is present and set to
+		// undefined, which is not the same claim.
+		expect(Object.hasOwn(w.content, 'rowActions')).toBe(false)
+		const target = manifest.pages.find((p) => p.id === 'TaskDetail')
+		expect(target, 'rowRoute must name a page that exists').toBeDefined()
 	})
 
 	it('deadlines covers everything past due and the next three days', () => {
@@ -243,12 +288,13 @@ describe('dashboard work tables', () => {
 		])
 	})
 
-	it('places each table in one cell, and never two in the same cell', () => {
+	it('places each widget in one cell, and never two in the same cell', () => {
+		// Every widget, not only the object-tables: `my-work` left that set
+		// when it became a custom widget, and a tile placed twice renders
+		// twice whatever its type.
 		const page = dashboardPage()
-		for (const table of objectTables()) {
-			expect(cellsFor(table.id), `layout cells for ${table.id}`).toHaveLength(
-				1,
-			)
+		for (const w of page.config.widgets) {
+			expect(cellsFor(w.id), `layout cells for ${w.id}`).toHaveLength(1)
 		}
 		const taken = new Map()
 		for (const cell of page.config.layout) {

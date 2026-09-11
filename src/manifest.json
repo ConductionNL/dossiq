@@ -708,67 +708,16 @@
 					},
 					{
 						"id": "my-work",
-						"type": "object-table",
+						"type": "custom",
 						"title": "My work",
-						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `my-tasks` and `task-reminders`, which read the same schema with the same filter and differed only in a due-date window, so seven of ten rows appeared on the page twice. `extend` carries `case` as well as `calculations`: a $ref column renders the stored uuid unless the referenced object is extended AND the column reads `<property>.<labelField>`, which is why the case column is keyed `case.title`. `rowActions` Pick up and Complete stay blocked on nextcloud-vue (the 2.40.0 object-table vocabulary has no such key); the row keeps `rowRoute` to TaskDetail, where the lifecycle buttons already render.",
+						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false
-								},
-								"extend": ["case", "calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"label": "Task",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "case.title",
-									"label": "Case",
-									"cellClass": "cn-cell--muted"
-								},
-								{
-									"key": "daysUntilDue",
-									"label": "Days left",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
+							"limit": 10,
 							"rowRoute": "TaskDetail",
-							"rowClass": [
-								{
-									"when": {
-										"field": "daysUntilDue",
-										"op": "lt",
-										"value": 0
-									},
-									"class": "cn-row--danger"
-								}
-							],
 							"viewAllRoute": {
-								"name": "Tasks",
-								"query": {
-									"assignee": "@me",
-									"isTerminalStatus": "false"
-								}
+								"name": "Tasks"
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": false,
-							"borderless": true,
 							"emptyText": "You have no open tasks"
 						}
 					},
@@ -989,6 +938,10 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The `slots` map below is not decoration. A `type: \"custom\"` dashboard widget resolves ONLY through it, and it must sit here beside `config`, never inside it. CnPageRenderer reads `page.slots`; a slots map nested under `config` is never read, the widget renders the \"Widget not available\" placeholder, and the manifest schema accepts it either way because `config` is additionalProperties:true. Nine of decidesk's eleven widgets shipped that way on 2026-06-13.",
+			"slots": {
+				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -2526,9 +2479,10 @@
 			"type": "index",
 			"title": "Tasks",
 			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"allowSavedViews": true,
+				"entitySource": "tasks",
+				"rowRoute": "TaskDetail",
+				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
+				"allowSavedViews": false,
 				"showViewAction": false,
 				"actions": [
 					{
@@ -2540,48 +2494,52 @@
 						"type": "handler"
 					}
 				],
-				"_columnsNote": "`case` is a $ref to the case and CnIndexPage renders a plain key raw, so the column showed truncated uuids. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded object's title; the server cannot sort on a nested field, so the column is not sortable.",
-				"extend": ["case", "assigneeGroup"],
-				"_quickFiltersNote": "one-case-list: the same lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. `isTerminalStatus` is the task-side twin of the case's `isFinalStatus` and is a stored boolean, so plain equality reaches it. All stays the default chip for the reason spelled out on Cases. lists-that-answer added Closed, Overdue and Due this week, which finishes the parallel: the six labels are now identical on both pages and only the field underneath differs, `dueDate` here against `deadline` there. `dueDate` is `format: date-time` while `deadline` is `format: date`, and the comparison is a plain string comparison on a string column (MagicSearchHandler casts only numeric columns), so `2026-09-08T09:00:00+00:00` sorts AFTER the prefix `2026-09-08`. That is the behaviour these windows need: a task due at nine this morning is due today, not overdue, and it belongs to Due this week. The boundary is asserted in tests/e2e/case-list-lenses.spec.ts rather than left to the reader to re-derive.",
+				"_quickFiltersNote": "one-case-list: the same six lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. Only what sits underneath changed: `isTerminalStatus` was `caseTask`'s materialised boolean and `isTerminal` is the engine's own, and the two due windows are `dueAfter`/`dueBefore` predicates the engine answers (openregister#3581) rather than string comparisons against a `dueDate` column. 🔴 `scope` IS SET EXPLICITLY ON EVERY LENS. The task endpoint defaults to `scope: assigned`, so a lens that left it off would quietly answer 'my closed tasks' where this list has always meant 'closed tasks'. Only Mine and Unclaimed are person-scoped, and they now say so rather than inheriting it. The `@today` tokens resolve because nextcloud-vue#1071 taught a named source's filters the same sentinel grammar self-fetch has always had; before that they went over the wire as literal strings and the window was silently wrong.",
 				"quickFilters": [
-					{ "label": "All", "filter": {}, "default": true },
+					{
+						"label": "All",
+						"filter": {
+							"scope": "all"
+						},
+						"default": true
+					},
 					{
 						"label": "Mine",
-						"filter": { "assignee": "@me", "isTerminalStatus": false }
+						"filter": {
+							"scope": "assigned",
+							"isTerminal": false
+						}
 					},
 					{
 						"label": "Unclaimed",
-						"filter": { "assignee": "IS NULL", "isTerminalStatus": false }
+						"filter": {
+							"scope": "pooled",
+							"isTerminal": false
+						}
 					},
 					{
 						"label": "Closed",
-						"filter": { "isTerminalStatus": true }
+						"filter": {
+							"scope": "all",
+							"isTerminal": true
+						}
 					},
 					{
 						"label": "Overdue",
 						"filter": {
-							"isTerminalStatus": false,
-							"dueDate[lt]": "@today"
+							"scope": "all",
+							"overdue": true
 						}
 					},
 					{
 						"label": "Due this week",
 						"filter": {
-							"isTerminalStatus": false,
-							"dueDate[gte]": "@today",
-							"dueDate[lt]": "@today+7d"
+							"scope": "all",
+							"isTerminal": false,
+							"dueAfter": "@today",
+							"dueBefore": "@today+7d"
 						}
 					}
-				],
-				"_priorityColumnNote": "REQ-TASK-004's first scenario has always required the task row to show priority, and the column was never declared. `caseTask.priority` is a `facetable` enum (low, normal, high, urgent) with a default of normal, so it was reachable through the sidebar facet and invisible in the row a handler actually reads. It sits after `dueDate` because the two answer the same question in order: when is this due, and does it jump the queue.",
-				"columns": [
-					"title",
-					{ "key": "case.title", "label": "Case", "sortable": false },
-					"assignee",
-					{ "key": "assigneeGroup.roleName", "label": "Team", "sortable": false },
-					"status",
-					"dueDate",
-					"priority"
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2651,136 +2609,12 @@
 		{
 			"id": "TaskDetail",
 			"route": "/tasks/:id",
-			"type": "detail",
+			"type": "custom",
 			"title": "Task",
+			"component": "TaskDetailView",
+			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE, THE PAGE ID AND THE DEEP LINKS ARE UNCHANGED: `/tasks/:id`, `TaskDetail`, and the `deepLinks` entry pointing at /apps/dossiq/tasks/{uuid}. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
 			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"_note": "ACTION-ITEM archetype: a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available -> active -> completed / terminated). The case this task sits on is a CARD at the top (task-case), not a data row: `case` is a $ref and the platform renders a $ref as its uuid. The card resolves it, so `case` is hidden from the Data widget below rather than shown twice. Notes and appointments are leaves ON the task since the task-page-widgets change: a handler answering a task records the answer against the task that asked, and books the site visit against it too. Documents stay on the parent case. Audit history (status transitions) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "task-case",
-						"type": "custom",
-						"title": "Case",
-						"icon": "FolderOutline",
-						"_note": "task-on-the-case REQ-TASK-015: the case this task is on, as a card. Resolved via page slots (widget-task-case -> TaskCaseCard). Carries the case identifier, title as the link, status badge, case type, handler and case deadline, because a handler who opened the task from a notification needs those before deciding whether to act. It renders for EVERY task with a case, which is what separates it from task-waiting-case below: that one renders only for a task holding a flow run, and saying a case is waiting on an ordinary to-do would not be true. A task without a case renders nothing, and showTitle stays false so there is no empty titled box either. Not a data widget over the case field: case is a $ref and the platform renders a $ref as its uuid, which reads as broken data rather than as a way back."
-					},
-					{
-						"id": "task-data",
-						"type": "data",
-						"title": "Task",
-						"icon": "ClipboardCheckOutline",
-						"content": {
-							"title": "Task",
-							"columns": 2,
-							"overrides": {
-								"case": {
-									"hidden": true
-								}
-							}
-						}
-					},
-					{
-						"id": "task-waiting-case",
-						"type": "custom",
-						"title": "Waiting case",
-						"icon": "CheckboxMarkedCircleOutline",
-						"_note": "The task half of the flow waiting relationship (case-flow-human-steps 6.1). Resolved via page slots (widget-task-waiting-case -> TaskWaitingCaseSection); names the case whose suspended run this task blocks and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. showTitle stays false: an empty titled box on every ordinary task would be exactly the clutter the null render avoids."
-					},
-					{
-						"id": "task-notes",
-						"type": "integration",
-						"integrationId": "notes",
-						"title": "Notes",
-						"icon": "CommentTextOutline",
-						"_note": "The notes leaf, on the task. A handler working a task writes down what they found, who they called, why they are waiting. Before this that went on the parent case, where it was filed against the whole case rather than against the question that prompted it, and a case with twenty tasks collected twenty unattributed notes. `notes` is one of OpenRegister's five always-available built-in providers (no requiredApp), so this needs no dependency and renders for every task. ObjectIntegrationsController::index does NOT gate on the schema's linkedTypes, so the widget works without a schema change; caseTask declares it anyway because LinkedEntityService and the related widget read that list, and LogDanglingLinkedTypes scans it."
-					},
-					{
-						"id": "task-calendar",
-						"type": "integration",
-						"integrationId": "calendar",
-						"title": "Appointments",
-						"icon": "Calendar",
-						"_note": "The calendar leaf, on the task, the same component the case page's Appointments panel uses. A task that asks someone to inspect a site or call an objector is the thing the appointment belongs to, and booking it against the case lost which task it settled. requiredApp is `calendar`: without the Nextcloud Calendar app the leaf renders its own empty state rather than failing, which is why this is safe to ship unconditionally."
-					}
-				],
-				"layout": [
-					{
-						"id": "3",
-						"widgetId": "task-case",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 3,
-						"showTitle": false
-					},
-					{
-						"id": "1",
-						"widgetId": "task-data",
-						"gridX": 0,
-						"gridY": 3,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "task-waiting-case",
-						"gridX": 0,
-						"gridY": 9,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "4",
-						"widgetId": "task-notes",
-						"gridX": 0,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "5",
-						"widgetId": "task-calendar",
-						"gridX": 6,
-						"gridY": 11,
-						"gridWidth": 6,
-						"gridHeight": 4,
-						"showTitle": true
-					}
-				],
-				"lifecycleActions": {
-					"field": "status"
-				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			},
-			"slots": {
-				"widget-task-case": "TaskCaseCard",
-				"widget-task-waiting-case": "TaskWaitingCaseSection"
+				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{

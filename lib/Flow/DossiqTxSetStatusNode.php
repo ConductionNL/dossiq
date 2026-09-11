@@ -33,7 +33,7 @@ use UnexpectedValueException;
  * SHIPPED flow can only name the status — never carry its id. This node takes
  * that name and the handler resolves it inside the case's own case type.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DossiqTxSetStatusNode extends DossiqTransitionNode {
 
@@ -134,7 +134,7 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Set case status');
@@ -147,7 +147,7 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function getDescription(): string {
         return $this->l10n->t('Move the case to a status of its case type, named rather than referenced by id.');

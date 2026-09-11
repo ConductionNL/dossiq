@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -77,6 +78,7 @@ class KpiAggregationService {
 	 * @param IAppConfig $appConfig The app configuration service.
 	 * @param ContainerInterface $container The DI container.
 	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
+	 * @param EngineTaskInbox $engineTasks The engine's task counter.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
 	 * @return void
@@ -85,6 +87,7 @@ class KpiAggregationService {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private IAppManager $appManager,
+		private EngineTaskInbox $engineTasks,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -128,17 +131,15 @@ class KpiAggregationService {
 				filters: ['isFinalStatus' => 0, 'deadline' => ['lt' => $today]]
 			),
 			'completedCount' => count($closed),
-			'taskCount' => $this->countTasks(
-				ids: $ids,
-				filters: ['assignee' => $userId, 'isTerminalStatus' => 0]
-			),
-			'tasksDueToday' => $this->countTasks(
-				ids: $ids,
-				filters: [
-					'assignee' => $userId,
-					'isTerminalStatus' => 0,
-					'dueDate' => ['gte' => ($today . 'T00:00:00+00:00'), 'lte' => ($today . 'T23:59:59+00:00')],
-				]
+			// The ENGINE counts, and it counts server-side. Both tiles used
+			// to be object counts over `caseTask`; the terminality split and
+			// the due window are now predicates the engine understands, so
+			// dossiq neither derives overdue-ness nor counts a page.
+			'taskCount' => $this->engineTasks->countOpenForAssignee(actor: $userId),
+			'tasksDueToday' => $this->engineTasks->countOpenForAssignee(
+				actor: $userId,
+				dueAfter: ($today . 'T00:00:00+00:00'),
+				dueBefore: ($today . 'T23:59:59+00:00')
 			),
 			'statusBreakdown' => $this->breakdown(rows: $openCases, field: 'status', label: 'status'),
 			'typeBreakdown' => $this->breakdown(rows: $openCases, field: 'caseType', label: 'type'),
@@ -183,17 +184,6 @@ class KpiAggregationService {
 		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
 	}//end countCases()
 
-	/**
-	 * Count tasks matching a filter.
-	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param array $filters The filter criteria.
-	 *
-	 * @return int The count.
-	 */
-	private function countTasks(array $ids, array $filters): int {
-		return $this->countObjects(ids: $ids, schema: $ids['caseTask'], filters: $filters);
-	}//end countTasks()
 
 	/**
 	 * Count objects of one schema, server-side.
@@ -450,13 +440,17 @@ class KpiAggregationService {
 	/**
 	 * The register and schema ids these metrics read.
 	 *
-	 * @return array{register: string, case: string, caseTask: string}|null The ids, or null when unconfigured.
+	 * 🔴 `task_schema` IS DELIBERATELY ABSENT. It used to be required here,
+	 * and every case tile on the dashboard would have blanked the moment
+	 * the task schema was retired -- an unrelated setting taking out the
+	 * whole panel. Tasks are counted by the engine now and need no schema.
+	 *
+	 * @return array{register: string, case: string}|null The ids, or null when unconfigured.
 	 */
 	private function ids(): ?array {
 		$ids = [
 			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
 			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
-			'caseTask' => $this->appConfig->getValueString(Application::APP_ID, 'task_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {

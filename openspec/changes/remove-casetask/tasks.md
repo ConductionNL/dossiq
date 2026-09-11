@@ -15,24 +15,39 @@ Each moves from `useObjectStore` over `caseTask` to `useEngineTaskStore`.
 Each gets its unit test updated and its e2e assertion checked BEFORE the next
 one starts.
 
-- [ ] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
+- [x] 1.1 `src/components/tasks/CaseTaskPane.vue` — reads
       `objectStore.fetchCollection('caseTask', openTasksQuery(...))`. Becomes
       `engineTasks.openForCase(caseId)`, which already filters terminal rows.
       Its lifecycle buttons move from the register's transitions to the
       engine's verbs (`invoke(uuid, 'complete')`).
-- [ ] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
+- [x] 1.2 `src/utils/caseTaskPaneHelpers.js` — `FINAL_TASK_STATUSES` is the
       same three states the engine calls terminal. Delete it and use
       `isTerminal` from the engine store, rather than keeping a second copy
       that can drift.
-- [ ] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
-- [ ] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
+- [x] 1.3 `src/components/tabs/CaseTasksTab.vue` — the sidebar list.
+- [x] 1.4 `src/views/widgets/MyTasksWidget.vue` — `scope: 'assigned'` here,
       unlike the case surfaces: this one IS the reader's own list.
-- [ ] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
+- [x] 1.5 `src/views/widgets/TaskRemindersWidget.vue` — needs `overdue`,
       which the engine's inbox filter already supports, so dossiq stops
       deriving overdue-ness itself.
-- [ ] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
+- [x] 1.6 `src/components/flow/TaskWaitingCaseSection.vue` and
       `src/components/tasks/TaskCaseCard.vue` — both read a task to find its
       case. The engine's `objectUuid` IS the case, so these get simpler.
+
+### Section 1 was already green
+
+Measured 2026-09-10: all six surfaces import `useEngineTaskStore` and no
+`fetchCollection('caseTask', ...)` survives in `src/`. The boxes were never
+ticked, not the work left undone. The two surfaces that still import
+`useObjectStore` (`TaskWaitingCaseSection`, `TaskCaseCard`) use it for the
+CASE object, which is correct: the case is still an OpenRegister object.
+
+One `caseTask` WRITE did survive the sweep, in a place nothing read:
+`workflow.js`'s `dispatchCreateTaskAction`. A task written there succeeded,
+the transition reported success, and the task was invisible to every one of
+the six surfaces above -- an object write producing a task nobody sees and
+no error anywhere. It now writes the engine and THROWS on refusal, because
+`dispatchActions` records a per-action result the user is shown.
 
 ## 2. The two pages
 
@@ -54,12 +69,31 @@ upstream, and none needs a custom page:
 | `isTerminal` not on the store allowlist | Two of the six lenses ARE that filter. The server always accepted it | nextcloud-vue#1063 |
 | No due-window filter | "Due this week" had no server-side answer at all | openregister#3581, then nextcloud-vue#1063 |
 
-- [ ] 2.1 `TaskDetail` (`/tasks/:id`). Still a real change: `type: "detail"`
+- [x] 2.1 `TaskDetail` (`/tasks/:id`). Still a real change: `type: "detail"`
       binds a register and a schema, and there is no detail-page equivalent
       of `entitySource`. **The route, the page id and the deep links must not
       change**, so notification links and bookmarks survive. It keeps the
       case card, the notes and appointment leaves and the lifecycle buttons.
       Check `lib/Service/DeepLink*` and the notification templates resolve.
+
+      DONE. The page is `type: "custom"` over `TaskDetailView`, with the
+      route and the page id untouched. `lib/Service/DeepLink*` does not
+      exist in this repo and no PHP builds a task URL: the published link is
+      the manifest `deepLinks` entry `/apps/dossiq/tasks/{uuid}`, which the
+      SPA resolves by route. Two tests hold that shape,
+      `manifestCaseTaskPane.spec.js` and `searchableSchemas.spec.js`, and
+      both were mutation-checked by moving the route and by moving the
+      template.
+
+      The three leaves moved with it. Notes and appointments read
+      openregister's task-anchored endpoints from openregister#3594
+      (`/api/flow-tasks/{uuid}/notes` and `/events`); the audit sidebar tab
+      became a page section over `/api/flow-tasks/{uuid}/audit`. The
+      version-history tab is gone on purpose: an engine task is not an
+      object, so nothing writes a version of it. The lifecycle buttons are
+      the engine's verbs through `invoke(uuid, verb)`, never
+      `CnLifecycleActions`, which asks `/api/objects/{uuid}/available-actions`
+      and 404s for a task.
 - [ ] 2.2 `Tasks` (`/tasks`): add `entitySource: "tasks"` and `rowRoute:
       "TaskDetail"`, drop `register`/`schema`. Map the six lenses onto the
       engine's own filters (All -> `scope: all`, Mine -> `scope: assigned` +
@@ -79,7 +113,7 @@ the slug finds six more users the first pass missed: `AskPersonTaskStore`,
 is the important one: it is the flow node's task storage, and it pairs with
 the resume listener that already moved.
 
-- [ ] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` — stop writing the
+- [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
 - [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
@@ -88,15 +122,15 @@ the resume listener that already moved.
       (`flow-user-task-node`, 19/19 done), which does the same thing against
       the engine natively. That is a separate decision and should be made
       before this task is started, not during it.
-- [ ] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
+- [x] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
-- [ ] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
+- [x] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
       storage, reading `task_schema` directly. Pairs with the resume
       listener, which already moved to `TaskTerminalEvent`.
-- [ ] 3.3c `lib/Service/WorkQueueService.php` and
+- [x] 3.3c `lib/Service/WorkQueueService.php` (dossiq#2369) and
       `lib/Service/CaseReassignmentService.php` — both read `task_schema`;
       reassignment writes to it, so it is a writer as well as a reader.
-- [ ] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
+- [x] 3.4 `lib/Service/KpiAggregationService.php` — counts tasks. Note the
       documented trap in that file: `findAll()` overwrites the register and
       schema context as a side effect, so a count issued after another read
       silently counts the WRONG schema and answers 0.
@@ -107,7 +141,7 @@ the resume listener that already moved.
       entry goes.
 - [ ] 3.7 `lib/Repair/RenameCollidingSchemaSlugs.php` — remove the slug from
       the collision list.
-- [ ] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
+- [x] 3.8 Demo data: `DemoCaseloadGateway`, `DemoCaseloadReport`,
       `DemoCaseloadSeedDataService` and the 64 `tasks` rows in the seed files.
       Demo tasks must become engine tasks, or the demo caseload arrives with
       no work on it.
@@ -137,10 +171,12 @@ Only after 1 to 3 are green.
 
 ## 5. e2e
 
-- [ ] 5.1 The nine specs that name the slug:
+- [x] 5.1 The nine specs that name the slug:
       `case-flow-live-journeys`, `case-list-lenses`, `case-parties`,
       `case-task-pane`, `checklist-per-status`, `dashboard-tiles`,
       `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
+      Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
+      / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
 - [ ] 5.2 One new spec for the cutover itself: a task created by a transition,
       completed through the engine's verb, resuming a suspended flow run. That
       is the path `TaskCompletionResumeListener` now serves and no existing
@@ -149,8 +185,120 @@ Only after 1 to 3 are green.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
 
+### What 5.1 left standing on purpose
+
+`checklist-per-status` needed no conversion: dossiq#2402 and #2405 had already
+moved both of its halves onto the engine, and its four remaining mentions of
+the slug are past-tense history. One of them was a lie, though — a
+`🔴 KNOWN TO FAIL` note on `back to intake and forward again keeps one set of
+tasks`, describing the `existingTitles()` defect that #2405 fixed. The
+assertion was always the right one and was never weakened; only the note
+moved.
+
+`case-flow-live-journeys` had rotted unnoticed. It is excluded from the
+default Playwright project (it needs the shipped flow ENABLED), so nothing has
+run it since the writes moved. Its `completeTask` read `/objects/dossiq/task`,
+a slug this app does not ship, and then PUT `caseTask` — an object
+`AskPersonTaskStore` stopped creating at #2363. Both halves now go through the
+engine.
+
+`ci-seed.sh` no longer REQUIRES `caseTask`. The schema still exists and
+`demo-caseload` still seeds objects of it, deliberately — but a name in that
+list is a hard `exit 1` before Playwright starts, which reports every spec as
+NOT RUN. Out of the list, the day the schema goes costs `demo-caseload` its
+two calculation scenarios and nothing else.
+
+`FIXTURE_SCHEMAS` in `helpers/fixtures.ts` keeps `caseTask` for the same
+reason: it is the cleanup order for the objects `demo-caseload` writes. It
+goes with 4.2, not with 5.1.
+
+## 6. What the first pass missed
+
+An exhaustive inventory on 2026-09-10 found references the checklist above
+does not name. Two of them were LIVE REGRESSIONS rather than deletion work,
+and both were caused by moving the task WRITES to the engine while leaving
+the matching READS on `caseTask`.
+
+- [x] 6.1 `lib/Service/Transitions/StatusChecklist.php` (dossiq#2405, landed
+      by a parallel session while this branch was out) — the worst of them.
+      `actionsFor()` emits `createTask`, `CreateTaskHandler` writes it to the
+      engine, and `tasksFor()` read `caseTask` objects. Both callers broke at
+      once and neither said so: `existingTitles()` saw nothing, so every
+      re-entry into a status raised the whole checklist again as DUPLICATE
+      tasks, and `StatusChecklistGuard` saw nothing completed, so a status
+      with a required item could never be left. Note the guard fails CLOSED,
+      not open: an empty read blocks the transition rather than waving it
+      through.
+- [x] 6.2 `lib/Service/Substitution/SubstitutedWorkResolver.php` — a
+      substitute saw the absentee's cases with no tasks under them. The guard
+      `if ($taskSchema !== '')` stayed TRUE the whole time, so there was no
+      branch to notice. This path had NO test at all, which is why it went
+      unseen; it has two now.
+- [x] 6.3 The read path never spoke the register's vocabulary.
+      `engineTask.js`'s `create()` mapped `dueDate` to the engine's `dueAt`
+      from the first day; rows came back RAW, so every component asking for
+      `row.dueDate` got `undefined` and a task due today rendered "No due
+      date". Mapped once in the store now, the way `EngineTaskInbox::asArray()`
+      does it server-side.
+- [x] 6.4 A version mismatch became a plausible zero. Every filter is a NAMED
+      argument on another app's class, so an OpenRegister predating one throws
+      "Unknown named parameter", the catch turns it into no rows, and a count
+      answers 0 for ever. Measured on the dev instance, whose OpenRegister
+      checkout predated the due-window filter: the dashboard's due-today tile
+      read 0 and looked like a quiet morning. Logged at ERROR now, naming the
+      parameter.
+- [ ] 6.5 `src/manifest.json` metrics `tasks_total` and `tasks_overdue_total`
+      (`kind: objectCount`, `schema: caseTask`) and the `deepLinks[]` entry
+      with `schemaSlug: caseTask`. Neither is in section 4; both dangle when
+      the schema goes. The deep link is paired with
+      `tests/vitest/searchableSchemas.spec.js`, whose own comment warns the
+      pairing "fails silently" when broken.
+- [ ] 6.6 `src/views/settings/Settings.vue` — a visible admin form field bound
+      to `form.task_schema`, offering a picker for a schema that will not
+      exist.
+- [ ] 6.7 `lib/Service/Settings/ConfigKeys.php` carries `task_schema`. Decide
+      explicitly whether to drop it or leave it as an orphan appconfig row.
+      Dropping it also touches four LIVE openspec specs whose MUST-clauses
+      enumerate the key, plus `SettingsServiceTest` and `VthSettingsServiceTest`.
+- [ ] 6.8 `lib/Settings/dossiq_mock_register.json` holds THREE seeded objects
+      with `@self.schema: "caseTask"`, not just the schema block section 4.2
+      names. Orphan demo rows pointing at a dead schema.
+- [ ] 6.9 `tests/vitest/casePartiesWidget.spec.js` reads
+      `schema('caseTask').properties.assigneeGroup.facetable` off the shipped
+      register and will fail outright. Two further e2e specs navigate to a
+      task surface without naming the slug and are not in 5.1:
+      `spec-coverage/task-management.spec.ts` and `docs-screenshots.spec.ts`.
+- [x] 6.10 🔴 48 `@spec` citations ALREADY DANGLED, independent of this change:
+      they name `openspec/changes/task-on-the-case/…`, which was archived on
+      2026-09-08. They live in exactly the files this change touches
+      (`CaseTaskPane.vue` 18, `TaskCaseCard.vue` 15, `registry.js` 4,
+      `caseTaskPaneHelpers.js` 6, and four vitest specs), so repoint them in
+      the same commit rather than leaving the debt behind.
+
 ## Not in this change
 
 - `tenantOnboardingTask` is re-filed here from the tenancy cluster (it is a
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
+
+## What the server side learned on the way
+
+Three things came out of 3.1 to 3.4 that the plan did not anticipate, and
+each one is now a property of the code rather than a note here.
+
+**A read that fails and a case with no tasks both answer `[]`.** For the
+checklist guard that difference decides a transition: "no tasks" means
+"nothing unticked", which PASSES. So `EngineTaskInbox::lastError()` exists,
+the guard asks for it by name, and the guard's own test cannot prove it
+because that test mocks the method -- the proof lives in
+`EngineTaskInboxTest` instead.
+
+**A count is not `count($rows)`.** The inbox pages. A dashboard tile built
+on the row count reads the page size once there are more matches than the
+limit, and would have said the same number for ever. The envelope carries
+`total`, so the count asks for a page of one and throws the rows away.
+
+**`task_schema` was a required id for the whole KPI payload.** Every case
+tile on the dashboard would have blanked the moment the task schema was
+retired. It is gone from `ids()`, which is a prerequisite for step 4 rather
+than a tidy-up.

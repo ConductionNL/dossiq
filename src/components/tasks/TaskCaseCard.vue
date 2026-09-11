@@ -34,7 +34,7 @@
   together would either make the waiting claim on ordinary tasks, which is
   untrue, or hide the case on them, which is the gap being closed.
 
-  @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<div v-if="caseId" class="task-case-card" data-testid="task-case-card">
@@ -127,7 +127,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -148,7 +148,7 @@ export default {
 		 * has one, otherwise the one fetched here.
 		 *
 		 * @return {object|null} The task.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		task() {
 			return this.objectData ?? this.fetchedTask
@@ -162,13 +162,13 @@ export default {
 		 * the ordinary one that had no way back.
 		 *
 		 * @return {string|null} The case id.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		caseId() {
 			return caseIdFrom(taskCaseRef(this.task))
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		caseRoute() {
 			return caseRouteFor(this.caseId)
 		},
@@ -177,7 +177,7 @@ export default {
 		 * The case's own reference number, when it has one.
 		 *
 		 * @return {string} The identifier, or ''.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		identifier() {
 			return String(this.caseObject?.identifier ?? '').trim()
@@ -188,7 +188,7 @@ export default {
 		 * case whose title cannot be read is still reachable.
 		 *
 		 * @return {string} The label.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		caseLabel() {
 			const title = String(this.caseObject?.title ?? '').trim()
@@ -203,7 +203,7 @@ export default {
 		 * definition list, so a bare case still renders as a clean header.
 		 *
 		 * @return {Array<{key: string, label: string, value: string}>} The rows.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		facts() {
 			const rows = [
@@ -230,7 +230,7 @@ export default {
 		 * Who owns the case, which is not always who owns the task.
 		 *
 		 * @return {string} The handler, or ''.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		handler() {
 			return String(this.caseObject?.assignee ?? '').trim()
@@ -245,7 +245,7 @@ export default {
 		 * the same date twice would suggest they are always the same.
 		 *
 		 * @return {string} The formatted date, or ''.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		deadline() {
 			const raw = this.caseObject?.deadline ?? this.caseObject?.plannedEndDate
@@ -273,7 +273,7 @@ export default {
 			 * have resolved.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+			 * @spec openspec/specs/task-management/spec.md
 			 */
 			handler() {
 				this.loadCase()
@@ -290,7 +290,7 @@ export default {
 	 * TaskWaitingCaseSection and InitiatorSection use.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	async mounted() {
 		await initializeStores()
@@ -303,7 +303,7 @@ export default {
 		 * Read the task, unless the surface already handed it over.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async loadTask() {
 			if (this.objectData) {
@@ -330,7 +330,7 @@ export default {
 		 * not cost the case type as well.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async loadCase() {
 			const caseId = this.caseId
@@ -368,7 +368,7 @@ export default {
 		 * @param {string} type The registered type slug.
 		 * @param {string|object|null|undefined} ref The reference.
 		 * @return {Promise<string>} The label.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async labelOf(type, ref) {
 			const id = caseIdFrom(ref)

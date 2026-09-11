@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -54,11 +55,13 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * @param AssigneeResolver  $assignees       The app's one answer to who work goes to
 	 * @param EngineTaskGateway $engineTasks     The dual-run seam onto OpenRegister's task engine
 	 * @param LoggerInterface   $logger          Logger
+	 * @param IUserSession|null $userSession Names the actor when the context does not.
 	 */
 	public function __construct(
 		private readonly AssigneeResolver $assignees,
 		private readonly EngineTaskGateway $engineTasks,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -126,11 +129,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// the register write would leave a second store that nothing
 			// reads, drifting quietly until somebody trusted it.
 			//
-			// `mirrorImport` rather than `mirrorCreate`: on the flow path the
-			// engine's RegistryStepDispatcher runs this handler inside
-			// `ObjectService::runAs()` as the run's acting identity
-			// (openregister#3332), which is a trusted in-process caller, not
-			// an HTTP one.
+			// `mirrorImport` rather than `mirrorCreate`: the engine's create
+			// path is the HTTP one and pins the requester to whoever triggered
+			// the transition, where `import()` is its trusted in-process entry.
+			// It still authorizes, which is what the actor below is for.
 			//
 			// A FAILURE NOW FAILS THE TRANSITION, deliberately. Under the
 			// dual-run a failed mirror was swallowed because the register
@@ -138,10 +140,13 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// left, and a transition that silently created no task is the
 			// worse outcome. A checklist step whose task never appeared
 			// looks like a case that needs no work.
+			// 🔴 THIS WAS `actor: null`, AND THE ENGINE DENIES EVERY VERB WITH
+			// NO ACTING IDENTITY, so no checklist task was ever created. See
+			// {@see actor()} for what resolves one and why in that order.
 			$taskId = $this->engineTasks->mirrorImport(
 				task: $task,
 				caseId: $caseId,
-				actor: null
+				actor: $this->actor(transitionContext: $transitionContext)
 			);
 
 			if ($taskId === '') {
@@ -162,6 +167,46 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'create_task_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * The identity the engine write is authorized as.
+	 *
+	 * The transition's own `userId` first: `StatusTransitionService` sets it on
+	 * every context it dispatches, and it names the person who moved the case,
+	 * which is who the resulting work belongs to. A flow run reaching this
+	 * handler through `DossiqFlowNodeBase` passes the run's context instead,
+	 * which need not carry one, so the session answers for that path.
+	 *
+	 * `TaskService::import()` hands this straight to
+	 * `TaskAuthorizationService::assertMay()`, whose first guard rejects a
+	 * blank uid with "Verb 'create' denied: no acting identity". The old
+	 * comment here read `runAs()` as supplying it; it does not, because
+	 * `import()` authorizes on the argument, so an in-process caller still has
+	 * to name itself. `AskPersonTaskStore` resolves one for the same reason.
+	 *
+	 * Returns null when neither resolves, and null is refused by the engine.
+	 * That is the right end: a task created with no acting identity is one no
+	 * audit entry can attribute, and the caller fails the transition on it.
+	 *
+	 * @param array<string, mixed> $transitionContext The dispatch context.
+	 *
+	 * @return string|null The acting identity, or null when none resolves.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function actor(array $transitionContext): ?string {
+		$fromContext = trim((string)($transitionContext['userId'] ?? ''));
+		if ($fromContext !== '') {
+			return $fromContext;
+		}
+
+		$fromSession = trim((string)($this->userSession?->getUser()?->getUID() ?? ''));
+		if ($fromSession !== '') {
+			return $fromSession;
+		}
+
+		return null;
+	}//end actor()
 
 	/**
 	 * Who this task goes to.
