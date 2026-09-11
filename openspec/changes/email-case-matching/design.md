@@ -169,3 +169,81 @@ hidden.
   explicit occ command may be added later for backfill.
 - Rollback: disable the toggles or remove the job registration; existing leaf links remain (they are
   ordinary email-leaf links, indistinguishable from manual ones — by design).
+
+---
+
+## Implementation notes, added 2026-09-11
+
+Phases 1 to 4 are built. Six things the design did not say, each decided while
+building and each with a reason worth keeping.
+
+### The batch runs as the mailbox owner, and that is the tenant boundary
+
+D1 said to lift pipelinq's transport unchanged in shape. Two of its behaviours
+could not be lifted, and both are security-relevant rather than cosmetic.
+
+pipelinq runs its lookups from a cron job with no session user. OpenRegister
+reads exactly that shape (CLI, no user, not SaaS mode) as a trusted system
+context in `MagicOrganizationHandler::resolveOrganizationScope()`, which returns
+`SCOPE_ALL`: **every organisation**. And its `linkEmail()` calls cannot succeed
+at all, because `EmailLinkService::linkEmail()` throws 401 without a session
+user.
+
+Both are answered by running the whole batch inside
+`ObjectService::runAs($owner)` (openregister#3332). The owner is the session
+subject for the duration, so the case lookup carries the owner's RBAC and their
+active organisation, and the leaf records the link as made by the owner. When
+OpenRegister exposes no `runAs()`, the run is refused rather than run with
+whatever identity the process happens to carry.
+
+### The organisation filter has to be asked for explicitly
+
+`_multitenancy: true` is not enough. `MagicSearchHandler::applyAccessControlFilters()`
+SKIPS the organisation filter for a caller whose RBAC already grants the schema,
+and `resolveMultitenancyFlag()` skips it for a schema with public read. A case
+handler holds exactly that grant. The case lookup therefore passes
+`_multitenancy_explicit => true`, which is what OpenRegister's own
+`ObjectsController` passes when a caller asks for `_multi=true`.
+
+Measured on the dev instance, register 23 / schema 172, through `runAs()`: a user
+whose active organisation is a second organisation gets 0 rows for an identifier
+that exists in the Default Organisation, while a non-admin in the Default
+Organisation gets 1. On that schema (`authorization: null`) the filter held with
+and without the flag; the flag is there for the schemas where it does not.
+
+### Three checks, not one
+
+Recognising a number is never enough. `CaseNumberRecognizer::resolveCases()`
+requires all four of: the owner's own scope (above), exact equality on
+`identifier` after the search, exactly one visible match (two link to neither,
+because picking one is a guess), and `CaseAccessGuard::hasCaseReadAccess()`, the
+per-case check dossiq's case endpoints already use.
+
+### Per-user settings live in user preferences, not app config
+
+pipelinq keys per-user blobs as `email_match_settings.<uid>` in `IAppConfig`.
+App-config keys are capped at 64 characters (`AppConfig::KEY_MAX_LENGTH`) and a
+Nextcloud user id may be 64 characters on its own, so that shape throws for the
+long LDAP and SSO ids a municipality actually has. `IUserConfig` has no such
+limit, is removed with the user, and lets the job ask for opted-in users
+directly (`searchUsersByValueBool`) instead of walking every account.
+
+### The class split is D6's seam, made real
+
+Rather than one 900-line service, the code is three classes:
+`CaseNumberRecognizer` (the pattern and identifier resolution, the only
+dossiq-specific part), `CaseEmailMatchPreferences` (per-user settings, cursor,
+status), and `CaseEmailMatchService` (the transport D6 wants moved into the leaf
+later). PHPMD's complexity ceiling forced the question; D6 already had the
+answer.
+
+### Scope limits, stated rather than implied
+
+The body scan reads `mail_messages.preview_text` only, which Mail caps at 255
+characters. A case number further down a long body is missed in V1, as D3
+allows, and the settings screen says so instead of letting a user assume
+otherwise. The instance toggle and the pattern get their own admin endpoints
+(`/api/settings/email-case-matching/instance`) rather than joining
+`EmailTemplateController`'s IMAP keys: the pattern needs validating before it is
+stored, and putting that there would have coupled the shared-mailbox controller
+to this feature.

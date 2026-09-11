@@ -57,6 +57,7 @@ class ListenerRegistrar {
 	public function register(IRegistrationContext $context): void {
 		(new ObjectListenerRegistrar())->register(context: $context);
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
+		(new CaseTypeListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);
