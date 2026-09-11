@@ -971,9 +971,18 @@ parent's. A chain that returns to itself SHALL be refused on save.
 #### Scenario: A cycle is refused
 @e2e tests/e2e/case-type-authoring-extras.spec.ts
 
+The refusal sits on the publish path, not on the write. The authoring page
+writes a case type straight to OpenRegister's object API and no dossiq code
+runs in between, so there is no dossiq-owned moment at which a save can be
+refused. Publishing is the one write dossiq does own, and it is where a chain
+that returns to itself is stopped. `chainFor()` degrades safely on a chain
+already stored that way, so a mis-saved type stays readable while it is
+unpublished.
+
 - **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
-- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
-- **THEN** the save SHALL fail with a message naming the cycle
+- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and try to publish Bezwaar
+- **THEN** the publish SHALL be refused, changing nothing, and report a finding naming the cycle: both titles, in the order that closes it
+- **AND** validating the publish SHALL report the same finding without publishing anything, so a person about to be refused is told before being made to write a change note
 
 ### Requirement: You configure everything a status is, on the page (REQ-CT-10)
 
