@@ -312,9 +312,36 @@ continued, not replaced.
       is deliberately NO target schema count: two attempts at one were both
       wrong, and a total hides the difference between a clean row and a
       partial one.
-- [ ] 5.2 Every retired slug returns zero hits from a case-insensitive
-      `git grep` across the whole repo, including seed data, demo data, e2e
-      fixtures and `ci-seed.sh`.
+- [ ] 5.2 Every retired slug is gone from every place that RESOLVES it —
+      including seed data, demo data, e2e fixtures and `ci-seed.sh`, which is
+      where the first pass of the caseTask removal nearly left one.
+
+      🔴 **THIS LINE USED TO SAY "zero hits from a case-insensitive `git grep`
+      across the whole repo", AND THAT TEST DOES NOT WORK.** It was applied to
+      `caseTask`, ticked, and is false: 124 files still match the word. Every
+      one is a hit that cluster kept on purpose — component names that name
+      the CONCEPT (`CaseTaskPane.vue`, the `caseTasks` parameters in
+      `workflow.js`), prose recording why the schema went, archived openspec
+      changes, and one composed backfill key.
+
+      A test that cannot pass gets ticked anyway, which is worse than having
+      none: the next person runs it, gets 124 files, and has no way to tell a
+      kept concept-name from a live binding. Corrected here rather than only
+      in `remove-casetask`, because this line is what every remaining cluster
+      inherits — eleven chances to repeat it.
+
+      The test that holds is the slug as a **string a store is asked for**:
+
+          git grep -n "dossiq/<slug>\|'<slug>'\|\"<slug>\"" -- lib src appinfo
+
+      `tests/` is deliberately outside it. Unit tests use a retired slug as an
+      arbitrary schema NAME to drive a resolver or a slug map — fixture data,
+      not a binding — and including them makes the check permanently red for
+      no defect. Measured for `caseTask` 2026-09-11: exit 1.
+
+      The prose, the component names and the `_note` blocks STAY. They name a
+      concept the app still has, and renaming them is a refactor with no
+      functional change.
 - [ ] 5.3 No sibling app's duck-typed lookup points at a removed slug
       (the table from 0.3, re-run).
 
