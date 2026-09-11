@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
 
 /**
  * The case flow, end to end: a case that pauses for a person and moves when
@@ -22,7 +22,16 @@ import type { Page } from '@playwright/test'
  *
  * @spec openspec/specs/case-flow-human-steps/spec.md
  */
-import { expect, test } from '@playwright/test'
+import { expect, request, test } from '@playwright/test'
+import { STORAGE_STATE } from './helpers/auth.ts'
+import { getRequestToken, RUN_PREFIX } from './helpers/fixtures.ts'
+import {
+	createFlow,
+	OR_API,
+	publishFlow,
+	removeFlow,
+	runFlow,
+} from './helpers/flows.ts'
 
 /** The case type the flow ships against. */
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'
@@ -196,6 +205,17 @@ test.describe('Case flow — human steps', () => {
 	test('a deep link to a case survives a hard reload, under both URL forms', async ({
 		page,
 	}) => {
+		// 🔴 FOUR PAGE LOADS, AND THE DEFAULT BUDGET HOLDS ABOUT TWO.
+		//
+		// The index, the click into the case, and then the same case hard
+		// loaded under both URL spellings. On CI four workers share one
+		// `php -S`, where a load costs 13 to 23 seconds, so the 60 second
+		// default cannot fit this test and it timed out on `development`
+		// (run 34578124024) while passing everywhere quieter. `test.slow()`
+		// triples the budget, which is the honest size of this journey rather
+		// than a retry until it fits.
+		test.slow()
+
 		// The RELOAD of a deep link is the test. Sidebar navigation stays
 		// inside the loaded SPA and never re-derives the router base, so it
 		// worked even while every hard load of `/apps/dossiq/cases/<id>`
@@ -204,7 +224,10 @@ test.describe('Case flow — human steps', () => {
 		// came from generateUrl() while the page was served under the other
 		// URL form. Reach a case the supported way first, then hard-load the
 		// URL the browser ended up on.
-		await page.goto('/index.php/apps/dossiq/cases')
+		// Named budgets on every navigation below. Without one, a slow load
+		// spends the whole test budget and Playwright reports a bare
+		// "Test timeout exceeded" that names neither the URL nor the step.
+		await page.goto('/index.php/apps/dossiq/cases', { timeout: 45000 })
 		await expect(
 			page.locator('body'),
 			`The seeded case "${INCOMPLETE_CASE}" is missing.`,
@@ -216,7 +239,7 @@ test.describe('Case flow — human steps', () => {
 
 		// Form 1: exactly the URL the browser shows. A hard load must land on
 		// the case, not the dashboard.
-		await page.goto(deepLink.pathname)
+		await page.goto(deepLink.pathname, { timeout: 45000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
@@ -231,7 +254,7 @@ test.describe('Case flow — human steps', () => {
 		const altPath = deepLink.pathname.includes('/index.php/')
 			? deepLink.pathname.replace('/index.php', '')
 			: deepLink.pathname.replace('/apps/dossiq', '/index.php/apps/dossiq')
-		await page.goto(altPath)
+		await page.goto(altPath, { timeout: 45000 })
 		await expect(page.locator('body')).toContainText(INCOMPLETE_CASE, {
 			timeout: 15000,
 		})
@@ -253,42 +276,96 @@ test.describe('Case flow — human steps', () => {
 		await expect(page.locator('body')).not.toContainText('Wacht op aanvulling')
 	})
 
-	test('a run reports the objects it touched, grouped by node', async ({
-		page,
-	}) => {
-		// The traceability half. Asserted through the API because it is an API:
-		// the panel that renders it lives in nextcloud-vue and is covered there.
-		const runs = await page.request.get(
-			'/index.php/apps/openregister/api/flow-runs?limit=25',
-		)
-		expect(runs.ok(), 'The flow-runs surface must answer.').toBeTruthy()
+	test.describe('with a run seeded to read back', () => {
+		// THE RUN IS SEEDED, NOT FOUND. This test used to read the newest run
+		// on the instance and skip when there was none, and CI never holds
+		// one: the shipped flow arrives DISABLED by spec (2.2). So it skipped
+		// on every CI run. It also read that run in two requests, list then
+		// objects, so another worker's teardown could delete the run in
+		// between. Now it runs a flow of its own and reads that run by uuid,
+		// the same way case-detail-flow-runs.spec.ts seeds its runs.
+		let api: APIRequestContext
+		let token = ''
 
-		const body = await runs.json()
-		const results = (body?.results ?? []) as Array<Record<string, unknown>>
+		/** What beforeAll seeds, and afterAll removes. */
+		const seeded = { flowId: '', run: '' }
 
-		test.skip(
-			results.length === 0,
-			'no runs on this instance yet — nothing to attribute',
-		)
+		test.beforeAll(async ({ baseURL }) => {
+			// A flow, a publish and a synchronous run: more than the default
+			// hook budget on a loaded runner.
+			test.setTimeout(120_000)
+			api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
+			token = await getRequestToken(api)
 
-		const uuid = String(results[0].uuid ?? '')
-		expect(uuid).not.toBe('')
+			// No case: the objects read needs a run, and a run needs no
+			// subject. Leaving it subjectless also keeps it out of every
+			// case-scoped run read another spec makes.
+			seeded.flowId = await createFlow(
+				api,
+				token,
+				`${RUN_PREFIX} Flow run objects`,
+				'Throwaway flow seeded by case-flow-human-steps.spec.ts.',
+			)
+			await publishFlow(api, token, seeded.flowId)
 
-		const touched = await page.request.get(
-			`/index.php/apps/openregister/api/flow-runs/${uuid}/objects`,
-		)
+			const run = await runFlow(api, token, seeded.flowId)
+			seeded.run = String(run.uuid ?? '')
+			expect(
+				seeded.run,
+				'The run endpoint must answer with the run it made.',
+			).not.toBe('')
+		})
 
-		expect(
-			touched.ok(),
-			'GET /api/flow-runs/{uuid}/objects must answer for a run the caller can read.',
-		).toBeTruthy()
+		test.afterAll(async () => {
+			if (!api) return
+			test.setTimeout(120_000)
+			let leaks: string[] = []
 
-		const payload = await touched.json()
-		expect(payload).toHaveProperty('run', uuid)
-		// An empty list is the honest answer for a run that wrote nothing; what
-		// must never happen is the key being absent.
-		expect(payload).toHaveProperty('nodes')
-		expect(Array.isArray(payload.nodes)).toBeTruthy()
+			try {
+				if (seeded.flowId !== '') {
+					leaks = await removeFlow(api, token, seeded.flowId, [seeded.run])
+				}
+			} finally {
+				await api.dispose()
+			}
+
+			if (leaks.length > 0) {
+				throw new Error(
+					'e2e teardown left seeded rows behind, so the next run on this '
+						+ `instance starts dirty: ${leaks.join(', ')}`,
+				)
+			}
+		})
+
+		test('a run reports the objects it touched, grouped by node', async ({
+			page,
+		}) => {
+			// The traceability half. Asserted through the API because it is an
+			// API: the panel that renders it lives in nextcloud-vue and is
+			// covered there.
+			const touched = await page.request.get(
+				`${OR_API}/flow-runs/${seeded.run}/objects`,
+			)
+
+			expect(
+				touched.ok(),
+				'GET /api/flow-runs/{uuid}/objects must answer for a run the caller can read.',
+			).toBeTruthy()
+
+			const payload = await touched.json()
+			expect(payload).toHaveProperty('run', seeded.run)
+			expect(payload).toHaveProperty('flowId', seeded.flowId)
+			// What must never happen is the key being absent.
+			expect(payload).toHaveProperty('nodes')
+			expect(Array.isArray(payload.nodes)).toBeTruthy()
+			// A manual start into an end writes nothing, so the honest answer
+			// is an empty list. That is also the scoping proof: a read that
+			// ignored the run would hand back what other runs wrote.
+			expect(
+				payload.nodes,
+				"A run that wrote nothing must report no objects, and none of another run's.",
+			).toEqual([])
+		})
 	})
 
 	test('the objects endpoint does not answer for a run that does not exist', async ({
