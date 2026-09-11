@@ -199,7 +199,7 @@ test.describe('Case detail — the Communication tab', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-the-case-page-lists-its-contact-moments-req-kwz-12
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-tab-lists-the-cases-contacts
 	test('the tab lists this case contacts and not another case one', async ({
 		page,
 	}) => {
@@ -229,7 +229,7 @@ test.describe('Case detail — the Communication tab', () => {
 		await expect(widget.getByText(OTHER_SUMMARY)).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-the-case-page-lists-its-contact-moments-req-kwz-12
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#newest-first
 	test('the newest contact is the first row', async ({ page }) => {
 		const widget = await openCommunicationTab(page, caseId)
 		await expect(widget.locator('tbody tr')).toHaveCount(2, {
@@ -243,7 +243,7 @@ test.describe('Case detail — the Communication tab', () => {
 		expect(earlier).toBe(1)
 	})
 
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-the-case-page-lists-its-contact-moments-req-kwz-12
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#an-empty-case-still-shows-the-list
 	test('a case without contacts shows the tab and its empty state', async ({
 		page,
 	}) => {
@@ -272,7 +272,8 @@ test.describe('Case detail — the Communication tab', () => {
 		).toBe(true)
 	})
 
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-you-log-a-contact-from-the-case-req-kwz-13
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-does-not-ask-for-the-kcc-fields
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-never-asks-which-case
 	test('the Log contact form asks for five fields and none of the KCC ones', async ({
 		page,
 	}) => {
@@ -305,8 +306,8 @@ test.describe('Case detail — the Communication tab', () => {
 		await expect(dialog.locator('[data-cn-field="case"]')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-a-contact-moment-names-its-case-req-kwz-11
-	// @e2e openspec/changes/contact-moments/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-you-log-a-contact-from-the-case-req-kwz-13
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#a-contact-logged-on-the-case-carries-the-case
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#a-logged-call-shows-up-in-the-list
 	test('a logged call carries the case and shows up in the tab', async ({
 		page,
 	}) => {

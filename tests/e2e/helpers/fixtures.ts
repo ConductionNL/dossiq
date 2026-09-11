@@ -31,6 +31,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import { occPurge, OccUnavailableError } from './occ.ts'
+import { isStaleResidue, residueMinAgeMs, sweepsAllResidue } from './residue.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
 export const REGISTER = 'dossiq'
@@ -945,19 +946,34 @@ export async function cleanupRunObjects(
 }
 
 /**
- * Remove the residue of EVERY fixture run on this instance.
+ * Remove the residue of fixture runs that are no longer running.
  *
  * Called once from `global-setup.ts`, before any spec has run. Per-spec
  * teardown can only sweep its own `RUN_PREFIX`; a run that was interrupted
  * (Ctrl-C, a crashed worker, a `globalTimeout`) never reaches its teardown at
- * all, and its objects then belong to no future run's prefix. Sweeping the
- * family prefix up front is what makes a second suite run on one rig start
- * from the same state as the first.
+ * all, and its objects then belong to no future run's prefix. This is what
+ * collects them.
  *
- * Deliberately NOT an afterAll: the suite runs single-worker and owns its
- * instance (see `base-url.ts`, which refuses a default target for exactly this
- * reason), so a clean slate at the start is safe, where a family-wide sweep at
- * the end could tear down a concurrently running sibling suite.
+ * 🔴 IT USED TO REMOVE EVERY `E2EZAAK-` OBJECT, on the stated premise that
+ * "the suite runs single-worker and owns its instance". On the shared
+ * developer instance it does not: several sessions run this suite against the
+ * same Nextcloud, the family prefix is common to all of them, and one run's
+ * setup deleted another session's case type, statuses and workflow template
+ * between that session's `beforeAll` and its first assertion. The victim saw
+ * "No status types defined" on a case type it had just seeded.
+ *
+ * So the sweep is now bounded by AGE (`residue.ts`): a live row is removed only
+ * when its own `updated`/`created` stamp is older than
+ * `DOSSIQ_E2E_RESIDUE_MIN_AGE_MINUTES` (default 120, well past the suite's 38
+ * minute `globalTimeout`), which no running suite's fixtures can be. A crashed
+ * run's leftovers therefore still go, one sweep after they age out, without
+ * anybody passing a flag.
+ *
+ * The TRASH is left alone unless the instance is declared the caller's own
+ * (`DOSSIQ_E2E_SWEEP_ALL_RESIDUE=1`, which also drops the age bound). A
+ * trashed row carries no timestamp OpenRegister will return (`@self.created`
+ * and `updated` are null there), and a row nobody can date may belong to a run
+ * that trashed it a second ago.
  *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
@@ -967,9 +983,18 @@ export async function sweepFixtureResidue(
 	api: APIRequestContext,
 	token: string,
 ): Promise<string[]> {
+	const minAgeMs = residueMinAgeMs()
+	const includeTrash = sweepsAllResidue()
+
 	return [
-		...(await sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
-		...(await sweepTrash(api, token, FIXTURE_PREFIX)),
+		...(await sweepPrefix(
+			api,
+			token,
+			FIXTURE_PREFIX,
+			[...FIXTURE_SCHEMAS],
+			minAgeMs,
+		)),
+		...(includeTrash ? await sweepTrash(api, token, FIXTURE_PREFIX) : []),
 	]
 }
 
@@ -1030,10 +1055,17 @@ async function sweepTrash(
  * none of the fixture's text, so `JSON.stringify(row).includes(prefix)` never
  * matches it. Those rows outlived every previous teardown.
  *
- * @param api     Authenticated request context.
- * @param token   CSRF request-token.
- * @param prefix  Run prefix or family prefix.
- * @param schemas Schema slugs to sweep, child-first.
+ * `minAgeMs` bounds the sweep to rows that are nobody's live fixture (see
+ * `sweepFixtureResidue`). It is zero for a run's own teardown, which removes
+ * what it seeded however fresh. A child row of a case that IS removed goes
+ * with it whatever its own age, because it would otherwise be left pointing
+ * at a case that no longer exists.
+ *
+ * @param api      Authenticated request context.
+ * @param token    CSRF request-token.
+ * @param prefix   Run prefix or family prefix.
+ * @param schemas  Schema slugs to sweep, child-first.
+ * @param minAgeMs How old a prefixed row must be to be removed; 0 for all.
  * @return Ids that still resolve after the sweep.
  */
 async function sweepPrefix(
@@ -1041,6 +1073,7 @@ async function sweepPrefix(
 	token: string,
 	prefix: string,
 	schemas: string[],
+	minAgeMs = 0,
 ): Promise<string[]> {
 	const survivors: string[] = []
 
@@ -1048,7 +1081,12 @@ async function sweepPrefix(
 	const caseIds = new Set<string>()
 	if (schemas.includes('case') === true) {
 		for (const row of await listAllObjects(api, 'case').catch(() => [])) {
-			if (JSON.stringify(row).includes(prefix)) caseIds.add(objectId(row))
+			if (
+				JSON.stringify(row).includes(prefix)
+				&& isStaleResidue(row, minAgeMs)
+			) {
+				caseIds.add(objectId(row))
+			}
 		}
 	}
 
@@ -1063,7 +1101,8 @@ async function sweepPrefix(
 		for (const row of rows) {
 			const id = objectId(row)
 			if (id === '') continue
-			const matchesPrefix = JSON.stringify(row).includes(prefix)
+			const matchesPrefix =
+				JSON.stringify(row).includes(prefix) && isStaleResidue(row, minAgeMs)
 			const matchesCase =
 				caseIds.has(String(row.case ?? '')) === true
 				|| caseIds.has(String(row.parentCase ?? '')) === true

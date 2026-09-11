@@ -122,9 +122,10 @@ the miss anywhere except the run's scanned counter.
 
 The system SHALL run matching only when BOTH the instance toggle (app-config
 `email_case_matching_enabled`, default `no`, managed through `SettingsService`) AND the user's own
-setting (per-user settings blob in `IAppConfig`: `enabled` default `false`, plus the mail account id
-to index) allow it. Each user's settings SHALL be independent. Disabling either level SHALL stop all
-scanning for the affected scope from the next run.
+setting (the user's own Nextcloud preferences: `enabled` default `false`, plus the mail account id
+to index, which SHALL be an account the user owns) allow it. Each user's settings SHALL be
+independent. Disabling either level SHALL stop all scanning for the affected scope from the next
+run.
 
 #### Scenario: Instance toggle off stops everything
 

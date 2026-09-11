@@ -167,7 +167,7 @@ test.describe('Grant schemes are administered as case types', () => {
 	// on a build where the capability vanished entirely, which is what ADR-044
 	// Decision 5 forbids.
 	//
-	// @e2e openspec/changes/subsidieregeling-is-a-casetype/proposal.md
+	// @e2e openspec/specs/case-types/spec.md#the-retired-route-falls-through-rather-than-erroring
 	test('the retired scheme index is gone and Case types took it over', async ({
 		page,
 	}) => {
