@@ -151,12 +151,10 @@ permissions:
 jobs:
   quality:
     if: (github.event_name != 'pull_request' || github.head_ref != 'development')
-    # TEMPORARY: points at ConductionNL/.github's `feat/e2e-shards` branch so
-    # this PR's own run exercises the sharded job before that change lands.
-    # Put it back to @main in the same PR once that branch is merged. Do not
-    # merge this PR while it reads anything but @main, and do not merge it
-    # BEFORE the .github change either: @main does not yet declare
-    # `e2e-shards`, and an undeclared input makes the whole call fail.
+    # `e2e-shards` below is declared by ConductionNL/.github#758 (merged
+    # 2026-09-11). This call must stay at @main: an input the called workflow
+    # does not declare makes the whole call fail, so pinning to a ref that
+    # predates #758 breaks every run.
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: dossiq
