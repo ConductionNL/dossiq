@@ -191,9 +191,11 @@ test.describe('Contacts', () => {
 		// API-seeded case has no projection until somebody opens its detail page.
 		//
 		// Writing only `initiatorType` and `initiatorDisplayName` is the worst of
-		// the three options: it satisfies the back-fill's guard without supplying
-		// `initiatorSourceId`, so `resolveSource()` returns before its lookup and
-		// the initiator card renders no link. That broke "the case links back".
+		// the three options. `fillProjectionFromRequester()` skips any case that
+		// already has an `initiatorDisplayName`, so it never supplies the missing
+		// `initiatorSourceId`; `resolveSource()` then returns before its lookup
+		// and the initiator card renders no link. That broke "the case links
+		// back".
 		// Writing none of them leaves the COMPANY case with an empty Requester
 		// cell, because no test opens that case and nothing back-fills it — the
 		// person case only worked by the accident of an earlier test visiting it.

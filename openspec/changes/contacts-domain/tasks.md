@@ -178,13 +178,27 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
     second, while a shared filter would return every other case of the same
     type and could push either row onto a second page.
 
-    Both seeded cases name `requester` and nothing else about the initiator.
-    Writing `initiatorType` and `initiatorDisplayName` by hand, which a first
-    version of the spec did, left `initiatorSourceId` EMPTY: with it empty
-    `InitiatorSection.resolveSource()` returns before its lookup, the initiator
-    card renders no link, and 3.5's own e2e failed twice while passing on
-    `development` with the same application code. The projections are derived
-    from the reference, and writing one by hand is not a neutral act.
+    Both seeded cases carry the WHOLE initiator projection: `initiatorType`,
+    `initiatorDisplayName` and `initiatorSourceId`. It took two CI runs to learn
+    why all three, and the lesson is not about the test:
+
+    - The projection is NOT derived by OpenRegister. `InitiatorSection`
+      back-fills it in the browser the first time a case's detail page opens,
+      so an API-seeded case has none until somebody visits it.
+    - Seeding `requester` alone left the COMPANY row with an empty Requester
+      cell, because no test opens that case. The person row only passed by the
+      accident of an earlier test visiting its case.
+    - Seeding `initiatorType` and `initiatorDisplayName` without
+      `initiatorSourceId` is worse: `fillProjectionFromRequester()` skips any
+      case that already has a display name, so the source id is never
+      supplied, `resolveSource()` returns before its lookup, and 3.5's
+      initiator-card link disappeared while passing on `development` with the
+      same application code.
+
+    That last point is a latent PRODUCT defect, recorded here rather than fixed
+    under this task: the back-fill keys on `initiatorDisplayName` alone, so any
+    case written with a name but no source id is never repaired and its card
+    link stays dead.
   - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment
