@@ -742,7 +742,20 @@ class CaseEmailMatchService {
 				objectService: $context['objectService'],
 				register: $context['register'],
 				schema: $context['schema'],
-				filters: ['identifier' => $identifier, '_limit' => 10],
+				filters: [
+					'identifier' => $identifier,
+					'_limit' => 10,
+					'_rbac' => true,
+					'_multitenancy' => true,
+					// 🔴 REQUIRED, NOT DECORATION. OpenRegister skips the
+					// organisation filter for a caller whose RBAC already grants
+					// the schema ("let RBAC handle access control"), and for a
+					// schema with public read. A case handler holds that grant,
+					// so without this flag the lookup spans every organisation.
+					// Asking explicitly keeps the owner's active organisation
+					// (and its parents) as the boundary in every case.
+					'_multitenancy_explicit' => true,
+				],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: resolving a case number failed: ' . $e->getMessage(), ['app' => Application::APP_ID]);

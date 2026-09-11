@@ -1018,6 +1018,27 @@ class CaseEmailMatchServiceTest extends TestCase {
 	}//end testCasesAreResolvedAndLinkedAsTheMailboxOwner()
 
 	/**
+	 * The lookup asks OpenRegister for the organisation boundary explicitly.
+	 *
+	 * OpenRegister drops the organisation filter for a caller whose RBAC grants
+	 * the schema unless multitenancy is requested explicitly, and a case
+	 * handler holds exactly that grant. Without the flag the owner scope set by
+	 * runAs() would still cover every organisation's cases.
+	 *
+	 * @return void
+	 */
+	public function testTheLookupRequestsTheOrganisationBoundaryExplicitly(): void {
+		$this->receive(id: 101, subject: 'Zaak 2026-0042');
+
+		$this->service()->runForUser(userId: self::OWNER);
+
+		$search = $this->objectService->searches[0];
+		$this->assertTrue($search['_multitenancy_explicit'] ?? null);
+		$this->assertTrue($search['_multitenancy'] ?? null);
+		$this->assertTrue($search['_rbac'] ?? null);
+	}//end testTheLookupRequestsTheOrganisationBoundaryExplicitly()
+
+	/**
 	 * The link carries the case's numeric register and schema, the account and the message.
 	 *
 	 * @return void
