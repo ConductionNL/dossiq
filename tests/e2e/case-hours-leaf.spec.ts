@@ -32,11 +32,19 @@
  * apps it looked for; leave the flag off where humaniq IS enabled and the
  * absence half fails naming the flag to set. Neither state can pass quietly.
  *
- * 🔴 THE JOURNEY HALF IS UNPROVEN. It is written against the leaf's published
- * `data-testid` contract and has not been run against an instance serving the
- * `humaniq-hours` bundle, because that bundle is not shipped yet
- * (humaniq `hours-leaf-for-any-object`). Read a first green run as evidence,
- * not this comment.
+ * THE JOURNEY HALF HAS NOW RUN. That bundle used to be unshipped, and this
+ * comment used to say so. It ships: `humaniq/js/humaniq-leaves.js` carries
+ * `humaniq-hours` and the `hq-hours-*` hooks, and on an instance with humaniq
+ * enabled the leaf mounts, reads and books. First run 2026-09-11.
+ *
+ * That first run found a defect in this file rather than in the leaf, which is
+ * the usual result of running a test nobody has run: see `tryReadFigure`.
+ *
+ * 🔴 IT STILL DOES NOT RUN IN CI. The journey half registers only under
+ * `DOSSIQ_E2E_HUMANIQ=1`, and nothing in this repo or in the shared workflow
+ * sets it, so every assertion below is one no pipeline executes. CI installs
+ * openregister and nothing else, so enabling it there means adding humaniq to
+ * `additional-apps` as well as setting the flag.
  *
  * WHERE THE CITATIONS POINT. The delta is not synced into `openspec/specs/`
  * yet, so a citation naming the canonical path would resolve to nothing. They
@@ -253,10 +261,34 @@ async function openCase(page: Page, caseId: string): Promise<void> {
 }
 
 /**
- * Read the number a leaf figure prints.
+ * Read the number a leaf figure prints, or null while it prints none.
  *
  * The leaf formats its own figures and may print a unit or a Dutch decimal
  * comma, so the number is extracted rather than compared as text.
+ *
+ * NULL RATHER THAN A THROW, because this is what a poll calls. The tile
+ * prints an en-dash placeholder while it refetches after a write, and that
+ * state is transient by design. `readFigure` throws on it, and a throw inside
+ * `expect.poll`'s function ABORTS the poll instead of retrying it, so the
+ * first ever run of this spec died on a placeholder that would have been a
+ * number a moment later. Returning null lets the matcher fail and the poll
+ * retry; a placeholder that never resolves still fails, on the budget.
+ *
+ * @param figure The locator holding the figure.
+ * @return The number, or null when the figure prints no digits yet.
+ */
+async function tryReadFigure(figure: Locator): Promise<number | null> {
+	const text = (await figure.innerText()).trim()
+	const match = text.match(/-?\d+(?:[.,]\d+)?/)
+	return match === null ? null : Number(String(match[0]).replace(',', '.'))
+}
+
+/**
+ * Read the number a leaf figure prints, failing when it does not print one.
+ *
+ * For ONE-SHOT reads, where a placeholder is a real failure. Inside an
+ * `expect.poll` use `tryReadFigure`: this one throws, and a throw inside the
+ * polled function aborts the poll rather than retrying it.
  *
  * @param figure The locator holding the figure.
  * @param what   What the figure is, for the failure message.
@@ -592,14 +624,10 @@ if (!HUMANIQ_DECLARED) {
 			// than read once: the tile refetches after the write, and reading
 			// between the two is a race that reports the booking as lost.
 			await expect
-				.poll(
-					async () =>
-						readFigure(widget.getByTestId(HOOK.total), 'the total'),
-					{
-						timeout: 20_000,
-						message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
-					},
-				)
+				.poll(async () => tryReadFigure(widget.getByTestId(HOOK.total)), {
+					timeout: 20_000,
+					message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
+				})
 				.toBeCloseTo(before + BOOKED_HOURS, 2)
 		})
 
