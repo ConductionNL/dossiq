@@ -46,6 +46,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\BerichtenboxService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -65,12 +66,14 @@ class BerichtenboxReadStatusJob extends TimedJob {
 	 * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
 	 * @param IAppManager $appManager The Nextcloud app manager.
 	 * @param LoggerInterface $logger The logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private BerichtenboxService $berichtenboxService,
 		private IAppManager $appManager,
 		private LoggerInterface $logger,
+		private OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 86400);
@@ -105,8 +108,12 @@ class BerichtenboxReadStatusJob extends TimedJob {
 			['app' => Application::APP_ID, 'pendingMessages' => $count],
 		);
 
+		// `getPendingMessages()` hands back what `findAll()` returned, which is
+		// `ObjectEntity` objects. Indexing one as an array is an Error, so this
+		// loop would have died on the first message the moment the job was
+		// registered. The uuid is read off the row itself.
 		foreach ($messages as $message) {
-			$messageId = (string)($message['uuid'] ?? ($message['id'] ?? ''));
+			$messageId = $this->rowNormaliser->normalise(row: $message)['uuid'];
 			if ($messageId === '') {
 				continue;
 			}
