@@ -78,6 +78,18 @@ export async function provisioningContext(
 
 	return playwright.request.newContext({
 		baseURL,
+		// 🔴 AN EXPLICIT EMPTY JAR, OR THE ADMIN'S SESSION RIDES ALONG.
+		// Inside a test, Playwright fills every option a `request.newContext`
+		// call leaves out from the project's `use` block
+		// (`runBeforeCreateRequestContext` in @playwright/test 1.63), and that
+		// block names the admin's captured `storageState`. So without this line
+		// the context sent the stale session cookie AND the basic credentials,
+		// and Nextcloud answered from the session. Measured on proof run
+		// 34603140073: with the password here replaced by one the instance
+		// refuses, whoami still answered `admin` and provisioning still
+		// succeeded, so the whoami check could not tell the two apart and the
+		// "no session" this helper promises was not true.
+		storageState: { cookies: [], origins: [] },
 		extraHTTPHeaders: {
 			Authorization: `Basic ${basic}`,
 			'OCS-APIRequest': 'true',
