@@ -68,7 +68,11 @@ async function openControlled(page: Page): Promise<void> {
 }
 
 test.describe('mobiel-inspectie-offline service worker', () => {
-	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
+	// @e2e exclude No surviving scenario states the worker script's CSP. It used
+	// to cite mobiel-inspectie-offline's "Download daily schedule" scenario,
+	// whose day sync, progress indicator and IndexedDB storage were removed with
+	// the mobile-inspection frontend (062d9dede); that scenario is now excluded
+	// in the spec. This test still guards property 2 in the header.
 	test('the worker script is served with a connect-src it can actually use', async ({
 		request,
 	}) => {
@@ -89,7 +93,11 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 		expect(csp).toContain('https://service.pdok.nl')
 	})
 
-	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
+	// @e2e exclude No surviving scenario states that a claimed request reaches
+	// the server. The day-sync scenario this cited is excluded in the spec: the
+	// /api/sync routes it downloads from were removed in 062d9dede, so this test
+	// proves the worker's pass-through (any `basic` answer, a 404 included),
+	// never a download.
 	test('a request the worker CLAIMS still reaches the server', async ({
 		page,
 	}) => {
