@@ -148,6 +148,8 @@ down so the next implementation cannot quietly choose a different one.
 
 #### Scenario: The case cannot be resolved
 
+@e2e exclude every branch of this one is an infrastructure failure a browser cannot stage: an absent OpenRegister, an unconfigured case schema, a case uuid with no row. `CaseAccessGuardReadAccessTest` drives all three against the guard directly, which is where the decision is taken.
+
 - **WHEN** a submission names a case that does not exist, or OpenRegister is
   unavailable, or the case schema is not configured
 - **THEN** the system SHALL refuse the submission
