@@ -30,6 +30,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	FIXTURE_PREFIX,
 	getRequestToken,
 	listObjects,
 	objectId,
@@ -78,7 +79,18 @@ test.describe('The case Actions menu', () => {
 		if (flows.ok() === true) {
 			const body = await flows.json()
 			const rows = (body?.results ?? body?.flows ?? body ?? []) as any[]
-			const first = Array.isArray(rows) ? rows[0] : null
+			// Never a flow another spec seeded. The list is newest first, so
+			// while case-detail-flow-runs.spec.ts holds its throwaway flow on
+			// another worker that flow is `[0]`, and its teardown deletes it
+			// out from under the dialog assertion below. FIXTURE_PREFIX marks
+			// it, as it marks every fixture row (see adoptableCaseTypes).
+			const first = Array.isArray(rows)
+				? rows.find(
+						(row) =>
+							String(row?.name ?? '').includes(FIXTURE_PREFIX)
+							=== false,
+					)
+				: null
 			if (first) {
 				startableFlowId = String(first.uuid ?? first.id ?? '')
 				startableFlowTitle = String(first.name ?? '')

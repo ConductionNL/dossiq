@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Resolves a statusType by id or by name within a case type.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusTypeLookup {
 	/**
@@ -66,7 +66,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The name, or the empty string when unresolvable.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function nameFor(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
@@ -112,7 +112,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when there is no such status.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForName(string $caseTypeId, string $statusName): string {
 		$wanted = strtolower(trim($statusName));
@@ -201,7 +201,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<string, string> The statuses, keyed by id.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function statusesOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -255,7 +255,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<string, mixed> The object, or an empty array when unreadable.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function read(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();

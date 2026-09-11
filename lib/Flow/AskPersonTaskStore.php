@@ -106,7 +106,7 @@ class AskPersonTaskStore {
      * @throws RuntimeException When storage is unavailable, unconfigured, or the
      *                          written task cannot be identified.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function create(array $task): string {
         $caseId = trim((string) ($task['case'] ?? ''));

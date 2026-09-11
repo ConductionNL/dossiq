@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use RuntimeException;
 /**
  * Applies a handler's own field changes to the stored case, never the snapshot.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class CaseFieldWriter {
 
@@ -77,7 +77,7 @@ class CaseFieldWriter {
 	 *                          case cannot be re-read, or the object service
 	 *                          offers no seam this writer can use.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function write(object $objectService, string $register, string $schema, array $case, array $changes): void {
 

@@ -156,9 +156,12 @@ describe('the case-tasks widget after the retype', () => {
 		// The content is what the widget goes back to reading the day
 		// CnObjectListWidget grows a lifecycle column. Dropping a key here
 		// would make the swap back a second change rather than a revert.
+		//
+		// `register` and `schema` ARE dropped, and their absence is asserted
+		// below. The component has read the task engine since dossiq#2357 and
+		// ignored both, so the pair named a schema that no longer exists and
+		// claimed a binding the widget never made.
 		expect(pane.content).toMatchObject({
-			register: 'dossiq',
-			schema: 'caseTask',
 			filter: { case: '@objectId' },
 			sort: { field: 'dueDate', dir: 'asc' },
 			rowRoute: 'TaskDetail',
@@ -167,6 +170,8 @@ describe('the case-tasks widget after the retype', () => {
 		})
 		expect(Array.isArray(pane.content.columns)).toBe(true)
 		expect(typeof pane.content.emptyText).toBe('string')
+		expect(pane.content.register).toBeUndefined()
+		expect(pane.content.schema).toBeUndefined()
 	})
 
 	it('stays inside the tabs strip and out of the layout', () => {
@@ -229,20 +234,38 @@ describe('the case-tasks widget after the retype', () => {
 })
 
 describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
-	it('keeps its route and its id, so every deep link still resolves', () => {
+	it('keeps its route and its id, so every existing link still resolves', () => {
 		// This is the whole constraint of task 2.1 and the only one that can
-		// break a bookmark. The manifest `deepLinks` entry publishes
-		// /apps/dossiq/tasks/{uuid}, notifications point there, and the SPA
-		// resolves it by ROUTE. A route resolves at request time, so a change
-		// here fails silently for everyone holding an old link.
+		// break a bookmark. Notifications and bookmarks point at
+		// /apps/dossiq/tasks/{uuid} and the SPA resolves it by ROUTE. A route
+		// resolves at request time, so a change here fails silently for
+		// everyone holding an old link.
 		const detail = page('TaskDetail')
 		expect(detail).toBeDefined()
 		expect(detail.route).toBe('/tasks/:id')
+	})
 
-		const deepLink = manifest().deepLinks.find(
-			(entry) => entry.urlTemplate === '/apps/dossiq/tasks/{uuid}',
+	it('publishes no deepLinks entry, because a deep link needs a schema', () => {
+		// 🔴 THE ENTRY IS GONE AND ITS ABSENCE IS THE ASSERTION.
+		// `deepLinks` is keyed on `registerSlug` + `schemaSlug`, and it feeds
+		// exactly one consumer: OpenRegister's schema-scoped unified search,
+		// which resolves a hit on an OBJECT of that schema to a URL.
+		// remove-casetask deleted the schema, so the entry addressed a schema
+		// nothing declares and could match no object. Keeping it would have
+		// published a link nothing can ever produce.
+		//
+		// The cost is real and is recorded rather than papered over: an engine
+		// task has NO unified-search provider today. That is an OpenRegister
+		// gap, not a dossiq one. The engine's tasks live in their own table,
+		// outside the object index the search reads, and no `deepLinks` shape
+		// addresses them. The route above is unchanged, so the moment such a
+		// shape exists this page is ready for it.
+		const taskLinks = manifest().deepLinks.filter(
+			(entry) =>
+				entry.schemaSlug === 'caseTask'
+				|| entry.urlTemplate === '/apps/dossiq/tasks/{uuid}',
 		)
-		expect(deepLink, 'the task deep link must still be declared').toBeDefined()
+		expect(taskLinks).toEqual([])
 	})
 
 	it('is a custom page bound to a component the registry answers', () => {

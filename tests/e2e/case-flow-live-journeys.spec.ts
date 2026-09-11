@@ -37,7 +37,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 import { expect, request, test } from '@playwright/test'
 import { execSync } from 'child_process'
@@ -207,7 +207,7 @@ async function runsForCase(api: APIRequestContext, caseId: string): Promise<Json
  * Every task standing on one case, read from the ENGINE.
  *
  * 🔴 IT USED TO LIST `/objects/dossiq/task`, WHICH IS NOT A SCHEMA THIS APP
- * SHIPS. The slug is `caseTask`, so the read 404'd; and even spelled right it
+ * SHIPS. The slug was `caseTask`, so the read 404'd; and even spelled right it
  * would have answered `[]`, because the flow's human step writes the engine
  * and stopped writing register objects. Both wrong spellings fail the same
  * silent way — an empty list reads as "the flow created no task", which is a

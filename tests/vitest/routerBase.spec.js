@@ -12,7 +12,7 @@
  * dashboard — a deep link to a case answered 200 from the server and landed
  * on `/apps/dossiq/` client-side.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import { routerBase } from '../../src/utils/routerBase.js'

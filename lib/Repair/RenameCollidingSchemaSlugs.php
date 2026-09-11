@@ -69,10 +69,14 @@ class RenameCollidingSchemaSlugs implements IRepairStep {
 	 */
 	private const RENAMES = [
 		'supplierInvoice' => ['to' => 'caseSupplierInvoice', 'with' => 'shillinq'],
-		// The case task. `task` was claimed by three apps and they share only
-		// `description`, `priority` and `status`. planninq's project task is the
-		// largest and keeps the bare slug; pipelinq took crmTask.
-		'task' => ['to' => 'caseTask', 'with' => 'planninq, pipelinq'],
+		// 🔴 THE CASE TASK IS NOT HERE ANY MORE, AND LEAVING IT WOULD HAVE UNDONE
+		// THE DELETION ONCE PER UPGRADE. `task` was claimed by three apps, so this
+		// step renamed dossiq's to `caseTask` before every register import. The
+		// task engine is the record now and remove-casetask removed the schema
+		// from both descriptors; a rename that still ran would re-create the slug
+		// on the next `occ upgrade`, against a descriptor that no longer declares
+		// it. A schema nothing ships and nothing reads is worse than a collision:
+		// it answers 200 and returns rows no writer has touched.
 	];
 
 	/**
