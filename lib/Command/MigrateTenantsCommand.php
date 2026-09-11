@@ -88,13 +88,24 @@ class MigrateTenantsCommand extends Command {
 		$output->writeln('  total    = ' . $summary['total']);
 		$output->writeln('  migrated = ' . $summary['migrated']);
 		$output->writeln('  skipped  = ' . $summary['skipped']);
+		$output->writeln('  refused  = ' . $summary['refused']);
 		$output->writeln('  failed   = ' . $summary['failed']);
 
 		foreach ($summary['mappings'] as $mapping) {
 			$output->writeln('  ' . $mapping['tenant'] . ' -> ' . $mapping['organisation']);
 		}
 
-		if ($summary['failed'] > 0) {
+		// A refused tenant is louder than a failed one, because the damage is
+		// done by acting on the report rather than by the migration itself.
+		foreach (($summary['collisions'] ?? []) as $collision) {
+			$output->writeln(
+				'<error>  REFUSED ' . $collision['tenant'] . ': slug "' . $collision['slug']
+				. '" is held by organisation ' . $collision['heldBy']
+				. '. Nothing was written and no mapping is reported. Rename one of the two, then re-run.</error>'
+			);
+		}
+
+		if ($summary['failed'] > 0 || $summary['refused'] > 0) {
 			return Command::FAILURE;
 		}
 
