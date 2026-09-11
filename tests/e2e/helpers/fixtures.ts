@@ -73,7 +73,19 @@ const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
-	'caseTask',
+	// 🔴 `caseTask` IS GONE FROM THIS LIST, and it was here as cleanup order
+	// rather than as a thing most specs made. remove-casetask deleted the
+	// schema and `demo-caseload`, the last spec that created one, now seeds the
+	// engine instead, so nothing this suite writes lands there. A name kept
+	// here would cost a listing round trip per sweep against a schema that
+	// answers nothing: `sweepPrefix` swallows a failed list, so it would be
+	// silent as well as useless.
+	//
+	// One consequence is stated rather than discovered: on an instance
+	// UPGRADED from a version that had the schema, rows earlier runs left
+	// behind are no longer swept, because the import does not delete a schema
+	// it stops declaring. They are orphan rows under an orphan schema and
+	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
@@ -90,8 +102,8 @@ export const FIXTURE_SCHEMAS = [
 	'role',
 	'case',
 	'roleType',
-	// The team a case or a task names. After `case` and `caseTask` for the
-	// same reason `caseType` is: they reference it.
+	// The team a case names. After `case` for the same reason `caseType` is:
+	// it references it.
 	'organisatieRol',
 	'workflowTemplate',
 	'statusType',

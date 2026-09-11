@@ -406,11 +406,16 @@ test.describe('Settings page', () => {
 			form.getByText('Case schema', { exact: true }).first(),
 		).toBeVisible()
 		await expect(
-			form.getByText('Task schema', { exact: true }).first(),
-		).toBeVisible()
-		await expect(
 			form.getByText('Status schema', { exact: true }).first(),
 		).toBeVisible()
+		// 🔴 NO TASK SCHEMA FIELD, AND ITS ABSENCE IS THE ASSERTION.
+		// remove-casetask deleted the schema, so a field here would offer a
+		// picker for something the register no longer declares, and an admin
+		// who filled it in would configure nothing. Tasks live in OpenRegister's
+		// task engine, which needs no schema id. Asserted AFTER the fields that
+		// must render, so a form that failed to load cannot pass this by
+		// showing nothing at all.
+		await expect(form.getByText('Task schema', { exact: true })).toHaveCount(0)
 	})
 
 	// FIXME(#719): same gap — no "Case Type Management" heading renders on the

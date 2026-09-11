@@ -1521,10 +1521,8 @@
 										"type": "case-task-pane",
 										"title": "Tasks",
 										"icon": "ClipboardCheckOutline",
-										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon, the tab entry and every content key are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column.",
+										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
 										"content": {
-											"register": "dossiq",
-											"schema": "caseTask",
 											"filter": {
 												"case": "@objectId"
 											},
@@ -2612,7 +2610,7 @@
 			"type": "custom",
 			"title": "Task",
 			"component": "TaskDetailView",
-			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE, THE PAGE ID AND THE DEEP LINKS ARE UNCHANGED: `/tasks/:id`, `TaskDetail`, and the `deepLinks` entry pointing at /apps/dossiq/tasks/{uuid}. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
+			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The `deepLinks` entry went with the schema in remove-casetask 4.2. It was keyed on `schemaSlug: caseTask` and fed OpenRegister's schema-scoped unified search only, so with no objects of that schema it matched nothing and resolved nothing. Engine tasks therefore have NO unified-search provider today. That gap is OpenRegister's: the engine's tasks live in their own table and no deep-link shape addresses them, and a dossiq entry cannot invent one. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
 			"config": {
 				"documentationUrl": "https://procest.conduction.nl"
 			}
@@ -5127,7 +5125,7 @@
 		}
 	],
 	"observability": {
-		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added dossiq_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit dossiq_info / dossiq_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers).",
+		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added dossiq_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit dossiq_info / dossiq_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers). 🔴 `dossiq_tasks_total` AND `dossiq_tasks_overdue_total` ARE GONE, and they are the one break in that parity. Both were `kind: objectCount` over `schema: caseTask`, and remove-casetask deleted the schema: a counter over a schema nothing declares reports 0 for ever, which on a task gauge reads as a quiet week rather than as a broken metric. Task counts belong to whoever owns the tasks, and that is now OpenRegister's task engine, which is exporting them itself in openregister#3597. An `objectCount` source cannot reach the engine's table, so there is nothing dossiq can declare here in the meantime.",
 		"health": {
 			"statusCodePolicy": "adr006",
 			"checks": [
@@ -5193,34 +5191,6 @@
 						}
 					}
 				}
-			},
-			{
-				"name": "tasks_total",
-				"type": "gauge",
-				"help": "Total tasks by status",
-				"cacheTtl": 30,
-				"source": {
-					"kind": "objectCount",
-					"register": "dossiq",
-					"schema": "caseTask",
-					"groupBy": ["status"]
-				}
-			},
-			{
-				"name": "tasks_overdue_total",
-				"type": "gauge",
-				"help": "Tasks past their deadline",
-				"cacheTtl": 60,
-				"source": {
-					"kind": "objectCount",
-					"register": "dossiq",
-					"schema": "caseTask",
-					"filter": {
-						"deadline": {
-							"lt": "now"
-						}
-					}
-				}
 			}
 		]
 	},
@@ -5230,12 +5200,6 @@
 			"schemaSlug": "case",
 			"urlTemplate": "/apps/dossiq/cases/{uuid}",
 			"displayName": "Case"
-		},
-		{
-			"registerSlug": "dossiq",
-			"schemaSlug": "caseTask",
-			"urlTemplate": "/apps/dossiq/tasks/{uuid}",
-			"displayName": "Task"
 		},
 		{
 			"registerSlug": "dossiq",

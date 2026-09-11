@@ -199,20 +199,18 @@ required = {
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
     #
-    # `caseTask` IS DELIBERATELY NOT HERE, and the reason is about where a
-    # failure lands rather than about the schema. This list is a hard gate:
-    # a name it cannot find exits 1 before Playwright starts, and the run then
-    # reports every spec as NOT RUN. That is the loudest possible signal
-    # attached to the least informative message — "the suite did not run" says
-    # nothing about which surface broke.
+    # `caseTask` IS NOT HERE AND MUST NOT COME BACK. remove-casetask deleted the
+    # schema: the register no longer declares it, so a name in this list would
+    # never resolve. This list is a hard gate, and a name it cannot find exits 1
+    # BEFORE Playwright starts, which reports every spec as NOT RUN. That is the
+    # loudest possible signal attached to the least informative message: "the
+    # suite did not run" says nothing about which surface broke.
     #
-    # remove-casetask deletes the schema. One spec still needs an object of it
-    # (demo-caseload, whose first two scenarios assert OpenRegister
-    # CALCULATIONS — isTerminalStatus, daysUntilDue — which only an object
-    # materialises). Keeping the name here would turn that one spec's
-    # dependency into a whole-suite outage on the day the schema goes; leaving
-    # it out lets demo-caseload fail on its own, naming the schema it could not
-    # create, while the other ~330 specs still run and still report.
+    # Nothing seeds a task object any more either. `demo-caseload` was the last
+    # spec that did, for two scenarios over OpenRegister CALCULATIONS
+    # (isTerminalStatus, daysUntilDue) that only an object materialises; both
+    # now ask the ENGINE the same two questions, through /api/flow-tasks, which
+    # needs no schema at all.
     'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate',
                 'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
 }[kind]
