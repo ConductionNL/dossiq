@@ -144,12 +144,20 @@ test.describe('Cases — full CRUD with persistence', () => {
 
 	// UNPARKED. The old FIXME(#719) said the case detail page never displays
 	// the zaaknummer, and at the time it was right: the page had no line for
-	// it. `CaseDetail` in src/manifest.json now declares
-	// `config.subtitleField: "identifier"`, whose own `_subtitleNote` records
-	// why ("the case page did not say which case you are on. `identifier` is
-	// the case number, and it reads under the title"). So the gap this test
-	// pinned was closed by the page gaining the field, and the test can hold
-	// it there.
+	// it. `CaseDetail` in src/manifest.json now puts it there TWICE, and the
+	// second place is not obvious, so it is written down here:
+	//
+	//   1. `config.subtitleField: "identifier"`, whose own `_subtitleNote`
+	//      records why ("the case page did not say which case you are on").
+	//   2. `identifier` in the `case-core` widget's `content.include`, with an
+	//      override re-admitting it as `readOnly: false` — its `_note` records
+	//      that `fieldsFromSchema` drops a readOnly property outright, which is
+	//      why the field had sat in that list and rendered nowhere.
+	//
+	// Measured, not assumed: mutating `subtitleField` alone on CI run
+	// 34583207838 left this test GREEN, because the widget still carried the
+	// number. Both sources have to go before it reddens, which is what the
+	// mutation-check on this file removed.
 	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,

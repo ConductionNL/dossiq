@@ -96,9 +96,11 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		}
 	})
 
-	// UNPARKED for the same reason as its cases-crud twin: `CaseDetail` in
-	// src/manifest.json now declares `config.subtitleField: "identifier"`, so
-	// the zaaknummer this test waited for reads under the case title.
+	// UNPARKED for the same reason as its cases-crud twin, which carries the
+	// long version: `CaseDetail` in src/manifest.json now renders the
+	// zaaknummer both as `config.subtitleField` and as an `identifier` entry in
+	// the `case-core` widget's include list, so the number this test waited for
+	// is on the page in two places.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {
