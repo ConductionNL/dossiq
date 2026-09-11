@@ -25,7 +25,11 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { cleanupRunObjects, getRequestToken } from './helpers/fixtures.ts'
 
-const CASE_TYPES_URL = '/apps/dossiq/#/settings/case-types'
+// History-mode routing (src/main.js uses createWebHistory), so no `#/`. A hash
+// URL is not an error here: it loads the app ROOT, the Dashboard, where the
+// Case types Add button does not exist, and every test then times out waiting
+// for a button on the wrong page.
+const CASE_TYPES_URL = '/apps/dossiq/settings/case-types'
 
 /**
  * The twelve fields the manifest's `includeFields` declares, in the order its
@@ -109,7 +113,7 @@ test.describe('New case type dialog', () => {
 	 *   locator scoped to the testid finds the fields but never Create.
 	 */
 	async function openDialog(page) {
-		await page.goto(CASE_TYPES_URL)
+		await page.goto(CASE_TYPES_URL, { timeout: 60_000 })
 		await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 		await page.getByTestId('cn-cta-primary').click()
 		const dialog = page.getByRole('dialog').filter({
