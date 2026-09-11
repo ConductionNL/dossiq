@@ -20,7 +20,7 @@ import type { Page } from '@playwright/test'
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 import { expect, test } from '@playwright/test'
 
