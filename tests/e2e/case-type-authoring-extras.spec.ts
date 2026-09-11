@@ -321,7 +321,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-19: a status has a colour and a list visibility ─────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-coloured-status-shows-on-the-board
 	// Scenario: A coloured status shows on the board
 	test('a coloured status draws its board column in that colour', async ({
 		page,
@@ -349,7 +349,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toHaveAttribute('data-colour', 'orange')
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-hidden-status-keeps-its-cases-out-of-the-list
 	// Scenario: A hidden status keeps its cases out of the list
 	test('a hidden status keeps its cases off the list, and Closed brings them back', async ({
 		page,
@@ -404,7 +404,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-20: a type derives from a parent ────────────────────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-child-shows-its-parents-statuses
 	// Scenario: A child shows its parent's statuses
 	test('a child that declares nothing shows its parent’s four statuses, marked Inherited', async ({
 		page,
@@ -456,6 +456,10 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
+	// NOT cited to case-types::a-cycle-is-refused. That scenario says the SAVE
+	// fails with a message naming the cycle; this test saves the cycle
+	// successfully and asserts only that the blueprint then terminates. The
+	// refusal lives on the publish path (CaseTypeResolver::assertNoCycle).
 	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {

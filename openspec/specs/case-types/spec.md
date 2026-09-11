@@ -1119,6 +1119,59 @@ repair step SHALL report the counts it converted rather than reporting success.
 - **THEN** no scheme index SHALL render, tested on the page's own create control rather than a heading
 - **AND** the page SHALL NOT show a server error
 
+### Requirement: Creating a case type asks the twelve authoring fields, in two columns (REQ-CT-24)
+
+The Add control on the Case types index SHALL open a form scoped to the fields
+an author fills when naming a new blueprint, laid out in two columns at large
+dialog width.
+
+The form SHALL ask for `title`, `identifier`, `category`, `handlingModel`,
+`confidentiality`, `processingDeadline`, `validFrom`, `isDraft`,
+`parentCaseType`, `description`, `purpose` and `trigger`, and SHALL NOT ask for
+the other twenty-nine properties the `caseType` schema declares. Every field it
+omits SHALL remain editable on the case type's own detail page, so narrowing the
+create form takes nothing away.
+
+The form SHALL open on `title`. Not one of the schema's properties carries an
+`order`, so the field sort falls through to alphabetical and an unordered form
+opens on `category` with `title` in tenth place.
+
+`description`, `purpose` and `trigger` SHALL render as multi-line fields and
+SHALL span both columns. The schema declares all three as plain strings with no
+`maxLength`, which resolves to a single-line input for what is a paragraph.
+
+The form SHALL NOT ask for `initialStatus`. It is a reference to a `statusType`
+filtered by `caseType`, and at create time the case type has no id and therefore
+no statuses, so the picker would fetch unfiltered and offer every other type's
+statuses. A type's statuses are authored on its detail page, once it exists.
+
+#### Scenario: The create form asks the twelve authoring fields and not the rest
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the Add control on the Case types index
+- **THEN** the form SHALL ask for each of the twelve authoring fields
+- **AND** it SHALL NOT ask for the versioning, relation, privacy or specialist coding fields
+
+#### Scenario: The form opens on the title rather than alphabetically
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the first field SHALL be the title
+- **AND** the fields SHALL follow the declared authoring order rather than an alphabetical one
+
+#### Scenario: The fields are laid out in two columns
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the single-line fields SHALL occupy exactly two columns, measured from their rendered positions rather than from a class name
+- **AND** the three prose fields SHALL each span the full width of the form
+
+#### Scenario: The starting status is not asked for at create time
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** it SHALL NOT offer a starting status field
+
 ## UI References
 
 - **Case Type List**: See wireframe 3.6 in DESIGN-REFERENCES.md (admin settings, case type cards with status/deadline/validity)
