@@ -268,7 +268,29 @@ Only after 1 to 3 are green.
       one assertion at a time, because the first failure hides every test
       after it.
 
-      The status vocabulary is fixed and the mutation re-run.
+      The status vocabulary is fixed and the mutation re-run. **Second run
+      (dossiq 34581112375), and this one is a real check:**
+
+      | Test | Result |
+      |---|---|
+      | the ask suspends its run and parks it on a heartbeat minutes away | ✓ |
+      | the task the ask created is reachable on dossiq's own task page | ✓ |
+      | completing it through the engine verb makes the run due at once | ✓ |
+      | and one worker pass then carries the run past the ask to a terminal state | ✓ |
+      | **cancelling the task leaves its run parked on the heartbeat** | **✘, and only this one** |
+
+      It failed with its own message — "A cancelled task must NOT make the run
+      due. A run resumed here would walk past the ask as though somebody had
+      answered it, and nobody did." — and the numbers say exactly what the
+      guard buys:
+
+          Expected: > 60000      (parked, ~30 minutes out)
+          Received:   -1073      (due, 1.07 seconds in the PAST)
+
+      So with the guard widened, cancelling a task signals the run within a
+      second. That is the behaviour the guard exists to refuse, and nothing
+      else in the file moved. The listener was restored and verified
+      byte-identical afterwards; the proof branch is deleted.
 - [x] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
