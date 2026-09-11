@@ -126,10 +126,10 @@ describe('CaseDetail: tags', () => {
 
 describe('CaseDetail: terms and archive', () => {
 	it('shows the lead time, the legal basis and the payment data', () => {
-		// The ARCHIVAL half moved out to `case-archival`. A data widget builds
-		// its fields from the schema's own properties and reads them off the top
-		// level of the record, so it cannot bind `@self._retention` — which is
-		// where the archival answer now lives for every app, not just this one.
+		// The ARCHIVAL half is not here. A data widget builds its fields from
+		// the schema's own properties and reads them off the top level of the
+		// record, so it cannot bind `@self._retention`, which is where the
+		// archival answer now lives for every app, not just this one.
 		const terms = widget('case-terms')
 		expect(terms.type).toBe('data')
 		expect(terms.content.include).toEqual([
@@ -140,47 +140,51 @@ describe('CaseDetail: terms and archive', () => {
 		])
 	})
 
-	it('reads the archival constraints from the abstract @self._retention', () => {
-		// The point of the move: one shape any app can ask an object for, rather
-		// than each app reading its own field names. `type: metadata` is
-		// nextcloud-vue's CnObjectMetadataWidget and `include` names keys of the
-		// resolved decision.
+	it('has no archiving card of its own any more', () => {
+		// The card duplicated a category the object metadata panel already
+		// groups. It also had to name the `@self._retention` keys in an
+		// `include` list, which meant every rename in OpenRegister's resolver
+		// silently blanked the card here: it did exactly that when #3584 moved
+		// the keys to MDTO concepts. Reading the panel instead removes the
+		// second copy of the list, so there is nothing left to fall behind.
+		expect(widget('case-archival')).toBeUndefined()
+	})
+
+	it('keeps the metadata panel, which is where archiving is read now', () => {
+		// The sidebar's metadata panel is CnObjectMetadataWidget over the whole
+		// `@self` block, Archiving among its categories. Turning it off would
+		// take the archival answer off the page entirely.
+		expect(caseDetail().config.sidebar.showMetadata).toBe(true)
+	})
+
+	it('leaves both columns packed and ending on the same row', () => {
+		// ADR-062: the two columns end level. Dropping a five-row card without
+		// reclaiming its rows is the half of the change a manifest edit
+		// forgets, and it shows up two ways: a hole where the card was, or a
+		// short column beside a long one.
 		//
-		// 🔴 THESE ARE THE RESOLVER'S KEYS, AND FOUR OF THEM USED TO BE OURS.
-		// The list read `nomination, period, actionDate, status, ...`, which are
-		// the names dossiq writes on the RECORD. OpenRegister's
-		// ArchivalDecisionResolver does not emit those: it aliases them onto its
-		// own vocabulary (`archiveNomination` and `archiefnominatie` become
-		// `appraisal`, `archiveActionDate` becomes `disposalDate`,
-		// `archiveStatus` becomes `recordState`; see declaredArchivalFields()).
-		// So six of the seven resolved to nothing, the card rendered the single
-		// row `Basis: record`, and the nomination, the retention period and the
-		// disposal date were missing from the case page while still being
-		// written on the case. This guard pinned the wrong names, so it went
-		// green throughout.
-		const archival = widget('case-archival')
-		expect(archival.type).toBe('metadata')
-		expect(archival.content.include).toEqual([
-			'appraisal',
-			'retentionPeriod',
-			'disposalDate',
-			'recordState',
-			'basis',
-			'source',
-			'legalHold',
-		])
-	})
+		// The bottom edge alone does not catch the hole — a gap in the middle
+		// still ends where it ended. So walk each column: every widget has to
+		// start exactly where the one above it finished.
+		const layout = caseDetail().config.layout
+		const column = (x) =>
+			layout
+				.filter((w) => w.gridX === x && w.gridWidth < 12)
+				.sort((a, b) => a.gridY - b.gridY)
 
-	it('keeps the legal hold in the list, because it overrides the rest', () => {
-		// A destruction date shown without an active hold beside it is actively
-		// misleading: the hold is what stops the destruction.
-		expect(widget('case-archival').content.include).toContain('legalHold')
-	})
+		const walk = (x) => {
+			let cursor = Math.min(...column(x).map((w) => w.gridY))
+			for (const w of column(x)) {
+				expect(
+					[w.widgetId, w.gridY],
+					`${w.widgetId} should start at row ${cursor}`,
+				).toEqual([w.widgetId, cursor])
+				cursor = w.gridY + w.gridHeight
+			}
+			return cursor
+		}
 
-	it('says so when no archiving rule applies, instead of showing blank rows', () => {
-		expect(widget('case-archival').content.emptyLabel).toBe(
-			'No archiving rule applies to this case yet.',
-		)
+		expect(walk(8)).toBe(walk(0))
 	})
 
 	it('keeps an empty row visible instead of hiding it', () => {
