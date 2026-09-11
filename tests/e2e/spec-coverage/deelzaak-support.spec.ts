@@ -423,6 +423,13 @@ async function seedCaseType(
 		identifier: `${RUN_PREFIX.toLowerCase()}-${slug}`,
 		description: 'Seeded by deelzaak-support.spec.ts.',
 		isDraft: false,
+		// SET ON PURPOSE, and it hides a product defect this test is not
+		// about. `DeelzaakCreateModal` copies the child type's confidentiality
+		// onto the new case and falls back to 'public' when there is none, but
+		// the case schema's enum is Dutch ('openbaar', 'intern', ...) and
+		// refuses 'public' with a 400. Without this line the create fails
+		// before `parentCase` is ever written. Measured 2026-09-11.
+		confidentiality: 'openbaar',
 		subCaseTypes,
 	})
 }
@@ -611,7 +618,8 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		const allowed = await validateSubCase(page, eligibleParentId, childTypeAId)
 		expect(
 			allowed.status,
-			'an allowed child type on an open, top-level parent must validate',
+			'an allowed child type on an open, top-level parent must validate: '
+				+ JSON.stringify(allowed.body),
 		).toBe(200)
 		expect(allowed.body.ok).toBe(true)
 
@@ -622,7 +630,7 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 			eligibleParentId,
 			strangerTypeId,
 		)
-		expect(stranger.status).toBe(409)
+		expect(stranger.status, JSON.stringify(stranger.body)).toBe(409)
 		expect(stranger.body.reason).toBe('case_type_not_allowed')
 
 		await openSubCasesPage(page, eligibleParentId)
@@ -702,7 +710,7 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		// The same child type IS allowed on the open parent of the same case
 		// type, so the refusal is attributable to the endDate and nothing else.
 		const openTwin = await validateSubCase(page, eligibleParentId, childTypeAId)
-		expect(openTwin.status).toBe(200)
+		expect(openTwin.status, JSON.stringify(openTwin.body)).toBe(200)
 
 		await openSubCasesPage(page, closedParentId)
 		await expect(createControl(page)).toHaveCount(0)
