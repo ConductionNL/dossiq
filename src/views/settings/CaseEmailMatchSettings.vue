@@ -78,7 +78,9 @@
 				{{ feedback.message }}
 			</NcNoteCard>
 
-			<p class="case-email-match__status" data-testid="case-email-match-status">
+			<p
+				class="case-email-match__status"
+				data-testid="case-email-match-status">
 				{{ statusText }}
 			</p>
 		</template>
@@ -111,19 +113,46 @@ const SETTINGS_URL = '/apps/dossiq/api/settings/email-case-matching'
  */
 export function refusalMessages() {
 	return {
-		account_not_owned: t('dossiq', 'The chosen account is not yours, so nothing was read.'),
-		pattern_invalid: t('dossiq', 'The case number pattern is broken. Ask your administrator to fix it.'),
-		register_unconfigured: t('dossiq', 'Cases are not set up yet. Ask your administrator.'),
-		openregister_unavailable: t('dossiq', 'Cases could not be reached. The next check tries again.'),
-		scope_unavailable: t('dossiq', 'Your access could not be checked, so nothing was linked.'),
-		email_leaf_unavailable: t('dossiq', 'Mail linking is not available here. Ask your administrator.'),
-		run_failed: t('dossiq', 'The last check failed. The next check tries again.'),
+		account_not_owned: t(
+			'dossiq',
+			'The chosen account is not yours, so nothing was read.',
+		),
+		pattern_invalid: t(
+			'dossiq',
+			'The case number pattern is broken. Ask your administrator to fix it.',
+		),
+		register_unconfigured: t(
+			'dossiq',
+			'Cases are not set up yet. Ask your administrator.',
+		),
+		openregister_unavailable: t(
+			'dossiq',
+			'Cases could not be reached. The next check tries again.',
+		),
+		scope_unavailable: t(
+			'dossiq',
+			'Your access could not be checked, so nothing was linked.',
+		),
+		email_leaf_unavailable: t(
+			'dossiq',
+			'Mail linking is not available here. Ask your administrator.',
+		),
+		run_failed: t(
+			'dossiq',
+			'The last check failed. The next check tries again.',
+		),
 	}
 }
 
 export default {
 	name: 'CaseEmailMatchSettings',
-	components: { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon, NcNoteCard, NcSelect },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcSelect,
+	},
 
 	data() {
 		return {
@@ -184,17 +213,29 @@ export default {
 		 */
 		statusText() {
 			if (!this.status || !this.status.lastRunAt) {
-				return t('dossiq', 'Not checked yet. The first check starts at your newest mail, so older mail is not linked.')
+				return t(
+					'dossiq',
+					'Not checked yet. The first check starts at your newest mail, so older mail is not linked.',
+				)
 			}
 			if (this.status.error) {
-				return refusalMessages()[this.status.error]
-					|| t('dossiq', 'The last check failed. The next check tries again.')
+				return (
+					refusalMessages()[this.status.error]
+					|| t(
+						'dossiq',
+						'The last check failed. The next check tries again.',
+					)
+				)
 			}
-			return t('dossiq', 'Last check: {when}. Messages read: {scanned}. Links made: {linked}.', {
-				when: new Date(this.status.lastRunAt).toLocaleString(),
-				scanned: this.status.scanned,
-				linked: this.status.linked,
-			})
+			return t(
+				'dossiq',
+				'Last check: {when}. Messages read: {scanned}. Links made: {linked}.',
+				{
+					when: new Date(this.status.lastRunAt).toLocaleString(),
+					scanned: this.status.scanned,
+					linked: this.status.linked,
+				},
+			)
 		},
 	},
 
@@ -238,7 +279,10 @@ export default {
 			} catch {
 				this.feedback = {
 					type: 'error',
-					message: t('dossiq', 'Could not load your settings. Reload the page to try again.'),
+					message: t(
+						'dossiq',
+						'Could not load your settings. Reload the page to try again.',
+					),
 				}
 			} finally {
 				this.loading = false
@@ -262,7 +306,10 @@ export default {
 				this.apply(data)
 				this.feedback = {
 					type: 'success',
-					message: t('dossiq', 'Saved. New mail is checked every five minutes.'),
+					message: t(
+						'dossiq',
+						'Saved. New mail is checked every five minutes.',
+					),
 				}
 			} catch (error) {
 				const status = error?.response?.status

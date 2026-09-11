@@ -54,9 +54,16 @@ vi.mock('@nextcloud/vue', () => ({
 	NcNoteCard: boxStub('NcNoteCard'),
 	NcSelect: {
 		name: 'NcSelect',
-		props: { modelValue: { type: Object, default: null }, options: { type: Array, default: () => [] }, disabled: Boolean },
+		props: {
+			modelValue: { type: Object, default: null },
+			options: { type: Array, default: () => [] },
+			disabled: Boolean,
+		},
 		render() {
-			return h('select', { class: 'NcSelect', disabled: this.disabled || undefined })
+			return h('select', {
+				class: 'NcSelect',
+				disabled: this.disabled || undefined,
+			})
 		},
 	},
 	NcCheckboxRadioSwitch: {
@@ -90,7 +97,12 @@ function body(overrides = {}) {
 		enabled: true,
 		account: 7,
 		accounts: [{ id: 7, name: 'Werk', email: 'alice@gemeente.test' }],
-		status: { lastRunAt: '2026-09-11T06:00:00+00:00', linked: 2, scanned: 5, error: null },
+		status: {
+			lastRunAt: '2026-09-11T06:00:00+00:00',
+			linked: 2,
+			scanned: 5,
+			error: null,
+		},
 		...overrides,
 	}
 }
@@ -113,10 +125,12 @@ describe('CaseEmailMatchSettings', () => {
 		vi.clearAllMocks()
 	})
 
-	it('reads the settings from the caller\'s own endpoint', async () => {
+	it("reads the settings from the caller's own endpoint", async () => {
 		await open(body())
 
-		expect(axios.get).toHaveBeenCalledWith('/index.php/apps/dossiq/api/settings/email-case-matching')
+		expect(axios.get).toHaveBeenCalledWith(
+			'/index.php/apps/dossiq/api/settings/email-case-matching',
+		)
 	})
 
 	it('reports what the last check did', async () => {
@@ -128,33 +142,50 @@ describe('CaseEmailMatchSettings', () => {
 	})
 
 	it('reports a refused check in words, not as a count', async () => {
-		const wrapper = await open(body({
-			status: { lastRunAt: '2026-09-11T06:00:00+00:00', linked: 0, scanned: 0, error: 'account_not_owned' },
-		}))
+		const wrapper = await open(
+			body({
+				status: {
+					lastRunAt: '2026-09-11T06:00:00+00:00',
+					linked: 0,
+					scanned: 0,
+					error: 'account_not_owned',
+				},
+			}),
+		)
 
 		const status = wrapper.find('[data-testid="case-email-match-status"]').text()
 		expect(status).toBe('The chosen account is not yours, so nothing was read.')
 	})
 
 	it('says a first check starts at the newest mail', async () => {
-		const wrapper = await open(body({ status: { lastRunAt: null, linked: 0, scanned: 0, error: null } }))
+		const wrapper = await open(
+			body({
+				status: { lastRunAt: null, linked: 0, scanned: 0, error: null },
+			}),
+		)
 
-		expect(wrapper.find('[data-testid="case-email-match-status"]').text()).toContain('older mail is not linked')
+		expect(
+			wrapper.find('[data-testid="case-email-match-status"]').text(),
+		).toContain('older mail is not linked')
 	})
 
 	it('says so when the administrator has not switched matching on', async () => {
 		const wrapper = await open(body({ instanceEnabled: false }))
 
-		expect(wrapper.find('[data-testid="case-email-match-instance-off"]').exists()).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-email-match-instance-off"]').exists(),
+		).toBe(true)
 	})
 
 	it('cannot be switched on before an account is chosen', async () => {
 		const wrapper = await open(body({ enabled: false, account: 0 }))
 
-		expect(wrapper.find('.NcCheckboxRadioSwitch').attributes('disabled')).toBeDefined()
+		expect(
+			wrapper.find('.NcCheckboxRadioSwitch').attributes('disabled'),
+		).toBeDefined()
 	})
 
-	it('saves the choice to the caller\'s own endpoint', async () => {
+	it("saves the choice to the caller's own endpoint", async () => {
 		const wrapper = await open(body())
 		axios.put.mockResolvedValue({ data: body() })
 
@@ -174,6 +205,8 @@ describe('CaseEmailMatchSettings', () => {
 		await wrapper.find('[data-testid="case-email-match-save"]').trigger('click')
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="case-email-match-feedback"]').text()).toBe('That mail account is not yours.')
+		expect(
+			wrapper.find('[data-testid="case-email-match-feedback"]').text(),
+		).toBe('That mail account is not yours.')
 	})
 })

@@ -481,7 +481,9 @@ export default {
 		async loadMatching() {
 			try {
 				const response = await fetch(
-					generateUrl('/apps/dossiq/api/settings/email-case-matching/instance'),
+					generateUrl(
+						'/apps/dossiq/api/settings/email-case-matching/instance',
+					),
 					{ headers: { requesttoken: OC.requestToken } },
 				)
 				if (response.ok) {
@@ -506,7 +508,9 @@ export default {
 		 */
 		async saveMatching() {
 			const response = await fetch(
-				generateUrl('/apps/dossiq/api/settings/email-case-matching/instance'),
+				generateUrl(
+					'/apps/dossiq/api/settings/email-case-matching/instance',
+				),
 				{
 					method: 'PUT',
 					headers: {
