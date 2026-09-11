@@ -333,7 +333,9 @@ export async function occFlowWorkerPass(): Promise<{
 			`--class=${FLOW_RUN_WORKER}`,
 			'--output=json',
 		])
-		let rows: Array<{ id?: unknown }> = []
+		// No initialiser: both branches below assign it, so a starting `[]` would
+		// be a value nothing reads (eslint no-useless-assignment).
+		let rows: Array<{ id?: unknown }>
 		try {
 			rows = JSON.parse(listed.stdout.trim() || '[]')
 		} catch {
