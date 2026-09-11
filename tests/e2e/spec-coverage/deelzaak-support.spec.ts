@@ -662,9 +662,12 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		// register, and only the register can answer it.
 		let created: any
 		await expect(async () => {
+			// By TITLE, not by parentCase. Filtering on the field under test
+			// would turn "stored without parentCase" into "not stored at all",
+			// and the red would name the wrong defect.
 			const rows = await listObjects(api, 'case', {
-				parentCase: eligibleParentId,
-				_limit: '500',
+				title: subTitle,
+				_limit: '50',
 			})
 			created = rows.find((row: any) => String(row.title ?? '') === subTitle)
 			expect(created, `no case titled ${subTitle} was stored`).toBeTruthy()
