@@ -526,8 +526,15 @@ test.describe('Case detail — the task pane', () => {
 		})
 	})
 
-	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
-	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
+	// No citation, on purpose. This test used to carry
+	// `task-management::the-task-names-its-case-and-leads-back-to-it` twice,
+	// and every assertion in it survives a case link that is missing or points
+	// at the wrong case, which is the whole of that scenario
+	// (e2e-citation-integrity, audit group 3). The test above shows the title
+	// as a link, follows it and lands on the case, and that is where the
+	// scenario is proven. What this one guards is REQ-TASK-015's prose about
+	// the card resolving the case, its type and its deadline, which no
+	// scenario states.
 	test('TaskDetailView carries the case identity, and does not repeat it as a raw row', async ({
 		page,
 	}) => {
@@ -592,8 +599,12 @@ test.describe('Case detail — the task pane', () => {
 		await expect(page.locator('[data-testid="task-case-card"]')).toHaveCount(1)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md#the-task-names-its-case-and-leads-back-to-it
-	// @e2e task-management::the-task-names-its-case-and-leads-back-to-it
+	// No citation, on purpose. This test used to carry
+	// `task-management::the-task-names-its-case-and-leads-back-to-it` twice
+	// while asserting two section headings, so removing the case link
+	// entirely left it green (e2e-citation-integrity, audit group 3). The
+	// link is proven by the first TaskDetailView test above. The notes and
+	// appointments sections have no scenario of their own to cite.
 	test('TaskDetailView carries the task own notes and appointments', async ({
 		page,
 	}) => {
