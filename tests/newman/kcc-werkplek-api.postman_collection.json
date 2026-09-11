@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "kcc-werkplek-api — belplan + specialist beschikbaarheid",
-		"description": "Gate-25 contract tests for the KCC-werkplek bridge read endpoints shipped by kcc-werkplek-zaaksysteem-bridge: belplan listing (seeded defaults) and specialist-beschikbaarheid polling. Write/quick-action endpoints mutate cases and are covered by PHPUnit; DigiD and the telephony transfer are cross-app (OpenConnector / pipelinq).",
+		"description": "Gate-25 contract tests for the KCC-werkplek bridge read endpoints shipped by kcc-werkplek-zaaksysteem-bridge: belplan listing (seeded defaults) and specialist-beschikbaarheid polling. Write/quick-action endpoints mutate cases and are covered by PHPUnit; DigiD and the telephony transfer are cross-app (OpenConnector / pipelinq).\n\n@newman exclude Not dead: the /api/kcc and /api/contactmomenten routes are live in appinfo/routes.php, and the collection runs locally through tests/newman/run-all.sh. It has never run in CI because it sits outside newman-collection-path 'data' and the caller sets enable-newman false. See the comment on enable-newman in .github/workflows/code-quality.yml.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
