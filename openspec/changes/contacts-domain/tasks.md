@@ -199,6 +199,23 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
     under this task: the back-fill keys on `initiatorDisplayName` alone, so any
     case written with a name but no source id is never repaired and its card
     link stays dead.
+
+    A third run found the cause that made the WHOLE projection fail too: the
+    spec's person used BSN `999990627`, which the shipped register already holds
+    as the seeded persona "Stephan Janssen" (`25-brp-kvk.json`). With
+    `initiatorSourceId` supplied up front, the card resolves its row BY NUMBER
+    with `_limit: 1`, found Stephan Janssen, and linked the card to him. The
+    back-fill path never showed it, because it takes the row's id straight from
+    `requester` and never searches by number. The organisation's KvK
+    `90004760` was seeded as well, under a comment calling it unique to the run.
+    Both now use numbers absent from every seed file and every other spec:
+    BSN `999990019` (valid under the 11-proef) and KvK `90004800`.
+
+    A second latent PRODUCT defect sits in the same place, also recorded rather
+    than fixed here: `InitiatorSection.resolveSource()` takes the FIRST row
+    matching an identifying number. A real BSN is unique per person, so this
+    holds in production; it does not hold for any register that carries a
+    duplicate, and when it fails it links to a stranger without a warning.
   - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment

@@ -60,10 +60,30 @@ const PERSON_NAME = `${RUN_PREFIX} Jansen`
 const EMPTY_NAME = `${RUN_PREFIX} Zonder`
 /** The organisation the Organisations index is asserted on. */
 const COMPANY_NAME = `${RUN_PREFIX} Dakkapellen BV`
-/** Fictitious, and unique to this run so the index row is unambiguous. */
-const COMPANY_KVK = '90004760'
-/** The person's BSN, named once: the seed and the card assertion share it. */
-const PERSON_BSN = '999990627'
+/**
+ * The organisation's KvK number. Not a number the shipped register holds.
+ *
+ * This read `90004760` until 2026-09-11 under a comment calling it "unique to
+ * this run", and it was not: `lib/Settings/register.d/25-brp-kvk.json` seeds a
+ * kvkCompany with exactly that number. Nothing asserted the trap, but it is the
+ * same one that sent the person's initiator card to a seeded persona (see
+ * `PERSON_BSN`): the card looks its row up by this number with `_limit: 1`.
+ */
+const COMPANY_KVK = '90004800'
+/**
+ * The person's BSN, named once: the seed and every assertion share it.
+ *
+ * It must NOT be a BSN the shipped register already holds. This was
+ * `999990627` until 2026-09-11, which is the seeded persona "Stephan Janssen"
+ * in `lib/Settings/register.d/25-brp-kvk.json`. The initiator card finds its
+ * row BY THIS NUMBER with `_limit: 1`, so it resolved Stephan Janssen and
+ * linked the card to him instead of to this spec's person. That stayed hidden
+ * for as long as the case's projection was back-filled from `requester`, which
+ * takes the row's id directly and never searches by number; it surfaced the
+ * moment the seed supplied `initiatorSourceId` up front. Valid under the
+ * 11-proef, and absent from every seed file and every other e2e spec.
+ */
+const PERSON_BSN = '999990019'
 
 let api: APIRequestContext
 let token: string
@@ -280,7 +300,7 @@ test.describe('Contacts', () => {
 
 		const row = page.getByRole('row', { name: new RegExp(PERSON_NAME, 'i') })
 		await expect(row).toBeVisible({ timeout: 30_000 })
-		await expect(row).toContainText('999990627')
+		await expect(row).toContainText(PERSON_BSN)
 	})
 
 	test('offers no folder sidebar, and reaches organisations another way', async ({
@@ -360,7 +380,7 @@ test.describe('Contacts', () => {
 		await expect(page.getByText(PERSON_NAME).first()).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByText('999990627').first()).toBeVisible()
+		await expect(page.getByText(PERSON_BSN).first()).toBeVisible()
 
 		const caseRow = page.getByRole('row', {
 			name: new RegExp(`${RUN_PREFIX} Dormer window`, 'i'),
