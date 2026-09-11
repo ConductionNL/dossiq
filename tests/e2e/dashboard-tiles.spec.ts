@@ -485,7 +485,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-fresh-session-lands-on-the-dashboard
-	// @e2e dashboard::kpi-tiles-render-on-a-fresh-load
 	test('every KPI tile shows a number on the first load of a session', async ({
 		page,
 	}) => {
@@ -524,7 +523,6 @@ test.describe('Dashboard tiles', () => {
 		test.use({ storageState: WORK_STATE })
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-your-tasks-appear-once-with-days-left
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
 		test('My work lists each of your open tasks once, with days left', async ({
 			page,
 		}) => {
@@ -572,7 +570,6 @@ test.describe('Dashboard tiles', () => {
 		})
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
 		test('a My work row opens the task, which is where Pick up and Complete are', async ({
 			page,
 		}) => {
@@ -591,7 +588,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-overdue-and-near-deadline-cases-share-one-table
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('Deadlines holds the overdue and the nearly due, overdue first and in red', async ({
 		page,
 	}) => {
@@ -644,7 +640,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-closed-cases-stay-out
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('a closed case stays off Deadlines, however late it was', async ({
 		page,
 	}) => {
@@ -668,7 +663,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
-	// @e2e dashboard::view-all-keeps-the-tiles-filter
 	// @e2e openspec/specs/signalering-widgets/spec.md
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
@@ -743,7 +737,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-draft-case-types-are-absent
-	// @e2e dashboard::the-case-type-list-on-new-case-is-sorted-and-filtered
 	test('New case offers the published case type and not the draft', async ({
 		page,
 	}) => {
