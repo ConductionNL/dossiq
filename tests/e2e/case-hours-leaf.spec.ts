@@ -54,6 +54,7 @@ import {
 	adoptableCaseTypes,
 	getRequestToken,
 	objectId,
+	purgeObject,
 	REGISTER,
 	seedCase,
 } from './helpers/fixtures.ts'
@@ -149,6 +150,109 @@ async function enabledHumaniqApp(api: APIRequestContext): Promise<string | null>
  * @param api An authenticated request context.
  * @return The seeded case uuid.
  */
+/**
+ * Remove the case a half seeded, and fail loudly if it stays.
+ *
+ * `dossiq/case` is archival, so every HTTP delete is refused (openregister#3428)
+ * and `purgeObject` falls through to `occ openregister:objects:purge`. That path
+ * did not exist when this file was written, which is why it once said a seeded
+ * case could never be removed and left one behind on every run. A teardown that
+ * swallows a failed purge would report a clean instance it did not observe, so a
+ * leak throws.
+ *
+ * @param baseURL The instance under test.
+ * @param caseId  The seeded case, or '' when setup never got that far.
+ */
+async function purgeHoursCase(
+	playwright: {
+		request: {
+			newContext: (o: { baseURL?: string }) => Promise<APIRequestContext>
+		}
+	},
+	baseURL: string | undefined,
+	caseId: string,
+): Promise<void> {
+	if (caseId === '') return
+	const api = await playwright.request.newContext({ baseURL })
+	try {
+		const token = await getRequestToken(api)
+		if ((await purgeObject(api, token, 'case', caseId)) === false) {
+			throw new Error(
+				'e2e teardown left the seeded hours case behind, so the next run on this '
+					+ `instance starts dirty: case ${caseId}`,
+			)
+		}
+	} finally {
+		await api.dispose()
+	}
+}
+
+/**
+ * Stop any running timer, then delete every TimeEntry booked against a case.
+ *
+ * Filters on the BARE key `domainObjectRef`. OpenRegister's objects endpoint
+ * reads `filter[x]` as a filter on a property literally named `filter[x]`, so
+ * that spelling returns the empty set and a cleanup written with it would
+ * report success having removed nothing (openregister#3611).
+ *
+ * A leftover entry is a failure, for the same reason a leftover case is: it is
+ * hours on a real person's timesheet that nobody worked.
+ *
+ * @param baseURL The instance under test.
+ * @param caseId  The seeded case, or '' when setup never got that far.
+ */
+async function purgeHoursEntries(
+	playwright: {
+		request: {
+			newContext: (o: { baseURL?: string }) => Promise<APIRequestContext>
+		}
+	},
+	baseURL: string | undefined,
+	caseId: string,
+): Promise<void> {
+	if (caseId === '') return
+	const api = await playwright.request.newContext({ baseURL })
+	const headers = { 'OCS-APIRequest': 'true', 'Content-Type': 'application/json' }
+	try {
+		await api.post('/index.php/apps/humaniq/api/time-entries/timer/stop', {
+			headers,
+			data: {},
+		})
+
+		const list = async (): Promise<Array<Record<string, unknown>>> => {
+			const res = await api.get(
+				`/index.php/apps/openregister/api/objects/humaniq/TimeEntry?_limit=200&domainObjectRef=${caseId}`,
+				{ headers },
+			)
+			const body = await res.json()
+			return Array.isArray(body) ? body : body.results || []
+		}
+
+		for (const row of await list()) {
+			const self = (row['@self'] || {}) as Record<string, unknown>
+			const id = String(self.id || row.id || '')
+			if (id !== '') {
+				await api.delete(
+					`/index.php/apps/openregister/api/objects/humaniq/TimeEntry/${id}`,
+					{
+						headers,
+					},
+				)
+			}
+		}
+
+		const left = await list()
+		if (left.length > 0) {
+			throw new Error(
+				`e2e teardown left ${left.length} time entr${left.length === 1 ? 'y' : 'ies'} `
+					+ `on case ${caseId}, which stay on the acting user's real timesheet`,
+			)
+		}
+	} finally {
+		await api.dispose()
+	}
+}
+
 async function seedHoursCase(api: APIRequestContext): Promise<string> {
 	const token = await getRequestToken(api)
 	const caseTypes = await adoptableCaseTypes(api)
@@ -173,7 +277,10 @@ async function seedHoursCase(api: APIRequestContext): Promise<string> {
  * @param caseId The seeded case uuid.
  */
 async function openCase(page: Page, caseId: string): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, {
+		waitUntil: 'domcontentloaded',
+		timeout: 60_000,
+	})
 	await expect(
 		page.locator('.cn-detail-page'),
 		'the case detail page must render, or nothing below is an observation about the hours surface',
@@ -192,14 +299,50 @@ async function openCase(page: Page, caseId: string): Promise<void> {
  * @param what   What the figure is, for the failure message.
  * @return The number.
  */
-async function readFigure(figure: Locator, what: string): Promise<number> {
-	const text = (await figure.innerText()).trim()
+/**
+ * Read a figure for use INSIDE `expect.poll`, where a throw is fatal.
+ *
+ * `readFigure` asserts, and an assertion that throws inside a poll callback ends
+ * the poll on its first try instead of letting it retry. That defeated the only
+ * reason the poll was there: the leaf refetches after a write, and on a case
+ * with no prior hours it prints `–` while the read is in flight, which is its
+ * rule for "not known yet" rather than a zero it cannot vouch for. The first
+ * poll caught exactly that transient state and failed the booking as lost.
+ *
+ * Returns NaN for a figure that is not a number yet, which matches no
+ * `toBeCloseTo` or `toBeGreaterThanOrEqual`, so the poll keeps trying until the
+ * real figure lands or its timeout says it never did.
+ *
+ * @param figure The locator holding the figure.
+ * @return The number, or NaN while the leaf prints no number.
+ */
+async function pollFigure(figure: Locator): Promise<number> {
+	const text = (await figure.innerText().catch(() => '')).trim()
 	const match = text.match(/-?\d+(?:[.,]\d+)?/)
-	expect(
-		match,
-		`${what} must print a number, and it printed "${text}"`,
-	).not.toBeNull()
-	return Number(String(match?.[0]).replace(',', '.'))
+	return match === null ? Number.NaN : Number(match[0].replace(',', '.'))
+}
+
+async function readFigure(figure: Locator, what: string): Promise<number> {
+	// WAIT for a number, then return it. The leaf prints `–` while its read is
+	// in flight, which is its rule for "not known yet" rather than a zero it
+	// cannot vouch for. A single read right after mount races that fetch, and on
+	// a loaded instance it lost: the first figure read `–` and the test failed
+	// on timing rather than on the leaf. A figure that never becomes a number
+	// still fails, with this message, once the timeout says it never arrived.
+	let value = Number.NaN
+	await expect
+		.poll(
+			async () => {
+				value = await pollFigure(figure)
+				return Number.isNaN(value) ? null : value
+			},
+			{
+				timeout: 30_000,
+				message: `${what} must print a number, and it printed none within 30 s`,
+			},
+		)
+		.not.toBeNull()
+	return value
 }
 
 /**
@@ -241,8 +384,10 @@ if (!HUMANIQ_DECLARED) {
 			await api.dispose()
 		})
 
-		// No afterAll: the case is archival and cannot be deleted, and the case
-		// type is adopted rather than owned. Nothing is left dangling either.
+		// The case type is adopted rather than owned, so only the case goes.
+		test.afterAll(async ({ playwright, baseURL }) => {
+			await purgeHoursCase(playwright, baseURL, caseId)
+		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-surface-is-absent-when-humaniq-is
 		test('the page renders its own widgets and no hours surface at all', async ({
@@ -342,6 +487,19 @@ if (!HUMANIQ_DECLARED) {
 
 			caseId = await seedHoursCase(api)
 			await api.dispose()
+		})
+
+		// The booking and the stopped timer are rows in humaniq's register, and
+		// they are NOT harmless: humaniq files every TimeEntry onto the acting
+		// user's monthly timesheet and recomputes its total from them. Measured
+		// on the shared dev instance 2026-09-11, four earlier runs had left 10
+		// hours on admin's real September timesheet (12.5 h, of which 2.5 real),
+		// each pointing at a case that no longer existed. So the entries go
+		// first, then the case. A running timer is stopped before that, or the
+		// next run's stopwatch is disabled and the timer test fails on state.
+		test.afterAll(async ({ playwright, baseURL }) => {
+			await purgeHoursEntries(playwright, baseURL, caseId)
+			await purgeHoursCase(playwright, baseURL, caseId)
 		})
 
 		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
@@ -487,14 +645,10 @@ if (!HUMANIQ_DECLARED) {
 			// the write, and reading between the two is a race that reports the
 			// booking as lost.
 			await expect
-				.poll(
-					async () =>
-						readFigure(widget.getByTestId(HOOK.total), 'the total'),
-					{
-						timeout: 20_000,
-						message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
-					},
-				)
+				.poll(async () => pollFigure(widget.getByTestId(HOOK.total)), {
+					timeout: 20_000,
+					message: `the headline must count the ${BOOKED_HOURS} hours just booked, on top of the ${before} it showed`,
+				})
 				.toBeCloseTo(before + BOOKED_HOURS, 2)
 		})
 
@@ -524,7 +678,10 @@ if (!HUMANIQ_DECLARED) {
 			// THE POINT OF THE FEATURE. A timer held in component state looks
 			// identical to one held on the server until the page is reloaded, and
 			// a caseworker who reloads is the whole reason it is stored.
-			await page.reload()
+			// Same budget and wait condition as openCase: `load` waits for every
+			// asset on a heavy page, and on a shared instance that outruns 30 s while
+			// the DOM is long ready. The widget expect below proves the render.
+			await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
 			await dismissSupportDialog(page)
 			const reloaded = page.getByTestId(HOOK.widget)
 			await expect(reloaded).toBeVisible({ timeout: 30_000 })
@@ -546,14 +703,10 @@ if (!HUMANIQ_DECLARED) {
 				'the headline must read again once the timer stops',
 			).toBeVisible({ timeout: 15_000 })
 			await expect
-				.poll(
-					async () =>
-						readFigure(reloaded.getByTestId(HOOK.total), 'the total'),
-					{
-						timeout: 20_000,
-						message: `stopping the timer books the run, so the total may not fall below the ${before} it showed before`,
-					},
-				)
+				.poll(async () => pollFigure(reloaded.getByTestId(HOOK.total)), {
+					timeout: 20_000,
+					message: `stopping the timer books the run, so the total may not fall below the ${before} it showed before`,
+				})
 				.toBeGreaterThanOrEqual(before)
 		})
 	})
