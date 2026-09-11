@@ -794,8 +794,10 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		page,
 	}) => {
 		await openSubCasesPage(page, childlessCaseId)
+		// EXACT, because the empty state's description also contains the words
+		// "no sub-cases yet" and a loose match resolves to both.
 		await expect(
-			page.getByText(/No sub-cases yet|Nog geen deelzaken/i),
+			page.getByText(/^(No sub-cases yet|Nog geen deelzaken)$/).first(),
 		).toBeVisible({ timeout: 15_000 })
 
 		await page
