@@ -116,19 +116,29 @@ the resume listener that already moved.
 - [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
-- [ ] 3.2 **The migration half is done; the retirement question is open.**
-      The node writes and re-reads through `AskPersonTaskStore`, which is the
-      engine since 3.3b, so no `caseTask` object is created or read on any
-      path. What is still open is whether the node should exist at all beside
-      OpenRegister's `UserTaskNode`, and that is a decision about duplication
-      rather than about this schema. Section 4 does not wait on it.
+- [x] 3.2 `lib/Flow/DossiqAskPersonNode.php` — created a `caseTask` and
+      re-read it on heartbeat. Both moved to the engine.
 
-- [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
-      re-reads it on heartbeat. Both move to the engine. **Consider retiring
-      the node entirely** in favour of OpenRegister's `UserTaskNode`
-      (`flow-user-task-node`, 19/19 done), which does the same thing against
-      the engine natively. That is a separate decision and should be made
-      before this task is started, not during it.
+      **DONE, and this entry used to be TWO entries both numbered 3.2**, which
+      made the change's own count wrong: the file listed 38 tasks where 37 were
+      distinct. The duplicate was the original wording plus the note written
+      when the migration landed; they are one task and are now one entry.
+
+      The migration half is done and verified. The node writes and re-reads
+      through `AskPersonTaskStore`, which is the engine since 3.3b, so no
+      `caseTask` object is created or read on any path.
+
+      **The retirement question is RE-FILED to section 7, not answered here**,
+      and deliberately left unanswered rather than decided in passing. Whether
+      `dossiq.askPerson` should exist beside OpenRegister's `UserTaskNode` is a
+      decision about duplication, and it is not free: the node carries three
+      behaviours `UserTaskNode` has no reason to have — `AssigneeResolver`
+      rendering with a declared fallback, the case-id extraction that makes the
+      task hang off the case, and placing the answer under a configured
+      `signalKey`. The shipped `Case behandeling` flow names `dossiq.askPerson`
+      in two nodes, and every suspended run's resume slot names that node id, so
+      a swap is a data migration and not an edit. Section 4 never waited on it
+      and neither does the archive of this change.
 - [x] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
 - [x] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
@@ -170,11 +180,38 @@ Only after 1 to 3 are green.
       `task_engine_write` flag, `mirrorCreate`'s trusted path, and
       `TaskBackfillService` with `occ dossiq:tasks:mirror`. They exist for the
       migration and should not outlive it.
-- [x] 4.4 `git grep -i casetask` over the WHOLE repo returns nothing. Not
-      `lib src tests`: seed data, `tests/e2e/ci-seed.sh`, demo data and
-      fixtures all carry it, and a miss in `ci-seed.sh` exits before
+- [x] 4.4 The slug is gone from every place that RESOLVES it. Not
+      `lib src tests` alone: seed data, `tests/e2e/ci-seed.sh`, demo data and
+      fixtures all carried it, and a miss in `ci-seed.sh` exits before
       Playwright starts, which reports every spec as NOT RUN rather than as
       one broken seed.
+
+      ⚠️ **THE TEST AS FIRST WRITTEN — "`git grep -i casetask` returns
+      nothing" — IS FALSE, AND WAS FALSE WHEN IT WAS TICKED.** Measured on
+      `development` 2026-09-11: **124 files still match**, and every one of
+      them is a hit this change kept ON PURPOSE. Leaving the claim standing is
+      worse than having no claim, because the next person runs the stated
+      command, gets 124 files, and has no way to tell a kept concept-name from
+      a live binding.
+
+      What the 124 are: component and file names that name the CONCEPT a task
+      on a case (`CaseTaskPane.vue`, `CaseTasksTab.vue`,
+      `caseTaskPaneHelpers.js`, the `caseTasks` parameters in `workflow.js`),
+      prose and `_note` blocks recording why the schema went, archived
+      openspec changes, and ONE live literal:
+      `EngineTaskGateway::sourceKey()`'s `'dossiq:caseTask:' . $id`, kept
+      deliberately as the only written-down form of the backfill key (see 4.1).
+
+      The test that actually holds, and the one to re-run before archiving —
+      the slug as a STRING a store is asked for, rather than the word:
+
+          git grep -n "dossiq/caseTask\|'caseTask'\|\"caseTask\"" -- lib src appinfo
+
+      Verified 2026-09-11: exit 1, no matches. `tests/` is deliberately NOT in
+      that list and must not be added: 20-odd unit tests use the literal
+      `caseTask` as an arbitrary schema NAME to drive a resolver or a slug map,
+      which is fixture data rather than a binding, and including them would
+      make the check permanently red for no defect.
 
 ## 5. e2e
 
@@ -184,10 +221,38 @@ Only after 1 to 3 are green.
       `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
       Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
       / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
-- [ ] 5.2 One new spec for the cutover itself: a task created by a transition,
+- [x] 5.2 One new spec for the cutover itself: a task created by a transition,
       completed through the engine's verb, resuming a suspended flow run. That
       is the path `TaskCompletionResumeListener` now serves and no existing
       spec covers it end to end.
+
+      DONE as `tests/e2e/task-completion-resumes-the-run.spec.ts`, and what it
+      asserts is narrower than this line asked for, on purpose.
+
+      **The transition half was already covered and re-asserting it would have
+      proved nothing.** `checklist-per-status` drives a real transition, reads
+      the tasks it created out of `/api/flow-tasks`, and completes one through
+      the engine's verb. What no spec covered was the WAKE, and the reason it
+      went uncovered is the reason it needed its own file:
+      `case-flow-live-journeys` completes a task and then drives the flow
+      worker, so a run woken by `TaskCompletionResumeListener` and a run woken
+      by its own heartbeat are indistinguishable from there. The heartbeat is
+      the safety net by design (`DossiqAskPersonNode` re-reads the task on
+      re-entry), which means the listener can be entirely dead while every
+      journey assertion stays green and the only symptom is a case that moves
+      up to half an hour late.
+
+      So the new spec asserts the wake through the one field that separates
+      them. `FlowRunService::signal()` sets `resumeAt` to now;
+      `DossiqAskPersonNode::heartbeatAt()` sets it minutes out. The run is read
+      before and after the completion and must go from parked to due.
+
+      It also covers the half that fails SILENTLY and had no test at any level
+      above the unit: the engine announces terminality for `completed`,
+      `terminated` and `disabled` alike, and only a completion is an answer. A
+      second case has its task CANCELLED, and its run's `resumeAt` must not
+      move. Mutation-checked on `proof/task-resume-withdrawn-guard`, which
+      widens the listener's guard to accept all three terminal states.
 - [x] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
@@ -406,7 +471,42 @@ them is a refactor with no functional change and is out of scope here.
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
 
-## 7. Follow-up: `tenantOnboardingTask`
+## 7. Follow-ups
+
+### 7.0 🔴 ARCHIVING THIS CHANGE BREAKS 14 `@spec` CITATIONS
+
+Found 2026-09-11, while checking what archiving would cost. This is a blocker
+on the archive, not on the work.
+
+- [ ] 7.0 Repoint the 14 `@spec` citations that name
+      `openspec/changes/remove-casetask/tasks.md`. Measured:
+
+          git grep -c 'openspec/changes/remove-casetask' -- lib src tests   # 14
+
+      across `AskPersonTaskStore`, `EngineTaskGateway` (2), `EngineTaskInbox`
+      (2), `EngineTaskInboxTest`, `TaskWaitingCaseSection.vue`,
+      `CaseTaskPane.vue` (2), `TaskCaseCard.vue`, `engineTask.js` (3) and
+      `flowTaskHelpers.js`.
+
+      **Every one names a tasks.md, which is a PLAN and not a requirement.**
+      Gate 16 is satisfied by the path existing, so all 14 are green today and
+      stay green right up to the moment the archive moves the file, at which
+      point they resolve to nothing — the same failure dossiq#2057 left behind
+      as 119 dangling citations.
+
+      🔴 **AND THE OBVIOUS TARGET IS NOT YET A VALID ONE.**
+      `openspec/specs/task-management/spec.md` is where these requirements
+      belong, but it still describes dossiq's tasks as "JSON objects with
+      CMMN-compliant lifecycle states" (line 23) and four of its requirements
+      still name the deleted schema. Repointing 14 citations at a spec that
+      describes the pre-cutover model would LOOK resolved and be worse than
+      the dangle, because nothing would then prompt anyone to fix it.
+
+      So the order is fixed: bring `task-management/spec.md` up to the engine
+      first (the follow-up "Section 4 did NOT do" already names, whose subject
+      is the spec rather than the schema), THEN repoint, THEN archive.
+
+### 7.1 Follow-up: `tenantOnboardingTask`
 
 Re-filed from `tenancy-onto-openregister-organisation` (decision 2c,
 2026-09-11). It is a follow-up to this change, not part of it.
