@@ -2882,6 +2882,7 @@ OC.L10N.register(
         "The audit package could not be exported.": "The audit package could not be exported.",
         "The BAG nummeraanduiding ID could not be found in the BAG register.": "The BAG nummeraanduiding ID could not be found in the BAG register.",
         "The BAG nummeraanduiding ID must be a 16-digit number.": "The BAG nummeraanduiding ID must be a 16-digit number.",
+        "A case type cannot inherit from itself: %s": "A case type cannot inherit from itself: %s",
         "The case assistant is currently unavailable. Please try again later.": "The case assistant is currently unavailable. Please try again later.",
         "The case could not be deleted. Please try again.": "The case could not be deleted. Please try again.",
         "The category could not be deleted. Please try again.": "The category could not be deleted. Please try again.",
