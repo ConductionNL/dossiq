@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -80,10 +81,12 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseFieldWriter $fieldWriter Applies ONLY the transition's own fields to the stored document.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseFieldWriter $fieldWriter,
 	) {
 	}//end __construct()
 
@@ -151,7 +154,21 @@ class InformatieobjectStatusLifecycle {
 			$updateData['lockedOn'] = date('Y-m-d\TH:i:s');
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
+		// THE TRANSITION'S FIELDS, APPLIED TO THE STORED DOCUMENT. This used to
+		// hand `$updateData` straight to `saveObject()` with the uuid, but that
+		// save is PUT-semantic: the payload IS the new object. Every property it
+		// left out was dropped, and because four of them are required
+		// OpenRegister refused the write, so no document status change ever
+		// completed and the bulk run failed every document it was given.
+		// CaseFieldWriter is the fleet's partial-write seam: `patchObject()`
+		// where OpenRegister has it, a fresh read-then-save where it does not.
+		$this->fieldWriter->write(
+			objectService: $objectService,
+			register: $register,
+			schema: $infoSchema,
+			case: ['id' => $infoObjectId],
+			changes: $updateData,
+		);
 
 		$this->logger->info(
 			'Dossiq dossier: informatieobject ' . $infoObjectId . ' transitioned ' . $currentStatus . ' -> ' . $newStatus,

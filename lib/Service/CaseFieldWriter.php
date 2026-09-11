@@ -28,6 +28,11 @@
  * The non-flow path (StatusTransitionService) already re-reads before writing;
  * this gives the flow-handler path the same discipline.
  *
+ * Nothing in it is specific to a case: it addresses the stored object by id
+ * and applies the fields it is given. InformatieobjectStatusLifecycle writes
+ * a document's status through it for the same reason, because a status-only
+ * `saveObject()` dropped every other property of the document.
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
