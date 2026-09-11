@@ -40,7 +40,8 @@ vi.mock('@nextcloud/router', () => ({
 	imagePath: (app, file) => `/${app}/img/${file}`,
 }))
 
-const { default: CaseTypeList } = await import('../../src/views/settings/CaseTypeList.vue')
+const { default: CaseTypeList } =
+	await import('../../src/views/settings/CaseTypeList.vue')
 
 /**
  * A stand-in for nextcloud-vue's CnIndexPage that DECLARES the props under
@@ -51,7 +52,15 @@ const { default: CaseTypeList } = await import('../../src/views/settings/CaseTyp
  */
 const CnIndexPageStub = {
 	name: 'CnIndexPage',
-	props: ['selectable', 'rowClickToView', 'title', 'description', 'schema', 'objects', 'loading'],
+	props: [
+		'selectable',
+		'rowClickToView',
+		'title',
+		'description',
+		'schema',
+		'objects',
+		'loading',
+	],
 	template: '<div class="cn-index-page-stub" />',
 }
 
