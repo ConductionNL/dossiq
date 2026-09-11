@@ -279,35 +279,8 @@ export default defineConfig({
 			// The parallel body of the suite: everything except the specs that
 			// change state the whole INSTANCE shares.
 			testIgnore: [...IGNORED, ...INSTANCE_MUTATING],
-			use: { ...devices['Desktop Chrome'] },
-		},
-		{
-			// 🔴 THE SPECS THAT MUTATE THE INSTANCE, RUN LAST AND ALONE-ISH.
-			//
-			// `dependencies` makes this project start only once `chromium` has
-			// finished, which is the ordering that matters. The hazard is
-			// asymmetric: a spec that installs demo data or writes app settings
-			// while ~131 empty-state assertions are running elsewhere makes
-			// those assertions fail, and it reads as a product defect rather
-			// than as a fixture racing them. The reverse order costs nothing.
-			//
-			// That asymmetry is why this list errs toward INCLUDING a spec.
-			// Serialising one that did not need it costs a few seconds at the
-			// end of the run; leaving one out costs a failure nobody can
-			// reproduce and no diff explains.
-			//
-			// ⚠️ THE PRICE, STATED RATHER THAN DISCOVERED. Playwright SKIPS a
-			// project whose dependency had failures. So while anything in
-			// `chromium` is red, these 31 tests report as "did not run" — and a
-			// test that never ran reads identically to one that passed in any
-			// summary counting failures. That is a real cost and it is the
-			// right trade only because a run with failures is red regardless:
-			// the verdict is not being hidden, the detail is. Read the tally,
-			// not the colour, until the parallel project is green.
-			name: 'chromium-instance-state',
-			testIgnore: IGNORED,
-			testMatch: INSTANCE_MUTATING,
-			dependencies: ['chromium'],
+			// PROOF BRANCH ONLY: two page-load-heavy specs.
+			testMatch: ['**/case-flow-human-steps.spec.ts', '**/app-chrome.spec.ts'],
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],
