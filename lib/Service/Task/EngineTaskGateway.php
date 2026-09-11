@@ -104,13 +104,6 @@ class EngineTaskGateway {
 
 
     /**
-     * The inbox reader, or null until first use.
-     *
-     * @var EngineTaskInbox|null
-     */
-    private ?EngineTaskInbox $inboxReader = null;
-
-    /**
      * The most recent engine failure, for callers that report rather than log.
      *
      * @var string
@@ -148,24 +141,6 @@ class EngineTaskGateway {
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
-    /**
-     * The inbox reader, built on first use.
-     *
-     * Constructed rather than injected so this class's constructor signature —
-     * and therefore every test that builds it — is unchanged by the split.
-     *
-     * @return EngineTaskInbox The reader.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    private function inbox(): EngineTaskInbox {
-        if ($this->inboxReader === null) {
-            $this->inboxReader = new EngineTaskInbox($this->settings, $this->container, $this->logger);
-        }
-
-        return $this->inboxReader;
-    }//end inbox()
 
     /**
      * Whether a task written here will reach the engine.
