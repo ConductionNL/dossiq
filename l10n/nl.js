@@ -2890,6 +2890,7 @@ OC.L10N.register(
         "The audit package could not be exported.": "Het audit-pakket kon niet worden geexporteerd.",
         "The BAG nummeraanduiding ID could not be found in the BAG register.": "Het BAG-nummeraanduiding-ID kon niet worden gevonden in het BAG-register.",
         "The BAG nummeraanduiding ID must be a 16-digit number.": "Het BAG-nummeraanduiding-ID moet een getal van 16 cijfers zijn.",
+        "A case type cannot inherit from itself: %s": "Een zaaktype kan niet van zichzelf erven: %s",
         "The case assistant is currently unavailable. Please try again later.": "De zaakassistent is momenteel niet beschikbaar. Probeer het later opnieuw.",
         "The case could not be deleted. Please try again.": "De zaak kon niet worden verwijderd. Probeer het opnieuw.",
         "The category could not be deleted. Please try again.": "De categorie kon niet worden verwijderd. Probeer het opnieuw.",
