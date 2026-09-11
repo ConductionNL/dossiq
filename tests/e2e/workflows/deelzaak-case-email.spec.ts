@@ -96,15 +96,14 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		}
 	})
 
-	// FIXME(#719): same gap as cases-crud — the case detail page does not
-	// display the assigned zaaknummer anywhere in its rendered text.
+	// UNPARKED for the same reason as its cases-crud twin, which carries the
+	// long version: `CaseDetail` in src/manifest.json now renders the
+	// zaaknummer both as `config.subtitleField` and as an `identifier` entry in
+	// the `case-core` widget's include list, so the number this test waited for
+	// is on the page in two places.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): same gap as cases-crud — the case detail page does not display the assigned zaaknummer anywhere in its rendered text.',
-		)
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, {
