@@ -317,3 +317,31 @@ continued, not replaced.
       fixtures and `ci-seed.sh`.
 - [ ] 5.3 No sibling app's duck-typed lookup points at a removed slug
       (the table from 0.3, re-run).
+
+      **Re-run 2026-09-11 for the one cluster that has actually retired, and
+      it is CLEAN.** 0.3 says to re-run before each removal because it
+      measures the day it runs, not the day of the merge; `caseTask` was
+      removed in dossiq#2424, so this is that re-run. Done over the ORG rather
+      than over local checkouts (`gh search code --owner ConductionNL
+      "caseTask"`), because a local sweep only sees the siblings somebody
+      happened to clone.
+
+      Four hits outside dossiq, and none of them is a lookup:
+
+      | Where | What it is |
+      |---|---|
+      | `openregister/lib/Listener/CaseTaskTerminalListener.php` | OpenRegister's own CMMN **CaseTask** plan item. It listens to `TaskTerminalEvent`, the engine's event, and never names a dossiq schema |
+      | `openregister/lib/AppInfo/Application.php` | registers that listener |
+      | `pipelinq/lib/Repair/RenameCollidingSchemaSlugs.php` | a PROSE comment, "dossiq took caseTask", beside its own `task` -> `crmTask` rename. Now stale, and harmless: it resolves nothing |
+      | `nextcloud-vue`, `market-intelligence`, `spectr` | documentation and research prose |
+
+      So removing the slug could not silently no-op another app, which is the
+      failure 0.3 exists to catch. **This line stays UNTICKED**: it is a
+      programme done-condition over every retired slug, and exactly one
+      cluster has retired. It is ticked when 5.1 is.
+
+      ⚠️ Noted while here, for whoever does the next cluster: OpenRegister and
+      dossiq now BOTH listen to `TaskTerminalEvent` — `CaseTaskTerminalListener`
+      drives the plan item, `TaskCompletionResumeListener` resumes the flow
+      run. Different concerns on one event, which is fine, but a future
+      listener on it should know it is the third.
