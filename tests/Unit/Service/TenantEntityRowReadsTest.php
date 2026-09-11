@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\ShillinqIntegrationService;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantConfigurationService;
@@ -80,6 +81,7 @@ interface TenantEntityRowObjectServiceStub {
 /**
  * @covers \OCA\Dossiq\Service\TenantOnboardingService
  * @covers \OCA\Dossiq\Service\TenantConfigurationService
+ * @covers \OCA\Dossiq\Service\TenantBillingService
  *
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  * @uses \OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser
@@ -311,4 +313,85 @@ class TenantEntityRowReadsTest extends TestCase {
 	public function testAnUnreadableConfigurationRowIsNotAConfiguration(): void {
 		$this->assertNull($this->configurationAnswering(rows: [new stdClass()])->getConfig(tenantId: 't-1'));
 	}//end testAnUnreadableConfigurationRowIsNotAConfiguration()
+
+	/**
+	 * The billing service over a fake OpenRegister.
+	 *
+	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 *
+	 * @return TenantBillingService The service.
+	 */
+	private function billingAnswering(array $rows): TenantBillingService {
+		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
+
+		return new TenantBillingService(
+			appManager: $appManager,
+			container: $container,
+			logger: $this->createMock(LoggerInterface::class),
+			shillinq: $this->createMock(ShillinqIntegrationService::class),
+		);
+	}//end billingAnswering()
+
+	/**
+	 * A billing event row in the shape `findAll()` returns it.
+	 *
+	 * @param string $uuid The event's uuid.
+	 * @param string $occurredAt When it occurred.
+	 * @param float $unitPrice What one unit costs.
+	 *
+	 * @return ObjectEntity The row.
+	 */
+	private function billingEvent(string $uuid, string $occurredAt, float $unitPrice): ObjectEntity {
+		return $this->entity(
+			object: [
+				'tenantRef' => 't-1',
+				'eventType' => 'case_created',
+				'quantity' => 1.0,
+				'unitPrice' => $unitPrice,
+				'currency' => 'EUR',
+				'occurredAt' => $occurredAt,
+				'invoiceRef' => null,
+			],
+			uuid: $uuid
+		);
+	}//end billingEvent()
+
+	/**
+	 * The month's billing is aggregated from the rows, and only that month's.
+	 *
+	 * Before the read was fixed, `$r['occurredAt']` on an `ObjectEntity` threw
+	 * outside any catch, so every billing figure and every invoice run for a
+	 * tenant with events died where it started.
+	 *
+	 * @return void
+	 */
+	public function testTheMonthsBillingIsAggregatedFromEntityRows(): void {
+		$rows = [
+			$this->billingEvent(uuid: 'e-1', occurredAt: '2026-07-05T10:00:00+00:00', unitPrice: 10.0),
+			$this->billingEvent(uuid: 'e-2', occurredAt: '2026-07-28T09:00:00+00:00', unitPrice: 15.0),
+			$this->billingEvent(uuid: 'e-3', occurredAt: '2026-08-01T09:00:00+00:00', unitPrice: 99.0),
+		];
+
+		$summary = $this->billingAnswering(rows: $rows)->getMonthBilling(tenantId: 't-1', month: '2026-07');
+
+		$this->assertSame(2, $summary['eventCount'], 'an event from another month was billed');
+		$this->assertSame(25.0, $summary['totalAmount']);
+	}//end testTheMonthsBillingIsAggregatedFromEntityRows()
+
+	/**
+	 * A row that carries nothing readable is not billed.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableBillingRowIsNotBilled(): void {
+		$rows = [
+			new stdClass(),
+			$this->billingEvent(uuid: 'e-1', occurredAt: '2026-07-05T10:00:00+00:00', unitPrice: 10.0),
+		];
+
+		$summary = $this->billingAnswering(rows: $rows)->getMonthBilling(tenantId: 't-1', month: '2026-07');
+
+		$this->assertSame(1, $summary['eventCount']);
+		$this->assertSame(10.0, $summary['totalAmount']);
+	}//end testAnUnreadableBillingRowIsNotBilled()
 }//end class
