@@ -247,6 +247,32 @@ export async function assertOccReachable(): Promise<string> {
 }
 
 /**
+ * Run one arbitrary occ command against the instance under test.
+ *
+ * The second sanctioned CLI use, and it exists for the same shape of reason as
+ * the purge above: some behaviour the suite has to exercise simply has no HTTP
+ * entry point. OpenRegister's flow worker is a background job, so a run parked
+ * for resumption only moves when cron fires, and a test cannot wait for cron.
+ *
+ * The exit code is RETURNED, never thrown on. Callers decide: a job listing
+ * that finds nothing and a job that ran and did nothing are different answers,
+ * and both are more useful read than raised.
+ *
+ * @param args Arguments appended after the resolved occ prefix.
+ * @return The command's exit code and combined output.
+ */
+export async function occRun(
+	args: string[],
+): Promise<{ code: number; output: string }> {
+	const invocation = await resolveOcc()
+	if (invocation === null) {
+		throw new OccUnavailableError(unavailableMessage())
+	}
+
+	return run(invocation, args)
+}
+
+/**
  * Permanently destroy the named objects through the sanctioned CLI purge.
  *
  * `--force` is required and passed deliberately: it is what makes the suite say
