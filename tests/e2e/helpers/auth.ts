@@ -73,7 +73,8 @@ export async function provisioningContext(
 	baseURL: string,
 ): Promise<APIRequestContext> {
 	const user = process.env.ADMIN_USER ?? 'admin'
-	const password = process.env.ADMIN_PASSWORD ?? 'admin'
+	// MUTATION (proof branch only): a credential the instance refuses.
+	const password = 'not-the-admin-password'
 	const basic = Buffer.from(`${user}:${password}`).toString('base64')
 
 	return playwright.request.newContext({
