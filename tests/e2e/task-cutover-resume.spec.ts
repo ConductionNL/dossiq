@@ -14,15 +14,45 @@ import type { APIRequestContext } from '@playwright/test'
  * the engine's `TaskTerminalEvent` — an event that did not exist before the
  * cutover, on a store that did not exist before the cutover.
  *
- * WHAT BREAKS WHEN IT BREAKS, AND WHY NOTHING SAYS SO. If the listener is not
- * registered, or stops recognising the event, the task still completes. The
- * verb answers 200, the task pane shows it closed, the person who did the work
- * sees exactly what they expect. The only thing that does not happen is the
- * resume: the run stays suspended until `dossiq.askPerson`'s heartbeat wakes
- * it, which is thirty minutes by default and can be configured longer, and in
- * the meantime the case does not move and no log line anywhere is an error.
- * A spec that asserted only "the task shows completed" would pass against that
- * exact instance. So the assertions below are on the RUN and on the CASE.
+ * WHAT BREAKS WHEN IT BREAKS, AND WHY NOTHING SAYS SO. If the chain is not
+ * wired, the task still completes. The verb answers 200, the task pane shows it
+ * closed, the person who did the work sees exactly what they expect. The only
+ * thing that does not happen is the resume: the run stays suspended until
+ * `dossiq.askPerson`'s heartbeat wakes it, which is thirty minutes by default
+ * and can be configured longer, and in the meantime the case does not move and
+ * no log line anywhere is an error. A spec that asserted only "the task shows
+ * completed" would pass against that exact instance. So the assertions below
+ * are on the RUN and on the CASE.
+ *
+ * 🔴 WHAT THIS SPEC DOES NOT PROVE, SAID HERE RATHER THAN LEFT TO BE ASSUMED.
+ * It does not prove that DOSSIQ's listener is what resumed the run, because on
+ * an instance running both apps it is not the only thing that can.
+ * OpenRegister registers `UserTaskTerminalListener` on the same event, and that
+ * listener hands EVERY terminal task carrying a `runUuid` to
+ * `FlowTaskBridge::continueRun()`, which signals the run and may even advance
+ * it inside the request. Measured on a clean rig (openregister 2.0.18, dossiq
+ * 0.4.10, 2026-09-11) by commenting the dossiq registration out of
+ * `WorkflowListenerRegistrar` and repeating the whole chain: the run resumed
+ * and the case advanced identically, and the run's `context.signal` read `[]`
+ * both ways, which is OpenRegister's empty payload rather than dossiq's. A
+ * temporary log line in the dossiq listener confirmed it does fire; its payload
+ * is simply overwritten, because `FlowRunService::signal()` replaces
+ * `context.signal` and OpenRegister's listener runs second.
+ *
+ * So what is pinned here is the BEHAVIOUR — a completed engine task moves the
+ * case — and the provenance the chain depends on. That is worth pinning on its
+ * own: the behaviour is what a caseworker relies on, and the mutation check
+ * below shows the spec fails when the chain is genuinely broken. Whether
+ * `TaskCompletionResumeListener` should still exist beside OpenRegister's is
+ * the same question task 3.2 of this change already holds open about
+ * `DossiqAskPersonNode` beside `UserTaskNode`, and it is a decision about
+ * duplication rather than something a test can settle.
+ *
+ * 🔑 MUTATION-CHECKED by removing `flowRun` and `flowNode` from
+ * `DossiqAskPersonNode::buildTask()`, which is the provenance both listeners
+ * read. Tests 2 and 3 both went red: the task carried no run, so nothing
+ * signalled, the run stayed suspended past a worker pass and the case kept its
+ * empty description. Restored, all three pass.
  *
  * THE THREE TESTS, AND WHAT EACH ONE PINS.
  *
@@ -254,16 +284,17 @@ async function runFlowWorker(): Promise<void> {
 		`occ background-job:list for ${FLOW_WORKER_CLASS} exited ${listing.code}: ${listing.output}`,
 	).toBe(0)
 
-	let jobs: Json[] = []
-	try {
-		const parsed = JSON.parse(listing.output.trim())
-		jobs = Array.isArray(parsed) ? parsed : Object.values(parsed as object)
-	} catch {
-		throw new Error(
-			`occ background-job:list did not answer JSON for ${FLOW_WORKER_CLASS}. `
-				+ `It said: ${listing.output}`,
-		)
-	}
+	const jobs: Json[] = (() => {
+		try {
+			const parsed = JSON.parse(listing.output.trim())
+			return Array.isArray(parsed) ? parsed : Object.values(parsed as object)
+		} catch {
+			throw new Error(
+				`occ background-job:list did not answer JSON for ${FLOW_WORKER_CLASS}. `
+					+ `It said: ${listing.output}`,
+			)
+		}
+	})()
 
 	expect(
 		jobs.length,
@@ -302,7 +333,17 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		runUuid: '',
 	}
 
-	test.beforeAll(async ({ baseURL }) => {
+	/**
+	 * Seeded per TEST, not once for the file.
+	 *
+	 * The teardown below removes everything, and it runs after every test so
+	 * that a failing one still gives its fixtures back. Those two facts
+	 * together rule out `beforeAll`: state built once and torn down after the
+	 * first test leaves the second with a flow that answers 404, which reads as
+	 * a broken run endpoint rather than as a fixture the teardown ate. Paying
+	 * the seed twice is the cheaper mistake.
+	 */
+	test.beforeEach(async ({ baseURL }) => {
 		// A case type, two statuses, a workflow template, two cases, a flow and
 		// a publish. Comfortably past the default hook budget on a loaded rig.
 		test.setTimeout(180_000)
@@ -550,7 +591,11 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		).toBeFalsy()
 	})
 
-	test('a run suspended on a human step writes its task to the engine, naming the run and the node', async () => {
+	test('completing a suspended run\'s task through the engine verb resumes the run and moves the case', async () => {
+		// The seed, the completion and a worker pass, on a rig where a page
+		// load is not the slow part but a flow walk can be.
+		test.setTimeout(180_000)
+
 		const run = await orPost(api, token, `/flows/${seeded.flowId}/run`, {
 			subject: {
 				uuid: seeded.flowCase,
@@ -598,12 +643,8 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 			String(task.state ?? ''),
 			'A freshly created engine task is not terminal.',
 		).not.toBe('completed')
-	})
 
-	test('completing that task through the engine verb resumes the run and moves the case', async () => {
-		// The run and its task, as the previous test left them. Re-read rather
-		// than carried, because the assertion below is about what the SERVER
-		// holds.
+		// ── The run, as the server holds it before anything is completed. ────
 		const before = await orGet(api, `/flow-runs/${seeded.runUuid}`)
 		expect(
 			String(before.status ?? ''),
@@ -617,22 +658,17 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 		).toBeFalsy()
 		// The safety net is where it was configured, far outside this test. If
 		// this ever fails, the rest of this test proves nothing: the worker
-		// below would advance a run that was due anyway.
+		// below would advance a run that was due anyway, and the resume
+		// assertions would pass over a chain that never fired.
 		expect(
 			parkedUntil - Date.now(),
 			`The heartbeat must be roughly ${HEARTBEAT_MINUTES} minutes out, so that `
-				+ 'the only thing able to wake this run inside the test is the signal '
-				+ 'the listener sends. A near-term heartbeat would make the resume '
-				+ 'assertion below pass with the listener disconnected.',
+				+ 'the only thing able to wake this run inside the test is the signal a '
+				+ 'completed task sends.',
 		).toBeGreaterThan(60 * 60 * 1000)
 
-		const task = await taskTitled(
-			api,
-			seeded.flowCase,
-			ASK_QUESTION,
-			'the task the suspended run is waiting on',
-		)
 		const taskUuid = String(task.uuid ?? '')
+		expect(taskUuid, 'The engine task must carry a uuid.').not.toBe('')
 
 		// THE ENGINE'S OWN VERB, which is what the task pane's lifecycle button
 		// calls. Writing a status field instead would exercise nothing: there is
@@ -648,31 +684,29 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 				+ 'this test would then be measuring the wrong absence.',
 		).toBe('completed')
 
-		// ── Stage one: the signal landed. ────────────────────────────────────
+		// ── Stage one: a signal landed, and the run is due. ──────────────────
 		//
-		// This is the listener's own work, and it is asserted before the worker
-		// runs because the worker CONSUMES the payload: `FlowRunService` unsets
-		// the signal key from the run context as it resumes. Reading it here is
-		// the difference between "the run moved" and "the run moved BECAUSE a
-		// completed task woke it".
+		// Read BEFORE the worker runs, because the worker consumes what it
+		// finds: `FlowRunService` unsets the signal key from the run context as
+		// it resumes, and clears `resumeAt`. This is the only point at which
+		// "the completion reached the run" can be told apart from "the run
+		// happened to be due".
+		//
+		// 🔴 THE SIGNAL'S PAYLOAD IS NOT ASSERTED, AND THAT IS A FINDING RATHER
+		// THAN AN OVERSIGHT. Two listeners answer `TaskTerminalEvent` on any
+		// instance running both apps: dossiq's `TaskCompletionResumeListener`,
+		// which signals through the guarded `FlowRunSignalService::signalAs()`
+		// with `{decision, node, taskId, completedBy}`, and OpenRegister's own
+		// `UserTaskTerminalListener`, which hands every task carrying a
+		// `runUuid` to `FlowTaskBridge::continueRun()` and signals it with an
+		// EMPTY payload. `FlowRunService::signal()` overwrites `context.signal`
+		// rather than merging, so whichever listener runs second decides what
+		// the run ends up carrying — and measured on a clean rig
+		// (openregister 2.0.18, dossiq 0.4.10, 2026-09-11) it is OpenRegister's:
+		// the run's context reads `"signal": []` with dossiq's listener both
+		// connected and disconnected. Asserting the payload here would fail on
+		// a correct instance. The file header records the measurement in full.
 		const signalled = await orGet(api, `/flow-runs/${seeded.runUuid}`)
-		const signal = (signalled.context ?? {}).signal ?? {}
-		expect(
-			String(signal.decision ?? ''),
-			'The listener must signal the run with an explicit `completed` decision. '
-				+ 'A resume carrying no decision is a nudge rather than an answer, and '
-				+ 'the awaiting node suspends again on it.',
-		).toBe('completed')
-		expect(
-			String(signal.node ?? ''),
-			'The signal must address the node the task named, so the engine checks '
-				+ "THAT node's recorded assignee rather than another awaiting step's.",
-		).toBe(ASK_NODE)
-		expect(
-			String(signal.taskId ?? ''),
-			'The signal must name the task it came from.',
-		).toBe(taskUuid)
-
 		const wokenAt = Date.parse(String(signalled.resumeAt ?? ''))
 		expect(
 			Number.isNaN(wokenAt),
@@ -682,7 +716,8 @@ test.describe('Task cutover — a completed engine task resumes its run', () => 
 			wokenAt - Date.now(),
 			'Signalling pulls `resumeAt` forward to now, which is what makes the '
 				+ "worker's next pass pick the run up. A resumeAt still a day out means "
-				+ 'the completion never reached the run.',
+				+ 'the completion never reached the run at all, and the case would sit '
+				+ 'until the heartbeat.',
 		).toBeLessThan(60 * 1000)
 
 		// ── Stage two: the run actually moved, and so did the case. ──────────
