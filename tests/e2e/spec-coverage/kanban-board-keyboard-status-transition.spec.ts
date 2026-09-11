@@ -99,6 +99,14 @@ let keyboardCaseId: string
 let dragCaseId: string
 
 test.describe('Workflow Board keyboard status transition', () => {
+	// A budget sized from what these tests DO, not from slow page loads: each
+	// one loads the board, completes a status move through the engine (two
+	// requests plus a board re-read) and then polls OpenRegister until the
+	// case's stored status changes. The keyboard test opens the case detail
+	// after that. The 30s default covered the old pair, which asserted a menu
+	// item and an attribute and moved nothing.
+	test.setTimeout(240_000)
+
 	// ⚠️ DELIBERATELY NOT `test.describe.configure({ mode: 'serial' })`.
 	// These two tests share only the beforeAll fixture; neither depends on the
 	// other's side effects, so serial mode buys nothing — and it costs the one
