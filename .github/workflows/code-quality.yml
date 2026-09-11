@@ -157,7 +157,7 @@ jobs:
     # merge this PR while it reads anything but @main, and do not merge it
     # BEFORE the .github change either: @main does not yet declare
     # `e2e-shards`, and an undeclared input makes the whole call fail.
-    uses: ConductionNL/.github/.github/workflows/quality.yml@feat/e2e-shards
+    uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: dossiq
       php-version: "8.3"
