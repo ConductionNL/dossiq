@@ -97,11 +97,10 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 	})
 
 	// UNPARKED for the same reason as its cases-crud twin, which carries the
-	// long version: the zaaknummer now renders in the `case-core` info panel
-	// (not under the title: `config.subtitleField` is dead config on a detail
-	// page). The assertion is scoped to that panel because unscoped it stayed
-	// green on CI run 34592678724 with the number removed from the page's only
-	// declared source.
+	// long version: the zaaknummer now renders in the `case-core` info panel.
+	// Scoped to that panel because unscoped it was satisfied by the copy
+	// CaseHeaderRow prints under the title, and stayed green on CI run
+	// 34592678724 with the number removed from the panel.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {

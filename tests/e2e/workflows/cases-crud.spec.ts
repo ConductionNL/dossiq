@@ -143,27 +143,30 @@ test.describe('Cases — full CRUD with persistence', () => {
 	})
 
 	// UNPARKED. The old FIXME(#719) said the case detail page never displays
-	// the zaaknummer, and at the time it was right. It does now, in exactly
-	// ONE place: `identifier` in the `case-core` widget's `content.include`,
-	// with an override re-admitting it as `readOnly: false` (the widget's
-	// `_note` records that `fieldsFromSchema` drops a readOnly property
-	// outright, which is why the field once sat in that list and rendered
-	// nowhere).
+	// the zaaknummer, and at the time it was right. It does now, in two places,
+	// and they are covered by two different specs:
 	//
-	// 🔴 `config.subtitleField` IS NOT A SECOND PLACE. CaseDetail declares it,
-	// and its `_subtitleNote` says the number "reads under the title". It does
-	// not: in @conduction/nextcloud-vue 2.46.0 and 2.48.1 alike, only
-	// CnIndexPage, CnObjectRow and CnObjectList read `subtitleField`, and
-	// CnDetailPage never maps it onto its `subtitle` prop. Measured, not read:
-	// mutating it on CI run 34583207838 changed nothing.
+	//   1. Under the title, by dossiq's own `CaseHeaderRow.vue`
+	//      (`data-testid="case-header-identifier"`). case-header.spec.ts owns
+	//      that one.
+	//   2. In the case INFO PANEL: `identifier` in the `case-core` widget's
+	//      `content.include`, with an override re-admitting it as
+	//      `readOnly: false` (the widget's `_note` records that
+	//      `fieldsFromSchema` drops a readOnly property outright). This test
+	//      owns that one, because the scenario it cites is the info panel.
 	//
-	// 🔴 AND THE ASSERTION IS SCOPED TO THE INFO PANEL, because unscoped it
-	// could not fail. It used to be `page.getByText(identifier).first()`. On CI
-	// run 34592678724 the number was removed from BOTH places above and this
-	// test stayed green, because the string also appears elsewhere on the case
-	// page. The scenario this cites is the case INFO PANEL, so that panel is
-	// where the number is now looked for, the same locator case-identity.spec.ts
-	// uses for the same fact.
+	// 🔴 `config.subtitleField` IS NOT A THIRD PLACE. CaseDetail declares it
+	// and its `_subtitleNote` says the number "reads under the title", but in
+	// @conduction/nextcloud-vue 2.46.0 and 2.48.1 alike only CnIndexPage,
+	// CnObjectRow and CnObjectList read `subtitleField`. CnDetailPage never
+	// maps it onto its `subtitle` prop. Mutating it on CI run 34583207838
+	// changed nothing. CaseHeaderRow is what actually does that job.
+	//
+	// 🔴 SCOPED, BECAUSE UNSCOPED IT COULD NOT FAIL. This used to be
+	// `page.getByText(identifier).first()`, which the header copy satisfies on
+	// its own. On CI run 34592678724 the number was removed from the info panel
+	// and this test stayed green. It now looks in the info panel only, with the
+	// locator case-identity.spec.ts uses for the same fact.
 	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,
