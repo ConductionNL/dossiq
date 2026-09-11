@@ -6,8 +6,12 @@
  * One-shot, idempotent migration of legacy dossiq `tenant` schema objects onto
  * OpenRegister Organisations (`migrate-tenant-to-or-tenant`, ADR-022). Reads any
  * pre-existing `tenant` rows, projects each onto an OR Organisation (preserving
- * the row UUID + lifecycle status), and reports a migrated/skipped/failed
- * summary. Safe to re-run — Organisations whose slug already exists are skipped.
+ * the row UUID + lifecycle status), and reports a
+ * migrated/repaired/skipped/failed summary. Safe to re-run: an Organisation
+ * whose slug already exists is never created twice. A re-run also REPAIRS the
+ * two lifecycle statuses an earlier version of the migration mapped wrongly,
+ * and `repaired` counts those separately from `skipped` so an operator can see
+ * that a status actually changed.
  *
  * @category Command
  * @package  OCA\Dossiq\Command
@@ -87,6 +91,7 @@ class MigrateTenantsCommand extends Command {
 		$output->writeln('<info>dossiq:migrate-tenants done</info>');
 		$output->writeln('  total    = ' . $summary['total']);
 		$output->writeln('  migrated = ' . $summary['migrated']);
+		$output->writeln('  repaired = ' . $summary['repaired']);
 		$output->writeln('  skipped  = ' . $summary['skipped']);
 		$output->writeln('  failed   = ' . $summary['failed']);
 
