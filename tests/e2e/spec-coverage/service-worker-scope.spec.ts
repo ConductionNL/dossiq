@@ -25,6 +25,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { journeyBudget, PAGE_LOAD } from '../helpers/nav.ts'
 
 /**
  * Resolve the scope of dossiq's active service worker.
@@ -56,10 +57,10 @@ async function activeWorkerScope(page: Page, timeout = 20_000): Promise<string> 
  * @param page The page under test.
  */
 async function openControlled(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq/dashboard')
+	await page.goto('/index.php/apps/dossiq/dashboard', PAGE_LOAD)
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 	const scope = await activeWorkerScope(page)
-	await page.goto(scope)
+	await page.goto(scope, PAGE_LOAD)
 	await page.waitForFunction(
 		() => navigator.serviceWorker.controller !== null,
 		undefined,
@@ -93,6 +94,10 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 	test('a request the worker CLAIMS still reaches the server', async ({
 		page,
 	}) => {
+		// `openControlled` makes two page loads and waits up to 55s besides
+		// (the login check, the worker activating, the worker taking control),
+		// so the budget holds all of it. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2, 60_000))
 		await openControlled(page)
 		// `/apps/dossiq/api/sync/...` is the one same-origin prefix the worker
 		// answers itself (network-first). Under the old script CSP the worker's
