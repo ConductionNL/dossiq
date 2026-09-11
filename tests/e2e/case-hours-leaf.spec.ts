@@ -537,6 +537,18 @@ if (!HUMANIQ_DECLARED) {
 			// never read. On a one-case instance the two are indistinguishable,
 			// which is every CI instance this file has ever run on.
 			//
+			// MUTATION CHECKED 2026-09-11 against a live instance with humaniq
+			// enabled. humaniq's `fetchEntries` was made to send `_limit` only,
+			// dropping both filter keys, so the leaf reads EVERY time entry in
+			// the instance. This test reddened on the read assertion:
+			//
+			//   the leaf must read its hours filtered to this case; no request
+			//   carried a domainObjectRef at all
+			//   Expected: > 0   Received: 0
+			//
+			// The delta assertion alone would NOT have caught it: the booking
+			// still lands and the unfiltered sum still rises by 2.5.
+			//
 			// So the filter is asserted on the wire, before the arithmetic.
 			// The listener is attached BEFORE the navigation: the leaf's first
 			// read happens as it mounts, and a listener attached afterwards
