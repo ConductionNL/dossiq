@@ -66,47 +66,122 @@ Do not silence it with a placeholder capability.
 Blocks clusters 3.1, 3.2 and 4.2. Additive, so it can land before any of them.
 `development` there is gated: merge needs `--admin`.
 
-- [x] 1.1 `cnFormFieldRenderer.js`: `field.type === 'file'` renders
-      `CnFileField`. nextcloud-vue #1083, in 2.47.0. The field holds the picked
-      file as a `data:` URL and never builds a path, so whoever receives the
-      payload decides where it is stored; valid on form pages only, because a
-      settings page saves to app config and app config has no place for file
-      content.
-- [x] 1.2 `CnObjectListWidget`: nextcloud-vue #1090, in 2.47.0. **Delivered
-      wider than written, because the written ask would not have worked.** A
-      `$ref` resolved to ONE label is `fkResolve`, which already shipped in
-      2.42.0 and did not unblock documents-on-the-case 2.2: that task needs SIX
-      fields off the same referenced `informatieobject`, and it needs a drop
-      zone and a row action the widget matched at all. So what landed is
-      `content.extend` (OpenRegister `_extend[]`, which makes a dotted column
-      key resolve), `content.rowActions[]` and `content.dropZone`.
+- [x] 1.1 `cnFormFieldRenderer.js`: add `field.type === 'file'`. Needed by the
+      task form's upload; no other field type is missing.
 
-      It does NOT retire `DossierTab`. Measured 2026-09-11: that component now
-      groups rows by `informatieobjecttype`, multi-selects, sorts, facets on
-      keywords and carries its own upload button, none of which
-      `CnObjectListWidget` expresses. Swapping it would remove shipped
-      capability while looking correct. The decision is recorded on
-      documents-on-the-case 2.2 and is Ruben's, not the library's.
-- [x] 1.3 `CnIndexPage`: a column's `link` names a route, and picks it PER ROW.
-      nextcloud-vue #1083, in 2.47.0. `widgetProps.routeField` names a sibling
-      field and `widgetProps.routeMap` maps its values to page ids, so one
-      column sends a person to `ContactDetail` and an organisation to
-      `OrganisationDetail`. Consumed by contacts-domain 3.6, which is now done.
-- [ ] 1.4 `actionsDispatcher.js`: dispatch a declared action by name.
-      Unblocks documents-on-the-case 3.3.
+      **Done.** nextcloud-vue #1083 (`83a4332fb`). `DEFAULT_COMPONENT_MAP` in
+      `src/composables/cnFormFieldRenderer.js:124` maps `file: CnFileField`, and
+      the manifest schema admits `"file"` in the formField type enum
+      (`src/schemas/app-manifest.schema.json:900`). Traced end to end: a
+      declared field reaches `CnFormPage.vue:579`, which calls
+      `cnRenderFormField`, which returns `CnFileField`. Pinned by
+      `tests/composables/cnFormFieldRenderer.spec.js:130`. Mutation-checked on
+      2026-09-11: blanking the map entry reddened that test and no other.
+      `tests/components/CnFormPageFileField.spec.js` pins the same path through
+      the real page, up to the submitted `data:` URL.
 
-      **NOT a library gap, measured 2026-09-11.** It needs an OpenRegister
-      endpoint that runs one flow node out of graph (none exists — only
-      `POST /api/flows/{id}/run` over a whole flow), plus a new interactive
-      token class for `@pick:`, which would be the first token in the closed
-      vocabulary that suspends a dispatch and waits for a person. Four
-      decisions, written out in full on documents-on-the-case 3.3. This item
-      cannot be lifted here and should probably move out of section 1.
+      The renderer is still the integration point. A report that it holds
+      neither `'file'` nor `CnFileField` was read from a stale tree.
+- [x] 1.2 `CnObjectListWidget`: the document list on a case, rendered from the
+      manifest instead of `DossierTab`. Unblocks documents-on-the-case 2.2.
+
+      **Done, and not by the mechanism this task first named.** The original
+      wording asked for a `$ref` column resolved to a label. That already
+      existed before this programme: the built-in `fkResolve` cell widget
+      (`CnFkResolveCell`, added in `f02d8d5fe`), which this widget already
+      forwarded `widget` and `widgetProps` to (`df2586c53`). The 2026-09-10
+      recheck under documents-on-the-case 2.2 found the task still blocked, and
+      named the three real gaps.
+
+      All three shipped in nextcloud-vue #1090 (`f8ad729ba`): `content.extend`
+      becomes OpenRegister's `_extend[]`, which is what makes a dotted column
+      key such as `informatieobject.title` resolve to a value instead of six
+      copies of one uuid; `content.rowActions[]` carries the Versions action;
+      `content.dropZone` carries the upload. Pinned by the 18 tests in
+      `tests/components/CnObjectListWidgetExtendActionsDrop.spec.js`.
+      Mutation-checked on 2026-09-11: dropping the `_extend` forwarding reddened
+      `forwards content.extend as OpenRegister _extend` at line 57, alone.
+
+      **It does NOT retire `DossierTab`, so documents-on-the-case 2.2 stays
+      open.** Measured 2026-09-11: `DossierTab` now groups rows by
+      `informatieobjecttype`, multi-selects, sorts, facets on keywords and
+      carries its own upload button, none of which `CnObjectListWidget`
+      expresses. Swapping it would remove shipped capability, including the
+      keyword filter documents-on-the-case 2.3 exists to deliver, while looking
+      correct. The two options are written out on that task; the choice is
+      Ruben's, not the library's.
+- [x] 1.3 `CnIndexPage`: let a column's `link` name a route. Unblocks
+      contacts-domain 3.6.
+
+      **Done.** nextcloud-vue #1083, second commit. A fixed `widgetProps.route`
+      already worked; the half contacts-domain 3.6 turns on did not. That half
+      is now `linkRouteName()` in
+      `src/components/CnCellRenderer/CnCellRenderer.vue:420`, where
+      `widgetProps.routeField` names a sibling field and `widgetProps.routeMap`
+      maps its values to page ids. So a Requester column can send a person to
+      `ContactDetail` and an organisation to `OrganisationDetail`.
+
+      The chain is CnIndexPage, then CnDataTable, which forwards `col.widget`
+      and `col.widgetProps` at `CnDataTable.vue:185`, then CnCellRenderer.
+      Pinned by `routes each row to the page its sibling field maps to` in
+      `tests/components/CnCellRenderer.spec.js:322`. Mutation-checked on
+      2026-09-11: disabling the map lookup reddened that test, alone. A sibling
+      test at line 349 pins that a row value can never name a page the manifest
+      did not declare.
+- [ ] 1.4 `actionsDispatcher.js`: an action `type: "run-action"` that runs a
+      flow node, and a `@pick:` config token. Unblocks documents-on-the-case
+      3.3.
+
+      **Not done, and the old wording hid that.** This task used to read
+      "dispatch a declared action by name". Read literally that has been true
+      for a long time: `dispatchAction()` at
+      `src/utils/actionsDispatcher.js:542` resolves `action.handler` against
+      `context.handlers` and calls it, pinned by
+      `tests/utils/actionsDispatcher.spec.js:18`. Confirming the symbol exists
+      proves nothing here, because nothing about it was ever missing.
+
+      What documents-on-the-case 3.3 actually waits on, measured against
+      nextcloud-vue `development` at `f8ad729ba` on 2026-09-11, is an action of
+      `type: "run-action"` carrying `node`, `subject` and a `config` whose
+      values may use a `@pick:` token. Neither exists. The action type enum at
+      `src/schemas/app-manifest-v2.schema.json:1648` reads `handler`,
+      `open-modal`, `open-page`, `navigate`, `object-op`, `export`, `open-form`,
+      `refresh`, `api-call`, `agent`, `toggle`. There is no `@pick` sentinel
+      anywhere in `src/`.
+
+      Two lookalikes to not mistake for it. `run-action` does appear in
+      `CnSetupWizard.vue`, but that is a wizard STEP type that posts to an
+      endpoint, a separate vocabulary the dispatcher never sees. And the
+      `agent` type is the nearest shape in the action family, but it runs a
+      hermiq agent, not a flow node.
+
+      **And it is not a library gap alone.** OpenRegister has no endpoint that
+      runs ONE registered node out of graph: `POST /api/flows/{id}/run` takes
+      a flow uuid and 404s `No such flow` otherwise, and
+      `GET /api/flow/node-catalog` answers no parameter metadata a `@pick:`
+      could read its options from. So a `run-action` type in this library would
+      have no server to call. Four decisions (the endpoint, what `@pick:`
+      names, whether a suspending token belongs in the closed vocabulary at
+      all, and the `run-action` name collision) are written out on
+      documents-on-the-case 3.3. This item should probably leave section 1.
 - [ ] 1.5 Docs page + JSDoc per changed prop, `check:docs` and `check:jsdoc`
       green, baseline bumped only if coverage genuinely improved.
-      Done for 1.2 (`docs/components/cn-object-list-widget.md`, the regenerated
-      `_generated` reference, both checks exit 0); 1.1 and 1.3 shipped with
-      #1083 and are not re-verified here.
+
+      **Green for everything that has landed, so it reopens when 1.4 does.**
+      Run on 2026-09-11 in a clean clone of nextcloud-vue `development` at
+      `f8ad729ba`. `npm run check:docs` exits 0: 492 of 492 public exports
+      documented, 259 of 259 component docs covering their props and slots.
+      `npm run check:jsdoc` exits 0: all 269 components meet their baseline.
+
+      The baseline moved once and it moved up. #1083 ADDED `"CnFileField": 1`,
+      which is the highest bar the script has, for a component that measures
+      100 percent at 7 of 7. No existing entry was lowered.
+
+      One trap for whoever runs this next. `check:jsdoc` exits **2** with
+      "Failed to load vue-docgen-api" until `cd docusaurus && npm ci` has run,
+      because it loads that package from `docusaurus/node_modules` rather than
+      the root install. That failure looks like a docs defect and is not one.
+      `npm install` at the root is not enough.
 
 ## 2. Wave 1 — the task spine
 
