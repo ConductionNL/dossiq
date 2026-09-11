@@ -21,24 +21,32 @@ task; the criteria under a task are plain bullets.
   - `grep -n case-kpis-hours src/manifest.json` matches the widget and one layout
     entry, and the layout entry is absent from `git diff`
 
-## 2. Verification
-
-- [x] 1.5 Remove the `log-hours` header action from `CaseDetail`, and every
+- [x] 1.4 Remove the `log-hours` header action from `CaseDetail`, and every
   reference the removal made false: the widget note, two in-flight design docs
   citing it as a live `props`-prefill precedent, and a capability-comparison row
   claiming it ships.
-- [ ] 2.1 Re-run the greps as gates, with the searched-file count asserted
+
+## 2. Verification
+
+- [x] 2.1 Re-run the greps as gates, with the searched-file count asserted
   non-zero: no widget declares `"register": "humaniq"`, no `"type":
   "integration"` widget declares `requiredApp`, and no line added by this change
-  contains an em-dash.
-- [ ] 2.2 `npm run check:manifest`; read the exit code, and compare the findings
+  contains an em-dash. Done 2026-09-11 over 49 pages and 80 widgets: no widget
+  queries the humaniq register, none names it anywhere in the manifest, no
+  integration widget declares `requiredApp`, 0 em-dashes on added lines.
+- [x] 2.2 `npm run check:manifest`; read the exit code, and compare the findings
   against the same run on `development` so a pre-existing failure is not read as
-  a new one.
-- [ ] 2.3 [blocked: humaniq `hours-leaf-for-any-object` shipping the
-  `humaniq-hours` bundle] Verify on a live instance with humaniq enabled: the
-  widget renders the leaf in its cell, the total matches hours booked through the
-  leaf's own dialog, and the same instance with humaniq disabled renders no hours
-  surface rather than `0`.
+  a new one. Ajv validation PASS, 0 errors, exit 0. The four findings seen earlier
+  came from the structural fallback that runs when `node_modules` is absent.
+- [x] 2.3 Verify on a live instance with humaniq enabled: the widget renders the
+  leaf in its cell, the total matches hours booked through the leaf's own dialog,
+  and the same instance with humaniq disabled renders no hours surface rather
+  than `0`. Unblocked by humaniq#412. Verified 2026-09-11 on the dev instance: the
+  leaf renders in `case-kpis-hours`, booking 2.5 hours through its dialog took
+  the headline from 0.04 to 2.54, and View hours opened the time-entry index
+  reading "Showing 2 of 2". The humaniq-absent half was NOT checked on a live
+  instance; it is proven by CI instead, where humaniq is not installed and the
+  absence tests in `tests/e2e/case-hours-leaf.spec.ts` passed.
 - [x] 2.4 Add the e2e coverage the delta scenarios name. It landed in a file of
   its own, `tests/e2e/case-hours-leaf.spec.ts`, rather than beside the tile
   assertions: the two halves of the scenario need opposite instances, and that

@@ -163,13 +163,32 @@ class AdviceController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-6
+	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	#[NoAdminRequired]
 	public function createForCase(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Not authenticated');
+		}
+
+		// Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`.
+		//
+		// Found while fixing #799 on the neighbouring VTH endpoint. This one
+		// had no per-case check AT ALL — "is anyone signed in" was its entire
+		// authorization model — while its own sibling `getForCase()` twelve
+		// lines below already asked `hasCaseReadAccess()`. So any
+		// authenticated account could create an advice request against any
+		// case uuid, name any `advisor`, and set any `deadline`; the write
+		// lands in OpenRegister and `notifyAdviseur()` then mails the person
+		// named in the body.
+		//
+		// MUTATION access rather than read access, because this WRITES to the
+		// case and dispatches a notification on its behalf. That matches
+		// `transitionStatus()` and `dispatchReminder()` above, which both
+		// already require the handler of the linked case.
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
 		$data = $this->readJsonBody();

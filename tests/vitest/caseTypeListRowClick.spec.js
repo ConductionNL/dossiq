@@ -1,87 +1,154 @@
 // @vitest-environment jsdom
-// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
 // SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
 
 /**
- * A row in the admin Case types list opens its case type.
+ * Clicking a case type in the admin list opens it.
  *
- * The list is `selectable`, and with `selectable` set and `rowClickToView`
- * absent, nextcloud-vue's CnIndexPage and CnDataTable both treat a row-body
- * click as a selection toggle and RETURN before emitting `row-click`
- * (CnDataTable.onRowClick). So `@rowClick="selectCaseType"` could never fire,
- * and an admin clicking a row only ticked its checkbox, with no way to open a
- * case type from the list at all.
+ * THE DEFECT THIS PINS DOWN
+ * -------------------------
+ * `CaseTypeList` hands `CnIndexPage` `:selectable="true"` and listens for the
+ * row click. `CnIndexPage.onRowClick` only emits `row-click` when the page is
+ * NOT selectable, or when `rowClickToView` is set; a selectable page without
+ * it TOGGLES THE ROW'S CHECKBOX instead and returns. So a click on a case type
+ * selected it, `selectCaseType` never ran, and `CaseTypeDetail` was never
+ * mounted: no administrator could open an existing case type on the admin
+ * page, which is the only place `StatusesTab` lives. The Statuses tab that
+ * `case-type-authored-not-edited` built was unreachable. Nothing errored; the
+ * row simply turned grey. Found by `tests/e2e/case-type-status-authoring.spec.ts`,
+ * which clicked the row and waited five minutes for a tab that never came.
  *
- * What is asserted is the prop the library gates on. Rendering the list proves
- * nothing, because a list that cannot be opened renders exactly like one that
- * can, which is why nothing caught this.
+ * HOW IT IS TESTED WITHOUT TESTING A STUB
+ * ---------------------------------------
+ * The vitest suite aliases `@conduction/nextcloud-vue` to a stub, so a
+ * stubbed index page that emitted `row-click` on every click would pass with
+ * the defect in place. Two things are asserted instead, and together they
+ * are the chain:
+ *
+ *  1. the props `CaseTypeList` actually hands the index page ask for
+ *     navigation (`rowClickToView`) and not only for selection;
+ *  2. the library's OWN `onRowClick`, read from its source, still makes that
+ *     the rule. Importing the real SFC is not possible here (its imports pull
+ *     `@nextcloud/vue` CSS the transform pipeline cannot externalise), so the
+ *     rule is checked as text. If the library ever changes it, this reddens
+ *     and says which half moved, rather than the admin list quietly going
+ *     inert again.
  *
  * @spec openspec/specs/case-types/spec.md
  */
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
 
-// The shape CaseTypeList reads: `loading.caseType`, `collections.caseType`,
-// and `fetchSchema` in its created hook. Empty, because only the props handed
-// to CnIndexPage are under test, not the rows.
-vi.mock('../../src/store/modules/object.js', () => ({
-	useObjectStore: () => ({
-		loading: {},
-		collections: {},
-		fetchSchema: vi.fn(async () => ({})),
-		fetchCollection: vi.fn(async () => []),
+const indexPageProps = {}
+
+vi.mock('@conduction/nextcloud-vue', () => ({
+	CnIndexPage: defineComponent({
+		name: 'CnIndexPage',
+		props: {
+			title: { type: String, default: '' },
+			description: { type: String, default: '' },
+			schema: { type: Object, default: null },
+			objects: { type: Array, default: () => [] },
+			loading: { type: Boolean, default: false },
+			selectable: { type: Boolean, default: true },
+			rowClickToView: { type: Boolean, default: false },
+		},
+		emits: ['add', 'refresh', 'row-click'],
+		setup(props) {
+			// Keep the live props object, so the test reads what was passed
+			// at the moment it looks rather than a copy from mount time.
+			indexPageProps.current = props
+		},
+		render() {
+			return h('div', { class: 'cn-index-page-stub' })
+		},
 	}),
 }))
 
-// vitest.config aliases `@nextcloud/router` to a stub exporting only
-// generateUrl; this component's imports also need imagePath.
-vi.mock('@nextcloud/router', () => ({
-	generateUrl: (p) => p,
-	imagePath: (app, file) => `/${app}/img/${file}`,
+vi.mock('@nextcloud/vue', () => ({
+	NcButton: defineComponent({
+		name: 'NcButton',
+		render() {
+			return h('button', {}, this.$slots.default ? this.$slots.default() : [])
+		},
+	}),
+	NcLoadingIcon: defineComponent({
+		name: 'NcLoadingIcon',
+		render() {
+			return h('span')
+		},
+	}),
 }))
 
+vi.mock('../../src/store/modules/object.js', () => ({
+	useObjectStore: () => ({
+		loading: {},
+		collections: { caseType: [] },
+		fetchSchema: vi.fn(() => Promise.resolve(null)),
+		fetchCollection: vi.fn(() => Promise.resolve([])),
+	}),
+}))
+
+vi.mock('../../src/store/modules/settings.js', () => ({
+	useSettingsStore: () => ({ config: {} }),
+}))
+
+// Imported AFTER the mocks so the component sees the stubbed modules.
 const { default: CaseTypeList } =
 	await import('../../src/views/settings/CaseTypeList.vue')
 
-/**
- * A stand-in for nextcloud-vue's CnIndexPage that DECLARES the props under
- * test, so the mount records exactly what CaseTypeList hands it. The real
- * component's row-click gate is library code (CnDataTable.onRowClick); what can
- * regress in this app is the attribute that feeds it, so that is what is
- * captured.
- */
-const CnIndexPageStub = {
-	name: 'CnIndexPage',
-	props: [
-		'selectable',
-		'rowClickToView',
-		'title',
-		'description',
-		'schema',
-		'objects',
-		'loading',
-	],
-	template: '<div class="cn-index-page-stub" />',
-}
+/** The library's own index page, as shipped in node_modules. */
+const CN_INDEX_PAGE_SOURCE = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	'../../node_modules/@conduction/nextcloud-vue/src/components/CnIndexPage/CnIndexPage.vue',
+)
 
-describe('CaseTypeList', () => {
-	it('lets a row open its case type, not merely select it', () => {
-		const wrapper = shallowMount(CaseTypeList, {
-			global: {
-				mocks: { t: (_app, s) => s },
-				stubs: { CnIndexPage: CnIndexPageStub },
-			},
-		})
+describe('CaseTypeList row click', () => {
+	it('asks the index page for navigation on a row click, not only for selection', async () => {
+		const wrapper = mount(CaseTypeList)
+		await flushPromises()
 
-		const index = wrapper.findComponent(CnIndexPageStub)
-		expect(index.exists(), 'the list must render through CnIndexPage').toBe(true)
+		const props = indexPageProps.current
+		expect(props, 'CaseTypeList should render CnIndexPage').toBeTruthy()
 
-		// Both halves, because the bug is their combination. Selectable alone
-		// is fine; selectable WITHOUT rowClickToView is what swallows the click.
-		expect(index.props('selectable')).toBe(true)
+		// Selectable stays: the checkboxes are how several case types are
+		// picked at once. What must come with it is navigation on a click.
+		expect(props.selectable).toBe(true)
 		expect(
-			index.props('rowClickToView'),
-			'a selectable list needs rowClickToView, or a row click only toggles its checkbox',
+			props.rowClickToView,
+			'a selectable index page without rowClickToView turns a row click into a checkbox tick',
 		).toBe(true)
+
+		wrapper.unmount()
+	})
+
+	it('relies on a rule the library still has: selectable without rowClickToView only selects', () => {
+		const source = readFileSync(CN_INDEX_PAGE_SOURCE, 'utf8')
+		const handler = source.slice(
+			source.indexOf('onRowClick(row) {'),
+			source.indexOf("this.$emit('row-click', row)"),
+		)
+
+		expect(handler, 'CnIndexPage.onRowClick should still exist').not.toBe('')
+		expect(handler).toMatch(
+			/if \(this\.selectable && !this\.rowClickToView\) \{\s*this\.onSelect\([^\n]*\)\s*return\s*\}/,
+		)
+	})
+
+	it('turns the row click into the select event that opens the detail', async () => {
+		const wrapper = mount(CaseTypeList)
+		await flushPromises()
+
+		wrapper
+			.findComponent({ name: 'CnIndexPage' })
+			.vm.$emit('row-click', { id: 'ct-1', title: 'Bezwaar' })
+
+		expect(wrapper.emitted('select')).toEqual([['ct-1']])
+
+		wrapper.unmount()
 	})
 })
