@@ -41,6 +41,7 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseEmailMatchService;
+use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -63,13 +64,15 @@ class CaseEmailMatchJob extends TimedJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param ITimeFactory          $time    Time factory.
-	 * @param CaseEmailMatchService $matcher The matcher.
-	 * @param LoggerInterface       $logger  Logger.
+	 * @param ITimeFactory              $time        Time factory.
+	 * @param CaseEmailMatchService     $matcher     The matcher.
+	 * @param CaseEmailMatchPreferences $preferences Who opted in, and where a failure is recorded.
+	 * @param LoggerInterface           $logger      Logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly CaseEmailMatchService $matcher,
+		private readonly CaseEmailMatchPreferences $preferences,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -98,14 +101,14 @@ class CaseEmailMatchJob extends TimedJob {
 		$linked = 0;
 		$scanned = 0;
 		$failures = 0;
-		foreach ($this->matcher->optedInUsers() as $userId) {
+		foreach ($this->preferences->optedInUsers() as $userId) {
 			try {
 				$result = $this->matcher->runForUser(userId: (string)$userId);
 				$linked += $result['linked'];
 				$scanned += $result['scanned'];
 			} catch (Throwable $e) {
 				$failures++;
-				$this->matcher->writeStatus(userId: (string)$userId, linked: 0, scanned: 0, error: 'run_failed');
+				$this->preferences->writeStatus(userId: (string)$userId, linked: 0, scanned: 0, error: 'run_failed');
 				$this->logger->warning(
 					'Dossiq: email case matching failed for one user, continuing with the next: ' . $e->getMessage(),
 					['app' => Application::APP_ID, 'userId' => (string)$userId]

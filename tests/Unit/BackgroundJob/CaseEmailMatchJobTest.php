@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\CaseEmailMatchJob;
 use OCA\Dossiq\Service\CaseEmailMatchService;
+use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -48,13 +49,21 @@ class CaseEmailMatchJobTest extends TestCase {
 	private CaseEmailMatchService $matcher;
 
 	/**
-	 * Set up a matcher mock.
+	 * Who opted in, and where a failure is recorded.
+	 *
+	 * @var CaseEmailMatchPreferences&MockObject
+	 */
+	private CaseEmailMatchPreferences $preferences;
+
+	/**
+	 * Set up the mocks.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
 		parent::setUp();
 		$this->matcher = $this->createMock(CaseEmailMatchService::class);
+		$this->preferences = $this->createMock(CaseEmailMatchPreferences::class);
 	}//end setUp()
 
 	/**
@@ -66,6 +75,7 @@ class CaseEmailMatchJobTest extends TestCase {
 		$job = new CaseEmailMatchJob(
 			time: $this->createMock(ITimeFactory::class),
 			matcher: $this->matcher,
+			preferences: $this->preferences,
 			logger: new NullLogger()
 		);
 		(new ReflectionMethod($job, 'run'))->invoke($job, null);
@@ -82,6 +92,7 @@ class CaseEmailMatchJobTest extends TestCase {
 		$job = new CaseEmailMatchJob(
 			time: $this->createMock(ITimeFactory::class),
 			matcher: $this->matcher,
+			preferences: $this->preferences,
 			logger: new NullLogger()
 		);
 
@@ -95,7 +106,7 @@ class CaseEmailMatchJobTest extends TestCase {
 	 */
 	public function testTheInstanceToggleOffStopsTheJobBeforeAnyUser(): void {
 		$this->matcher->method('isInstanceEnabled')->willReturn(false);
-		$this->matcher->expects($this->never())->method('optedInUsers');
+		$this->preferences->expects($this->never())->method('optedInUsers');
 		$this->matcher->expects($this->never())->method('runForUser');
 
 		$this->runJob();
@@ -108,7 +119,7 @@ class CaseEmailMatchJobTest extends TestCase {
 	 */
 	public function testOnlyOptedInUsersAreRun(): void {
 		$this->matcher->method('isInstanceEnabled')->willReturn(true);
-		$this->matcher->method('optedInUsers')->willReturn(['alice', 'carol']);
+		$this->preferences->method('optedInUsers')->willReturn(['alice', 'carol']);
 
 		$ran = [];
 		$this->matcher->method('runForUser')->willReturnCallback(
@@ -130,7 +141,7 @@ class CaseEmailMatchJobTest extends TestCase {
 	 */
 	public function testOneUsersFailureDoesNotStopTheNext(): void {
 		$this->matcher->method('isInstanceEnabled')->willReturn(true);
-		$this->matcher->method('optedInUsers')->willReturn(['alice', 'carol']);
+		$this->preferences->method('optedInUsers')->willReturn(['alice', 'carol']);
 
 		$ran = [];
 		$this->matcher->method('runForUser')->willReturnCallback(
@@ -143,7 +154,7 @@ class CaseEmailMatchJobTest extends TestCase {
 				return ['linked' => 0, 'scanned' => 1];
 			}
 		);
-		$this->matcher->expects($this->once())
+		$this->preferences->expects($this->once())
 			->method('writeStatus')
 			->with('alice', 0, 0, 'run_failed');
 

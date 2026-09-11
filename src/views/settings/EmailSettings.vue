@@ -163,7 +163,7 @@
 			}}</label>
 			<NcInputField
 				id="email_case_matching_pattern"
-				v-model="form.email_case_matching_pattern"
+				v-model="matching.email_case_matching_pattern"
 				:disabled="!writable || loading"
 				:placeholder="defaultCasePattern"
 				data-testid="email-case-matching-pattern" />
@@ -319,12 +319,17 @@ export default {
 				email_from_address: '',
 				email_from_name: '',
 				email_recipient_allowlist: '',
+			},
+
+			// Email-to-case matching has its own endpoint, which validates the
+			// pattern before anything is stored.
+			matching: {
 				email_case_matching_enabled: 'no',
 				email_case_matching_pattern: '',
 			},
 
 			// Shown as the placeholder, so an empty field says what it means.
-			// Mirrors CaseEmailMatchService::DEFAULT_PATTERN.
+			// Mirrors CaseNumberRecognizer::DEFAULT_PATTERN.
 			defaultCasePattern:
 				'/(?<![\\w-])(?:\\[)?(?:[A-Z]{2,10}-)?((?:19|20)\\d{2}-\\d{4,6})(?:\\])?(?![\\w-])/u',
 
@@ -408,7 +413,7 @@ export default {
 			 * @return {boolean} Whether matching is on.
 			 */
 			get() {
-				return this.form.email_case_matching_enabled === 'yes'
+				return this.matching.email_case_matching_enabled === 'yes'
 			},
 
 			/**
@@ -417,7 +422,7 @@ export default {
 			 * @return {void}
 			 */
 			set(value) {
-				this.form.email_case_matching_enabled = value ? 'yes' : 'no'
+				this.matching.email_case_matching_enabled = value ? 'yes' : 'no'
 			},
 		},
 
@@ -437,6 +442,7 @@ export default {
 	 */
 	async mounted() {
 		await this.load()
+		await this.loadMatching()
 		await this.loadCaseTypes()
 	},
 
@@ -464,6 +470,70 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Read the email-to-case matching switch and pattern.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async loadMatching() {
+			try {
+				const response = await fetch(
+					generateUrl('/apps/dossiq/api/settings/email-case-matching/instance'),
+					{ headers: { requesttoken: OC.requestToken } },
+				)
+				if (response.ok) {
+					const data = await response.json()
+					Object.keys(this.matching).forEach((key) => {
+						if (data[key] !== undefined && data[key] !== null) {
+							this.matching[key] = String(data[key])
+						}
+					})
+				}
+			} catch {
+				// Non-fatal: the switch stays off, which is the stored default.
+			}
+		},
+
+		/**
+		 * Save the matching switch and pattern first, so a refused pattern
+		 * stops the whole save before anything is written.
+		 *
+		 * @return {Promise<boolean>} Whether the matching settings were saved.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async saveMatching() {
+			const response = await fetch(
+				generateUrl('/apps/dossiq/api/settings/email-case-matching/instance'),
+				{
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: OC.requestToken,
+					},
+					body: JSON.stringify(this.matching),
+				},
+			)
+			if (response.status === 400) {
+				this.testResult = {
+					type: 'error',
+					message: t(
+						'dossiq',
+						'This pattern cannot find case numbers. Check that it is valid and has a capture group.',
+					),
+				}
+				return false
+			}
+			if (!response.ok) {
+				this.testResult = {
+					type: 'error',
+					message: t('dossiq', 'Could not save mailbox settings.'),
+				}
+				return false
+			}
+			return true
 		},
 
 		/**
@@ -496,6 +566,9 @@ export default {
 			this.saving = true
 			this.testResult = null
 			try {
+				if ((await this.saveMatching()) === false) {
+					return
+				}
 				const payload = { ...this.form }
 				// Never resend the mask back as a real password.
 				if (payload.email_imap_password === '') {
@@ -518,16 +591,6 @@ export default {
 						message: t('dossiq', 'Mailbox settings saved.'),
 					}
 					await this.load()
-				} else if (response.status === 400) {
-					// The only field the server refuses on its own is the
-					// case number pattern; nothing was saved.
-					this.testResult = {
-						type: 'error',
-						message: t(
-							'dossiq',
-							'This pattern cannot find case numbers. Check that it is valid and has a capture group.',
-						),
-					}
 				} else {
 					this.testResult = {
 						type: 'error',

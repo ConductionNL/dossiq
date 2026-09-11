@@ -556,9 +556,11 @@ $extra = [
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#testImap',       'url' => '/api/settings/email/test-imap',                                 'verb' => 'POST'],
-    // The caller's own email-to-case matching settings (email-case-matching).
+    // Email-to-case matching (email-case-matching): each user's own settings, and the instance's.
     ['name' => 'caseEmailMatch#getSettings',   'url' => '/api/settings/email-case-matching',                             'verb' => 'GET'],
     ['name' => 'caseEmailMatch#saveSettings',  'url' => '/api/settings/email-case-matching',                             'verb' => 'PUT'],
+    ['name' => 'caseEmailMatch#getInstanceSettings',  'url' => '/api/settings/email-case-matching/instance',     'verb' => 'GET'],
+    ['name' => 'caseEmailMatch#saveInstanceSettings', 'url' => '/api/settings/email-case-matching/instance',     'verb' => 'PUT'],
 
         // ── Template (workflow step templates) ──────────────────────────
     ['name' => 'template#index',    'url' => '/api/templates',           'verb' => 'GET'],

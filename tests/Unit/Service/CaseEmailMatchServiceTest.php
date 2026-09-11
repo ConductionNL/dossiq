@@ -34,6 +34,8 @@ use Generator;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseEmailMatchService;
+use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
+use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Config\IUserConfig;
@@ -50,6 +52,8 @@ use Stringable;
  * Unit tests for CaseEmailMatchService.
  *
  * @covers \OCA\Dossiq\Service\CaseEmailMatchService
+ * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
+ * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
  */
 class CaseEmailMatchServiceTest extends TestCase {
 
@@ -145,6 +149,20 @@ class CaseEmailMatchServiceTest extends TestCase {
 	private array $logs = [];
 
 	/**
+	 * The recognizer the last built service uses.
+	 *
+	 * @var CaseNumberRecognizer
+	 */
+	private CaseNumberRecognizer $recognizer;
+
+	/**
+	 * The preferences the last built service uses.
+	 *
+	 * @var CaseEmailMatchPreferences
+	 */
+	private CaseEmailMatchPreferences $preferences;
+
+	/**
 	 * Whether the SettingsService was asked for the object service.
 	 *
 	 * @var boolean
@@ -166,9 +184,9 @@ class CaseEmailMatchServiceTest extends TestCase {
 		];
 		$this->prefs = [
 			self::OWNER => [
-				CaseEmailMatchService::PREF_ENABLED => true,
-				CaseEmailMatchService::PREF_ACCOUNT => self::ACCOUNT,
-				CaseEmailMatchService::PREF_CURSOR => 100,
+				CaseEmailMatchPreferences::PREF_ENABLED => true,
+				CaseEmailMatchPreferences::PREF_ACCOUNT => self::ACCOUNT,
+				CaseEmailMatchPreferences::PREF_CURSOR => 100,
 			],
 		];
 		$this->cases = [
@@ -519,16 +537,49 @@ class CaseEmailMatchServiceTest extends TestCase {
 			}
 		};
 
+		$this->recognizer = new CaseNumberRecognizer(
+			settingsService: $settings,
+			caseAccess: $guard,
+			logger: $logger
+		);
+		$this->preferences = new CaseEmailMatchPreferences(
+			userConfig: $userConfig,
+			messages: $messages,
+			logger: $logger
+		);
+
 		return new CaseEmailMatchService(
 			settingsService: $settings,
-			userConfig: $userConfig,
+			preferences: $this->preferences,
+			recognizer: $this->recognizer,
 			userManager: $userManager,
 			messages: $messages,
-			caseAccess: $guard,
 			container: $container,
 			logger: $logger
 		);
 	}//end service()
+
+	/**
+	 * The recognizer, built over the same fakes as the service.
+	 *
+	 * @return CaseNumberRecognizer The recognizer.
+	 */
+	private function recognizer(): CaseNumberRecognizer {
+		$this->service();
+
+		return $this->recognizer;
+	}//end recognizer()
+
+	/**
+	 * The preferences, built over the same fakes as the service.
+	 *
+	 * @return CaseEmailMatchPreferences The preferences.
+	 */
+	private function preferences(): CaseEmailMatchPreferences {
+		$this->service();
+
+		return $this->preferences;
+	}//end preferences()
 
 	/**
 	 * Put one message in Alice's mailbox.
@@ -558,7 +609,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 * @return string|null The error code.
 	 */
 	private function statusError(): ?string {
-		$status = json_decode((string)($this->prefs[self::OWNER][CaseEmailMatchService::PREF_STATUS] ?? '{}'), true);
+		$status = json_decode((string)($this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_STATUS] ?? '{}'), true);
 
 		return ($status['error'] ?? null);
 	}//end statusError()
@@ -592,7 +643,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	public function testDefaultPatternYieldsTheIdentifierTheSchemaHolds(string $text, array $expected): void {
 		$this->assertSame(
 			$expected,
-			$this->service()->extractCaseNumberCandidates(text: $text, pattern: CaseEmailMatchService::DEFAULT_PATTERN)
+			$this->recognizer()->extractCaseNumberCandidates(text: $text, pattern: CaseNumberRecognizer::DEFAULT_PATTERN)
 		);
 	}//end testDefaultPatternYieldsTheIdentifierTheSchemaHolds()
 
@@ -629,7 +680,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	public function testDefaultPatternRefusesLookalikes(string $text): void {
 		$this->assertSame(
 			[],
-			$this->service()->extractCaseNumberCandidates(text: $text, pattern: CaseEmailMatchService::DEFAULT_PATTERN)
+			$this->recognizer()->extractCaseNumberCandidates(text: $text, pattern: CaseNumberRecognizer::DEFAULT_PATTERN)
 		);
 	}//end testDefaultPatternRefusesLookalikes()
 
@@ -640,7 +691,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 */
 	public static function patterns(): array {
 		return [
-			'the default' => [CaseEmailMatchService::DEFAULT_PATTERN, true],
+			'the default' => [CaseNumberRecognizer::DEFAULT_PATTERN, true],
 			'a named group' => ['/(?<nummer>\d{4}-\d{4})/', true],
 			'bracket delimiters' => ['{(\d{4}-\d{4})}', true],
 			'empty' => ['', false],
@@ -662,7 +713,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 */
 	#[DataProvider('patterns')]
 	public function testPatternValidation(string $pattern, bool $usable): void {
-		$reason = $this->service()->validatePattern(pattern: $pattern);
+		$reason = $this->recognizer()->validatePattern(pattern: $pattern);
 
 		if ($usable === true) {
 			$this->assertNull($reason);
@@ -678,7 +729,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnInvalidConfiguredPatternRefusesTheRun(): void {
-		$this->config[CaseEmailMatchService::PATTERN_KEY] = '/(\d{4}/';
+		$this->config[CaseNumberRecognizer::PATTERN_KEY] = '/(\d{4}/';
 		$this->receive(id: 101, subject: 'Aanvulling zaak 2026-0042');
 
 		$result = $this->service()->runForUser(userId: self::OWNER);
@@ -784,7 +835,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 		$service = $this->service();
 
 		$service->runForUser(userId: self::OWNER);
-		$this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR] = 100;
+		$this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR] = 100;
 		$second = $service->runForUser(userId: self::OWNER);
 
 		$this->assertCount(1, $this->leaf->links);
@@ -877,9 +928,9 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 */
 	public function testAUserWhoHasNotOptedInIsNotScanned(): void {
 		$this->prefs['bob'] = [
-			CaseEmailMatchService::PREF_ENABLED => false,
-			CaseEmailMatchService::PREF_ACCOUNT => 9,
-			CaseEmailMatchService::PREF_CURSOR => 100,
+			CaseEmailMatchPreferences::PREF_ENABLED => false,
+			CaseEmailMatchPreferences::PREF_ACCOUNT => 9,
+			CaseEmailMatchPreferences::PREF_CURSOR => 100,
 		];
 		$this->receive(id: 101, subject: 'Aanvulling zaak 2026-0042');
 		$service = $this->service();
@@ -888,7 +939,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 
 		$this->assertSame(['linked' => 0, 'scanned' => 0], $result);
 		$this->assertSame(0, $this->mailboxReads);
-		$this->assertSame([self::OWNER], iterator_to_array($service->optedInUsers(), false));
+		$this->assertSame([self::OWNER], iterator_to_array($this->preferences->optedInUsers(), false));
 	}//end testAUserWhoHasNotOptedInIsNotScanned()
 
 	/**
@@ -907,7 +958,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 
 		$this->assertSame(['case-42', 'case-44'], $this->linkedCases());
 		$this->assertSame(['linked' => 2, 'scanned' => 3], $result);
-		$this->assertSame(103, $this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		$this->assertSame(103, $this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 		$this->assertContains('warning', array_column($this->logs, 'level'));
 	}//end testOnePoisonedMessageDoesNotStopTheBatch()
 
@@ -922,7 +973,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 
 		$this->service()->runForUser(userId: self::OWNER);
 
-		$this->assertSame(104, $this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		$this->assertSame(104, $this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 	}//end testTheCursorAdvancesPastTheProcessedMail()
 
 	/**
@@ -931,7 +982,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFirstRunStartsAtTheNewestMessage(): void {
-		unset($this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		unset($this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 		$this->receive(id: 101, subject: 'Zaak 2026-0042');
 
 		$result = $this->service()->runForUser(userId: self::OWNER);
@@ -939,7 +990,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 		$this->assertSame(['linked' => 0, 'scanned' => 0], $result);
 		$this->assertSame(0, $this->mailboxReads);
 		$this->assertSame([], $this->leaf->links);
-		$this->assertSame(500, $this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		$this->assertSame(500, $this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 	}//end testAFirstRunStartsAtTheNewestMessage()
 
 	/**
@@ -1115,7 +1166,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 		$this->prefs = [];
 
 		try {
-			$this->service()->saveUserSettings(userId: self::OWNER, enabled: true, account: 99);
+			$this->preferences()->saveUserSettings(userId: self::OWNER, enabled: true, account: 99);
 			$this->fail('A foreign account was accepted.');
 		} catch (InvalidArgumentException $e) {
 			$this->assertSame([], $this->prefs);
@@ -1130,10 +1181,10 @@ class CaseEmailMatchServiceTest extends TestCase {
 	public function testSwitchingMatchingOnStartsAtTheNewestMessage(): void {
 		$this->prefs = [];
 
-		$saved = $this->service()->saveUserSettings(userId: self::OWNER, enabled: true, account: self::ACCOUNT);
+		$saved = $this->preferences()->saveUserSettings(userId: self::OWNER, enabled: true, account: self::ACCOUNT);
 
 		$this->assertSame(['enabled' => true, 'account' => self::ACCOUNT], $saved);
-		$this->assertSame(500, $this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		$this->assertSame(500, $this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 	}//end testSwitchingMatchingOnStartsAtTheNewestMessage()
 
 	/**
@@ -1142,8 +1193,8 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testSavingUnchangedSettingsKeepsTheCursor(): void {
-		$this->service()->saveUserSettings(userId: self::OWNER, enabled: true, account: self::ACCOUNT);
+		$this->preferences()->saveUserSettings(userId: self::OWNER, enabled: true, account: self::ACCOUNT);
 
-		$this->assertSame(100, $this->prefs[self::OWNER][CaseEmailMatchService::PREF_CURSOR]);
+		$this->assertSame(100, $this->prefs[self::OWNER][CaseEmailMatchPreferences::PREF_CURSOR]);
 	}//end testSavingUnchangedSettingsKeepsTheCursor()
 }//end class

@@ -33,7 +33,6 @@ use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
@@ -327,7 +326,6 @@ class IntegrationProbesRecordTest extends TestCase {
 			userSession: $userSession,
 			groupManager: $this->createMock(IGroupManager::class),
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
-			caseEmailMatch: $this->createMock(CaseEmailMatchService::class),
 		);
 	}//end emailController()
 

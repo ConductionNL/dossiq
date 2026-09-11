@@ -15,30 +15,22 @@
  * The transport is lifted in shape from pipelinq's `EmailMatchService`: a
  * per-user cursor over `mail_messages`, a batch cap, the leaf resolved through
  * the container, a `getLinkedEmails` pre-check before `linkEmail`, and a refusal
- * on an unconfigured register. Only the recognizer is new, which is the seam
- * design decision D6 wants kept clean so the core can later move into the leaf.
+ * on an unconfigured register. Only the recognizer is new, and it lives in
+ * {@see CaseNumberRecognizer}, the seam design decision D6 wants kept clean so
+ * the core can later move into the leaf.
  *
- * 🔴 A CASE NUMBER IN A SUBJECT IS WRITTEN BY WHOEVER SENT THE MAIL. Anyone can
- * put `2026-0042` in a subject line, so recognising it must never be enough to
- * attach the mail to a case its recipient has no business with, or to a case in
- * another organisation. Three things stand between the two:
+ * 🔴 THE WHOLE BATCH RUNS AS THE MAILBOX OWNER. A case number in a subject is
+ * written by whoever sent the mail, so it must resolve only to cases the owner
+ * may see. The batch runs inside `ObjectService::runAs($owner)`, which puts the
+ * owner in the session for every OpenRegister read, and the recognizer adds
+ * the per-case checks (see its class comment).
  *
- *  - the whole batch runs inside `ObjectService::runAs($owner)`, so the
- *    identifier is resolved with the MAILBOX OWNER's OpenRegister RBAC and
- *    multitenancy (their active organisation and its hierarchy). A case they
- *    cannot see does not come back from the search;
- *  - every case that does come back must also pass
- *    `CaseAccessGuard::hasCaseReadAccess()`, the same per-case check every
- *    dossiq case endpoint uses: the owner handles the case, is among its
- *    assignees, or is an administrator;
- *  - an identifier that resolves to more than one visible case links to none.
- *    Picking one would be a guess, and the guess is exactly the cross-case
- *    attachment this guard exists to prevent.
- *
- * pipelinq ran its lookups with no user at all. In a background job that means
- * a search with no subject, and its `linkEmail()` calls then refused with 401
- * because the leaf needs a session user. `runAs()` supplies that user too,
- * which is why the link is recorded as made by the mailbox owner.
+ * This is also where pipelinq's shape could not be lifted as-is. It runs its
+ * lookups in a cron job with no session user, and OpenRegister reads exactly
+ * that (CLI, no user) as a trusted system context: the organisation filter
+ * answers "every organisation". Its `linkEmail()` calls then refuse with 401,
+ * because the leaf requires a session user. `runAs()` fixes both: the scope is
+ * the owner's, and the link is recorded as made by the owner.
  *
  * Nothing here creates anything. No match means no write of any kind, and a
  * miss is recorded only as a scanned count (REQ-ECM-005).
@@ -65,10 +57,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
+use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Support\SuppressesWarnings;
-use OCP\Config\IUserConfig;
 use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Container\ContainerInterface;
@@ -78,28 +69,9 @@ use Throwable;
 /**
  * Automatic, idempotent attachment of Nextcloud Mail messages to cases.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Orchestrates the Mail tables,
- *     OpenRegister's object and email-leaf services, per-user preferences and
- *     the case access guard; each is a required collaborator of one run.
- *
  * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
  */
 class CaseEmailMatchService {
-
-	use SearchesObjects;
-	use SuppressesWarnings;
-
-	/**
-	 * The recognizer every instance starts with (design D2).
-	 *
-	 * Capture group 1 is the bare identifier the `case` schema materialises
-	 * (`2026-0042`). The optional uppercase prefix and brackets accept the
-	 * legacy `[ZAAK-2026-000142]` tag as decoration, and the boundary guards
-	 * keep `12026-00421` and phone-number fragments out.
-	 *
-	 * @var string
-	 */
-	public const DEFAULT_PATTERN = '/(?<![\w-])(?:\[)?(?:[A-Z]{2,10}-)?((?:19|20)\d{2}-\d{4,6})(?:\])?(?![\w-])/u';
 
 	/**
 	 * Instance toggle. Anything but an explicit yes means off.
@@ -107,56 +79,6 @@ class CaseEmailMatchService {
 	 * @var string
 	 */
 	public const INSTANCE_TOGGLE_KEY = 'email_case_matching_enabled';
-
-	/**
-	 * App-config key for a configured recognizer. Empty means the default.
-	 *
-	 * @var string
-	 */
-	public const PATTERN_KEY = 'email_case_matching_pattern';
-
-	/**
-	 * User preference: whether this user's mail is matched.
-	 *
-	 * Per-user settings live in user preferences, not in app config keyed by
-	 * `<prefix>.<uid>` as pipelinq keeps them. App-config keys are capped at 64
-	 * characters and a user id may be 64 characters on its own, so that shape
-	 * throws for exactly the long LDAP and SSO ids a municipality uses.
-	 *
-	 * @var string
-	 */
-	public const PREF_ENABLED = 'case_matching_enabled';
-
-	/**
-	 * User preference: the Mail account id whose messages are matched.
-	 *
-	 * @var string
-	 */
-	public const PREF_ACCOUNT = 'case_matching_account';
-
-	/**
-	 * User preference: the last Mail message id processed.
-	 *
-	 * @var string
-	 */
-	public const PREF_CURSOR = 'case_matching_cursor';
-
-	/**
-	 * User preference: JSON status of the last run.
-	 *
-	 * @var string
-	 */
-	public const PREF_STATUS = 'case_matching_status';
-
-	/**
-	 * The cursor value that means "never started".
-	 *
-	 * Distinct from 0, which is a real starting point: an account that held no
-	 * mail when matching was switched on.
-	 *
-	 * @var int
-	 */
-	public const CURSOR_UNSET = -1;
 
 	/**
 	 * Most messages one run reads for one user.
@@ -175,20 +97,20 @@ class CaseEmailMatchService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Register/schema config and the object service.
-	 * @param IUserConfig        $userConfig      Per-user preferences.
-	 * @param IUserManager       $userManager     Resolves the mailbox owner.
-	 * @param MailMessageSource  $messages        Mail accounts and messages.
-	 * @param CaseAccessGuard    $caseAccess      The per-case read check.
-	 * @param ContainerInterface $container       Resolves OpenRegister's email leaf.
-	 * @param LoggerInterface    $logger          Logger.
+	 * @param SettingsService           $settingsService Register/schema config and the object service.
+	 * @param CaseEmailMatchPreferences $preferences     Per-user settings, cursor and status.
+	 * @param CaseNumberRecognizer      $recognizer      Case numbers in text, resolved to cases.
+	 * @param IUserManager              $userManager     Resolves the mailbox owner.
+	 * @param MailMessageSource         $messages        Mail accounts and messages.
+	 * @param ContainerInterface        $container       Resolves OpenRegister's email leaf.
+	 * @param LoggerInterface           $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly IUserConfig $userConfig,
+		private readonly CaseEmailMatchPreferences $preferences,
+		private readonly CaseNumberRecognizer $recognizer,
 		private readonly IUserManager $userManager,
 		private readonly MailMessageSource $messages,
-		private readonly CaseAccessGuard $caseAccess,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -208,126 +130,6 @@ class CaseEmailMatchService {
 	}//end isInstanceEnabled()
 
 	/**
-	 * The users who have switched matching on for themselves.
-	 *
-	 * @return iterable<string> Their user ids.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function optedInUsers(): iterable {
-		return $this->userConfig->searchUsersByValueBool(Application::APP_ID, self::PREF_ENABLED, true);
-	}//end optedInUsers()
-
-	/**
-	 * Why a recognizer cannot be used, or null when it can.
-	 *
-	 * It must compile and contain at least one capture group, because group 1
-	 * is the identifier. A recognizer that silently matches nothing is the
-	 * classic silent failure, so the caller refuses the run instead.
-	 *
-	 * The group count is taken from PCRE itself rather than by reading the
-	 * pattern: the body is wrapped as `(?:body)|` so it always matches the empty
-	 * string, and with PREG_UNMATCHED_AS_NULL every group is then reported.
-	 *
-	 * @param string $pattern A full PCRE pattern, delimiters included.
-	 *
-	 * @return string|null The reason it is unusable, or null.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function validatePattern(string $pattern): ?string {
-		if (trim($pattern) === '') {
-			return 'The pattern is empty.';
-		}
-
-		$compiled = $this->withoutWarnings(static fn (): int|false => preg_match($pattern, ''));
-		if ($compiled === false) {
-			return 'The pattern does not compile.';
-		}
-
-		$delimiter = $pattern[0];
-		$closing = (['(' => ')', '{' => '}', '[' => ']', '<' => '>'][$delimiter] ?? $delimiter);
-		$end = strrpos($pattern, $closing);
-		if ($end === false || $end === 0) {
-			return 'The pattern has no closing delimiter.';
-		}
-
-		$probe = $delimiter . '(?:' . substr($pattern, 1, ($end - 1)) . "\n)|" . $closing . substr($pattern, ($end + 1));
-		$groups = [];
-		$probed = $this->withoutWarnings(
-			static function () use ($probe, &$groups): int|false {
-				return preg_match($probe, '', $groups, PREG_UNMATCHED_AS_NULL);
-			}
-		);
-		if ($probed === false || (count($groups) - 1) < 1) {
-			return 'The pattern has no capture group for the case number.';
-		}
-
-		return null;
-	}//end validatePattern()
-
-	/**
-	 * The recognizer this instance uses, validated, or null when it must not run.
-	 *
-	 * @return string|null The pattern, or null after logging why it was refused.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function loadPattern(): ?string {
-		$pattern = trim($this->settingsService->getConfigValue(self::PATTERN_KEY));
-		if ($pattern === '') {
-			$pattern = self::DEFAULT_PATTERN;
-		}
-
-		$reason = $this->validatePattern(pattern: $pattern);
-		if ($reason !== null) {
-			$this->logger->error(
-				'Dossiq: email case matching refused to run, the configured ' . self::PATTERN_KEY . ' is unusable: ' . $reason,
-				['app' => Application::APP_ID]
-			);
-			return null;
-		}
-
-		return $pattern;
-	}//end loadPattern()
-
-	/**
-	 * The distinct case-number candidates a text contains, in order of appearance.
-	 *
-	 * @param string $text    The text to scan.
-	 * @param string $pattern A validated recognizer.
-	 *
-	 * @return array<int, string> The identifiers captured by group 1.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function extractCaseNumberCandidates(string $text, string $pattern): array {
-		if (trim($text) === '') {
-			return [];
-		}
-
-		$matches = [];
-		$count = $this->withoutWarnings(
-			static function () use ($pattern, $text, &$matches): int|false {
-				return preg_match_all($pattern, $text, $matches);
-			}
-		);
-		if ($count === false || $count === 0) {
-			return [];
-		}
-
-		$candidates = [];
-		foreach (($matches[1] ?? []) as $candidate) {
-			$candidate = trim((string)$candidate);
-			if ($candidate !== '' && in_array($candidate, $candidates, true) === false) {
-				$candidates[] = $candidate;
-			}
-		}
-
-		return $candidates;
-	}//end extractCaseNumberCandidates()
-
-	/**
 	 * Run one matching pass over one user's mail.
 	 *
 	 * @param string $userId The mailbox owner.
@@ -342,7 +144,7 @@ class CaseEmailMatchService {
 			return $nothing;
 		}
 
-		$settings = $this->getUserSettings(userId: $userId);
+		$settings = $this->preferences->getUserSettings(userId: $userId);
 		$owner = $this->userManager->get($userId);
 		if ($settings['enabled'] === false || $settings['account'] <= 0 || $owner === null) {
 			return $nothing;
@@ -350,27 +152,21 @@ class CaseEmailMatchService {
 
 		$context = $this->prepareRun(owner: $owner, accountId: $settings['account']);
 		if (is_string($context) === true) {
-			$this->writeStatus(userId: $userId, linked: 0, scanned: 0, error: $context);
+			$this->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: $context);
 			return $nothing;
 		}
 
-		$cursor = $this->readCursor(userId: $userId);
-		if ($cursor === self::CURSOR_UNSET) {
+		$cursor = $this->preferences->readCursor(userId: $userId);
+		if ($cursor === CaseEmailMatchPreferences::CURSOR_UNSET) {
 			// First run on this account: start at what is already there, so
 			// switching matching on does not retro-link a mailbox history.
-			$this->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $settings['account']));
-			$this->writeStatus(userId: $userId, linked: 0, scanned: 0, error: null);
+			$this->preferences->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $settings['account']));
+			$this->preferences->writeStatus(userId: $userId, linked: 0, scanned: 0, error: null);
 			return $nothing;
 		}
 
-		$batch = $this->messages->listMessagesSince(
-			accountId: $settings['account'],
-			sinceId: $cursor,
-			limit: self::BATCH_SIZE
-		);
-
 		$outcome = $this->processBatchAsOwner(
-			batch: $batch,
+			batch: $this->messages->listMessagesSince(accountId: $settings['account'], sinceId: $cursor, limit: self::BATCH_SIZE),
 			context: $context,
 			owner: $owner,
 			accountId: $settings['account'],
@@ -378,136 +174,13 @@ class CaseEmailMatchService {
 		);
 
 		if ($outcome['cursor'] > $cursor) {
-			$this->writeCursor(userId: $userId, cursor: $outcome['cursor']);
+			$this->preferences->writeCursor(userId: $userId, cursor: $outcome['cursor']);
 		}
 
-		$this->writeStatus(userId: $userId, linked: $outcome['linked'], scanned: $outcome['scanned'], error: null);
+		$this->preferences->writeStatus(userId: $userId, linked: $outcome['linked'], scanned: $outcome['scanned'], error: null);
 
 		return ['linked' => $outcome['linked'], 'scanned' => $outcome['scanned']];
 	}//end runForUser()
-
-	/**
-	 * A user's matching settings.
-	 *
-	 * An unreadable preference reads as off: there is no failure that should
-	 * start scanning somebody's mailbox.
-	 *
-	 * @param string $userId The user.
-	 *
-	 * @return array{enabled: bool, account: int} The settings.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function getUserSettings(string $userId): array {
-		try {
-			return [
-				'enabled' => $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, false),
-				'account' => $this->userConfig->getValueInt($userId, Application::APP_ID, self::PREF_ACCOUNT, 0),
-			];
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: reading email case matching settings failed: ' . $e->getMessage());
-			return ['enabled' => false, 'account' => 0];
-		}
-	}//end getUserSettings()
-
-	/**
-	 * Save a user's matching settings.
-	 *
-	 * The account must be the user's own. Switching matching on, or pointing it
-	 * at another account, restarts the cursor at that account's current newest
-	 * message, so nothing already in the mailbox is linked retroactively.
-	 *
-	 * @param string $userId  The user.
-	 * @param bool   $enabled Whether to match this user's mail.
-	 * @param int    $account The Mail account to match, 0 for none.
-	 *
-	 * @return array{enabled: bool, account: int} The settings now stored.
-	 *
-	 * @throws \InvalidArgumentException When the account is not the user's.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function saveUserSettings(string $userId, bool $enabled, int $account): array {
-		if ($account > 0 && $this->messages->ownsAccount(accountId: $account, userId: $userId) === false) {
-			throw new \InvalidArgumentException('That Mail account is not yours.');
-		}
-
-		$account = max(0, $account);
-		$before = $this->getUserSettings(userId: $userId);
-		$restart = ($enabled === true
-			&& $account > 0
-			&& ($before['enabled'] === false || $before['account'] !== $account));
-
-		$this->userConfig->setValueBool($userId, Application::APP_ID, self::PREF_ENABLED, $enabled);
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_ACCOUNT, $account);
-		if ($restart === true) {
-			$this->writeCursor(userId: $userId, cursor: $this->messages->maxMessageId(accountId: $account));
-		}
-
-		return ['enabled' => $enabled, 'account' => $account];
-	}//end saveUserSettings()
-
-	/**
-	 * The status of a user's last run.
-	 *
-	 * @param string $userId The user.
-	 *
-	 * @return array{lastRunAt: ?string, linked: int, scanned: int, error: ?string} The status.
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function getStatus(string $userId): array {
-		$empty = ['lastRunAt' => null, 'linked' => 0, 'scanned' => 0, 'error' => null];
-		try {
-			$json = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STATUS, '');
-		} catch (Throwable $e) {
-			return $empty;
-		}
-
-		$decoded = json_decode($json, true);
-		if (is_array($decoded) === false) {
-			return $empty;
-		}
-
-		return [
-			'lastRunAt' => (isset($decoded['lastRunAt']) === true ? (string)$decoded['lastRunAt'] : null),
-			'linked' => (int)($decoded['linked'] ?? 0),
-			'scanned' => (int)($decoded['scanned'] ?? 0),
-			'error' => (isset($decoded['error']) === true ? (string)$decoded['error'] : null),
-		];
-	}//end getStatus()
-
-	/**
-	 * Record the outcome of a user's run.
-	 *
-	 * The error is a short code the settings screen translates, never message
-	 * content: the matcher stores nothing about a mail but counts.
-	 *
-	 * @param string      $userId  The user.
-	 * @param int         $linked  New links the run made.
-	 * @param int         $scanned Messages the run read.
-	 * @param string|null $error   Why the run refused, or null.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
-	 */
-	public function writeStatus(string $userId, int $linked, int $scanned, ?string $error): void {
-		$payload = json_encode(
-			[
-				'lastRunAt' => gmdate('c'),
-				'linked' => $linked,
-				'scanned' => $scanned,
-				'error' => $error,
-			]
-		);
-
-		try {
-			$this->userConfig->setValueString($userId, Application::APP_ID, self::PREF_STATUS, (string)$payload);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: recording the email case matching status failed: ' . $e->getMessage());
-		}
-	}//end writeStatus()
 
 	/**
 	 * Everything one run needs, or the code for why it must not run.
@@ -532,7 +205,7 @@ class CaseEmailMatchService {
 			return 'account_not_owned';
 		}
 
-		$pattern = $this->loadPattern();
+		$pattern = $this->recognizer->loadPattern();
 		if ($pattern === null) {
 			return 'pattern_invalid';
 		}
@@ -553,8 +226,8 @@ class CaseEmailMatchService {
 		}
 
 		if (method_exists($objectService, 'runAs') === false) {
-			// Without runAs() the lookup would run with no subject, or with
-			// whoever the process happens to be. Neither is the mailbox owner.
+			// Without runAs() the lookup would run with no subject, which a cron
+			// process is: OpenRegister then scopes it to every organisation.
 			$this->logger->warning(
 				'Dossiq: OpenRegister has no runAs(); email case matching is refused rather than resolving cases outside the mailbox owner\'s scope',
 				['app' => Application::APP_ID]
@@ -585,11 +258,11 @@ class CaseEmailMatchService {
 	 * organisation scope, and the leaf's `linkEmail()` has the session user it
 	 * requires.
 	 *
-	 * @param array<int, array{id: int, uid: string, subject: string, preview: string}> $batch     The messages.
+	 * @param array<int, array{id: int, uid: string, subject: string, preview: string}> $batch The messages.
 	 * @param array{objectService: object, linkService: object, pattern: string, register: string, schema: string} $context The run context.
-	 * @param IUser                                                                    $owner     The mailbox owner.
-	 * @param int                                                                      $accountId The Mail account.
-	 * @param int                                                                      $cursor    The cursor the batch started after.
+	 * @param IUser $owner     The mailbox owner.
+	 * @param int   $accountId The Mail account.
+	 * @param int   $cursor    The cursor the batch started after.
 	 *
 	 * @return array{linked: int, scanned: int, cursor: int} What the batch did.
 	 */
@@ -623,11 +296,11 @@ class CaseEmailMatchService {
 	 * runs. The cursor advances over every message that completed, as
 	 * pipelinq's does, so a message that fails at the tail is retried next run.
 	 *
-	 * @param array<int, array{id: int, uid: string, subject: string, preview: string}> $batch     The messages.
+	 * @param array<int, array{id: int, uid: string, subject: string, preview: string}> $batch The messages.
 	 * @param array{objectService: object, linkService: object, pattern: string, register: string, schema: string} $context The run context.
-	 * @param IUser                                                                    $owner     The mailbox owner.
-	 * @param int                                                                      $accountId The Mail account.
-	 * @param int                                                                      $cursor    The cursor the batch started after.
+	 * @param IUser $owner     The mailbox owner.
+	 * @param int   $accountId The Mail account.
+	 * @param int   $cursor    The cursor the batch started after.
 	 *
 	 * @return array{linked: int, scanned: int, cursor: int} What the batch did.
 	 */
@@ -662,25 +335,17 @@ class CaseEmailMatchService {
 	 * nothing (REQ-ECM-002). A failure to link one case is logged and does not
 	 * stop the others (REQ-ECM-004).
 	 *
-	 * @param array{id: int, uid: string, subject: string, preview: string} $message   The message.
+	 * @param array{id: int, uid: string, subject: string, preview: string} $message The message.
 	 * @param array{objectService: object, linkService: object, pattern: string, register: string, schema: string} $context The run context.
-	 * @param IUser                                                        $owner     The mailbox owner.
-	 * @param int                                                          $accountId The Mail account.
+	 * @param IUser $owner     The mailbox owner.
+	 * @param int   $accountId The Mail account.
 	 *
 	 * @return int New links made.
 	 */
 	private function matchAndLinkMessage(array $message, array $context, IUser $owner, int $accountId): int {
-		$cases = $this->resolveCases(
-			candidates: $this->extractCaseNumberCandidates(text: $message['subject'], pattern: $context['pattern']),
-			context: $context,
-			owner: $owner
-		);
+		$cases = $this->casesIn(text: $message['subject'], context: $context, owner: $owner);
 		if ($cases === []) {
-			$cases = $this->resolveCases(
-				candidates: $this->extractCaseNumberCandidates(text: $message['preview'], pattern: $context['pattern']),
-				context: $context,
-				owner: $owner
-			);
+			$cases = $this->casesIn(text: $message['preview'], context: $context, owner: $owner);
 		}
 
 		$linked = 0;
@@ -701,107 +366,31 @@ class CaseEmailMatchService {
 	}//end matchAndLinkMessage()
 
 	/**
-	 * Resolve candidates to the cases the mailbox owner may see.
+	 * The cases one text names that the owner may see.
 	 *
-	 * @param array<int, string> $candidates The identifiers found in the text.
+	 * @param string $text  The subject or the body preview.
 	 * @param array{objectService: object, linkService: object, pattern: string, register: string, schema: string} $context The run context.
-	 * @param IUser              $owner      The mailbox owner.
+	 * @param IUser  $owner The mailbox owner.
 	 *
-	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases, distinct.
+	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases.
 	 */
-	private function resolveCases(array $candidates, array $context, IUser $owner): array {
-		$cases = [];
-		foreach ($candidates as $identifier) {
-			$case = $this->resolveCase(identifier: $identifier, context: $context, owner: $owner);
-			if ($case !== null) {
-				$cases[$case['uuid']] = $case;
-			}
-		}
-
-		return array_values($cases);
-	}//end resolveCases()
-
-	/**
-	 * Resolve one identifier to exactly one case the owner may read, or nothing.
-	 *
-	 * The search runs as the owner (the caller is inside `runAs()`), and its
-	 * rows are then held to exact equality on `identifier`: a search filter
-	 * that matched loosely must not become a link.
-	 *
-	 * @param string $identifier The candidate identifier.
-	 * @param array{objectService: object, linkService: object, pattern: string, register: string, schema: string} $context The run context.
-	 * @param IUser  $owner      The mailbox owner.
-	 *
-	 * @return array{uuid: string, identifier: string, registerId: int, schemaId: int}|null The case, or null.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) One flat refusal per way a candidate can fail to be a case.
-	 */
-	private function resolveCase(string $identifier, array $context, IUser $owner): ?array {
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $context['objectService'],
-				register: $context['register'],
-				schema: $context['schema'],
-				filters: [
-					'identifier' => $identifier,
-					'_limit' => 10,
-					'_rbac' => true,
-					'_multitenancy' => true,
-					// 🔴 REQUIRED, NOT DECORATION. OpenRegister skips the
-					// organisation filter for a caller whose RBAC already grants
-					// the schema ("let RBAC handle access control"), and for a
-					// schema with public read. A case handler holds that grant,
-					// so without this flag the lookup spans every organisation.
-					// Asking explicitly keeps the owner's active organisation
-					// (and its parents) as the boundary in every case.
-					'_multitenancy_explicit' => true,
-				],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: resolving a case number failed: ' . $e->getMessage(), ['app' => Application::APP_ID]);
-			return null;
-		}
-
-		$hits = array_values(
-			array_filter($rows, static fn (array $row): bool => (string)($row['identifier'] ?? '') === $identifier)
+	private function casesIn(string $text, array $context, IUser $owner): array {
+		return $this->recognizer->resolveCases(
+			candidates: $this->recognizer->extractCaseNumberCandidates(text: $text, pattern: $context['pattern']),
+			objectService: $context['objectService'],
+			register: $context['register'],
+			schema: $context['schema'],
+			owner: $owner
 		);
-		if (count($hits) !== 1) {
-			if (count($hits) > 1) {
-				$this->logger->warning(
-					'Dossiq: a case number resolves to more than one case; the mail is linked to none of them',
-					['app' => Application::APP_ID, 'case' => $identifier, 'matches' => count($hits)]
-				);
-			}
-
-			return null;
-		}
-
-		$uuid = $this->idOf(row: $hits[0]);
-		if ($uuid === '' || $this->caseAccess->hasCaseReadAccess(caseId: $uuid, user: $owner) === false) {
-			return null;
-		}
-
-		$self = (is_array($hits[0]['@self'] ?? null) === true ? $hits[0]['@self'] : []);
-		$registerId = $this->numericId(fromRow: $self['register'] ?? null, fromConfig: $context['register']);
-		$schemaId = $this->numericId(fromRow: $self['schema'] ?? null, fromConfig: $context['schema']);
-		if ($registerId <= 0 || $schemaId <= 0) {
-			$this->logger->warning(
-				'Dossiq: a matched case carries no numeric register or schema id; it is not linked rather than linked to id 0',
-				['app' => Application::APP_ID, 'case' => $identifier]
-			);
-			return null;
-		}
-
-		return ['uuid' => $uuid, 'identifier' => $identifier, 'registerId' => $registerId, 'schemaId' => $schemaId];
-	}//end resolveCase()
+	}//end casesIn()
 
 	/**
 	 * Link a message to a case unless the leaf already holds that link.
 	 *
-	 * @param object                                                               $linkService The email leaf.
-	 * @param array{uuid: string, identifier: string, registerId: int, schemaId: int} $case       The case.
-	 * @param int                                                                  $accountId   The Mail account.
-	 * @param array{id: int, uid: string, subject: string, preview: string}        $message     The message.
+	 * @param object $linkService The email leaf.
+	 * @param array{uuid: string, identifier: string, registerId: int, schemaId: int} $case The case.
+	 * @param int    $accountId   The Mail account.
+	 * @param array{id: int, uid: string, subject: string, preview: string} $message The message.
 	 *
 	 * @return bool True when a new link was made.
 	 */
@@ -860,69 +449,6 @@ class CaseEmailMatchService {
 	}//end hasLink()
 
 	/**
-	 * The object's uuid from an OpenRegister row.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or '' when it carries none.
-	 */
-	private function idOf(array $row): string {
-		$self = (is_array($row['@self'] ?? null) === true ? $row['@self'] : []);
-
-		return (string)($self['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-	}//end idOf()
-
-	/**
-	 * A register or schema id as the integer the leaf stores.
-	 *
-	 * The row's own `@self` value wins, because that is where the case lives;
-	 * the configured value is used only when it is numeric. A slug is never
-	 * cast, because `(int)'dossiq'` is 0 and a link to register 0 is a write to
-	 * the wrong place rather than a refusal.
-	 *
-	 * @param mixed  $fromRow    The row's `@self` value.
-	 * @param string $fromConfig The configured value.
-	 *
-	 * @return int The id, or 0 when neither is numeric.
-	 */
-	private function numericId(mixed $fromRow, string $fromConfig): int {
-		foreach ([(string)(is_scalar($fromRow) === true ? $fromRow : ''), $fromConfig] as $candidate) {
-			if ($candidate !== '' && ctype_digit($candidate) === true) {
-				return (int)$candidate;
-			}
-		}
-
-		return 0;
-	}//end numericId()
-
-	/**
-	 * The user's cursor, or CURSOR_UNSET when it was never started.
-	 *
-	 * @param string $userId The user.
-	 *
-	 * @return int The cursor.
-	 */
-	private function readCursor(string $userId): int {
-		try {
-			return $this->userConfig->getValueInt($userId, Application::APP_ID, self::PREF_CURSOR, self::CURSOR_UNSET);
-		} catch (Throwable $e) {
-			return self::CURSOR_UNSET;
-		}
-	}//end readCursor()
-
-	/**
-	 * Store the user's cursor.
-	 *
-	 * @param string $userId The user.
-	 * @param int    $cursor The last processed message id.
-	 *
-	 * @return void
-	 */
-	private function writeCursor(string $userId, int $cursor): void {
-		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_CURSOR, max(0, $cursor));
-	}//end writeCursor()
-
-	/**
 	 * Resolve OpenRegister's email leaf, or null when it is not there.
 	 *
 	 * @return object|null The leaf service.
@@ -934,6 +460,10 @@ class CaseEmailMatchService {
 			return null;
 		}
 
-		return (is_object($service) === true ? $service : null);
+		if (is_object($service) === false) {
+			return null;
+		}
+
+		return $service;
 	}//end getEmailLinkService()
 }//end class

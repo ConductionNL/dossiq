@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -74,10 +73,6 @@ class EmailTemplateController extends Controller {
 		// mail stays in the mailbox, which is the default and the behaviour
 		// every instance had before this key existed.
 		'email_fallback_case_type',
-		// Per-user mail matching (email-case-matching). The toggle defaults to
-		// off, and the pattern is validated before it is stored.
-		'email_case_matching_enabled',
-		'email_case_matching_pattern',
 	];
 
 	/**
@@ -97,7 +92,6 @@ class EmailTemplateController extends Controller {
 	 * @param IUserSession $userSession Current user session.
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
-	 * @param CaseEmailMatchService $caseEmailMatch Validates a case-number pattern before it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -107,7 +101,6 @@ class EmailTemplateController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly CaseEmailMatchService $caseEmailMatch,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -307,20 +300,6 @@ class EmailTemplateController extends Controller {
 	public function saveSettings(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// A pattern the matcher cannot use would only surface as a refused run
-		// in the log. Refuse it here, before anything is written, so the admin
-		// who typed it is the one who hears about it.
-		$pattern = trim((string)($this->request->getParam(CaseEmailMatchService::PATTERN_KEY) ?? ''));
-		if ($pattern !== '') {
-			$reason = $this->caseEmailMatch->validatePattern(pattern: $pattern);
-			if ($reason !== null) {
-				return new JSONResponse(
-					['message' => $reason, 'field' => CaseEmailMatchService::PATTERN_KEY],
-					Http::STATUS_BAD_REQUEST
-				);
-			}
 		}
 
 		foreach (self::IMAP_KEYS as $key) {
