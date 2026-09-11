@@ -19,6 +19,12 @@
  * arrays, and a filter on a property the schema lacks returns no rows rather
  * than every row.
  *
+ * Until 2026-09-11 all four lookups read those objects as arrays, so on a real
+ * install none of them worked: no membership resolved, the role and matrix
+ * lookups threw and denied, and the quota lookup allowed everything. They were
+ * fixed together, and the tests below that feed an `ObjectEntity` are what
+ * holds each of them to the fix.
+ *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
  *
@@ -60,11 +66,25 @@ interface TenantLookupObjectServiceStub {
 	 * @return array<int, mixed> The rows.
 	 */
 	public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array;
+
+	/**
+	 * Save an object.
+	 *
+	 * @param array<string, mixed> $object   The object data.
+	 * @param string               $register The register.
+	 * @param string               $schema   The schema.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed> The saved object.
+	 */
+	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
 }
 
 /**
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
  * @covers \OCA\Dossiq\Service\TenantQuotaService
+ *
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class TenantScopedLookupsTest extends TestCase {
 	/**
@@ -75,18 +95,51 @@ class TenantScopedLookupsTest extends TestCase {
 	private array $queries = [];
 
 	/**
+	 * Every `saveObject()` call, in order.
+	 *
+	 * @var array<int, array{object: array<string, mixed>, schema: string, uuid: string|null}>
+	 */
+	private array $saves = [];
+
+	/**
+	 * A row in the shape `findAll()` returns it.
+	 *
+	 * @param array<string, mixed> $object The object data.
+	 * @param string|null          $uuid   The object's uuid.
+	 *
+	 * @return ObjectEntity The row.
+	 */
+	private function entity(array $object, ?string $uuid = null): ObjectEntity {
+		$row = new ObjectEntity();
+		$row->setUuid($uuid);
+		$row->setObject($object);
+
+		return $row;
+	}
+
+	/**
 	 * Build a container whose ObjectService records each query and answers with $rows.
 	 *
-	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 * @param array<int, mixed>                $rows         What `findAll()` returns.
+	 * @param array<string, array<int, mixed>> $rowsBySchema What it returns for a named schema instead.
 	 *
 	 * @return array{0: IAppManager, 1: ContainerInterface} The app manager and container.
 	 */
-	private function openRegisterAnswering(array $rows): array {
+	private function openRegisterAnswering(array $rows, array $rowsBySchema = []): array {
 		$objectService = $this->createMock(TenantLookupObjectServiceStub::class);
 		$objectService->method('findAll')->willReturnCallback(
-			function (array $config) use ($rows): array {
+			function (array $config) use ($rows, $rowsBySchema): array {
 				$this->queries[] = $config;
-				return $rows;
+				$schema = (string)($config['filters']['schema'] ?? '');
+
+				return ($rowsBySchema[$schema] ?? $rows);
+			}
+		);
+		$objectService->method('saveObject')->willReturnCallback(
+			function (array $object, string $register, string $schema, ?string $uuid = null): array {
+				$this->saves[] = ['object' => $object, 'schema' => $schema, 'uuid' => $uuid];
+
+				return $object;
 			}
 		);
 
@@ -102,14 +155,32 @@ class TenantScopedLookupsTest extends TestCase {
 	/**
 	 * The authentication service over a fake OpenRegister.
 	 *
-	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 * @param array<int, mixed>                $rows         What `findAll()` returns.
+	 * @param array<string, array<int, mixed>> $rowsBySchema What it returns for a named schema instead.
 	 *
 	 * @return TenantAuthenticationService The service.
 	 */
-	private function authAnswering(array $rows): TenantAuthenticationService {
-		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
+	private function authAnswering(array $rows, array $rowsBySchema = []): TenantAuthenticationService {
+		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows, rowsBySchema: $rowsBySchema);
 
 		return new TenantAuthenticationService(
+			appManager: $appManager,
+			container: $container,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+	}
+
+	/**
+	 * The quota service over a fake OpenRegister.
+	 *
+	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 *
+	 * @return TenantQuotaService The service.
+	 */
+	private function quotaAnswering(array $rows): TenantQuotaService {
+		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
+
+		return new TenantQuotaService(
 			appManager: $appManager,
 			container: $container,
 			logger: $this->createMock(LoggerInterface::class),
@@ -186,14 +257,7 @@ class TenantScopedLookupsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheQuotaLookupIsScopedToTheTenant(): void {
-		[$appManager, $container] = $this->openRegisterAnswering(rows: []);
-		$quota = new TenantQuotaService(
-			appManager: $appManager,
-			container: $container,
-			logger: $this->createMock(LoggerInterface::class),
-		);
-
-		$this->assertNull($quota->getQuota(tenantId: 'tenant-a', quotaType: 'cases_per_month'));
+		$this->assertNull($this->quotaAnswering(rows: [])->getQuota(tenantId: 'tenant-a', quotaType: 'cases_per_month'));
 
 		$filters = $this->onlyFilters();
 		$this->assertSame('tenantQuota', $filters['schema']);
@@ -211,28 +275,203 @@ class TenantScopedLookupsTest extends TestCase {
 	}
 
 	/**
-	 * PINNED AS-IS, AND A DEFECT: a membership row as OpenRegister returns it is dropped.
+	 * A membership row as OpenRegister returns it resolves to its tenant.
 	 *
-	 * `listTenantsForUser()` keeps only rows that are arrays, and
-	 * `ObjectService::findAll()` returns `ObjectEntity` objects. So on a real
-	 * install no user has a membership, the session never resolves a tenant,
-	 * and the whole SaaS middleware chain (context, isolation, claim, mandate,
-	 * quota) sees an unbound request and steps aside.
-	 *
-	 * Not fixed here, on purpose. Fixing only this lookup would bind tenants,
-	 * and the mandate gate would then read the role and the matrix through
-	 * `resolveUserRole()` and `loadActiveMatrix()`, which index the same
-	 * entities as arrays, throw, and deny every write by every member. The
-	 * three have to move together, and the tenancy move rewrites all three.
-	 * This test turning red is the signal that someone has.
+	 * This test used to pin the opposite, as
+	 * `testAMembershipRowInTheShapeOpenRegisterReturnsIsDropped`, and named it
+	 * a defect: `listTenantsForUser()` kept only rows that were arrays, so on a
+	 * real install no user had a membership and the whole SaaS middleware chain
+	 * stepped aside. It was left unfixed until the role, mandate and quota
+	 * lookups could be fixed with it. Fixed alone, it would have bound tenants
+	 * and then denied every member's writes through the two lookups that still
+	 * threw.
 	 *
 	 * @return void
 	 */
-	public function testAMembershipRowInTheShapeOpenRegisterReturnsIsDropped(): void {
-		$row = new ObjectEntity();
-		$row->setObject(['tenantRef' => 'tenant-a', 'userRef' => 'alice', 'role' => 'tenant_admin']);
+	public function testAMembershipRowInTheShapeOpenRegisterReturnsResolves(): void {
+		$rows = [$this->entity(object: ['tenantRef' => 'tenant-a', 'userRef' => 'alice', 'role' => 'tenant_admin'])];
 
-		$this->assertSame([], $this->authAnswering(rows: [$row])->listTenantsForUser(userId: 'alice'));
+		$this->assertSame(['tenant-a'], $this->authAnswering(rows: $rows)->listTenantsForUser(userId: 'alice'));
+		$this->assertTrue($this->authAnswering(rows: $rows)->isMemberOf(tenantId: 'tenant-a', userId: 'alice'));
+		$this->assertFalse($this->authAnswering(rows: $rows)->isMemberOf(tenantId: 'tenant-b', userId: 'alice'));
+	}
+
+	/**
+	 * A role row as OpenRegister returns it resolves to its role.
+	 *
+	 * Before the fix this indexed the entity as an array, threw, and the
+	 * mandate gate denied: a member would have been refused every write.
+	 *
+	 * @return void
+	 */
+	public function testARoleRowInTheShapeOpenRegisterReturnsResolves(): void {
+		$rows = [$this->entity(object: ['tenantRef' => 'tenant-a', 'userRef' => 'alice', 'role' => 'case_handler'])];
+
+		$this->assertSame('case_handler', $this->authAnswering(rows: $rows)->resolveUserRole(tenantId: 'tenant-a', userId: 'alice'));
+	}
+
+	/**
+	 * A mandate row as OpenRegister returns it yields its own matrix.
+	 *
+	 * @return void
+	 */
+	public function testAMandateRowInTheShapeOpenRegisterReturnsResolves(): void {
+		$matrix = ['case_handler' => ['create' => true]];
+		$rows = [
+			$this->entity(
+				object: ['tenantRef' => 'tenant-a', 'effectiveFrom' => '2020-01-01', 'effectiveTo' => '2099-12-31', 'matrix' => $matrix]
+			),
+		];
+
+		$this->assertSame($matrix, $this->authAnswering(rows: $rows)->loadActiveMatrix(tenantId: 'tenant-a'));
+	}
+
+	/**
+	 * A mandate row outside its window grants nothing, read as an entity too.
+	 *
+	 * Reading the row differently must not stop the window from being checked.
+	 * The matrix here grants everything, so a skipped window check would show.
+	 *
+	 * @return void
+	 */
+	public function testAMandateRowOutsideItsWindowGrantsNothing(): void {
+		$rows = [
+			$this->entity(
+				object: ['tenantRef' => 'tenant-a', 'effectiveFrom' => '2020-01-01', 'effectiveTo' => '2021-01-01', 'matrix' => ['*' => ['*' => true]]]
+			),
+		];
+
+		$this->assertNull($this->authAnswering(rows: $rows)->loadActiveMatrix(tenantId: 'tenant-a'));
+	}
+
+	/**
+	 * A mandate row that cannot be read grants nothing.
+	 *
+	 * Read as an empty array it would have no window, a row with no window
+	 * counts as active, and a row with no matrix falls back to the default
+	 * template, which gives `tenant_admin` everything. So an unreadable row is
+	 * dropped, and a tenant with nothing else has no matrix at all.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableMandateRowGrantsNothing(): void {
+		$this->assertNull($this->authAnswering(rows: ['not a row'])->loadActiveMatrix(tenantId: 'tenant-a'));
+	}
+
+	/**
+	 * Once the rows are read, a member may do what the matrix grants, and only that.
+	 *
+	 * This is the end state the four lookups had to reach together. Neither
+	 * "denies every write" (the role and matrix lookups throwing) nor "allows
+	 * every write": `create` is granted to the role and `delete` is not.
+	 *
+	 * @return void
+	 */
+	public function testAMemberMayDoWhatTheMatrixGrantsAndNothingElse(): void {
+		$auth = $this->authAnswering(
+			rows: [],
+			rowsBySchema: [
+				'tenantUser' => [$this->entity(object: ['tenantRef' => 'tenant-a', 'userRef' => 'alice', 'role' => 'case_handler'])],
+				'tenantMandate' => [
+					$this->entity(
+						object: [
+							'tenantRef' => 'tenant-a',
+							'effectiveFrom' => '2020-01-01',
+							'effectiveTo' => '2099-12-31',
+							'matrix' => ['case_handler' => ['create' => true]],
+						]
+					),
+				],
+			],
+		);
+
+		$this->assertSame(
+			['allowed' => true, 'reason' => 'Authorised by mandate matrix'],
+			$auth->validateMandateMatrix(tenantId: 'tenant-a', userId: 'alice', action: 'create')
+		);
+		$this->assertSame(
+			['allowed' => false, 'reason' => 'Role case_handler is not authorised for action delete'],
+			$auth->validateMandateMatrix(tenantId: 'tenant-a', userId: 'alice', action: 'delete')
+		);
+	}
+
+	/**
+	 * A quota row as OpenRegister returns it is read, id included.
+	 *
+	 * Before the fix `getQuota()` returned the entity from a method typed
+	 * `?array`, the `TypeError` was caught as "no row", and every quota allowed.
+	 *
+	 * @return void
+	 */
+	public function testAQuotaRowInTheShapeOpenRegisterReturnsIsRead(): void {
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'cases_per_month', 'limit' => 100, 'currentUsage' => 40, 'enforcement' => 'block'],
+			uuid: 'quota-1',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row])->getQuota(tenantId: 'tenant-a', quotaType: 'cases_per_month');
+
+		$this->assertIsArray($quota);
+		$this->assertSame('quota-1', $quota['id']);
+		$this->assertSame(100, $quota['limit']);
+		$this->assertSame(40, $quota['currentUsage']);
+	}
+
+	/**
+	 * A tenant at its limit on a blocking quota is blocked, and nothing is counted.
+	 *
+	 * @return void
+	 */
+	public function testATenantAtItsLimitIsBlocked(): void {
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'cases_per_month', 'limit' => 100, 'currentUsage' => 100, 'enforcement' => 'block'],
+			uuid: 'quota-1',
+		);
+
+		$decision = $this->quotaAnswering(rows: [$row])->consume(tenantId: 'tenant-a', quotaType: 'cases_per_month');
+
+		$this->assertSame(TenantQuotaService::DECISION_BLOCK, $decision['decision']);
+		$this->assertSame([], $this->saves);
+	}
+
+	/**
+	 * A quota row that cannot be read is no row, and nothing is written.
+	 *
+	 * Read as an empty array it would carry no `id` and no `tenantRef`, and
+	 * counting against it would create a new quota row belonging to nobody.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableQuotaRowCountsNothing(): void {
+		$decision = $this->quotaAnswering(rows: ['not a row'])->consume(tenantId: 'tenant-a', quotaType: 'cases_per_month');
+
+		$this->assertSame('no_quota_row', $decision['reason']);
+		$this->assertSame([], $this->saves);
+	}
+
+	/**
+	 * A consumed quota is written back to the row it was read from.
+	 *
+	 * `persistQuota()` updates by the row's `id`. Lose it in the read and every
+	 * counted request creates a new quota row at 1, so the limit is never
+	 * reached and nothing in the response says so.
+	 *
+	 * @return void
+	 */
+	public function testAConsumedQuotaIsWrittenBackToTheRowItWasReadFrom(): void {
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'cases_per_month', 'limit' => 100, 'currentUsage' => 40, 'enforcement' => 'block'],
+			uuid: 'quota-1',
+		);
+
+		$decision = $this->quotaAnswering(rows: [$row])->consume(tenantId: 'tenant-a', quotaType: 'cases_per_month');
+
+		$this->assertSame(TenantQuotaService::DECISION_ALLOW, $decision['decision']);
+		$this->assertCount(1, $this->saves);
+		$this->assertSame('tenantQuota', $this->saves[0]['schema']);
+		$this->assertSame('quota-1', $this->saves[0]['uuid']);
+		$this->assertSame(41, $this->saves[0]['object']['currentUsage']);
+		$this->assertSame('tenant-a', $this->saves[0]['object']['tenantRef']);
 	}
 
 	/**
