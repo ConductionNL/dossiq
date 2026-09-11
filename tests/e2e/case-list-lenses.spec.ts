@@ -1093,7 +1093,14 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// No citation, on purpose. This test used to cite
+	// openspec/specs/case-management/spec.md with no anchor, which names a
+	// file and credits no scenario. The requirement it is about, REQ-CM-32 Deadline
+	// before, has one scenario, and that scenario is excluded on the spec because
+	// the sidebar control it drives does not exist (see the comment below).
+	// A query against the object API cannot prove a control, so the test
+	// stays as a guard on the query path the Overdue tiles use, uncited
+	// (e2e-citation-integrity, audit group 3).
 	test('the deadline query narrows the list, which is what the sidebar filter would drive', async () => {
 		// The Deadline before SIDEBAR filter is blocked: nextcloud-vue 2.41's
 		// index sidebar derives its filters from schema `facetable`
