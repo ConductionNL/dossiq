@@ -146,31 +146,52 @@ export default defineConfig({
 	// a clean run is a weak argument, so the measurement wins over the caution.
 	// Raise it further only the same way: behind a run, not behind arithmetic.
 	//
-	//        5           measured by run 34585313834, see below
+	//        5           measured below: FEWER results per minute, not more
 	//
-	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
-	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
-	// it still truncated with 26 never reached and 1 interrupted at the 38
-	// minute stop. The note below used to say the gap was the failures being
-	// retried, and that was true when 25 tests were red; with one red test the
-	// remaining gap is throughput, and the suite is roughly 10 percent short of
-	// fitting.
+	// 🔴 FOUR, AND FIVE WAS MEASURED AND MADE IT WORSE. #2485 raised this to
+	// five on the reasoning that the gap had become throughput. The runs it
+	// produced say the fifth worker buys no throughput and costs timeouts.
+	// Measured over every E2E job on 2026-09-10 and 11 that ran the whole
+	// suite (87 at four workers, 13 at five), read off the job logs:
 	//
-	// The suite also grew, deliberately: the skip-discipline work gave about a
-	// dozen previously skipped tests real bodies, and decidiq is installed now,
-	// so three decision journeys execute instead of standing down. More tests
-	// reaching a verdict is the point; the budget has to follow.
+	//     THE RUNNER DECIDES FIRST. Identical code took 96.8 test-minutes on
+	//     run 34581297676 and 123.0 on 34585313834, 35 minutes apart, with
+	//     every spec slower by the same factor. GitHub's runners come in
+	//     speeds about 1.3x apart, and the time the runner spends building
+	//     decidiq (second `webpack ... compiled in` line of the job) sorts
+	//     them: under 72s fast, 72 to 88s medium, over 90s slow. Of the 45
+	//     four-worker jobs that line exists for, 29 landed on a slow runner:
+	//     21 were stopped by the 38 minute globalTimeout and 5 more ended in
+	//     its last half minute. The 16 fast or medium ones ended by 33.2.
+	//     So workers are compared within a runner speed, never across one.
+	//
+	//     EVERY TEST GETS SLOWER, NOT JUST THE PAGE LOADS. Matching each test
+	//     to itself on runners of the same speed, a fifth worker made its
+	//     median duration 1.22 to 1.42 times longer, in every duration band
+	//     from sub-second API tests to 30-second journeys (366 tests on fast
+	//     runners, 338 on slow). A four-vCPU runner holding four Chromes, eight
+	//     PHP workers and Postgres is already saturated; a fifth Chrome only
+	//     divides the same CPU finer.
+	//
+	//                                   4 workers   5 workers
+	//     results per minute, fast       15.9        14.7
+	//     results per minute, slow        9.5         9.4
+	//     flaky tests per slow run        1.2         4.8
+	//     test timeouts per job           0.36        1.08
+	//     page.goto timeouts per job      0           1.38
+	//     hook timeouts per job           0.32        1.69
+	//
+	// So five did not close the gap and could not have: it turned time into
+	// failures. Sharding (#2497) closes the gap, by giving each shard its own
+	// runner; the count below is per shard, and the same arithmetic applies
+	// to every one of them.
 	//
 	// ⚠️ WATCH FOR `SQLSTATE[53200] out of shared memory /
-	// max_locks_per_transaction`. That is the failure this count was held back
-	// from, seen once under four and never since. If it reappears, put this
-	// back to 4 and take the time out of the suite instead, rather than
-	// re-measuring hopefully.
+	// max_locks_per_transaction`. That is the failure three was held back to
+	// before four was measured, seen once under four and never since.
 	//
-	// ⚠️ FIVE WORKERS MAY STILL NOT MAKE THE SUITE FIT, and nothing here should
-	// be read as claiming it does. The next lever is the wall clock inside the
-	// heavy specs, not more workers: `globalTimeout` cannot rise much without
-	// eating the margin that guarantees a verdict at all.
+	// Raise this again only the way it was lowered: compare results per minute
+	// within one runner speed, not the wall clock of one run.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where four workers seeding and tearing down at once is both
@@ -178,7 +199,7 @@ export default defineConfig({
 	//
 	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
 	// code change.
-	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 5 : 1)),
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
@@ -208,6 +229,10 @@ export default defineConfig({
 			{ outputFile: path.resolve(__dirname, 'test-results', 'results.xml') },
 		],
 		['list'],
+		// Last, so its lines follow the list reporter's tally. It fails the run
+		// by name when any test did not run or was interrupted, and names the
+		// step every timeout happened in. See the file for why both are needed.
+		[path.resolve(__dirname, 'helpers', 'verdict-reporter.ts')],
 	],
 	outputDir: path.resolve(__dirname, 'test-results'),
 
@@ -225,6 +250,12 @@ export default defineConfig({
 		// after 65 of 122 tests. A bounded action fails in 15s with the same
 		// diagnostic and leaves the remaining budget for the real assertions.
 		actionTimeout: 15_000,
+		// 30s is held because it is measured to fit at four workers. Every
+		// `page.goto` in the slowest run's report (354 of them, run
+		// 34585313834, a slow runner) finished in at most 27.4s, p99 25.6s,
+		// and not one of the 87 four-worker jobs logged a goto timeout. At five
+		// workers the same loads ran 1.3x longer and 13 jobs logged 18 of them.
+		// When a load does overrun, this is the budget that names its URL.
 		navigationTimeout: 30_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
