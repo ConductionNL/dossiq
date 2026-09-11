@@ -49,10 +49,9 @@ export function storageStatePath(uid: string): string {
  *
  * The failure is a function of WHERE a spec sorts in the run, so a spec that
  * provisions can pass for months and then break because an unrelated spec was
- * added ahead of it. `dashboard-tiles.spec.ts` and `integrations-page.spec.ts`
- * still provision through the session and are carrying the same latent flake;
- * they should move to this. Left alone here on purpose, so a security fix does
- * not quietly change what two unrelated specs authenticate as.
+ * added ahead of it. `dashboard-tiles.spec.ts` provisions through this too.
+ * `integrations-page.spec.ts` provisions no account at all: its non-admin
+ * comes from `ci-seed.sh`, for this same reason.
  *
  * Basic auth removes the clock rather than racing it. Password confirmation is
  * a property of a SESSION, and a request that carries no session cookie has no
