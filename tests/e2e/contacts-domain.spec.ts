@@ -363,37 +363,52 @@ test.describe('Contacts', () => {
 	test('the Requester column sends a person and an organisation to different pages', async ({
 		page,
 	}) => {
-		// contacts-domain 3.6. The point of the assertion is that ONE column
-		// resolves TWO routes: a fixed `widgetProps.route` would pass a
-		// single-row check and still be wrong, so both rows are asserted in the
-		// same render, and they must differ.
-		await page.goto(
-			`/apps/${REGISTER}/cases?title=${encodeURIComponent(RUN_PREFIX)}`,
+		// contacts-domain 3.6. The claim under test is that ONE column resolves
+		// TWO routes, so one row cannot prove it: a fixed `widgetProps.route`
+		// would send both requesters to the same page and still pass a
+		// single-row check.
+		//
+		// Each row is reached by its own EXACT `?title=` deep link rather than
+		// both together under a shared filter. The column definition is static
+		// in the manifest, so two navigations exercise the same config and a
+		// fixed route still fails the second one — and an exact filter returns
+		// exactly the seeded row, where a shared filter would return this run's
+		// rows plus every other case of the same type and could push either row
+		// onto a second page.
+		const requesterLink = async (title: string, name: string) => {
+			await page.goto(
+				`/apps/${REGISTER}/cases?title=${encodeURIComponent(title)}`,
+			)
+			await dismissSupportDialog(page)
+			await expect(page.locator('.cn-index-page')).toBeVisible({
+				timeout: 30_000,
+			})
+			const row = page.getByRole('row', { name: new RegExp(title, 'i') })
+			await expect(row).toBeVisible({ timeout: 30_000 })
+			const link = row.getByRole('link', { name })
+			await expect(link).toBeVisible({ timeout: 30_000 })
+			return link
+		}
+
+		const personLink = await requesterLink(
+			`${RUN_PREFIX} Dormer window`,
+			PERSON_NAME,
 		)
-		await dismissSupportDialog(page)
-		await expect(page.locator('.cn-index-page')).toBeVisible({
-			timeout: 30_000,
-		})
+		await expect(personLink).toHaveAttribute(
+			'href',
+			new RegExp(`/contacts/${personId}$`),
+		)
 
-		const personRow = page.getByRole('row', {
-			name: new RegExp(`${RUN_PREFIX} Dormer window`, 'i'),
-		})
-		await expect(personRow).toBeVisible({ timeout: 30_000 })
-		await expect(
-			personRow.getByRole('link', { name: PERSON_NAME }),
-		).toHaveAttribute('href', new RegExp(`/contacts/${personId}$`))
-
-		const companyRow = page.getByRole('row', {
-			name: new RegExp(`${RUN_PREFIX} Roof terrace`, 'i'),
-		})
-		await expect(companyRow).toBeVisible({ timeout: 30_000 })
-		const companyLink = companyRow.getByRole('link', { name: COMPANY_NAME })
+		const companyLink = await requesterLink(
+			`${RUN_PREFIX} Roof terrace`,
+			COMPANY_NAME,
+		)
 		await expect(companyLink).toHaveAttribute(
 			'href',
 			new RegExp(`/organisations/${companyId}$`),
 		)
 
-		// And it is a real in-app route, not a href that reads right and 404s.
+		// And it is a real in-app route, not an href that reads right and 404s.
 		await companyLink.click()
 		await expect(page).toHaveURL(new RegExp(`/organisations/${companyId}$`))
 		await expect(page.getByText(COMPANY_KVK).first()).toBeVisible({

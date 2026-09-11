@@ -167,11 +167,16 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   reason this task recorded: it would have reimplemented in dossiq the seam
   every fleet app needs.
   - `npm run check:manifest` exits 0
-  - e2e in `tests/e2e/contacts-domain.spec.ts`: one render of the Cases index
-    carries a person row linking to `/contacts/:id` and a company row linking
-    to `/organisations/:id`, and the company link is followed to prove it is a
-    route and not a plausible href. One row could not have told a working
-    `routeMap` apart from a fixed `route`, so both are asserted together.
+  - e2e in `tests/e2e/contacts-domain.spec.ts`: the Cases index is opened twice,
+    once per seeded case, by exact `?title=` deep link, and the Requester cell
+    is asserted to link to `/contacts/:id` for the person and
+    `/organisations/:id` for the company. The company link is then followed, so
+    an href that reads right and resolves to nothing fails here. TWO rows are
+    needed because one cannot tell a working `routeMap` apart from a fixed
+    `route`; two NAVIGATIONS rather than one shared filter because the column
+    definition is static in the manifest, so a fixed route still fails the
+    second, while a shared filter would return every other case of the same
+    type and could push either row onto a second page.
   - `@spec openspec/specs/initiator-display/spec.md`
 
 ## 4. The contact reference on a contact moment
