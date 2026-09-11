@@ -143,21 +143,27 @@ test.describe('Cases — full CRUD with persistence', () => {
 	})
 
 	// UNPARKED. The old FIXME(#719) said the case detail page never displays
-	// the zaaknummer, and at the time it was right: the page had no line for
-	// it. `CaseDetail` in src/manifest.json now puts it there TWICE, and the
-	// second place is not obvious, so it is written down here:
+	// the zaaknummer, and at the time it was right. It does now, in exactly
+	// ONE place: `identifier` in the `case-core` widget's `content.include`,
+	// with an override re-admitting it as `readOnly: false` (the widget's
+	// `_note` records that `fieldsFromSchema` drops a readOnly property
+	// outright, which is why the field once sat in that list and rendered
+	// nowhere).
 	//
-	//   1. `config.subtitleField: "identifier"`, whose own `_subtitleNote`
-	//      records why ("the case page did not say which case you are on").
-	//   2. `identifier` in the `case-core` widget's `content.include`, with an
-	//      override re-admitting it as `readOnly: false` — its `_note` records
-	//      that `fieldsFromSchema` drops a readOnly property outright, which is
-	//      why the field had sat in that list and rendered nowhere.
+	// 🔴 `config.subtitleField` IS NOT A SECOND PLACE. CaseDetail declares it,
+	// and its `_subtitleNote` says the number "reads under the title". It does
+	// not: in @conduction/nextcloud-vue 2.46.0 and 2.48.1 alike, only
+	// CnIndexPage, CnObjectRow and CnObjectList read `subtitleField`, and
+	// CnDetailPage never maps it onto its `subtitle` prop. Measured, not read:
+	// mutating it on CI run 34583207838 changed nothing.
 	//
-	// Measured, not assumed: mutating `subtitleField` alone on CI run
-	// 34583207838 left this test GREEN, because the widget still carried the
-	// number. Both sources have to go before it reddens, which is what the
-	// mutation-check on this file removed.
+	// 🔴 AND THE ASSERTION IS SCOPED TO THE INFO PANEL, because unscoped it
+	// could not fail. It used to be `page.getByText(identifier).first()`. On CI
+	// run 34592678724 the number was removed from BOTH places above and this
+	// test stayed green, because the string also appears elsewhere on the case
+	// page. The scenario this cites is the case INFO PANEL, so that panel is
+	// where the number is now looked for, the same locator case-identity.spec.ts
+	// uses for the same fact.
 	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,
@@ -170,8 +176,10 @@ test.describe('Cases — full CRUD with persistence', () => {
 			identifier,
 			description: 'Detail-leg description.',
 		})
-		// dossiq assigns the zaaknummer and ignores the supplied identifier;
-		// assert the ASSIGNED value the create returned.
+		// The number the create RETURNED, whatever it is. The `case` schema's
+		// own description says a number supplied on create is kept and one left
+		// out is calculated as YEAR-NNNN, so reading it back from the response
+		// holds under either rule rather than guessing which one applied.
 		const assignedIdentifier = String(
 			(kase as Record<string, unknown>).identifier ?? identifier,
 		)
@@ -182,14 +190,19 @@ test.describe('Cases — full CRUD with persistence', () => {
 		// Click the seeded case's row to open its detail view.
 		await row.getByText(title, { exact: false }).first().click()
 
-		// CaseDetail (manifest `type:"detail"`) renders the case title + the
-		// detail chrome. Assert the title and (assigned) identifier surface.
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
-			timeout: 15000,
-		})
+		// The case info panel: the active panel of the detail page's tab strip,
+		// which opens on `case-core`.
+		const infoPanel = page
+			.locator('.cn-tabs-widget')
+			.locator('.cn-tabs__content > [role="tabpanel"]:not([hidden])')
 		await expect(
-			page.getByText(assignedIdentifier, { exact: false }).first(),
-		).toBeVisible()
+			infoPanel,
+			'the case info panel carries the title',
+		).toContainText(title, { timeout: 30_000 })
+		await expect(
+			infoPanel,
+			'the case info panel carries the zaaknummer',
+		).toContainText(assignedIdentifier, { timeout: 15_000 })
 	})
 
 	// @e2e exclude REQ-CM-02 carries scenarios for the description, the
