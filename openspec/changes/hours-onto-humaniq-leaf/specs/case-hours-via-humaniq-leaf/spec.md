@@ -23,7 +23,9 @@ the same case, beside the total those hours land in.
 
 - **WHEN** a caseworker opens a case detail on an install where humaniq is enabled
 - **THEN** the `humaniq-hours` leaf SHALL render in the widget's cell, showing the
-  hours booked against that case and the bookings that explain the total
+  hours booked against that case and the caller's own share, as a card with a
+  stopwatch and one action button, and without listing the bookings behind the
+  total, which stay one press away through View hours
 
 #### Scenario: The surface is absent when humaniq is
 
