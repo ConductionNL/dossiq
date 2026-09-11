@@ -168,8 +168,13 @@ which is the engine's own answer to the same question, because that page reads
 the task engine and no longer binds a schema.
 
 A Team chip waits for the platform to resolve the signed-in handler's teams.
-Until then the Team facet is the way to narrow `Cases` to a team, and there is
-no such way on `Tasks`: see the requirement above.
+Until then the Team column on `Cases` is the way to read a team off a list.
+The Team facet is not: `useObjectStore` normalises a facet bucket as
+`{ value, count }` and OpenRegister's bucket carries `results` rather than
+`count`, so every option reads 0, and the same normalisation drops the label,
+so a `$ref` facet lists uuids. Both are one-line defects in the library, and
+neither is coverage for the Team chip. On `Tasks` there is no column and no
+facet at all: see the requirement above.
 
 #### Scenario: Mine shows only my cases
 @e2e tests/e2e/case-parties.spec.ts

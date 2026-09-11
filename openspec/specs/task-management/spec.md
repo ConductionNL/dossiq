@@ -738,12 +738,13 @@ added.
 them: they are what the widget goes back to the day nextcloud-vue's
 `CnObjectListWidget` grows a lifecycle column and this component is deleted.
 
-Two scenarios below name the buttons Mark task as completed, Terminate the
-task and Disable the task. Those labels went with the schema and the pane
-shows Complete and Cancel, which is what `case-task-pane.spec.ts` already
-asserts. The scenario text is left byte-identical on purpose: gate 19 asks
-every modified scenario for a Playwright citation and this change ships no
-test, so correcting them belongs to the change that can cite one.
+Four scenarios below press Mark task as completed, and the first of them also
+names Terminate the task and Disable the task. Those labels went with the
+schema. The pane shows Complete and Cancel, which is what
+`case-task-pane.spec.ts` already asserts, so the four are false as written.
+They are left byte-identical on purpose: gate 19 asks every modified scenario
+for a Playwright citation and this change ships no test, so correcting them
+belongs to the change that can cite one.
 
 #### Scenario: The open task shows its buttons on the case
 @e2e tests/e2e/case-task-pane.spec.ts
