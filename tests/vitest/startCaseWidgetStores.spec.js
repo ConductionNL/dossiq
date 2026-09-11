@@ -53,7 +53,8 @@ vi.mock('@nextcloud/router', () => ({
 	imagePath: (app, file) => `/${app}/img/${file}`,
 }))
 
-const { default: StartCaseWidget } = await import('../../src/views/widgets/StartCaseWidget.vue')
+const { default: StartCaseWidget } =
+	await import('../../src/views/widgets/StartCaseWidget.vue')
 
 describe('StartCaseWidget', () => {
 	beforeEach(() => {
@@ -61,9 +62,11 @@ describe('StartCaseWidget', () => {
 	})
 
 	it('registers the stores, and waits for them, before it fetches a case type', async () => {
-		const fetchSpy = vi.spyOn(StartCaseWidget.methods, 'fetchCaseTypes').mockImplementation(function () {
-			events.push('fetchCaseTypes')
-		})
+		const fetchSpy = vi
+			.spyOn(StartCaseWidget.methods, 'fetchCaseTypes')
+			.mockImplementation(function () {
+				events.push('fetchCaseTypes')
+			})
 
 		shallowMount(StartCaseWidget, {
 			global: { mocks: { t: (_app, s) => s } },
