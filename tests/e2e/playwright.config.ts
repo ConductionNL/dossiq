@@ -161,7 +161,13 @@ export default defineConfig({
 	// a clean run is a weak argument, so the measurement wins over the caution.
 	// Raise it further only the same way: behind a run, not behind arithmetic.
 	//
-	//        5           measured by run 34585313834, see below
+	//        5            405             392         0            0
+	//
+	// The five row is run 34601685356 on `development` (cd5e61bf), measured
+	// BEFORE sharding (#2497) merged, so it is one instance with five workers:
+	// every test reached a verdict, 13 were skipped by reason, and the suite
+	// finished in 29.6 of its 38 minutes. The run that motivated it, on four
+	// workers, stopped at 38 minutes with 26 never reached.
 	//
 	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
 	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
