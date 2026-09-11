@@ -557,17 +557,38 @@ test.describe('Integrations', () => {
 		}
 	})
 
-	test.fixme('lists a missing required app', async () => {
+	test('lists a missing required app', async () => {
 		// REQ-ADMIN-021 is RED and cannot pass yet. The Required apps
 		// section needs CnLeafDependencySettings mounted through a
 		// `type: "component"` widget on a `type: "settings"` page, and the
 		// installed @conduction/nextcloud-vue resolves a settings section's
 		// widgets only against `version-info`, `register-mapping` and the
-		// `component` discriminator — `object-list` is a DASHBOARD widget.
+		// `component` discriminator. `object-list` is a DASHBOARD widget.
 		// So the connections could not live on a settings page, the page
 		// ships as an index (task 2.2's named interim), and an index page
 		// has nowhere to put this section. Unfixme when a settings section
 		// can host a list; nothing else about the page has to change.
+		//
+		// Re-measured against the pinned 2.46.0: CnSettingsPage's
+		// BUILTIN_SETTINGS_WIDGETS is still `version-info`,
+		// `register-mapping` and `component`, so this stands. There is no
+		// body yet because there is no section to assert on; writing one
+		// belongs with the change that builds the section.
+		//
+		// The reason is passed to `test.fixme(true, reason)` so the run report
+		// records it. `test.fixme(title, body)` records none, which is how
+		// this reached the skip gate as an exclusion without a reason.
+		test.fixme(
+			true,
+			'REQ-ADMIN-021 has no surface to test: the Integrations page ships '
+				+ 'as a type index page, because a type settings section in '
+				+ 'nextcloud-vue 2.46.0 resolves widgets only against version-info, '
+				+ 'register-mapping and component, so the connections list could '
+				+ 'not live on a settings page, and an index page has nowhere to '
+				+ 'mount CnLeafDependencySettings. Building the Required apps '
+				+ 'section is product work in src/manifest.json (and possibly '
+				+ 'nextcloud-vue), not a change to this spec.',
+		)
 	})
 
 	test('leaves the seeded rows where the next run expects them', async () => {

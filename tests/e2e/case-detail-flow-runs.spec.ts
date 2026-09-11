@@ -50,13 +50,17 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import {
+	createFlow,
+	OR_API,
+	publishFlow,
+	removeFlow,
+	runFlow,
+} from './helpers/flows.ts'
 import { navToRoute } from './helpers/nav.ts'
 
 /** The seeded case that is INCOMPLETE, and should carry the applicant loop's run. */
 const INCOMPLETE_CASE = 'Schuur Molenweg 3'
-
-/** OpenRegister's API root, which owns flows and their runs. */
-const OR_API = '/index.php/apps/openregister/api'
 
 /** The widget's root, as CnFlowRunsWidget renders it. */
 const WIDGET = '.cn-flow-runs-widget'
@@ -131,39 +135,6 @@ async function openCase(page: Page, uuid: string) {
 	return widget
 }
 
-/**
- * The headers a CSRF-protected OpenRegister write needs. The flow routes are
- * plain app routes, so the request token is what lets a POST or DELETE in.
- */
-function writeHeaders(token: string): Record<string, string> {
-	return {
-		requesttoken: token,
-		'OCS-APIRequest': 'true',
-		'Content-Type': 'application/json',
-	}
-}
-
-/**
- * One seeding POST to OpenRegister, failing with the server's own answer so a
- * refused seed names its reason instead of surfacing later as an empty widget.
- */
-async function orPost(
-	api: APIRequestContext,
-	token: string,
-	path: string,
-	data: Record<string, unknown> = {},
-): Promise<Record<string, unknown>> {
-	const response = await api.post(`${OR_API}${path}`, {
-		headers: writeHeaders(token),
-		data,
-	})
-	expect(
-		response.ok(),
-		`POST ${path} -> ${response.status()} ${await response.text()}`,
-	).toBeTruthy()
-	return (await response.json()) as Record<string, unknown>
-}
-
 test.describe('Case detail — flow runs widget', () => {
 	test('the case detail page renders the runs widget under its title', async ({
 		page,
@@ -211,9 +182,10 @@ test.describe('Case detail — flow runs widget', () => {
 		 * live and finished lists mid-test.
 		 */
 		async function runOnCase(caseId: string): Promise<string> {
-			const run = await orPost(api, token, `/flows/${seeded.flowId}/run`, {
-				subject: { uuid: caseId, register: 'dossiq', schema: 'case' },
-				sync: true,
+			const run = await runFlow(api, token, seeded.flowId, {
+				uuid: caseId,
+				register: 'dossiq',
+				schema: 'case',
 			})
 			expect(
 				run.subjectUuid,
@@ -275,51 +247,21 @@ test.describe('Case detail — flow runs widget', () => {
 
 			// A flow this spec OWNS, rather than the shipped one enabled for the
 			// occasion: enabling that one would start it on every case any other
-			// worker creates while this file runs. The smallest graph the engine
-			// accepts, a manual start into an end: a node with no way out is
-			// refused at publish and at run time (FlowDeadEnd).
-			const flow = await orPost(api, token, '/flows', {
-				name: seeded.flowName,
-				description:
-					'Throwaway flow seeded by case-detail-flow-runs.spec.ts.',
-				app: 'dossiq',
-				// Off, and it can stay off. `enabled` only decides whether the
-				// flow's TRIGGERS are subscribed; a run asked for by hand does not
-				// consult it, so this flow can never start on its own.
-				enabled: false,
-				nodes: [
-					{
-						id: 'start',
-						type: 'openregister.trigger-manual',
-						config: {},
-						position: { x: 0, y: 0 },
-					},
-					{
-						id: 'end',
-						type: 'openregister.end',
-						config: {},
-						position: { x: 0, y: 160 },
-					},
-				],
-				edges: [{ id: 'start-end', from: 'start', to: 'end' }],
-			})
-			seeded.flowId = String(flow.uuid ?? '')
-			expect(seeded.flowId, 'The created flow must carry a uuid.').not.toBe('')
+			// worker creates while this file runs (see helpers/flows.ts). Its id
+			// is recorded before the publish, so a refused publish is still torn
+			// down.
+			seeded.flowId = await createFlow(
+				api,
+				token,
+				seeded.flowName,
+				'Throwaway flow seeded by case-detail-flow-runs.spec.ts.',
+			)
 
 			// PUBLISHED, although the run endpoint would walk a draft. A draft
 			// test run is recorded with no version, and without one the flow page
 			// has no graph to pin, so the banner the second test reads would
 			// never appear however well the click worked.
-			const published = await orPost(
-				api,
-				token,
-				`/flows/${seeded.flowId}/publish`,
-			)
-			seeded.version = Number(published.version ?? 0)
-			expect(
-				seeded.version,
-				'Publishing must answer with the version it made.',
-			).toBeGreaterThan(0)
+			seeded.version = await publishFlow(api, token, seeded.flowId)
 
 			seeded.run = await runOnCase(seeded.caseWithRun)
 			seeded.otherRun = await runOnCase(seeded.otherCase)
@@ -331,33 +273,16 @@ test.describe('Case detail — flow runs widget', () => {
 			const leaks: string[] = []
 
 			try {
-				// The flow FIRST, because its runs go with it. OpenRegister
-				// publishes no delete for a run: DELETE /api/flows/{id} is the
-				// only route that removes one, by sweeping the flow's runs, steps,
-				// state and versions (FlowService::delete). That sweep swallows
-				// its own failure and still answers 200, so the runs are read
-				// back rather than the status trusted.
+				// The flow FIRST, because its runs go with it: deleting the flow
+				// is the only route that removes a run, and it swallows its own
+				// failure, so removeFlow reads the flow and both runs back.
 				if (seeded.flowId !== '') {
-					await api
-						.delete(`${OR_API}/flows/${seeded.flowId}`, {
-							headers: writeHeaders(token),
-						})
-						.catch(() => undefined)
-					const flowLeft = await api
-						.get(`${OR_API}/flows/${seeded.flowId}`)
-						.catch(() => null)
-					if (flowLeft === null || flowLeft.status() !== 404) {
-						leaks.push(`flow ${seeded.flowId}`)
-					}
-					for (const run of [seeded.run, seeded.otherRun]) {
-						if (run === '') continue
-						const runLeft = await api
-							.get(`${OR_API}/flow-runs/${run}`)
-							.catch(() => null)
-						if (runLeft === null || runLeft.status() !== 404) {
-							leaks.push(`flow run ${run}`)
-						}
-					}
+					leaks.push(
+						...(await removeFlow(api, token, seeded.flowId, [
+							seeded.run,
+							seeded.otherRun,
+						])),
+					)
 				}
 
 				// Then the cases. `case` is archival, so purgeObject falls through
