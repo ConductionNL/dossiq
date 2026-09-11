@@ -456,7 +456,11 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
-	// @e2e case-types::a-cycle-is-refused
+	// NOT cited to case-types::a-cycle-is-refused. That scenario says the SAVE
+	// fails with a message naming the cycle; this test saves the cycle
+	// successfully and asserts only that the blueprint then terminates. The
+	// refusal lives on the publish path (CaseTypeResolver::assertNoCycle).
+	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
 		// The refusal lives in CaseTypeResolver::assertNoCycle, which the
