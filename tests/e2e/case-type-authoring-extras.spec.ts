@@ -498,19 +498,28 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// @e2e openspec/specs/property-definition-management/spec.md
 	// Scenario: A folder narrows the index
-	// 🔴 PARKED ON OpenRegister#3560. The cause is a stale facet, NOT the page
-	// size, and not anything in this app or in the library.
+	// UNPARKED. This was `test.fixme` on OpenRegister#3560, and that cause is
+	// fixed in the OpenRegister this suite runs against.
 	//
-	// `FacetHandler::getFacetsForObjects()` caches the whole facet response for
-	// an hour and no object write invalidates it. CnFolderSidebar builds the
-	// folder pane from that facet, so a category created today gets no folder
-	// today. On CI an earlier worker warmed the facet and deleted its rows in
-	// teardown; the retry worker seeded its own category, opened the page inside
-	// the hour, and was handed the dead category instead of its own.
+	// The cause was a stale facet, not the page size and not anything in this
+	// app or in the library. `FacetHandler::getFacetsForObjects()` cached the
+	// whole facet response for an hour and no object write invalidated it.
+	// CnFolderSidebar builds the folder pane from that facet, so a category
+	// created today got no folder today. On CI an earlier worker warmed the
+	// facet and deleted its rows in teardown; the retry worker seeded its own
+	// category, opened the page inside the hour, and was handed the dead
+	// category instead of its own.
 	//
-	// THE TEN-SECOND PROOF, if you ever need to re-establish this. One live
-	// instance, same request, same instant, one parameter that changes only the
-	// cache key:
+	// openregister#3563 (merged into `development` on 2026-09-10, e08a0d72)
+	// folds a per register and schema version counter into the facet cache
+	// key and bumps it on every object create, update, delete and transition.
+	// dossiq's CI installs openregister from `development` (`additional-apps`
+	// in .github/workflows/code-quality.yml), so the category this spec seeds
+	// in `beforeAll` invalidates the facet the page then reads.
+	//
+	// IF THIS GOES RED AGAIN, check the facet before the test. One instance,
+	// same request, same instant, one parameter that changes only the cache
+	// key:
 	//
 	//   create a case type with a category nothing else uses
 	//     -> total 24 becomes 25, buckets UNCHANGED
@@ -518,35 +527,24 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	//     -> the same 25 rows, and the new bucket is there
 	//
 	// If two otherwise identical requests disagree, it is the cache, not the
-	// data. Clearing it with `DELETE /api/settings/cache?type=facet` then makes
-	// the original request agree.
+	// data. openregister#3563 turned that proof into
+	// `testAddingASortParameterNoLongerChangesTheBucketList`.
 	//
-	// ⚠️ I first wrote the page-size explanation here, and it was wrong. The
-	// manifest's own `_folderSidebarNote` says `field` derives the folders from
-	// the distinct values of the loaded rows. That stopped being true at
-	// nextcloud-vue 2.42.0 (#1036), which prefers the facet with pagination
-	// stripped. A docblock outlived its truth and sent me, and two sessions
-	// before me, back to the same wrong theory. That note is corrected in the
-	// same change as this comment, so the two now agree.
+	// And not the page size, which was the first theory here and was wrong.
+	// Since nextcloud-vue 2.42.0 (#1036) the pane is built from the facet with
+	// pagination stripped, not from the loaded rows. #2170's retry confirmed
+	// it: it sorted this run's rows onto page one and still found no folder.
 	//
 	// 🔑 THE SIBLING THAT PASSES, PASSES BY NARROWING. `case-objects.spec.ts`
-	// clicks a folder in the same component and is green, because it opens its
-	// index filtered by a fresh case uuid: that filter is part of the cache key,
-	// so its facet can never be warm. Do not read it as evidence the pane works.
-	//
-	// 🔑 #2170's retry is the independent confirmation. It sorted this run's
-	// rows onto page one, got them, and still found no folder. Rows present,
-	// facet stale. So do not retry a sort, and note that `_order` IS read back
-	// by `parseSortKeysFromQuery`, contrary to what #2210 recorded.
+	// clicks a folder in the same component and was green throughout, because
+	// it opens its index filtered by a fresh case uuid: that filter is part of
+	// the cache key, so its facet could never be warm. Do not read it as
+	// evidence for this test, in either direction.
 	//
 	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
 	// `DELETE /api/settings/cache?type=facet` is an admin action a page reader
 	// cannot take, so a test that arranges it asserts the arrangement.
-	//
-	// This is a live product defect, not a test artefact: an administrator who
-	// gives a case type a new category gets no folder for it until the hour is
-	// out. Restore this by deleting the `fixme` once OpenRegister#3560 lands.
-	test.fixme('picking a folder narrows the Case types index to that category', async ({
+	test('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
 		// The precondition is checked through the API, not off page one of the
