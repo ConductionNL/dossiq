@@ -792,14 +792,33 @@ warning tying the engine's audit to the task; RUN_NOT_FOUND and NOT_SUSPENDED
 are recorded quietly, because a task naming a vanished or already-advanced
 run is completable and its completer did nothing wrong.
 
+The engine announces terminality for `completed`, `terminated` and `disabled`
+alike. Only a completion is an answer, so the system SHALL resume nothing on
+the other two: they are the question being withdrawn, and a run carried past a
+withdrawn ask would proceed as though somebody had answered it.
+
 #### Scenario: Completing a flow task resumes its run
 
 - **GIVEN** a suspended run awaiting a task
 - **WHEN** the task transitions to completed
 - **THEN** the run is signalled through `signalAs` with the completer as actor and the task's node addressed
 
-`@e2e case-flow-live-journeys.spec.ts` drives the live task-completion resume;
-the seam call shape is pinned by TaskCompletionResumeListenerTest.
+`@e2e task-completion-resumes-the-run.spec.ts` isolates the wake: the run is
+read before and after the completion, and the resume is what makes it due
+ahead of its heartbeat. `@e2e case-flow-live-journeys.spec.ts` drives the same
+resume inside the shipped journey. The seam call shape is pinned by
+TaskCompletionResumeListenerTest.
+
+#### Scenario: A withdrawn ask wakes nothing
+
+- **GIVEN** a suspended run awaiting a task
+- **WHEN** the task is cancelled rather than completed, so it reaches a terminal state that is not a completion
+- **THEN** no signal is delivered and the run stays parked on its own heartbeat
+
+`@e2e task-completion-resumes-the-run.spec.ts` cancels the task of a second
+run and reads that run's `resumeAt` back unchanged. Without this, the guard
+could be missing and every journey that only ever completes its tasks would
+stay green.
 
 #### Scenario: A refusal from the seam withholds the resume
 
