@@ -563,13 +563,14 @@ test.describe('A status brings its checklist with it', () => {
 		)
 		expect(forward.status, JSON.stringify(forward.body)).toBe(200)
 
-		// 🔴 KNOWN TO FAIL, AND THE ASSERTION IS THE CORRECT ONE. The
-		// de-duplication reads `StatusChecklist::existingTitles()`, which
-		// searches the `caseTask` register objects the transition no longer
-		// writes (lib/Service/Transitions/StatusChecklist.php:210-221). It
-		// therefore sees no previous visit and re-creates both items, so this
-		// answers four. Weakening it to four would record the defect as the
-		// design. It is left naming what a second entry must do.
+		// This was KNOWN TO FAIL and is not any more, and the assertion never
+		// moved. The de-duplication reads `StatusChecklist::existingTitles()`,
+		// which searched the `caseTask` register objects the transition
+		// stopped writing at dossiq#2363: it saw no previous visit, re-created
+		// both items, and this answered four. Weakening it to four would have
+		// recorded the defect as the design, so it was left naming what a
+		// second entry must do. dossiq#2405 moved the reader onto
+		// `EngineTaskInbox::forCase()` and the two now answer two.
 		const after = await tasksOf(cases.roundtrip, arrival.progress)
 		expect(after, 'a second entry must not double the work').toHaveLength(2)
 		const stillDone = after.find((row) => String(row.title) === ITEM.dossier)

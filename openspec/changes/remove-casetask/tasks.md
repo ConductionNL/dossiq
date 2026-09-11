@@ -171,10 +171,12 @@ Only after 1 to 3 are green.
 
 ## 5. e2e
 
-- [ ] 5.1 The nine specs that name the slug:
+- [x] 5.1 The nine specs that name the slug:
       `case-flow-live-journeys`, `case-list-lenses`, `case-parties`,
       `case-task-pane`, `checklist-per-status`, `dashboard-tiles`,
       `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
+      Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
+      / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
 - [ ] 5.2 One new spec for the cutover itself: a task created by a transition,
       completed through the engine's verb, resuming a suspended flow run. That
       is the path `TaskCompletionResumeListener` now serves and no existing
@@ -182,6 +184,33 @@ Only after 1 to 3 are green.
 - [ ] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
+
+### What 5.1 left standing on purpose
+
+`checklist-per-status` needed no conversion: dossiq#2402 and #2405 had already
+moved both of its halves onto the engine, and its four remaining mentions of
+the slug are past-tense history. One of them was a lie, though — a
+`🔴 KNOWN TO FAIL` note on `back to intake and forward again keeps one set of
+tasks`, describing the `existingTitles()` defect that #2405 fixed. The
+assertion was always the right one and was never weakened; only the note
+moved.
+
+`case-flow-live-journeys` had rotted unnoticed. It is excluded from the
+default Playwright project (it needs the shipped flow ENABLED), so nothing has
+run it since the writes moved. Its `completeTask` read `/objects/dossiq/task`,
+a slug this app does not ship, and then PUT `caseTask` — an object
+`AskPersonTaskStore` stopped creating at #2363. Both halves now go through the
+engine.
+
+`ci-seed.sh` no longer REQUIRES `caseTask`. The schema still exists and
+`demo-caseload` still seeds objects of it, deliberately — but a name in that
+list is a hard `exit 1` before Playwright starts, which reports every spec as
+NOT RUN. Out of the list, the day the schema goes costs `demo-caseload` its
+two calculation scenarios and nothing else.
+
+`FIXTURE_SCHEMAS` in `helpers/fixtures.ts` keeps `caseTask` for the same
+reason: it is the cleanup order for the objects `demo-caseload` writes. It
+goes with 4.2, not with 5.1.
 
 ## 6. What the first pass missed
 
