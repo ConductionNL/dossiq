@@ -9,7 +9,7 @@
 				{{
 					t(
 						'dossiq',
-						'Only the fields you select below are shared — never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.',
+						'Only the fields you select below are shared. Never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.',
 					)
 				}}
 			</p>

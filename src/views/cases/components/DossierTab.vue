@@ -19,6 +19,14 @@
 					:reduce="(option) => option.id"
 					label="label"
 					:clearable="false" />
+				<NcSelect
+					v-model="keywordFilter"
+					class="dossier-tab__keyword-filter"
+					data-testid="dossier-keyword-filter"
+					:inputLabel="t('dossiq', 'Filter by keyword')"
+					:options="availableKeywords"
+					:disabled="availableKeywords.length === 0"
+					multiple />
 				<NcButton type="primary" @click="triggerFilePicker">
 					<template #icon>
 						<Upload :size="20" />
@@ -66,9 +74,39 @@
 			</template>
 		</NcEmptyContent>
 
+		<NcEmptyContent
+			v-else-if="visibleGroups.length === 0"
+			:name="t('dossiq', 'No documents match this keyword')"
+			:description="
+				t('dossiq', 'Clear the keyword filter to see the whole dossier.')
+			">
+			<template #icon>
+				<FolderOpenOutline :size="20" />
+			</template>
+			<template #action>
+				<NcButton @click="clearKeywordFilter">
+					{{ t('dossiq', 'Clear filter') }}
+				</NcButton>
+			</template>
+		</NcEmptyContent>
+
 		<div v-else class="dossier-tab__groups">
+			<div class="dossier-tab__columns" data-testid="dossier-columns">
+				<span class="dossier-tab__column-spacer" />
+				<span class="dossier-tab__column-spacer" />
+				<span class="dossier-tab__column">{{ t('dossiq', 'Title') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Type') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Status') }}</span>
+				<span class="dossier-tab__column">{{
+					t('dossiq', 'Direction')
+				}}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Date') }}</span>
+				<span class="dossier-tab__column">{{ t('dossiq', 'Author') }}</span>
+				<span class="dossier-tab__column-spacer" />
+			</div>
+
 			<DossierGroup
-				v-for="group in groups"
+				v-for="group in visibleGroups"
 				:key="group.informatieobjecttype"
 				:groupLabel="typeLabel(group.informatieobjecttype)"
 				:documents="group.documents"
@@ -77,7 +115,6 @@
 				:sortDirection="sortDirection"
 				@toggleSelect="toggleSelect"
 				@open="openInFiles"
-				@share="shareDocument"
 				@versionHistory="showVersions"
 				@delete="deleteDocument" />
 		</div>
@@ -99,7 +136,9 @@
 		<VersionHistoryPanel
 			v-if="versionDocument"
 			:document="versionDocument"
-			:userId="userId" />
+			:userId="userId"
+			@downloadVersion="downloadVersion"
+			@restoreVersion="restoreVersion" />
 	</div>
 </template>
 
@@ -115,6 +154,10 @@ import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 import BulkActionsBar from './BulkActionsBar.vue'
 import DossierGroup from './DossierGroup.vue'
 import VersionHistoryPanel from './VersionHistoryPanel.vue'
+import {
+	collectKeywords,
+	filterGroupsByKeywords,
+} from '../../../utils/dossierHelpers.js'
 
 /**
  * Case dossier tab: lists informatieobjecten grouped by type with a count
@@ -159,6 +202,7 @@ export default {
 			selectedIds: [],
 			sortKey: 'creatiedatum',
 			sortDirection: 'desc',
+			keywordFilter: [],
 			dragActive: false,
 			pendingFiles: [],
 			showMetadataDialog: false,
@@ -210,6 +254,26 @@ export default {
 				{ id: 'status', label: this.t('dossiq', 'Status') },
 			]
 		},
+
+		/**
+		 * The keywords in use across this case's dossier — the filter's facet.
+		 *
+		 * @return {string[]} The keywords, sorted.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		availableKeywords() {
+			return collectKeywords(this.groups)
+		},
+
+		/**
+		 * The groups the list renders, narrowed by the chosen keywords.
+		 *
+		 * @return {Array} The narrowed groups.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		visibleGroups() {
+			return filterGroupsByKeywords(this.groups, this.keywordFilter)
+		},
 	},
 
 	watch: {
@@ -247,7 +311,7 @@ export default {
 				this.groups = data.groups || []
 				this.total = data.total || 0
 				this.$emit('count-changed', this.total)
-			} catch (error) {
+			} catch {
 				this.groups = []
 				this.total = 0
 			} finally {
@@ -268,7 +332,7 @@ export default {
 				)
 				const { data } = await axios.get(url)
 				this.types = data.results || data.objects || data || []
-			} catch (error) {
+			} catch {
 				this.types = []
 			}
 		},
@@ -387,7 +451,7 @@ export default {
 					})
 					this.uploadProgress[index] = 100
 					anySuccess = true
-				} catch (error) {
+				} catch {
 					this.uploadErrors[index] = true
 				}
 			}
@@ -414,6 +478,15 @@ export default {
 			} else {
 				this.selectedIds.splice(index, 1)
 			}
+		},
+
+		/**
+		 * Clear the keyword filter, so the whole dossier comes back.
+		 *
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		clearKeywordFilter() {
+			this.keywordFilter = []
 		},
 
 		/**
@@ -467,7 +540,7 @@ export default {
 				const { data } = await axios.post(generateUrl(path), payload)
 				this.bulkResults = data.results || []
 				this.fetchDossier()
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'Bulk action failed'))
 			} finally {
 				this.bulkBusy = false
@@ -497,7 +570,7 @@ export default {
 				link.download = `dossier-${this.caseId}.zip`
 				link.click()
 				window.URL.revokeObjectURL(objectUrl)
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'ZIP export failed'))
 			} finally {
 				this.bulkBusy = false
@@ -517,21 +590,6 @@ export default {
 		},
 
 		/**
-		 * Trigger a public share for the document.
-		 *
-		 * @param {object} document The document.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
-		 */
-		shareDocument(document) {
-			this.$emit('count-changed', this.total)
-			showSuccess(
-				this.t('dossiq', 'Share requested for {name}', {
-					name: document.title,
-				}),
-			)
-		},
-
-		/**
 		 * Show the version-history panel for a document.
 		 *
 		 * @param {object} document The document.
@@ -539,6 +597,55 @@ export default {
 		 */
 		showVersions(document) {
 			this.versionDocument = document
+		},
+
+		/**
+		 * Download one previous version of the open document.
+		 *
+		 * `version.id` is the DAV href PROPFIND returned, which is already the
+		 * download URL for that version. It is opened rather than fetched
+		 * because the browser must own the save dialog.
+		 *
+		 * @param {object} version The version to download.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		downloadVersion(version) {
+			if (!version || !version.id) {
+				return
+			}
+			window.open(version.id, '_blank')
+		},
+
+		/**
+		 * Restore the open document to one of its previous versions.
+		 *
+		 * Nextcloud restores a version by MOVEing its DAV node onto the
+		 * `restore/target` endpoint. The dossier is refetched afterwards
+		 * because the size and the modification date on the row both change.
+		 *
+		 * @param {object} version The version to restore.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async restoreVersion(version) {
+			if (!version || !version.id || !this.userId) {
+				return
+			}
+			try {
+				await axios.request({
+					method: 'MOVE',
+					url: version.id,
+					headers: {
+						Destination: generateUrl(
+							`/remote.php/dav/versions/${this.userId}/restore/target`,
+						),
+					},
+				})
+				showSuccess(this.t('dossiq', 'Version restored'))
+				this.fetchDossier()
+			} catch {
+				showError(this.t('dossiq', 'Could not restore this version'))
+			}
 		},
 
 		/**
@@ -555,7 +662,7 @@ export default {
 				)
 				await axios.delete(url)
 				this.fetchDossier()
-			} catch (error) {
+			} catch {
 				showError(this.t('dossiq', 'Could not remove document'))
 			}
 		},
@@ -567,6 +674,30 @@ export default {
 .dossier-tab {
 	position: relative;
 	padding: 12px;
+
+	/* The one declaration of the case file's column tracks: select, thumbnail,
+	   Title, Type, Status, Direction, Date, Author, actions. The header strip
+	   below and every DocumentRow inherit it, so a column cannot move in one
+	   place and stay put in the other. */
+	--dossier-columns: 34px 32px minmax(0, 2fr) minmax(0, 1fr) 90px 90px 100px
+		minmax(0, 1fr) 44px;
+}
+
+.dossier-tab__columns {
+	display: grid;
+	grid-template-columns: var(--dossier-columns);
+	gap: 12px;
+	padding: 0 4px 4px;
+	border-bottom: 1px solid var(--color-border);
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+	font-size: 0.85em;
+}
+
+.dossier-tab__column {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .dossier-tab__header {
@@ -586,6 +717,10 @@ export default {
 
 .dossier-tab__sort {
 	min-width: 180px;
+}
+
+.dossier-tab__keyword-filter {
+	min-width: 200px;
 }
 
 .dossier-tab__file-input {

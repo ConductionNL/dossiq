@@ -15,7 +15,7 @@
 				<template #icon>
 					<Import :size="18" />
 				</template>
-				{{ t('dossiq', 'Import from Decidesk') }}
+				{{ t('dossiq', 'Import from Decidiq') }}
 			</NcButton>
 		</div>
 

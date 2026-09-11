@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -475,7 +475,7 @@
       "aiAuditEntry": {
         "slug": "aiAuditEntry",
         "icon": "RobotOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:DigitalDocument",
         "title": "AI Audit Entry",
         "description": "Immutable audit log entry for AI-assisted processing interactions",
@@ -507,11 +507,17 @@
               "suggestion",
               "accepted",
               "rejected",
-              "modified"
+              "modified",
+              "failed"
             ],
-            "description": "Outcome of the AI suggestion",
+            "description": "Outcome of the AI interaction: a suggestion offered, what the human did with it, or a failed attempt",
             "title": "Action",
             "facetable": true
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the attempt failed, when action is failed",
+            "title": "Error"
           },
           "caseId": {
             "type": "string",
@@ -1276,6 +1282,12 @@
             "type": "string",
             "title": "Template ID",
             "description": "BeschikkingTemplate identifier (Docudesk-bound)"
+          },
+          "templateVersion": {
+            "type": "string",
+            "title": "Template Version",
+            "description": "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.",
+            "x-notes": "Resolved by TemplateEngineAdapterInterface::resolveVersion() at compose time and stored by BeschikkingService::compose(), which used to compute it and drop it. The filinq adapter reads it from filinq's TemplateVersionService chain, so the value is 'v<n>' for a versioned template and the template object's own OpenRegister version otherwise. Unrelated to draftVersion, which counts re-renders of this beschikking."
           },
           "draftVersion": {
             "type": "integer",
@@ -2354,7 +2366,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.9.0",
+        "version": "1.10.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2786,6 +2798,14 @@
             "title": "Assignee",
             "facetable": true
           },
+          "assignedGroup": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "organisatieRol",
+            "description": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+            "title": "Team",
+            "facetable": true
+          },
           "intakeChannel": {
             "type": "string",
             "enum": [
@@ -3012,15 +3032,18 @@
           },
           "initiatorDisplayName": {
             "type": "string",
-            "title": "Initiator display name",
-            "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
+            "title": "Requester",
+            "description": "Name of the person or company who asked for this case, denormalised when you pick them so the list and the card can render it without a second read. Stays hidden as a form field: the picker writes it, you do not type it.",
+            "visible": false,
+            "facetable": true
           },
           "requester": {
             "type": "string",
             "format": "uuid",
             "referenceSemanticType": "https://openregister.app/ns#Requester",
+            "x-relation-schema-field": "initiatorType",
             "title": "Requester",
-            "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference: one write path."
+            "description": "The person or company who asked for this case. Pick them when you file the case, or when you edit it. A case that arrives through the ns#Case semantic handoff writes the same field, so there is one write path. Holds the UUID of the row that provides ns#Requester (ADR-048); initiatorType, initiatorSourceId and initiatorDisplayName are its display projection."
           },
           "handoffSource": {
             "type": "string",
@@ -4767,7 +4790,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.1.0",
+        "version": "1.3.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -4839,6 +4862,14 @@
             "type": "string",
             "title": "Identified Citizen ID",
             "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"
+          },
+          "contact": {
+            "type": "string",
+            "format": "uuid",
+            "referenceSemanticType": "https://openregister.app/ns#Requester",
+            "title": "Contact",
+            "facetable": true,
+            "description": "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both."
           },
           "identificationMethod": {
             "type": "string",
@@ -13112,291 +13143,6 @@
           }
         }
       },
-      "caseTask": {
-        "slug": "caseTask",
-        "x-openregister-notifications": {
-          "taskAssigned": {
-            "trigger": {
-              "type": "created"
-            },
-            "enabled": true,
-            "channels": [
-              "nc-notification"
-            ],
-            "recipients": [
-              {
-                "kind": "field",
-                "field": "assignee"
-              }
-            ],
-            "subject": {
-              "nl": "Taak \"{{title}}\" aan je toegewezen",
-              "en": "Task \"{{title}}\" assigned to you"
-            }
-          }
-        },
-        "icon": "CheckboxMarkedCircleOutline",
-        "version": "1.2.0",
-        "x-schema-org": "schema:Action",
-        "x-zgw-equivalent": "Taak",
-        "title": "Task",
-        "description": "A task within a case",
-        "type": "object",
-        "required": [
-          "title",
-          "case"
-        ],
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 255,
-            "description": "Title of this task",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "description": "Detailed description of this task",
-            "visible": false,
-            "title": "Description"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "available",
-              "active",
-              "completed",
-              "terminated",
-              "disabled"
-            ],
-            "default": "available",
-            "description": "Task status (CMMN HumanTask lifecycle)",
-            "title": "Status",
-            "facetable": true
-          },
-          "isTerminalStatus": {
-            "type": "boolean",
-            "readOnly": true,
-            "default": false,
-            "description": "Whether the task sits at a terminal status (completed/terminated/disabled). Computed declaratively by OpenRegister (x-openregister-calculations.isTerminalStatus); filter isTerminalStatus=false for open tasks.",
-            "title": "Is Terminal Status",
-            "facetable": true,
-            "visible": false
-          },
-          "case": {
-            "type": "string",
-            "format": "uuid",
-            "$ref": "case",
-            "onDelete": "CASCADE",
-            "description": "Reference to the parent case",
-            "title": "Case"
-          },
-          "assignee": {
-            "type": "string",
-            "description": "Nextcloud user ID of the assigned user",
-            "title": "Assignee",
-            "facetable": true
-          },
-          "dueDate": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Due date for this task",
-            "title": "Due Date"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "low",
-              "normal",
-              "high",
-              "urgent"
-            ],
-            "default": "normal",
-            "description": "Task priority",
-            "title": "Priority",
-            "facetable": true
-          },
-          "completedDate": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date the task was completed",
-            "visible": false,
-            "title": "Completed Date"
-          },
-          "workflowStepId": {
-            "type": "string",
-            "description": "UUID of the workflow step that generated this task",
-            "visible": false,
-            "title": "Workflow Step ID"
-          },
-          "checklist": {
-            "type": "string",
-            "description": "JSON-encoded array of checklist items ({id, label, checked})",
-            "visible": false,
-            "title": "Checklist"
-          }
-        },
-        "searchable": true,
-        "configuration": {
-          "x-openregister-calculations": {
-            "isTerminalStatus": {
-              "type": "boolean",
-              "materialise": true,
-              "description": "True when the task status is terminal (completed/terminated/disabled: mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
-              "expression": {
-                "or": [
-                  {
-                    "eq": [
-                      {
-                        "prop": "status"
-                      },
-                      "completed"
-                    ]
-                  },
-                  {
-                    "eq": [
-                      {
-                        "prop": "status"
-                      },
-                      "terminated"
-                    ]
-                  },
-                  {
-                    "eq": [
-                      {
-                        "prop": "status"
-                      },
-                      "disabled"
-                    ]
-                  }
-                ]
-              }
-            },
-            "daysUntilDue": {
-              "type": "integer",
-              "materialise": false,
-              "description": "Signed whole days from today until dueDate (negative = overdue, null = no dueDate). Virtual (materialise:false): time-dependent, computed at read time when the request passes _extend=calculations. Both operands are floored to date granularity (dueDate is date-time) to match day-based reminder semantics.",
-              "expression": {
-                "dateDiff": {
-                  "from": {
-                    "formatDate": [
-                      {
-                        "now": []
-                      },
-                      "Y-m-d"
-                    ]
-                  },
-                  "to": {
-                    "formatDate": [
-                      {
-                        "prop": "dueDate"
-                      },
-                      "Y-m-d"
-                    ]
-                  },
-                  "unit": "days"
-                }
-              }
-            },
-            "daysOverdue": {
-              "type": "integer",
-              "materialise": false,
-              "description": "Whole days past dueDate; null when there is no dueDate or the task is not overdue (due today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
-              "expression": {
-                "if": [
-                  {
-                    "gt": [
-                      {
-                        "dateDiff": {
-                          "from": {
-                            "formatDate": [
-                              {
-                                "prop": "dueDate"
-                              },
-                              "Y-m-d"
-                            ]
-                          },
-                          "to": {
-                            "formatDate": [
-                              {
-                                "now": []
-                              },
-                              "Y-m-d"
-                            ]
-                          },
-                          "unit": "days"
-                        }
-                      },
-                      0
-                    ]
-                  },
-                  {
-                    "dateDiff": {
-                      "from": {
-                        "formatDate": [
-                          {
-                            "prop": "dueDate"
-                          },
-                          "Y-m-d"
-                        ]
-                      },
-                      "to": {
-                        "formatDate": [
-                          {
-                            "now": []
-                          },
-                          "Y-m-d"
-                        ]
-                      },
-                      "unit": "days"
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          "x-openregister-lifecycle": {
-            "field": "status",
-            "initial": "available",
-            "final": [
-              "completed",
-              "terminated",
-              "disabled"
-            ],
-            "transitions": {
-              "activate": {
-                "from": [
-                  "available"
-                ],
-                "to": "active",
-                "description": "Pick up the task."
-              },
-              "complete": {
-                "from": [
-                  "active"
-                ],
-                "to": "completed",
-                "description": "Mark task as completed."
-              },
-              "terminate": {
-                "from": [
-                  "available",
-                  "active"
-                ],
-                "to": "terminated",
-                "description": "Terminate the task."
-              },
-              "disable": {
-                "from": [
-                  "available",
-                  "active"
-                ],
-                "to": "disabled",
-                "description": "Disable the task."
-              }
-            }
-          }
-        }
-      },
       "tenant": {
         "slug": "tenant",
         "icon": "OfficeBuildingOutline",
@@ -14652,6 +14398,108 @@
             },
             "description": "Reference to a status type",
             "title": "Status Type Reference"
+          }
+        }
+      },
+      "dossiqIntegration": {
+        "slug": "dossiqIntegration",
+        "icon": "PowerPlugOutline",
+        "version": "1.2.0",
+        "title": "Integration",
+        "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, matching the schema of the same name in the application register. The demo register seeds no rows here, and MockRegisterHasNoSeededCatalogueTest holds that line, so this block changes nothing that exists today. It is here so a demo instance that later grows a row does not reopen what the application register just closed.",
+        "type": "object",
+        "authorization": {
+          "read": [
+            "admin"
+          ],
+          "create": [
+            "admin"
+          ],
+          "update": [
+            "admin"
+          ],
+          "delete": [
+            "admin"
+          ]
+        },
+        "required": [
+          "key",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Machine identifier for the connection. A probe and a save handler both find their row by this key.",
+            "enum": [
+              "zgw",
+              "stuf",
+              "kcc",
+              "dmn",
+              "mailbox",
+              "store",
+              "financial",
+              "brp",
+              "kvk",
+              "pdok",
+              "berichtenbox",
+              "templates"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "The name of the connection as an admin knows it."
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What Dossiq uses the connection for."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "What the app can back about this connection right now.",
+            "default": "unconfigured",
+            "enum": [
+              "configured",
+              "unconfigured",
+              "unavailable",
+              "simulated",
+              "error"
+            ],
+            "x-enum-labels": {
+              "configured": "Configured",
+              "unconfigured": "Not configured",
+              "unavailable": "Not available",
+              "simulated": "Simulated",
+              "error": "Error"
+            },
+            "facetable": true
+          },
+          "statusMessage": {
+            "type": "string",
+            "title": "Status message",
+            "description": "What the last probe or save reported, in the words the reader needs."
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last checked",
+            "description": "When the status was last written by a probe or a save."
+          },
+          "settingsUrl": {
+            "type": "string",
+            "title": "Settings",
+            "description": "Where the connection is configured. Empty when there is nothing to configure yet.",
+            "x-notes": "A same-origin path plus an anchor into the Nextcloud admin page, e.g. /settings/admin/dossiq#section-stuf. NOT format: uri, which rejects a relative path."
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "Where the connection sits in the list.",
+            "default": 0
           }
         }
       }
@@ -22672,63 +22520,6 @@
         "addedBy": "Voorbeeld Addedby 3",
         "addedAt": "2026-03-03T09:00:00+00:00",
         "lastLoginAt": "2026-03-03T09:00:00+00:00"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "caseTask",
-          "slug": "task-voorbeeld-title-1-1",
-          "id": "fab148e2-e14d-45ca-a0c2-58073d5e59b3"
-        },
-        "title": "Voorbeeld Title 1",
-        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
-        "description": "Voorbeeld Description 1",
-        "status": "available",
-        "isTerminalStatus": false,
-        "assignee": "Voorbeeld Assignee 1",
-        "dueDate": "2026-03-01T09:00:00+00:00",
-        "priority": "low",
-        "completedDate": "2026-03-01T09:00:00+00:00",
-        "workflowStepId": "Voorbeeld Workflowstepid 1",
-        "checklist": "Voorbeeld Checklist 1"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "caseTask",
-          "slug": "task-voorbeeld-title-2-2",
-          "id": "10d3503b-1077-45db-8516-ae4719f1a40f"
-        },
-        "title": "Voorbeeld Title 2",
-        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
-        "description": "Voorbeeld Description 2",
-        "status": "active",
-        "isTerminalStatus": false,
-        "assignee": "Voorbeeld Assignee 2",
-        "dueDate": "2026-03-02T09:00:00+00:00",
-        "priority": "normal",
-        "completedDate": "2026-03-02T09:00:00+00:00",
-        "workflowStepId": "Voorbeeld Workflowstepid 2",
-        "checklist": "Voorbeeld Checklist 2"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "caseTask",
-          "slug": "task-voorbeeld-title-3-3",
-          "id": "0d4e9a65-535b-4ef8-bd93-453713b8fa78"
-        },
-        "title": "Voorbeeld Title 3",
-        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
-        "description": "Voorbeeld Description 3",
-        "status": "completed",
-        "isTerminalStatus": false,
-        "assignee": "Voorbeeld Assignee 3",
-        "dueDate": "2026-03-03T09:00:00+00:00",
-        "priority": "high",
-        "completedDate": "2026-03-03T09:00:00+00:00",
-        "workflowStepId": "Voorbeeld Workflowstepid 3",
-        "checklist": "Voorbeeld Checklist 3"
       },
       {
         "@self": {

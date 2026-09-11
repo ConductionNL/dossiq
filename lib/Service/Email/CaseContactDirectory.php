@@ -10,11 +10,20 @@
  * address as either `email` or `emailadres`.
  *
  * Split out of CaseEmailService so that service states the *policy* ("the
- * recipient must be a registered contact") while the knowledge of where
- * contacts are stored lives here.
+ * recipient must be allowed") while the knowledge of where contacts are stored
+ * lives here.
  *
- * An empty result means the case registers no contacts at all, which callers
- * read as "no restriction applies" — not as "no contact matched".
+ * ⚠️ MEASURED 2026-09-10, not assumed: the `case` schema in
+ * `lib/Settings/dossiq_register.json` declares NONE of these four fields, and
+ * `git log -S` finds no commit that ever added one. The requester is a
+ * cross-register UUID reference (`requester`), not an address. So on today's
+ * data model this class returns [] for every case, and the allow-list carries
+ * the whole recipient policy. It is kept, and fed the raw case record, so that
+ * the day the schema grows a contact field the policy reads it — but nothing
+ * here may be read as evidence that a case supplies an address today.
+ *
+ * An empty result means "no contact matched". It is NOT a licence to send: the
+ * caller must reject a recipient that no source allows.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Email
@@ -49,8 +58,10 @@ class CaseContactDirectory {
 	 * Collect the normalised (lowercased) email addresses of all contacts on a case.
 	 *
 	 * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
-	 * `initiator`, and the top-level `email` field. Returns an empty array when
-	 * no contacts are registered; the caller treats an empty array as "no restriction".
+	 * `initiator`, and the top-level `email` field. None of the four is declared
+	 * on today's `case` schema, so this returns an empty array for every real
+	 * case; the caller MUST treat an empty array as "no contact matched", never
+	 * as "no restriction".
 	 *
 	 * @param array<string, mixed> $caseData The case data array
 	 *

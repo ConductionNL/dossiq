@@ -17,13 +17,6 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
-		if (config.register && config.task_schema) {
-			objectStore.registerObjectType(
-				'caseTask',
-				config.task_schema,
-				config.register,
-			)
-		}
 		if (config.register && config.status_schema) {
 			objectStore.registerObjectType(
 				'status',
@@ -76,10 +69,16 @@ export async function initializeStores() {
 				config.register,
 			)
 		}
-		if (config.register && config.result_type_schema) {
+		// Same slug fallback, same reason as caseType/statusType above, plus one
+		// of its own: the case page asks for a case type's result types to know
+		// what to offer when a transition CLOSES the case. Left unregistered,
+		// that read throws and the closing dialog offers no result at all — a
+		// case type with results configured would close without one, which is
+		// exactly what REQ-STE-12 forbids.
+		if (config.register) {
 			objectStore.registerObjectType(
 				'resultType',
-				config.result_type_schema,
+				config.result_type_schema || 'resultType',
 				config.register,
 			)
 		}
@@ -159,6 +158,25 @@ export async function initializeStores() {
 			objectStore.registerObjectType(
 				'caseDocument',
 				config.case_document_schema || 'caseDocument',
+				config.register,
+			)
+		}
+		// The two party register sets behind the requester (brp-kvk register
+		// sets). They were the only types the app READ without registering:
+		// `_getTypeConfig` THROWS on an unregistered type, the picker caught
+		// it in its search try/catch, and every person and company search
+		// answered "no matching records in the seeded register set" — which
+		// is exactly what an empty register looks like. Slug fallback like
+		// caseDocument above; both are seeded by the 25-brp-kvk fragment.
+		if (config.register) {
+			objectStore.registerObjectType(
+				'brpPerson',
+				config.brp_person_schema || 'brpPerson',
+				config.register,
+			)
+			objectStore.registerObjectType(
+				'kvkCompany',
+				config.kvk_company_schema || 'kvkCompany',
 				config.register,
 			)
 		}

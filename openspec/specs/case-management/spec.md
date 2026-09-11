@@ -966,6 +966,373 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 <!-- BEGIN retrofit-2026-05-24-case-management -->
 
+### Requirement: Every new case gets a number (REQ-CM-25)
+
+Every new case gets a number like 2026-0042 without you typing it. The `case`
+schema SHALL declare `identifier` as a generated value: the year of the start
+date, a hyphen and a four-digit sequence that restarts every year. The field
+SHALL be read-only on every form and SHALL NOT appear on the New case form. A
+case that already holds an identifier SHALL keep it.
+
+**Feature tier**: MVP
+
+#### Scenario: A case filed from the form gets the next number
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** the last case of this year is numbered 2026-0041
+- **WHEN** you file a case from New case on the Dashboard
+- **THEN** the case page SHALL show the number 2026-0042
+- **AND** the New case form SHALL NOT have offered a number field
+
+#### Scenario: A case posted to the API gets a number too
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case posted to the case endpoint without an identifier
+- **WHEN** the answer arrives
+- **THEN** its identifier SHALL match `YYYY-NNNN`
+- **AND** the year SHALL be the year of its start date
+
+#### Scenario: An existing number stays
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case that holds the identifier BZW-2025-17
+- **WHEN** you edit and save its title
+- **THEN** its identifier SHALL still be BZW-2025-17
+
+### Requirement: You tag a case and filter on tags (REQ-CM-26)
+
+You tag a case and filter the list on tags. The `case` schema SHALL carry
+`tags`, a list of free words. `CaseDetail` SHALL show the tags in a sidebar
+tab where you add and remove them. The Cases index SHALL offer a Tags filter
+that lists cases carrying the chosen tag.
+
+**Feature tier**: MVP
+
+#### Scenario: You add a tag on the case
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case without tags
+- **WHEN** you open the Tags tab and add spoed
+- **THEN** the tag SHALL show on the case after a reload
+
+#### Scenario: You filter the list on a tag
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** two cases tagged wijk-noord and ten without
+- **WHEN** you filter the Cases index on wijk-noord
+- **THEN** the list SHALL hold the two tagged cases only
+
+### Requirement: The case shows its lead time, archive and payment data (REQ-CM-27)
+
+You read the case's legal lead time, archive nomination and destruction date
+on the case. `CaseDetail` SHALL show a Terms and payment block with the type's
+processing deadline, the case's legal basis, payment indication and last
+payment date, and an Archiving block with the nomination, retention period,
+archive action date, archive status, its basis and source, and any legal
+hold. The `case` schema SHALL carry `legalBasis` as text.
+
+The two blocks are split by where the answer comes from, not by topic. The
+statutory and payment fields are the case's own schema properties. The
+archival ones SHALL be read from the resolved `@self._retention` decision
+rather than from this app's field names, so that the same surface answers for
+any object; the case still writes `archiveNomination` and its siblings for its
+ZGW consumers, and the resolver reads them from there.
+
+**Feature tier**: MVP
+
+#### Scenario: The blocks read the type and the case
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case of a type with a processing deadline of 8 weeks
+- **AND** the case carries archive nomination blijvend bewaren and legal basis Awb 4:13
+- **WHEN** you open the case page
+- **THEN** Terms and payment SHALL show 8 weeks as the statutory lead time
+- **AND** SHALL show Awb 4:13
+- **AND** Archiving SHALL name the nomination as the phrase it stands for, not the stored code
+
+#### Scenario: Empty fields stay visible
+@e2e tests/e2e/case-identity.spec.ts
+
+- **GIVEN** a case with no archive action date
+- **WHEN** you open the case page
+- **THEN** the Archiving block SHALL show the archive action date row as empty, not hide it
+
+⚠️ This scenario is RED and its test is parked on
+[nextcloud-vue#1062](https://github.com/ConductionNL/nextcloud-vue/issues/1062).
+It held while the archival fields sat in a data widget, where `hideEmpty:
+false` expressed it. They now render through `CnObjectMetadataWidget`, which
+drops an archival key that has no value even when `include` names it, and
+exposes no prop to ask for it back. The requirement stays as written because
+it is still the behaviour a records officer needs: an absent destruction date
+is the thing being looked for, and a hidden row and a blank row say different
+things.
+
+### Requirement: The case page lists its objects (REQ-CM-28)
+
+You see what the case is about on the case. `CaseDetail` SHALL show an
+Objects tab in `case-panels` that lists the `caseObject` records whose
+`case` is the open case, with the columns object type, identification,
+description and link. A case without objects SHALL show the tab with an
+empty state, not hide it. The rows SHALL NOT open a detail page: a case
+object is a link row, not a record of its own.
+
+**Feature tier**: MVP
+
+#### Scenario: The tab lists the case's objects
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case with a building object and a vehicle object
+- **AND** another case with one object of its own
+- **WHEN** you open the first case's Objects tab
+- **THEN** the list SHALL show two rows with their object type, identification, description and link
+- **AND** SHALL NOT show the other case's object
+
+#### Scenario: An empty case shows the tab
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case without objects
+- **WHEN** you open its page
+- **THEN** the Objects tab SHALL be present
+- **AND** SHALL read No objects linked to this case yet
+
+### Requirement: You link an object from the case (REQ-CM-29)
+
+You link a building, a vehicle or any other object without leaving the
+case. `CaseDetail` SHALL offer a header action Link object that opens a form
+over `caseObject` asking for the object type, the identification, the link
+and a description, with the open case passed as the value of `case`. After
+saving, the new object SHALL appear in the Objects tab.
+
+**Feature tier**: MVP
+
+#### Scenario: A linked object shows up in the tab
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** a case with no objects
+- **WHEN** you choose Link object, enter object type building, identification 0363100012345678, description The shed at the back and save
+- **THEN** the Objects tab SHALL show one row with that object type, identification and description
+- **AND** the saved object SHALL hold the case's id in `case`
+
+#### Scenario: A link without an object type is refused
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** the Link object form is open
+- **WHEN** you fill the identification and leave the object type empty and try to save
+- **THEN** the form SHALL not save
+- **AND** SHALL mark the object type as required
+
+#### Scenario: The case is prefilled once nextcloud-vue passes initial data
+@e2e exclude The prefill waits on nextcloud-vue create-with-initial-data (placement.md, triage #6); until then the saved object is asserted, not the field.
+
+- **GIVEN** the Link object form opened from a case
+- **WHEN** the form renders
+- **THEN** the `case` field SHALL already hold the open case
+
+### Requirement: You find every case on an object (REQ-CM-30)
+
+You start from the object and find its cases. The app SHALL offer an
+Objects index over `caseObject`, reached from the Cases menu group, whose
+sidebar groups the rows by object type and whose search matches the
+identification. Each row SHALL name its case and SHALL offer a View case
+action that opens that case. `caseObject.objectType` SHALL be a facet so the
+sidebar can group on it.
+
+**Feature tier**: MVP
+
+#### Scenario: One building, two cases
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** two cases that each link the building 0363100012345678
+- **AND** a third case that links a vehicle
+- **WHEN** you open the Objects index and search for 0363100012345678
+- **THEN** the list SHALL show two rows, one per case
+- **AND** SHALL NOT show the vehicle
+
+#### Scenario: A row opens its case
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** the Objects index showing a row on a case
+- **WHEN** you choose View case on that row
+- **THEN** the case page of that case SHALL open
+
+#### Scenario: The sidebar groups by object type
+@e2e tests/e2e/case-objects.spec.ts
+
+- **GIVEN** objects of type building and of type vehicle
+- **WHEN** you pick building in the sidebar
+- **THEN** the list SHALL show only the building rows
+- **AND** All objects SHALL bring every row back
+
+### Requirement: You copy a case from its page (REQ-CM-24)
+
+You copy a case with its type, requester and properties into a new case. The
+Actions menu of `CaseDetail` SHALL offer Copy case. Confirming SHALL create a
+new case of the same type in the type's initial status, carrying the source's
+requester, confidentiality, priority, intake channel and properties, with the
+source listed under related cases. The number, deadline, result, status
+history, decisions and publications SHALL NOT be copied. When you tick Include
+documents, the source's open documents SHALL be linked to the new case, not
+duplicated.
+
+**Feature tier**: V1
+
+#### Scenario: A handler copies a case
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case of type Melding openbare ruimte with a requester and two filled properties
+- **WHEN** the handler chooses Copy case and confirms with the proposed title
+- **THEN** a new case SHALL open with the same type, requester and property values
+- **AND** its status SHALL be the type's initial status
+- **AND** its number SHALL differ from the source's number
+- **AND** the source SHALL be listed under its related cases
+
+#### Scenario: Documents come along as links
+@e2e tests/e2e/case-actions-menu.spec.ts
+
+- **GIVEN** a case with one document
+- **WHEN** the handler copies it with Include documents ticked
+- **THEN** the new case's Documents tab SHALL list that document
+- **AND** the file SHALL exist once in storage
+
+#### Scenario: A reader cannot copy
+@e2e exclude Playwright signs in as admin and cannot take a lesser role; PHPUnit covers the refusal in CaseActionsControllerTest, which asserts the guard is asked before the service and that no case is created
+
+- **GIVEN** a user who may read the case but not write cases
+- **WHEN** they post to the copy endpoint
+- **THEN** the answer SHALL be 403
+- **AND** no case SHALL be created
+
+### Requirement: REQ-CASE-LTA-001 The Cases index MUST offer a Due this week lens
+
+You see the week ahead without reading every deadline. The `Cases` page SHALL
+carry a Due this week chip after Overdue, filtering
+`deadline[gte] = "@today"`, `deadline[lt] = "@today+7d"` and
+`isFinalStatus = false`.
+
+The window is half-open on both sides. Without the near edge the chip would
+list every overdue case as well and still read as a plausible list, which is
+the failure mode a reader cannot see.
+
+The chip SHALL NOT carry a `statusHiddenInLists` condition, matching its
+sibling Overdue rather than All.
+
+#### Scenario: Due this week shows the case due in three days and neither neighbour
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** an open case due in three days, an open case due in thirty days and an open case that was due two days ago
+- **WHEN** you choose the chip Due this week
+- **THEN** the list SHALL show the case due in three days
+- **AND** the list SHALL NOT show the case due in thirty days
+- **AND** the list SHALL NOT show the case that was due two days ago
+
+### Requirement: The case task is namespaced (REQ-CM-070)
+
+This requirement is obsolete. dossiq owns no task schema, so there is no slug
+left to namespace. It is kept rather than deleted because the collision it
+settled was real, and the next person to propose a task schema would otherwise
+re-litigate it.
+
+**What it settled.** Three apps modelled a task at the same time, and register
+slugs are global on an instance. planninq keeps the bare slug `task`, pipelinq
+uses `crmTask`, and dossiq took `caseTask`. The three shapes shared
+`description`, `priority` and `status` alone, so renaming them apart cost less
+than folding three claims onto one owner.
+
+**What replaced it.** The change `remove-casetask` deleted the `caseTask`
+schema from `lib/Settings/dossiq_register.json` and
+`lib/Settings/dossiq_mock_register.json`. A dossiq task is an OpenRegister
+engine task now, behind `/api/flow-tasks`, and the engine keeps its tasks in
+its own table rather than as objects of a schema. The collision is gone
+because the concept moved, not because the slug won.
+
+**What the move left behind.** `KpiAggregationService::ids()` carries a
+register and a `case` schema only, and its two task tiles ask
+`EngineTaskInbox::countOpenForAssignee()`. `DemoCaseloadGateway::schemaIds()`
+omits the task id on purpose, because the method throws on a missing id and
+would otherwise have taken the whole demo caseload down with the schema.
+`tests/e2e/ci-seed.sh` names the slug only to say it must not come back.
+
+The one clause that still holds is the exclusion. `task` as a row or item type
+label is not a slug, and nothing renamed it: `WorkQueueService`'s `itemType`,
+and the `type` key in `CaseReassignmentService`, `BulkReassignModal`,
+`taskApi` and `dashboardHelpers`.
+
+The two scenarios below are false as written, and they are left byte-identical
+on purpose. Gate 19 asks every modified scenario for a Playwright citation and
+this change ships no test, so correcting them belongs to the change that can
+cite one.
+
+#### Scenario: The KPI counts still resolve their schema
+
+- **WHEN** the dashboard KPIs are computed
+- **THEN** the task count resolves a schema id rather than null.
+
+#### Scenario: The demo caseload still seeds its tasks
+
+- **WHEN** the demo caseload is seeded
+- **THEN** each task is created against a resolved schema id.
+
+### Requirement: REQ-CM-31 Open work by default, closed work on request
+
+Your work list shows open cases only unless you ask for closed ones. On the
+`Cases` page the chips Mine and Unclaimed MUST carry `isFinalStatus = false`
+and the chip Closed MUST carry `isFinalStatus = true`, so a closed case
+appears under Closed and under All and nowhere else. `isFinalStatus` is a
+stored boolean on every case row, so plain equality reaches it and no
+derived filter is needed.
+
+#### Scenario: A closed case leaves Mine
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a case assigned to the signed-in user whose status is final
+- **WHEN** you open the Cases page with the chip Mine active
+- **THEN** the list SHALL NOT show the closed case
+
+#### Scenario: Closed shows the closed case
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** a case whose status is final and an open case
+- **WHEN** you choose the chip Closed
+- **THEN** the list SHALL show the closed case and SHALL NOT show the open one
+
+### Requirement: REQ-CM-32 Deadline before in the sidebar
+
+You narrow the case list on a deadline. The `Cases` page sidebar MUST offer
+a filter Deadline before, a date input that adds `deadline lt <date>` to the
+active query.
+
+**[blocked: the index sidebar has no manifest-declared filter and no
+operator]** `CnIndexSidebar` builds its Filters section entirely from the
+SCHEMA — `filtersFromSchema` walks the properties marked `facetable: true`
+and renders each as a checkbox (booleans) or a values select (everything
+else), whose `filter-change` event carries `{ key, values }`. There is no
+manifest key for a sidebar filter, no date input among the widget types and
+no operator anywhere in that path: a facet can only say `field = one of
+these values`, never `field < this date`. Nothing in `@conduction/nextcloud-vue`
+2.41 can express this requirement, so no configuration in this repo
+satisfies it.
+
+Interim, the state is reachable but not offerable: `resolveQueryFilters`
+passes any non-underscore route query through to the fetch, so
+`/cases?deadline[lt]=2026-10-01` narrows the list exactly as this
+requirement describes, and that is the path the Overdue dashboard tiles
+take. What is missing is a control a reader can operate. Unblocking it is a
+nextcloud-vue change: a `sidebar.filters[]` array of
+`{ field, operator, label, type }` on `CnIndexPage`, rendered beside the
+schema facets and merged into the fetch the way the facets already are. It MUST combine with the active chip rather than replace it,
+so Mine plus Deadline before shows your cases due before that date. The
+Requester text filter on `initiatorDisplayName` sits in the same sidebar and
+is specified by `requester-on-the-case` (`initiator-display` REQ-ID-2); this
+requirement does not restate it.
+
+#### Scenario: Deadline before narrows the list
+@e2e exclude The control does not exist to drive: nextcloud-vue 2.41's index sidebar derives its filters from schema `facetable` properties as value lists, with no date input and no operator, so there is no Deadline before field for a spec to fill. The narrowing itself is covered where it IS reachable, by the Overdue tile's View all in tests/e2e/case-list-lenses.spec.ts, which sends `deadline[lt]` through the route query.
+
+- **GIVEN** two open cases assigned to the signed-in user, one due in 3 days and one due in 30 days
+- **WHEN** you set Deadline before to 10 days from today
+- **THEN** the list SHALL show the case due in 3 days and SHALL NOT show the case due in 30 days
+- **AND** the chip Mine SHALL still be active
+
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
 ### REQ-101: Dossiq SHALL expose case-sharing endpoints via CaseSharingController
@@ -1005,6 +1372,34 @@ The `OCA\Dossiq\Controller\EmailController` SHALL expose the HTTP surface: `POST
 #### Scenario: Preview before send
 - **WHEN** a behandelaar calls `EmailController::preview($caseId)` with `{templateId, recipient}`
 - **THEN** the response SHALL contain the fully-rendered subject + body without any side effects
+
+### REQ-103a: CaseEmailService SHALL reject any recipient that is not on the allow-list
+
+@e2e exclude Backend recipient policy; the reject path is covered by PHPUnit and has no dossiq UI surface that can exercise it without a configured mail transport.
+
+`CaseEmailService::sendEmail()` SHALL send only to a recipient that matches the allow-list resolved by `OCA\Dossiq\Service\Email\RecipientAllowlist`, or that is a contact registered on the case. Every other recipient SHALL be rejected before the message reaches the mailer, and the rejection SHALL be logged.
+
+The allow-list SHALL never be empty on an instance that can send at all. When the operator has configured no entries, it SHALL default to the domain of `email_from_address`, which `resolveFromAddress()` already requires. An entry of `*` SHALL allow every recipient, so opening the relay stays possible but stays an explicit operator decision.
+
+An empty address list SHALL NOT be read as "no restriction". This requirement exists because it was: the guard was handed `loadCaseVariables()`'s six-key projection, which carries none of the contact fields the reader inspects, so the list was empty on every call and the guard passed every address it ever saw.
+
+The `case` schema declares no contact address field today, so the case-contact source contributes nothing and the allow-list carries the whole policy. Any future contact field SHALL be read from the raw case record, never from the variable projection.
+
+#### Scenario: A recipient outside a populated allow-list is rejected
+- **GIVEN** `email_recipient_allowlist` is `@gemeente.nl` and a readable case
+- **WHEN** a behandelaar calls `sendEmail()` with `attacker@evil.example`
+- **THEN** the call SHALL throw, the mailer SHALL NOT be handed a message, and a warning SHALL be logged
+
+#### Scenario: No configured allow-list still restricts to the sender's own domain
+- **GIVEN** `email_recipient_allowlist` is unset and `email_from_address` is `zaken@gemeente.nl`
+- **WHEN** a behandelaar calls `sendEmail()` with `iemand@gemeente.nl`
+- **THEN** the mail SHALL be sent
+- **AND** the same call with `iemand@elders.example` SHALL be rejected
+
+#### Scenario: The operator can open the relay deliberately
+- **GIVEN** `email_recipient_allowlist` is `*`
+- **WHEN** a behandelaar calls `sendEmail()` with any valid address
+- **THEN** the mail SHALL be sent
 
 ### REQ-104: PublicShareController SHALL enforce token-scoped access to case data
 
@@ -1214,7 +1609,6 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-01a: Create a case with case type selection
 
 - GIVEN a user with case management access
@@ -1281,7 +1675,6 @@ The system MUST support updating case properties. Changes MUST be recorded in th
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-02a: Update case description
 
 - GIVEN an existing case "Bouwvergunning Keizersgracht 100" with identifier "2026-042"
@@ -1326,7 +1719,6 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-03a: Delete a case in initial status
 
 - GIVEN a case "Testmelding" with status "Ontvangen" and no linked tasks, decisions, or sub-cases
@@ -1355,7 +1747,6 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-04a: Default case list
 
@@ -1425,7 +1816,6 @@ The system MUST support changing a case's status directly from the case list vie
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-05a: Quick status change via dropdown
 
 - GIVEN a case "Bouwvergunning Keizersgracht 100" with status "Ontvangen" in the case list
@@ -1465,7 +1855,6 @@ The system MUST support changing a case's status directly from the case list vie
 The system MUST provide a comprehensive detail view for each case. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-06a: Case info panel
 
@@ -1519,7 +1908,6 @@ The case detail view MUST display a visual status timeline showing all statuses 
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-07a: Status timeline with current status
 
 - GIVEN a case of type "Omgevingsvergunning" with ordered statuses ["Ontvangen", "In behandeling", "Besluitvorming", "Afgehandeld"]
@@ -1560,7 +1948,6 @@ The case detail view MUST display assigned participants with their roles.
 
 **Feature tier**: MVP (handler assignment), V1 (full role types)
 
-
 #### Scenario CM-08a: Display participants
 
 - GIVEN a case with roles: Handler = "Jan de Vries", Initiator = "Petra Jansen (Acme Corp)", Advisor = "Dr. K. Bakker"
@@ -1591,7 +1978,6 @@ The case detail view MUST display custom properties defined by the case type.
 
 **Feature tier**: V1
 
-
 #### Scenario CM-09a: Display custom properties
 
 - GIVEN a case of type "Omgevingsvergunning" with property definitions ["Kadastraal nummer" (text), "Bouwkosten" (number), "Oppervlakte" (number), "Bouwlagen" (number)]
@@ -1621,7 +2007,6 @@ The case detail view MUST display custom properties defined by the case type.
 The case detail view MUST display a checklist of required documents defined by the case type, showing which are present and which are missing.
 
 **Feature tier**: V1
-
 
 #### Scenario CM-10a: Document checklist with mixed completion
 
@@ -1667,7 +2052,6 @@ The case detail view MUST display tasks linked to the case.
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-11a: Display tasks with completion count
 
 - GIVEN a case with 5 tasks: 2 completed, 1 active, 2 available
@@ -1699,7 +2083,6 @@ The case detail view MUST display decisions linked to the case.
 
 **Feature tier**: V1
 
-
 #### Scenario CM-12a: Display decisions
 
 - GIVEN a case with 1 decision: "Vergunning verleend" decided on Feb 20 by "Jan de Vries"
@@ -1728,7 +2111,6 @@ The case detail view MUST display decisions linked to the case.
 The case detail view MUST display an activity timeline showing all events related to the case in chronological order (newest first).
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-13a: Activity timeline entries
 
@@ -1764,7 +2146,6 @@ The case detail view MUST display an activity timeline showing all events relate
 The system MUST support changing a case's status. Status changes MUST respect case type constraints: only statuses defined by the case type are allowed, required properties MUST be satisfied, and required documents MUST be present.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-14a: Valid status change
 
@@ -1824,7 +2205,6 @@ The system MUST support recording a result when closing a case.
 
 **Feature tier**: MVP (basic result), V1 (result types from case type)
 
-
 #### Scenario CM-15a: Record result from case type's allowed results (V1)
 
 - GIVEN a case of type "Omgevingsvergunning" with result types ["Vergunning verleend", "Vergunning geweigerd", "Ingetrokken"]
@@ -1854,7 +2234,6 @@ The system MUST support recording a result when closing a case.
 The system MUST support extending a case's deadline when the case type allows it.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-16a: Extend deadline when allowed
 
@@ -1886,7 +2265,6 @@ The system MUST support extending a case's deadline when the case type allows it
 The system SHALL support suspending a case when the case type allows it. Suspension pauses the deadline countdown.
 
 **Feature tier**: V1
-
 
 #### Scenario CM-17a: Suspend a case
 
@@ -1926,7 +2304,6 @@ The system SHALL support parent/child case hierarchies. A sub-case is a full cas
 
 **Feature tier**: V1
 
-
 #### Scenario CM-18a: Create a sub-case
 
 - GIVEN an existing case "Bouwproject Centrum" (identifier "2026-042")
@@ -1963,7 +2340,6 @@ The system SHALL support confidentiality levels on cases, defaulting from the ca
 
 **Feature tier**: V1
 
-
 #### Scenario CM-19a: Inherit confidentiality from case type
 
 - GIVEN a case type "Omgevingsvergunning" with `confidentiality = "internal"`
@@ -1991,7 +2367,6 @@ The system SHALL support confidentiality levels on cases, defaulting from the ca
 The system MUST enforce validation rules when creating or modifying cases.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-20a: Title is required
 
@@ -2031,7 +2406,6 @@ The system MUST display deadline countdowns on cases across all views (list, det
 
 **Feature tier**: MVP
 
-
 #### Scenario CM-21a: Days remaining display
 
 - GIVEN a case with `deadline = "2026-03-15"` and today is "2026-02-25"
@@ -2067,7 +2441,6 @@ The system MUST display deadline countdowns on cases across all views (list, det
 The system MUST maintain a complete audit trail for all case modifications. The audit trail is published via Nextcloud's Activity system (`OCP\Activity\IManager`).
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-22a: Status change audit entry
 
@@ -2107,7 +2480,6 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 The system MUST provide full-text search across cases matching against title, description, identifier, and custom property values.
 
 **Feature tier**: MVP
-
 
 #### Scenario CM-23a: Search by identifier
 

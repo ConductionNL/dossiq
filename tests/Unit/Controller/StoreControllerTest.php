@@ -128,7 +128,7 @@ class StoreControllerTest extends TestCase {
 
 		$this->registry = $this->getMockBuilder(ConfiguredRegistryService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['save'])
+			->onlyMethods(['save', 'recordStoreStatus'])
 			->getMock();
 
 		$this->controller = new StoreController(

@@ -126,6 +126,17 @@ $extra = [
 
         // Case type duplicate (zaaktype-copy) + draft-only guarded delete.
     ['name' => 'caseDefinition#copy',   'url' => '/api/case-definitions/{id}/copy', 'verb' => 'POST'],
+        // The next version of a published case type. A separate gesture from
+        // copy because it means something different: same case type, later on,
+        // with the running cases left on the version they started under.
+    ['name' => 'caseDefinition#newVersion', 'url' => '/api/case-definitions/{id}/new-version', 'verb' => 'POST'],
+        // The effective blueprint of a case type (its own rows merged with its
+        // parent's) and the validate-then-publish gesture. Keyed on the case
+        // type rather than on a definition package, so they sit under
+        // /api/case-types and on their own controller.
+    ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
+    ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
+    ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -349,6 +360,30 @@ $extra = [
     ['name' => 'statusTransition#execute',   'url' => '/api/case/{caseId}/transition',            'verb' => 'POST'],
     ['name' => 'statusTransition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
     ['name' => 'statusTransition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
+
+        // The gestures that change a case without changing its status:
+        // opschorten (Awb 4:5), hervatten, verlengen (Awb 4:14) and heropenen.
+        // They sit beside the transition engine because they share its subject
+        // and its guards, and the `lifecycle` read is what tells the case page
+        // which of them are honest to offer on this case.
+    ['name' => 'caseLifecycle#state',   'url' => '/api/case/{caseId}/lifecycle', 'verb' => 'GET'],
+    ['name' => 'caseLifecycle#suspend', 'url' => '/api/case/{caseId}/suspend',   'verb' => 'POST'],
+    ['name' => 'caseLifecycle#resume',  'url' => '/api/case/{caseId}/resume',    'verb' => 'POST'],
+    ['name' => 'caseLifecycle#extend',  'url' => '/api/case/{caseId}/extend',    'verb' => 'POST'],
+    ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
+
+        // The Actions menu's three non-lifecycle gestures (case-actions-menu):
+        // copy this case, start a flow its type allows, and plan a follow-up
+        // case for a later date. `startable-flows` and `planned` are the two
+        // reads the case page needs to offer the other two honestly, so a
+        // handler is never shown a Start list the type does not allow or a
+        // planned row that has already become an ordinary case. All four are
+        // literal segments after `{caseId}`, so none collides with the
+        // lifecycle or transition routes above.
+    ['name' => 'caseActions#copy',           'url' => '/api/case/{caseId}/copy',            'verb' => 'POST'],
+    ['name' => 'caseActions#startableFlows', 'url' => '/api/case/{caseId}/startable-flows', 'verb' => 'GET'],
+    ['name' => 'caseActions#plan',           'url' => '/api/case/{caseId}/plan',            'verb' => 'POST'],
+    ['name' => 'caseActions#planned',        'url' => '/api/case/{caseId}/planned',         'verb' => 'GET'],
 
         // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
         // prefix with literal `bulk-transition` segments, distinct from the
@@ -724,6 +759,11 @@ $extra = [
     ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'GET'],
     ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+        // Generate document: renders a library template over the case and
+        // files the result as an informatieobject + join, through the same
+        // MergeTemplateHandler branch DossiqMergeTemplateNode will run once
+        // nextcloud-vue can dispatch a `run-action` header action.
+    ['name' => 'caseDocumentGeneration#generateDocument', 'url' => '/api/cases/{caseId}/dossier/generate',        'verb' => 'POST'],
     ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
     ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],

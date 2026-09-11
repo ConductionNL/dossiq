@@ -20,7 +20,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
 use OCP\IAppConfig;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -296,6 +297,7 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 			container: $container,
 			appConfig: $appConfig,
 			caseWriter: new CaseFieldWriter(),
+			userSession: $this->createMock(IUserSession::class),
 			logger: new NullLogger(),
 		);
 

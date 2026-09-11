@@ -53,9 +53,13 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 	/**
 	 * Person fields requested from the API (no more than the lifecycle needs).
 	 *
+	 * `geheimhoudingPersoonsgegevens` is asked for because a handler has to
+	 * be told that a person's data is protected before they read the BSN;
+	 * it maps to the `indicatieGeheim` flag on the mapped row.
+	 *
 	 * @var array<int, string>
 	 */
-	private const FIELDS = ['citizenServiceNumber', 'name', 'birth', 'residence'];
+	private const FIELDS = ['citizenServiceNumber', 'name', 'birth', 'residence', 'geheimhoudingPersoonsgegevens'];
 
 	/**
 	 * Constructor.
@@ -121,6 +125,12 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 			// MUST NOT persist beyond the autorisatieprofiel-protected need.
 			unset($persoon['citizenServiceNumber']);
 
+			// Carry the secrecy indication onto the row under the name the
+			// brpPerson schema uses, so one flag answers "is this person
+			// protected?" everywhere downstream.
+			$persoon['indicatieGeheim'] = $this->mapIndicatieGeheim(persoon: $persoon);
+			unset($persoon['geheimhoudingPersoonsgegevens']);
+
 			return new BrpLookupResult(
 				lookupStatus: 'FOUND',
 				persoon: $persoon,
@@ -146,6 +156,41 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 		}//end try
 
 	}//end lookup()
+
+	/**
+	 * Map Haal Centraal `geheimhoudingPersoonsgegevens` onto the boolean
+	 * `indicatieGeheim` the `brpPerson` schema carries.
+	 *
+	 * Haal Centraal answers with a GBA code, not a boolean: `0` means the
+	 * person asked for nothing, and every other value is a form of
+	 * protection. So the rule is "anything but 0 is true", and an absent
+	 * field is false — a person the BRP says nothing about is not protected.
+	 * Reading it as a plain truthiness test would make the string `"0"` the
+	 * mock returns come out TRUE, which is the wrong way round for a flag
+	 * that hides a BSN.
+	 *
+	 * @param array<string,mixed> $persoon The mapped person envelope.
+	 *
+	 * @return bool TRUE when the person's data is protected.
+	 *
+	 * @spec openspec/specs/brp-register/spec.md
+	 */
+	private function mapIndicatieGeheim(array $persoon): bool {
+		if (array_key_exists('geheimhoudingPersoonsgegevens', $persoon) === false) {
+			return false;
+		}
+
+		$raw = $persoon['geheimhoudingPersoonsgegevens'];
+		if ($raw === null || $raw === '' || is_array($raw) === true) {
+			return false;
+		}
+
+		if (is_bool($raw) === true) {
+			return $raw;
+		}
+
+		return ((int)$raw !== 0);
+	}//end mapIndicatieGeheim()
 
 	/**
 	 * A configured live adapter is not dormant.

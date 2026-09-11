@@ -17,7 +17,7 @@ import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
 
 test.describe('Workflow Board page', () => {
-	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
 	test('workflow board renders its heading and a status/empty surface', async ({
 		page,
 	}) => {
@@ -52,7 +52,7 @@ test.describe('Workflow Board page', () => {
 	// Doorlooptijd analytics view (caseType). store.js now falls back to the
 	// canonical schema slug ('caseType' / 'statusType') when the config id is
 	// empty, so the types are always registered and this contract holds.
-	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-loads-without-console-errors
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
@@ -67,7 +67,7 @@ test.describe('Workflow Board page', () => {
 })
 
 test.describe('Case Map page', () => {
-	// @e2e openspec/specs/case-map/spec.md#case-map-renders-map-surface
+	// @e2e openspec/specs/case-map-overview/spec.md#scenario-overview-01a-display-all-cases-on-map
 	test('case map renders its heading and an interactive map surface', async ({
 		page,
 	}) => {
@@ -96,32 +96,62 @@ test.describe('Case Map page', () => {
 // feat(nav): streamline work queue.
 
 test.describe('Subsidies intake page', () => {
-	// FIXME(#719): /subsidies falls back to the GENERIC case index — measured
-	// buttons are [Settings, Cards, Table, Add Case, Actions], i.e. "Add Case"
-	// rather than any subsidy-specific create control, so there is no subsidy
-	// intake shell to assert. (/subsidieregelingen renders "Add
-	// Subsidieregeling" correctly and its test passes.)
-	// @e2e openspec/specs/subsidy-intake/spec.md#subsidies-index-renders-list-shell
+	// UNPARKED, AND THE ASSERTION IT WAS WAITING ON WAS THE WRONG ONE.
+	//
+	// The old FIXME(#719) recorded that /subsidies shows "Add Case" rather than
+	// "Add Subsidie", and parked the test until a subsidy-specific create
+	// control appeared. It never will, and it should not: `Subsidies` in
+	// src/manifest.d/50-subsidie.json is an index over register `dossiq`,
+	// schema `case`, narrowed by `filter.caseType`. A subsidie-aanvraag IS a
+	// case — that is the same decision ADR-044 records for grant schemes
+	// becoming case types — so CnIndexPage labels the create button from the
+	// `case` schema's title, and "Add Case" is the correct label.
+	//
+	// So the shell this test pins is not the create button. It is that
+	// /subsidies is a NARROWED case list with its own column set, rather than
+	// the unfiltered Cases index under a different name.
+	// @e2e exclude No canonical spec covers the subsidies index shell. The
+	// subsidie specs describe the keten (voorschot, termijnen, verplichting,
+	// vaststelling) and the settlement of case costs, none of them the page
+	// that lists the aanvragen. This test pins the shell until one is written.
 	test('subsidies index renders the subsidy intake list shell', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): /subsidies falls back to the GENERIC case index — measured buttons are [Settings, Cards, Table, Add Case, Actions], i.e. "Add Case" rather than any subsidy-specific create control, so there is no subsidy intake shell to assert. (/subsidieregelingen renders "Add Subsidieregeling" correctly and its test passes.)',
-		)
 		const errors = trackDossiqErrors(page)
 		// "Subsidies" is a group header with no label in the subsidie manifest
 		// fragment, so it renders no clickable nav entry — navigate by route.
 		await navToRoute(page, '/subsidies')
 		// View switcher renders as buttons, not radios.
 		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
-			timeout: 15000,
+			timeout: 30_000,
 		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		// Subsidy-specific create control distinguishes this from other lists.
+		// Its own page, by its own title.
 		await expect(
-			page.getByRole('button', { name: /^Add Subsidie/ }),
-		).toBeVisible()
+			page.getByRole('heading', { name: /^Subsidies$/i }).first(),
+		).toBeVisible({ timeout: 30_000 })
+		// 🔴 THE NARROWING IS THE CLAIM, AND AN ABSENCE IS HOW IT READS.
+		// `Subsidies` declares `config.filter.caseType` and NO `quickFilters`,
+		// while `Cases` declares six of them (All, Mine, Unclaimed, Closed,
+		// Overdue, Due this week) and no filter. So the chip strip is present
+		// on exactly one of the two pages, and its absence here is what says
+		// this is the narrowed subsidy list rather than the Cases index under
+		// another route. Measured rather than assumed: the column headers this
+		// used to assert are not on the page at all, because the seeded
+		// register holds no case of this caseType and the table renders its
+		// empty state instead.
+		for (const chip of ['All', 'Unclaimed', 'Overdue']) {
+			await expect(
+				page.getByRole('tab', { name: chip, exact: true }),
+				`the subsidies index declares no quick filters, so there is no ${chip} chip`,
+			).toHaveCount(0)
+		}
+		// The create control carries the `case` schema's label, because a
+		// subsidie-aanvraag IS a case. This is the assertion the old FIXME was
+		// waiting to see inverted.
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case)$/ }).first(),
+		).toBeVisible({ timeout: 30_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
 	})

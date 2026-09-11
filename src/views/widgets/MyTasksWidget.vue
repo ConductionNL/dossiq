@@ -20,9 +20,8 @@
 
 <script>
 import { CnDataTable } from '@conduction/nextcloud-vue'
-import { getCurrentUser } from '@nextcloud/auth'
 import { generateUrl } from '@nextcloud/router'
-import { useObjectStore } from '../../store/modules/object.js'
+import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
@@ -55,8 +54,8 @@ export default {
 
 	computed: {
 		/** @spec openspec/specs/signalering-widgets/spec.md */
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		/**
@@ -125,22 +124,21 @@ export default {
 		async fetchData() {
 			this.loading = true
 			try {
-				const currentUser = getCurrentUser()?.uid || ''
 				// 🔴 `_filters[x]` IS INERT. The store passes params straight to the
 				// query string, and OpenRegister reads a BARE field name; measured
 				// against the live API, `_filters[assignee]=rbac-editor` returned all
 				// 32 tasks while `assignee=rbac-editor` returned the 2 that match. So
 				// this widget was fetching EVERY user's tasks and filtering only by
 				// status, which is not what a widget called "My Tasks" may show.
-				const results = await this.objectStore.fetchCollection('caseTask', {
-					assignee: currentUser,
-					isTerminalStatus: false,
-					_limit: 7,
+				// `scope: assigned` HERE, unlike the case surfaces: this
+				// widget IS the reader's own list. The engine filters the
+				// terminal ones out server-side, so the client-side
+				// status filter this used to carry is gone.
+				const results = await this.engineTasks.list({
+					scope: 'assigned',
+					limit: 7,
 				})
-				// Filter to active/available tasks only.
-				this.tasks = (results || []).filter(
-					(t) => t.status === 'available' || t.status === 'active',
-				)
+				this.tasks = (results || []).filter((t) => !isTerminal(t))
 			} catch (err) {
 				console.error('[MyTasksWidget] Failed to fetch tasks:', err)
 				this.tasks = []

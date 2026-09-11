@@ -176,3 +176,81 @@ scanned, linked, last error) SHALL be recorded per user for the settings surface
 - **GIVEN** a batch where one message's processing throws
 - **WHEN** the run completes
 - **THEN** the remaining messages SHALL still be processed and the failure SHALL be logged
+
+---
+
+### Requirement: REQ-ECM-009 — An unmatched mail in the shared mailbox becomes a case
+
+The shared-mailbox poller SHALL resolve a subject tag to a case by the bare
+identifier the tag contains, not by the tag itself. When the subject carries no
+tag, or names a case that does not resolve, and the instance configures a
+fallback case type, the poller SHALL create a case of that type from the mail
+and archive the mail onto it. When no fallback case type is configured it SHALL
+create nothing, which is the behaviour of every instance that does not opt in.
+The new case SHALL take its title from the subject, `email` as its intake
+channel, and its assignee from the fallback case type's default assignee. Every
+message the poller cannot place SHALL be counted in the run's log.
+
+**Feature tier**: V1
+
+#### Scenario: A reply carrying a case tag reaches its case
+@e2e exclude Background poller over IMAP; covered by tests/Unit/BackgroundJob/InboundEmailJobTest.php.
+
+- **GIVEN** a mail whose subject reads `Re: [ZAAK-2026-000142] uw aanvraag`
+- **WHEN** the poller reads it
+- **THEN** the case SHALL be looked up by the identifier `2026-000142`, without the prefix
+- **AND** the mail SHALL be archived onto that case
+
+#### Scenario: A first-time mail becomes a case
+@e2e exclude Background poller over IMAP; covered by tests/Unit/Service/Email/UnmatchedMailIntakeTest.php.
+
+- **GIVEN** an instance whose fallback case type is Klantvraag
+- **WHEN** a mail arrives whose subject carries no case tag
+- **THEN** a case of type Klantvraag SHALL be created with the subject as its title
+- **AND** its intake channel SHALL be `email` and its assignee the type's default assignee
+- **AND** the mail SHALL be archived onto it
+
+#### Scenario: An instance that names no fallback type creates nothing
+@e2e exclude Backend guard; covered by tests/Unit/Service/Email/UnmatchedMailIntakeTest.php.
+
+- **GIVEN** an instance with no fallback case type configured
+- **WHEN** a mail arrives that matches no case
+- **THEN** nothing SHALL be written and the mail SHALL stay in the mailbox
+- **AND** the run SHALL log how many messages it could not place
+
+---
+
+### Requirement: REQ-ECM-010 — One rule says who work goes to
+
+Every path that creates a task or a case SHALL resolve its assignee through one
+shared rule: render the authored value against the case, fall back to the
+declared second choice, and answer nobody rather than the unrendered template.
+A task created by a status transition or a status checklist SHALL additionally
+fall back to the case's own handler, and SHALL carry the case's team when it has
+one. A task that ends up naming nobody SHALL be logged.
+
+**Feature tier**: V1
+
+#### Scenario: A checklist task reaches the case's handler
+@e2e exclude Backend resolution; covered by tests/Unit/Service/Transitions/CreateTaskHandlerTest.php.
+
+- **GIVEN** a case whose handler is alice, entering a status whose checklist has one item
+- **WHEN** the transition runs
+- **THEN** the created task SHALL be assigned to alice
+- **AND** its assignee SHALL NOT be the literal `{{ case.assignee }}`
+
+#### Scenario: The team comes along without being mistaken for the handler
+@e2e exclude Backend resolution; covered by tests/Unit/Service/Transitions/CreateTaskHandlerTest.php.
+
+- **GIVEN** a case with a team and no personal handler
+- **WHEN** a transition creates a task on it
+- **THEN** the task SHALL carry the team in its own field
+- **AND** the assignee field SHALL stay empty rather than holding the team's id
+
+#### Scenario: A flow step still refuses when nobody resolves
+@e2e exclude Backend resolution; covered by tests/Unit/Flow/DossiqAskPersonNodeTest.php.
+
+- **GIVEN** a flow step whose assignee and fallback both name nobody
+- **WHEN** the step runs
+- **THEN** it SHALL refuse, because an unassigned flow task can be resumed by anyone
+- **AND** the refusal SHALL say whether there was no fallback or a fallback that named nobody

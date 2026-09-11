@@ -84,7 +84,7 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Bind openconnector source slug `zgw-external` (per-receiver JWT signing key + Autorisaties-API scope handshake) '
+				'note' => 'Bind integriq source slug `zgw-external` (per-receiver JWT signing key + Autorisaties-API scope handshake) '
 					. 'and override ZgwExternalAdapterInterface in Application::register() to enable real Zaken-API push.',
 			],
 		);
@@ -129,7 +129,7 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Bind openconnector source slug `zgw-external` + map receiver Documenten-API endpoint to enable real document push.',
+				'note' => 'Bind integriq source slug `zgw-external` + map receiver Documenten-API endpoint to enable real document push.',
 			],
 		);
 	}//end submitDocument()

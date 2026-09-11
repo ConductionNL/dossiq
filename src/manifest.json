@@ -79,7 +79,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "center",
 						"title": "Welcome to Dossiq",
-						"body": "Let's take a quick spin through case handling. We'll register a case together so you can see how the pieces fit, and you'll add the record yourself.",
+						"body": "In seven steps you register your first case and see where it goes. The case you save is a real record, not a demo.",
 						"target": {
 							"kind": "page",
 							"ref": "Dashboard"
@@ -92,7 +92,7 @@
 						"id": "go-cases",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"body": "Cases are the heart of your work. Open Cases from the menu to see everything in progress.",
+						"body": "You work from this list: every case in the organisation, open and closed.",
 						"task": "Click Cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -222,11 +222,33 @@
 			"order": 20
 		},
 		{
+			"id": "Contacts",
+			"label": "Contacts",
+			"icon": "AccountGroupOutline",
+			"route": "Contacts",
+			"order": 25,
+			"open": true
+		},
+		{
+			"id": "OrganisationsMenu",
+			"label": "Organisations",
+			"icon": "OfficeBuildingOutline",
+			"route": "Organisations",
+			"order": 26
+		},
+		{
 			"id": "Cases",
 			"label": "All cases",
 			"icon": "FolderAccountOutline",
 			"route": "Cases",
 			"order": 30
+		},
+		{
+			"id": "CaseObjectsMenu",
+			"label": "Objects",
+			"icon": "CubeOutline",
+			"route": "CaseObjects",
+			"order": 31
 		},
 		{
 			"id": "Tasks",
@@ -351,6 +373,15 @@
 			"permission": "admin"
 		},
 		{
+			"id": "IntegrationsMenu",
+			"label": "Integrations",
+			"icon": "PowerPlugOutline",
+			"route": "Integrations",
+			"section": "settings",
+			"order": 99,
+			"permission": "admin"
+		},
+		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
 			"icon": "MapMarkerPath",
@@ -397,6 +428,7 @@
 						"includeFields": [
 							"caseType",
 							"title",
+							"requester",
 							"description",
 							"assignee",
 							"priority",
@@ -408,6 +440,10 @@
 						"fieldOverrides": {
 							"description": {
 								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
 							}
 						},
 						"icon": "Plus",
@@ -489,6 +525,7 @@
 							"route": {
 								"name": "Cases",
 								"query": {
+									"isFinalStatus": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -658,7 +695,10 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -667,97 +707,25 @@
 						}
 					},
 					{
-						"id": "overdue-cases",
-						"type": "object-table",
-						"title": "Overdue",
+						"id": "my-work",
+						"type": "custom",
+						"title": "My work",
+						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
 						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"deadline": {
-										"lt": "@today"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysOverdue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"positive": "{n} days overdue"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases"
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No open cases"
-						}
-					},
-					{
-						"id": "my-tasks",
-						"type": "object-table",
-						"title": "My Tasks",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false
-								},
-								"extend": ["calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
+							"limit": 10,
 							"rowRoute": "TaskDetail",
 							"viewAllRoute": {
 								"name": "Tasks"
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No tasks found"
+							"emptyText": "You have no open tasks"
 						}
 					},
 					{
-						"id": "deadline-alerts",
+						"id": "deadlines",
 						"type": "object-table",
-						"title": "Deadline Alerts",
+						"title": "Deadlines",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -777,10 +745,12 @@
 							"columns": [
 								{
 									"key": "title",
+									"label": "Case",
 									"cellClass": "cn-cell--strong"
 								},
 								{
 									"key": "daysUntilDeadline",
+									"label": "Days left",
 									"formatter": "conditionalPhrase",
 									"formatterOptions": {
 										"negative": "{n} days overdue",
@@ -791,60 +761,28 @@
 								}
 							],
 							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases"
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No deadline alerts"
-						}
-					},
-					{
-						"id": "task-reminders",
-						"type": "object-table",
-						"title": "Task Due Reminders",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "caseTask",
-								"filter": {
-									"assignee": "@me",
-									"isTerminalStatus": false,
-									"dueDate": {
-										"lte": "@today+3d"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"dueDate": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
+							"rowClass": [
 								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDue",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
+									"when": {
+										"field": "daysUntilDeadline",
+										"op": "lt",
+										"value": 0
 									},
-									"cellClass": "cn-cell--muted cn-cell--end"
+									"class": "cn-row--danger"
 								}
 							],
-							"rowRoute": "TaskDetail",
+							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
 							"viewAllRoute": {
-								"name": "Tasks"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"deadline[lte]": "@today+3d"
+								}
 							},
 							"viewAllLabel": "View all",
-							"hideHeader": true,
+							"hideHeader": false,
 							"borderless": true,
-							"emptyText": "No task reminders"
+							"emptyText": "No deadlines in the next three days"
 						}
 					},
 					{
@@ -880,7 +818,11 @@
 							],
 							"rowRoute": "CaseDetail",
 							"viewAllRoute": {
-								"name": "Cases"
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
+								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
@@ -950,7 +892,7 @@
 					},
 					{
 						"id": "7",
-						"widgetId": "open-cases",
+						"widgetId": "my-work",
 						"gridX": 0,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -959,7 +901,7 @@
 					},
 					{
 						"id": "8",
-						"widgetId": "overdue-cases",
+						"widgetId": "deadlines",
 						"gridX": 4,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -968,7 +910,7 @@
 					},
 					{
 						"id": "9",
-						"widgetId": "my-tasks",
+						"widgetId": "open-cases",
 						"gridX": 8,
 						"gridY": 6,
 						"gridWidth": 4,
@@ -977,26 +919,8 @@
 					},
 					{
 						"id": "10",
-						"widgetId": "deadline-alerts",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "11",
-						"widgetId": "task-reminders",
-						"gridX": 4,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "12",
 						"widgetId": "stalled-cases",
-						"gridX": 8,
+						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
@@ -1014,6 +938,10 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The `slots` map below is not decoration. A `type: \"custom\"` dashboard widget resolves ONLY through it, and it must sit here beside `config`, never inside it. CnPageRenderer reads `page.slots`; a slots map nested under `config` is never read, the widget renders the \"Widget not available\" placeholder, and the manifest schema accepts it either way because `config` is additionalProperties:true. Nine of decidesk's eleven widgets shipped that way on 2026-06-13.",
+			"slots": {
+				"widget-my-work": "MyWorkWidget"
 			}
 		},
 		{
@@ -1095,12 +1023,37 @@
 			"actionsComponent": "CaseListExportAction",
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
+				"_bulkActionsNote": "one-case-list A21. Bulk work stopped at Reassign while `BulkTransitionDialog` and `BulkStatusTransitionService` already served the workflow board, so the four gestures a handler does most from a list were reachable only one case at a time. Each handler opens the SAME dialog in its own mode with a required reason: Suspend, Resume and Extend term are statutory acts (Awb 4:5 and 4:14) someone has to justify later, and doing twenty at once is exactly when the justification goes unwritten. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
 						"id": "reassign",
 						"label": "Reassign",
 						"icon": "AccountSwitchOutline",
 						"handler": "reassignSelection"
+					},
+					{
+						"id": "transition",
+						"label": "Transition",
+						"icon": "SwapHorizontal",
+						"handler": "transitionSelection"
+					},
+					{
+						"id": "suspend",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"handler": "suspendSelection"
+					},
+					{
+						"id": "resume",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"handler": "resumeSelection"
+					},
+					{
+						"id": "extend-term",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"handler": "extendTermSelection"
 					}
 				],
 				"register": "dossiq",
@@ -1141,9 +1094,60 @@
 						"type": "handler"
 					}
 				],
+				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
+				"extend": ["assignedGroup"],
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"statusHiddenInLists": false
+						},
+						"default": true
+					},
+					{
+						"label": "Mine",
+						"filter": {
+							"assignee": "@me",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Unclaimed",
+						"filter": {
+							"assignee": "IS NULL",
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Closed",
+						"filter": {
+							"isFinalStatus": true
+						}
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[lt]": "@today"
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"isFinalStatus": false,
+							"deadline[gte]": "@today",
+							"deadline[lt]": "@today+7d"
+						}
+					}
+				],
 				"columns": [
 					"identifier",
 					"title",
+					{
+						"key": "initiatorDisplayName",
+						"label": "Requester"
+					},
 					{
 						"key": "caseType",
 						"label": "Case type",
@@ -1152,10 +1156,22 @@
 					{
 						"key": "status",
 						"label": "Status",
-						"formatter": "statusTypeName"
+						"formatter": "statusTypeName",
+						"widget": "statusBadge",
+						"_note": "The Status column reads the status's own colour. `statusTypeName` alone resolves the $ref to a name and stops there, so five different statuses read as one grey column. A cell WIDGET rather than a second formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour. The formatter stays as the fallback label the widget renders while the statusType collection is still loading."
 					},
 					"assignee",
-					"deadline",
+					{
+						"key": "assignedGroup.roleName",
+						"label": "Team",
+						"sortable": false
+					},
+					{
+						"key": "deadline",
+						"label": "Deadline",
+						"widget": "deadlineCountdown",
+						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+					},
 					{
 						"key": "id",
 						"label": "Sub-cases",
@@ -1187,7 +1203,10 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
+				"subtitleField": "identifier",
+				"_breadcrumbsNote": "REMOVED, deliberately. The case page carried a trail whose LAST crumb was the case title, rendered one line below the page header that already printed that title: 'Cases > Dakkapel Kerkstraat 12' directly under 'Dakkapel Kerkstraat 12'. It read as a repeat rather than as a location, and it cost the top of the page a row. The way back to the list is the app menu, which is where the other detail pages in this app put it. This key stays as a note and not as config so the next reader finds out the trail was removed on purpose rather than re-adding it.",
+				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
@@ -1195,6 +1214,7 @@
 						"type": "data",
 						"title": "Core case data",
 						"icon": "FileDocument",
+						"_note": "`identifier` carries `readOnly: true` in the schema because OpenRegister generates it, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it. So the case number sat in this include list and rendered nowhere at all — the very field five of the seven demo cases were reported as missing. The `identifier` override re-admits the field with `readOnly: false` and then keeps it un-editable with `editable: false`, which is the state the requirement asks for: shown, never typed.",
 						"content": {
 							"title": "Core case data",
 							"columns": 2,
@@ -1205,6 +1225,7 @@
 								"caseType",
 								"status",
 								"assignee",
+								"assignedGroup",
 								"requester",
 								"priority",
 								"confidentiality",
@@ -1215,38 +1236,49 @@
 							"overrides": {
 								"status": {
 									"editable": false
+								},
+								"identifier": {
+									"readOnly": false,
+									"editable": false
+								},
+								"requester": {
+									"widget": "InitiatorPicker",
+									"label": "Requester"
+								}
+							}
+						}
+					},
+					{
+						"id": "case-terms",
+						"type": "data",
+						"title": "Terms and payment",
+						"icon": "CalendarClock",
+						"_note": "The statutory block: what the law gives you for this case, and what happens to the file afterwards. Every field here already existed on the schema and every one of them carried `visible: false`, which drops a property from every schema-driven surface at once, so the fields were declared and unreadable rather than merely unplaced. `statutoryTerm` is the type's processing deadline copied onto the case: the design asked for `extend` plus the include path `caseType.processingDeadline`, but a data widget builds its fields from the schema's OWN properties, so a dotted include matches nothing and renders nothing, and the stat-caption fallback interpolates only an endpoint payload. `hideEmpty` stays off on purpose: a case with no statutory term must show the row empty, because an absent term is itself the thing a handler is looking for. THE ARCHIVAL HALF MOVED OUT of this widget and no longer has a card of its own. `archiveNomination`, `archiveActionDate` and `archiveStatus` are still written on the case for its ZGW consumers, but they are read from `@self._retention`, the one place any app can ask an object what happens to it and when, and they surface in the object metadata panel under its Archiving category alongside every other `@self` fact. A data widget cannot bind that, because it builds its fields from the schema's own properties and reads them off the top level of the record. The separate `case-archival` card that briefly held them is gone: it duplicated a category the metadata panel already groups, and it spent five rows of the right column saying what the panel says in five.",
+						"content": {
+							"title": "Terms and payment",
+							"columns": 2,
+							"include": [
+								"statutoryTerm",
+								"legalBasis",
+								"paymentIndication",
+								"lastPaymentDate"
+							],
+							"hideEmpty": false,
+							"overrides": {
+								"statutoryTerm": {
+									"readOnly": false,
+									"editable": false
 								}
 							}
 						}
 					},
 					{
 						"id": "case-kpis-hours",
-						"type": "stats-block",
+						"type": "integration",
+						"integrationId": "humaniq-hours",
 						"title": "Hours booked",
 						"icon": "History",
-						"requiredApp": "humaniq",
-						"_note": "The Log hours header action books time against THIS case; its `props` are seed values rather than fields a person fills in, because humaniq keeps domainObjectRef and domainObjectType out of every includeFields allowlist on purpose (they are written by integrations, not typed by an employee). Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' This tile used to sum shillinq UrenRegistratie on subjectApp/subjectId, which contradicted that ADR and, worse, could only ever read zero: a fleet-wide grep found NO writer for subjectApp anywhere, so the tile reported 0 hours on every case in every install and looked correct doing it. The retirement of the shillinq path is tracked in shillinq openspec/changes/hours-to-humaniq. `dossiq:case` is the `<app>:<schema>` literal humaniq documents; it is the app <id> in appinfo/info.xml, and dossiq is the first writer of it in the fleet.",
-						"content": {
-							"entries": [
-								{
-									"title": "Hours booked",
-									"register": "humaniq",
-									"schema": "TimeEntry",
-									"metric": "sum",
-									"field": "hours",
-									"filter": {
-										"domainObjectType": "dossiq:case",
-										"domainObjectRef": "@objectId"
-									}
-								}
-							]
-						}
-					},
-					{
-						"id": "case-related",
-						"type": "related",
-						"title": "Case type, parent & related cases",
-						"icon": "LinkVariant"
+						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
 					},
 					{
 						"id": "initiator",
@@ -1256,172 +1288,11 @@
 						"_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set."
 					},
 					{
-						"id": "case-sub-cases",
-						"type": "object-list",
-						"title": "Sub-cases",
-						"icon": "FileTreeOutline",
-						"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
-						"content": {
-							"register": "dossiq",
-							"schema": "case",
-							"filter": {
-								"parentCase": "@objectId"
-							},
-							"sort": {
-								"field": "deadline",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "deadline",
-									"label": "Deadline"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"emptyText": "No sub-cases yet"
-						}
-					},
-					{
-						"id": "case-tasks",
-						"type": "object-list",
-						"title": "Tasks",
-						"icon": "ClipboardCheckOutline",
-						"content": {
-							"register": "dossiq",
-							"schema": "caseTask",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "dueDate",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "title",
-									"label": "Title"
-								},
-								{
-									"key": "status",
-									"label": "Status"
-								},
-								{
-									"key": "assignee",
-									"label": "Assignee"
-								},
-								{
-									"key": "dueDate",
-									"label": "Due"
-								},
-								{
-									"key": "priority",
-									"label": "Priority"
-								}
-							],
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": "Tasks",
-							"viewAllQuery": {
-								"case": "@objectId"
-							},
-							"emptyText": "No tasks for this case yet"
-						}
-					},
-					{
-						"id": "case-locaties",
-						"type": "object-list",
-						"title": "Locations",
-						"icon": "Earth",
-						"content": {
-							"register": "dossiq",
-							"schema": "case-location",
-							"filter": {
-								"case": "@objectId"
-							},
-							"sort": {
-								"field": "order",
-								"dir": "asc"
-							},
-							"limit": 25,
-							"columns": [
-								{
-									"key": "label",
-									"label": "Label"
-								},
-								{
-									"key": "formattedAddress",
-									"label": "Address"
-								},
-								{
-									"key": "addressDesignationId",
-									"label": "Nummeraanduiding id"
-								},
-								{
-									"key": "parcelId",
-									"label": "Parcel id"
-								},
-								{
-									"key": "source",
-									"label": "Source"
-								}
-							],
-							"emptyText": "No locations linked to this case yet"
-						}
-					},
-					{
-						"id": "case-files",
-						"type": "integration",
-						"integrationId": "files",
-						"title": "Files & attachments",
-						"icon": "FolderOutline"
-					},
-					{
-						"id": "case-notes",
-						"type": "integration",
-						"integrationId": "notes",
-						"title": "Notes",
-						"icon": "NoteTextOutline"
-					},
-					{
-						"id": "case-contacts",
-						"type": "integration",
-						"integrationId": "contacts",
-						"title": "Connected contacts",
-						"icon": "AccountGroup"
-					},
-					{
-						"id": "case-calendar",
-						"type": "integration",
-						"integrationId": "calendar",
-						"title": "Appointments & hearings",
-						"icon": "Calendar"
-					},
-					{
-						"id": "case-decidesk-decisions",
-						"type": "integration",
-						"integrationId": "decidesk-decisions",
-						"title": "Besluitvorming",
-						"icon": "Gavel"
-					},
-					{
 						"id": "case-flow-runs",
 						"type": "flow-runs",
 						"title": "Flow runs",
 						"icon": "Sitemap",
-						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow whose sidebar lists its runs. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing.",
+						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing. The row click also carries the clicked run as `?run=`, so FlowDetail opens with that run inspected and the canvas showing the graph version the run actually executed, rather than the flow's current graph with no run selected. Nothing here declares that: the widget adds the query, and CnPageRenderer forwards `run` to a flow page because that page type declares it reads it.",
 						"content": {
 							"subject": "@objectId",
 							"limit": 5,
@@ -1431,116 +1302,419 @@
 						}
 					},
 					{
-						"id": "case-kpi-time-left",
-						"type": "countdown",
-						"title": "Time left",
-						"icon": "ClockAlertOutline",
-						"_note": "Counts down to the case deadline. Reads `deadline` off the record the page has already loaded, so it costs no request. The thresholds follow the handling rhythm rather than round numbers: at two weeks a handler still has room to act, at five days they do not. An overdue case reads as an alert whether or not thresholds are set.",
-						"content": {
-							"label": "Time left",
-							"field": "deadline",
-							"icon": "ClockAlertOutline",
+						"id": "case-transitions",
+						"type": "custom",
+						"title": "Case status",
+						"icon": "SwapHorizontal",
+						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
+					},
+					{
+						"id": "case-header",
+						"type": "custom",
+						"title": "Case identity",
+						"icon": "BadgeAccountOutline",
+						"_note": "Placement row A01: the case identity, as a titled card at the top of the page's right-hand column (page slot widget-case-header -> CaseHeaderRow). It carries the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. IT WAS A FULL-WIDTH BAND AND IT WAS MOSTLY AIR: two grid rows tall and twelve columns wide for three to five short facts laid out in a line, so on a real case more than half of it was empty and the two rows came out of the content below. As a card in the four-column right rail the same facts stack, read as a labelled group, and the page gets its two rows back. It also rendered a breadcrumb whose last crumb repeated the page title one line above it; that trail is gone, see the page config note. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the card reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
+						"props": {
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
-							},
-							"showDate": true
-						}
-					},
-					{
-						"id": "case-kpi-casetype",
-						"type": "stat",
-						"title": "Case type",
-						"icon": "FileTreeOutline",
-						"_note": "`case.caseType` holds a uuid, which is not something to show a person, so `resolve` looks the case type's title up through the shared object store (cached per schema, deduplicated in flight). An id that cannot be resolved keeps showing the raw value rather than blanking: a blank KPI says nothing at all.",
-						"content": {
-							"label": "Case type",
-							"icon": "FileTreeOutline",
-							"objectField": {
-								"field": "caseType",
-								"resolve": {
-									"register": "dossiq",
-									"schema": "caseType",
-									"labelField": "title"
-								}
 							}
 						}
 					},
 					{
-						"id": "case-kpi-progress",
-						"type": "stat",
-						"title": "Completed",
-						"icon": "PercentOutline",
-						"_note": "Milestone progress, from MilestoneService::getCaseProgress through the routed milestone#progress endpoint. That service and its route already existed with NO frontend consumer: the percentage was computed on every call and shown nowhere. Reads 0% for a case type with no milestones configured, which is honest, because nothing has been declared to reach. The endpoint resolves the case's type SERVER-SIDE: the two-segment form needed `@object.caseType`, which is empty on the first render because the record has not loaded, so every page load fired a 404 before the corrected request followed.",
-						"content": {
-							"label": "Completed",
-							"icon": "PercentOutline",
-							"format": {
-								"style": "percent",
-								"decimals": 0
-							},
-							"endpointSource": {
-								"url": "/apps/dossiq/api/cases/@objectId/milestones/progress"
-							},
-							"valueField": "percentage"
-						}
-					},
-					{
-						"id": "case-email",
-						"type": "integration",
-						"integrationId": "email",
-						"title": "Mail & messages",
-						"icon": "EmailOutline",
-						"_note": "The mail leaf as a body widget so it can be a tab. The sidebar CaseEmailTab stays: the sidebar is for reading alongside the case, the tab is for working in it."
+						"id": "case-steps",
+						"type": "custom",
+						"title": "Timeline",
+						"icon": "Timeline",
+						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It renders WITH its title (`showTitle: true`): the stepper sat in the right rail as a bare column of four labelled dots with nothing saying what the column was, so a reader had to infer that it was the case progressing rather than, say, a checklist. It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Six panels describing one case used to be six cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. The six children stay in `widgets` and are DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries SIX, which is what the placement work asked for. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
 								{
-									"widgetId": "case-notes",
-									"label": "Notes"
+									"widgetId": "case-core",
+									"label": "Data"
 								},
 								{
-									"widgetId": "case-files",
-									"label": "Files"
+									"widgetId": "case-documents-panel",
+									"label": "Documents"
 								},
 								{
-									"widgetId": "case-related",
-									"label": "Related cases"
+									"widgetId": "case-people-panel",
+									"label": "People"
 								},
 								{
-									"widgetId": "case-sub-cases",
-									"label": "Sub-cases"
+									"widgetId": "case-work-panel",
+									"label": "Work"
 								},
 								{
-									"widgetId": "case-tasks",
-									"label": "Tasks"
+									"widgetId": "case-related-panel",
+									"label": "Related"
 								},
 								{
-									"widgetId": "case-email",
-									"label": "Mail"
+									"widgetId": "case-objects-panel",
+									"label": "Objects and locations"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-documents-panel",
+						"type": "case-sections",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "The Documents tab. The registered documents of the case, and the case folder under them. Files is a SECTION here rather than a tab of its own, and it was not simply dropped: the files leaf carries the share and comment surface that the dossier list does not (design D5), and after DQ1 the two read different folders, so folding them is not the same claim as saying they hold the same files. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Documents",
+									"widget": {
+										"id": "case-documents",
+										"type": "dossier-tab",
+										"title": "Documents",
+										"icon": "FileDocumentMultipleOutline",
+										"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files SECTION sits under it in the same tab, for loose attachments and Nextcloud shares.",
+										"content": {
+											"emptyText": "No documents yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-calendar",
-									"label": "Appointments"
+									"label": "Files",
+									"widget": {
+										"id": "case-files",
+										"type": "integration",
+										"integrationId": "files",
+										"title": "Files & attachments",
+										"icon": "FolderOutline"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-people-panel",
+						"type": "case-sections",
+						"title": "People",
+						"icon": "AccountGroupOutline",
+						"_note": "The People tab. Who is involved in the case, and every contact with them. A contactmoment records a channel, a direction and a summary against a person, so it belongs beside the roles rather than in a tab of its own. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Parties",
+									"widget": {
+										"id": "case-roles",
+										"type": "object-list",
+										"title": "Parties",
+										"icon": "AccountKeyOutline",
+										"_note": "parties-on-the-case D1: everyone involved in THIS case, read straight off the `role` schema. `RolesTab.vue` is an admin surface over every role row in the register, so it can never answer the case page's question; this widget is the same object-list shape `case-tasks` and `case-sub-cases` already use, filtered on `case: @objectId`. `roleType` is a $ref and CnIndexPage renders a $ref column raw, so that cell shows a uuid until nextcloud-vue renders label fields for reference columns (triage #8, Tier D06); `participant` carries the readable identity in the meantime. `delegate` and `delegateUntil` are shown as the plain window they are: whether a delegate is active NOW is the substitution resolver's answer, not this list's. Absent from `layout` like every other tab child: the tabs widget renders it, so a layout entry would render it twice.",
+										"content": {
+											"register": "dossiq",
+											"schema": "role",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "roleType",
+												"dir": "asc"
+											},
+											"limit": 50,
+											"columns": [
+												{
+													"key": "roleType",
+													"label": "Role"
+												},
+												{
+													"key": "participant",
+													"label": "Participant"
+												},
+												{
+													"key": "delegate",
+													"label": "Delegate"
+												},
+												{
+													"key": "delegateUntil",
+													"label": "Delegate until"
+												}
+											],
+											"emptyText": "No parties on this case yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-decidesk-decisions",
-									"label": "Decisions"
+									"label": "Communication",
+									"widget": {
+										"id": "case-communication",
+										"type": "object-list",
+										"title": "Communication",
+										"icon": "PhoneInTalk",
+										"_note": "Every call, visit and message logged on this case, newest first. The contactmoment schema was the KCC workplace's alone and no case page read it; `contactmoment.case` is the single case reference the object-list filter needs, because `relatedCases` is a list and a list cannot be a filter. Notes and Mail are NOT beside it and are not going to be: page-topology-cleanup moved both to the sidebar on the rule that one log in two places is duplication rather than coverage, which retires design D4's fold rather than deferring it. The tab that holds this list already holds two widgets as stacked sections, through the case-sections container type, so the capability D4 waited on is here and the fold is what is no longer wanted. The Log contact header action beside this list seeds FOUR values through `props`, not just the case: design D3 has ContactMomentService fill the KCC fields the form does not ask for, which holds for the API path (ContactMomentController) but not for this one, because an open-form action saves straight to /apps/openregister/api/objects and no dossiq service runs. `contactmoment` requires identificationMethod, kccEmployeeId and nature, so without the seeds every save from that button answers 400 with the required list. Seeded values are written and never rendered: CnFormDialog takes its fields from includeFields and merges initialData over the form data, so the handler still sees the five fields the spec names. `relatedCases` is seeded from the same token because the KCC voorblad reads that list; ContactMomentService does the same for the API path, where the service DOES run.",
+										"content": {
+											"register": "dossiq",
+											"schema": "contactmoment",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "startTime",
+												"dir": "desc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "startTime",
+													"label": "Date"
+												},
+												{
+													"key": "notificationChannel",
+													"label": "Channel"
+												},
+												{
+													"key": "direction",
+													"label": "Direction"
+												},
+												{
+													"key": "summary",
+													"label": "Summary"
+												}
+											],
+											"emptyText": "No contact logged on this case yet"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-work-panel",
+						"type": "case-sections",
+						"title": "Work",
+						"icon": "ClipboardCheckOutline",
+						"_note": "The Work tab. What is still to be done on this case, whether it is a task with a due date or an appointment with a time. The task pane stays in the strip rather than moving to the right column (plan item 3.18): that column already carries four cards, and a fifth would move the complexity rather than remove it. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Tasks",
+									"widget": {
+										"id": "case-tasks",
+										"type": "case-task-pane",
+										"title": "Tasks",
+										"icon": "ClipboardCheckOutline",
+										"_note": "task-on-the-case A06: the Tasks tab shows the first OPEN task of this case with the lifecycle buttons OpenRegister answers for it, confirms a completion with a toast and puts the next open task in its place, so a handler finishes a task without leaving the case. The id, the title, the icon and the tab entry are unchanged, and no page is added or retyped, so the ADR-100 page ratchet does not move. TYPE is the interim. [blocked: nextcloud-vue 2.41.1 CnObjectListWidget has no rowActions and no lifecycle column] so a button cannot be put inside a row from configuration; verified against the installed 2.40.0 dist and the published 2.41.1 tarball. TARGET: back to type object-list with a lifecycle column (asked for in https://github.com/ConductionNL/nextcloud-vue/issues/1033), at which point src/components/tasks/CaseTaskPane.vue and its registry entry are deleted. The type names the registry key rather than \"custom\" because this widget is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per GRID item only, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. content.columns, content.rowRoute and content.emptyText are kept as written: they are what the widget goes back to reading the day the library grows the column. `register` and `schema` are NOT kept, and that is remove-casetask 4.2: the component reads the task engine and has ignored both keys since dossiq#2357, so the pair named a schema that no longer exists and claimed a binding the widget does not make. The day the swap back happens, the list the widget goes back to is the engine's, not an object list, so neither key comes back.",
+										"content": {
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "dueDate",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "title",
+													"label": "Title"
+												},
+												{
+													"key": "status",
+													"label": "Status"
+												},
+												{
+													"key": "assignee",
+													"label": "Assignee"
+												},
+												{
+													"key": "dueDate",
+													"label": "Due"
+												},
+												{
+													"key": "priority",
+													"label": "Priority"
+												}
+											],
+											"rowRoute": "TaskDetail",
+											"viewAllRoute": "Tasks",
+											"viewAllQuery": {
+												"case": "@objectId"
+											},
+											"emptyText": "No tasks for this case yet"
+										}
+									}
 								},
 								{
-									"widgetId": "case-contacts",
-									"label": "Contacts"
+									"label": "Appointments",
+									"widget": {
+										"id": "case-calendar",
+										"type": "integration",
+										"integrationId": "calendar",
+										"title": "Appointments & hearings",
+										"icon": "Calendar"
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-related-panel",
+						"type": "case-sections",
+						"title": "Related",
+						"icon": "LinkVariant",
+						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Related cases",
+									"widget": {
+										"id": "case-related",
+										"type": "case-related-planned",
+										"title": "Case type, parent & related cases",
+										"icon": "LinkVariant",
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
+									}
 								},
 								{
-									"widgetId": "case-locaties",
-									"label": "Locations"
+									"label": "Sub-cases",
+									"widget": {
+										"id": "case-sub-cases",
+										"type": "object-list",
+										"title": "Sub-cases",
+										"icon": "FileTreeOutline",
+										"_note": "deelzaak-support REQ 'Sub-cases section on parent case detail': 'The case detail view SHALL display a \"Sub-cases\" section ... listing all cases whose parentCase references the current case. The section MUST show each sub-case's title, status, assignee, and deadline.' Only the stats-block COUNT (case-kpis-sub-cases) existed; the listing lived on a separate route (/cases/:id/deelzaken, DeelzaakList), so the detail view had no such section and the requirement was unimplemented. The count widget already proves the filter shape works. Rows deep-link to CaseDetail because a sub-case IS a case.",
+										"content": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"parentCase": "@objectId"
+											},
+											"sort": {
+												"field": "deadline",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "title",
+													"label": "Title"
+												},
+												{
+													"key": "status",
+													"label": "Status"
+												},
+												{
+													"key": "assignee",
+													"label": "Assignee"
+												},
+												{
+													"key": "deadline",
+													"label": "Deadline"
+												}
+											],
+											"rowRoute": "CaseDetail",
+											"emptyText": "No sub-cases yet"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"id": "case-objects-panel",
+						"type": "case-sections",
+						"title": "Objects and locations",
+						"icon": "CubeOutline",
+						"_note": "The Objects and locations tab. What the case is about. Locations sits HERE and not under Related, which is where the tab count sketch put it: a case-location carries a nummeraanduiding id and a parcel id, so it is a registry object the case concerns, the same kind of thing as a caseObject, and Related is case to case. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"content": {
+							"sections": [
+								{
+									"label": "Objects",
+									"widget": {
+										"id": "case-objects",
+										"type": "object-list",
+										"title": "Objects",
+										"icon": "CubeOutline",
+										"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+										"content": {
+											"register": "dossiq",
+											"schema": "caseObject",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "objectType",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "objectType",
+													"label": "Object type"
+												},
+												{
+													"key": "objectIdentification",
+													"label": "Identification"
+												},
+												{
+													"key": "description",
+													"label": "Description"
+												},
+												{
+													"key": "objectUrl",
+													"label": "Link"
+												}
+											],
+											"emptyText": "No objects linked to this case yet"
+										}
+									}
+								},
+								{
+									"label": "Locations",
+									"widget": {
+										"id": "case-locaties",
+										"type": "object-list",
+										"title": "Locations",
+										"icon": "Earth",
+										"content": {
+											"register": "dossiq",
+											"schema": "case-location",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "order",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "label",
+													"label": "Label"
+												},
+												{
+													"key": "formattedAddress",
+													"label": "Address"
+												},
+												{
+													"key": "addressDesignationId",
+													"label": "Nummeraanduiding id"
+												},
+												{
+													"key": "parcelId",
+													"label": "Parcel id"
+												},
+												{
+													"key": "source",
+													"label": "Source"
+												}
+											],
+											"emptyText": "No locations linked to this case yet"
+										}
+									}
 								}
 							]
 						}
@@ -1549,54 +1723,54 @@
 				"layout": [
 					{
 						"id": "1",
-						"widgetId": "case-kpi-time-left",
+						"widgetId": "case-header",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 4,
+						"gridWidth": 12,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
-						"id": "2",
-						"widgetId": "case-kpi-casetype",
-						"gridX": 4,
-						"gridY": 0,
-						"gridWidth": 4,
+						"id": "10",
+						"widgetId": "case-transitions",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 8,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "3",
-						"widgetId": "case-kpi-progress",
+						"widgetId": "case-steps",
 						"gridX": 8,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "4",
-						"widgetId": "case-core",
-						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 8,
-						"gridHeight": 6,
-						"showTitle": false
+						"gridWidth": 4,
+						"gridHeight": 5,
+						"showTitle": true
 					},
 					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 8,
+						"gridY": 4,
 						"gridWidth": 8,
-						"gridHeight": 8,
+						"gridHeight": 18,
 						"showTitle": false
+					},
+					{
+						"id": "9",
+						"widgetId": "initiator",
+						"gridX": 8,
+						"gridY": 7,
+						"gridWidth": 4,
+						"gridHeight": 3,
+						"showTitle": true
 					},
 					{
 						"id": "6",
 						"widgetId": "case-kpis-hours",
 						"gridX": 8,
-						"gridY": 2,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 2,
 						"showTitle": false
@@ -1605,23 +1779,20 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 8,
-						"gridY": 4,
+						"gridY": 12,
 						"gridWidth": 4,
-						"gridHeight": 4
+						"gridHeight": 7
 					},
 					{
-						"id": "9",
-						"widgetId": "initiator",
-						"gridX": 0,
-						"gridY": 16,
-						"gridWidth": 12,
+						"id": "11",
+						"widgetId": "case-terms",
+						"gridX": 8,
+						"gridY": 19,
+						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
 					}
 				],
-				"lifecycleActions": {
-					"field": "status"
-				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true,
@@ -1630,17 +1801,12 @@
 							"id": "audit",
 							"label": "History",
 							"icon": "History",
+							"_note": "Placement row A05: ONE history of the case. This tab is the case timeline, CnAuditTrailTab over OpenRegister's audit trail for this object, newest first, with the actor and the action on every row. The `version-history` tab that sat beside it is GONE from THIS page: it read the same audit rows as a field diff, which is what made the case show its history twice and neither of them well. The other 13 detail pages keep theirs, and the `VersionHistoryLeafTab` registry entry stays because they resolve it; row A05 scores the case page only. Three things this tab still cannot do, each a need rather than a defect: it cannot OPEN on writes, because `actionFilter` is internal state on CnAuditTrailTab and this widget declares only `register`, `schema`, `objectId`, `title` and `maxDisplay`; it cannot EXPORT, because the tab has no export action; and it cannot carry document, note and mail events beside the audit rows, because a merged per-object feed is the OpenRegister `activity` leaf, which does not exist. Until each lands the tab opens unfiltered over writes and reads, with the Action and User filters it already renders. There is deliberately NO body tab over the same log: case-header's strip carries no Timeline entry, because one log in two places is the duplication this row retires.",
 							"widgets": [
 								{
 									"type": "audit"
 								}
 							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
 						},
 						{
 							"id": "notes",
@@ -1665,29 +1831,214 @@
 							"label": "Besluitvorming",
 							"icon": "Gavel",
 							"component": "BesluitvormingLeafTab"
+						},
+						{
+							"id": "tags",
+							"label": "Tags",
+							"icon": "TagMultiple",
+							"_note": "A sidebar tab renders EITHER a registered `component` or `widgets[]` whose `type` is a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table). A `type: \"custom\"` entry here resolves to nothing and renders an empty panel with a console warning nobody reads — the page-slot mechanism (`widget-<id>`) only applies to layout grid items. So this is the `data` built-in over the single `tags` field: it is handed the loaded case and the resolved schema by the host, and an array-of-strings property already resolves to the tags editor. The `widget` override says so out loud, so a later change to the type cannot silently turn the editor into a text box.",
+							"widgets": [
+								{
+									"type": "data",
+									"props": {
+										"title": "Tags",
+										"columns": 1,
+										"include": [
+											"tags"
+										],
+										"overrides": {
+											"tags": {
+												"widget": "tags"
+											}
+										}
+									}
+								}
+							]
 						}
 					]
 				},
+				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
 				"headerActions": [
 					{
-						"id": "log-hours",
+						"id": "add-party",
 						"type": "open-form",
-						"label": "Log hours",
-						"icon": "ClockPlusOutline",
-						"register": "humaniq",
-						"schema": "TimeEntry",
-						"successMessage": "Hours logged on this case.",
+						"label": "Add party",
+						"icon": "AccountPlusOutline",
+						"register": "dossiq",
+						"schema": "role",
+						"includeFields": [
+							"name",
+							"roleType",
+							"participant",
+							"delegate",
+							"delegateUntil",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Party added to the case.",
 						"props": {
-							"domainObjectRef": "@objectId",
-							"domainObjectType": "dossiq:case"
+							"case": "@objectId"
+						}
+					},
+					{
+						"id": "link-object",
+						"type": "open-form",
+						"label": "Link object",
+						"icon": "CubeOutline",
+						"register": "dossiq",
+						"schema": "caseObject",
+						"includeFields": [
+							"objectType",
+							"objectIdentification",
+							"objectUrl",
+							"description"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Object linked to this case.",
+						"props": {
+							"case": "@objectId"
+						}
+					},
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhonePlusOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"summary",
+							"callerIdentification"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact logged on this case.",
+						"props": {
+							"case": "@objectId",
+							"relatedCases": ["@objectId"],
+							"kccEmployeeId": "@me",
+							"identificationMethod": "non_geidentificeerd",
+							"nature": "informatieverzoek"
+						}
+					},
+					{
+						"id": "generate-document",
+						"type": "open-modal",
+						"target": "BeschikkingComposerDialog",
+						"label": "Generate document",
+						"icon": "FileDocumentPlusOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"successMessage": "Document added to the case."
+					},
+					{
+						"id": "case-suspend",
+						"type": "open-modal",
+						"label": "Suspend",
+						"icon": "PauseCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "suspend"
 						},
 						"visibleWhen": {
-							"appInstalled": "humaniq"
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
 						}
+					},
+					{
+						"id": "case-resume",
+						"type": "open-modal",
+						"label": "Resume",
+						"icon": "PlayCircleOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "resume"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-extend",
+						"type": "open-modal",
+						"label": "Extend term",
+						"icon": "CalendarPlus",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "extend"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-reopen",
+						"type": "open-modal",
+						"label": "Reopen",
+						"icon": "LockOpenVariantOutline",
+						"target": "CaseLifecycleActionDialog",
+						"props": {
+							"action": "reopen"
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "eq",
+							"value": true
+						}
+					},
+					{
+						"id": "copy-case",
+						"type": "open-modal",
+						"label": "Copy case",
+						"icon": "ContentCopy",
+						"target": "CaseCopyDialog"
+					},
+					{
+						"id": "start-flow",
+						"type": "open-modal",
+						"label": "Start",
+						"icon": "Sitemap",
+						"target": "CaseStartFlowDialog",
+						"visibleWhen": {
+							"field": "hasStartableFlows",
+							"op": "eq",
+							"value": true
+						}
+					},
+					{
+						"id": "plan-follow-up",
+						"type": "open-modal",
+						"label": "Plan follow-up",
+						"icon": "CalendarClock",
+						"target": "CasePlanFollowUpDialog"
 					}
 				]
 			},
 			"slots": {
+				"widget-case-header": "CaseHeaderRow",
+				"widget-case-transitions": "CaseTransitionsWidget",
+				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection"
 			}
 		},
@@ -2095,9 +2446,10 @@
 			"type": "index",
 			"title": "Tasks",
 			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"allowSavedViews": true,
+				"entitySource": "tasks",
+				"rowRoute": "TaskDetail",
+				"_sourceNote": "remove-casetask 2.2. The list is the ENGINE's task inbox, not OpenRegister objects over a `caseTask` schema, so `register`, `schema` and `extend` are gone rather than left behind as config nothing reads. `rowRoute` is what keeps the page dossiq's: the source's own `openRow` calls window.location.assign on OpenRegister's task page, and a `row-click` listener cannot recover a navigation that has already left the app, which is why nextcloud-vue#1063 added the prop. `columns` is deliberately ABSENT. The source supplies six, with state and priority as badges whose colour maps are built from the same t() calls as their labels, so the lookup holds in every locale; reproducing that here to rename one header would be a divergent copy of the thing this change removes, and if the wording matters it belongs upstream as a label override. TWO VISIBLE DELTAS, both deliberate: the case column's header now reads Subject, and the Team column is gone because the engine models candidate groups as a LIST and has no single assigneeGroup to read.",
+				"allowSavedViews": false,
 				"showViewAction": false,
 				"actions": [
 					{
@@ -2109,7 +2461,53 @@
 						"type": "handler"
 					}
 				],
-				"columns": ["title", "case", "assignee", "status", "dueDate"],
+				"_quickFiltersNote": "one-case-list: the same six lenses the Cases index carries, in the same order and with the same labels, so a person who learned one list has learned the other. Only what sits underneath changed: `isTerminalStatus` was `caseTask`'s materialised boolean and `isTerminal` is the engine's own, and the two due windows are `dueAfter`/`dueBefore` predicates the engine answers (openregister#3581) rather than string comparisons against a `dueDate` column. 🔴 `scope` IS SET EXPLICITLY ON EVERY LENS. The task endpoint defaults to `scope: assigned`, so a lens that left it off would quietly answer 'my closed tasks' where this list has always meant 'closed tasks'. Only Mine and Unclaimed are person-scoped, and they now say so rather than inheriting it. The `@today` tokens resolve because nextcloud-vue#1071 taught a named source's filters the same sentinel grammar self-fetch has always had; before that they went over the wire as literal strings and the window was silently wrong.",
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"scope": "all"
+						},
+						"default": true
+					},
+					{
+						"label": "Mine",
+						"filter": {
+							"scope": "assigned",
+							"isTerminal": false
+						}
+					},
+					{
+						"label": "Unclaimed",
+						"filter": {
+							"scope": "pooled",
+							"isTerminal": false
+						}
+					},
+					{
+						"label": "Closed",
+						"filter": {
+							"scope": "all",
+							"isTerminal": true
+						}
+					},
+					{
+						"label": "Overdue",
+						"filter": {
+							"scope": "all",
+							"overdue": true
+						}
+					},
+					{
+						"label": "Due this week",
+						"filter": {
+							"scope": "all",
+							"isTerminal": false,
+							"dueAfter": "@today",
+							"dueBefore": "@today+7d"
+						}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -2118,121 +2516,72 @@
 			}
 		},
 		{
-			"id": "TaskNew",
-			"route": "/tasks/new",
-			"type": "detail",
-			"title": "New task",
+			"id": "CaseObjects",
+			"route": "/case-objects",
+			"type": "index",
+			"title": "Objects",
 			"config": {
 				"register": "dossiq",
-				"schema": "caseTask",
-				"_note": "CREATE-FORM archetype — the task creation form (route /tasks/new, usually pre-seeded with ?caseId=). A not-yet-persisted task has no id, so no children, history, aggregates or content leaves apply: it is just the Data form. No audit sidebar tab either — there is no object to have a history. All richness lives on TaskDetail once the task exists.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
+				"schema": "caseObject",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"_caseColumnNote": "The `case` column reads the raw $ref through the `caseTitle` FORMATTER and NOT through `extend`, which is how the Tasks index renders the same reference. `extend` replaces `row.case` with the expanded case object, and the View case action below resolves its `{case}` token with a FLAT row lookup: it would hand vue-router an object instead of a uuid and open nothing, silently. The formatter leaves the uuid in place for the action and resolves the title for the reader, out of the case collection the object store already holds.",
+				"_viewCaseNote": "The row action opens the ROW'S CASE, not the row. `params` is merged OVER the default `{ id: row[rowKey] }`, and `{case}` runs the `{field}` row-token grammar against the flat row, so the case uuid wins over the case object's own uuid. A case object has no detail page of its own, which is why `showViewAction` is false and this is the only action.",
+				"actions": [
 					{
-						"id": "tasknew-data",
-						"type": "data",
-						"title": "New task",
-						"icon": "ClipboardCheckOutline",
-						"content": {
-							"title": "New task",
-							"columns": 2
-						}
+						"id": "view-case",
+						"label": "View case",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"params": {
+							"id": "{case}"
+						},
+						"type": "handler"
 					}
 				],
-				"layout": [
+				"columns": [
 					{
-						"id": "1",
-						"widgetId": "tasknew-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
+						"key": "objectType",
+						"label": "Object type"
+					},
+					{
+						"key": "objectIdentification",
+						"label": "Identification"
+					},
+					{
+						"key": "description",
+						"label": "Description"
+					},
+					{
+						"key": "case",
+						"label": "Case",
+						"formatter": "caseTitle",
+						"sortable": false
 					}
 				],
+				"_folderSidebarNote": "`source: \"field\"` groups the loaded rows by the distinct values of `objectType` and filters on the same key when one is picked; `allLabel` brings every row back. The change's design wrote `source: \"facet\"`, which CnFolderSidebar's validator rejects (it takes `custom`, `field` or `files`): that would have rendered no sidebar and warned only in the console. The related facet FILTER in the metadata sidebar comes from `facetable: true` on `caseObject.objectType`; `x-openregister-facet`, which the design also named, is read by nothing.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "objectType",
+					"allLabel": "All objects"
+				},
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": false
-				}
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
 			"id": "TaskDetail",
 			"route": "/tasks/:id",
-			"type": "detail",
+			"type": "custom",
 			"title": "Task",
+			"component": "TaskDetailView",
+			"_note": "The task page over OpenRegister's task ENGINE, which is not an OpenRegister object and has no typed page that can render it. It was `type: \"detail\"` bound to `register: dossiq, schema: caseTask`, the schema remove-casetask deletes. CnDetailPage takes objectType/objectId and resolves them through the object store; it has NO entitySource mode (checked against the installed @conduction/nextcloud-vue 2.46.0), so unlike the Tasks index, which stayed `type: \"index\"` and gained `entitySource: \"tasks\"`, this page cannot be fixed with a manifest key. The defect it closes is specific: the page asked BOTH stores with one uuid, so an engine uuid rendered the case card and every field below it as an em dash, a legacy uuid rendered the fields and no case card, and neither showed a lifecycle button that worked. THE ROUTE AND THE PAGE ID ARE UNCHANGED: `/tasks/:id` and `TaskDetail`, so notification links and bookmarks still resolve. The `deepLinks` entry went with the schema in remove-casetask 4.2. It was keyed on `schemaSlug: caseTask` and fed OpenRegister's schema-scoped unified search only, so with no objects of that schema it matched nothing and resolved nothing. Engine tasks therefore have NO unified-search provider today. That gap is OpenRegister's: the engine's tasks live in their own table and no deep-link shape addresses them, and a dossiq entry cannot invent one. TaskDetailView keeps every widget the detail page carried. The case card (TaskCaseCard) and the waiting-case section (TaskWaitingCaseSection) are now plain child components rather than page slots. The notes and appointment leaves moved from `type: \"integration\"` to the task-anchored endpoints /api/flow-tasks/{uuid}/notes and /events, because the library's integration widgets read an OBJECT and a task has none. The audit sidebar tab became a page section reading /api/flow-tasks/{uuid}/audit, which is the engine's own append-only trail; a `type: \"custom\"` page has no sidebar for CnPageRenderer to render. The version-history tab is gone on purpose: an engine task is not an object and nothing writes a version of it, so the tab was an always-empty drawer. The lifecycle buttons are the engine's verbs through invoke(uuid, verb), NOT CnLifecycleActions, which asks /api/objects/{uuid}/available-actions and 404s for a task.",
 			"config": {
-				"register": "dossiq",
-				"schema": "caseTask",
-				"_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "task-data",
-						"type": "data",
-						"title": "Task",
-						"icon": "ClipboardCheckOutline",
-						"content": {
-							"title": "Task",
-							"columns": 2
-						}
-					},
-					{
-						"id": "task-waiting-case",
-						"type": "custom",
-						"title": "Waiting case",
-						"icon": "CheckboxMarkedCircleOutline",
-						"_note": "The task half of the flow waiting relationship (case-flow-human-steps 6.1). Resolved via page slots (widget-task-waiting-case -> TaskWaitingCaseSection); names the case whose suspended run this task blocks and links to it. Renders NOTHING for a task without a flowRun, so pre-existing tasks are unchanged. showTitle stays false: an empty titled box on every ordinary task would be exactly the clutter the null render avoids."
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "task-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "task-waiting-case",
-						"gridX": 0,
-						"gridY": 6,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					}
-				],
-				"lifecycleActions": {
-					"field": "status"
-				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
-						}
-					]
-				}
-			},
-			"slots": {
-				"widget-task-waiting-case": "TaskWaitingCaseSection"
+				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
@@ -2562,6 +2911,8 @@
 			"route": "/settings/tenants",
 			"type": "index",
 			"title": "Tenants",
+			"permission": "admin",
+			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -2710,6 +3061,7 @@
 			"route": "/settings/tenants/:id",
 			"type": "detail",
 			"title": "Tenant",
+			"permission": "admin",
 			"config": {
 				"register": "dossiq",
 				"schema": "tenant",
@@ -3773,8 +4125,10 @@
 		{
 			"id": "FeaturesRoadmap",
 			"route": "/features-roadmap",
-			"type": "roadmap",
+			"type": "custom",
+			"component": "FeaturesRoadmapView",
 			"title": "Features & roadmap",
+			"_note": "Was type:\"roadmap\". The library's CnFeaturesAndRoadmapView renders exactly two tabs and declares zero slots (verified against the installed dist, @conduction/nextcloud-vue 2.41.0), so the capability comparison could not be added from the manifest. FeaturesRoadmapView renders that library page unchanged as its default section and adds the comparison as a second one. Revert to type:\"roadmap\" the day the library grows a slot or a comparison tab.",
 			"config": {
 				"documentationUrl": "https://procest.conduction.nl"
 			}
@@ -3844,6 +4198,7 @@
 			"route": "/substitution-admin",
 			"type": "custom",
 			"title": "Substitutions & reassignment",
+			"permission": "admin",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		},
@@ -3857,6 +4212,7 @@
 				"schema": "caseType",
 				"columns": [
 					"title",
+					"category",
 					"identifier",
 					"handlingModel",
 					"processingDeadline",
@@ -3876,6 +4232,46 @@
 						"type": "handler"
 					}
 				],
+				"formSize": "large",
+				"formColumns": 2,
+				"_formNote": "The Add dialog on this page asked all 41 of caseType's properties, in one column, at default dialog width. Nothing was wrong with the dialog: CnFormDialog has taken `size` and `columns` since two-column forms shipped, but CnIndexPage passed neither, so the built-in Add form had no way to ask. The `case` create form on the Dashboard and the two contact pages is two columns already because it is an `open-form` HEADER ACTION, and CnActionButtons did forward both keys. Same app, same kind of record, two different forms, and no manifest key that explained the difference. nextcloud-vue 2.46.0 adds `formSize`/`formColumns` to CnIndexPage, CnDetailPage, CnObjectListWidget and CnObjectDataWidget, which is what these two keys reach.",
+				"includeFields": [
+					"title",
+					"identifier",
+					"category",
+					"handlingModel",
+					"confidentiality",
+					"processingDeadline",
+					"validFrom",
+					"isDraft",
+					"parentCaseType",
+					"description",
+					"purpose",
+					"trigger"
+				],
+				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
+				"fieldOverrides": {
+					"title": { "order": 1 },
+					"identifier": { "order": 2 },
+					"category": { "order": 3 },
+					"handlingModel": { "order": 4 },
+					"confidentiality": { "order": 5 },
+					"processingDeadline": { "order": 6 },
+					"validFrom": { "order": 7 },
+					"isDraft": { "order": 8 },
+					"parentCaseType": { "order": 9 },
+					"description": { "order": 10, "widget": "textarea" },
+					"purpose": { "order": 11, "widget": "textarea" },
+					"trigger": { "order": 12, "widget": "textarea" }
+				},
+				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
+				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All case types"
+				},
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -3892,13 +4288,215 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "caseType",
+				"widgets": [
+					{
+						"id": "case-type-core",
+						"type": "data",
+						"title": "Case type",
+						"icon": "FolderCogOutline",
+						"content": {
+							"title": "Case type",
+							"columns": 2,
+							"include": [
+								"title",
+								"identifier",
+								"description",
+								"category",
+								"parentCaseType",
+								"purpose",
+								"trigger",
+								"handlingModel",
+								"confidentiality",
+								"isDraft"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-terms",
+						"type": "data",
+						"title": "Terms",
+						"icon": "CalendarTextOutline",
+						"content": {
+							"title": "Terms",
+							"columns": 2,
+							"include": [
+								"processingDeadline",
+								"suspensionAllowed",
+								"extensionAllowed",
+								"extensionPeriod",
+								"validFrom",
+								"validUntil"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-privacy",
+						"type": "data",
+						"title": "Personal data",
+						"icon": "ShieldAccountOutline",
+						"_note": "The AVG facts belong to the case TYPE, not to a case: whether this process touches personal data, which categories, on what article 6 basis, and which activity in OpenRegister's verwerkingsregister the cases are logged under. `hideEmpty` stays off, because an unanswered basis is exactly what a data protection officer is looking for -- an empty row is the finding.",
+						"content": {
+							"title": "Personal data",
+							"columns": 2,
+							"include": [
+								"processesPersonalData",
+								"personalDataCategories",
+								"legalBasis",
+								"verwerkingsactiviteit"
+							],
+							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-versions",
+						"type": "object-list",
+						"title": "Versions",
+						"icon": "History",
+						"_note": "The type's workflowTemplate rows: what was published, when, and what the change note said. A DECLARED object-list and not the blueprint widget, because a workflowTemplate belongs to exactly one case type -- there is no inheritance to merge here, so `caseType = @objectId` is the whole question. `description` is the column the change note is written into by the publish action.",
+						"content": {
+							"register": "dossiq",
+							"schema": "workflowTemplate",
+							"filter": {
+								"caseType": "@objectId"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "version",
+									"label": "Version"
+								},
+								{
+									"key": "lifecycleStatus",
+									"label": "Lifecycle status"
+								},
+								{
+									"key": "description",
+									"label": "Change note"
+								},
+								{
+									"key": "@self.updated",
+									"label": "Updated",
+									"_note": "`updated` is NOT a workflowTemplate property: the timestamp lives on OpenRegister's metadata envelope, and a column bound to a property the schema does not declare renders a dash in every row without saying so. `WorkflowDefinitions` spells it the same way. Caught by ManifestColumnBindingTest, which is exactly what that test exists for."
+								}
+							],
+							"rowRoute": "WorkflowDefinitionDetail",
+							"emptyText": "This case type has no published versions yet"
+						}
+					},
+					{
+						"id": "case-type-blueprint",
+						"type": "custom",
+						"title": "Statuses, results and attributes",
+						"icon": "FormatListBulletedType",
+						"_note": "The one widget on this page that a declared type cannot be. An object-list fetches OpenRegister itself, so the only question it can ask is `statusType where caseType = @objectId` -- the type's OWN rows. A type that derives its lifecycle from a parent has none of those, so three declared lists would render three empty tables about a case type that plainly has four statuses, and nothing would say so. The merge exists only in CaseTypeResolver, and /api/case-types/{id}/blueprint is how a page reads it. It sits in the LAYOUT and not inside a tab strip on purpose: a `type: \"custom\"` widget named as a tab CHILD resolves by registry TYPE, finds nothing, and renders an empty panel without logging anything."
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "case-type-core",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 6,
+						"showTitle": false
+					},
+					{
+						"id": "2",
+						"widgetId": "case-type-blueprint",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "3",
+						"widgetId": "case-type-terms",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 8,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "4",
+						"widgetId": "case-type-privacy",
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "case-type-versions",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					}
+				],
+				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string.",
+				"headerActions": [
+					{
+						"id": "case-type-export",
+						"type": "api-call",
+						"label": "Export",
+						"icon": "TrayArrowDown",
+						"url": "/apps/dossiq/api/case-definitions/export",
+						"method": "POST",
+						"payload": {
+							"caseTypeId": "@objectId"
+						},
+						"download": true,
+						"filename": "case-type.zip",
+						"errorMessage": "The case type could not be exported."
+					},
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					},
+					{
+						"id": "case-type-duplicate",
+						"type": "open-modal",
+						"label": "Duplicate",
+						"icon": "ContentDuplicate",
+						"target": "CaseTypeDuplicateDialog"
+					},
+					{
+						"id": "case-type-publish",
+						"type": "open-modal",
+						"label": "Publish",
+						"icon": "Publish",
+						"target": "CaseTypePublishDialog",
+						"visibleWhen": {
+							"field": "isDraft",
+							"op": "eq",
+							"value": true
+						}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
-			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here."
+			"slots": {
+				"widget-case-type-blueprint": "CaseTypeBlueprintWidget"
+			},
+			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},
 		{
 			"id": "Store",
@@ -3934,10 +4532,602 @@
 			},
 			"sidebarComponent": "FlowDetailSidebar",
 			"_note": "The shared CnFlowDetail node/edge canvas over the same native flow store OpenRegister and hermiq use — not an app-owned editor. Controls live in the NcAppSidebar (sidebarComponent) so the canvas gets full width; canvas and sidebar share useFlowStore. Mirrors openregister/src/manifest.json:flowDetail."
+		},
+		{
+			"id": "Integrations",
+			"route": "/settings/integrations",
+			"type": "index",
+			"title": "Integrations",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "dossiqIntegration",
+				"showViewAction": false,
+				"defaultSort": {
+					"field": "order",
+					"direction": "asc"
+				},
+				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021 — the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget — and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns and the seed are the page.",
+				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text — which is exactly what REQ-ADMIN-019 asks for on the BRP and KvK rows: no Open settings offered.",
+				"columns": [
+					{
+						"key": "title",
+						"label": "Connection"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "integrationStatus"
+					},
+					{
+						"key": "statusMessage",
+						"label": "Status message",
+						"sortable": false
+					},
+					{
+						"key": "checkedAt",
+						"label": "Last checked"
+					},
+					{
+						"key": "settingsUrl",
+						"label": "Settings",
+						"sortable": false,
+						"formatter": "integrationSettingsLabel",
+						"widget": "link",
+						"widgetProps": {
+							"href": "{settingsUrl}"
+						}
+					}
+				],
+				"folderSidebar": {
+					"source": "field",
+					"field": "status",
+					"allLabel": "All connections"
+				},
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "Contacts",
+			"route": "/contacts",
+			"type": "index",
+			"title": "Contacts",
+			"config": {
+				"register": "dossiq",
+				"schema": "brpPerson",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"_folderSidebarNote": "THE FOLDER SIDEBAR IS STILL ABSENT, AND IT IS NO LONGER WAITED ON. `contacts-domain` recorded why one could not ship, and both measurements still hold against nextcloud-vue 2.41.0. FIRST, there is no `hidden`: `folderSidebarFolders()` hands `folders[]` to CnFolderTree verbatim, so an Organisations folder would render, and selecting it would filter this page's `brpPerson` rows by a value no person carries and show an empty list. SECOND, `filterField: \"@self.schema\"` is not a filter OpenRegister answers: the wire form is a NESTED `@self` object (see `VthSeedLookup`'s `['@self' => ['slug' => ...]]`), so a flat `@self.schema` key reads as a filter on a field no object has and the search returns nothing while looking like an empty register. WHAT CHANGED is the question the sidebar was answering. It was never wanted for its own sake; it was the only way anyone could think of to reach the ten `kvkCompany` rows, which until now were listed on no page at all. The `Organisations` page below is that list, as a CHILD of this entry, so the answer costs no top-level navigation and no folder seam. If B10 ever lands, a folder that swaps the schema becomes a presentation choice between two pages rather than the thing that decides whether organisations are reachable, which is the right size for it.",
+				"columns": [
+					{
+						"key": "displayName",
+						"label": "Name"
+					},
+					{
+						"key": "citizenServiceNumber",
+						"label": "Number"
+					},
+					{
+						"key": "residence.city",
+						"label": "Residence",
+						"sortable": false
+					},
+					{
+						"key": "description",
+						"label": "Description",
+						"sortable": false
+					}
+				],
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "ContactDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose \u2014 the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
+		},
+		{
+			"id": "Organisations",
+			"route": "/organisations",
+			"type": "index",
+			"title": "Organisations",
+			"config": {
+				"register": "dossiq",
+				"schema": "kvkCompany",
+				"allowSavedViews": true,
+				"showViewAction": false,
+				"columns": [
+					{
+						"key": "tradeName",
+						"label": "Name"
+					},
+					{
+						"key": "kvkNumber",
+						"label": "KvK number"
+					},
+					{
+						"key": "legalForm",
+						"label": "Legal form"
+					},
+					{
+						"key": "address.place",
+						"label": "Place",
+						"sortable": false
+					},
+					{
+						"key": "description",
+						"label": "Description",
+						"sortable": false
+					}
+				],
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "OrganisationDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			},
+			"_note": "The organisations dossiq knows, and the other half of the Contacts domain. `contacts-domain` shipped `OrganisationDetail` with no way to reach it except the initiator card of a case that already named the company, so the ten seeded `kvkCompany` rows were listed nowhere. This page is that list. It spends NO top-level navigation slot: `src/menu-layout.json` relocates `OrganisationsMenu` under `Contacts`, and ADR-097 Decision 1 counts top-level entries only. `Contacts` carries `open: true` so the child is visible on mount rather than behind a chevron, because a nav entry you must first expand to discover is not the answer to a capability called contacts you can find. The `address.place` column is `sortable: false` for the same reason the Contacts page's residence column is: a dot-path resolves client-side for rendering, but a sort sends the key to OpenRegister as an `_order` field and no such column exists there."
+		},
+		{
+			"id": "ContactDetail",
+			"route": "/contacts/:id",
+			"type": "detail",
+			"title": "Contact",
+			"config": {
+				"register": "dossiq",
+				"schema": "brpPerson",
+				"documentationUrl": "https://procest.conduction.nl",
+				"headerActions": [
+					{
+						"id": "new-case-for-contact",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "FolderPlusOutline",
+						"size": "large",
+						"columns": 2,
+						"register": "dossiq",
+						"schema": "case",
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"description",
+							"assignee",
+							"priority",
+							"confidentiality",
+							"intakeChannel",
+							"startDate",
+							"plannedEndDate"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							}
+						},
+						"successMessage": "Case filed for this contact.",
+						"props": {
+							"requester": "@objectId"
+						}
+					},
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhoneLogOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"nature",
+							"summary",
+							"relatedCases"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact moment logged.",
+						"props": {
+							"contact": "@objectId"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "contact-card",
+						"type": "data",
+						"title": "Contact",
+						"icon": "CardAccountDetailsOutline",
+						"content": {
+							"title": "Contact",
+							"columns": 2,
+							"editable": false,
+							"include": [
+								"displayName",
+								"citizenServiceNumber",
+								"name",
+								"birth",
+								"residence",
+								"description"
+							]
+						}
+					},
+					{
+						"id": "contact-cases",
+						"type": "object-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "identifier",
+									"label": "Number"
+								},
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": "Cases",
+							"viewAllQuery": {
+								"requester": "@objectId"
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-moments",
+						"type": "object-list",
+						"title": "Contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Start time"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary",
+									"sortable": false
+								}
+							],
+							"emptyText": "No contact moments yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "contact-card",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "2",
+						"widgetId": "contact-cases",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "contact-moments",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						}
+					]
+				}
+			},
+			"_note": "One person, what they have with us, and the two things you do next. The card is read only: `brpPerson` is read from its source and editing it here would write a fourth version of a citizen's data. The cases list filters `case.requester` on this row's uuid exactly, so a case whose requester is a Nextcloud contact rather than a register row does not appear — the gap requester-on-the-case D1 accepts. No menu entry: a detail page spends no navigation budget."
+		},
+		{
+			"id": "OrganisationDetail",
+			"route": "/organisations/:id",
+			"type": "detail",
+			"title": "Organisation",
+			"config": {
+				"register": "dossiq",
+				"schema": "kvkCompany",
+				"documentationUrl": "https://procest.conduction.nl",
+				"headerActions": [
+					{
+						"id": "new-case-for-contact",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "FolderPlusOutline",
+						"size": "large",
+						"columns": 2,
+						"register": "dossiq",
+						"schema": "case",
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"description",
+							"assignee",
+							"priority",
+							"confidentiality",
+							"intakeChannel",
+							"startDate",
+							"plannedEndDate"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							}
+						},
+						"successMessage": "Case filed for this contact.",
+						"props": {
+							"requester": "@objectId"
+						}
+					},
+					{
+						"id": "log-contact",
+						"type": "open-form",
+						"label": "Log contact",
+						"icon": "PhoneLogOutline",
+						"register": "dossiq",
+						"schema": "contactmoment",
+						"includeFields": [
+							"notificationChannel",
+							"direction",
+							"startTime",
+							"nature",
+							"summary",
+							"relatedCases"
+						],
+						"fieldOverrides": {
+							"summary": {
+								"widget": "textarea"
+							}
+						},
+						"successMessage": "Contact moment logged.",
+						"props": {
+							"contact": "@objectId"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "contact-card",
+						"type": "data",
+						"title": "Organisation",
+						"icon": "CardAccountDetailsOutline",
+						"content": {
+							"title": "Organisation",
+							"columns": 2,
+							"editable": false,
+							"include": [
+								"tradeName",
+								"kvkNumber",
+								"legalForm",
+								"address",
+								"description"
+							]
+						}
+					},
+					{
+						"id": "contact-cases",
+						"type": "object-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "identifier",
+									"label": "Number"
+								},
+								{
+									"key": "title",
+									"label": "Title"
+								},
+								{
+									"key": "status",
+									"label": "Status"
+								},
+								{
+									"key": "deadline",
+									"label": "Deadline"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": "Cases",
+							"viewAllQuery": {
+								"requester": "@objectId"
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-moments",
+						"type": "object-list",
+						"title": "Contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "startTime",
+									"label": "Start time"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Channel"
+								},
+								{
+									"key": "direction",
+									"label": "Direction"
+								},
+								{
+									"key": "summary",
+									"label": "Summary",
+									"sortable": false
+								}
+							],
+							"emptyText": "No contact moments yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "contact-card",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "2",
+						"widgetId": "contact-cases",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "3",
+						"widgetId": "contact-moments",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
+						}
+					]
+				}
+			},
+			"_note": "The same anatomy as ContactDetail over `kvkCompany`, because a detail page takes one schema and an organisation is not a person. Reached from a case's initiator card, not from the Contacts index: the index lists people until a folder can swap the index's schema (the Contacts page's own note has the measurement). Widget ids repeat ContactDetail's on purpose; they are page-scoped, and `npm run check:manifest` is what says so."
 		}
 	],
 	"observability": {
-		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added dossiq_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit dossiq_info / dossiq_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers).",
+		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added dossiq_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit dossiq_info / dossiq_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers). 🔴 `dossiq_tasks_total` AND `dossiq_tasks_overdue_total` ARE GONE, and they are the one break in that parity. Both were `kind: objectCount` over `schema: caseTask`, and remove-casetask deleted the schema: a counter over a schema nothing declares reports 0 for ever, which on a task gauge reads as a quiet week rather than as a broken metric. Task counts belong to whoever owns the tasks, and that is now OpenRegister's task engine, which is exporting them itself in openregister#3597. An `objectCount` source cannot reach the engine's table, so there is nothing dossiq can declare here in the meantime.",
 		"health": {
 			"statusCodePolicy": "adr006",
 			"checks": [
@@ -4003,34 +5193,6 @@
 						}
 					}
 				}
-			},
-			{
-				"name": "tasks_total",
-				"type": "gauge",
-				"help": "Total tasks by status",
-				"cacheTtl": 30,
-				"source": {
-					"kind": "objectCount",
-					"register": "dossiq",
-					"schema": "caseTask",
-					"groupBy": ["status"]
-				}
-			},
-			{
-				"name": "tasks_overdue_total",
-				"type": "gauge",
-				"help": "Tasks past their deadline",
-				"cacheTtl": 60,
-				"source": {
-					"kind": "objectCount",
-					"register": "dossiq",
-					"schema": "caseTask",
-					"filter": {
-						"deadline": {
-							"lt": "now"
-						}
-					}
-				}
 			}
 		]
 	},
@@ -4043,12 +5205,6 @@
 		},
 		{
 			"registerSlug": "dossiq",
-			"schemaSlug": "caseTask",
-			"urlTemplate": "/apps/dossiq/tasks/{uuid}",
-			"displayName": "Task"
-		},
-		{
-			"registerSlug": "dossiq",
 			"schemaSlug": "objectionProceeding",
 			"urlTemplate": "/apps/dossiq/bezwaren/{uuid}",
 			"displayName": "Bezwaar"
@@ -4058,6 +5214,18 @@
 			"schemaSlug": "beroep",
 			"urlTemplate": "/apps/dossiq/beroepen/{uuid}",
 			"displayName": "Beroep"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "brpPerson",
+			"urlTemplate": "/apps/dossiq/contacts/{uuid}",
+			"displayName": "Contact"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "kvkCompany",
+			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
+			"displayName": "Organisation"
 		}
 	]
 }

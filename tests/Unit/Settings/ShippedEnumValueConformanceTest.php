@@ -58,14 +58,13 @@ final class ShippedEnumValueConformanceTest extends TestCase {
 	 * 🔴 A slug that names no schema makes this sweep check NOTHING for that
 	 * collection and still pass, so {@see testTheCollectionMapNamesRealSchemas}
 	 * asserts every slug here resolves. That test exists because the first
-	 * draft of this file mapped `tasks` to `caseTask`, which no schema is
-	 * called: 32 task payloads were skipped in silence.
+	 * draft of this file mapped `tasks` to `caseTask`, which no schema was
+	 * called at the time: 32 task payloads were skipped in silence.
 	 *
 	 * @var array<string, string>
 	 */
 	private const COLLECTION_SCHEMA = [
 		'cases' => 'case',
-		'tasks' => 'caseTask',
 		'caseTypes' => 'caseType',
 		'statusTypes' => 'statusType',
 		'roleTypes' => 'roleType',
@@ -74,6 +73,25 @@ final class ShippedEnumValueConformanceTest extends TestCase {
 		'decisionTypes' => 'decisionType',
 		'propertyDefinitions' => 'propertyDefinition',
 		'inspectionChecklists' => 'inspectionChecklistTemplate',
+	];
+
+	/**
+	 * Seed collections this sweep CANNOT judge, and why not.
+	 *
+	 * 🔴 RECORDED RATHER THAN DELETED. A collection that leaves
+	 * {@see COLLECTION_SCHEMA} is skipped in silence again, which is the exact
+	 * failure that map was written to stop. Naming it here keeps the skip
+	 * visible and keeps it honest: {@see testTheUnjudgedCollectionsAreStillUnjudgeable}
+	 * fails if a recorded key becomes mappable, and
+	 * {@see testTheRecordedCollectionsAreStillSeeded} fails if it stops being
+	 * seeded at all.
+	 *
+	 * @var array<string, string>
+	 */
+	private const COLLECTIONS_WITHOUT_A_SHIPPED_SCHEMA = [
+		'tasks' => "remove-casetask: a demo task is written to OpenRegister's task ENGINE, not to a "
+			. 'dossiq schema, so its `status` and `priority` are judged by the engine and no descriptor '
+			. 'this app ships declares their enums.',
 	];
 
 	/**
@@ -123,6 +141,65 @@ final class ShippedEnumValueConformanceTest extends TestCase {
 		);
 
 	}//end testTheCollectionMapNamesRealSchemas()
+
+	/**
+	 * A recorded collection is one no shipped schema could judge anyway.
+	 *
+	 * 🔴 THE RECORD ONLY SHRINKS. The moment a schema with that slug exists,
+	 * the collection belongs in {@see COLLECTION_SCHEMA} and its payloads go
+	 * back under the sweep. Without this, the record becomes the place a
+	 * mappable collection hides.
+	 *
+	 * @return void
+	 */
+	public function testTheUnjudgedCollectionsAreStillUnjudgeable(): void {
+		$stale = [];
+		foreach (array_keys(self::COLLECTIONS_WITHOUT_A_SHIPPED_SCHEMA) as $key) {
+			foreach ([$key, rtrim($key, 's'), 'case' . ucfirst(rtrim($key, 's'))] as $candidate) {
+				if (isset($this->schemas[$candidate]) === true) {
+					$stale[] = $key . ' => ' . $candidate;
+				}
+			}
+		}
+
+		self::assertSame(
+			[],
+			$stale,
+			"A shipped schema now covers these collections, so they must move back into\n"
+			. "COLLECTION_SCHEMA and be swept rather than recorded as unjudgeable:\n" . implode("\n", $stale)
+		);
+
+	}//end testTheUnjudgedCollectionsAreStillUnjudgeable()
+
+	/**
+	 * A recorded collection is one the seed data actually still carries.
+	 *
+	 * An exclusion outlives the data it cites otherwise, and a record that
+	 * describes nothing reads exactly like one that describes a live gap.
+	 *
+	 * @return void
+	 */
+	public function testTheRecordedCollectionsAreStillSeeded(): void {
+		$seen = [];
+		foreach ($this->seedFiles() as $path) {
+			$raw = (string)file_get_contents($path);
+			foreach (array_keys(self::COLLECTIONS_WITHOUT_A_SHIPPED_SCHEMA) as $key) {
+				if (str_contains($raw, '"' . $key . '"') === true) {
+					$seen[$key] = true;
+				}
+			}
+		}
+
+		$unseeded = array_values(array_diff(array_keys(self::COLLECTIONS_WITHOUT_A_SHIPPED_SCHEMA), array_keys($seen)));
+
+		self::assertSame(
+			[],
+			$unseeded,
+			"No seed file carries these collections any more, so the record describes nothing:\n"
+			. implode("\n", $unseeded)
+		);
+
+	}//end testTheRecordedCollectionsAreStillSeeded()
 
 	/**
 	 * Every value a shipped seed payload writes is one its enum allows.

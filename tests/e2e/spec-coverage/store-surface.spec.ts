@@ -25,7 +25,7 @@ test.describe('Store surface', () => {
 	// load; the neighbouring specs set the same explicit budget.
 	test.setTimeout(300_000)
 
-	// @e2e openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	// @e2e openspec/specs/dossiq-store-surface/spec.md
 	test('the store entry sits in the footer between Documentation and Reports', async ({
 		page,
 	}) => {
@@ -64,7 +64,7 @@ test.describe('Store surface', () => {
 		expect(store, 'Store must precede Reports').toBeLessThan(reports)
 	})
 
-	// @e2e openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	// @e2e openspec/specs/dossiq-store-surface/spec.md
 	test('an unconfigured instance renders the built-in templates and calls no registry', async ({
 		page,
 	}, testInfo) => {
@@ -111,7 +111,7 @@ test.describe('Store surface', () => {
 		).toEqual([])
 	})
 
-	// @e2e openspec/changes/dossiq-store-surface/specs/dossiq-store-surface/spec.md
+	// @e2e openspec/specs/dossiq-store-surface/spec.md
 	test('the store page is reachable by direct link', async ({ page }) => {
 		// Relabelling or moving the menu entry must not move the ROUTE.
 		//

@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V.",
+    "description": "Mandate matrix schemas, plus two organisatieRol rows (parties-on-the-case task 3.2) so the Team picker on a case and a task, and the Team facet on both indexes, have something to show on a fresh instance. Without them the field renders an empty picker, which reads exactly like a broken reference rather than an instance that has no teams yet. The e2e seeds its own rows and does not read these."
+  },
   "components": {
     "registers": {
       "dossiq": {
@@ -138,6 +143,32 @@
           "resolvedAt":      {"type": "string", "title": "Resolved At", "description": "Date and time at which this escalation was resolved.", "format": "date-time"}
         }
       }
-    }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "organisatieRol",
+          "slug": "org-rol-team-vergunningen"
+        },
+        "roleName": "Team Vergunningen",
+        "roleType": "ambtelijk",
+        "department": "Ruimte",
+        "team": "Vergunningen",
+        "mandateLevel": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "organisatieRol",
+          "slug": "org-rol-team-handhaving"
+        },
+        "roleName": "Team Handhaving",
+        "roleType": "ambtelijk",
+        "department": "Ruimte",
+        "team": "Handhaving",
+        "mandateLevel": 2
+      }
+    ]
   }
 }

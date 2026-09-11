@@ -3,8 +3,43 @@
  */
 
 /**
+ * The id a reference holds, whether it is a string or an expanded object.
+ *
+ * @param {string|object|null} value The stored reference.
+ * @return {string} The id, or an empty string when there is none.
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+function referenceId(value) {
+	if (typeof value === 'string') return value.trim()
+	if (value && typeof value === 'object') {
+		return String(value.id || value.uuid || '').trim()
+	}
+	return ''
+}
+
+/**
+ * Whether this is the version of its case type that new cases get.
+ *
+ * A case type version that has been replaced keeps running its own cases: they
+ * hold its id, and their statuses are its statuses. It is closed to NEW cases,
+ * which is exactly what `supersededBy` says. Anything that offers a case type
+ * to start a case with asks this, so the answer lives in one place: two
+ * versions of one case type carry the same name, and a picker showing both
+ * gives the person choosing no way to tell them apart.
+ *
+ * @param {object} caseType Case type object
+ * @return {boolean} True while nothing has replaced it.
+ * @spec openspec/specs/zaaktype-versioning/spec.md
+ */
+export function isCurrentCaseTypeVersion(caseType) {
+	if (!caseType) return false
+	return referenceId(caseType.supersededBy) === ''
+}
+
+/**
  * Check whether a case type is usable for creating cases.
- * Must be published (not draft), validFrom <= today, and validUntil >= today or null.
+ * Must be the current version, published (not draft), validFrom <= today, and
+ * validUntil >= today or null.
  *
  * @param {object} caseType Case type object
  * @return {boolean}
@@ -13,6 +48,7 @@
 export function isCaseTypeUsable(caseType) {
 	if (!caseType) return false
 	if (caseType.isDraft === true || caseType.isDraft === 'true') return false
+	if (!isCurrentCaseTypeVersion(caseType)) return false
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
@@ -46,6 +82,13 @@ export function getCaseTypeUnusableReason(caseType) {
 		return t(
 			'dossiq',
 			'Cannot create a case with a draft case type. The case type must be published first.',
+		)
+	}
+
+	if (!isCurrentCaseTypeVersion(caseType)) {
+		return t(
+			'dossiq',
+			'This version of the case type has been replaced. Cases already running on it continue. New cases go on the current version.',
 		)
 	}
 

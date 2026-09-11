@@ -58,7 +58,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 				const params = {}
 				if (caseType) params.case_type = caseType
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/dashboard/kpi'),
+					generateUrl('/apps/dossiq/api/termijn/dashboard/kpi'),
 					{ params },
 				)
 				this.kpi = res.data || null
@@ -89,7 +89,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/reports/kwartaal'),
+					generateUrl('/apps/dossiq/api/termijn/reports/kwartaal'),
 					{ params: { periode } },
 				)
 				this.quarterly = res.data
@@ -117,7 +117,7 @@ export const useTermijnDashboardStore = defineStore('termijnDashboard', {
 			this.error = null
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/procest/api/termijn/reports/jaarrekening'),
+					generateUrl('/apps/dossiq/api/termijn/reports/jaarrekening'),
 					{ params: { jaar } },
 				)
 				this.annual = res.data

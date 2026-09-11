@@ -4,7 +4,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by OpenConnector and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
+					'Configure how the KCC-werkplek bridge identifies burgers, opens the case-voorblad, scores sentiment, and routes calls. DigiD authentication and the telephony screen-pop are delivered by Integriq and pipelinq respectively; only the Dossiq-side behaviour is configured here.',
 				)
 			}}
 		</NcNoteCard>
@@ -96,7 +96,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachttijd">{{
-				t('dossiq', 'Belplan overflow threshold — wachttijd (seconds)')
+				t('dossiq', 'Belplan overflow threshold: wachttijd (seconds)')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachttijd"
@@ -108,7 +108,7 @@
 
 		<div class="setting-row">
 			<label for="kcc_belplan_overflow_threshold_wachtrij_lengte">{{
-				t('dossiq', 'Belplan overflow threshold — wachtrij lengte')
+				t('dossiq', 'Belplan overflow threshold: wachtrij lengte')
 			}}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachtrij_lengte"
@@ -180,7 +180,7 @@ import {
  *
  * Reads and writes the KCC config keys through the generic Dossiq settings
  * endpoint (GET /api/settings, POST /api/settings). DigiD and the telephony
- * screen-pop live in OpenConnector / pipelinq and are not configured here.
+ * screen-pop live in Integriq / pipelinq and are not configured here.
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
  */

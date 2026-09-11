@@ -30,3 +30,12 @@
 - [ ] 5.2 Default-deny proven: a fresh agent with no write grants is denied `dossiq.reassignCase` before the service runs; the same agent can still call `dossiq.getDeadlineDashboard`.
 - [ ] 5.3 End-to-end gated write: grant `reassignCase` to a test agent, run the "reassign Henk's open cases to Fatima" scenario — each call pends in Hermiq approvals, nothing moves pre-approval, approval executes through `CaseReassignmentService` with notifications, and the approval + invocation + object change are each retrievable from their audit surfaces (REQ-MCP-208).
 - [ ] 5.4 Chat scenarios from design D4 answered live via the Hermiq chat facade: deadline-breach question (read-only), reassignment (gated), beschikking draft (gated, draft-only) — confirming signing/sending remain unavailable to the agent (REQ-MCP-207).
+
+## Re-verified 2026-09-09
+
+Unstarted. `DossiqScannableServices.php` does not exist, and no `#[McpTool]` attribute appears
+anywhere under `lib/` — the four `McpTool` matches there are all substrings of
+`IMcpToolProvider` in `lib/Mcp/DossiqToolProvider.php`.
+
+Keep as backlog, strictly behind `dossiq-mcp-adoption`. Task T0 already says so; nothing here is
+actionable while the hand-written provider is the one that runs.

@@ -2,24 +2,36 @@
  * The caseload surfaces a demo actually shows: the Tasks page, and the two
  * dashboard widgets that scope to the current user.
  *
- * WHAT THIS ASSERTS, AND WHY EACH ONE EXISTS. All three pin a defect that
- * shipped, and all three failed silently rather than loudly.
+ * WHAT THIS ASSERTS, AND WHY IT EXISTS. It pins a defect that shipped, and
+ * that failed silently rather than loudly: the Tasks page must list tasks. It
+ * listed none, because `task_schema` pointed at a schema in ANOTHER app's
+ * register, and every task Dossiq wrote went there.
  *
- * 1. A task whose status is terminal must READ as terminal. `isTerminalStatus`
- *    is a materialised OpenRegister calculation, and it was installed on
- *    another app's `task` schema instead of ours, because both of Dossiq's
- *    schema reconcilers resolved the slug `task` instance-wide and three
- *    schemas carried it. So every completed task read isTerminalStatus =
- *    false. Nothing errored. The My Tasks widget, whose entire filter is
- *    isTerminalStatus = false, simply kept showing completed work.
+ * 🔴 TWO SCENARIOS CHANGED STORES WITH THE SCHEMA, AND THEY ARE THE SAME TWO
+ * QUESTIONS ASKED OF THE ENGINE.
  *
- * 2. `daysUntilDue` must come back when asked for. Same root cause: the
- *    calculation was declared on the foreign schema, so extending ours
- *    returned nothing and every due-date column rendered as an empty cell.
+ * They were `a completed task reads as terminal` and `daysUntilDue is returned
+ * when calculations are extended`, and both read MATERIALISED OpenRegister
+ * CALCULATIONS off dossiq's own `caseTask` schema. Both had the same root
+ * cause as the third: the calculations were installed on another app's `task`
+ * schema, because both of dossiq's reconcilers resolved that slug
+ * instance-wide and three schemas carried it. A completed task read
+ * `isTerminalStatus: false` and every due-date column rendered empty, with no
+ * error anywhere.
  *
- * 3. The Tasks page must list tasks. It listed none, because `task_schema`
- *    pointed at that same foreign schema and every task Dossiq wrote went
- *    into another register.
+ * remove-casetask deleted the schema, so there is no calculation of ours to
+ * materialise. The engine answers both questions itself, and differently:
+ * `isTerminal` is a real COLUMN it maintains through the lifecycle verbs, and
+ * the deadline is a per-row PROJECTION `TaskInboxService::row()` attaches at
+ * read time (`daysOverdue` counts up after the deadline, `daysUntilDue` counts
+ * down before it, never both). The user-visible truth is unchanged and so are
+ * the two assertions: completed work must stay out of an open-work read, and a
+ * task with a deadline must come back with a number rather than a blank.
+ *
+ * Not the same as the lens coverage in `case-list-lenses.spec.ts`, which
+ * probes the `dueAfter`/`dueBefore` FILTER. This is the per-row projection the
+ * columns render, and `signedDaysUntilDue()` in `src/store/modules/engineTask.js`
+ * folds the two fields into the one signed number a column shows.
  *
  * SEEDED, NOT ASSUMED. These assertions are data-dependent, which is why the
  * sibling widget scenarios are marked `@e2e exclude`. This spec seeds exactly
@@ -41,42 +53,68 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	cleanupFlowTasks,
 	cleanupRunObjects,
-	createObject,
 	ensureCaseType,
 	getRequestToken,
+	invokeFlowTask,
+	listFlowTasks,
 	listObjects,
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	seedFlowTask,
 } from './helpers/fixtures.ts'
 import { navToRoute } from './helpers/nav.ts'
 
 /** The case every task in this spec hangs off. */
 const CASE_TITLE = `${RUN_PREFIX} Caseload case`
 
-/** An OPEN task, which must appear on the Tasks page and in My Tasks. */
+/**
+ * An OPEN task, which must appear on the Tasks page and open on its own page.
+ *
+ * 🔴 IT IS AN ENGINE TASK, and there is only one store now. This spec used to
+ * seed two `caseTask` objects AND a third row in the engine, because its
+ * calculation scenarios needed an object and its detail scenario needed an
+ * engine uuid. `/tasks/{id}` is TaskDetailView since dossiq#2411 and reads the
+ * engine by uuid, so handing it an object id resolved nothing and the page
+ * rendered empty: that is why the two rows had two names. With the schema gone
+ * there is one row and one name.
+ */
 const OPEN_TASK = `${RUN_PREFIX} Open task`
 
 /** A COMPLETED task, which must appear nowhere that filters on open work. */
 const DONE_TASK = `${RUN_PREFIX} Completed task`
 
+/** A task whose deadline has NOT passed, so the projection counts down. */
+const FUTURE_TASK = `${RUN_PREFIX} Future task`
+
 /**
- * Days from today, as the ISO date-time the task schema stores.
+ * Days from now, as the ISO instant the engine stores in `dueAt`.
+ *
+ * 🔴 AN HOUR OF SLACK, AWAY FROM NOW, AND IT IS LOAD-BEARING. The engine's
+ * projection is `intdiv(abs(deadline - now), 86400)` on an INSTANT, so a
+ * deadline set exactly two days back reports 1 rather than 2 the moment a
+ * single second of the run has elapsed. The slack pushes each fixture past the
+ * boundary in the direction it already points, so the assertion is an exact
+ * number on every run rather than a band that would pass either way.
  *
  * @param days Offset in days, negative for the past.
  */
 function dueInDays(days: number): string {
-	const d = new Date()
-	d.setDate(d.getDate() + days)
-	return d.toISOString()
+	const slackHours = days < 0 ? -1 : 1
+	return new Date(
+		Date.now() + (days * 24 + slackHours) * 3600 * 1000,
+	).toISOString()
 }
 
 test.describe('Demo caseload surfaces', () => {
 	let api: APIRequestContext
 	let token: string
 	let caseId: string
-	let openTaskId: string
+	let engineTaskUuid: string
+	let futureTaskUuid: string
+	let doneTaskUuid: string
 
 	test.beforeAll(async ({ browser }) => {
 		const context = await browser.newContext()
@@ -108,60 +146,120 @@ test.describe('Demo caseload surfaces', () => {
 			)
 		}
 
-		const open = await createObject(api, token, 'caseTask', {
+		// Field names are the engine's, and three of them differ from the ones
+		// the register task carried: `case` is `objectUuid`, `status` is
+		// `state`, `dueDate` is `dueAt`. The id is a uuid; the numeric primary
+		// key is one no route accepts.
+		engineTaskUuid = await seedFlowTask(api, token, {
 			title: OPEN_TASK,
-			case: caseId,
+			objectUuid: caseId,
 			assignee: 'admin',
-			status: 'active',
-			dueDate: dueInDays(-2),
+			state: 'active',
+			dueAt: dueInDays(-2),
 		})
-		openTaskId = objectId(open)
 
-		await createObject(api, token, 'caseTask', {
-			title: DONE_TASK,
-			case: caseId,
+		futureTaskUuid = await seedFlowTask(api, token, {
+			title: FUTURE_TASK,
+			objectUuid: caseId,
 			assignee: 'admin',
-			status: 'completed',
-			dueDate: dueInDays(-4),
+			state: 'active',
+			dueAt: dueInDays(3),
 		})
+
+		// COMPLETED THROUGH THE VERB. The engine refuses a task born terminal
+		// ("it reaches that state through a lifecycle verb"), which is also
+		// the transition a person makes.
+		doneTaskUuid = await seedFlowTask(api, token, {
+			title: DONE_TASK,
+			objectUuid: caseId,
+			assignee: 'admin',
+			state: 'active',
+			dueAt: dueInDays(-4),
+		})
+		await invokeFlowTask(api, token, doneTaskUuid, 'complete')
 	})
 
 	test.afterAll(async () => {
+		// The engine task is not an OpenRegister object, so the prefix sweep
+		// cannot see it; `cancel` is the only removal verb the engine has.
+		await cleanupFlowTasks(api, token)
 		await cleanupRunObjects(api, token)
 	})
 
 	test('a completed task reads as terminal, so open-work filters exclude it', async () => {
-		const tasks = await listObjects(api, 'caseTask')
+		// The engine's own column, asked for by name. When terminality was a
+		// calculation installed on the wrong schema this was false for every
+		// completed task and every open-work filter let it through.
+		const closed = await listFlowTasks(api, {
+			scope: 'all',
+			isTerminal: 'true',
+			objectUuid: caseId,
+			limit: '200',
+		})
+		const open = await listFlowTasks(api, {
+			scope: 'all',
+			isTerminal: 'false',
+			objectUuid: caseId,
+			limit: '200',
+		})
 
-		const open = tasks.find((t) => t.title === OPEN_TASK)
-		const done = tasks.find((t) => t.title === DONE_TASK)
+		const closedUuids = closed.map((t: any) => String(t.uuid))
+		const openUuids = open.map((t: any) => String(t.uuid))
 
-		expect(open, `seeded task "${OPEN_TASK}" is missing`).toBeTruthy()
-		expect(done, `seeded task "${DONE_TASK}" is missing`).toBeTruthy()
-
-		// The calculation, not the raw status. When it is installed on the wrong
-		// schema this is false and every open-work filter lets the task through.
+		// BOTH DIRECTIONS. A filter that is dropped rather than applied
+		// answers everything, so "the completed task is in the closed list"
+		// passes on its own while proving nothing.
 		expect(
-			done.isTerminalStatus,
-			'a completed task must materialise isTerminalStatus = true',
-		).toBe(true)
+			closedUuids,
+			`the completed task "${DONE_TASK}" must read as terminal`,
+		).toContain(doneTaskUuid)
 		expect(
-			open.isTerminalStatus,
-			'an active task must materialise isTerminalStatus = false',
-		).toBe(false)
+			openUuids,
+			'a completed task must not come back from an open-work read',
+		).not.toContain(doneTaskUuid)
+		expect(
+			openUuids,
+			`the open task "${OPEN_TASK}" must come back from an open-work read`,
+		).toContain(engineTaskUuid)
+		expect(
+			closedUuids,
+			'an active task must not read as terminal',
+		).not.toContain(engineTaskUuid)
 	})
 
-	test('daysUntilDue is returned when calculations are extended', async () => {
-		const tasks = await listObjects(api, 'caseTask', { _extend: 'calculations' })
-		const open = tasks.find((t) => t.title === OPEN_TASK)
+	test('the deadline projection comes back per row, so a due column is never empty', async () => {
+		const rows = await listFlowTasks(api, {
+			scope: 'all',
+			objectUuid: caseId,
+			limit: '200',
+		})
 
-		expect(open, `seeded task "${OPEN_TASK}" is missing`).toBeTruthy()
-		// Seeded two days in the past, so the signed value is negative. Asserting
-		// the NUMBER, not merely that a key exists: the defect returned null.
+		const overdue = rows.find((t: any) => String(t.uuid) === engineTaskUuid)
+		const upcoming = rows.find((t: any) => String(t.uuid) === futureTaskUuid)
+
+		expect(overdue, `seeded task "${OPEN_TASK}" is missing`).toBeTruthy()
+		expect(upcoming, `seeded task "${FUTURE_TASK}" is missing`).toBeTruthy()
+
+		// The NUMBER, not merely that a key exists: the shipped defect
+		// returned null and the column rendered blank. The engine reports the
+		// two directions in two fields and never both, which is the shape
+		// `signedDaysUntilDue()` folds.
 		expect(
-			open.daysUntilDue,
-			'daysUntilDue must compute for a task with a due date',
-		).toBe(-2)
+			overdue.daysOverdue,
+			'a task two days past its deadline must report daysOverdue = 2',
+		).toBe(2)
+		expect(
+			overdue.daysUntilDue,
+			'daysUntilDue must be null once the deadline has passed',
+		).toBeNull()
+		expect(
+			upcoming.daysUntilDue,
+			'a task due in three days must report daysUntilDue = 3',
+		).toBe(3)
+		expect(
+			upcoming.daysOverdue,
+			'daysOverdue must be null before the deadline',
+		).toBeNull()
 	})
 
 	test('the Tasks page lists tasks instead of an empty state', async ({
@@ -170,7 +268,10 @@ test.describe('Demo caseload surfaces', () => {
 		await navToRoute(page, '/tasks')
 
 		// The shipped defect rendered this page's empty state on an instance that
-		// had tasks, because task_schema pointed at a schema in another register.
+		// had tasks, because `task_schema` pointed at a schema in another
+		// register. The page reads the engine's inbox now, so the seed above is
+		// what puts a row here.
+		//
 		// Asserting on ROWS rather than on the seeded title on purpose: the index
 		// pages at 20 rows, so a title assertion here would depend on how many
 		// tasks the instance happens to hold. The seeded task's own visibility is
@@ -187,11 +288,16 @@ test.describe('Demo caseload surfaces', () => {
 	})
 
 	test('a seeded task opens on its own detail page', async ({ page }) => {
-		await navToRoute(page, `/tasks/${openTaskId}`)
+		// THE ENGINE'S UUID. `/tasks/{id}` is TaskDetailView since dossiq#2411
+		// and it reads the task engine by uuid. It used to be handed an object
+		// id as well, which resolved nothing and rendered an empty page: that
+		// reads as "the detail page is broken" rather than as "that id belongs
+		// to the other store".
+		await navToRoute(page, `/tasks/${engineTaskUuid}`)
 
 		await expect(
 			page.getByText(OPEN_TASK, { exact: false }).first(),
-			'the task detail page must show the seeded task',
+			'the task detail page must show the seeded engine task',
 		).toBeVisible({ timeout: 20000 })
 	})
 })

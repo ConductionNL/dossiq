@@ -20,21 +20,43 @@
 		<div class="dossier-document-row__main">
 			<span class="dossier-document-row__title">{{ document.title }}</span>
 			<span class="dossier-document-row__meta">
-				{{ formatDate(document.creatiedatum) }} ·
-				{{ document.auteur || t('dossiq', 'Unknown') }} ·
-				{{ formatSize(document.bestandsomvang) }}
+				{{ formatSize(document.bestandsomvang) }} ·
+				{{ confidentialityLabel }}
 			</span>
+			<ul v-if="keywords.length > 0" class="dossier-document-row__keywords">
+				<li
+					v-for="keyword in keywords"
+					:key="keyword"
+					class="dossier-document-row__keyword"
+					data-testid="dossier-keyword">
+					{{ keyword }}
+				</li>
+			</ul>
 		</div>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-type">
+			{{ typeLabel || t('dossiq', 'Unknown type') }}
+		</span>
 
 		<span
 			class="dossier-document-row__badge dossier-document-row__status"
-			:class="'dossier-document-row__status--' + document.status">
+			:class="'dossier-document-row__status--' + document.status"
+			data-testid="dossier-cell-status">
 			{{ statusLabel }}
 		</span>
 
 		<span
-			class="dossier-document-row__badge dossier-document-row__confidentiality">
-			{{ confidentialityLabel }}
+			class="dossier-document-row__cell"
+			data-testid="dossier-cell-direction">
+			{{ directionLabel }}
+		</span>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-date">
+			{{ formatDate(document.creatiedatum) }}
+		</span>
+
+		<span class="dossier-document-row__cell" data-testid="dossier-cell-author">
+			{{ document.auteur || t('dossiq', 'Unknown') }}
 		</span>
 
 		<NcActions :inline="0">
@@ -49,12 +71,6 @@
 					<History :size="20" />
 				</template>
 				{{ t('dossiq', 'Version history') }}
-			</NcActionButton>
-			<NcActionButton :disabled="!canShare" @click="$emit('share', document)">
-				<template #icon>
-					<ShareVariant :size="20" />
-				</template>
-				{{ t('dossiq', 'Share') }}
 			</NcActionButton>
 			<NcActionButton
 				v-if="document.status === 'draft'"
@@ -74,17 +90,24 @@ import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
-import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
 import {
-	canShare as canShareLevel,
+	DEFAULT_DIRECTION,
+	documentKeywords,
 	formatSize as formatBytes,
 } from '../../../utils/dossierHelpers.js'
 
 /**
  * A single dossier document row: selection checkbox, preview thumbnail, title
  * and metadata, status and confidentiality badges, and an action menu. The
- * share action is disabled and the delete action hidden by the document's
- * confidentiality/status so the UI mirrors the server-side guards.
+ * delete action is hidden on a final document, so the UI mirrors the
+ * server-side guard.
+ *
+ * There is no Share action. One shipped, and it made no request at all: it
+ * emitted `count-changed` and raised a success toast, so a user was told a
+ * share had been created every time nothing happened. Sharing a case document
+ * is a real feature and it belongs to OpenRegister, which owns the folder the
+ * bytes now live in and decides who may read the object. It comes back as a
+ * route, not as a toast.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T06
  */
@@ -97,7 +120,6 @@ export default {
 		Delete,
 		History,
 		OpenInNew,
-		ShareVariant,
 	},
 
 	props: {
@@ -110,9 +132,17 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		// The document's type, resolved to its catalogue description by the
+		// tab. The row renders the label rather than the reference: an
+		// informatieobjecttype uuid in a Type column tells nobody anything.
+		typeLabel: {
+			type: String,
+			default: '',
+		},
 	},
 
-	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
+	emits: ['toggle-select', 'open', 'version-history', 'delete'],
 	data() {
 		return {
 			thumbFailed: false,
@@ -151,6 +181,36 @@ export default {
 		},
 
 		/**
+		 * Human-readable direction label.
+		 *
+		 * A document written before `direction` existed carries none, and the
+		 * schema default is what a write would have given it, so the column
+		 * reads Internal rather than blank.
+		 *
+		 * @return {string} The label.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		directionLabel() {
+			const labels = {
+				incoming: this.t('dossiq', 'Incoming'),
+				outgoing: this.t('dossiq', 'Outgoing'),
+				internal: this.t('dossiq', 'Internal'),
+			}
+			const direction = this.document.direction || DEFAULT_DIRECTION
+			return labels[direction] || direction
+		},
+
+		/**
+		 * The document's keywords, rendered as chips under its title.
+		 *
+		 * @return {string[]} The keywords, possibly empty.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		keywords() {
+			return documentKeywords(this.document)
+		},
+
+		/**
 		 * Human-readable confidentiality label.
 		 *
 		 * @return {string} The label.
@@ -171,16 +231,6 @@ export default {
 				labels[this.document.vertrouwelijkheidaanduiding]
 				|| this.document.vertrouwelijkheidaanduiding
 			)
-		},
-
-		/**
-		 * Whether the document may be publicly shared (mirrors server guard).
-		 *
-		 * @return {boolean} True when below the vertrouwelijk threshold.
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
-		 */
-		canShare() {
-			return canShareLevel(this.document.vertrouwelijkheidaanduiding)
 		},
 	},
 
@@ -227,12 +277,39 @@ export default {
 </script>
 
 <style scoped>
+/* The six columns the case file is read by, plus the select, the thumbnail
+   and the actions menu. The header strip in DossierTab declares the same
+   track list, so the headings sit over the values they name. */
 .dossier-document-row {
-	display: flex;
+	display: grid;
+	grid-template-columns: var(--dossier-columns);
 	align-items: center;
 	gap: 12px;
 	padding: 8px 4px;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.dossier-document-row__cell {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dossier-document-row__keywords {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	list-style: none;
+	margin: 2px 0 0;
+	padding: 0;
+}
+
+.dossier-document-row__keyword {
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill);
+	background-color: var(--color-primary-element-light);
+	color: var(--color-main-text);
+	font-size: 0.8em;
 }
 
 .dossier-document-row__thumb {

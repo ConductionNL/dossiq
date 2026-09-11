@@ -48,7 +48,11 @@ class SchemaSlugMap {
 	public const SLUG_TO_CONFIG_KEY = [
 		'catalog' => 'catalogus_schema',
 		'case' => 'case_schema',
-		'caseTask' => 'task_schema',
+		// `caseTask` is gone. remove-casetask deleted the schema from both
+		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
+		// resolve a slug the register no longer declares, once per import. The
+		// `task_schema` appconfig key survives as an inert row; see
+		// {@see ConfigKeys::ALL}.
 		'status' => 'status_schema',
 		'statusRecord' => 'status_record_schema',
 		'role' => 'role_schema',
@@ -107,6 +111,14 @@ class SchemaSlugMap {
 		'bacAdviceRequest' => 'bac_advice_request_schema',
 		'beroep' => 'beroep_schema',
 		'bezwaarDecision' => 'bezwaar_decision_schema',
+		// Beschikking lifecycle (beschikking-generatie spec) — Awb besluit.
+		// These four were imported by `register.d/30-beschikking.json` but never
+		// mapped, so the reconciler never wrote their keys and every service that
+		// resolved one threw `..._not_configured` on the first call.
+		'beschikking' => 'beschikking_schema',
+		'stateMachineLog' => 'state_machine_log_schema',
+		'bezwaarTrigger' => 'bezwaar_trigger_schema',
+		'mandateArrangement' => 'mandaat_regeling_schema',
 		'routingRule' => 'routing_rule_schema',
 		'kccAgent' => 'kcc_agent_schema',
 		'decisionTable' => 'decision_table_schema',
@@ -182,6 +194,9 @@ class SchemaSlugMap {
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
 		'caseModel' => 'case_model_schema',
+		// The connections Dossiq has to systems outside it
+		// (pluggable-integration-registry).
+		'dossiqIntegration' => 'dossiq_integration_schema',
 	];
 
 	/**

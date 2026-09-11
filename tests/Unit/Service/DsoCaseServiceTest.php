@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -40,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\DsoCaseService
  *
  * @uses \OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class DsoCaseServiceTest extends TestCase {
 
@@ -102,6 +104,7 @@ class DsoCaseServiceTest extends TestCase {
 			// does not load in this app's test environment — that is the whole
 			// reason the interface exists.
 			objectService: $this->createMock(ObjectServiceInterface::class),
+			workingDays: new WorkingDayCalculator(),
 		);
 	}//end setUp()
 
@@ -327,6 +330,7 @@ class DsoCaseServiceTest extends TestCase {
 			notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
 			logger: $this->logger,
 			objectService: $objectServiceMock,
+			workingDays: new WorkingDayCalculator(),
 		);
 
 		$result = $service->createZaakFromVergunningaanvraag(

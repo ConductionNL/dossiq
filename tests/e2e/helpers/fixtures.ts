@@ -73,12 +73,41 @@ const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
-	'caseTask',
+	// 🔴 `caseTask` IS GONE FROM THIS LIST, and it was here as cleanup order
+	// rather than as a thing most specs made. remove-casetask deleted the
+	// schema and `demo-caseload`, the last spec that created one, now seeds the
+	// engine instead, so nothing this suite writes lands there. A name kept
+	// here would cost a listing round trip per sweep against a schema that
+	// answers nothing: `sweepPrefix` swallows a failed list, so it would be
+	// silent as well as useless.
+	//
+	// One consequence is stated rather than discovered: on an instance
+	// UPGRADED from a version that had the schema, rows earlier runs left
+	// behind are no longer swept, because the import does not delete a schema
+	// it stops declaring. They are orphan rows under an orphan schema and
+	// removing them is an administrative act, not a test fixture's job.
+	'contactmoment',
+	// The things a case is about. Before `case` for the same reason every
+	// other child is: `case` is on a CASCADE, so a case removed first takes
+	// its objects with it and the sweep then reports rows it cannot find.
+	'caseObject',
+	// The dossier, child-first: the join names both the case and the document,
+	// and the document names its type.
+	'zaakinformatieobject',
+	'informatieobject',
+	'informatieobjecttype',
 	'consultation',
 	'objectionProceeding',
+	// A role points at a case AND at a role type, so it goes before both.
+	'role',
 	'case',
+	'roleType',
+	// The team a case names. After `case` for the same reason `caseType` is:
+	// it references it.
+	'organisatieRol',
 	'workflowTemplate',
 	'statusType',
+	'resultType',
 	'caseType',
 	'propertyDefinition',
 ] as const
@@ -370,6 +399,78 @@ export async function tryDeleteObject(
 }
 
 /**
+ * Monotonic counter making every seeded identifier unique WITHIN a worker.
+ *
+ * `RUN_PREFIX` is already unique per PROCESS, and a Playwright worker is a
+ * process, so it separates workers on its own. What it does not separate is two
+ * calls in the SAME worker: a `caseType.identifier` derived from `RUN_PREFIX`
+ * alone is the same string on the second call, and the second create then
+ * collides on a field the schema expects to be distinct.
+ */
+let fixtureSeq = 0
+
+/**
+ * A suffix unique to this call, on this worker, on this run.
+ *
+ * @return Short suffix safe to append to an identifier or a title.
+ */
+function nextFixtureSuffix(): string {
+	fixtureSeq += 1
+	return String(fixtureSeq)
+}
+
+/**
+ * Case types this suite is allowed to ADOPT: every one on the instance that
+ * some fixture run does not already own.
+ *
+ * Adopting `[0]` unfiltered is what pinned the whole suite to `workers: 1`.
+ * Worker A seeds a throwaway caseType, worker B adopts it as if it were
+ * instance data (`seeded: false`, so B never cleans it up), and A's teardown
+ * then deletes it out from under B mid-test. Excluding rows that carry
+ * `FIXTURE_PREFIX` removes that whole class: a worker can only ever adopt a
+ * caseType no teardown will remove.
+ *
+ * Filtering rather than always-seeding is deliberate. Five specs
+ * (case-communication, case-documents, case-parties, case-task-pane,
+ * case-detail-kpis-and-tabs) each record the same reason for adopting instead
+ * of seeding: `case` is an ARCHIVAL schema, so a seeded case cannot be deleted
+ * in teardown, and a caseType that IS deleted therefore leaves permanent cases
+ * pointing at a type that is gone — which reddens unrelated specs. Making every
+ * caller seed its own type would reintroduce exactly that.
+ *
+ * 🔴 PUBLISHED ONLY, AND THIS HALF IS NOT OPTIONAL. Since #1918
+ * `case.caseType` carries `x-relation-filter: {isDraft: false}`, and the
+ * caseType schema DEFAULTS `isDraft` to true. A case seeded against a draft
+ * type therefore has no usable type: the list comes back empty and reads as
+ * "there is nothing here" rather than as a bad fixture. #1944 fixed the
+ * fixtures that CREATE a type; the six specs that ADOPT one were not covered.
+ *
+ * Measured on the dev instance rather than assumed: of 21 live case types
+ * 13 are drafts, so blind `[0]` adoption picks one more often than not, and
+ * the register import itself ships 6 of its 14 with the field ABSENT.
+ *
+ * The two filters compose in a way that matters under parallel workers.
+ * Another worker's seeded type is `isDraft: false` and would have been a
+ * perfectly valid adoption; the FIXTURE_PREFIX filter excludes it and would
+ * otherwise push these specs onto a DRAFT shipped type instead — making the
+ * multi-worker case worse than the serial one it was meant to enable.
+ *
+ * `=== false` and not `!== true`: absent must count as a draft, because that
+ * is what the schema default makes it.
+ *
+ * @param api Authenticated request context.
+ * @return Published case types no fixture run owns, in server order.
+ */
+export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]> {
+	const rows = await listObjects(api, 'caseType')
+	return rows.filter(
+		(row: any) =>
+			row.isDraft === false
+			&& JSON.stringify(row).includes(FIXTURE_PREFIX) === false,
+	)
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with
@@ -382,7 +483,7 @@ export async function ensureCaseType(
 	api: APIRequestContext,
 	token: string,
 ): Promise<{ id: string; name: string; seeded: boolean }> {
-	const existing = await listObjects(api, 'caseType')
+	const existing = await adoptableCaseTypes(api)
 	if (existing.length > 0) {
 		const ct = existing[0]
 		return {
@@ -392,11 +493,17 @@ export async function ensureCaseType(
 		}
 	}
 	// Live caseType schema requires `title` (+ identifier), not `name`.
-	const name = `${RUN_PREFIX} CaseType`
+	const suffix = nextFixtureSuffix()
+	const name = `${RUN_PREFIX} CaseType ${suffix}`
 	const ct = await createObject(api, token, 'caseType', {
 		title: name,
-		identifier: `${RUN_PREFIX.toLowerCase()}-casetype`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`,
 		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
+		// PUBLISHED, NOT DRAFT. `case.caseType` carries
+		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
+		// `isDraft` to TRUE, so a type seeded without this is a draft and never
+		// appears in the New case picker.
+		isDraft: false,
 	})
 	return { id: objectId(ct), name, seeded: true }
 }
@@ -431,6 +538,16 @@ export async function seedCase(
 /** A seeded state machine: a caseType, three statusTypes, an active template. */
 export interface StateMachine {
 	caseTypeId: string
+	/**
+	 * The caseType's TITLE, exactly as stored.
+	 *
+	 * Returned because a caller cannot reconstruct it. The title carries a
+	 * per-call suffix (`RUN_PREFIX` is per-process, so a second call in the
+	 * same worker would otherwise reuse the first call's identifier), and a
+	 * spec that rebuilt it from `RUN_PREFIX` alone matched EVERY machine this
+	 * worker seeded rather than its own.
+	 */
+	caseTypeTitle: string
 	statusReceived: string
 	statusInProgress: string
 	statusDone: string
@@ -465,10 +582,18 @@ export async function seedStateMachine(
 		return id
 	}
 
+	// The suffix is what lets one worker seed more than one state machine:
+	// `RUN_PREFIX` is per-process, so without it the second call reuses the
+	// first call's identifier.
+	const machineSuffix = nextFixtureSuffix()
+	const caseTypeTitle = `${RUN_PREFIX} Vergunning ${machineSuffix}`
 	const caseType = await createObject(api, token, 'caseType', {
-		title: `${RUN_PREFIX} Vergunning`,
-		identifier: `${RUN_PREFIX.toLowerCase()}-verg`,
+		title: caseTypeTitle,
+		identifier: `${RUN_PREFIX.toLowerCase()}-verg-${machineSuffix}`,
 		description: 'Throwaway caseType for the dossiq state-machine e2e layer.',
+		// See `ensureCaseType`: the schema defaults this to true and
+		// `case.caseType` filters the picker on `isDraft: false`.
+		isDraft: false,
 	})
 	const caseTypeId = add('caseType', caseType)
 
@@ -520,7 +645,14 @@ export async function seedStateMachine(
 	})
 	add('workflowTemplate', wf)
 
-	return { caseTypeId, statusReceived, statusInProgress, statusDone, created }
+	return {
+		caseTypeId,
+		caseTypeTitle,
+		statusReceived,
+		statusInProgress,
+		statusDone,
+		created,
+	}
 }
 
 const DOSSIQ_API = '/index.php/apps/dossiq/api'
@@ -610,6 +742,166 @@ export async function updateObject(
 		`update ${schema}/${id} -> ${res.status()} ${await res.text()}`,
 	).toBeTruthy()
 	return unwrapObject(await res.json())
+}
+
+/**
+ * OpenRegister's task ENGINE. A flow task is not an OpenRegister object, so it
+ * has its own table, its own field names and its own verbs — `/api/objects/…`
+ * cannot see it and `cleanupRunObjects` cannot sweep it.
+ */
+export const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/**
+ * The fields a seeded engine task takes.
+ *
+ * Three names change from the `caseTask` schema this replaced, and they are
+ * the three that silently seed nothing when written the old way: `case`
+ * becomes `objectUuid` (OpenRegister has no case entity — the case IS the
+ * object), `status` becomes `state`, and `dueDate` becomes `dueAt`.
+ */
+export interface FlowTaskSeed {
+	/** The task title. Carry RUN_PREFIX so a row locator can find it. */
+	title: string
+	/** The object the task hangs off — a case uuid, for dossiq. */
+	objectUuid?: string
+	/** The uid the task is assigned to. Omit to leave it in the pool. */
+	assignee?: string
+	/** available | enabled | active. A terminal state needs the verb. */
+	state?: string
+	/** ISO instant. `overdue` is `dueAt < now`, an INSTANT comparison. */
+	dueAt?: string
+	/** low | normal | high | urgent. */
+	priority?: string
+	/** The uids that may claim an unassigned task, i.e. its pool. */
+	candidateUsers?: string[]
+	/** The group ids that may claim an unassigned task. */
+	candidateGroups?: string[]
+}
+
+/** Every engine task this process seeded, newest last, for teardown. */
+const seededFlowTasks: string[] = []
+
+/**
+ * Seed one task IN THE ENGINE and return its uuid.
+ *
+ * 🔴 SEEDING A `caseTask` OBJECT SEEDS SOMETHING NO SURFACE READS. dossiq#2357
+ * moved every task read onto the engine and #2408 moved the Tasks index with
+ * it, so a fixture that still posts `/api/objects/dossiq/caseTask` writes a
+ * different table: the list then shows nothing and the spec times out on a
+ * title that was never going to arrive, which reads as a broken list rather
+ * than as a fixture pointing at the wrong store.
+ *
+ * The uuid is the id. The numeric primary key is one no route accepts.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param seed  The task's fields.
+ */
+export async function seedFlowTask(
+	api: APIRequestContext,
+	token: string,
+	seed: FlowTaskSeed,
+): Promise<string> {
+	const res = await api.post(FLOW_TASKS_BASE, {
+		headers: writeHeaders(token),
+		data: { appId: REGISTER, state: 'available', ...seed },
+	})
+	expect(
+		res.status(),
+		`seed engine task "${seed.title}" -> ${res.status()} ${await res.text()}`,
+	).toBe(201)
+
+	const created = await res.json()
+	const uuid = String(created?.uuid ?? '')
+	expect(uuid, `seeded task "${seed.title}" came back without a uuid`).not.toBe('')
+	// Read back what the engine STORED, not what was asked for. A state the
+	// engine declined would otherwise be discovered by a lens assertion three
+	// screens away from the cause.
+	expect(
+		String(created.state),
+		`seeded task "${seed.title}" did not take the state asked for`,
+	).toBe(String(seed.state ?? 'available'))
+	seededFlowTasks.push(uuid)
+	return uuid
+}
+
+/**
+ * Drive one lifecycle verb on an engine task and assert it was accepted.
+ *
+ * A terminal task cannot be CREATED by an ordinary caller — the engine
+ * refuses a task born closed — so a spec that needs a completed task drives
+ * it there through the verb, which is also the transition a person makes.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param uuid  The task.
+ * @param verb  claim | complete | cancel | …
+ * @param body  The verb's payload, when it takes one.
+ */
+export async function invokeFlowTask(
+	api: APIRequestContext,
+	token: string,
+	uuid: string,
+	verb: string,
+	body: Record<string, unknown> = {},
+): Promise<any> {
+	const res = await api.post(`${FLOW_TASKS_BASE}/${uuid}/${verb}`, {
+		headers: writeHeaders(token),
+		data: body,
+	})
+	expect(
+		res.ok(),
+		`${verb} task ${uuid} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	return await res.json()
+}
+
+/**
+ * Read the engine inbox with explicit query parameters.
+ *
+ * @param api    Authenticated request context.
+ * @param params The inbox query, as the endpoint takes it.
+ */
+export async function listFlowTasks(
+	api: APIRequestContext,
+	params: Record<string, string>,
+): Promise<any[]> {
+	const query = new URLSearchParams(params).toString()
+	const res = await api.get(`${FLOW_TASKS_BASE}?${query}`)
+	expect(
+		res.ok(),
+		`list engine tasks (${query}) -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	const body = await res.json()
+	return Array.isArray(body?.results) ? body.results : []
+}
+
+/**
+ * Cancel every engine task this process seeded.
+ *
+ * `cancel` is the only removal verb the engine publishes — it TERMINATES
+ * rather than erases — and failures are swallowed on purpose: a task a test
+ * already completed answers 409 to a cancel, and a teardown that threw on
+ * that would redden a run whose assertions all passed.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ */
+export async function cleanupFlowTasks(
+	api: APIRequestContext,
+	token: string,
+): Promise<void> {
+	while (seededFlowTasks.length > 0) {
+		const uuid = seededFlowTasks.pop() as string
+		try {
+			await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+				headers: writeHeaders(token),
+				data: {},
+			})
+		} catch {
+			// Best effort; the next run's residue sweep is the backstop.
+		}
+	}
 }
 
 /**

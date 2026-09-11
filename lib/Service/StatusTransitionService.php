@@ -42,10 +42,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
@@ -54,6 +56,14 @@ use RuntimeException;
 
 /**
  * The status-transition engine.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the collaborators ARE the
+ *      decomposition: persistence, the group gate, the template dialects, the
+ *      closing result and the status checklist each live in their own class,
+ *      and folding any of them back in to satisfy the count would put the
+ *      concern back where it was split from.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — same reason, counted at the
+ *      constructor: every parameter is one of those collaborators, injected.
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
  */
@@ -80,6 +90,8 @@ class StatusTransitionService {
 	 * @param TransitionSpecReader $specReader Guard/action shape reader
 	 * @param IUserSession $userSession Current session
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
+	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -90,6 +102,8 @@ class StatusTransitionService {
 		private readonly TransitionSpecReader $specReader,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseResultWriter $resultWriter,
+		private readonly StatusChecklist $statusChecklist,
 	) {
 	}//end __construct()
 
@@ -120,7 +134,11 @@ class StatusTransitionService {
 
 		$result = [
 			'transitions' => [],
-			'current' => ['statusId' => $currentId, 'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId)],
+			'current' => [
+				'statusId' => $currentId,
+				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
+				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+			],
 		];
 
 		if ($template === null) {
@@ -141,8 +159,11 @@ class StatusTransitionService {
 				continue;
 			}
 
-			$guards = $this->specReader->extractGuards(transition: $transition);
-			$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+			$eval = $this->guardRegistry->evaluateAll(
+				guards: $this->evaluateGuards(transition: $transition),
+				case: $case,
+				userId: $userId,
+			);
 
 			// Drop transitions whose role guard hides them silently.
 			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
@@ -170,15 +191,23 @@ class StatusTransitionService {
 	 * @param string $transitionId Transition id from the workflow the case runs on
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
+	 * @param string|null $resultTypeId ResultType chosen for a closing transition
 	 *
 	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
 	 *
 	 * @throws GuardFailedException When server-side re-evaluation fails any guard
-	 * @throws RuntimeException When case/transition/template are not found
+	 * @throws RuntimeException When case/transition/template are not found, or a
+	 *                          closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId = null): array {
+	public function execute(
+		string $caseId,
+		string $transitionId,
+		?string $comment,
+		?string $userId = null,
+		?string $resultTypeId = null,
+	): array {
 		$userId = $this->resolveUserId(explicit: $userId);
 		$case = $this->store->loadCase(caseId: $caseId);
 		if ($case === null) {
@@ -218,6 +247,21 @@ class StatusTransitionService {
 			currentId: $currentId,
 		);
 
+		// A closing transition carries its result, or it does not happen.
+		//
+		// REQ-STE-12: the question "what came of this case" is asked at the
+		// moment the case closes, not afterwards, and the answer is written in
+		// the SAME save as the status. Refusing here rather than after the
+		// status write is what keeps a closed case from ever existing without
+		// a result: the refusal happens before the mutation, so the case is
+		// untouched.
+		$caseAtSave = $this->applyClosingResult(
+			case: $caseAtSave,
+			caseId: $caseId,
+			toStatus: $toStatus,
+			resultTypeId: $resultTypeId,
+		);
+
 		// Status mutation BEFORE side-effects per REQ-STE-5-002.
 		// Include @self.version so the store can detect a concurrent modification.
 		$caseAtSave['status'] = $toStatus;
@@ -232,14 +276,62 @@ class StatusTransitionService {
 		// Alias for the remainder of the method.
 		$case = $savedCase;
 
+		[$record, $dispatched] = $this->recordAndDispatch(
+			case: $case,
+			transition: $transition,
+			caseId: $caseId,
+			currentId: $currentId,
+			comment: $comment,
+			userId: $userId,
+			evaluatedGuards: $eval,
+		);
+
+		return [
+			'status' => 'ok',
+			'statusRecord' => $record,
+			'dispatchedActions' => $dispatched,
+			'version' => $savedVersion,
+		];
+	}//end execute()
+
+	/**
+	 * Write the statusRecord for a transition and run its side effects.
+	 *
+	 * Both halves live here because the record's id is the correlation key the
+	 * dispatched actions are written back onto: splitting them would mean
+	 * passing that id back and forth for no gain.
+	 *
+	 * @param array<string, mixed> $case The SAVED case (side effects read the new status)
+	 * @param array<string, mixed> $transition The transition definition
+	 * @param string $caseId Case UUID
+	 * @param string $currentId The status the case moved out of
+	 * @param string|null $comment Free-form comment
+	 * @param string $userId The acting user UID
+	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<int, array<string, mixed>>}
+	 *         The statusRecord and the dispatched-action results
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function recordAndDispatch(
+		array $case,
+		array $transition,
+		string $caseId,
+		string $currentId,
+		?string $comment,
+		string $userId,
+		array $evaluatedGuards,
+	): array {
 		$label = (string)($transition['label'] ?? '');
+		$toStatus = (string)($transition['toStatus'] ?? '');
 		$record = $this->store->writeStatusRecord(
 			caseId: $caseId,
 			toStatus: $toStatus,
 			fromStatus: $currentId,
 			label: $label,
 			comment: $comment,
-			evaluatedGuards: $eval,
+			evaluatedGuards: $evaluatedGuards,
 			noWorkflowTemplate: false,
 		);
 
@@ -252,7 +344,14 @@ class StatusTransitionService {
 			'statusRecordUuid' => $statusRecordId,
 		];
 
-		$actions = $this->specReader->extractActions(transition: $transition);
+		// The status the case just entered brings its own work. The checklist
+		// actions go FIRST, so the tasks a phase asks for exist before whatever
+		// the transition itself does with them — a notification that lists the
+		// case's open tasks is otherwise sent one dispatch too early.
+		$actions = array_merge(
+			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case, actor: $userId),
+			$this->specReader->extractActions(transition: $transition),
+		);
 		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
 		// Update the statusRecord with the actual dispatched-action results.
@@ -262,13 +361,77 @@ class StatusTransitionService {
 			statusRecordId: $statusRecordId,
 		);
 
-		return [
-			'status' => 'ok',
-			'statusRecord' => $record,
-			'dispatchedActions' => $dispatched,
-			'version' => $savedVersion,
-		];
-	}//end execute()
+		return [$record, $dispatched];
+	}//end recordAndDispatch()
+
+	/**
+	 * Write the result a closing transition records, onto the case payload.
+	 *
+	 * Returns the case unchanged when the target status is not final. When it
+	 * is, a result type is REQUIRED: a case that closes with no result answers
+	 * none of the questions an archivist, a citizen or a WOO request will ask
+	 * of it later.
+	 *
+	 * A closing transition also settles the case's END DATE and its ARCHIVAL
+	 * FUTURE, both in this same save. Neither used to happen here. `endDate`
+	 * was written only by the ZGW path (zrc-007a), so a case closed at the desk
+	 * read as still open to every consumer that asks the zaak whether it has an
+	 * einddatum; and the zrc-021 nomination was derived only over the API, so
+	 * the same case closed two ways ended in two different archival states.
+	 * Doing both here, rather than in a job afterwards, is what keeps them
+	 * true of every closed case rather than of most of them.
+	 *
+	 * @param array<string, mixed> $case The case payload about to be saved
+	 * @param string $caseId Case UUID
+	 * @param string $toStatus The target statusType UUID
+	 * @param string|null $resultTypeId The chosen resultType UUID, or null
+	 *
+	 * @return array<string, mixed> The case payload, with `result`, `endDate` and
+	 *                              the archival fields set when closing
+	 *
+	 * @throws RuntimeException When a closing transition carries no result type
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function applyClosingResult(
+		array $case,
+		string $caseId,
+		string $toStatus,
+		?string $resultTypeId,
+	): array {
+		if ($this->resultWriter->isFinalStatus(statusTypeId: $toStatus) === false) {
+			return $case;
+		}
+
+		// An end date the case already carries is left alone: a handler who
+		// backdated the close meant it, and zrc-021 derives from that date.
+		$endDate = substr((string)($case['endDate'] ?? ''), 0, 10);
+		if ($endDate === '') {
+			$endDate = date('Y-m-d');
+		}
+
+		$case['endDate'] = $endDate;
+
+		$resultId = $this->resultWriter->resolveClosingResult(
+			caseId: $caseId,
+			caseTypeId: (string)($case['caseType'] ?? ''),
+			resultTypeId: $resultTypeId,
+		);
+		if ($resultId === null) {
+			return $case;
+		}
+
+		$case['result'] = $resultId;
+
+		return array_merge(
+			$case,
+			$this->resultWriter->archivalFuture(
+				case: $case,
+				resultTypeId: (string)$resultTypeId,
+				endDate: $endDate,
+			)
+		);
+	}//end applyClosingResult()
 
 	/**
 	 * Re-evaluate every server-side precondition for a transition.
@@ -313,8 +476,11 @@ class StatusTransitionService {
 		}
 
 		// Defence in depth — re-evaluate guards on the server side.
-		$guards = $this->specReader->extractGuards(transition: $transition);
-		$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+		$eval = $this->guardRegistry->evaluateAll(
+			guards: $this->evaluateGuards(transition: $transition),
+			case: $case,
+			userId: $userId,
+		);
 		$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
 		// @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
 		if (count($failed) > 0) {
@@ -399,7 +565,7 @@ class StatusTransitionService {
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>}
+	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>}
 	 *
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
@@ -433,7 +599,24 @@ class StatusTransitionService {
 			noWorkflowTemplate: true,
 		);
 
-		return ['status' => 'ok', 'statusRecord' => $record];
+		// A status brings its checklist however the case arrived. This path
+		// dispatched nothing at all before, because it has no transition to
+		// read actions off — but the work belongs to the phase, not to the road
+		// into it, so an admin's move brings the tasks too. Only the checklist
+		// actions run here: there is no transition whose actions could.
+		$dispatched = $this->sideEffectDispatcher->dispatch(
+			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case, actor: $userId),
+			case: $case,
+			transitionContext: [
+				'fromStatus' => $currentId,
+				'toStatus' => $toStatusId,
+				'transitionLabel' => 'Free-form transition',
+				'userId' => $userId,
+				'statusRecordUuid' => (string)($record['id'] ?? ''),
+			],
+		);
+
+		return ['status' => 'ok', 'statusRecord' => $record, 'dispatchedActions' => $dispatched];
 	}//end executeFreeForm()
 
 	/**
@@ -479,6 +662,31 @@ class StatusTransitionService {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * The guards a transition is subject to: its own, plus the implicit one.
+	 *
+	 * The status checklist is appended to EVERY transition rather than left to
+	 * the template, because the list it enforces is authored on the status. A
+	 * guard a template has to remember is a guard the next case type forgets,
+	 * and a required item that only holds one road out of a phase holds
+	 * nothing at all.
+	 *
+	 * It goes LAST, so a role guard still hides a transition before the
+	 * checklist has anything to say about it.
+	 *
+	 * @param array<string, mixed> $transition The transition definition
+	 *
+	 * @return array<int, array<string, mixed>> The guards to evaluate
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function evaluateGuards(array $transition): array {
+		$guards = $this->specReader->extractGuards(transition: $transition);
+		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
+
+		return $guards;
+	}//end evaluateGuards()
 
 	/**
 	 * Resolve a user UID either from the explicit parameter or IUserSession.

@@ -198,7 +198,21 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'workflowTemplate', 'caseTask', 'complaint'],
+    #
+    # `caseTask` IS NOT HERE AND MUST NOT COME BACK. remove-casetask deleted the
+    # schema: the register no longer declares it, so a name in this list would
+    # never resolve. This list is a hard gate, and a name it cannot find exits 1
+    # BEFORE Playwright starts, which reports every spec as NOT RUN. That is the
+    # loudest possible signal attached to the least informative message: "the
+    # suite did not run" says nothing about which surface broke.
+    #
+    # Nothing seeds a task object any more either. `demo-caseload` was the last
+    # spec that did, for two scenarios over OpenRegister CALCULATIONS
+    # (isTerminalStatus, daysUntilDue) that only an object materialises; both
+    # now ask the ENGINE the same two questions, through /api/flow-tasks, which
+    # needs no schema at all.
+    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate',
+                'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
 }[kind]
 with open(path) as fh:
     raw = fh.read()
@@ -238,8 +252,9 @@ print(f'[ci-seed] {kind} present ({len(slugs)}): {sorted(s for s in slugs if s)}
 if missing:
     print(f'::error::Dossiq {kind} missing after import: {missing}')
     print('::error::tests/e2e/helpers/fixtures.ts cannot seed a case, caseType, '
-          'statusType, workflowTemplate, task or complaint without them, and every '
-          'UI spec then asserts against an empty list.')
+          'statusType, workflowTemplate, task, complaint, role, roleType or '
+          'organisatieRol without them, and every UI spec then asserts against '
+          'an empty list.')
     sys.exit(1)
 print(f'[ci-seed] {kind} OK ({len(required)} required slugs present)')
 PY
@@ -296,6 +311,50 @@ if ! php occ dossiq:workflows:migrate-to-flows --user="${USER_NAME}"; then
 	exit 1
 fi
 echo "[ci-seed] workflow definitions projected onto flows (disabled)."
+
+# ── 2c. A user who is NOT an admin ───────────────────────────────────────────
+# `integrations-page.spec.ts` asserts that the Integrations entry and its rows
+# are invisible to an ordinary user. Asserted from the admin session that is
+# not a test at all: the admin sees everything, so the spec would pass on an
+# app with no permission checks whatsoever. The suite therefore needs a second,
+# unprivileged account, and it has to exist before the spec runs rather than be
+# created by it — a spec that provisions its own user cannot tell "the guard
+# works" from "the user was never created".
+#
+# Idempotent: `user:add` on an existing uid exits non-zero, and that is not a
+# seeding failure, so the exit status is read and reported rather than trusted.
+if OC_PASS="${E2E_USER_PASS:-e2e-user-pass}" php occ user:add \
+	--password-from-env \
+	--display-name="E2E Ordinary User" \
+	"${E2E_USER_NAME:-e2euser}" >/dev/null 2>&1; then
+	echo "[ci-seed] created the non-admin user ${E2E_USER_NAME:-e2euser}."
+else
+	echo "[ci-seed] non-admin user ${E2E_USER_NAME:-e2euser} already exists (or could not be created); continuing."
+fi
+
+# The account has to be ordinary, and "already exists" above does not say so.
+# On a reused instance the uid may have been left in the admin group by an
+# earlier run or by hand, and then the whole point of the account is gone: the
+# permission spec would assert that an admin cannot see an admin page and fail
+# for a reason that has nothing to do with the guard it is testing. Reported
+# rather than repaired, because a test account that quietly acquired admin is
+# something to look at, not something to paper over.
+#
+# Two failure modes, kept apart on purpose. `occ` not answering at all and the
+# account turning out to be an admin want different fixes, and `set -o pipefail`
+# would otherwise report the first as the second. Nothing here is sent to
+# /dev/null: an occ error that reaches CI as silence is the failure mode
+# CiSeedScriptTest::testNoOccInvocationDiscardsItsOutput exists to prevent.
+if ! e2e_user_json=$(php occ user:info "${E2E_USER_NAME:-e2euser}" --output=json); then
+	echo "::error::occ user:info could not read ${E2E_USER_NAME:-e2euser}, so the account integrations-page.spec.ts needs cannot be confirmed ordinary. The occ error is above."
+	exit 1
+fi
+if ! printf '%s' "$e2e_user_json" \
+	| php -r 'exit(in_array("admin", json_decode(stream_get_contents(STDIN), true)["groups"] ?? [], true) ? 1 : 0);'; then
+	echo "::error::${E2E_USER_NAME:-e2euser} is in the admin group. integrations-page.spec.ts asserts that an ORDINARY account cannot reach the Integrations page, and against an admin that assertion cannot pass. Remove it: occ group:removeuser admin ${E2E_USER_NAME:-e2euser}"
+	exit 1
+fi
+echo "[ci-seed] ${E2E_USER_NAME:-e2euser} holds no admin group membership."
 
 # ── 3. Warm the SPA so the first spec doesn't pay the cold start ─────────────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets

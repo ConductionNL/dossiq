@@ -55,41 +55,18 @@ if (is_link($ocpVendorDir) === true && file_exists($ocpVendorDir) === false) {
 
 unset($ocpVendorDir);
 
-// Polyfill easter_date() when the PHP `calendar` extension is not loaded
-// (it is absent from the slim PHP-CLI image used in the dev container).
-// Production Nextcloud images ship the calendar extension, so this guard is a
-// no-op there. The algorithm is the standard Gauss/Meeus computation returning
-// a Unix timestamp for noon (matching the extension's CAL_EASTER_DEFAULT).
-if (function_exists('easter_date') === false) {
-	/**
-	 * Compute the Unix timestamp of Easter Sunday for a Gregorian year.
-	 *
-	 * @param int|null $year The year (defaults to the current year).
-	 *
-	 * @return int Unix timestamp (UTC noon) of Easter Sunday.
-	 */
-	function easter_date(?int $year = null): int {
-		$year = ($year ?? (int)date('Y'));
-
-		$a = ($year % 19);
-		$b = intdiv($year, 100);
-		$c = ($year % 100);
-		$d = intdiv($b, 4);
-		$e = ($b % 4);
-		$f = intdiv(($b + 8), 25);
-		$g = intdiv((($b - $f) + 1), 3);
-		$h = (((19 * $a) + $b - $d - $g + 15) % 30);
-		$i = intdiv($c, 4);
-		$k = ($c % 4);
-		$l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
-		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
-
-		$month = intdiv(($h + $l - (7 * $m) + 114), 31);
-		$day = ((($h + $l - (7 * $m) + 114) % 31) + 1);
-
-		return gmmktime(0, 0, 0, $month, $day, $year);
-	}//end easter_date()
-}//end if
+// NOTE: there used to be an easter_date() polyfill here, defining the function
+// when ext-calendar was absent. It is gone on purpose. lib/ crashed in
+// production on any ordinary weekday because two services called
+// easter_date() and no Nextcloud image we run ships ext-calendar — and the
+// test suite could never see it, because this bootstrap handed the tests a
+// function production did not have. It also papered over a second bug: the
+// real easter_date() returns a fixed CEST-midnight timestamp, so
+// date('Y-m-d', easter_date($y)) reads one day early under date.timezone=UTC,
+// while the polyfill's gmmktime() read correctly. Nothing in lib/ calls it
+// now; WorkingDayCalculator owns the computus, and
+// Unit/Service/WorkingDayCalculatorTest::testLibDoesNotDependOnExtCalendar
+// fails if that changes. Do not reinstate this.
 
 // Load the OC-internal and Doctrine stubs FIRST — before the OCP pre-load and
 // before any OCP autoloader is registered.
@@ -199,17 +176,107 @@ if ($ncLibPublicDir !== false && is_dir($ncLibPublicDir) === true) {
 	}//end if
 }//end if
 
+/**
+ * Tell whether a Nextcloud root is an INSTALLED instance, not just a source tree.
+ *
+ * `lib/base.php` from a source tree that was never installed still declares
+ * `OC` and builds `\OC::$server` before it throws "Not installed". That server
+ * cannot be undone (`OC::$server` is a typed static), so from then on every
+ * `\OC::$server->get()` in the code under test hits a container that knows
+ * none of this app's registrations and autowires from scratch; constructor
+ * cycles then recurse until memory runs out (19 GB and 6 GB of swap in one
+ * openregister run on 2026-09-08). So the decision has to be made BEFORE
+ * base.php is loaded, and the only cheap signal is the `installed` flag in
+ * config/config.php.
+ *
+ * @param string $ncRoot Candidate Nextcloud root.
+ *
+ * @return bool True when config/config.php declares `installed => true`.
+ */
+function dossiq_nc_root_is_installed(string $ncRoot): bool {
+	$configFile = $ncRoot . '/config/config.php';
+	if (is_file($configFile) === false || filesize($configFile) === 0) {
+		return false;
+	}
+
+	// The config file is a plain `$CONFIG = [...]` script; including it in a
+	// closure keeps `$CONFIG` out of the global scope.
+	$config = (static function () use ($configFile): array {
+		$CONFIG = [];
+		try {
+			include $configFile;
+		} catch (\Throwable) {
+			return [];
+		}
+
+		if (is_array($CONFIG) === false) {
+			return [];
+		}
+
+		return $CONFIG;
+	})();
+
+	return ($config['installed'] ?? false) === true;
+}//end dossiq_nc_root_is_installed()
+
 // Load a real Nextcloud server when one is present (CI/dev container). This
 // must happen BEFORE the stub OCP PSR-4 registration below so that NC's
 // classmap autoloader takes priority for any remaining OCP classes.
+//
+// Only an INSTALLED root is booted. A bare source tree (the workspace checkout
+// above apps-extra/ has a 0-byte config/config.php) would declare `OC`, build
+// `\OC::$server` and then throw "Not installed", and there is no way back to
+// pure-unit mode from that state: see dossiq_nc_root_is_installed(). NC's
+// tests/autoload.php requires lib/base.php itself, so it sits behind the same
+// guard.
 if (defined('OC_CONSOLE') === false) {
-	if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
-		include_once __DIR__ . '/../../../lib/base.php';
+	$dossiqNcRoot = realpath(__DIR__ . '/../../..');
+	if ($dossiqNcRoot !== false && file_exists($dossiqNcRoot . '/lib/base.php') === true) {
+		if (dossiq_nc_root_is_installed($dossiqNcRoot) === true) {
+			try {
+				include_once $dossiqNcRoot . '/lib/base.php';
+
+				if (file_exists($dossiqNcRoot . '/tests/autoload.php') === true) {
+					include_once $dossiqNcRoot . '/tests/autoload.php';
+				}
+			} catch (\Throwable $e) {
+				// The tree IS installed, so the dangerous case this guard exists for
+				// (loading a bare source tree) did not happen. base.php still failed
+				// part-way.
+				//
+				// This does NOT abort. `OC::$server` is a typed static, so a half-built
+				// container cannot be unset, and aborting was tried: it turned all six
+				// PHPUnit legs red on a suite that passes (humaniq, 2026-09-08). The
+				// runaway this guard exists for needs an autowiring lookup to reach the
+				// poisoned container, this app has none in lib, and phpunit.xml's 2G cap
+				// bounds one anyway.
+				//
+				// So: say plainly that the container is unreliable, and let the pure unit
+				// tests run. A container-bound test failing loudly is the intended outcome.
+				fwrite(
+					STDERR,
+					sprintf(
+						"[dossiq/tests/bootstrap] Nextcloud at %s could not finish booting (%s).\n"
+						. "  \\OC::\$server now holds a HALF-BUILT container and cannot be unset. Pure unit tests\n"
+						. "  continue; anything resolving a service from that container is UNVERIFIED by this run.\n",
+						$dossiqNcRoot,
+						$e->getMessage()
+					)
+				);
+			}
+		} else {
+			fwrite(
+				STDERR,
+				sprintf(
+					"[dossiq/tests/bootstrap] Nextcloud root at %s is not an installed instance (config/config.php lacks installed => true); "
+					. "skipping lib/base.php and running with composer autoload only (pure-unit mode).\n",
+					$dossiqNcRoot
+				)
+			);
+		}
 	}
 
-	if (file_exists(__DIR__ . '/../../../tests/autoload.php') === true) {
-		include_once __DIR__ . '/../../../tests/autoload.php';
-	}
+	unset($dossiqNcRoot);
 }
 
 // Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
@@ -496,6 +563,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
 // BezwaarDecisionListenerTest can exercise the guard's real decision through
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Db/Task.php';
+	include_once __DIR__ . '/Stubs/Event/TaskTerminalEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }

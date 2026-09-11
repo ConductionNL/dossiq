@@ -12,7 +12,7 @@
 			{{
 				t(
 					'dossiq',
-					'Paste or upload a Decidesk mandate export (CSV/JSON). The preview shows which mandaten will be created, updated, or skipped before you approve the import.',
+					'Paste or upload a Decidiq mandate export (CSV/JSON). The preview shows which mandaten will be created, updated, or skipped before you approve the import.',
 				)
 			}}
 		</p>

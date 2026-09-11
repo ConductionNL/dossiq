@@ -7,6 +7,7 @@
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
+		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
 		:permissions="permissions">
@@ -22,6 +23,17 @@
 			`:use-registry="false"` keeps the manifest `component:`-based
 			tabs (CaseTasksTab / CaseEmailTab / …) instead of the
 			integration-registry tabs.
+
+			`objectSchema` and `objectData` are the RESOLVED schema and record,
+			not the slugs beside them. A `data` sidebar tab renders
+			CnObjectDataWidget, which builds its field list from the schema
+			OBJECT and its values from the loaded record; given neither it
+			returns an empty list and the tab reads "No data available" on a
+			case that is perfectly fine. CnDetailPage publishes both into this
+			shared state for exactly this reason — `schemaObject` and `object`
+			— and they were simply never passed on, so the Tags tab could not
+			show a tag and could not offer the Click-to-edit that adds a first
+			one.
 		-->
 		<template #sidebar="{ pageSidebarComponent }">
 			<CnObjectSidebar
@@ -33,6 +45,8 @@
 				:objectId="objectSidebarState.objectId"
 				:register="objectSidebarState.register"
 				:schema="objectSidebarState.schema"
+				:objectSchema="objectSidebarState.schemaObject"
+				:objectData="objectSidebarState.object"
 				:tabs="objectSidebarState.tabs"
 				:hiddenTabs="objectSidebarState.hiddenTabs"
 				:open="objectSidebarState.open"
@@ -50,6 +64,7 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import { initializeStores } from './store/store.js'
+import { currentPermissions } from './utils/permissions.js'
 
 export default {
 	name: 'App',
@@ -108,6 +123,18 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * Cell-widget registry — forwarded to CnAppRoot as `cnCellWidgets`.
+		 * Resolves `pages[].config.columns[].widget` ids to components on
+		 * index pages (see src/services/cellWidgets.js). A formatter shapes a
+		 * value; a cell widget is what a column needs when the cell carries a
+		 * STATE the reader has to see, such as an overdue deadline.
+		 */
+		cellWidgets: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	data() {
@@ -144,18 +171,13 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
 		permissions() {
-			const base = window.OC?.currentUser?.permissions ?? []
-			// CnAppNav's permission filter is an array-includes check; Nextcloud
-			// does not put the boolean admin flag into the permissions array, so
-			// we inject it here for manifest entries gated on permission: "admin"
-			// (the platform-admin tenant management pages). isUserAdmin() returns
-			// true for users in the Nextcloud admin group, matching the backend
-			// TenantService::isPlatformAdmin() check.
-			const isAdmin =
-				typeof window.OC?.isUserAdmin === 'function'
-					? window.OC.isUserAdmin()
-					: false
-			return isAdmin ? [...base, 'admin'] : base
+			// One source, shared with the router guard in `main.js`. It used
+			// to live here alone, and the router half of the same manifest
+			// field went unenforced for as long as it did: the nav hid
+			// Integrations from an ordinary account and the route rendered it
+			// in full to the same account. See `utils/permissions.js` for why
+			// the list is never empty and for what this does NOT close.
+			return currentPermissions()
 		},
 	},
 

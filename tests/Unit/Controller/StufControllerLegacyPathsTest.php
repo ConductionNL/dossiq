@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufServices;
@@ -75,7 +76,7 @@ class StufControllerLegacyPathsTest extends TestCase {
 	private function controller(): StufController {
 		$services = (new ReflectionClass(StufServices::class))->newInstanceWithoutConstructor();
 
-		return new class('dossiq', $this->createMock(IRequest::class), $services, $this->dispatcher, $this->createMock(StufEnvelopeInspector::class), $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), ) extends StufController {
+		return new class('dossiq', $this->createMock(IRequest::class), $services, $this->dispatcher, $this->createMock(StufEnvelopeInspector::class), $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), ) extends StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *

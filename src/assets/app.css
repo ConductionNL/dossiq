@@ -15,3 +15,38 @@
 	justify-content: center !important;
 	min-height: 100% !important;
 }
+
+/* CnCountdownWidget colours its headline with the plain --color-error /
+   --color-warning / --color-success tokens. On Nextcloud 34 those are FILL
+   tokens (--color-error is #FFE7E7), so "26 days overdue" rendered as pale
+   pink on white; the readable foreground tokens are the -text variants, which
+   CnStatWidget already uses. The widget writes the token reference as an
+   inline style, so redefining the token on the widget root is the one
+   override that reaches it without !important. Scoped per variant so nothing
+   else on the page sees a repointed token. */
+.cn-countdown-widget--error {
+	--color-error: var(--color-error-text, #8a0000);
+}
+
+.cn-countdown-widget--warning {
+	--color-warning: var(--color-warning-text, #6b4c00);
+}
+
+.cn-countdown-widget--success {
+	--color-success: var(--color-success-text, #005e1f);
+}
+
+/* A dashboard row whose deadline has passed reads in the error colour.
+   The manifest declares this through the object-table `rowClass` rules, which
+   land on the <tr>; the colour has to be re-stated on the cells because
+   nextcloud-vue styles `.cn-data-table td.cn-cell--muted` directly and a
+   colour inherited from the row would lose to it. Two class levels here beat
+   that one, without !important. --color-error-text is the readable FOREGROUND
+   token: --color-error is a fill (pale pink on Nextcloud 34). */
+.cn-data-table tr.cn-row--danger td {
+	color: var(--color-error-text, #8a0000);
+}
+
+.cn-data-table tr.cn-row--danger td.cn-cell--strong {
+	font-weight: 600;
+}

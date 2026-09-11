@@ -64,6 +64,10 @@ class FlowNodeRegistry {
 		private readonly IEventDispatcher $dispatcher,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urls = null,
+		// Reads what a node SAYS IT IS — its BPMN kind, its palette category
+		// and its role — applying the defaults for a node that declares
+		// nothing. Optional, and built from the logger above when absent.
+		private mixed $taxonomy = null,
 	) {
 	}//end __construct()
 

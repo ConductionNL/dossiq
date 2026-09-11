@@ -7,6 +7,12 @@
 **Standards:** KvK Zoeken API (field naming), GEMMA Zaakafhandel (initiator betrokkene), ZGW ZRC Rol `niet_natuurlijk_persoon`, Schema.org `schema:Organization`
 **Feature tier:** MVP
 
+## Purpose
+
+The KvK company register set in OpenRegister: the `kvkCompany` schema and its
+fictitious seed rows, named after the KvK Zoeken API so the live adapter and the
+seed data describe the same company the same way.
+
 ## Requirements
 
 ### Requirement: KvK company register schema exists in OpenRegister

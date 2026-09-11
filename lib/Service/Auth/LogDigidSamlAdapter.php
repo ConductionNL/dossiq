@@ -87,14 +87,14 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
 				'active' => $this->isActive(),
 				'response_len' => strlen($samlResponse),
 				'relay_state' => $relayState,
-				'activation' => 'configure openconnector DigiD broker + private key + cert; '
+				'activation' => 'configure integriq DigiD broker + private key + cert; '
 					. 'occ config:app:set dossiq digid.feature_flag --value 1; '
 					. 'swap DI binding to the active SamlAdapter implementation.',
 			]
 		);
 
 		throw new RuntimeException(
-			'DigiD broker not configured — wire openconnector + flip digid.feature_flag.'
+			'DigiD broker not configured. Wire integriq, then flip digid.feature_flag.'
 		);
 	}//end decodeAssertion()
 

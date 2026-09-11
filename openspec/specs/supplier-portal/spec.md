@@ -1,12 +1,38 @@
 ---
 status: done
-status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member 09 (contract backend) completed 2026-06-13 — the previously-deferred ContractController (GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and the nightly ScanExpiringContractsJob (TimedJob wrapping ContractRenewalService::scanAndFlagExpiring) are now genuinely built, routed, and unit-tested. 2026-07-07 (move-portals-to-portaliq, ADR-046, procest#162): the in-app supplier portal VIEWS (src/views/leverancier/*) + nav/routes/manifest fragment are RETIRED — the supplier surface is rendered by the shared Portaliq portal as the `supplier` audience of PortalContributionProvider. The backend supplier services + /api/leverancier-portaal/* endpoints and the OpenRegister schemas remain unchanged. 2026-07-08 (procest#loose-ends): SUPERSEDED for the in-app implementation — the now-consumerless backend was removed too. Deleted: SupplierPortalController / SupplierProfileController / ContractController + all /api/leverancier-portaal/* routes, SupplierAuthMiddleware, the supplier services (Scope/Session/Dashboard/KpiAggregation/Message/MasterDataMutation/Leverancier+Tender ViewModel/TenderVisibility/InvoicePaymentForecast/Auth/UserManagement), and the ContractRenewalService + ScanExpiringContractsJob renewal chain. The OpenRegister schemas (supplierTender/Contract/Invoice/Message) are UNCHANGED and are read directly by Portaliq (field-projected), which is now the sole supplier surface. This spec is retained for history; the live supplier experience is owned by Portaliq.
+status-note: >-
+  Reverse-synced 2026-06-13 from archived implemented changes. Member 09
+  (contract backend) completed 2026-06-13 — the previously-deferred
+  ContractController (GET /contracts/list, GET /contracts/{id}, POST
+  /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and
+  the nightly ScanExpiringContractsJob (TimedJob wrapping
+  ContractRenewalService::scanAndFlagExpiring) are now genuinely built,
+  routed, and unit-tested. 2026-07-07 (move-portals-to-portaliq, ADR-046,
+  procest#162): the in-app supplier portal VIEWS (src/views/leverancier/*) +
+  nav/routes/manifest fragment are RETIRED — the supplier surface is rendered
+  by the shared Portaliq portal as the `supplier` audience of
+  PortalContributionProvider. The backend supplier services +
+  /api/leverancier-portaal/* endpoints and the OpenRegister schemas remain
+  unchanged. 2026-07-08 (procest#loose-ends): SUPERSEDED for the in-app
+  implementation — the now-consumerless backend was removed too. Deleted:
+  SupplierPortalController / SupplierProfileController / ContractController +
+  all /api/leverancier-portaal/* routes, SupplierAuthMiddleware, the supplier
+  services
+  (Scope/Session/Dashboard/KpiAggregation/Message/MasterDataMutation/Leverancier+Tender
+  ViewModel/TenderVisibility/InvoicePaymentForecast/Auth/UserManagement), and
+  the ContractRenewalService + ScanExpiringContractsJob renewal chain. The
+  OpenRegister schemas (supplierTender/Contract/Invoice/Message) are UNCHANGED
+  and are read directly by Portaliq (field-projected), which is now the sole
+  supplier surface. This spec is retained for history; the live supplier
+  experience is owned by Portaliq.
 ---
 # supplier-portal Specification
 
 ## Purpose
 Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Dossiq workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.
+
 ## Requirements
+
 ### Requirement: Supplier-Portal Schemas Are Registered
 
 The system SHALL register seven OpenRegister schemas — `Supplier`, `SupplierUser`,
@@ -512,7 +538,10 @@ The system SHALL flag contracts within 90 days of expiry and compute the days re
 
 #### Scenario: Contract within the threshold is flagged
 
-@e2e exclude Backend-only — driven by the nightly ScanExpiringContractsJob (TimedJob) with no UI surface; covered by ScanExpiringContractsJobTest + ContractRenewalServiceTest. Contract UI is chain member 10.
+@e2e exclude backend-only, with no UI surface in this app. The nightly job and
+the renewal service this reason used to name were deleted by 062d9dede when the
+consumerless supplier backend was removed. Portaliq is now the sole supplier
+surface and reads the OpenRegister Contract schema directly.
 
 - GIVEN the nightly expiry-scan job runs
 - WHEN a contract's `endDate` is within 90 days
@@ -527,7 +556,10 @@ account manager.
 
 #### Scenario: Renewal request opens a Dossiq case
 
-@e2e exclude Backend REST contract — exercised via the Newman leverancier-contract-api collection + ContractControllerTest (role gate, manual-only, window, cross-supplier 403); no UI surface in this chain member. Contract renewal UI is chain member 10.
+@e2e exclude backend REST contract with no UI surface in this app. The
+controller and the /api/leverancier-portaal/* routes this reason used to name
+were deleted by 062d9dede, the collection it named has never existed, and this
+app sets enable-newman false. Portaliq now renders the supplier experience.
 
 - GIVEN a contracts or admin user requests renewal of a manual-renewal contract within 90 days
 - WHEN the request endpoint is called
@@ -535,3 +567,34 @@ account manager.
   contract reference and an email sent to the account manager
 - AND a cross-supplier contract request SHALL return 403
 
+### Requirement: The case supplier invoice is namespaced (REQ-SP-030)
+
+The supplier invoice schema SHALL be `caseSupplierInvoice` and SHALL NOT be
+`supplierInvoice`.
+
+A schema slug is global per organisation and `SchemaMapper::find()` matches
+`LOWER(slug)`, so a bare `supplierInvoice` was answered for by shillinq's
+accounts-payable record as readily as by this app's case-side view. shillinq
+owns the invoice and keeps the bare slug.
+
+They SHALL be renamed apart and SHALL NOT be folded. The two share only
+`invoiceDate` and `dueDate`; there is no invoice number and nothing else that
+identifies the document.
+
+A repair step SHALL rename the row IN PLACE before the register import, scoped
+to this app's own rows, and SHALL be registered in both the post-migration and
+the install block. Enabling the app is a fresh install as far as Nextcloud is
+concerned, so an instance holding the old slug reaches the import through
+either path.
+
+#### Scenario: The slug is renamed in place
+
+- **GIVEN** an install carrying a dossiq-owned `supplierInvoice` schema
+- **WHEN** the repair step runs
+- **THEN** the row keeps its schema id, and so its shard table and objects.
+
+#### Scenario: The register declares the namespaced slug
+
+- **WHEN** the register JSON is read
+- **THEN** `caseSupplierInvoice` is declared and `supplierInvoice` is not, so the
+  import cannot create a second schema behind the renamed row.

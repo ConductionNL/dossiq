@@ -17,7 +17,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Flow;
 
 use JsonSerializable;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCP\IUserSession;
 use OCP\AppFramework\Db\DoesNotExistException;
 use RuntimeException;
 
@@ -32,7 +33,12 @@ use RuntimeException;
  * drifting apart; leaving them inline pushed the node past its complexity
  * budget, which was the measurement saying the same thing.
  *
- * DUCK-TYPED ON PURPOSE. `SettingsService::getObjectService()` resolves
+ * The duck-typing that used to live here moved with the storage:
+ * `EngineTaskGateway` resolves OpenRegister's task service by name, because
+ * OpenRegister is an optional runtime dependency and its classes cannot be
+ * type-hinted. What follows describes that seam, not this class.
+ *
+ * HISTORICAL. `SettingsService::getObjectService()` resolved
  * OpenRegister's service as `?object`, because dossiq stays installable without
  * it. Everything here therefore accepts what that service really returns rather
  * than what a caller assumes — the assumption that a save returned an array is
@@ -46,17 +52,43 @@ class AskPersonTaskStore {
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Resolves the object service and the configured schemas.
+     * @param EngineTaskGateway $engineTasks     The seam onto OpenRegister's task engine.
+     * @param IUserSession      $userSession     The acting identity the engine records.
      *
      * @return void
      *
      * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
+        private readonly EngineTaskGateway $engineTasks,
+        private readonly IUserSession $userSession,
     ) {
 
     }//end __construct()
+
+
+    /**
+     * Who the engine records as having raised this task.
+     *
+     * The session's user, and NOTHING when there is none. The engine is
+     * fail-closed and refuses a verb with no acting identity, which is the
+     * right outcome here: a task raised under a guessed identity is worse
+     * than a run that stalls and says why, because the guess is what the
+     * audit trail will show for ever.
+     *
+     * @return string|null The uid, or null.
+     *
+     * @spec openspec/changes/remove-casetask/tasks.md
+     */
+    private function actor(): ?string {
+        $uid = $this->userSession->getUser()?->getUID();
+
+        if ($uid === null || trim($uid) === '') {
+            return null;
+        }
+
+        return $uid;
+    }//end actor()
 
 
     /**
@@ -74,15 +106,25 @@ class AskPersonTaskStore {
      * @throws RuntimeException When storage is unavailable, unconfigured, or the
      *                          written task cannot be identified.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function create(array $task): string {
-        $objectService = $this->objectService();
-        [$register, $taskSchema] = $this->location();
+        $caseId = trim((string) ($task['case'] ?? ''));
 
-        $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
-
-        $taskId = $this->createdTaskId(created: $created);
+        // The engine, not the register. `dossiq.askPerson` asks a person a
+        // question and waits for the answer; the answer now arrives as
+        // `TaskTerminalEvent` from the engine, so the task it waits on has
+        // to be an engine task or nothing will ever wake the run.
+        //
+        // `trusted: true` because this is an in-process caller with no
+        // session of its own: the flow engine runs it as the run's acting
+        // identity, and `create()` (the HTTP path) would pin the requester
+        // to whoever happened to trigger the transition.
+        $taskId = $this->engineTasks->mirrorImport(
+            task: $task,
+            caseId: $caseId,
+            actor: $this->actor()
+        );
         if ($taskId === '') {
             // A task that was written but cannot be identified is worse than
             // none: the slot would stay empty, so the next heartbeat writes
@@ -112,11 +154,8 @@ class AskPersonTaskStore {
      * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
      */
     public function find(string $taskId): ?array {
-        $objectService = $this->objectService();
-        [$register, $taskSchema] = $this->location();
-
         try {
-            $found = $objectService->find($taskId, register: $register, schema: $taskSchema);
+            $found = $this->engineTasks->find(taskId: $taskId);
         } catch (DoesNotExistException) {
             return null;
         }
@@ -130,41 +169,8 @@ class AskPersonTaskStore {
     }//end find()
 
 
-    /**
-     * The object service, or a loud refusal.
-     *
-     * @return object The object service.
-     *
-     * @throws RuntimeException When storage is unavailable.
-     */
-    private function objectService(): object {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        return $objectService;
-
-    }//end objectService()
 
 
-    /**
-     * Where the task rows live: the register and the task schema.
-     *
-     * @return array{0: string, 1: string} The register and schema.
-     *
-     * @throws RuntimeException When either is unconfigured.
-     */
-    private function location(): array {
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-        if ($register === '' || $taskSchema === '') {
-            throw new RuntimeException('task_schema_not_configured');
-        }
-
-        return [$register, $taskSchema];
-
-    }//end location()
 
 
     /**
@@ -195,46 +201,6 @@ class AskPersonTaskStore {
     }//end asTask()
 
 
-    /**
-     * The id of the task the object service reports having written.
-     *
-     * `ObjectService::saveObject()` returns an ObjectEntity — it always has.
-     * This used to accept only an array, so every successful save was followed
-     * by "could not identify the task it created": the task existed, the run
-     * STOPPED instead of suspending, no resume slot was written, and the task
-     * sat orphaned in somebody's list with no way to wake anything. The
-     * entity's uuid is the id every read surface serves back, so it is the one
-     * the resume slot must remember.
-     *
-     * The array shape is still accepted because the service is duck-typed, and
-     * refusing a shape that carries a perfectly good id would recreate this bug
-     * for the other shape.
-     *
-     * @param mixed $created Whatever the object service returned.
-     *
-     * @return string The task id, or '' when the result names none.
-     *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
-     */
-    private function createdTaskId(mixed $created): string {
-        if (is_object($created) === true && method_exists($created, 'getUuid') === true) {
-            $uuid = (string) ($created->getUuid() ?? '');
-            if ($uuid !== '') {
-                return $uuid;
-            }
-        }
-
-        if (is_object($created) === true && ($created instanceof JsonSerializable) === true) {
-            $created = (array) $created->jsonSerialize();
-        }
-
-        if (is_array($created) === true) {
-            return (string) ($created['id'] ?? ($created['uuid'] ?? ''));
-        }
-
-        return '';
-
-    }//end createdTaskId()
 
 
 }//end class

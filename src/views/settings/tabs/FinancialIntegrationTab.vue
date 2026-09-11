@@ -8,7 +8,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401) — an unconfigured secret is never treated as an implicit pass.',
+					'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401). An unconfigured secret is never treated as an implicit pass.',
 					{ endpoint: '/apps/dossiq/api/dwangsom/payment-callback' },
 				)
 			}}
@@ -30,7 +30,7 @@
 				:helperText="
 					t(
 						'dossiq',
-						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.',
+						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP or Integriq integrator so it can sign X-Procest-Signature headers.',
 					)
 				"
 				@update:modelValue="onSecretInput" />

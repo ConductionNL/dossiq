@@ -22,7 +22,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	// enough to overrun even test.slow()'s tripled budget.
 	test.setTimeout(300_000)
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('admin settings surface renders the Case Type Management heading', async ({
 		page,
 	}) => {
@@ -33,7 +33,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('admin settings surface has an add-control for case types', async ({
 		page,
 	}) => {
@@ -48,7 +48,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		await expect(addBtn).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/changes/case-types-02-backend-validation/tasks.md#TASK-CT-08-SMOKE
+	// @e2e openspec/changes/archive/2026-06-13-case-types-02-backend-validation/tasks.md#TASK-CT-08-SMOKE
 	test('publish validation endpoint exists at the case-types route', async ({
 		page,
 		request,

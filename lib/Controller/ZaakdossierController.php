@@ -153,6 +153,20 @@ class ZaakdossierController extends Controller {
 			);
 		}
 
+		// 201 CREATED ONLY IF SOMETHING WAS CREATED. A per-file result list is
+		// the right shape when one file of five fails, but answering 201 when
+		// EVERY file failed makes the failure invisible: the browser reads the
+		// status, sees success, and shows nothing. That is how a total upload
+		// failure sat on `development` looking like a working feature, with
+		// the reason sitting unread inside the body of a 201.
+		//
+		// Partial success stays 201, because something was in fact created and
+		// the per-file list says which.
+		$created = array_filter($results, static fn (array $r): bool => ($r['success'] ?? false) === true);
+		if (count($created) === 0) {
+			return new JSONResponse(['results' => $results], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
 		return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
 	}//end uploadDocument()
 

@@ -77,6 +77,23 @@ const IGNORED = [
 	'**/visual/**',
 ]
 
+/**
+ * Specs that change state the whole instance shares, so they cannot run
+ * alongside the rest once there is more than one worker.
+ *
+ * `demo-data-setup-step` records a setup decision and can install the demo
+ * dataset; `integrations-page` POSTs to `/api/settings`; `case-type-edit-and-setup`
+ * drives the setup wizard; `demo-caseload` reads the demo dataset and is
+ * meaningless if another worker is mid-install. Each of these is either a
+ * writer of instance state or a reader that a writer can invalidate.
+ */
+const INSTANCE_MUTATING = [
+	'**/spec-coverage/demo-data-setup-step.spec.ts',
+	'**/integrations-page.spec.ts',
+	'**/case-type-edit-and-setup.spec.ts',
+	'**/demo-caseload.spec.ts',
+]
+
 export default defineConfig({
 	testDir: __dirname,
 	// See the header: also repeated on the project below, because a
@@ -86,13 +103,82 @@ export default defineConfig({
 	timeout: 60_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
-	// One worker on purpose. `helpers/fixtures.ts#ensureCaseType` reuses
-	// `listObjects('caseType')[0]` — whatever caseType happens to exist — and
-	// `cleanupRunObjects` deletes by run prefix afterwards. With two workers,
-	// worker B can adopt worker A's throwaway caseType and then have it deleted
-	// out from under it mid-test. Serial execution removes that whole class of
-	// cross-worker flake.
-	workers: 1,
+	// FOUR WORKERS ON CI, ONE LOCALLY.
+	//
+	// The comment here used to argue for one worker, on the grounds that
+	// `helpers/fixtures.ts#ensureCaseType` adopts `listObjects('caseType')[0]`,
+	// so worker B could adopt worker A's throwaway and have it deleted out from
+	// under it mid-test. That defect was real, it was in seven sites rather than
+	// the one named, and it is fixed at the source: `adoptableCaseTypes()`
+	// excludes fixture-owned rows, so a worker can only adopt a caseType no
+	// teardown will remove.
+	//
+	// `fullyParallel` stays FALSE, so this parallelises at FILE granularity:
+	// different spec files run on different workers, and the tests inside one
+	// file still run in order on a single worker. That is the conservative half
+	// of parallelism and it is the half this suite needs, because several files
+	// build shared state in `beforeAll` and read it across their tests. The
+	// files that mutate instance state are listed in `INSTANCE_MUTATING` above
+	// and run in their own serial project after the parallel one.
+	//
+	// WHY IT HAS TO CHANGE. Measured off the log timestamps of run 34244366521,
+	// not estimated:
+	//
+	//     111 tests produced a result in 37.6 min      20.3s each
+	//     the 25 failures cost 18.5 min of that        22.2s x2 for the retry
+	//     if every one became a ~5.1s pass             saves 16.4 min
+	//     all 371 tests at the remaining rate          71 min SERIAL
+	//
+	// So fixing every red test still leaves the suite at roughly twice the 38
+	// minute budget. Parallelism is the only lever that closes that gap.
+	//
+	// FOUR IS MEASURED RATHER THAN REASONED. This started at three, to keep
+	// distance from a `SQLSTATE[53200] out of shared memory /
+	// max_locks_per_transaction` that had been seen ONCE under four. Both counts
+	// were then run against the same tree:
+	//
+	//     workers   reached a verdict   passed   never ran   postgres locks
+	//        1            144             108       227          -
+	//        3            282             205        89          0
+	//        4            309             230        60          0
+	//
+	// Four reached more and the lock error did not reappear. One sighting against
+	// a clean run is a weak argument, so the measurement wins over the caution.
+	// Raise it further only the same way: behind a run, not behind arithmetic.
+	//
+	//        5           measured by run 34585313834, see below
+	//
+	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
+	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
+	// it still truncated with 26 never reached and 1 interrupted at the 38
+	// minute stop. The note below used to say the gap was the failures being
+	// retried, and that was true when 25 tests were red; with one red test the
+	// remaining gap is throughput, and the suite is roughly 10 percent short of
+	// fitting.
+	//
+	// The suite also grew, deliberately: the skip-discipline work gave about a
+	// dozen previously skipped tests real bodies, and decidiq is installed now,
+	// so three decision journeys execute instead of standing down. More tests
+	// reaching a verdict is the point; the budget has to follow.
+	//
+	// ⚠️ WATCH FOR `SQLSTATE[53200] out of shared memory /
+	// max_locks_per_transaction`. That is the failure this count was held back
+	// from, seen once under four and never since. If it reappears, put this
+	// back to 4 and take the time out of the suite instead, rather than
+	// re-measuring hopefully.
+	//
+	// ⚠️ FIVE WORKERS MAY STILL NOT MAKE THE SUITE FIT, and nothing here should
+	// be read as claiming it does. The next lever is the wall clock inside the
+	// heavy specs, not more workers: `globalTimeout` cannot rise much without
+	// eating the margin that guarantees a verdict at all.
+	//
+	// One locally, deliberately. A developer runs this against the SHARED dev
+	// instance, where four workers seeding and tearing down at once is both
+	// slower and ruder than one.
+	//
+	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
+	// code change.
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 5 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
@@ -159,7 +245,38 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'chromium',
+			// The parallel body of the suite: everything except the specs that
+			// change state the whole INSTANCE shares.
+			testIgnore: [...IGNORED, ...INSTANCE_MUTATING],
+			use: { ...devices['Desktop Chrome'] },
+		},
+		{
+			// 🔴 THE SPECS THAT MUTATE THE INSTANCE, RUN LAST AND ALONE-ISH.
+			//
+			// `dependencies` makes this project start only once `chromium` has
+			// finished, which is the ordering that matters. The hazard is
+			// asymmetric: a spec that installs demo data or writes app settings
+			// while ~131 empty-state assertions are running elsewhere makes
+			// those assertions fail, and it reads as a product defect rather
+			// than as a fixture racing them. The reverse order costs nothing.
+			//
+			// That asymmetry is why this list errs toward INCLUDING a spec.
+			// Serialising one that did not need it costs a few seconds at the
+			// end of the run; leaving one out costs a failure nobody can
+			// reproduce and no diff explains.
+			//
+			// ⚠️ THE PRICE, STATED RATHER THAN DISCOVERED. Playwright SKIPS a
+			// project whose dependency had failures. So while anything in
+			// `chromium` is red, these 31 tests report as "did not run" — and a
+			// test that never ran reads identically to one that passed in any
+			// summary counting failures. That is a real cost and it is the
+			// right trade only because a run with failures is red regardless:
+			// the verdict is not being hidden, the detail is. Read the tally,
+			// not the colour, until the parallel project is green.
+			name: 'chromium-instance-state',
 			testIgnore: IGNORED,
+			testMatch: INSTANCE_MUTATING,
+			dependencies: ['chromium'],
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],

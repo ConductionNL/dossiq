@@ -41,6 +41,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\ReassignmentBatch;
 use OCA\Dossiq\Service\Support\WritesReassignments;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -59,6 +61,8 @@ class CaseReassignmentService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config + ObjectService bridge.
+	 * @param EngineTaskInbox $engineTasks The engine's task reader.
+	 * @param EngineTaskGateway $engineTask The engine's task verbs.
 	 * @param IManager $notificationManager The Nextcloud notification manager.
 	 * @param LoggerInterface $logger The logger.
 	 *
@@ -66,6 +70,8 @@ class CaseReassignmentService {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
+		private readonly EngineTaskGateway $engineTask,
 		private readonly IManager $notificationManager,
 		private readonly LoggerInterface $logger,
 	) {
@@ -90,7 +96,6 @@ class CaseReassignmentService {
 
 		[$objectService, $register] = $this->context();
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
 		$caseType = '';
 		if (isset($filter['caseType']) === true) {
 			$caseType = (string)$filter['caseType'];
@@ -110,17 +115,15 @@ class CaseReassignmentService {
 			$cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
 		}
 
-		$tasks = [];
-		if ($taskSchema !== '') {
-			$taskResults = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['assignee' => $fromUser]
-			);
-
-			$tasks = $this->filterOpenTasks(taskResults: $taskResults, cases: $cases, caseType: $caseType);
-		}
+		// The ENGINE holds the tasks, and it holds the open/closed split too:
+		// `openForAssignee` asks for `isTerminal: false` rather than reading
+		// a page and dropping the closed rows from it, which would have lost
+		// every open task past the page boundary.
+		$tasks = $this->filterOpenTasks(
+			taskResults: $this->engineTasks->openForAssignee(actor: $fromUser),
+			cases: $cases,
+			caseType: $caseType
+		);
 
 		return ['cases' => $cases, 'tasks' => $tasks];
 	}//end preview()
@@ -169,11 +172,11 @@ class CaseReassignmentService {
 
 		$tasks = [];
 
+		// NO TERMINAL-STATUS FILTER HERE ANY MORE. The engine is asked for
+		// `isTerminal: false` and answers only open tasks, so a second copy
+		// of the same three state names would be one more thing to keep in
+		// step with `Task::STATES` and nothing else.
 		foreach ($taskResults as $task) {
-			if (in_array((string)($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
-				continue;
-			}
-
 			// When narrowed by caseType, only tasks belonging to a previewed
 			// case are in scope.
 			if ($caseType !== '' && isset($caseIds[(string)($task['case'] ?? '')]) === false) {
@@ -218,7 +221,6 @@ class CaseReassignmentService {
 
 		[$objectService, $register] = $this->context();
 		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
-		$taskSchema = (string)$this->settingsService->getConfigValue('task_schema');
 
 		$preview = $this->preview(fromUser: $fromUser, filter: $filter);
 		$batchId = $this->generateBatchId();
@@ -253,14 +255,12 @@ class CaseReassignmentService {
 
 		foreach ($preview['tasks'] as $task) {
 			$id = (string)($task['id'] ?? ($task['uuid'] ?? ''));
-			$success = $this->reassignItem(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				id: $id,
-				item: $task,
-				batch: $batch
-			);
+
+			// A VERB, not a field write. The engine's `reassign` stamps the
+			// acting identity and writes its own audit row, so the transfer
+			// no longer depends on a hand-rolled entry in a JSON `activity`
+			// blob that only this app knows how to read.
+			$success = $this->engineTask->reassign(taskId: $id, assignee: $toUser, actor: $actorId);
 			$results[] = ['type' => 'task', 'id' => $id, 'title' => (string)($task['title'] ?? ''), 'success' => $success];
 			if ($success === true) {
 				$succeeded += 1;

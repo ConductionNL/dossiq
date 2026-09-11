@@ -320,8 +320,34 @@ class DrcController extends ZgwController {
 					content: $inhoud
 				);
 
-				if (empty($objectData['fileSize']) === true) {
-					$objectData['fileSize'] = $fileSize;
+				// The file id, and NOT only the size. Three surfaces resolve a
+				// document through `fileId` and each of them fails SILENTLY
+				// without one: `openInFiles()` and `VersionHistoryPanel` both
+				// return early on a falsy id, and Files comments hang off the
+				// same node. Only the upload path stamped it, so a document
+				// created over this API rendered an Open in Files action, a
+				// Version history action and a comments sidebar that all did
+				// nothing and reported nothing.
+				//
+				// The old guard is why: keyed on `fileSize` alone, a caller
+				// that supplied `bestandsomvang` skipped the write entirely
+				// and the id never landed at all.
+				$fileId = $this->resolveStoredFileId(uuid: $objectUuid, fileName: $fileName);
+				$needsSize = (empty($objectData['fileSize']) === true);
+				$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
+
+				if ($needsSize === true || $needsFileId === true) {
+					if ($needsSize === true) {
+						$objectData['fileSize'] = $fileSize;
+					}
+
+					if ($fileId > 0) {
+						$objectData['fileId'] = $fileId;
+					}
+
+					// The WHOLE object, never a partial: ObjectService::saveObject
+					// REPLACES, and a partial write drops the four properties the
+					// informatieobject schema requires (#1960).
 					$objectData['uuid'] = $objectUuid;
 					$this->zgwService->getObjectService()->saveObject(
 						register: $mappingConfig['sourceRegister'],
@@ -1468,6 +1494,13 @@ class DrcController extends ZgwController {
 				$objectData['fileParts'] = '';
 				$objectData['fileSize'] = $mergedSize;
 
+				// Same stamp as the single-shot path above: the merged file is
+				// the first moment a chunked upload HAS a node to point at.
+				$mergedFileId = $this->resolveStoredFileId(uuid: $uuid, fileName: $fileName);
+				if ($mergedFileId > 0) {
+					$objectData['fileId'] = $mergedFileId;
+				}
+
 				$objectService->saveObject(
 					register: $mappingConfig['sourceRegister'],
 					schema: $mappingConfig['sourceSchema'],
@@ -1553,6 +1586,35 @@ class DrcController extends ZgwController {
 			// Silently skip enrichment on errors.
 		}//end try
 	}//end enrichWithBestandsdelen()
+
+	/**
+	 * Resolve the Nextcloud file id of a stored document, or 0.
+	 *
+	 * Never throws. A missing file id costs three delegated surfaces (Open in
+	 * Files, version history, the Files comments sidebar); a document that
+	 * cannot be stamped is a worse outcome than one that cannot be created, so
+	 * a failure here degrades the metadata rather than failing the write the
+	 * caller already committed.
+	 *
+	 * @param string $uuid The informatieobject UUID
+	 * @param string $fileName The stored file name
+	 *
+	 * @return int The Nextcloud file id, or 0 when it cannot be resolved
+	 */
+	private function resolveStoredFileId(string $uuid, string $fileName): int {
+		try {
+			return $this->zgwService->getDocumentService()->getFileId(
+				uuid: $uuid,
+				fileName: $fileName
+			);
+		} catch (\Throwable $e) {
+			$this->zgwService->getLogger()->warning(
+				'DRC could not resolve the file id for ' . $uuid . ': ' . $e->getMessage(),
+				['exception' => $e]
+			);
+			return 0;
+		}
+	}//end resolveStoredFileId()
 
 	/**
 	 * Parse the fileParts JSON field from an object data array.
@@ -1728,8 +1790,34 @@ class DrcController extends ZgwController {
 					content: $inhoud
 				);
 
-				if (empty($objectData['fileSize']) === true) {
-					$objectData['fileSize'] = $fileSize;
+				// The file id, and NOT only the size. Three surfaces resolve a
+				// document through `fileId` and each of them fails SILENTLY
+				// without one: `openInFiles()` and `VersionHistoryPanel` both
+				// return early on a falsy id, and Files comments hang off the
+				// same node. Only the upload path stamped it, so a document
+				// created over this API rendered an Open in Files action, a
+				// Version history action and a comments sidebar that all did
+				// nothing and reported nothing.
+				//
+				// The old guard is why: keyed on `fileSize` alone, a caller
+				// that supplied `bestandsomvang` skipped the write entirely
+				// and the id never landed at all.
+				$fileId = $this->resolveStoredFileId(uuid: $objectUuid, fileName: $fileName);
+				$needsSize = (empty($objectData['fileSize']) === true);
+				$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
+
+				if ($needsSize === true || $needsFileId === true) {
+					if ($needsSize === true) {
+						$objectData['fileSize'] = $fileSize;
+					}
+
+					if ($fileId > 0) {
+						$objectData['fileId'] = $fileId;
+					}
+
+					// The WHOLE object, never a partial: ObjectService::saveObject
+					// REPLACES, and a partial write drops the four properties the
+					// informatieobject schema requires (#1960).
 					$objectData['uuid'] = $objectUuid;
 					$this->zgwService->getObjectService()->saveObject(
 						register: $mappingConfig['sourceRegister'],

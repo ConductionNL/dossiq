@@ -24,41 +24,60 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Pdok\PdokLocatieserverService;
 use OCA\Dossiq\Service\PdokService;
 use OCP\App\IAppManager;
-use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
-use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
+ * The second annotation below is LOAD-BEARING, not decoration, and its name must
+ * never be written with an at-sign anywhere in this prose: PHPUnit parses
+ * annotations ANYWHERE in a docblock, so even a quoted mention becomes a second,
+ * malformed annotation and every test in the class errors as invalid.
+ *
+ * Why it is needed: PdokService resolves integriq's installed id through
+ * FleetAppId, so these tests execute that class. PHPUnit reports code executed
+ * but not declared as RISKY, the suite runs with failOnRisky, and a risky test
+ * turns a passing run into one that prints `OK, but there were issues!` and
+ * exits 1. It only fires when a coverage driver is loaded, which CI has and a
+ * plain local `composer test:all` does not, so the check is silently absent
+ * locally and the local green means nothing about it.
+ *
  * @covers \OCA\Dossiq\Service\PdokService
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class PdokServiceTest extends TestCase {
+	/**
+	 * The app id the mocked instance answers to, captured so the flag read can
+	 * be asserted against it.
+	 *
+	 * @var list<string>
+	 */
+	private array $configReads = [];
+
 	private function makeService(
 		?PdokLocatieserverService $locatieserver = null,
-		bool $openconnectorInstalled = true,
+		?string $installedAs = 'integriq',
 		string $flagValue = '0',
 	): PdokService {
+		$this->configReads = [];
+
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('isInstalled')->willReturnCallback(
-			static fn (string $app): bool => $app === 'openconnector' ? $openconnectorInstalled : false,
+			static fn (string $app): bool => $app === $installedAs,
 		);
 
 		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturn($flagValue);
-
-		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('linkToRoute')->willReturn('/apps/openconnector/api/pdok/parcel');
-		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
-			static fn (string $p): string => 'http://nc.local' . $p,
+		$appConfig->method('getValueString')->willReturnCallback(
+			function (string $app, string $key, string $default = '') use ($flagValue): string {
+				$this->configReads[] = $app;
+				return $flagValue;
+			}
 		);
 
 		return new PdokService(
-			clientService: $this->createMock(IClientService::class),
 			appManager: $appManager,
 			appConfig: $appConfig,
-			urlGenerator: $urlGenerator,
 			locatieserver: $locatieserver ?? $this->createMock(PdokLocatieserverService::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -117,28 +136,72 @@ class PdokServiceTest extends TestCase {
 		$this->assertNull($svc->lookupAddress(''));
 	}
 
-	public function testSearchParcelReturnsEmptyWhenOpenconnectorMissing(): void {
-		$svc = $this->makeService(openconnectorInstalled: false);
+	/**
+	 * Integriq publishes no PDOK parcel endpoint, and the service says so
+	 * rather than calling one. The old code hid this behind a stale
+	 * `isInstalled('openconnector')` guard: the guard answered false on every
+	 * current instance, so nobody ever reached the missing route.
+	 */
+	public function testSearchParcelReportsThatIntegriqPublishesNoParcelEndpoint(): void {
+		$svc = $this->makeService();
 		$r = $svc->searchParcel(['perceelnummer' => '123']);
 		$this->assertSame([], $r);
 		$w = $svc->lastWarning();
 		$this->assertNotNull($w);
-		$this->assertSame('pdok.openconnector_missing', $w['messageKey']);
-		$this->assertSame(404, $w['status']);
+		$this->assertSame('pdok.parcel.unsupported', $w['messageKey']);
+		$this->assertSame(501, $w['status']);
 	}
 
 	public function testGetServiceStatusReflectsFlagAndInstallState(): void {
-		$svc = $this->makeService(openconnectorInstalled: true, flagValue: '1');
+		$svc = $this->makeService(installedAs: 'integriq', flagValue: '1');
 		$s = $svc->getServiceStatus();
-		$this->assertTrue($s['openconnectorInstalled']);
+		$this->assertTrue($s['integriqInstalled']);
 		$this->assertTrue($s['featureFlagActive']);
 		$this->assertNull($s['lastWarning']);
 	}
 
 	public function testGetServiceStatusReportsFlagOff(): void {
-		$svc = $this->makeService(openconnectorInstalled: true, flagValue: '0');
+		$svc = $this->makeService(installedAs: 'integriq', flagValue: '0');
 		$s = $svc->getServiceStatus();
-		$this->assertTrue($s['openconnectorInstalled']);
+		$this->assertTrue($s['integriqInstalled']);
 		$this->assertFalse($s['featureFlagActive']);
+	}
+
+	/**
+	 * The whole point of resolving rather than pinning: an instance still on
+	 * the OLD id must resolve, and this test fails if the candidate list is
+	 * trimmed back to one name.
+	 */
+	public function testStatusStillResolvesAnInstanceOnTheOldAppId(): void {
+		$svc = $this->makeService(installedAs: 'openconnector', flagValue: '1');
+		$s = $svc->getServiceStatus();
+		$this->assertTrue($s['integriqInstalled']);
+		$this->assertTrue($s['featureFlagActive']);
+	}
+
+	public function testStatusReportsAbsentWhenNeitherIdIsInstalled(): void {
+		$svc = $this->makeService(installedAs: null, flagValue: '1');
+		$s = $svc->getServiceStatus();
+		$this->assertFalse($s['integriqInstalled']);
+		$this->assertFalse(
+			$s['featureFlagActive'],
+			'With no PDOK app installed there is no app id to read the flag under.'
+		);
+	}
+
+	/**
+	 * `IAppConfig` namespaces values by app id, so the flag has to be read
+	 * under the id the app is INSTALLED as. Reading it under the canonical
+	 * name on an instance that still uses the old one returns the default and
+	 * the shim reports permanently dormant.
+	 */
+	public function testFlagIsReadUnderTheIdTheAppIsActuallyInstalledAs(): void {
+		$svc = $this->makeService(installedAs: 'openconnector', flagValue: '1');
+		$svc->getServiceStatus();
+		$this->assertSame(['openconnector'], $this->configReads);
+
+		$svc = $this->makeService(installedAs: 'integriq', flagValue: '1');
+		$svc->getServiceStatus();
+		$this->assertSame(['integriq'], $this->configReads);
 	}
 }

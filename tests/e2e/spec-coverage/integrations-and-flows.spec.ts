@@ -96,8 +96,8 @@ async function navLinks(page) {
 }
 
 test.describe('ADR-110: a link that leaves the app leaves the navigation', () => {
-	// @e2e openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md#scenario-procest-hosts-no-processing-activities-page
-	// @e2e openspec/changes/page-topology-cleanup/specs/ai-oversight-surface/spec.md#scenario-procest-hosts-no-ai-oversight-pages
+	// @e2e openspec/specs/avg-processing-surface/spec.md#scenario-procest-hosts-no-processing-activities-page
+	// @e2e openspec/specs/ai-oversight-surface/spec.md#scenario-procest-hosts-no-ai-oversight-pages
 	test('no sidebar link points into another app', async ({ page }) => {
 		const links = await navLinks(page)
 
@@ -117,7 +117,7 @@ test.describe('ADR-110: a link that leaves the app leaves the navigation', () =>
 		).toEqual([])
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md#scenario-procest-hosts-no-processing-activities-page
+	// @e2e openspec/specs/avg-processing-surface/spec.md#scenario-procest-hosts-no-processing-activities-page
 	test('the AVG and AI-oversight entries are gone from the navigation', async ({
 		page,
 	}) => {
@@ -126,7 +126,7 @@ test.describe('ADR-110: a link that leaves the app leaves the navigation', () =>
 		expect(labels).not.toContain('AI oversight')
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/admin-settings-surface/spec.md#scenario-exactly-one-entry-links-to-the-administration-surface
+	// @e2e openspec/specs/admin-settings-surface/spec.md#scenario-no-duplicate-configuration-entries
 	test('exactly one entry links to the administration surface', async ({
 		page,
 	}) => {
@@ -142,7 +142,7 @@ test.describe('ADR-110: a link that leaves the app leaves the navigation', () =>
 })
 
 test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
-	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
+	// @e2e openspec/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
 	test('the settings menu has a Flows entry pointing at an in-app route', async ({
 		page,
 	}) => {
@@ -157,7 +157,7 @@ test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
 		expect(href).toContain('/flows')
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
+	// @e2e openspec/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
 	test("/flows renders this app's own flow surface", async ({ page }) => {
 		await navToRoute(page, '/flows')
 
@@ -170,7 +170,7 @@ test.describe('ADR-110: Flows is an in-app page, not a deep link', () => {
 		})
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
+	// @e2e openspec/specs/automatic-actions-surface/spec.md#scenario-flows-are-authored-in-the-app
 	test('/flows/new renders the flow canvas', async ({ page }) => {
 		await navToRoute(page, '/flows/new')
 

@@ -75,7 +75,7 @@ use UnexpectedValueException;
  * taken.
  *
  * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The node speaks OpenRegister's
  *     whole suspend/resume vocabulary (suspension, resume slot, run context,
@@ -112,7 +112,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return void
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
         private readonly ContractDecisionDelegationService $delegation,
@@ -128,7 +128,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return string The namespaced node id.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getId(): string {
         return 'dossiq.requestDecision';
@@ -141,7 +141,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Request a decision');
@@ -154,7 +154,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getDescription(): string {
         return $this->l10n->t('Ask Decidiq to decide, and pause the case until it has.');
@@ -167,7 +167,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return string The icon name.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getIcon(): string {
         return 'gavel';
@@ -182,7 +182,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @return boolean True when available in this scope.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);
@@ -199,7 +199,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *
      * @throws UnexpectedValueException When the question is missing.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
         if (trim((string) ($config['question'] ?? '')) === '') {
@@ -231,7 +231,7 @@ class DossiqRequestDecisionNode implements IFlowNode {
      *                          refused, the decision is gone, or it was withdrawn.
      *
      * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function execute(array $items, array $config, array $context): array {
         $this->validateConfig(config: $config);

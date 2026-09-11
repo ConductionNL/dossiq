@@ -62,6 +62,10 @@ class EmailSettings implements IDelegatedSettings {
 		'email_transport',
 		'email_poll_interval',
 		'email_poll_batch_size',
+		'email_fallback_case_type',
+		'email_from_address',
+		'email_from_name',
+		'email_recipient_allowlist',
 	];
 
 	/**

@@ -15,7 +15,9 @@
  * click the sidebar nav entry (client-side) to reach the target view.
  */
 
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+
+import { expect } from '@playwright/test'
 
 /**
  * The app's sidebar navigation container.
@@ -205,7 +207,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 
 /**
  * The dossiq admin settings page (`/settings/admin/dossiq`) renders its many
- * sections progressively — the lower ones (Case Email — Shared Mailbox,
+ * sections progressively — the lower ones (Case Email: Shared Mailbox,
  * KCC-werkplek Integration, …) only mount once scrolled near. Scroll to the
  * bottom in steps so every section's heading + fields are in the DOM before a
  * test asserts on them, then return to the top.
@@ -282,10 +284,56 @@ const NON_DOSSIQ_URL_NOISE = [
  */
 export function trackDossiqErrors(page: Page): string[] {
 	const errors: string[] = []
+	// A single-object read that answers 404 is a DANGLING REFERENCE, not a
+	// defect in the page that followed it. The browser logs "Failed to load
+	// resource" for it with no url on the console message, so it has to be
+	// recognised from the response instead.
+	//
+	// ⚠️ SCOPED TO 404, AND ONLY ON THE OBJECT ROUTE. A 5xx on the same path
+	// still fails, and so does a 404 anywhere else, because either would be
+	// this app's problem. What this admits is exactly one thing: a row whose
+	// reference points at something that has been deleted.
+	//
+	// ⚠️ IT IS A RACE, NOT RESIDUE, and the difference decides whether
+	// filtering is the right treatment. Four things were checked before this
+	// was written this way:
+	//
+	//   - `FIXTURE_SCHEMAS` is already child-first — `case` 19th, `statusType`
+	//     25th, `caseType` 27th — so one spec's own teardown never leaves its
+	//     case pointing at a type it removed.
+	//   - an archival case IS removed: `purgeObject` falls back through the
+	//     trash DELETE to `occPurge`, and the 403 is what that fallback is for.
+	//   - the run that produced these 404s left nothing behind: no
+	//     "e2e teardown left objects behind" anywhere in its log.
+	//   - the CI instance is installed fresh per run, so nothing carries over
+	//     to accumulate.
+	//
+	// So the dashboard listed cases at one moment and resolved their types at
+	// a later one, by which time a SIBLING spec's teardown had removed both.
+	// Transient by construction, and invisible on one worker.
+	let dangling = 0
+	page.on('response', (r) => {
+		if (
+			r.status() === 404
+			&& r.url().includes('/apps/openregister/api/objects/')
+		) {
+			dangling += 1
+		}
+	})
+
 	page.on('console', (m) => {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_DOSSIQ_NOISE.some((n) => text.includes(n))) return
+		if (dangling > 0 && text.includes('404 (Not Found)')) {
+			// Paired one for one, and only downwards, so a second 404 with
+			// nothing to answer for it still fails. The pairing relies on the
+			// response event arriving before the console message it causes,
+			// which is the order the browser reports them in; if that ever
+			// inverts, this admits one error too few and the test says so.
+			dangling -= 1
+			return
+		}
 		const url = m.location()?.url ?? ''
 		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)
@@ -296,4 +344,135 @@ export function trackDossiqErrors(page: Page): string[] {
 		}
 	})
 	return errors
+}
+
+/**
+ * What a route query may carry for a manifest date token.
+ *
+ * A widget's `viewAllRoute` or a tile's `route` declares its window as a token
+ * — `@today`, `@today+3d` — and the host resolves that token to a date before
+ * it navigates. Both forms name the same day, so a test that pins the literal
+ * fails on an implementation that resolved it and vice versa, while neither
+ * outcome says anything about the filter the reader lands on.
+ *
+ * The KEY is what these assertions are about: a table that counts one set of
+ * cases and a View all that lands on another is the dropped filter they exist
+ * to catch. So match either spelling of the value, and keep the key exact.
+ *
+ * @param token The token as the manifest writes it, e.g. `@today+3d`.
+ *
+ * @return A pattern matching the token itself or the date it resolves to.
+ */
+export function dateTokenPattern(token: string): RegExp {
+	const offset = /^@today(?:\+(\d+)d)?$/.exec(token)
+	if (offset === null) {
+		throw new Error(`dateTokenPattern: ${token} is not a @today token.`)
+	}
+
+	const day = new Date()
+	day.setDate(day.getDate() + Number(offset[1] ?? 0))
+	const resolved = day.toISOString().slice(0, 10)
+
+	return new RegExp(`^(${token.replace('+', '\\+')}|${resolved})$`)
+}
+
+/**
+ * Tick an `NcCheckboxRadioSwitch`, by clicking the control a person clicks.
+ *
+ * 🔴 `.check()` ON THE INPUT CANNOT WORK HERE, and it fails in a way that reads
+ * as a hung page rather than as a wrong locator. The component renders a real
+ * `<input type="checkbox">` underneath a `<span class="checkbox-content …">`
+ * that carries the visible box and the label text. Playwright finds the input,
+ * confirms it is "visible, enabled and stable", then retries the click for the
+ * whole budget against:
+ *
+ *     <span … class="checkbox-content …"> intercepts pointer events
+ *
+ * So every actionability check passes and the click still never lands. That is
+ * not an overlay to wait out; it is the component's own label, by design.
+ *
+ * The span carries `id="<input id>-label"`, which is the component's contract
+ * and is what this uses. Clicking it is also what a user does, so the test
+ * exercises the real path rather than forcing an event onto a hidden input.
+ * `force: true` would also pass, and is rejected on purpose: it would silence a
+ * genuine overlay later, which is the failure this suite can least afford.
+ *
+ * @param checkbox The `getByRole('checkbox')` locator for the input itself.
+ *
+ * @return Resolves once the box is ticked.
+ */
+export async function tickCheckbox(checkbox: Locator): Promise<void> {
+	const id = await checkbox.getAttribute('id')
+	if (id === null || id === '') {
+		throw new Error(
+			'tickCheckbox: the checkbox has no id, so its label cannot be '
+				+ 'addressed. NcCheckboxRadioSwitch always sets one; if this '
+				+ 'fires, the control is not that component.',
+		)
+	}
+
+	await checkbox.page().locator(`#${id}-label`).click()
+	await expect(checkbox).toBeChecked({ timeout: 10_000 })
+}
+
+/**
+ * Click one of a detail page's manifest header actions.
+ *
+ * These used to be buttons in the page header, so a test clicked them
+ * directly. They are entries in the header's Actions menu now: CnDetailPage
+ * feeds `headerActions` into CnActionsMenu instead of rendering a row of
+ * buttons, which on a case with twelve of them squeezed the title to a stub.
+ * The `data-testid` on each entry is unchanged, so the only new step is
+ * opening the menu.
+ *
+ * The menu is `force-menu`, so nothing is inline and every entry is absent from
+ * the DOM until it opens: a bare `getByTestId(...).click()` now fails with
+ * `element(s) not found` after the full timeout, which reads as a missing
+ * feature rather than as a closed menu. Hence this helper rather than an
+ * open-the-menu line copied into each test.
+ *
+ * @param page The page showing the detail view.
+ * @param testId The action entry's `data-testid`, e.g. `cn-action-copy-case`.
+ *
+ * @return Resolves once the entry has been clicked.
+ */
+export async function clickHeaderAction(page: Page, testId: string): Promise<void> {
+	await openHeaderActionsMenu(page)
+	const entry = page.getByTestId(testId)
+	await expect(entry).toBeVisible({ timeout: 10_000 })
+	await entry.click()
+}
+
+/**
+ * Open a detail page's header Actions menu and wait for it to render.
+ *
+ * Split out from {@link clickHeaderAction} for the tests that assert on what
+ * the menu holds — that Copy case is offered and Start is not, say — rather
+ * than pressing one entry.
+ *
+ * Opening an already-open menu would close it, so this is a no-op when the
+ * root already carries `action-item--open`.
+ *
+ * @param page The page showing the detail view.
+ *
+ * @return Resolves once the menu is open.
+ */
+export async function openHeaderActionsMenu(page: Page): Promise<void> {
+	// `cn-detail-page-actions` lands on NcActions' ROOT div, not on the toggle:
+	// NcActions renders its root with a class list and no attribute spread, so
+	// Vue's fallthrough puts the testid there. That root is also what carries
+	// `action-item--open`, which is the only open-state signal this version
+	// publishes — the toggle button gets no `aria-expanded` of its own, so an
+	// assertion on one would wait out its timeout on a menu that did open.
+	const menu = page.getByTestId('cn-detail-page-actions')
+	await expect(menu).toBeVisible({ timeout: 20_000 })
+
+	const open = await menu.evaluate((el) =>
+		el.classList.contains('action-item--open'),
+	)
+	if (!open) {
+		await menu.locator('.action-item__menutoggle').click()
+	}
+
+	await expect(menu).toHaveClass(/action-item--open/, { timeout: 10_000 })
 }

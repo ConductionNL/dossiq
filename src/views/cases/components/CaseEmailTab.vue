@@ -82,7 +82,7 @@
 					{{
 						t(
 							'dossiq',
-							'Unresolved template variables — the draft contains raw placeholders that you must fill manually:',
+							'Unresolved template variables. The draft contains raw placeholders that you must fill manually:',
 						)
 					}}
 				</p>

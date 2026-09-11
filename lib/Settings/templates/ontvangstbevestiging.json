@@ -1,0 +1,9 @@
+{
+  "id": "ontvangstbevestiging",
+  "title": "Ontvangstbevestiging",
+  "description": "Acknowledgement of receipt: confirms an application has arrived, names its reference and the decision deadline.",
+  "category": "document",
+  "version": "1.0.0",
+  "documentType": "Ontvangstbevestiging",
+  "body": "Geachte heer, mevrouw,\n\nWij hebben uw aanvraag {{case.title}} ontvangen en geregistreerd onder kenmerk {{case.identifier}}.\n\nWij nemen uiterlijk op {{case.deadline}} een besluit op uw aanvraag. Als wij meer tijd nodig hebben, laten wij u dat op tijd weten.\n\nMet vriendelijke groet,\n\nDe behandelaar"
+}

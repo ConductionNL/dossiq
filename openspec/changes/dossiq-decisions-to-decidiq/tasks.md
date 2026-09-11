@@ -21,6 +21,19 @@
 
 ## Phase 4: Blocked retirements (do NOT check these off here)
 
+> **Re-verified 2026-09-10: the openregister half of the first bullet has
+> LANDED, so that bullet is unblocked and merely unstarted.**
+> `ConductionNL/openregister` `development` carries
+> `lib/Service/Flow/Nodes/DecisionTableNode.php` and registers it in
+> `lib/Listener/FlowNodeRegistrationListener.php` (constructor-injected as
+> `$decisionTable`). Read out of the code rather than off the change's tasks
+> file, which is also 14 of 14 ticked; the change simply has not been
+> archived yet, which is why a listing of open changes still shows it.
+> The retirement itself is nine deletions across a schema, a service, a
+> controller with five routes, a handler, a flow node, a Vue tab, a command
+> and a migrator, so it wants its own PR and its own e2e run.
+> The SECOND bullet is unchanged and still blocked on decidiq.
+
 - [ ] BLOCKED on openregister `flow-decision-tables`: retire the DMN stack (schema `decisionTable`, `DecisionTableService`, `DecisionTableController` + 5 `/api/decisions` routes, `EvaluateDecisionHandler`, `DossiqTxEvaluateDecisionNode`, `DecisionTablesTab.vue`, `MigrateLhsToDecisionTablesCommand`, `LhsMatrixDecisionTableMigrator`) and shrink the test's DMN allowlist to empty.
 - [ ] BLOCKED on decidiq: add `woo-decision` to `DecisionIntegrationService::ALLOWED_TYPES` (and its pinned schema enum homes), then repoint `WOODecisionService`'s raise through the delegation seam; the assembly and Art. 5.1/5.2 guard stay.
 

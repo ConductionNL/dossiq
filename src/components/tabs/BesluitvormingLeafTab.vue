@@ -1,27 +1,36 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!--
-  BesluitvormingLeafTab — consumes decidesk's "Besluitvorming" (decisions)
+  BesluitvormingLeafTab — consumes decidiq's "Besluitvorming" (decisions)
   integration leaf on the dossiq case-detail sidebar.
 
-  "decidesk owns it; dossiq shows a leaf" (ADR-019 / ADR-022). decidesk
-  registers a `decidesk-decisions` provider on the shared OpenRegister
-  integration registry (`window.OCA.OpenRegister.integrations`) via a
-  global init script that loads on every Nextcloud page. This wrapper
-  resolves that provider's `tab` component at render time and forwards the
-  host case's `{ register, schema, objectId }` as the integration context.
+  "decidiq owns it; dossiq shows a leaf" (ADR-019 / ADR-022). decidiq
+  registers a `decidesk-decisions` provider (the id predates the app's
+  rename and is the contract every consumer binds to) on the shared
+  OpenRegister integration registry (`window.OCA.OpenRegister.integrations`)
+  via a global init script that loads on every Nextcloud page. This wrapper
+  resolves that provider at render time and forwards the host case's
+  `{ register, schema, objectId }` as the integration context.
 
   Dossiq's host `<CnObjectSidebar>` runs with `:use-registry="false"`
   (manifest `component:`-based tabs), so the registry-driven tab strip is
   off; this thin wrapper is how a single registry leaf is surfaced through
   the `sidebarTabs[].component` path without flipping the whole sidebar to
   registry mode. CnObjectSidebar injects `objectId` / `register` / `schema`
-  / `apiBase` via `sharedTabProps` — exactly the contract the decidesk leaf
-  tab expects — so the leaf does its own OR fetch / list / create with zero
+  / `apiBase` via `sharedTabProps` — exactly the contract the decidiq leaf
+  expects — so the leaf does its own OR fetch / list / create with zero
   per-app glue. This is consumption, not re-implementation.
 
-  When the decidesk app (or its leaf bundle) is not deployed, the provider
-  is absent from the registry and a quiet unavailable notice renders instead
-  of a broken tab.
+  Two render modes, because the registry carries both (ADR-066):
+  - a COMPONENT leaf exposes `tab`, a Vue component this bundle renders;
+  - a MOUNT leaf exposes `mount(el, props)` / `unmount(el)` and no `tab`
+    at all, because it runs its own framework instance from its own
+    bundle. decidiq ships this mode. It is rendered through the library's
+    `CnLeafMountHost`, the same host CnDetailWidgetHost uses for the
+    "Decisions" body tab, so the two surfaces cannot drift apart.
+
+  When decidiq (or its leaf bundle) is not deployed, the provider is absent
+  from the registry and a quiet unavailable notice renders instead of a
+  broken tab.
 -->
 <template>
 	<div class="besluitvorming-leaf-tab">
@@ -34,6 +43,10 @@
 			:objectId="objectId"
 			:objectLabel="title"
 			:integrationContext="integrationContext" />
+		<CnLeafMountHost
+			v-else-if="isMountLeaf"
+			:provider="leafEntry"
+			:mountProps="mountProps" />
 		<NcEmptyContent
 			v-else
 			:name="unavailableTitle"
@@ -46,29 +59,33 @@
 </template>
 
 <script>
+import { CnLeafMountHost } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcEmptyContent } from '@nextcloud/vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 
 /**
- * The decidesk decisions leaf id consuming apps reference to surface the
- * "Besluitvorming" leaf on an object's detail page / sidebar.
+ * The decisions leaf id consuming apps reference to surface the
+ * "Besluitvorming" leaf on an object's detail page / sidebar. decidiq kept
+ * the id across its rename, so this string is the contract, not the app id.
  *
  * @type {string}
  */
 const DECISIONS_INTEGRATION_ID = 'decidesk-decisions'
 
 /**
- * BesluitvormingLeafTab — render the decidesk decisions leaf tab for a case.
+ * BesluitvormingLeafTab — render the decidiq decisions leaf tab for a case.
  *
- * Resolves the `decidesk-decisions` provider's tab component from the live
- * OpenRegister integration registry and forwards the host case context.
- * Falls back to an unavailable notice when decidesk's leaf is not loaded.
+ * Resolves the `decidesk-decisions` provider from the live OpenRegister
+ * integration registry and forwards the host case context, through the
+ * provider's own `tab` component or, for a mount-mode leaf, through
+ * `CnLeafMountHost`. Falls back to an unavailable notice when decidiq's
+ * leaf is not loaded.
  */
 export default {
 	name: 'BesluitvormingLeafTab',
 
-	components: { NcEmptyContent, Gavel },
+	components: { CnLeafMountHost, NcEmptyContent, Gavel },
 
 	props: {
 		/** UUID of the host case the decisions are linked to (CnObjectSidebar sharedTabProps). */
@@ -89,20 +106,46 @@ export default {
 
 	computed: {
 		/**
-		 * The decidesk leaf's tab component, resolved from the shared OR
-		 * integration registry at render time. `undefined` when decidesk's
-		 * leaf bundle is not loaded on the page.
+		 * The decidiq provider entry from the shared OR integration registry,
+		 * resolved at render time. `undefined` when decidiq's leaf bundle is
+		 * not loaded on the page.
 		 *
-		 * @return {object|undefined} The decidesk leaf tab Vue component.
+		 * @return {object|undefined} The registry entry.
 		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 		 */
-		leafComponent() {
+		leafEntry() {
 			const reg = window.OCA?.OpenRegister?.integrations
 			if (!reg || typeof reg.get !== 'function') {
 				return undefined
 			}
-			const entry = reg.get(DECISIONS_INTEGRATION_ID)
-			return entry ? entry.tab : undefined
+			return reg.get(DECISIONS_INTEGRATION_ID) || undefined
+		},
+
+		/**
+		 * The leaf's tab component, for a provider that ships one.
+		 *
+		 * @return {object|undefined} The leaf tab Vue component.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+		 */
+		leafComponent() {
+			return this.leafEntry ? this.leafEntry.tab || undefined : undefined
+		},
+
+		/**
+		 * Whether the provider is a mount-mode leaf (ADR-066): it renders
+		 * itself into an element we hand it, and exposes no component.
+		 *
+		 * @return {boolean} True for a mount-mode leaf.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+		 */
+		isMountLeaf() {
+			const entry = this.leafEntry
+			return Boolean(
+				entry
+				&& entry.renderMode === 'mount'
+				&& typeof entry.mount === 'function'
+				&& typeof entry.unmount === 'function',
+			)
 		},
 
 		/**
@@ -121,7 +164,24 @@ export default {
 		},
 
 		/**
-		 * Empty-state title shown when the decidesk leaf is not loaded.
+		 * The prop bag a mount-mode leaf receives: the same shape
+		 * CnDetailWidgetHost hands it on the body tab, plus the surface.
+		 *
+		 * @return {object} The mount props.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+		 */
+		mountProps() {
+			return {
+				surface: 'sidebar-tab',
+				integrationId: this.integrationId,
+				...this.integrationContext,
+				objectLabel: this.title,
+				integrationContext: this.integrationContext,
+			}
+		},
+
+		/**
+		 * Empty-state title shown when the decidiq leaf is not loaded.
 		 *
 		 * @return {string} Translated unavailable-state heading.
 		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -131,7 +191,7 @@ export default {
 		},
 
 		/**
-		 * Empty-state help text pointing the user at decidesk.
+		 * Empty-state help text pointing the user at decidiq.
 		 *
 		 * @return {string} Translated unavailable-state description.
 		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -139,7 +199,7 @@ export default {
 		unavailableDescription() {
 			return t(
 				'dossiq',
-				'The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.',
+				'The decidiq app provides decision-making for this case. Install or enable decidiq to manage proposals, advice and decisions here.',
 			)
 		},
 	},
