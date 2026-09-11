@@ -288,7 +288,9 @@ test.describe('Workflow Board keyboard status transition', () => {
 				await page.keyboard.press('ArrowDown')
 			}
 		}
-		expect(focused, 'ArrowDown must reach "Move to … In behandeling"').toBe(true)
+		expect(focused, 'ArrowDown must reach the "In behandeling" menu item').toBe(
+			true,
+		)
 		await page.keyboard.press('Enter')
 
 		// The move control stops propagation, so activating it must not also
