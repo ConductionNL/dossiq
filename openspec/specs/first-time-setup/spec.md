@@ -7,7 +7,11 @@ Give dossiq a first-time setup flow that (a) is rendered by the abstract `CnSetu
 
 ### Requirement: REQ-SETUP-PRO-001 — dossiq Declares Its Setup Steps In The Manifest
 
-dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `register-check` (`config-fields`, **required**), `seed` (`run-action`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
+dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `demo-data` (`choice`, optional), `load-demo-data` (`run-action`, optional), `register-check` (`run-action`, **required**), `dwangsom-secret` (`config-fields`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
+
+dossiq SHALL NOT declare a `seed` step. The requirement used to mandate one, and the step was retired: the bezwaar/beroep case types it seeded live under `_caseTypes_disabled` in `bezwaar_seed_data.json`, so the seeder returned success with every counter at zero. Reporting that as done made the affordance one-shot and silently useless, and reporting it honestly left a step whose every click was a 422. The `seed` ACTION stays, for an operator who un-parks the data.
+
+The declared step list and the reported step list SHALL agree in both directions. A step the manifest renders but the status never reports is a step the wizard cannot gate on; a step the status reports but no manifest renders is one the wizard can never prompt for.
 
 #### Scenario: Required register-check gates the app
 
@@ -18,10 +22,19 @@ dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome`
 
 #### Scenario: Optional seed does not gate
 
-- **GIVEN** the register is initialised but no bezwaar/beroep data is seeded
+- **GIVEN** the register is initialised and an optional step is still outstanding
 - **WHEN** an admin opens the app
-- **THEN** the app SHALL be usable
-- **AND** the `seed` step SHALL be offered (auto-opened once, dismissible) and re-runnable from the admin page
+- **THEN** the app SHALL be usable, its shell reachable behind the wizard
+- **AND** the outstanding optional step SHALL be offered (auto-opened once, dismissible) and re-runnable from the admin page
+
+#### Scenario: No step is offered that the wizard cannot fulfil
+
+- **GIVEN** the bezwaar/beroep seed payload is parked under `_caseTypes_disabled`
+- **WHEN** the wizard reads `GET /apps/dossiq/api/setup/status`
+- **THEN** the payload SHALL NOT report a `seed` step, so the wizard cannot prompt for one
+- **AND** it SHALL still report the steps the manifest does declare, `register-check` among them
+- **AND** `POST /apps/dossiq/api/setup/action/seed` SHALL refuse with 422 and `success: false` rather than report a success-shaped zero
+- **AND** the refusal SHALL NOT add the step back to the payload
 
 ### Requirement: REQ-SETUP-PRO-002 — Seeding Runs Server-Side With System Privileges
 
@@ -43,7 +56,7 @@ dossiq SHALL expose `POST /apps/dossiq/api/setup/action/{actionId}` (admin-only,
 
 ### Requirement: REQ-SETUP-PRO-003 — Setup Status Is Reported For The Wizard
 
-dossiq SHALL expose `GET /apps/dossiq/api/setup/status` returning `{ version, completed, steps: { <id>: { done, detail } } }`, where `register-check.done` reflects OpenRegister enabled AND `register` + `case_type_schema` configured, and `seed.done` reflects the Bezwaar/Beroep caseTypes existing.
+dossiq SHALL expose `GET /apps/dossiq/api/setup/status` returning `{ version, completed, datasets, steps: { <id>: { done } } }`, where `register-check.done` reflects OpenRegister enabled AND `register` + `case_type_schema` configured. There SHALL be no `seed` key: the wizard no longer declares that step, and the payload is its step contract.
 
 #### Scenario: Status drives gating and completion
 

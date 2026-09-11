@@ -413,7 +413,18 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		await expect(page.locator('main')).toBeAttached()
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// THE ONE ANTI-COVERAGE IN THE AUDIT, SETTLED. This test asserts the
+	// wizard's step list does NOT contain `seed`, while REQ-SETUP-PRO-001 used
+	// to mandate a `seed` step and REQ-SETUP-PRO-003 a `seed.done` key:
+	// implementing the cited requirement would have turned this test red, and
+	// the anchorless citation made the contradiction invisible.
+	//
+	// The product is the current half. `SetupController::status()` carries the
+	// reasoning and `testEveryActionableManifestStepIsReported` compares the
+	// declared and reported step sets in both directions. So the spec moved:
+	// the step list it mandates is now the one the manifest ships, and the
+	// retirement of `seed` is stated rather than contradicted.
+	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
