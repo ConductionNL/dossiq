@@ -111,7 +111,11 @@ test.describe('Store surface', () => {
 		).toEqual([])
 	})
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	// @e2e exclude No requirement in dossiq-store-surface covers deep-link
+	// routing. REQ-DSS-002's two scenarios (the offline answer and the
+	// built-in templates) are proven by the test above, and REQ-DSS-006's
+	// placement by the first one. This is a routing regression guard and
+	// claims no requirement.
 	test('the store page is reachable by direct link', async ({ page }) => {
 		// Relabelling or moving the menu entry must not move the ROUTE.
 		//
