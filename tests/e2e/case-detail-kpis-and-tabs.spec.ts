@@ -102,12 +102,27 @@ const RETIRED_TAB_LABELS = [
  * was open (#1615); it supersedes the `case-runs` this branch had. Only the
  * PLACEMENT is ours — the right column beside Hours, rather than the middle
  * cell it shipped in.
+ *
+ * 🔴 `Hours booked` IS DELIBERATELY NOT IN THIS LIST, and its absence is the
+ * assertion rather than an omission. The heading is real, but it MOVED. It used
+ * to be drawn by the `stats-block`'s own CnWidgetWrapper. `case-kpis-hours` is
+ * now an integration widget placing humaniq's `humaniq-hours` leaf, and the
+ * heading comes from inside that leaf: a mount-mode leaf is handed no title
+ * (`integrationMountProps` carries surface, register, schema, objectId and the
+ * integration context, and nothing else), so humaniq renders its own `<h3>`
+ * caption, `hq-hours-caption`. Without it the tile was a bare number with
+ * nothing saying what was counted.
+ *
+ * A heading that lives inside the leaf is present exactly when the leaf is.
+ * Nothing renders in the cell at all where humaniq is absent: the host resolves
+ * no renderer, and the grid `<h3>` is drawn only for consumer slot widgets,
+ * which this page does not supply for this id. This file runs on a CI instance
+ * that installs openregister and nothing else, so requiring the title here
+ * would fail every run. It is asserted where the condition can be stated:
+ * `case-hours-leaf.spec.ts` requires the caption where humaniq is enabled, and
+ * requires its absence where it is not.
  */
-const COLUMN_TITLES = [
-	/Hours booked|Geboekte uren/,
-	/Flow runs|Flow-uitvoeringen/,
-	/Tasks|Taken/,
-]
+const COLUMN_TITLES = [/Flow runs|Flow-uitvoeringen/, /Tasks|Taken/]
 
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
@@ -299,13 +314,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			`dossiq 4xx: ${ownClientErrors.map((f) => `${f.status} ${f.url}`).join(' | ')}`,
 		).toEqual([])
 
-		// KNOWN GAP, deliberately not asserted away. The hours tile queries
-		// humaniq's register, so on an instance without humaniq it 404s and
-		// renders 0 — indistinguishable from a real zero. The `Log hours` action
-		// beside it IS gated on `visibleWhen: { appInstalled: "humaniq" }`; the
-		// tile cannot be, because the manifest schema allows `visibleWhen` on
-		// actions and fields but not on a widget or a layout cell. Closing it
-		// needs that gating in nextcloud-vue's CnDetailPage, not a change here.
+		// THE GAP THAT USED TO STAND HERE IS CLOSED. The hours tile queried
+		// humaniq's register, so on an instance without humaniq it 404'd and
+		// rendered 0, which is what a case with no hours booked renders too. It
+		// is now a placement of humaniq's `humaniq-hours` leaf, and an
+		// unregistered leaf renders nothing rather than a zero. The absence is
+		// asserted in `case-hours-leaf.spec.ts`, not here.
+		//
+		// The filter below stays, and it is still worth its lines: `hermiq` is
+		// on it, and a humaniq the manifest starts querying again would show up
+		// as a URL in this log rather than as a silent zero on the page.
 		const absent = failures.filter((f) => ABSENT_APPS.test(f.url))
 		if (absent.length > 0) {
 			console.log(
