@@ -27,7 +27,7 @@ By the end you will have opened the Administration settings page, re-imported th
 
    ![Re-import configuration](/screenshots/tutorials/admin/03-admin-settings-02.png)
 
-3. Scroll to **Configuration**. Pick the *Register* (e.g. *Dossiq*) from the first dropdown: the rest of the fields (*Case schema*, *Task schema*, *Status schema*, *Role schema*, *Result schema*, *Decision schema*, *Case type schema*, *Status type schema*) auto-fill from the register. Click **Save** to persist.
+3. Scroll to **Configuration**. Pick the *Register* (e.g. *Dossiq*) from the first dropdown: the rest of the fields (*Case schema*, *Status schema*, *Role schema*, *Result schema*, *Decision schema*, *Case type schema*, *Status type schema*) auto-fill from the register. Click **Save** to persist.
 
    ![Register and schema mapping](/screenshots/tutorials/admin/03-admin-settings-03.png)
 
