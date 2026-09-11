@@ -40,6 +40,8 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use RuntimeException;
+
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
@@ -221,7 +223,7 @@ trait SearchesObjects {
 	 *
 	 * @return array<string, mixed>|null The stored object, or null if it cannot be represented as one.
 	 *
-	 * @throws \RuntimeException When the object cannot be read on the fallback path,
+	 * @throws RuntimeException When the object cannot be read on the fallback path,
 	 *                           or the service offers no seam that writes partially.
 	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
@@ -247,7 +249,7 @@ trait SearchesObjects {
 		if (method_exists($objectService, 'find') === false) {
 			// Neither seam: a partial payload would replace the object, and
 			// saving one is exactly the defect this method exists to remove.
-			throw new \RuntimeException('object_service_cannot_write_partially');
+			throw new RuntimeException('object_service_cannot_write_partially');
 		}
 
 		$stored = $this->findObjectAsArray(
@@ -257,7 +259,7 @@ trait SearchesObjects {
 			id: $id
 		);
 		if ($stored === null) {
-			throw new \RuntimeException('object_not_found_for_partial_write');
+			throw new RuntimeException('object_not_found_for_partial_write');
 		}
 
 		unset($stored['@self'], $stored['id']);
