@@ -25,7 +25,6 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
-	cleanupRunObjects,
 	createObject,
 	ensureCaseType,
 	getRequestToken,
@@ -602,10 +601,14 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 	})
 
 	test.afterAll(async () => {
-		if (api !== undefined) {
-			await cleanupRunObjects(api, fixtureToken, ['case', 'caseType'])
-			await api.dispose()
-		}
+		// NO SWEEP HERE, by the same rule `case-documents.spec.ts` follows. The
+		// cases are archival, so removing them takes an occ purge per row, and
+		// on a loaded instance that walk overruns the 120s the helper allows
+		// itself: the run then reports `"afterAll" hook timeout` against the
+		// last test, whose assertions all passed. Every row here carries the
+		// family prefix, and global-setup's residue sweep removes cases before
+		// their case types, which is the order a teardown here would need too.
+		await api?.dispose()
 	})
 
 	// @e2e deelzaak-support::create-sub-case-from-parent-case-detail

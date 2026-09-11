@@ -310,16 +310,17 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 	})
 
 	test.afterAll(async () => {
-		if (api !== undefined) {
-			await cleanupRunObjects(api, token, [
-				'zaakinformatieobject',
-				'informatieobject',
-				'informatieobjecttype',
-				'case',
-				'caseType',
-			])
-			await api.dispose()
-		}
+		if (api === undefined) return
+		// The document rows only. The cases and their case type are archival
+		// or referenced by archival rows; they carry the family prefix, and
+		// global-setup's residue sweep takes them before the next run, the same
+		// split `case-documents.spec.ts` makes. Purging them here overran the
+		// helper's 120s teardown budget on a loaded instance.
+		await cleanupRunObjects(api, token, [
+			'informatieobject',
+			'informatieobjecttype',
+		])
+		await api.dispose()
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005c-file-validation-blocks-executable-uploads
