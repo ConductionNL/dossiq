@@ -961,15 +961,23 @@ parent's. A chain that returns to itself SHALL be refused on save.
 - **THEN** its Statuses tab SHALL list the four statuses marked Inherited
 
 #### Scenario: A child overrides one deadline
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** Bezwaar has a processing deadline of 12 weeks
 - **AND** Bezwaar (verkort) sets its own deadline to 6 weeks
 - **WHEN** you file a case of Bezwaar (verkort)
 - **THEN** the case's deadline SHALL be 6 weeks after its start date
 
+#### Scenario: A child inherits a deadline it does not declare
+@e2e tests/e2e/case-type-parent-chain.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (standaard) names Bezwaar as its parent and sets no deadline of its own
+- **WHEN** you file a case of Bezwaar (standaard)
+- **THEN** the case's deadline SHALL be 12 weeks after its start date
+
 #### Scenario: A cycle is refused
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-parent-chain.spec.ts
 
 - **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
 - **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
@@ -988,7 +996,7 @@ back any property the schema does not declare.
 **Feature tier**: MVP
 
 #### Scenario: A functional administrator gives a status a colour and a role
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a case type with a status called In behandeling
 - **WHEN** the administrator edits it, picks the colour orange and the role in progress, and saves
@@ -996,7 +1004,7 @@ back any property the schema does not declare.
 - **AND** a flow addressing the in-progress role SHALL resolve to this status
 
 #### Scenario: A status asks for a checklist
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a status being edited
 - **WHEN** the administrator adds the checklist item Check identity and marks it required

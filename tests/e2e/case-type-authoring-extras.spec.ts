@@ -456,46 +456,70 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
-	// NOT cited to case-types::a-cycle-is-refused. That scenario says the SAVE
-	// fails with a message naming the cycle; this test saves the cycle
-	// successfully and asserts only that the blueprint then terminates. The
-	// refusal lives on the publish path (CaseTypeResolver::assertNoCycle).
+	// NOT cited to case-types::a-cycle-is-refused. That scenario is about the
+	// save a PERSON makes, in the Edit dialog, and is cited where that is
+	// driven: case-type-parent-chain.spec.ts. This one sends the same save
+	// through the object API, the path a script or an import takes.
 	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
-		// The refusal lives in CaseTypeResolver::assertNoCycle, which the
-		// publish path calls; the round trip asserted here is that the
-		// blueprint of a cycle STOPS rather than looping the request forever,
-		// which is what a reader of a mis-saved chain actually meets.
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: child.caseType,
-		})
-
-		const res = await api.get(
-			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
-			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+		// Since CaseTypeParentCycleListener the loop is refused ON SAVE, on
+		// every write path. This is the one a script or an import uses,
+		// OpenRegister's object API; the Edit dialog a person uses is
+		// case-type-parent-chain.spec.ts, which is where the scenario is
+		// cited. What this keeps from its old self is the other half: the
+		// refusal leaves the stored chain as it was, so the blueprint still
+		// reads as a finite chain.
+		const current = await showObject(api, 'caseType', parent.caseType)
+		const refused = await api.put(
+			`/index.php/apps/openregister/api/objects/${REGISTER}/caseType/${parent.caseType}`,
+			{
+				headers: {
+					requesttoken: token,
+					'OCS-APIRequest': 'true',
+					'Content-Type': 'application/json',
+				},
+				data: { ...current, parentCaseType: child.caseType },
+			},
 		)
-		// With the status and the body in the message, because a bare
-		// `toBeTruthy()` here reported only "expected true, got false" and
-		// said nothing about the 412 that caused it.
-		expect(
-			res.ok(),
-			`blueprint -> ${res.status()} ${await res.text()}`,
-		).toBeTruthy()
+		try {
+			expect(refused.status(), await refused.text()).toBe(422)
+			// The loop, by the titles this spec seeded, in either locale.
+			expect(String((await refused.json()).error)).toContain(
+				`${RUN_PREFIX} Bezwaar -> ${RUN_PREFIX} Bezwaar (verkort) -> ${RUN_PREFIX} Bezwaar`,
+			)
 
-		const blueprint = await res.json()
-		// Three levels at most, and never the same type twice.
-		const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
-			objectId(row),
-		)
-		expect(new Set(ids).size).toBe(ids.length)
+			const stored = await showObject(api, 'caseType', parent.caseType)
+			expect(String(stored.parentCaseType ?? '')).toBe('')
 
-		// Put the parent back, so the tests that follow read an ordinary chain.
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: null,
-		})
-		const restored = await showObject(api, 'caseType', parent.caseType)
-		expect(String(restored.parentCaseType ?? '')).toBe('')
+			const res = await api.get(
+				`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
+				{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+			)
+			// With the status and the body in the message, because a bare
+			// `toBeTruthy()` here reported only "expected true, got false" and
+			// said nothing about the 412 that caused it.
+			expect(
+				res.ok(),
+				`blueprint -> ${res.status()} ${await res.text()}`,
+			).toBeTruthy()
+
+			const blueprint = await res.json()
+			// Three levels at most, and never the same type twice.
+			const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
+				objectId(row),
+			)
+			expect(new Set(ids).size).toBe(ids.length)
+		} finally {
+			// Only when the guard let the loop through: put the parent back so
+			// the tests that follow read an ordinary chain, and the failure
+			// above stays the one that is reported.
+			if (refused.ok()) {
+				await updateObject(api, token, 'caseType', parent.caseType, {
+					parentCaseType: null,
+				})
+			}
+		}
 	})
 
 	// ── REQ-PDM-01 / REQ-PDM-02: folders and shared attributes ─────────────
