@@ -34,7 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Dossiq\Service\TenantBillingService;
+use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\Dossiq\Service\TenantOnboardingService;
 use OCA\Dossiq\Service\TenantSaasService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -77,8 +79,10 @@ interface TenantEntityRowObjectServiceStub {
 
 /**
  * @covers \OCA\Dossiq\Service\TenantOnboardingService
+ * @covers \OCA\Dossiq\Service\TenantConfigurationService
  *
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser
  */
 class TenantEntityRowReadsTest extends TestCase {
 	/**
@@ -231,4 +235,80 @@ class TenantEntityRowReadsTest extends TestCase {
 		$this->assertNull($task);
 		$this->assertSame([], $this->saves);
 	}//end testMarkStepCompleteOnAnUnreadableRowWritesNothing()
+
+	/**
+	 * The configuration service over a fake OpenRegister.
+	 *
+	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 *
+	 * @return TenantConfigurationService The service.
+	 */
+	private function configurationAnswering(array $rows): TenantConfigurationService {
+		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
+
+		return new TenantConfigurationService(
+			appManager: $appManager,
+			container: $container,
+			sanitiser: new TenantBrandingSanitiser(),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+	}//end configurationAnswering()
+
+	/**
+	 * A stored configuration is found when its row is an entity.
+	 *
+	 * Before the read was fixed, `getConfig()` returned the entity from a
+	 * method typed `?array`. The TypeError was caught and read as "no
+	 * configuration", so no tenant ever had branding, a locale or a flag.
+	 *
+	 * @return void
+	 */
+	public function testTheConfigurationOfAnEntityRowIsFound(): void {
+		$row = $this->entity(
+			object: [
+				'tenantRef' => 't-1',
+				'branding' => ['primaryColor' => '#123456'],
+				'features' => ['beta-search'],
+			],
+			uuid: 'cfg-1'
+		);
+
+		$config = $this->configurationAnswering(rows: [$row])->getConfig(tenantId: 't-1');
+
+		$this->assertNotNull($config, 'the stored configuration was not found');
+		$this->assertSame('t-1', $config['tenantRef']);
+		$this->assertSame(['beta-search'], $config['features']);
+		$this->assertSame('#123456', $config['branding']['primaryColor']);
+	}//end testTheConfigurationOfAnEntityRowIsFound()
+
+	/**
+	 * Setting a flag keeps the flags the stored row already carries.
+	 *
+	 * This is what a configuration nobody can read costs: every write starts
+	 * from an empty configuration and drops what was there.
+	 *
+	 * @return void
+	 */
+	public function testSettingAFlagKeepsTheFlagsAlreadyStored(): void {
+		$row = $this->entity(object: ['tenantRef' => 't-1', 'features' => ['beta-search']], uuid: 'cfg-1');
+
+		$next = $this->configurationAnswering(rows: [$row])->setFeatureFlag(tenantId: 't-1', flag: 'beta-export', enabled: true);
+
+		$this->assertSame(['beta-search', 'beta-export'], $next['features']);
+		$this->assertCount(1, $this->saves);
+		$this->assertSame(['beta-search', 'beta-export'], $this->saves[0]['object']['features']);
+		$this->assertSame('tenantConfiguration', $this->saves[0]['schema']);
+	}//end testSettingAFlagKeepsTheFlagsAlreadyStored()
+
+	/**
+	 * A row that carries nothing readable is not a configuration.
+	 *
+	 * This passes on the code before the fix too, where the row was returned
+	 * and the TypeError caught; it guards the fix's own empty-row check.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableConfigurationRowIsNotAConfiguration(): void {
+		$this->assertNull($this->configurationAnswering(rows: [new stdClass()])->getConfig(tenantId: 't-1'));
+	}//end testAnUnreadableConfigurationRowIsNotAConfiguration()
 }//end class
