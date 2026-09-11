@@ -510,6 +510,12 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 	test.setTimeout(180_000)
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		// A describe-level `setTimeout` governs TESTS, not HOOKS: a hook keeps
+		// the config's 30s until it is widened from inside itself. Seeding a
+		// dozen objects on a loaded instance does not fit in 30s, and the
+		// failure then reads `"beforeAll" hook timeout` against whichever test
+		// ran first, which points at the wrong thing entirely.
+		test.setTimeout(300_000)
 		const context = await browser.newContext()
 		api = await playwright.request.newContext({
 			baseURL,
