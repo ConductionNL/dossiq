@@ -629,6 +629,21 @@ on the archive, not on the work.
       first (the follow-up "Section 4 did NOT do" already names, whose subject
       is the spec rather than the schema), THEN repoint, THEN archive.
 
+      **UPDATE 2026-09-11: the first step is done, by a parallel session.**
+      dossiq#2457 ("the four task specs follow the engine, not the deleted
+      schema") rewrote the requirement bodies of `task-management`,
+      `case-management`, `case-search-via-or-unified-search` and
+      `role-routing-via-or-rbac`. `task-management/spec.md` is now a valid
+      target, so this task is UNBLOCKED and is the next slice: repoint, then
+      the archive can follow.
+
+      One stale sentence survives #2457 and should go in the same slice. The
+      competitive-context paragraph (line 23) still says dossiq's tasks "are
+      JSON objects with CMMN-compliant lifecycle states, avoiding the
+      complexity of an embedded workflow engine". The tasks now live in
+      exactly such an engine. It is prose rather than a requirement, so no
+      gate reads it, which is why it survived.
+
 ### 7.2 🔴 TWO LISTENERS SIGNAL THE SAME RUN AND THE EMPTY PAYLOAD WINS
 
 Found 2026-09-11 by the spec 5.2 added. The first filing of this blamed
