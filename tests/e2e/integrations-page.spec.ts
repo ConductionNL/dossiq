@@ -580,7 +580,8 @@ test.describe('Integrations', () => {
 		// this reached the skip gate as an exclusion without a reason.
 		test.fixme(
 			true,
-			'REQ-ADMIN-021 has no surface to test: the Integrations page ships '
+			'REQ-ADMIN-021 has no surface to test (tracked by dossiq#2452): the '
+				+ 'Integrations page ships '
 				+ 'as a type index page, because a type settings section in '
 				+ 'nextcloud-vue 2.46.0 resolves widgets only against version-info, '
 				+ 'register-mapping and component, so the connections list could '
