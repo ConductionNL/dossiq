@@ -42,23 +42,36 @@ class TenantMigrationServiceTest extends TestCase {
 	/**
 	 * Build a fake OR ObjectService returning the given tenant rows on the slug path.
 	 *
-	 * @param array<int, array<string, mixed>> $rows Tenant rows.
+	 * @param array<int, array<string, mixed>>                       $rows     Tenant rows.
+	 * @param array<string, array<int, array<string, mixed>>>         $bySchema Rows for a named satellite schema.
 	 *
 	 * @return object
 	 */
-	private function objectServiceWithRows(array $rows): object {
-		return new class($rows) {
+	private function objectServiceWithRows(array $rows, array $bySchema = []): object {
+		return new class($rows, $bySchema) {
 			/** @var array<int, array<string, mixed>> */
 			private array $rows;
 
+			/** @var array<string, array<int, array<string, mixed>>> */
+			private array $bySchema;
+
 			// phpcs:ignore
-			public function __construct(array $rows) {
+			public function __construct(array $rows, array $bySchema = []) {
 				$this->rows = $rows;
+				$this->bySchema = $bySchema;
 			}
 
 			// phpcs:ignore
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				return $this->rows;
+				if (array_key_exists($schema, $this->bySchema) === true) {
+					return $this->bySchema[$schema];
+				}
+
+				if ($schema === 'tenant') {
+					return $this->rows;
+				}
+
+				return [];
 			}
 		};
 	}
@@ -410,5 +423,163 @@ class TenantMigrationServiceTest extends TestCase {
 		$summary = $service->migrate();
 		$this->assertSame(1, $summary['failed']);
 		$this->assertCount(0, $mapper->inserted);
+	}
+	/**
+	 * A tenantRef that resolves to nothing is REPORTED and never mapped.
+	 *
+	 * 🔴 There is no safe guess about which organisation an orphan meant.
+	 * Attaching it to the nearest candidate would give one tenant another
+	 * tenant's mandates or quotas, and every scoping filter downstream would
+	 * then agree, because the row really would say so.
+	 *
+	 * So the assertion is in two halves and both matter: the orphan must be
+	 * named in the report, AND nothing may be written. A reporter that quietly
+	 * repointed the row would satisfy the first half alone.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvableTenantRefIsReportedAndNothingIsWritten(): void {
+		$known = new Organisation();
+		$known->setUuid('org-real');
+		$known->setSlug('gemeente-baarn');
+
+		$mapper = $this->mapperWith(['gemeente-baarn' => $known]);
+		$report = $this->makeService(
+			$this->objectServiceWithRows(
+				[],
+				[
+					'tenantUser' => [
+						['id' => 'u1', 'tenantRef' => 'org-real'],
+						['id' => 'u2', 'tenantRef' => 'org-gone'],
+					],
+					'tenantMandate' => [['id' => 'm1', 'tenantRef' => 'org-gone']],
+				]
+			),
+			$mapper,
+		)->reportOrphans();
+
+		$this->assertSame(2, $report['orphans']);
+		$this->assertSame(3, $report['scanned']);
+		$this->assertSame(
+			[
+				['schema' => 'tenantUser', 'row' => 'u2', 'tenantRef' => 'org-gone'],
+				['schema' => 'tenantMandate', 'row' => 'm1', 'tenantRef' => 'org-gone'],
+			],
+			$report['rows']
+		);
+		$this->assertCount(0, $mapper->inserted, 'the orphan scan must write nothing');
+	}
+
+	/**
+	 * A row whose tenantRef resolves is not an orphan.
+	 *
+	 * The companion that catches a reporter which calls everything an orphan.
+	 *
+	 * @return void
+	 */
+	public function testARowWhoseTenantRefResolvesIsNotAnOrphan(): void {
+		$known = new Organisation();
+		$known->setUuid('org-real');
+		$known->setSlug('gemeente-baarn');
+
+		$report = $this->makeService(
+			$this->objectServiceWithRows([], ['tenantQuota' => [['id' => 'q1', 'tenantRef' => 'org-real']]]),
+			$this->mapperWith(['gemeente-baarn' => $known]),
+		)->reportOrphans();
+
+		$this->assertSame(0, $report['orphans']);
+		$this->assertSame(1, $report['scanned']);
+		$this->assertSame([], $report['rows']);
+	}
+
+	/**
+	 * The shipped tier quota templates are not orphans.
+	 *
+	 * Twelve `tenantQuota` rows ship in the register seed, four per tier,
+	 * each pointing at a sentinel uuid that belongs to no tenant. They are on
+	 * EVERY install. A report that called them orphans would open with twelve
+	 * false alarms and teach an operator to skim the list, which is how a real
+	 * orphan goes unread.
+	 *
+	 * tasks.md 2b read the same twelve rows off the dev instance and called
+	 * them test fixtures written on 2026-08-30. They are not. They are the
+	 * register seed, and this test is what keeps them classified.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedTierTemplatesAreCountedApartFromOrphans(): void {
+		$report = $this->makeService(
+			$this->objectServiceWithRows(
+				[],
+				[
+					'tenantQuota' => [
+						['id' => 'tpl-b', 'tenantRef' => '00000000-0000-0000-0000-000000000000'],
+						['id' => 'tpl-s', 'tenantRef' => '00000000-0000-0000-0000-000000000001'],
+						['id' => 'tpl-e', 'tenantRef' => '00000000-0000-0000-0000-000000000002'],
+						['id' => 'q-real', 'tenantRef' => 'org-gone'],
+					],
+				]
+			),
+			$this->mapperWith([]),
+		)->reportOrphans();
+
+		$this->assertSame(3, $report['templates']);
+		$this->assertSame(1, $report['orphans']);
+		$this->assertSame([['schema' => 'tenantQuota', 'row' => 'q-real', 'tenantRef' => 'org-gone']], $report['rows']);
+	}
+
+	/**
+	 * An empty tenantRef is an orphan too.
+	 *
+	 * It resolves to nothing, which is the definition, and a scan that only
+	 * checked non-empty values would pass over the rows most likely to be
+	 * wrong.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyTenantRefIsAnOrphan(): void {
+		$report = $this->makeService(
+			$this->objectServiceWithRows([], ['tenantBillingEvent' => [['id' => 'b1', 'tenantRef' => '']]]),
+			$this->mapperWith([]),
+		)->reportOrphans();
+
+		$this->assertSame(1, $report['orphans']);
+		$this->assertSame('', $report['rows'][0]['tenantRef']);
+	}
+
+	/**
+	 * The scan covers the five satellites and does not reach tenantOnboardingTask.
+	 *
+	 * That schema is re-filed onto the engine Task as follow-up 7.1 of
+	 * remove-casetask and still references `tenant`, so scanning it here would
+	 * report seven shipped onboarding-template rows against a store this step
+	 * does not own.
+	 *
+	 * @return void
+	 */
+	public function testTheScanCoversTheFiveSatellitesAndNotTheOnboardingTask(): void {
+		$rowsFor = static fn (string $schema): array => [[ 'id' => $schema . '-1', 'tenantRef' => 'org-gone']];
+
+		$report = $this->makeService(
+			$this->objectServiceWithRows(
+				[],
+				[
+					'tenantConfiguration' => $rowsFor('tenantConfiguration'),
+					'tenantQuota' => $rowsFor('tenantQuota'),
+					'tenantUser' => $rowsFor('tenantUser'),
+					'tenantMandate' => $rowsFor('tenantMandate'),
+					'tenantBillingEvent' => $rowsFor('tenantBillingEvent'),
+					'tenantOnboardingTask' => $rowsFor('tenantOnboardingTask'),
+				]
+			),
+			$this->mapperWith([]),
+		)->reportOrphans();
+
+		$this->assertSame(5, $report['scanned']);
+		$this->assertSame(
+			['tenantConfiguration', 'tenantQuota', 'tenantUser', 'tenantMandate', 'tenantBillingEvent'],
+			array_keys($report['bySchema'])
+		);
+		$this->assertArrayNotHasKey('tenantOnboardingTask', $report['bySchema']);
 	}
 }//end class

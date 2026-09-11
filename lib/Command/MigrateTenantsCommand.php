@@ -105,10 +105,50 @@ class MigrateTenantsCommand extends Command {
 			);
 		}
 
+		$this->reportOrphans(output: $output);
+
 		if ($summary['failed'] > 0 || $summary['refused'] > 0) {
 			return Command::FAILURE;
 		}
 
 		return Command::SUCCESS;
 	}//end execute()
+
+	/**
+	 * Print the satellite orphan scan.
+	 *
+	 * Orphans do NOT fail the command. A row pointing at a tenant that does
+	 * not exist is a thing an operator has to look at, not a reason to refuse
+	 * a migration that wrote the right rows. It is reported and never mapped:
+	 * there is no safe guess about which organisation an orphan meant, and
+	 * guessing would attach one tenant's mandates or quotas to another.
+	 *
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function reportOrphans(OutputInterface $output): void {
+		$report = $this->migrationService->reportOrphans();
+
+		$output->writeln('');
+		$output->writeln('<info>satellite scan</info>');
+		$output->writeln('  scanned   = ' . $report['scanned']);
+		$output->writeln('  templates = ' . $report['templates'] . ' (shipped tier quota templates, not orphans)');
+		$output->writeln('  orphans   = ' . $report['orphans']);
+
+		foreach ($report['rows'] as $orphan) {
+			$reference = $orphan['tenantRef'];
+			if ($reference === '') {
+				$reference = '(empty)';
+			}
+
+			$output->writeln(
+				'<comment>  ORPHAN ' . $orphan['schema'] . ' ' . $orphan['row']
+				. ' references ' . $reference . ', which resolves to no organisation. '
+				. 'Reported only. Nothing was mapped.</comment>'
+			);
+		}
+	}//end reportOrphans()
 }//end class
