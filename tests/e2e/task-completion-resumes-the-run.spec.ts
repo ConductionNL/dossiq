@@ -78,8 +78,19 @@ import {
 // loaded runner, and each worker pass is a full occ bootstrap.
 test.describe.configure({ mode: 'serial', timeout: 180_000 })
 
-/** The uid the ask is addressed to — the account the suite runs as. */
-const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
+/**
+ * The uid the ask is addressed to, resolved from the SESSION rather than read
+ * off an env default.
+ *
+ * 🔴 AN ENV DEFAULT WOULD MAKE THIS TEST FAIL FOR THE WRONG REASON. The whole
+ * assertion is that completing the task wakes the run, and the engine's seam
+ * refuses a completion by anyone but the awaiting step's recorded assignee. If
+ * `ADMIN_USER` were `admin` while the captured session belonged to somebody
+ * else, the seam would refuse, `resumeAt` would not move, and the failure would
+ * read as a broken listener rather than as a fixture addressing the wrong
+ * person. Asking the instance who it thinks we are removes that whole class.
+ */
+let currentUser = ''
 
 /** The node id the ask carries, and therefore the one the task must name. */
 const ASK_NODE = 'ask-the-handler'
@@ -98,38 +109,40 @@ const QUESTION = `${RUN_PREFIX} Answer the ask that suspends the run`
  * No `heartbeatMinutes`: the default is 30 and the floor is 5, and the whole
  * assertion below is that the completion beats whatever that number is.
  */
-const GRAPH = {
-	nodes: [
-		{
-			id: 'start',
-			type: 'openregister.trigger-manual',
-			config: {},
-			position: { x: 0, y: 0 },
-		},
-		{
-			id: ASK_NODE,
-			type: 'dossiq.askPerson',
-			config: {
-				question: QUESTION,
-				details:
-					'Seeded by task-completion-resumes-the-run.spec.ts. Completing this '
-					+ 'task must wake the run before its heartbeat comes due.',
-				assignee: ADMIN_USER,
-				signalKey: 'answer',
+function graphFor(assignee: string) {
+	return {
+		nodes: [
+			{
+				id: 'start',
+				type: 'openregister.trigger-manual',
+				config: {},
+				position: { x: 0, y: 0 },
 			},
-			position: { x: 0, y: 160 },
-		},
-		{
-			id: 'end',
-			type: 'openregister.end',
-			config: {},
-			position: { x: 0, y: 320 },
-		},
-	],
-	edges: [
-		{ id: 'start-ask', from: 'start', to: ASK_NODE },
-		{ id: 'ask-end', from: ASK_NODE, to: 'end' },
-	],
+			{
+				id: ASK_NODE,
+				type: 'dossiq.askPerson',
+				config: {
+					question: QUESTION,
+					details:
+						'Seeded by task-completion-resumes-the-run.spec.ts. Completing this '
+						+ 'task must wake the run before its heartbeat comes due.',
+					assignee,
+					signalKey: 'answer',
+				},
+				position: { x: 0, y: 160 },
+			},
+			{
+				id: 'end',
+				type: 'openregister.end',
+				config: {},
+				position: { x: 0, y: 320 },
+			},
+		],
+		edges: [
+			{ id: 'start-ask', from: 'start', to: ASK_NODE },
+			{ id: 'ask-end', from: ASK_NODE, to: 'end' },
+		],
+	}
 }
 
 let api: APIRequestContext
@@ -217,7 +230,7 @@ async function askedTaskOn(caseId: string, run: string): Promise<string> {
 	// The RENDERED principal, never the authored template: OpenRegister's
 	// assignee guard compares this against real uids, so a stored placeholder
 	// refuses every real user and the ask is unanswerable by anybody.
-	expect(String(task.assignee ?? '')).toBe(ADMIN_USER)
+	expect(String(task.assignee ?? '')).toBe(currentUser)
 
 	const uuid = String(task.uuid ?? '')
 	expect(
@@ -246,6 +259,16 @@ test.beforeAll(async ({ baseURL }) => {
 	api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 	token = await getRequestToken(api)
 
+	// `OCS-APIRequest` is not optional: without it Nextcloud's CSRF guard
+	// answers a plain OCS GET with 412, which reads as "no session" rather than
+	// as a missing header.
+	const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
+	expect(whoami.ok(), `whoami -> ${whoami.status()}`).toBeTruthy()
+	currentUser = String((await whoami.json())?.ocs?.data?.id ?? '')
+	expect(currentUser, 'The session must resolve to a user id.').not.toBe('')
+
 	const caseType = await ensureCaseType(api, token)
 	if (caseType.seeded === true) {
 		seeded.seededCaseType = caseType.id
@@ -255,14 +278,14 @@ test.beforeAll(async ({ baseURL }) => {
 		await seedCase(api, token, {
 			title: `${RUN_PREFIX} The ask that is answered`,
 			caseType: caseType.id,
-			assignee: ADMIN_USER,
+			assignee: currentUser,
 		}),
 	)
 	seeded.withdrawnCase = objectId(
 		await seedCase(api, token, {
 			title: `${RUN_PREFIX} The ask that is withdrawn`,
 			caseType: caseType.id,
-			assignee: ADMIN_USER,
+			assignee: currentUser,
 		}),
 	)
 
@@ -271,7 +294,7 @@ test.beforeAll(async ({ baseURL }) => {
 		token,
 		`${RUN_PREFIX} Ask and wake`,
 		'Throwaway flow seeded by task-completion-resumes-the-run.spec.ts.',
-		GRAPH,
+		graphFor(currentUser),
 	)
 	await publishFlow(api, token, seeded.flowId)
 })
