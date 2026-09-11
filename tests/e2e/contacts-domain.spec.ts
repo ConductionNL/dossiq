@@ -62,6 +62,8 @@ const EMPTY_NAME = `${RUN_PREFIX} Zonder`
 const COMPANY_NAME = `${RUN_PREFIX} Dakkapellen BV`
 /** Fictitious, and unique to this run so the index row is unambiguous. */
 const COMPANY_KVK = '90004760'
+/** The person's BSN, named once: the seed and the card assertion share it. */
+const PERSON_BSN = '999990627'
 
 let api: APIRequestContext
 let token: string
@@ -174,26 +176,37 @@ test.describe('Contacts', () => {
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(published[0])
 
-		personId = await seedPerson(PERSON_NAME, '999990627')
+		personId = await seedPerson(PERSON_NAME, PERSON_BSN)
 		emptyPersonId = await seedPerson(EMPTY_NAME, '999993653')
 		companyId = await seedCompany(COMPANY_NAME, COMPANY_KVK)
 
-		// A case names its `requester` and NOTHING ELSE about the initiator.
-		// `initiatorType`, `initiatorDisplayName` and `initiatorSourceId` are
-		// display projections OpenRegister derives from the reference.
+		// Each case carries the WHOLE initiator projection: `initiatorType`,
+		// `initiatorDisplayName` AND `initiatorSourceId`. All three, or none of
+		// them, and two CI runs paid for learning why.
 		//
-		// An earlier version of this file wrote `initiatorType` and
-		// `initiatorDisplayName` explicitly, on the assumption that an API create
-		// names the reference only. That assumption was wrong and it cost a
-		// neighbouring test: with them written by hand, `initiatorSourceId` came
-		// back EMPTY, so `InitiatorSection.resolveSource()` returned before its
-		// lookup, the initiator card rendered no link, and "the case links back"
-		// failed twice while passing on `development` with the same code. Writing
-		// a projection by hand is not a neutral act here.
+		// They are not derived by OpenRegister. `InitiatorSection` BACK-FILLS
+		// them in the browser: opening a case whose `requester` is set but whose
+		// projection is missing fetches the row, shapes it through
+		// `personResult` / `companyResult` and saves it back to the case. So an
+		// API-seeded case has no projection until somebody opens its detail page.
+		//
+		// Writing only `initiatorType` and `initiatorDisplayName` is the worst of
+		// the three options: it satisfies the back-fill's guard without supplying
+		// `initiatorSourceId`, so `resolveSource()` returns before its lookup and
+		// the initiator card renders no link. That broke "the case links back".
+		// Writing none of them leaves the COMPANY case with an empty Requester
+		// cell, because no test opens that case and nothing back-fills it — the
+		// person case only worked by the accident of an earlier test visiting it.
+		//
+		// `sourceId` is the identifying number the card looks the row up by: the
+		// BSN for a person, the KvK number for a company.
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Dormer window`,
 			caseType: caseTypeId,
 			requester: personId,
+			initiatorType: 'person',
+			initiatorDisplayName: PERSON_NAME,
+			initiatorSourceId: PERSON_BSN,
 		})
 		seededCaseId = objectId(seeded)
 
@@ -203,6 +216,9 @@ test.describe('Contacts', () => {
 			title: `${RUN_PREFIX} Roof terrace`,
 			caseType: caseTypeId,
 			requester: companyId,
+			initiatorType: 'company',
+			initiatorDisplayName: COMPANY_NAME,
+			initiatorSourceId: COMPANY_KVK,
 		})
 
 		await createObject(api, token, 'contactmoment', {
