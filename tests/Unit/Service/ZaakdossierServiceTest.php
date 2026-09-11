@@ -179,6 +179,7 @@ class ZaakdossierServiceTest extends TestCase {
 			// exercise the production coercion rather than a mock's answers.
 			normaliser: new InformatieobjectMetadataNormaliser(),
 			logger: $this->createMock(LoggerInterface::class),
+			fieldWriter: new CaseFieldWriter(),
 		);
 
 	}//end setUp()

@@ -109,6 +109,7 @@ class ZaakdossierService {
 	 *                                                       direction onto the
 	 *                                                       schema.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseFieldWriter $fieldWriter Applies ONLY the edited fields to the stored document.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -117,6 +118,7 @@ class ZaakdossierService {
 		private readonly InformatieobjectStatusLifecycle $statusLifecycle,
 		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
+		private readonly CaseFieldWriter $fieldWriter,
 	) {
 	}//end __construct()
 
@@ -548,7 +550,16 @@ class ZaakdossierService {
 			return ['id' => $infoObjectId, 'updated' => false];
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
+		// Only the edited fields, applied to the stored document: a bare
+		// saveObject() with the uuid replaces the document with $updateData,
+		// which the schema refuses for the required properties it drops.
+		$this->fieldWriter->write(
+			objectService: $objectService,
+			register: $register,
+			schema: $infoSchema,
+			case: ['id' => $infoObjectId],
+			changes: $updateData,
+		);
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()

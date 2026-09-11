@@ -30,179 +30,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
-use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
+use OCA\Dossiq\Tests\Unit\Fixtures\ReplacingObjectService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-
-/**
- * An object service that replaces on save, the way OpenRegister does.
- *
- * Deliberately has no `patchObject()`: this is the older OpenRegister shape,
- * where a partial write can only be done by reading and saving the whole.
- */
-class ReplacingObjectService {
-
-	/**
-	 * Stored objects by uuid.
-	 *
-	 * @var array<string, array<string, mixed>>
-	 */
-	public array $stored = [];
-
-	/**
-	 * Every payload saveObject() was handed, in order.
-	 *
-	 * @var array<int, array<string, mixed>>
-	 */
-	public array $saves = [];
-
-	/**
-	 * Constructor.
-	 *
-	 * @param string[] $required   The schema's required properties.
-	 * @param string[] $properties The schema's declared properties.
-	 */
-	public function __construct(
-		private readonly array $required,
-		private readonly array $properties,
-	) {
-	}
-
-	/**
-	 * Read one object back, shaped like ObjectEntity::jsonSerialize().
-	 *
-	 * @param string          $id       The uuid.
-	 * @param string|int|null $register Unused register scope.
-	 * @param string|int|null $schema   Unused schema scope.
-	 *
-	 * @return object The stored object with its id and an `@self` block.
-	 *
-	 * @throws DoesNotExistException When nothing is stored under the id.
-	 */
-	public function find(string $id, string|int|null $register = null, string|int|null $schema = null): object {
-		if (isset($this->stored[$id]) === false) {
-			throw new DoesNotExistException('not found: ' . $id);
-		}
-
-		return $this->entity(uuid: $id);
-	}
-
-	/**
-	 * Save with PUT semantics: the payload replaces the stored object.
-	 *
-	 * @param array<string, mixed> $object   The payload.
-	 * @param string|int|null      $register Unused register scope.
-	 * @param string|int|null      $schema   Unused schema scope.
-	 * @param string|null          $uuid     The uuid to update, or null to take it from the payload.
-	 *
-	 * @return object The stored object.
-	 *
-	 * @throws RuntimeException When a required property is missing, as OpenRegister's validation does.
-	 */
-	public function saveObject(
-		array $object,
-		string|int|null $register = null,
-		string|int|null $schema = null,
-		?string $uuid = null,
-	): object {
-		$this->saves[] = $object;
-
-		$self = (array)($object['@self'] ?? []);
-		$uuid = ($uuid ?? (string)($object['id'] ?? ($self['id'] ?? '')));
-		unset($object['@self'], $object['id']);
-
-		$missing = [];
-		foreach ($this->required as $property) {
-			if (isset($object[$property]) === false) {
-				$missing[] = $property;
-			}
-		}
-
-		if ($missing !== []) {
-			throw new RuntimeException('The required properties (' . implode(', ', $missing) . ') are missing.');
-		}
-
-		foreach ($this->properties as $property) {
-			if (array_key_exists($property, $object) === false) {
-				$object[$property] = null;
-			}
-		}
-
-		$this->stored[$uuid] = $object;
-
-		return $this->entity(uuid: $uuid);
-	}
-
-	/**
-	 * Wrap a stored object the way OpenRegister's ObjectEntity serialises.
-	 *
-	 * @param string $uuid The uuid.
-	 *
-	 * @return object An object exposing jsonSerialize().
-	 */
-	protected function entity(string $uuid): object {
-		$data = array_merge(
-			$this->stored[$uuid],
-			['id' => $uuid, '@self' => ['id' => $uuid, 'register' => 'dossiq', 'schema' => 'informatieobject']]
-		);
-
-		return new class($data) {
-			/**
-			 * Constructor.
-			 *
-			 * @param array<string, mixed> $data The serialised object.
-			 */
-			public function __construct(
-				private readonly array $data,
-			) {
-			}
-
-			/**
-			 * The serialised object.
-			 *
-			 * @return array<string, mixed>
-			 */
-			public function jsonSerialize(): array {
-				return $this->data;
-			}
-		};
-	}
-}//end class
-
-/**
- * The current OpenRegister shape: a merging `patchObject()` beside the replacing save.
- */
-class PatchingObjectService extends ReplacingObjectService {
-
-	/**
-	 * Merge the patch onto the stored object and save the result.
-	 *
-	 * @param string               $objectId The uuid.
-	 * @param array<string, mixed> $data     The fields to change.
-	 * @param string|int|null      $register Unused register scope.
-	 * @param string|int|null      $schema   Unused schema scope.
-	 *
-	 * @return object The stored object.
-	 */
-	public function patchObject(
-		string $objectId,
-		array $data,
-		string|int|null $register = null,
-		string|int|null $schema = null,
-	): object {
-		if (isset($this->stored[$objectId]) === false) {
-			throw new DoesNotExistException('not found: ' . $objectId);
-		}
-
-		return $this->saveObject(
-			object: array_merge($this->stored[$objectId], $data),
-			register: $register,
-			schema: $schema,
-			uuid: $objectId
-		);
-	}
-}//end class
 
 /**
  * Status transitions keep the document whole.
@@ -325,22 +156,14 @@ class InformatieobjectStatusLifecycleTest extends TestCase {
 	}//end testABulkRunMovesEveryDocumentThatMayMove()
 
 	/**
-	 * The double reads the schema from the register fragment the app ships.
+	 * The double enforces the informatieobject schema the app ships.
 	 *
 	 * @param class-string<ReplacingObjectService> $serviceClass The object-service shape.
 	 *
 	 * @return ReplacingObjectService
 	 */
 	private function objectService(string $serviceClass): ReplacingObjectService {
-		$fragment = json_decode(
-			(string)file_get_contents(
-				__DIR__ . '/../../../../lib/Settings/register.d/70-document-zaakdossier.json'
-			),
-			true
-		);
-		$schema = $fragment['components']['schemas']['informatieobject'];
-
-		return new $serviceClass($schema['required'], array_keys($schema['properties']));
+		return $serviceClass::forShippedSchema('informatieobject');
 
 	}//end objectService()
 
