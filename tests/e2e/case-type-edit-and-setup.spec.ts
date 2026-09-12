@@ -25,7 +25,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
  * Open the case-types index by ROUTE, not by sidebar label.
@@ -39,7 +39,7 @@ import { dismissSupportDialog } from './helpers/nav.ts'
  * @param page The page.
  */
 async function gotoCaseTypes(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq')
+	await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 	await dismissSupportDialog(page)
 	const href = await page.evaluate(() => {
 		const nav = document.querySelector('[id^="app-navigation"]')
@@ -55,7 +55,7 @@ async function gotoCaseTypes(page: Page): Promise<void> {
 			'[dossiq e2e] no sidebar link routes to /settings/case-types — the Case types menu entry is missing from the manifest or the nav did not render.',
 		)
 	}
-	await page.goto(href)
+	await page.goto(href, PAGE_LOAD)
 }
 
 /**

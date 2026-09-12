@@ -293,12 +293,12 @@ class SubsidieService {
 		}
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: ['status' => $toStatus],
-				uuid: (string)$id
+				id: (string)$id,
+				changes: ['status' => $toStatus]
 			) ?? array_merge($current, ['status' => $toStatus]));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: transitionAanvraag failed: ' . $e->getMessage());

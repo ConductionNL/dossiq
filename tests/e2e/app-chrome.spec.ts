@@ -22,13 +22,16 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
 test.describe('app chrome (ADR-114)', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto(`${APP_BASE}/`, { waitUntil: 'domcontentloaded' })
+		await page.goto(`${APP_BASE}/`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
 		await expect(page.locator('[data-testid="cn-nav"]')).toBeVisible({
 			timeout: 30_000,
 		})
@@ -108,6 +111,7 @@ test.describe('app chrome (ADR-114)', () => {
 			// as a broken route. The SPA mounts after DOM ready, and the
 			// assertions below are what prove the mount.
 			await page.goto(`${APP_BASE}${path}`, {
+				...PAGE_LOAD,
 				waitUntil: 'domcontentloaded',
 			})
 			await expect(page).toHaveURL(new RegExp(`${path}(\\?|$)`), {
@@ -131,6 +135,7 @@ test.describe('app chrome (ADR-114)', () => {
 			}
 		})
 		await page.goto(`${APP_BASE}/termijn-dashboard`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await expect
@@ -148,6 +153,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// The page reads its list from initial state (ADR-018); dossiq handed
 		// it nothing, so the tab was empty while docs/features.json held 23.
 		await page.goto(`${APP_BASE}/features-roadmap`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await expect(page.locator('.cn-features-and-roadmap-view')).toBeVisible({
@@ -172,6 +178,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// second section of FeaturesRoadmapView. The features section is the
 		// landing one, so this test has to switch before it can assert.
 		await page.goto(`${APP_BASE}/features-roadmap`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await expect(page.locator('.features-roadmap__sections')).toBeVisible({

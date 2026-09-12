@@ -92,7 +92,7 @@ class CaseFieldWriterTest extends TestCase {
 				return $this->stored;
 			}
 
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
 				$this->stored = $object;
 
 				return $object;
@@ -226,7 +226,7 @@ class CaseFieldWriterTest extends TestCase {
 		};
 
 		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('case_not_found_for_partial_write');
+		$this->expectExceptionMessage('object_not_found_for_partial_write');
 
 		$this->writer->write(
 			objectService: $objectService,
