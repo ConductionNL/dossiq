@@ -17898,54 +17898,6 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-zgw",
-          "id": "5b3f9c07-1a48-4e6d-8c92-0f7d41ba2e53"
-        },
-        "key": "zgw",
-        "title": "ZGW API's",
-        "description": "Zaken, catalogi, besluiten en documenten over de VNG ZGW API's.",
-        "status": "configured",
-        "statusMessage": "Laatste controle geslaagd.",
-        "checkedAt": "2026-09-01T09:00:00+00:00",
-        "settingsUrl": "/settings/admin/dossiq",
-        "order": 1
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-brp",
-          "id": "a72e5041-6cb3-4f19-85da-937c1e0b48f2"
-        },
-        "key": "brp",
-        "title": "BRP personen",
-        "description": "Persoonsgegevens bevragen via Haal Centraal BRP.",
-        "status": "simulated",
-        "statusMessage": "Draait op de personen-mock.",
-        "checkedAt": "2026-09-01T09:05:00+00:00",
-        "settingsUrl": "/settings/admin/dossiq",
-        "order": 2
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiqintegration-mailbox",
-          "id": "e18c2d64-97b5-41a0-b3f7-25c8d0e6491f"
-        },
-        "key": "mailbox",
-        "title": "Postbus",
-        "description": "Inkomende post die als zaak wordt geregistreerd.",
-        "status": "unconfigured",
-        "statusMessage": "Nog geen postbus ingesteld.",
-        "checkedAt": "2026-09-01T09:10:00+00:00",
-        "settingsUrl": "/settings/admin/dossiq",
-        "order": 3
-      },
-      {
-        "@self": {
-          "register": "dossiq",
           "schema": "dwangsomUitbetaling",
           "slug": "dwangsomuitbetaling-dwangsomuitbetaling-1-1",
           "id": "1de29ee9-d6f9-494c-92cd-4bf39cdcbbce"
