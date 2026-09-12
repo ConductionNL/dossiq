@@ -48,6 +48,15 @@ use Psr\Log\LoggerInterface;
  * surface was dark, and with it every VNG contract assertion that needs a zaak.
  *
  * @covers \OCA\Dossiq\Service\ZgwService
+ *
+ * The other two lists this test holds together are DECLARED, not covered.
+ * `phpunit.xml` sets `failOnRisky="true"`, so a test that executes a class it
+ * has not named exits 1 on an otherwise green suite: 3931 tests, 0 failures,
+ * "OK, but there were issues", exit code 1. That reads as a broken test matrix
+ * and is a missing annotation.
+ *
+ * @uses \OCA\Dossiq\Repair\LoadDefaultZgwMappings
+ * @uses \OCA\Dossiq\Service\ZgwMappingService
  */
 class ZgwResourceMapConsistencyTest extends TestCase {
 
