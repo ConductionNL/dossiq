@@ -71,7 +71,12 @@ test.describe('case-email-integration spec coverage', () => {
 	// on the admin page even after every section has been scrolled in. Run
 	// unparked on CI run 34578033755 it passed on the first attempt. Nothing in
 	// the body below changed, so what moved was the app, not the test.
-	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-dossiq-component
+	//
+	// @e2e exclude This used to cite "Composer is the leaf / NC Mail, not a
+	// dossiq component", which is about the case compose flow opening an NC Mail
+	// draft. This test reads admin-settings buttons and never opens a case. That
+	// scenario is now excluded in the spec because the Mail draft handoff is not
+	// built: prefillDraft returns a subject and body, and nothing opens a draft.
 	test('settings expose a Test connection control, not an outbound composer', async ({
 		page,
 	}) => {
