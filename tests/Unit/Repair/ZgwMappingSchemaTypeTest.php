@@ -94,7 +94,20 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 		foreach ($files as $file) {
 			$decoded = json_decode((string)file_get_contents($file), true);
 			foreach ((($decoded['components'] ?? [])['schemas'] ?? []) as $slug => $definition) {
-				$schemas[$slug] = $definition;
+				if (isset($schemas[$slug]) === false) {
+					$schemas[$slug] = $definition;
+					continue;
+				}
+
+				// MERGE, do not replace. `loadConfiguration()` deep-merges the
+				// fragments onto the base, and two fragments really do extend
+				// the same schema (dso-omgevingsloket.json adds to `case`).
+				// Replacing instead made every base property of `case` and
+				// `customerContact` look undeclared.
+				$schemas[$slug]['properties'] = array_merge(
+					($schemas[$slug]['properties'] ?? []),
+					($definition['properties'] ?? [])
+				);
 			}
 		}
 
@@ -214,4 +227,105 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 			'The outbound template encodes, so ZGW would otherwise receive a string.'
 		);
 	}//end testProductsOrServicesIsCastBackToAnArrayOnBothSides()
+	/**
+	 * Every inbound mapping writes into a property the schema declares.
+	 *
+	 * `reverseMapping` runs ZGW to OpenRegister, so its KEYS are register
+	 * property names. A key the schema does not declare is a value that reaches
+	 * OpenRegister under a name nothing reads, silently: no error, no stored
+	 * value, and a GET that returns the field empty forever.
+	 *
+	 * @return void
+	 */
+	public function testEveryInboundMappingWritesAPropertyTheSchemaDeclares(): void {
+		$slugForKey = array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY);
+		$schemas = $this->registerSchemas();
+		$unknown = [];
+		$checked = 0;
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			$slug = ($slugForKey[(string)($config['sourceSchema'] ?? '')] ?? null);
+			if ($slug === null || isset($schemas[$slug]) === false) {
+				continue;
+			}
+
+			$properties = ($schemas[$slug]['properties'] ?? []);
+			foreach (array_keys(($config['reverseMapping'] ?? [])) as $property) {
+				$checked++;
+				if (isset($properties[$property]) === false) {
+					$unknown[] = sprintf('%s writes %s.%s, which the schema does not declare', $mappingKey, $slug, $property);
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $checked, 'No inbound mapping keys were examined at all.');
+		$this->assertSame(
+			[],
+			$unknown,
+			"These ZGW inbound mappings write a property no schema declares, so the value is dropped\n"
+			. "without an error:\n  " . implode("\n  ", $unknown)
+		);
+	}//end testEveryInboundMappingWritesAPropertyTheSchemaDeclares()
+	/**
+	 * Every outbound template reads a property the schema declares.
+	 *
+	 * `propertyMapping` runs OpenRegister to ZGW, so its KEYS are ZGW field
+	 * names and its TEMPLATES read register properties. Both halves were
+	 * inverted on `zaaktype-informatieobjecttypen`: the keys said
+	 * `sequenceNumber` and `direction`, which ZGW does not define, and the
+	 * templates read `{{ volgnummer }}` and `{{ richting }}`, which the
+	 * register does not store. The response carried two fields nobody asked
+	 * for, both empty, and nothing said so.
+	 *
+	 * Variables beginning with an underscore are the mapping's own context
+	 * (`_baseUrl`, `_uuid`, `_valueMappings`) and are not schema properties.
+	 *
+	 * @return void
+	 */
+	public function testEveryOutboundTemplateReadsAPropertyTheSchemaDeclares(): void {
+		$slugForKey = array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY);
+		$schemas = $this->registerSchemas();
+		$unknown = [];
+		$checked = 0;
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			$slug = ($slugForKey[(string)($config['sourceSchema'] ?? '')] ?? null);
+			if ($slug === null || isset($schemas[$slug]) === false) {
+				continue;
+			}
+
+			$properties = ($schemas[$slug]['properties'] ?? []);
+			foreach (($config['propertyMapping'] ?? []) as $zgwField => $template) {
+				if (is_string($template) === false) {
+					continue;
+				}
+
+				preg_match_all('/\{\{\s*([A-Za-z_][A-Za-z0-9_]*)/', $template, $matches);
+				foreach ($matches[1] as $variable) {
+					if (str_starts_with($variable, '_') === true) {
+						continue;
+					}
+
+					$checked++;
+					if (isset($properties[$variable]) === false) {
+						$unknown[] = sprintf(
+							'%s reads {{ %s }} for the ZGW field %s, and %s does not declare it',
+							$mappingKey,
+							$variable,
+							$zgwField,
+							$slug
+						);
+					}
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $checked, 'No outbound templates were examined at all.');
+		$this->assertSame(
+			[],
+			$unknown,
+			"These ZGW outbound templates read a property no schema declares, so the field is\n"
+			. "returned empty:\n  " . implode("\n  ", $unknown)
+		);
+	}//end testEveryOutboundTemplateReadsAPropertyTheSchemaDeclares()
 }//end class

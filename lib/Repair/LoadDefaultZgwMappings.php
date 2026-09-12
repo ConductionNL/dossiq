@@ -1361,8 +1361,13 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'name' => '{{ naam }}',
-				'documentationLink' => '{{ documentatieLink }}',
+				// Inverted before this: the keys are ZGW field names, which are
+				// `naam` and `documentatieLink`, and the templates read register
+				// properties, which are `name` and `documentationLink`. Both
+				// halves pointed the wrong way, so the NRC kanalen response
+				// carried two fields ZGW does not define, both empty.
+				'naam' => '{{ name }}',
+				'documentatieLink' => '{{ documentationLink }}',
 				'filters' => '{{ filters }}',
 			],
 			'cast' => [
@@ -1437,9 +1442,13 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'domein' => '{{ domein }}',
 				'rsin' => '{{ rsin }}',
-				'contactPersonManagementName' => '{{ contactpersoonBeheerNaam }}',
-				'contactPersonManagementPhoneNumber' => '{{ contactpersoonBeheerTelefoonnummer }}',
-				'contactPersonManagementEmailAddress' => '{{ contactpersoonBeheerEmailadres }}',
+				// Inverted before this, the same way the kanaal mapping was: the
+				// keys are the ZGW field names and the templates read register
+				// properties. The ZTC catalogussen response carried three fields
+				// ZGW does not define, all empty, and dropped the three it does.
+				'contactpersoonBeheerNaam' => '{{ contactPersonManagementName }}',
+				'contactpersoonBeheerTelefoonnummer' => '{{ contactPersonManagementPhoneNumber }}',
+				'contactpersoonBeheerEmailadres' => '{{ contactPersonManagementEmailAddress }}',
 				'zaaktypen' => '[]',
 				'besluittypen' => '[]',
 				'informatieobjecttypen' => '[]',
@@ -1496,24 +1505,42 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					to: 'catalogi/informatieobjecttypen',
 					varName: 'informatieobjecttype'
 				),
-				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting }}',
+				// Same inversion as `richting` below: the ZGW field is
+				// `volgnummer`, and the value comes from `sequenceNumber`.
+				'volgnummer' => '{{ sequenceNumber }}',
+				// The ZGW field is `richting`, not `direction`. This key used to
+				// say `direction` and read `{{ richting }}`, so the response
+				// carried a field ZGW does not define, holding a value the
+				// register does not store. Both halves were inverted.
+				'richting' => '{{ direction | zgw_enum("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseMapping' => [
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 				'informatieobjecttype' => '{{ informatieobjecttype | zgw_extract_uuid }}',
 				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting }}',
+				'direction' => '{{ richting | zgw_enum_reverse("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseCast' => [
 				'sequenceNumber' => 'int',
 			],
 			'cast' => [
-				'sequenceNumber' => 'int',
+				'volgnummer' => 'int',
 			],
-			'valueMapping' => [],
+			// ZGW spells this enum in Dutch and the schema declares it in
+			// English, and both templates used to pass the value straight
+			// through. POST /catalogi/v1/zaaktype-informatieobjecttypen with
+			// ZGW's own `richting: inkomend` answered 400 "should be one of:
+			// 'inbound', 'internal', 'outbound'", so the endpoint could not
+			// accept a conformant body at all.
+			'valueMapping' => [
+				'direction' => [
+					'inbound' => 'inkomend',
+					'internal' => 'intern',
+					'outbound' => 'uitgaand',
+				],
+			],
 			'queryParameterMapping' => [
 				'caseType' => [
 					'field' => 'caseType',

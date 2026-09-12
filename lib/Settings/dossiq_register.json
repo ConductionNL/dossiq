@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.8.0",
+                "version": "1.9.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -27,6 +27,17 @@
                     "title"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
+                    "versionDate": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Versiedatum",
+                        "description": "Date this version of the case type took effect. ZGW sends it as versiedatum on every zaaktype write."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255,
@@ -661,7 +672,7 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document Type",
@@ -671,6 +682,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -745,7 +761,7 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision Type",
@@ -755,6 +771,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
