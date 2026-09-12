@@ -69,6 +69,10 @@ class EmailTemplateController extends Controller {
 		'email_poll_interval',
 		'email_poll_batch_size',
 		'email_max_attachment_size',
+		// The case type an unmatched mail becomes a case of. Empty means the
+		// mail stays in the mailbox, which is the default and the behaviour
+		// every instance had before this key existed.
+		'email_fallback_case_type',
 	];
 
 	/**
@@ -347,6 +351,10 @@ class EmailTemplateController extends Controller {
 		$host = $this->appConfig->getValueString(Application::APP_ID, 'email_imap_host', '');
 		$port = (int)$this->appConfig->getValueString(Application::APP_ID, 'email_imap_port', '993');
 		if ($host === '') {
+			$this->templateService->recordMailboxStatus(
+				status: 'unconfigured',
+				message: 'Not checked yet'
+			);
 			return new JSONResponse(['ok' => false, 'error' => 'imap_not_configured']);
 		}
 
@@ -360,10 +368,20 @@ class EmailTemplateController extends Controller {
 			}
 		);
 		if ($handle === false) {
+			$failure = 'connection_failed';
+			if ($errstr !== '') {
+				$failure = $errstr;
+			}
+
+			$this->templateService->recordMailboxStatus(status: 'error', message: $failure);
 			return new JSONResponse(['ok' => false, 'error' => 'connection_failed', 'detail' => $errstr]);
 		}
 
 		fclose($handle);
+		$this->templateService->recordMailboxStatus(
+			status: 'configured',
+			message: 'Connected to ' . $host . ':' . $port
+		);
 		return new JSONResponse(['ok' => true]);
 	}//end testImap()
 
@@ -417,7 +435,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @param string $caseTypeId Owning caseType id.
 	 *
-	 * @return JSONResponse {created: int} — how many were created on this run.
+	 * @return JSONResponse carrying created, the number created on this run.
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */

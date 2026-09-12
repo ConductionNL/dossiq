@@ -10,6 +10,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-zgw"
 			:name="t('dossiq', 'ZGW API Mapping')"
 			:description="
 				t(
@@ -58,7 +59,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix — Administration')"
+			:name="t('dossiq', 'Mandate Matrix: Administration')"
 			:description="
 				t(
 					'dossiq',
@@ -70,11 +71,11 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix — System Settings')"
+			:name="t('dossiq', 'Mandate Matrix: System Settings')"
 			:description="
 				t(
 					'dossiq',
-					'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.',
+					'Awb art. 10:3 mandate administration: Decidiq import, role hierarchy, waarnemer assignments.',
 				)
 			"
 			:loading="!storesReady">
@@ -82,6 +83,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-store"
 			:name="t('dossiq', 'Store registry')"
 			:description="
 				t(
@@ -106,7 +108,8 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Case Email — Shared Mailbox')"
+			id="section-mailbox"
+			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
 				t(
 					'dossiq',
@@ -118,6 +121,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-kcc"
 			:name="t('dossiq', 'KCC-werkplek Integration')"
 			:description="
 				t(
@@ -130,6 +134,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-dmn"
 			:name="t('dossiq', 'Decision Tables (DMN)')"
 			:description="
 				t(
@@ -142,7 +147,8 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Financial Integration — Dwangsom Callback')"
+			id="section-financial"
+			:name="t('dossiq', 'Financial Integration: Dwangsom Callback')"
 			:description="
 				t(
 					'dossiq',
@@ -154,6 +160,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-stuf"
 			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
 				t(

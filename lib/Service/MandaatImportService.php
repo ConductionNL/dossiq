@@ -82,7 +82,7 @@ class MandaatImportService {
 	 * @param string $decideskUuid Source Decidesk decision id.
 	 * @param string $csvContents The CSV payload (RFC 4180; first row is header).
 	 *
-	 * @return array<string, mixed> {mandateDecisionId, totalMandaten, newCount, changedCount, removedCount, diff}
+	 * @return array<string, mixed> carrying mandateDecisionId, totalMandaten, newCount, changedCount, removedCount and diff.
 	 *
 	 * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
 	 *

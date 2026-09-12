@@ -20,17 +20,28 @@ export function getOriginOptions() {
 	]
 }
 
-/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+/**
+ * The confidentiality levels a case type can carry.
+ *
+ * The ids are the caseType schema's ZGW `vertrouwelijkheidaanduiding` enum,
+ * which OpenRegister enforces. They used to be English (`public`, `internal`,
+ * `secret`), so every save of a level from the General tab was refused and a
+ * stored level never showed as selected. The labels stay English and
+ * translatable; only the stored value changed.
+ *
+ * @return {Array<{id: string, label: string}>} The options, lowest level first.
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+ */
 export function getConfidentialityOptions() {
 	return [
-		{ id: 'public', label: t('dossiq', 'Public') },
-		{ id: 'restricted', label: t('dossiq', 'Restricted') },
-		{ id: 'internal', label: t('dossiq', 'Internal') },
-		{ id: 'case_sensitive', label: t('dossiq', 'Case sensitive') },
-		{ id: 'confidential', label: t('dossiq', 'Confidential') },
-		{ id: 'highly_confidential', label: t('dossiq', 'Highly confidential') },
-		{ id: 'secret', label: t('dossiq', 'Secret') },
-		{ id: 'top_secret', label: t('dossiq', 'Top secret') },
+		{ id: 'openbaar', label: t('dossiq', 'Public') },
+		{ id: 'beperkt_openbaar', label: t('dossiq', 'Restricted') },
+		{ id: 'intern', label: t('dossiq', 'Internal') },
+		{ id: 'zaakvertrouwelijk', label: t('dossiq', 'Case sensitive') },
+		{ id: 'vertrouwelijk', label: t('dossiq', 'Confidential') },
+		{ id: 'confidentieel', label: t('dossiq', 'Highly confidential') },
+		{ id: 'geheim', label: t('dossiq', 'Secret') },
+		{ id: 'zeer_geheim', label: t('dossiq', 'Top secret') },
 	]
 }
 
@@ -96,47 +107,13 @@ export function validateCaseType(data) {
 	}
 }
 
-/**
- * Validate whether a case type can be published.
- *
- * @param {object} caseType Case type data
- * @param {Array} statusTypes Array of status type objects linked to this case type
- * @return {{ valid: boolean, errors: string[] }}
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
- */
-export function validateForPublish(caseType, statusTypes) {
-	const errors = []
-
-	const fieldValidation = validateCaseType(caseType)
-	if (!fieldValidation.valid) {
-		const missing = Object.keys(fieldValidation.errors)
-			.map((f) => getFieldLabel(f))
-			.join(', ')
-		errors.push(
-			t('dossiq', 'Missing required fields: {fields}', { fields: missing }),
-		)
-	}
-
-	if (!caseType.validFrom) {
-		errors.push(t('dossiq', "'Valid from' date must be set"))
-	}
-
-	if (!statusTypes || statusTypes.length === 0) {
-		errors.push(t('dossiq', 'At least one status type must be defined'))
-	} else {
-		const hasFinal = statusTypes.some((st) => st.isFinal)
-		if (!hasFinal) {
-			errors.push(
-				t('dossiq', 'At least one status type must be marked as final'),
-			)
-		}
-	}
-
-	return {
-		valid: errors.length === 0,
-		errors,
-	}
-}
+// The browser-side publish validation used to live here as
+// `validateForPublish`. It is gone rather than unused: the server's
+// `CaseTypePublishService::validate()` is the answer the Publish gesture now
+// shows, and it is a DIFFERENT answer on a case type that inherits its
+// lifecycle from a parent, where this one reported "at least one status type
+// must be defined" on a page showing four statuses. Two validators for one
+// gesture is how a page refuses what the server would have accepted.
 
 /**
  *

@@ -21,11 +21,19 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
+import {
+	journeyBudget,
+	navTo,
+	navToRoute,
+	trackDossiqErrors,
+} from '../helpers/nav.ts'
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
 	test('dashboard renders the manifest widget grid shell', async ({ page }) => {
+		// navTo loads the app to read its sidebar, then the target: two page
+		// loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navTo(page, 'Dashboard')
 		// The dashboard route mounts the nc-vue manifest widget grid into
 		// `.app-content`. The grid container renders independently of whether
@@ -51,8 +59,13 @@ test.describe('Dashboard page render', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#dashboard-mounts-without-console-errors
+	// @e2e exclude No scenario requires the dashboard to mount without
+	// dossiq console errors. REQ-DASH-UI-01 covers the grid, and the
+	// sibling test above cites it; the console-error leg has no home.
 	test('dashboard mounts without dossiq console errors', async ({ page }) => {
+		// navTo loads the app to read its sidebar, then the target: two page
+		// loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		const errors = trackDossiqErrors(page)
 		await navTo(page, 'Dashboard')
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard

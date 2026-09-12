@@ -4,7 +4,7 @@
 			{{
 				t(
 					'dossiq',
-					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.',
+					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Per-user mail accounts stay in Nextcloud Mail. The outbound fields below cover only the mail dossiq sends itself. That is workflow actions and the case email screen.',
 				)
 			}}
 		</NcNoteCard>
@@ -120,9 +120,124 @@
 				placeholder="50" />
 		</div>
 
+		<div class="setting-row">
+			<NcSelect
+				v-model="fallbackCaseTypeOption"
+				:inputLabel="t('dossiq', 'Case type for mail nobody claims')"
+				:options="caseTypeOptions"
+				:loading="caseTypesLoading"
+				:disabled="!writable || loading"
+				:placeholder="t('dossiq', 'Leave it in the mailbox')"
+				data-testid="email-fallback-case-type" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<NcCheckboxRadioSwitch
+				v-model="caseMatchingEnabled"
+				type="switch"
+				:disabled="!writable || loading"
+				data-testid="email-case-matching-enabled">
+				{{ t('dossiq', 'Link mail to cases by case number') }}
+			</NcCheckboxRadioSwitch>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Each user still switches it on for their own mailbox. Until then, nothing is linked.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_case_matching_pattern">{{
+				t('dossiq', 'Case number pattern')
+			}}</label>
+			<NcInputField
+				id="email_case_matching_pattern"
+				v-model="matching.email_case_matching_pattern"
+				:disabled="!writable || loading"
+				:placeholder="defaultCasePattern"
+				data-testid="email-case-matching-pattern" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Leave it empty to match numbers like 2026-0042 and [ZAAK-2026-0042]. The first group in the pattern must capture the case number.',
+					)
+				}}
+			</p>
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Only the subject and the start of each message are read. A case number further down is missed.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_from_address">{{
+				t('dossiq', 'Sender address')
+			}}</label>
+			<NcInputField
+				id="email_from_address"
+				v-model="form.email_from_address"
+				:disabled="!writable || loading"
+				placeholder="zaken@gemeente.nl"
+				data-testid="email-from-address" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'The address dossiq sends from. Leave it empty and dossiq refuses to send at all.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_from_name">{{ t('dossiq', 'Sender name') }}</label>
+			<NcInputField
+				id="email_from_name"
+				v-model="form.email_from_name"
+				:disabled="!writable || loading"
+				placeholder="Gemeente Voorbeeld"
+				data-testid="email-from-name" />
+		</div>
+
+		<div class="setting-row">
+			<label for="email_recipient_allowlist">{{
+				t('dossiq', 'Allowed recipients')
+			}}</label>
+			<NcInputField
+				id="email_recipient_allowlist"
+				v-model="form.email_recipient_allowlist"
+				:disabled="!writable || loading"
+				placeholder="@gemeente.nl, team@gemeente.nl"
+				data-testid="email-recipient-allowlist" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'List the addresses and domains dossiq may send case mail to. Leave it empty and only your own domain is allowed, taken from the sender address. Write * to allow every recipient.',
+					)
+				}}
+			</p>
+		</div>
+
 		<div class="email-settings__actions">
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!writable || saving || loading"
 				@click="save">
 				<template #icon>
@@ -130,13 +245,13 @@
 				</template>
 				{{
 					saving
-						? t('dossiq', 'Saving...')
+						? t('dossiq', 'Saving…')
 						: t('dossiq', 'Save mailbox settings')
 				}}
 			</NcButton>
 
 			<NcButton
-				type="secondary"
+				variant="secondary"
 				:disabled="testing || loading"
 				@click="testConnection">
 				<template #icon>
@@ -156,11 +271,13 @@
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcInputField,
 	NcLoadingIcon,
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
+import { useObjectStore } from '../../store/modules/object.js'
 
 /**
  * Shared case-email mailbox admin settings.
@@ -173,7 +290,15 @@ import {
  */
 export default {
 	name: 'EmailSettings',
-	components: { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcSelect },
+	components: {
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcInputField,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcSelect,
+	},
+
 	data() {
 		return {
 			loading: true,
@@ -191,7 +316,26 @@ export default {
 				email_transport: '',
 				email_poll_interval: '300',
 				email_poll_batch_size: '50',
+				email_fallback_case_type: '',
+				email_from_address: '',
+				email_from_name: '',
+				email_recipient_allowlist: '',
 			},
+
+			// Email-to-case matching has its own endpoint, which validates the
+			// pattern before anything is stored.
+			matching: {
+				email_case_matching_enabled: 'no',
+				email_case_matching_pattern: '',
+			},
+
+			// Shown as the placeholder, so an empty field says what it means.
+			// Mirrors CaseNumberRecognizer::DEFAULT_PATTERN.
+			defaultCasePattern:
+				'/(?<![\\w-])(?:\\[)?(?:[A-Z]{2,10}-)?((?:19|20)\\d{2}-\\d{4,6})(?:\\])?(?![\\w-])/u',
+
+			caseTypes: [],
+			caseTypesLoading: false,
 
 			encryptionOptions: [
 				{ id: 'ssl', label: 'SSL/TLS' },
@@ -217,6 +361,72 @@ export default {
 			},
 		},
 
+		/**
+		 * The case types a mail nobody claims can become.
+		 *
+		 * @return {Array<object>} The options, with an explicit empty one first.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		caseTypeOptions() {
+			return this.caseTypes.map((ct) => ({
+				id: String(ct.id),
+				label: ct.title || ct.identifier || String(ct.id),
+			}))
+		},
+
+		/**
+		 * The case type currently chosen, if the instance names one.
+		 *
+		 * @return {object|null} The option.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		fallbackCaseTypeOption: {
+			/**
+			 * @return {object|null} The chosen option.
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 */
+			get() {
+				return (
+					this.caseTypeOptions.find(
+						(o) => o.id === this.form.email_fallback_case_type,
+					) || null
+				)
+			},
+
+			/**
+			 * @param {object|null} option The chosen option.
+			 * @return {void}
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 */
+			set(option) {
+				this.form.email_fallback_case_type = option ? option.id : ''
+			},
+		},
+
+		/**
+		 * The instance toggle as a switch; stored as `yes` or `no`.
+		 *
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		caseMatchingEnabled: {
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @return {boolean} Whether matching is on.
+			 */
+			get() {
+				return this.matching.email_case_matching_enabled === 'yes'
+			},
+
+			/**
+			 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+			 * @param {boolean} value Whether matching is on.
+			 * @return {void}
+			 */
+			set(value) {
+				this.matching.email_case_matching_enabled = value ? 'yes' : 'no'
+			},
+		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
@@ -225,8 +435,16 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the stored settings, then the case types the picker offers.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 */
 	async mounted() {
 		await this.load()
+		await this.loadMatching()
+		await this.loadCaseTypes()
 	},
 
 	methods: {
@@ -248,10 +466,103 @@ export default {
 						}
 					})
 				}
-			} catch (error) {
+			} catch {
 				// Non-fatal: defaults stay in place if the endpoint is unreachable.
 			} finally {
 				this.loading = false
+			}
+		},
+
+		/**
+		 * Read the email-to-case matching switch and pattern.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async loadMatching() {
+			try {
+				const response = await fetch(
+					generateUrl(
+						'/apps/dossiq/api/settings/email-case-matching/instance',
+					),
+					{ headers: { requesttoken: OC.requestToken } },
+				)
+				if (response.ok) {
+					const data = await response.json()
+					Object.keys(this.matching).forEach((key) => {
+						if (data[key] !== undefined && data[key] !== null) {
+							this.matching[key] = String(data[key])
+						}
+					})
+				}
+			} catch {
+				// Non-fatal: the switch stays off, which is the stored default.
+			}
+		},
+
+		/**
+		 * Save the matching switch and pattern first, so a refused pattern
+		 * stops the whole save before anything is written.
+		 *
+		 * @return {Promise<boolean>} Whether the matching settings were saved.
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async saveMatching() {
+			const response = await fetch(
+				generateUrl(
+					'/apps/dossiq/api/settings/email-case-matching/instance',
+				),
+				{
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: OC.requestToken,
+					},
+					body: JSON.stringify(this.matching),
+				},
+			)
+			if (response.status === 400) {
+				this.testResult = {
+					type: 'error',
+					message: t(
+						'dossiq',
+						'This pattern cannot find case numbers. Check that it is valid and has a capture group.',
+					),
+				}
+				return false
+			}
+			if (!response.ok) {
+				this.testResult = {
+					type: 'error',
+					message: t('dossiq', 'Could not save mailbox settings.'),
+				}
+				return false
+			}
+			return true
+		},
+
+		/**
+		 * Read the published case types a fallback can be chosen from.
+		 *
+		 * Only published ones: filing mail into a draft case type would create
+		 * cases on a definition still being written.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+		 */
+		async loadCaseTypes() {
+			this.caseTypesLoading = true
+			try {
+				const results = await useObjectStore().fetchCollection('caseType', {
+					_limit: 100,
+					isDraft: false,
+				})
+				this.caseTypes = results || []
+			} catch {
+				// Non-fatal: the picker stays empty and the setting keeps its
+				// stored value, which is safer than clearing it.
+			} finally {
+				this.caseTypesLoading = false
 			}
 		},
 
@@ -260,6 +571,9 @@ export default {
 			this.saving = true
 			this.testResult = null
 			try {
+				if ((await this.saveMatching()) === false) {
+					return
+				}
 				const payload = { ...this.form }
 				// Never resend the mask back as a real password.
 				if (payload.email_imap_password === '') {

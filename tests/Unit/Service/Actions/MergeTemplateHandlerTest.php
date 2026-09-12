@@ -19,7 +19,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -28,7 +28,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 
 use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
 use OCA\Dossiq\Service\CaseFieldWriter;
+use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IAppConfig;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -55,8 +58,16 @@ class MergeTemplateHandlerTest extends TestCase {
 	 */
 	private ?object $objectService = null;
 
+	/**
+	 * The upload the dossier double was asked for, or null.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $uploaded = null;
+
 	protected function setUp(): void {
 		$this->saved = null;
+		$this->uploaded = null;
 
 		$saved = &$this->saved;
 		$this->objectService = new class($saved) {
@@ -102,11 +113,26 @@ class MergeTemplateHandlerTest extends TestCase {
 	 *
 	 * @return MergeTemplateHandler The handler under test.
 	 */
-	private function handler(): MergeTemplateHandler {
+	private function handler(?ZaakdossierService $dossier = null): MergeTemplateHandler {
 		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')
-			->with('OCA\OpenRegister\Service\ObjectService')
-			->willReturn($this->objectService);
+		$container->method('get')->willReturnCallback(
+			function (string $id) use ($dossier): object {
+				if ($id === ZaakdossierService::class) {
+					if ($dossier === null) {
+						throw new \RuntimeException('ZaakdossierService not available');
+					}
+
+					return $dossier;
+				}
+
+				return $this->objectService;
+			}
+		);
+
+		$user = $this->createMock(IUser::class);
+		$user->method('getDisplayName')->willReturn('Els Jansen');
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
@@ -121,6 +147,7 @@ class MergeTemplateHandlerTest extends TestCase {
 			container: $container,
 			appConfig: $appConfig,
 			caseWriter: new CaseFieldWriter(),
+			userSession: $userSession,
 			logger: new NullLogger(),
 		);
 	}//end handler()
@@ -156,15 +183,189 @@ class MergeTemplateHandlerTest extends TestCase {
 		self::assertNull($this->saved, 'A dry run must not write the case.');
 	}//end testADryRunPersistsNothing()
 
-	public function testAMissingTargetFieldFailsTheStep(): void {
-		$result = $this->handler()->handle(
-			actionConfig: ['type' => 'mergeTemplate', 'template' => 'Besluit'],
+	/**
+	 * A dossier service double recording the one upload it is asked for.
+	 *
+	 * @return ZaakdossierService The recording double.
+	 */
+	private function recordingDossier(): ZaakdossierService {
+		$dossier = $this->createMock(ZaakdossierService::class);
+		$dossier->method('uploadDocument')->willReturnCallback(
+			function (string $caseId, string $fileName, string $content, array $metadata): array {
+				$this->uploaded = [
+					'caseId' => $caseId,
+					'fileName' => $fileName,
+					'content' => $content,
+					'metadata' => $metadata,
+				];
+
+				return ['id' => 'inf-1'];
+			}
+		);
+
+		return $dossier;
+	}//end recordingDossier()
+
+	/**
+	 * REQ-BES-012: no targetField files the render in the case dossier.
+	 *
+	 * @return void
+	 */
+	public function testNoTargetFieldFilesTheRenderInTheDossier(): void {
+		$result = $this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Wij hebben uw aanvraag {{case.title}} ontvangen.',
+				'templateName' => 'Ontvangstbevestiging',
+				'documentType' => 'iot-uitgaand',
+			],
+			case: ['id' => 'case-1', 'title' => 'Kapvergunning'],
+			transitionContext: []
+		);
+
+		self::assertTrue($result->succeeded, (string)$result->error);
+		self::assertSame('inf-1', $result->data['informatieobject']);
+		self::assertSame('case-1', $this->uploaded['caseId']);
+		self::assertSame(
+			'Wij hebben uw aanvraag Kapvergunning ontvangen.',
+			$this->uploaded['content']
+		);
+		self::assertNull($this->saved, 'The case itself must not be written.');
+	}//end testNoTargetFieldFilesTheRenderInTheDossier()
+
+	/**
+	 * The filed document carries the title, direction and author the spec names.
+	 *
+	 * @return void
+	 */
+	public function testTheFiledDocumentCarriesTheSpecifiedMetadata(): void {
+		$this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste lezer',
+				'templateName' => 'Ontvangstbevestiging',
+				'documentType' => 'iot-uitgaand',
+			],
+			case: ['id' => 'case-1'],
+			transitionContext: []
+		);
+
+		self::assertSame('Ontvangstbevestiging', $this->uploaded['metadata']['title']);
+		self::assertSame('outgoing', $this->uploaded['metadata']['direction']);
+		self::assertSame('Els Jansen', $this->uploaded['metadata']['auteur']);
+		self::assertSame('ontvangstbevestiging.md', $this->uploaded['fileName']);
+	}//end testTheFiledDocumentCarriesTheSpecifiedMetadata()
+
+	/**
+	 * REQ-005: the template's documentType follows into the informatieobject.
+	 *
+	 * @return void
+	 */
+	public function testTheTemplatesDocumentTypeFollowsIntoTheDossier(): void {
+		$this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste lezer',
+				'templateName' => 'Verdagingsbrief',
+				'documentType' => 'iot-verdaging',
+			],
+			case: ['id' => 'case-1'],
+			transitionContext: []
+		);
+
+		self::assertSame(
+			'iot-verdaging',
+			$this->uploaded['metadata']['informatieobjecttype']
+		);
+	}//end testTheTemplatesDocumentTypeFollowsIntoTheDossier()
+
+	/**
+	 * A template naming a field the case does not have creates NOTHING.
+	 *
+	 * renderTemplate() blanks an unknown path, which is right for a case field
+	 * and wrong for a letter: a document with a hole where the addressee
+	 * belongs would file successfully and go out wrong.
+	 *
+	 * @return void
+	 */
+	public function testAFailedRenderLeavesTheDossierUntouched(): void {
+		$result = $this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste {{case.geadresseerde.naam}}',
+				'templateName' => 'Ontvangstbevestiging',
+				'documentType' => 'iot-uitgaand',
+			],
+			case: ['id' => 'case-1', 'title' => 'Kapvergunning'],
+			transitionContext: []
+		);
+
+		self::assertFalse($result->succeeded);
+		self::assertSame('missing_template_field:case.geadresseerde.naam', $result->error);
+		self::assertNull($this->uploaded, 'No informatieobject and no join.');
+	}//end testAFailedRenderLeavesTheDossierUntouched()
+
+	/**
+	 * A template with no document type cannot be filed, and says so.
+	 *
+	 * @return void
+	 */
+	public function testATemplateWithoutADocumentTypeCreatesNothing(): void {
+		$result = $this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste lezer',
+				'templateName' => 'Ontvangstbevestiging',
+			],
 			case: ['id' => 'case-1'],
 			transitionContext: []
 		);
 
 		self::assertFalse($result->succeeded);
-		self::assertSame('missing_target_field', $result->error);
-		self::assertNull($this->saved);
-	}//end testAMissingTargetFieldFailsTheStep()
+		self::assertSame('missing_document_type', $result->error);
+		self::assertNull($this->uploaded);
+	}//end testATemplateWithoutADocumentTypeCreatesNothing()
+
+	/**
+	 * With the dossier service unavailable, nothing is created and the step
+	 * fails loudly rather than reporting a document nobody can open.
+	 *
+	 * @return void
+	 */
+	public function testAnUnavailableDossierServiceFailsTheStep(): void {
+		$result = $this->handler()->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste lezer',
+				'templateName' => 'Ontvangstbevestiging',
+				'documentType' => 'iot-uitgaand',
+			],
+			case: ['id' => 'case-1'],
+			transitionContext: []
+		);
+
+		self::assertFalse($result->succeeded);
+		self::assertSame('dossier_service_unavailable', $result->error);
+	}//end testAnUnavailableDossierServiceFailsTheStep()
+
+	/**
+	 * A dry run still previews, and still writes nothing, on either branch.
+	 *
+	 * @return void
+	 */
+	public function testADryRunWithoutATargetFieldFilesNothing(): void {
+		$result = $this->handler($this->recordingDossier())->handle(
+			actionConfig: [
+				'type' => 'mergeTemplate',
+				'template' => 'Beste lezer',
+				'templateName' => 'Ontvangstbevestiging',
+				'documentType' => 'iot-uitgaand',
+			],
+			case: ['id' => 'case-1'],
+			transitionContext: ['dryRun' => true]
+		);
+
+		self::assertTrue($result->succeeded);
+		self::assertNull($this->uploaded);
+	}//end testADryRunWithoutATargetFieldFilesNothing()
 }//end class

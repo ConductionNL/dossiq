@@ -47,8 +47,9 @@ import { generateUrl } from '@nextcloud/router'
 import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
-import { initiatorProjection } from '../../services/initiatorSearch.js'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
+import { isCaseTypeUsable } from '../../utils/caseValidation.js'
 
 export default {
 	name: 'StartCaseWidget',
@@ -89,7 +90,23 @@ export default {
 		},
 	},
 
-	mounted() {
+	/** @spec openspec/specs/signalering-widgets/spec.md */
+	async mounted() {
+		// 🔴 THE STORES MUST BE REGISTERED BEFORE THE FETCH, OR THE WIDGET SAYS
+		// "No case types configured" ON EVERY INSTANCE.
+		//
+		// This widget mounts standalone on the Nextcloud Dashboard, in its own
+		// bundle with its own pinia, where the object store starts with an
+		// EMPTY type registry. `fetchCollection('caseType')` then throws "not
+		// registered", `fetchCaseTypes()` catches it and answers [], and the
+		// widget renders its empty state however many case types exist. The
+		// person/company picker's search and Skip's `saveObject('case')` fail
+		// the same way, so the widget could never start a case.
+		//
+		// The sibling widgets (CasesOverviewWidget, MyTasksWidget) already
+		// await this, with the same reason in their comments; this one was the
+		// one that did not.
+		await initializeStores()
 		this.fetchCaseTypes()
 	},
 
@@ -107,7 +124,13 @@ export default {
 					_limit: 50,
 					isDraft: false,
 				})
-				this.caseTypes = results || []
+				// The draft filter is the store's; whether a case type may
+				// start a case is `isCaseTypeUsable`, and asking it here rather
+				// than repeating half of it keeps one answer to that question.
+				// A version that has been superseded is published and still
+				// wrong to offer: its cases run on, new ones go on its
+				// successor.
+				this.caseTypes = (results || []).filter(isCaseTypeUsable)
 			} catch (err) {
 				console.error('[StartCaseWidget] Failed to fetch case types:', err)
 				this.caseTypes = []
@@ -132,16 +155,18 @@ export default {
 		},
 
 		/**
-		 * Create the case carrying the picked initiator projection.
+		 * Create the case carrying the picked requester.
 		 *
-		 * @param {object} initiator The unified initiator result
+		 * @param {object} initiator The requester payload (uuid + projection)
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		async onInitiatorConfirmed(initiator) {
 			const caseType = this.pendingCaseType
 			this.pendingCaseType = null
-			await this.createCase(caseType, initiatorProjection(initiator))
+			// The modal already emits the four fields the case carries, so
+			// there is nothing to map here: one write path, one shape.
+			await this.createCase(caseType, initiator || {})
 		},
 
 		/**
@@ -160,7 +185,7 @@ export default {
 		 * Create a new case of the given type and navigate to it.
 		 *
 		 * @param {object} caseType The case type to start
-		 * @param {object} extraFields Additional case fields (initiator projection)
+		 * @param {object} extraFields Additional case fields (the requester payload)
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */

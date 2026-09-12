@@ -15,8 +15,10 @@ import {
 	companyResult,
 	contactResult,
 	initiatorProjection,
+	isCurrentRequester,
 	personDisplayName,
 	personResult,
+	requesterPayload,
 	searchContacts,
 } from '../../src/services/initiatorSearch.js'
 
@@ -95,6 +97,82 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 		})
 		// No initiator picked -> no projection fields at all (case creatable without).
 		expect(initiatorProjection(null)).toEqual({})
+	})
+
+	it('reads the schema key casing the seeded rows actually carry', () => {
+		// The seeds are camelCase; these helpers were written snake_case and
+		// the mismatch never showed, because the register search could not
+		// run at all until brpPerson/kvkCompany became registered types.
+		expect(personResult({ citizenServiceNumber: '999990792' }).sourceId).toBe(
+			'999990792',
+		)
+		expect(
+			companyResult({ kvkNumber: '69599084', tradeName: 'Test EMZ Dagobert' })
+				.displayName,
+		).toBe('Test EMZ Dagobert')
+		expect(
+			personDisplayName({
+				givenNames: 'Jan',
+				namePrefix: 'de',
+				surname: 'Cuykelaer',
+			}),
+		).toBe('Jan de Cuykelaer')
+	})
+
+	it('carries the secrecy indication onto the result', () => {
+		expect(personResult({ indicatieGeheim: true }).protected).toBe(true)
+		expect(personResult({ citizenServiceNumber: '1' }).protected).toBe(false)
+	})
+
+	it('writes the uuid and the projection in one payload', () => {
+		expect(
+			requesterPayload({
+				type: 'person',
+				sourceId: '999990627',
+				displayName: 'Stephan Janssen',
+				objectId: 'uuid-1',
+			}),
+		).toEqual({
+			requester: 'uuid-1',
+			initiatorType: 'person',
+			initiatorSourceId: '999990627',
+			initiatorDisplayName: 'Stephan Janssen',
+		})
+		// A contact has no register row, so the canonical reference stays
+		// empty and only the projection is written.
+		expect(
+			requesterPayload({
+				type: 'contact',
+				sourceId: 'uid-9',
+				displayName: 'Anna de Wit',
+				objectId: null,
+			}).requester,
+		).toBe('')
+		expect(requesterPayload(null)).toEqual({})
+	})
+
+	it('recognises the requester already on the case', () => {
+		const result = {
+			type: 'person',
+			sourceId: '999990627',
+			displayName: 'Stephan Janssen',
+			objectId: 'uuid-1',
+		}
+		expect(isCurrentRequester('uuid-1', result)).toBe(true)
+		expect(isCurrentRequester('uuid-2', result)).toBe(false)
+		expect(
+			isCurrentRequester(
+				{ initiatorType: 'person', initiatorSourceId: '999990627' },
+				result,
+			),
+		).toBe(true)
+		expect(
+			isCurrentRequester(
+				{ initiatorType: 'company', initiatorSourceId: '999990627' },
+				result,
+			),
+		).toBe(false)
+		expect(isCurrentRequester(null, result)).toBe(false)
 	})
 
 	it('searches contacts via the core contactsmenu endpoint', async () => {

@@ -80,7 +80,7 @@ class WozController extends Controller {
 	 *   - postcode + huisnummer (string, string): Dutch address,
 	 *     optionally with huisletter / huisnummertoevoeging
 	 *
-	 * @return JSONResponse {lookupStatus, wozObject, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, wozObject, dormant and extras.
 	 *
 	 * @NoAdminRequired
 	 *
@@ -180,7 +180,7 @@ class WozController extends Controller {
 	 *
 	 * @param string $wozobjectnummer WOZ object number.
 	 *
-	 * @return JSONResponse {lookupStatus, wozObject, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, wozObject, dormant and extras.
 	 *
 	 * @NoAdminRequired
 	 *

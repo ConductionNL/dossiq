@@ -8,7 +8,7 @@ retrofit_extensions:
 
 @e2e exclude Workflow template is a JSON data file imported via backend; no dedicated Playwright UI test surface.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Omgevingsvergunning workflow template
 
@@ -79,33 +79,23 @@ The system SHALL provide pre-built workflow templates for Handhavingszaak coveri
 | `regulier` | Handhavingstraject | Awb 5:24 and the LHS | Announce, hear the offender, decide, run the recovery period, re-inspect. The default route. |
 | `spoedeisend` | Spoedig herstel (Awb 5:31) | Awb 5:31 | Act on the spot, write the decision afterwards. |
 
-Neither route SHALL deprecate the other. `regulier` SHALL be the case type's default route, because Awb 5:31 is the exception in law: acting first is what you do when the ordinary route is too slow. A route is defined by `workflow-variants`; it is not a case type, and it is not workflow inheritance.
+Neither route SHALL deprecate the other. `regulier` SHALL be the case type's default route, because Awb 5:31 is the exception in law: acting first is what you do when the ordinary route is too slow.
 
-A catalogue entry sharing a case type with another SHALL declare a `variant`, and the variants on one case type SHALL be distinct. An entry SHALL still name every entry it shares a case type with in `_sharesItsCaseTypeWith`. A third enforcement template can therefore land, and it has to say which route it is.
-
-**Feature tier**: V1
-**ZGW mapping**: Zaaktype "Handhavingszaak", StatusType per enforcement phase
-**CMMN**: CasePlanModel with EventListener (begunstigingstermijn) and HumanTask (hercontrole)
+A catalogue entry sharing a case type with another SHALL declare a `variant`, and the variants on one case type SHALL be distinct. An entry SHALL still name every entry it shares a case type with. A third enforcement template can therefore land, and it has to say which route it is, which is a stronger guarantee than refusing the pairing outright.
 
 #### Scenario: Import Handhavingszaak workflow
 
 - **WHEN** the beheerder imports the "Handhavingszaak" workflow template
 - **THEN** the system SHALL create a workflowTemplate with the following steps:
-  1. Constatering (initial) - action: link to source inspection rapport
-  2. Vooraankondiging - action: generate vooraankondigingsbrief, set zienswijzetermijn
-  3. Zienswijze - guard: zienswijzetermijn expired or zienswijze received
-  4. Handhavingsbesluit - role guard: mandated beslisser, checklist guard: LHS matrix classification completed
-  5. Begunstigingstermijn - timer guard: begunstigingstermijn days elapsed
-  6. Hercontrole - checklist guard: hercontrole inspection completed
-  7. Afgehandeld (final) - conditional: overtreding resolved OR dwangsom verbeurd
+  1. Constatering (initial), action: link to source inspection rapport
+  2. Vooraankondiging, action: generate vooraankondigingsbrief, set zienswijzetermijn
+  3. Zienswijze, guard: zienswijzetermijn expired or zienswijze received
+  4. Handhavingsbesluit, role guard: mandated beslisser, checklist guard: LHS matrix classification completed
+  5. Begunstigingstermijn, timer guard: begunstigingstermijn days elapsed
+  6. Hercontrole, checklist guard: hercontrole inspection completed
+  7. Afgehandeld (final), conditional: overtreding resolved OR dwangsom verbeurd
 - **THEN** the Begunstigingstermijn step SHALL automatically create a follow-up task when the timer expires
-- **THEN** transitions from Hercontrole SHALL branch: "Overtreding opgeheven" -> Afgehandeld, "Overtreding voortdurend" -> next enforcement cycle
-
-#### Scenario: Enforcement escalation path
-
-- **WHEN** the hercontrole shows the overtreding persists after last onder dwangsom
-- **THEN** the workflow SHALL support escalation transitions: last onder dwangsom -> verbeuring -> bestuursdwang
-- **THEN** each escalation step SHALL require a new handhavingsactie record with updated ernst/gedrag classification
+- **THEN** transitions from Hercontrole SHALL branch: "Overtreding opgeheven" to Afgehandeld, "Overtreding voortdurend" to the next enforcement cycle
 
 #### Scenario: Both enforcement routes land active on a fresh install
 
@@ -129,6 +119,12 @@ A catalogue entry sharing a case type with another SHALL declare a `variant`, an
 - **AND** the two variants SHALL differ
 - **AND** each entry SHALL name the other in `_sharesItsCaseTypeWith`
 
+#### Scenario: Enforcement escalation path
+
+- **WHEN** the hercontrole shows the overtreding persists after last onder dwangsom
+- **THEN** the workflow SHALL support escalation transitions: last onder dwangsom, verbeuring, bestuursdwang
+- **THEN** each escalation step SHALL require a new handhavingsactie record with updated ernst/gedrag classification
+
 #### Notes: how the two enforcement routes stopped deprecating each other
 
 The catalogue has always shipped two templates against `handhavingszaak`:
@@ -147,6 +143,34 @@ The rule is now one published definition per `(case type, route)`, and these two
 entries declare different routes. `workflowTemplate.parentWorkflow` is still not
 that mechanism: it is Enterprise tier, unimplemented, and describes a hierarchy
 BETWEEN case types. See `openspec/specs/workflow-variants/spec.md`.
+
+### REQ-001: SeedVthWorkflowTemplates repair step SHALL idempotently seed the VTH workflow catalog from bundled JSON files
+
+`OCA\Dossiq\Repair\SeedVthWorkflowTemplates` SHALL implement `IRepairStep` and SHALL run on every app enable / upgrade, with the behaviour the existing requirement describes: graceful no-ops when OpenRegister or the catalog directory is missing, per-file error containment, a per-entry summary, and idempotency keyed on case type plus title.
+
+It SHALL additionally:
+- pass each catalogue entry's `variant` to the definition it creates;
+- set the case type's default route from the entry declaring `isDefaultVariant`, rather than letting file order decide it;
+- report the route each entry landed on;
+- report a publish as having displaced something only when it displaced a previous version **of the same route**;
+- name a catalogue entry it finds `deprecated` and say how to bring it back, without republishing it.
+
+An entry found deprecated SHALL NOT be republished by the seeder. A row is deprecated whether the old rule retired it or an administrator did, and the stored data cannot tell those apart.
+
+#### Scenario: The summary names the route
+- **WHEN** the seed publishes a catalogue entry that declares a variant
+- **THEN** the summary line for that entry SHALL name the route it landed on
+
+#### Scenario: A publish that displaces nothing says nothing about deprecation
+- **GIVEN** a case type whose only active definition is on another route
+- **WHEN** a new route is seeded and published for it
+- **THEN** the summary line SHALL NOT report a deprecation
+
+#### Scenario: A deprecated entry is reported, not resurrected
+- **GIVEN** an instance where a catalogue entry sits at `deprecated` from an earlier install
+- **WHEN** the seed runs
+- **THEN** the entry SHALL still be deprecated afterwards
+- **AND** the summary SHALL name it, its route, and how an administrator brings it back
 
 ### Requirement: VTH workflow template library
 
@@ -239,7 +263,7 @@ The step SHALL additionally:
 #### Notes
 - The 9 private helpers (`processCatalogFile`, `resolveCaseTypeId`, `isAlreadySeeded`, `buildStatusMap`, `resolveSteps`, `resolveTransitions`, `deterministicId`, `extractFirstId`, `normalizeRow`) are not separately observable — they support the single `run()` contract above. Splitting them into separate REQs would inflate the spec without adding testable surface.
 - `crossLink` is reserved for templates that reference an unresolved caseType; the seeder logs the reference and counts it but does not block the run.
-## Requirements
+
 ### Requirement: VTH workflow template activation service
 
 The system SHALL provide a `VTHWorkflowService` that loads and activates the three VTH workflow templates declared by the config-foundation member, creating each template's statuses and roles, and SHALL be idempotent on re-activation.
@@ -260,4 +284,3 @@ The system SHALL provide a `VTHWorkflowService` that loads and activates the thr
 
 - **WHEN** a template that has already been activated is activated again
 - **THEN** the service SHALL NOT create duplicate statuses or roles
-

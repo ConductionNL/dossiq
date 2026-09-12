@@ -28,7 +28,9 @@
  *    dialog could not be submitted at all.
  *  - `BeschikkingComposerDialog` renamed its field to `rationale` and left the
  *    textarea writing to `motivering`, so typing a motivering did nothing and
- *    the composed decision went out without one.
+ *    the composed decision went out without one. The dialog is now the
+ *    Generate document picker (documents-on-the-case), and the same shape of
+ *    drift is guarded on the field its submit reads: `templateId`.
  *
  * The `@nextcloud/vue` components are stubbed, for the reason
  * `workflowEditorSmoke.spec.js` gives at length: several chunks deep they pull
@@ -40,7 +42,7 @@
  * @spec exclude regression guard for template/script name drift
  */
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import BeschikkingComposerDialog from '../../src/dialogs/BeschikkingComposerDialog.vue'
@@ -100,6 +102,7 @@ vi.mock('@nextcloud/vue', async () => {
 			},
 		},
 		NcDialog: box('NcDialog'),
+		NcLoadingIcon: box('NcLoadingIcon'),
 		NcNoteCard: box('NcNoteCard'),
 		NcSelect: field('NcSelect'),
 		NcTextArea: field('NcTextArea'),
@@ -173,6 +176,7 @@ const stubs = {
 			)
 		},
 	},
+	NcLoadingIcon: passthrough('NcLoadingIcon'),
 	NcNoteCard: passthrough('NcNoteCard'),
 	NcSelect: control('NcSelect'),
 	NcTextField: control('NcTextField'),
@@ -318,22 +322,39 @@ describe('SamenwerkverzoekDialog', () => {
 })
 
 describe('BeschikkingComposerDialog', () => {
-	it('writes the motivering into the field the composer actually submits', async () => {
+	it('writes the picked template into the field the submit actually reads', async () => {
 		const wrapper = mount(BeschikkingComposerDialog, {
-			props: { open: true, caseId: 'case-1', templateOptions: [] },
-			global: { stubs },
+			props: { open: true, caseId: 'case-1' },
+			global: { stubs, mocks: { $route: { params: { id: 'case-1' } } } },
 		})
+		// The dialog fetches the library the moment it opens, and the picker
+		// renders only once that settles.
+		await flushPromises()
 
-		const textarea = wrapper.findComponent({ name: 'NcTextArea' })
-		expect(textarea.exists()).toBe(true)
+		const picker = wrapper.findComponent({ name: 'NcSelect' })
+		expect(picker.exists()).toBe(true)
 
-		await textarea.vm.$emit(
-			'update:modelValue',
-			'Strijd met het bestemmingsplan.',
-		)
+		await picker.vm.$emit('update:modelValue', 'ontvangstbevestiging')
 
-		// The handler used to assign to `motivering`, a name nothing declares.
-		// `rationale` stayed empty and onCompose() sent no rationale at all.
-		expect(wrapper.vm.rationale).toBe('Strijd met het bestemmingsplan.')
+		// `onGenerate()` reads `templateId` and refuses when it is empty, so a
+		// picker bound to any other name leaves the Generate button inert with
+		// nothing on screen to say why.
+		expect(wrapper.vm.templateId).toBe('ontvangstbevestiging')
+	})
+
+	it('keeps Generate disabled until a template is picked', async () => {
+		const wrapper = mount(BeschikkingComposerDialog, {
+			props: { open: true, caseId: 'case-1' },
+			global: { stubs, mocks: { $route: { params: { id: 'case-1' } } } },
+		})
+		await flushPromises()
+
+		const generate = () =>
+			wrapper.findAll('button.NcButton').find((b) => b.text() === 'Generate')
+
+		expect(generate().attributes('disabled')).toBeDefined()
+
+		await wrapper.setData({ templateId: 'ontvangstbevestiging' })
+		expect(generate().attributes('disabled')).toBeUndefined()
 	})
 })

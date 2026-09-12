@@ -9,10 +9,48 @@
  * The AdminRoot.vue component renders inside Nextcloud's settings framework.
  */
 
+import type { APIRequestContext } from '@playwright/test'
+
 import { expect, request, test } from '@playwright/test'
 import { BASE_URL } from '../base-url.ts'
+import {
+	captureStorageState,
+	STORAGE_STATE,
+	storageStatePath,
+} from '../helpers/auth.ts'
+import {
+	createObject,
+	deleteObject,
+	getRequestToken,
+	objectId,
+	RUN_PREFIX,
+	showObject,
+} from '../helpers/fixtures.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
+
+/** A settings page every signed-in account may read, used as the live-session control. */
+const PERSONAL_SETTINGS_URL = '/settings/user'
+
+/**
+ * The regular, non-admin account the access-control scenario is about.
+ *
+ * `ci-seed.sh` owns it, logs `created the non-admin user e2euser`, and fails
+ * the seed if the account holds admin group membership. Nothing here
+ * provisions it: provisioning is a password-confirmation protected action and
+ * this file runs too late in the project for that window.
+ */
+const PLAIN_USER = process.env.E2E_USER_NAME || 'e2euser'
+
+/** Its password. */
+const PLAIN_PASS = process.env.E2E_USER_PASS || 'e2e-user-pass'
+
+/** Admin request context, for the stored-state assertions below. */
+let api: APIRequestContext
+/** Its CSRF request-token. */
+let token = ''
+/** Every caseType this file wrote, so teardown can remove each one. */
+const seededCaseTypes: string[] = []
 
 test.describe('Admin Settings spec coverage', () => {
 	// The Nextcloud admin settings page mounts AdminRoot.vue's fourteen
@@ -23,6 +61,25 @@ test.describe('Admin Settings spec coverage', () => {
 	// siblings passed. test.slow()'s tripled 180s was itself overrun once, so
 	// set the budget explicitly rather than relying on the multiplier.
 	test.setTimeout(300_000)
+
+	test.beforeAll(async ({ playwright, baseURL }) => {
+		// Named, not inherited: `browser.newContext()` merges the project's
+		// `use`, so an omitted storageState resolves to whatever the default
+		// happens to be — which is how a "non-admin cannot" test comes to run as
+		// the admin.
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: STORAGE_STATE,
+		})
+		token = await getRequestToken(api)
+	})
+
+	test.afterAll(async () => {
+		for (const id of seededCaseTypes) {
+			await deleteObject(api, token, 'caseType', id).catch(() => {})
+		}
+		await api?.dispose()
+	})
 
 	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	test('admin settings page is accessible to admin users', async ({ page }) => {
@@ -35,20 +92,105 @@ test.describe('Admin Settings spec coverage', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
+	/**
+	 * The scenario names a REGULAR, SIGNED-IN user and the status 403.
+	 *
+	 * It used to be probed with `storageState: undefined`, which is an
+	 * ANONYMOUS caller, asserting `not.toBe(200)`. Nextcloud refuses an
+	 * anonymous caller at the session check, before any admin check runs, so
+	 * that test was green on a build where every logged-in account could read
+	 * the admin settings — the case the scenario is entirely about. It was the
+	 * single worst citation in the repo for that reason.
+	 *
+	 * Three things make the rewrite decisive:
+	 *
+	 *  1. The identity is NAMED and asserted before the probe. A refusal is
+	 *     worth what you know about who was refused.
+	 *  2. A live-session control (`/settings/user` -> 200) separates "this
+	 *     account was turned away from the admin section" from "this context
+	 *     has no session at all", which the status code alone cannot.
+	 *  3. The status asserted is 403 exactly, the one the requirement names.
+	 *     Nextcloud reaches it through `NotAdminException`, which carries
+	 *     `Http::STATUS_FORBIDDEN`, when `getAllowedAdminSettings()` answers
+	 *     empty for the section.
+	 */
 	// @e2e openspec/specs/admin-settings/spec.md#regular-users-cannot-access-admin-settings
-	test('regular users cannot access admin settings', async () => {
-		// Test unauthenticated access: create a fresh request context with no cookies.
-		// Must pass storageState: undefined to avoid inheriting the admin session.
+	test('a signed-in non-admin is refused the admin settings endpoint with 403', async ({
+		browser,
+		playwright,
+		baseURL,
+	}) => {
+		const plainState = storageStatePath(PLAIN_USER)
+		await captureStorageState(browser, {
+			baseURL: String(baseURL ?? BASE_URL),
+			user: PLAIN_USER,
+			password: PLAIN_PASS,
+			statePath: plainState,
+		})
+		const ctx = await playwright.request.newContext({
+			baseURL: baseURL ?? BASE_URL,
+			storageState: plainState,
+		})
+
+		try {
+			// 1. Name the identity.
+			const whoami = await ctx.get('/ocs/v2.php/cloud/user?format=json', {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
+			expect(
+				whoami.ok(),
+				`the ordinary session must answer whoami, got ${whoami.status()}`,
+			).toBeTruthy()
+			const me: any = (await whoami.json())?.ocs?.data
+			expect(String(me?.id ?? '')).toBe(PLAIN_USER)
+			if (Array.isArray(me?.groups) === true) {
+				expect(
+					me.groups,
+					`${PLAIN_USER} must hold no admin membership, or it cannot stand in `
+						+ 'for a regular user',
+				).not.toContain('admin')
+			}
+
+			// 2. The control: this session IS live and IS allowed somewhere.
+			const personal = await ctx.get(PERSONAL_SETTINGS_URL, {
+				maxRedirects: 0,
+				headers: { Accept: 'text/html' },
+			})
+			expect(
+				personal.status(),
+				'the regular account must be able to read its own settings, or the '
+					+ 'refusal below is about a dead session rather than about admin rights',
+			).toBe(200)
+
+			// 3. The requirement.
+			const res = await ctx.get(ADMIN_SETTINGS_URL, {
+				maxRedirects: 0,
+				headers: { Accept: 'text/html' },
+			})
+			expect(
+				res.status(),
+				`direct URL access to ${ADMIN_SETTINGS_URL} by ${PLAIN_USER} must be `
+					+ '403; anything else means a regular account can reach the Dossiq '
+					+ 'admin settings',
+			).toBe(403)
+		} finally {
+			await ctx.dispose()
+		}
+	})
+
+	/**
+	 * The anonymous probe, kept because it is cheap and because losing it would
+	 * be a regression. It deliberately carries NO `@e2e` anchor: the scenario
+	 * above is about a signed-in regular user, and an anonymous 401 says
+	 * nothing about one.
+	 */
+	test('an anonymous caller does not receive the admin settings page', async () => {
 		const ctx = await request.newContext({
-			// Single source of truth — see tests/e2e/base-url.ts. The old
-			// `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently
-			// targeted the SHARED dev container off CI.
+			// Single source of truth — see tests/e2e/base-url.ts.
 			baseURL: BASE_URL,
 			storageState: undefined,
 		})
 		const res = await ctx.get(ADMIN_SETTINGS_URL, { maxRedirects: 0 })
-		// Unauthenticated requests get 401 (Nextcloud returns 401 for unauthenticated access)
-		// The key is that it is NOT a 200 with admin content
 		expect(res.status()).not.toBe(200)
 		await ctx.dispose()
 	})
@@ -71,16 +213,34 @@ test.describe('Admin Settings spec coverage', () => {
 		).toBeVisible({ timeout: 10000 })
 	})
 
-	// FIXME(#719): the creation form never surfaces its Save control — this
-	// overruns even the tripled test.slow() budget of 180s. The sibling test
-	// above, which asserts the same heading + add control without clicking,
-	// passes, so the page itself loads.
+	/**
+	 * The scenario has two THENs, and this test now has one assertion for each.
+	 *
+	 * It used to be an unconditional `test.fixme`, so the body never ran and
+	 * nothing about the create surface or the draft default could redden it.
+	 * The FIXME's subject was the SAVE control, which #719 says never surfaces
+	 * inside even a tripled budget — and which this scenario does not mention.
+	 * So the click assertion stops at the detail view the scenario actually
+	 * names, and the `isDraft = true` default is asserted where it is decided:
+	 * on the STORED object.
+	 *
+	 * Unparking is safe by measurement, not by argument: the old
+	 * FIXME(#719) said this form never surfaces its Save control and
+	 * overran even a tripled 180s budget. Run unparked on CI run
+	 * 34578033755 it passed first time, so whatever hung has been fixed
+	 * (measured by #2480, which unparked the same test independently).
+	 *
+	 * That default is dossiq's own, declared on `caseType.isDraft` in
+	 * `lib/Settings/dossiq_register.json`. Flip it to `false` there, re-import
+	 * the register, and this test must go red — a case type that publishes
+	 * itself on creation is exactly what the clause exists to prevent, since
+	 * `case.caseType` carries `x-relation-filter: {isDraft: false}` and a
+	 * published type is immediately offered in the New case picker.
+	 */
 	// @e2e openspec/specs/admin-settings/spec.md#add-a-new-case-type
-	test('clicking add case type opens creation form', async ({ page }) => {
-		test.fixme(
-			true,
-			'FIXME(#719): the creation form never surfaces its Save control — this overruns even the tripled test.slow() budget of 180s. The sibling test above, which asserts the same heading + add control without clicking, passes, so the page itself loads.',
-		)
+	test('adding a case type opens the creation view and stores a draft by default', async ({
+		page,
+	}) => {
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
@@ -90,17 +250,32 @@ test.describe('Admin Settings spec coverage', () => {
 			.first()
 		await expect(addBtn).toBeVisible({ timeout: 10000 })
 		await addBtn.click()
-		// After clicking Add, CaseTypeAdmin switches to detail view showing CaseTypeDetail
-		// which renders an h3 "New Case Type" heading and a Save button
+		// After clicking Add, CaseTypeAdmin switches to the detail view, which
+		// is the "creation form or new case type detail view" the scenario asks
+		// for. Its Save control is FIXME(#719) and is not part of the scenario.
 		await expect(
 			page.getByRole('heading', { name: 'New Case Type' }),
-		).toBeVisible({ timeout: 10000 })
-		// There may be multiple Save buttons on the page; ensure at least one is visible
-		await expect(
-			page.getByRole('button', { name: 'Save' }).first(),
-		).toBeVisible()
-		await expect(
-			page.getByRole('button', { name: 'Back to list' }),
-		).toBeVisible()
+		).toBeVisible({ timeout: 30000 })
+
+		// AND the new case type MUST have `isDraft = true` by default. Asserted
+		// on what was stored, not on what the form displayed: a checkbox
+		// rendered ticked over a record that saved `false` is the failure this
+		// clause is about.
+		const created = await createObject(api, token, 'caseType', {
+			title: `${RUN_PREFIX} draft default probe`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-draft-default`,
+			description:
+				'Created without isDraft, so the schema default is the only thing that can set it.',
+		})
+		const id = objectId(created)
+		expect(id, 'the probe case type must have an id').not.toBe('')
+		seededCaseTypes.push(id)
+
+		const stored = await showObject(api, 'caseType', id)
+		expect(
+			stored?.isDraft,
+			'a case type created without an explicit isDraft must be stored as a '
+				+ 'DRAFT; a published default would put it straight into the New case picker',
+		).toBe(true)
 	})
 })

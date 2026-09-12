@@ -63,10 +63,18 @@ class DossiqMergeTemplateNode extends DossiqActionNode {
 	/**
 	 * Config keys without which this action cannot run.
 	 *
+	 * `targetField` is NOT one of them any more. A node configured without it
+	 * files the rendered template in the case dossier as an informatieobject
+	 * instead of writing it into a case field, which is what the Generate
+	 * document action on the case page does. Requiring the key here would
+	 * refuse that configuration before the handler ever saw it.
+	 *
 	 * @return string[] The required key names.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	protected function requiredConfigKeys(): array {
-		return ['templateSlug', 'targetField'];
+		return ['templateSlug'];
 	}//end requiredConfigKeys()
 
 	/**

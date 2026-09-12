@@ -19,12 +19,17 @@ test.describe('Sidebar Navigation', () => {
 		// removed when the "Cases" GROUP IA was reverted, so it matched zero
 		// links and the assertion could only ever fail.
 		//
-		// "Dashboard" is now the ONLY top-level visible leaf. dossiq#1646
-		// gathered the work surfaces under a "My work" GROUP, and "Cases" moved
-		// into it as "All cases" — so it is rendered but `display:none` until
-		// the group is expanded, and is asserted with the other collapsed
-		// leaves below. The rest render inside collapsed groups too.
-		for (const label of ['Dashboard']) {
+		// "Dashboard" was the only top-level visible leaf after dossiq#1646
+		// gathered the work surfaces under a "My work" GROUP and "Cases" moved
+		// into it as "All cases" — rendered but `display:none` until the group
+		// is expanded, and asserted with the other collapsed leaves below.
+		//
+		// `contacts-domain` adds the second: Contacts is a top-level DOMAIN,
+		// not a work surface, so it is a leaf beside Dashboard rather than a
+		// sixth entry inside the group. It is asserted VISIBLE for that
+		// reason — an entry that ends up inside a collapsed group is hidden,
+		// and that failure is exactly the one this line exists to catch.
+		for (const label of ['Dashboard', 'Contacts']) {
 			await expect(
 				nav.getByRole('link', { name: label, exact: true }),
 			).toBeVisible()

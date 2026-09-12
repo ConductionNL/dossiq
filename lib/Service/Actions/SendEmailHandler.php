@@ -4,8 +4,10 @@
  * Dossiq SendEmailHandler
  *
  * Renders subject + body templates against the case and (in live mode)
- * dispatches the email via NotificatieService. In dry-run mode it returns
- * the rendered preview without contacting the mail subsystem.
+ * dispatches the email via CaseEmailService, the app's only outbound mail
+ * path: it owns the IMailer message, the from-address, the recipient policy
+ * and the record of the sent mail on the case. In dry-run mode it returns the
+ * rendered preview without contacting the mail subsystem.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Actions
@@ -29,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseEmailService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -43,10 +46,13 @@ class SendEmailHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor for SendEmailHandler.
 	 *
-	 * @param ContainerInterface $container DI container — used to resolve
-	 *                                      NotificatieService lazily (it is
-	 *                                      not always available, e.g. during
-	 *                                      dry-run unit tests).
+	 * @param ContainerInterface $container DI container, used to resolve
+	 *                                      CaseEmailService lazily. This
+	 *                                      handler is built whenever the Flow
+	 *                                      node catalogue is read, and a
+	 *                                      constructor dependency would drag
+	 *                                      the mailer and its repositories
+	 *                                      into every catalogue read.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
@@ -108,14 +114,27 @@ class SendEmailHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'missing_recipient', data: $preview);
 			}
 
-			$notification = $this->resolveNotificationService();
-			if ($notification === null) {
-				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			if ($caseId === '') {
+				// CaseEmailService needs the case to resolve the from-address,
+				// the recipient policy and the record of the send. Without an
+				// id there is nothing to send from.
+				return new ActionResult(succeeded: false, error: 'missing_case_id', data: $preview);
 			}
 
-			// @phpstan-ignore-next-line — NotificatieService::sendEmail is
-			// resolved lazily; signature is owned by the service itself.
-			$notification->sendEmail($recipient, $subject, $body);
+			$emailService = $this->resolveEmailService();
+			if ($emailService === null) {
+				return new ActionResult(succeeded: false, error: 'email_service_unavailable', data: $preview);
+			}
+
+			$sent = $emailService->sendEmail(
+				caseId: $caseId,
+				to: $recipient,
+				subject: $subject,
+				body: $body,
+			);
+
+			$preview['messageId'] = (string)($sent['messageId'] ?? '');
 
 			return new ActionResult(succeeded: true, data: $preview);
 		} catch (\Throwable $e) {
@@ -132,15 +151,27 @@ class SendEmailHandler implements ActionHandlerInterface {
 	}//end handle()
 
 	/**
-	 * Resolve NotificatieService from the container without a hard dep.
+	 * Resolve CaseEmailService lazily, and typed.
 	 *
-	 * @return object|null
+	 * Typed on purpose. The soft binding this replaced called
+	 * `NotificatieService::sendEmail()`, a method that has never existed, and
+	 * a container that answers `object` let that survive every static check.
+	 * An `instanceof` narrows the return so the call below is analysed against
+	 * the real signature.
+	 *
+	 * @return CaseEmailService|null The service, or null when unavailable.
 	 */
-	private function resolveNotificationService(): ?object {
+	private function resolveEmailService(): ?CaseEmailService {
 		try {
-			return $this->container->get('OCA\Dossiq\Service\NotificatieService');
+			$service = $this->container->get(CaseEmailService::class);
 		} catch (\Throwable $e) {
 			return null;
 		}
-	}//end resolveNotificatieService()
+
+		if ($service instanceof CaseEmailService) {
+			return $service;
+		}
+
+		return null;
+	}//end resolveEmailService()
 }//end class

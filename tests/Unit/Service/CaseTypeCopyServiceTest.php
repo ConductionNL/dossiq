@@ -29,7 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -38,6 +40,9 @@ use Psr\Log\LoggerInterface;
  * Unit tests for CaseTypeCopyService.
  *
  * @covers \OCA\Dossiq\Service\CaseTypeCopyService
+ *
+ * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  */
 class CaseTypeCopyServiceTest extends TestCase {
 
@@ -228,6 +233,8 @@ class CaseTypeCopyServiceTest extends TestCase {
 					'workflowDefinition' => 'workflow-v3',
 					'relatedCaseTypes' => ['ct-9'],
 					'subCaseTypes' => ['ct-8'],
+					'initialStatus' => 'st-1',
+					'version' => 2,
 				],
 			],
 			'st-1' => [
@@ -277,7 +284,12 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(settingsService: $this->settingsService, logger: $this->logger);
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
 		$copy = $service->copy('ct-1');
 
 		$this->assertNotNull($copy);
@@ -326,7 +338,136 @@ class CaseTypeCopyServiceTest extends TestCase {
 		// The source's own status types are unchanged (still point at ct-1).
 		$this->assertSame('ct-1', $store['st-1']['data']['caseType']);
 		$this->assertSame('ct-1', $store['st-2']['data']['caseType']);
+
+		// A duplicate starts its own chain rather than reading as version 2 of
+		// the type it was copied from.
+		$this->assertSame(1, $store[$newId]['data']['version']);
+		$this->assertNull($store[$newId]['data']['previousVersion']);
+		$this->assertNull($store[$newId]['data']['supersededBy']);
+
+		// 🔴 The copy's initial status is its OWN copy of that status, not the
+		// source's row. Left unrepointed, the copy files new cases into a
+		// status belonging to another case type, and publish validation refuses
+		// it with "pick the status a new case starts in" on a page that already
+		// shows one.
+		$initial = $store[$newId]['data']['initialStatus'];
+		$this->assertNotSame('st-1', $initial);
+		$this->assertSame($newId, $store[$initial]['data']['caseType']);
+		$this->assertSame('Received', $store[$initial]['data']['name']);
 	}//end testCopyDeepCopiesCaseTypeAndChildren()
+
+	/**
+	 * newVersion() keeps the identity and starts a draft one version on.
+	 *
+	 * @return void
+	 */
+	public function testNewVersionKeepsIdentityAndChainsBack(): void {
+		$store = $this->seedStore();
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$newId = $next['id'];
+		$this->assertNotSame('ct-1', $newId);
+
+		// The same case type, later on: title and identifier are what make two
+		// rows versions of ONE zaaktype rather than two unrelated ones.
+		$this->assertSame('Omgevingsvergunning regulier', $next['title']);
+		$this->assertSame('CT-1000', $next['identifier']);
+		$this->assertSame(3, $next['version']);
+		$this->assertSame('ct-1', $next['previousVersion']);
+		$this->assertNull($next['supersededBy']);
+		$this->assertTrue($next['isDraft']);
+
+		// A version is the same type, so it keeps its links to related and sub
+		// case types. A duplicate drops them; this is the difference.
+		$this->assertSame(['ct-9'], $next['relatedCaseTypes']);
+		$this->assertSame(['ct-8'], $next['subCaseTypes']);
+	}//end testNewVersionKeepsIdentityAndChainsBack()
+
+	/**
+	 * 🔴 newVersion() leaves the running cases' version completely alone.
+	 *
+	 * This is the whole reason a version is a new object. A case carries
+	 * `caseType` as the id of one specific row and `status` as a row owned by
+	 * it, so the reference the case already holds IS the pin, and nothing has
+	 * to be written to the case at all. If the source were edited in place
+	 * instead, every running case would see the change immediately.
+	 *
+	 * @return void
+	 */
+	public function testNewVersionLeavesTheRunningVersionUntouched(): void {
+		$store = $this->seedStore();
+		$before = $store['ct-1']['data'];
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+		$service->newVersion('ct-1');
+
+		$this->assertSame($before, $store['ct-1']['data']);
+		$this->assertFalse($store['ct-1']['data']['isDraft']);
+		$this->assertArrayNotHasKey('supersededBy', $store['ct-1']['data']);
+		$this->assertSame('ct-1', $store['st-1']['data']['caseType']);
+		$this->assertSame('st-1', $store['ct-1']['data']['initialStatus']);
+	}//end testNewVersionLeavesTheRunningVersionUntouched()
+
+	/**
+	 * A case type saved before the version property existed is version one,
+	 * so its next version is two rather than one.
+	 *
+	 * @return void
+	 */
+	public function testNewVersionOfAnUnversionedCaseTypeIsTwo(): void {
+		$store = $this->seedStore();
+		unset($store['ct-1']['data']['version']);
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$this->assertSame(2, $next['version']);
+	}//end testNewVersionOfAnUnversionedCaseTypeIsTwo()
+
+	/**
+	 * newVersion() returns null when the source case type does not resolve.
+	 *
+	 * @return void
+	 */
+	public function testNewVersionReturnsNullWhenSourceMissing(): void {
+		$store = [];
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$this->assertNull($service->newVersion('does-not-exist'));
+	}//end testNewVersionReturnsNullWhenSourceMissing()
 
 	/**
 	 * copy() returns null when the source case type does not resolve.
@@ -338,10 +479,262 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(settingsService: $this->settingsService, logger: $this->logger);
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
 
 		$this->assertNull($service->copy('does-not-exist'));
 	}//end testCopyReturnsNullWhenSourceMissing()
+
+	/**
+	 * Nothing is attempted when OpenRegister is not there.
+	 *
+	 * Both gestures share one path, so both have to refuse: writing half a case
+	 * type and answering an id nothing stands behind is worse than answering
+	 * nothing, because the page navigates to whatever comes back.
+	 *
+	 * @return void
+	 */
+	public function testBothGesturesRefuseWithoutAnObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$this->assertNull($service->copy('ct-1'));
+		$this->assertNull($service->newVersion('ct-1'));
+		$this->assertFalse($service->deleteDraft('ct-1')['ok']);
+	}//end testBothGesturesRefuseWithoutAnObjectService()
+
+	/**
+	 * A store that refuses the write answers null, not a half-made type.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteAnswersNull(): void {
+		$store = $this->seedStore();
+		$objectService = new class($store) {
+			/**
+			 * @param array<string, array{__schema: string, data: array<string, mixed>}> $store Store reference.
+			 */
+			public function __construct(
+				private array &$store,
+			) {
+			}//end __construct()
+
+			/**
+			 * @param string $id Object id.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(string $id, $register = null, $schema = null): ?array {
+				$entry = ($this->store[$id] ?? null);
+				if ($entry === null) {
+					return null;
+				}
+
+				return $entry['data'];
+			}//end find()
+
+			/**
+			 * @param array<string, mixed> $object Object payload.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return object
+			 */
+			public function saveObject(array $object, $register = null, $schema = null): object {
+				throw new \RuntimeException('unwritable');
+			}//end saveObject()
+		};
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$this->assertNull($service->copy('ct-1'));
+		$this->assertNull($service->newVersion('ct-1'));
+	}//end testAFailedWriteAnswersNull()
+
+	/**
+	 * A child schema that fails to copy does not abort the rest.
+	 *
+	 * The case type is already written by then, and losing every remaining
+	 * child over one bad row would leave a type that looks complete and is not.
+	 *
+	 * @return void
+	 */
+	public function testAChildThatFailsToCopyDoesNotAbortTheRest(): void {
+		$store = $this->seedStore();
+		$objectService = new class($store) {
+			/**
+			 * @param array<string, array{__schema: string, data: array<string, mixed>}> $store Store reference.
+			 */
+			public function __construct(
+				private array &$store,
+			) {
+			}//end __construct()
+
+			/**
+			 * @param string $id Object id.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema (ignored).
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(string $id, $register = null, $schema = null): ?array {
+				$entry = ($this->store[$id] ?? null);
+				if ($entry === null) {
+					return null;
+				}
+
+				return $entry['data'];
+			}//end find()
+
+			/**
+			 * @param array<string, mixed> $config Config with filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function findAll(array $config = []): array {
+				$filters = ($config['filters'] ?? []);
+				$schema = ($filters['schema'] ?? null);
+				if ($schema === 'roleType') {
+					throw new \RuntimeException('unreadable');
+				}
+
+				$results = [];
+				foreach ($this->store as $entry) {
+					if ($entry['__schema'] !== $schema) {
+						continue;
+					}
+
+					if (($entry['data']['caseType'] ?? null) === ($filters['caseType'] ?? null)) {
+						$results[] = $entry['data'];
+					}
+				}
+
+				return $results;
+			}//end findAll()
+
+			/**
+			 * @param array<string, mixed> $object Object payload.
+			 * @param mixed $register Register (ignored).
+			 * @param mixed $schema Schema slug.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(array $object, $register = null, $schema = null): array {
+				if (($schema === 'documentType') === true) {
+					throw new \RuntimeException('unwritable child');
+				}
+
+				$id = ($object['id'] ?? null);
+				if ($id === null) {
+					$id = 'generated-' . (count($this->store) + 1);
+					$object['id'] = $id;
+				}
+
+				$this->store[$id] = ['__schema' => (string)$schema, 'data' => $object];
+
+				return $object;
+			}//end saveObject()
+		};
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$newId = $next['id'];
+
+		// The statuses still copied, and the initial status still repointed:
+		// an unreadable role schema and an unwritable document type are not
+		// reasons to lose the lifecycle.
+		$copiedStatuses = array_filter(
+			$store,
+			static fn (array $entry): bool => $entry['__schema'] === 'statusType' && ($entry['data']['caseType'] ?? null) === $newId
+		);
+		$this->assertCount(2, $copiedStatuses);
+		$this->assertNotSame('st-1', $store[$newId]['data']['initialStatus']);
+	}//end testAChildThatFailsToCopyDoesNotAbortTheRest()
+
+	/**
+	 * A case type whose initial status is somebody else's is left alone.
+	 *
+	 * There is nothing to repoint it to, and inventing one would file cases
+	 * into a status the author never chose.
+	 *
+	 * @return void
+	 */
+	public function testAnInitialStatusOutsideTheTypeIsNotRepointed(): void {
+		$store = $this->seedStore();
+		$store['ct-1']['data']['initialStatus'] = 'st-99';
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$this->assertSame('st-99', $store[$next['id']]['data']['initialStatus']);
+	}//end testAnInitialStatusOutsideTheTypeIsNotRepointed()
+
+	/**
+	 * A reference stored as an expanded object still repoints.
+	 *
+	 * OpenRegister answers a `$ref` as a bare id on one read and as the
+	 * expanded object on another; reading only the string shape would leave the
+	 * copy pointing at the source's status with no error anywhere.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedInitialStatusReferenceStillRepoints(): void {
+		$store = $this->seedStore();
+		$store['ct-1']['data']['initialStatus'] = ['id' => 'st-1', 'name' => 'Received'];
+		$objectService = $this->makeObjectService(store: $store);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
+
+		$next = $service->newVersion('ct-1');
+
+		$this->assertNotNull($next);
+		$initial = $store[$next['id']]['data']['initialStatus'];
+		$this->assertIsString($initial);
+		$this->assertNotSame('st-1', $initial);
+		$this->assertSame($next['id'], $store[$initial]['data']['caseType']);
+	}//end testAnExpandedInitialStatusReferenceStillRepoints()
 
 	/**
 	 * deleteDraft() deletes a draft case type.
@@ -358,7 +751,12 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(settingsService: $this->settingsService, logger: $this->logger);
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
 		$result = $service->deleteDraft('ct-draft');
 
 		$this->assertTrue($result['ok']);
@@ -380,7 +778,12 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(settingsService: $this->settingsService, logger: $this->logger);
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
 		$result = $service->deleteDraft('ct-pub');
 
 		$this->assertFalse($result['ok']);
@@ -398,7 +801,12 @@ class CaseTypeCopyServiceTest extends TestCase {
 		$objectService = $this->makeObjectService(store: $store);
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$service = new CaseTypeCopyService(settingsService: $this->settingsService, logger: $this->logger);
+		$service = new CaseTypeCopyService(
+			settingsService: $this->settingsService,
+			store: new CaseTypeStore($this->settingsService),
+			payloads: new DerivedCaseTypePayload(),
+			logger: $this->logger
+		);
 		$result = $service->deleteDraft('does-not-exist');
 
 		$this->assertFalse($result['ok']);

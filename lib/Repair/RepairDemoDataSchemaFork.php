@@ -236,14 +236,17 @@ class RepairDemoDataSchemaFork implements IRepairStep {
 
 		$shipped = $this->shippedIdentity();
 		$restoredTitle = false;
-		if (($shipped['title'] ?? '') !== '' && $register->getTitle() === self::DEFACED_TITLE) {
-			$register->setTitle((string)$shipped['title']);
-			if (($shipped['description'] ?? '') !== '') {
-				$register->setDescription((string)$shipped['description']);
+		// No `?? ''`: shippedIdentity() always returns all three keys, so the
+		// coalesce was dead and phpstan said so. The emptiness check is the
+		// real one and stays.
+		if ($shipped['title'] !== '' && $register->getTitle() === self::DEFACED_TITLE) {
+			$register->setTitle($shipped['title']);
+			if ($shipped['description'] !== '') {
+				$register->setDescription($shipped['description']);
 			}
 
-			if (($shipped['version'] ?? '') !== '') {
-				$register->setVersion((string)$shipped['version']);
+			if ($shipped['version'] !== '') {
+				$register->setVersion($shipped['version']);
 			}
 
 			$restoredTitle = true;

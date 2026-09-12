@@ -30,6 +30,7 @@ import Alarm from 'vue-material-design-icons/Alarm.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import AlertOctagonOutline from 'vue-material-design-icons/AlertOctagonOutline.vue'
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
+import Archive from 'vue-material-design-icons/Archive.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
@@ -44,8 +45,12 @@ import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
+import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
+import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
+import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
 import CalendarTextOutline from 'vue-material-design-icons/CalendarTextOutline.vue'
 import CameraOutline from 'vue-material-design-icons/CameraOutline.vue'
+import CardAccountDetailsOutline from 'vue-material-design-icons/CardAccountDetailsOutline.vue'
 import Cash from 'vue-material-design-icons/Cash.vue'
 import CashMultiple from 'vue-material-design-icons/CashMultiple.vue'
 import CashRefund from 'vue-material-design-icons/CashRefund.vue'
@@ -76,6 +81,8 @@ import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
 import CommentQuestionOutline from 'vue-material-design-icons/CommentQuestionOutline.vue'
 import CommentTextOutline from 'vue-material-design-icons/CommentTextOutline.vue'
 import Connection from 'vue-material-design-icons/Connection.vue'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
+import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
@@ -97,6 +104,7 @@ import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditO
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
@@ -105,6 +113,7 @@ import FlagOutline from 'vue-material-design-icons/FlagOutline.vue'
 import FolderAccountOutline from 'vue-material-design-icons/FolderAccountOutline.vue'
 import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
+import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
@@ -124,6 +133,7 @@ import Lightbulb from 'vue-material-design-icons/Lightbulb.vue'
 import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import ListBoxOutline from 'vue-material-design-icons/ListBoxOutline.vue'
 import ListStatus from 'vue-material-design-icons/ListStatus.vue'
+import LockOpenVariantOutline from 'vue-material-design-icons/LockOpenVariantOutline.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
@@ -136,12 +146,18 @@ import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
+import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
 import PhoneForward from 'vue-material-design-icons/PhoneForward.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
+import PhoneLogOutline from 'vue-material-design-icons/PhoneLogOutline.vue'
+import PhonePlusOutline from 'vue-material-design-icons/PhonePlusOutline.vue'
 import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
+import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
+import Publish from 'vue-material-design-icons/Publish.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import RobotOutline from 'vue-material-design-icons/RobotOutline.vue'
@@ -150,6 +166,7 @@ import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import ScriptText from 'vue-material-design-icons/ScriptText.vue'
 import Send from 'vue-material-design-icons/Send.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
+import ShieldAccountOutline from 'vue-material-design-icons/ShieldAccountOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLockOutline from 'vue-material-design-icons/ShieldLockOutline.vue'
@@ -164,10 +181,13 @@ import Sync from 'vue-material-design-icons/Sync.vue'
 import TableColumn from 'vue-material-design-icons/TableColumn.vue'
 import TableLarge from 'vue-material-design-icons/TableLarge.vue'
 import TableSettings from 'vue-material-design-icons/TableSettings.vue'
+import TagMultiple from 'vue-material-design-icons/TagMultiple.vue'
 import TagOutline from 'vue-material-design-icons/TagOutline.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
+import TrayArrowDown from 'vue-material-design-icons/TrayArrowDown.vue'
+import TrayArrowUp from 'vue-material-design-icons/TrayArrowUp.vue'
 import TrayFull from 'vue-material-design-icons/TrayFull.vue'
 import Tune from 'vue-material-design-icons/Tune.vue'
 import ViewColumnOutline from 'vue-material-design-icons/ViewColumnOutline.vue'
@@ -193,6 +213,7 @@ export default {
 	AlertCircleOutline,
 	AlertOctagonOutline,
 	AlertOutline,
+	Archive,
 	ArrowUpBoldCircle,
 	BadgeAccountOutline,
 	BankTransfer,
@@ -207,9 +228,13 @@ export default {
 	BriefcaseVariantOutline,
 	Calculator,
 	Calendar,
+	CalendarClock,
+	CalendarClockOutline,
+	CalendarPlus,
 	CalendarTextOutline,
 	CameraOutline,
 	Cash,
+	CardAccountDetailsOutline,
 	CashMultiple,
 	CashRefund,
 	CashRegister,
@@ -239,6 +264,8 @@ export default {
 	CommentQuestionOutline,
 	CommentTextOutline,
 	Connection,
+	ContentCopy,
+	ContentDuplicate,
 	Creation,
 	CubeOutline,
 	Domain,
@@ -260,6 +287,7 @@ export default {
 	FileDocumentMultiple,
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
+	FileDocumentPlusOutline,
 	FileEyeOutline,
 	FileSign,
 	FileTreeOutline,
@@ -268,6 +296,7 @@ export default {
 	FolderAccountOutline,
 	FolderCogOutline,
 	FolderOutline,
+	FolderPlusOutline,
 	FolderTextOutline,
 	FormatListBulletedType,
 	FormatListChecks,
@@ -287,6 +316,7 @@ export default {
 	LinkVariant,
 	ListBoxOutline,
 	ListStatus,
+	LockOpenVariantOutline,
 	MapMarker,
 	MapMarkerOutline,
 	MapMarkerPath,
@@ -299,12 +329,18 @@ export default {
 	OfficeBuilding,
 	OfficeBuildingOutline,
 	PaperclipCheck,
+	PauseCircleOutline,
 	PercentOutline,
 	PhoneForward,
 	PhoneInTalk,
+	PhoneLogOutline,
+	PhonePlusOutline,
 	PhoneReturn,
+	PlayCircleOutline,
 	Plus,
+	PowerPlugOutline,
 	ProgressClock,
+	Publish,
 	Receipt,
 	Refresh,
 	RobotOutline,
@@ -313,6 +349,7 @@ export default {
 	ScriptText,
 	Send,
 	ShareVariant,
+	ShieldAccountOutline,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLockOutline,
@@ -327,10 +364,13 @@ export default {
 	TableColumn,
 	TableLarge,
 	TableSettings,
+	TagMultiple,
 	TagOutline,
 	Timeline,
 	TimerOutline,
 	TimerSandFull,
+	TrayArrowDown,
+	TrayArrowUp,
 	TrayFull,
 	Tune,
 	ViewColumnOutline,

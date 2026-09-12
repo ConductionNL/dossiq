@@ -135,7 +135,6 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-01a: Create a case type
 
 - GIVEN an admin on the Dossiq settings page
@@ -191,7 +190,6 @@ The system MUST support a draft/published lifecycle for case types. Draft case t
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-02a: New case type defaults to draft
 
 - GIVEN an admin creating a new case type
@@ -245,7 +243,6 @@ The system MUST support validity windows on case types. Cases can only be create
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-03a: Case type within validity window
 
 - GIVEN a case type "Omgevingsvergunning" with `validFrom = "2026-01-01"` and `validUntil = "2027-12-31"`
@@ -288,7 +285,6 @@ The system MUST support validity windows on case types. Cases can only be create
 The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
 
 **Feature tier**: MVP
-
 
 #### Scenario CT-04a: Add status types to a case type
 
@@ -370,7 +366,6 @@ The system MUST support configuring a processing deadline on each case type. The
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-05a: Set processing deadline
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -405,7 +400,6 @@ The system MUST support configuring a processing deadline on each case type. The
 The system MUST support configuring extension and suspension rules on case types.
 
 **Feature tier**: MVP (extension), V1 (suspension)
-
 
 #### Scenario CT-06a: Enable extension with period
 
@@ -446,7 +440,6 @@ The system MUST support configuring extension and suspension rules on case types
 The system SHALL support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: V1
-
 
 #### Scenario CT-07a: Add result types to a case type
 
@@ -492,7 +485,6 @@ The system SHALL support defining allowed role types for each case type. See wir
 
 **Feature tier**: V1
 
-
 #### Scenario CT-08a: Add role types to a case type
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -537,7 +529,6 @@ The system SHALL support defining allowed role types for each case type. See wir
 The system SHALL support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: V1
-
 
 #### Scenario CT-09a: Add property definitions
 
@@ -592,7 +583,6 @@ The system SHALL support defining required document types for each case type. Se
 
 **Feature tier**: V1
 
-
 #### Scenario CT-10a: Add document types
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -640,7 +630,6 @@ The system SHALL support defining decision types for each case type.
 
 **Feature tier**: V1
 
-
 #### Scenario CT-11a: Add decision types
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -672,7 +661,6 @@ The system SHALL support confidentiality defaults on case types. Cases inherit t
 
 **Feature tier**: V1
 
-
 #### Scenario CT-12a: Set confidentiality default
 
 - GIVEN a case type "Omgevingsvergunning" in edit mode
@@ -702,7 +690,6 @@ The system MUST support selecting a default case type in admin settings. The def
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-13a: Set default case type
 
 - GIVEN case types "Omgevingsvergunning" (published), "Subsidieaanvraag" (published), "Klacht" (published)
@@ -731,7 +718,6 @@ The system MUST support selecting a default case type in admin settings. The def
 The system MUST enforce validation rules when creating or modifying case types.
 
 **Feature tier**: MVP
-
 
 #### Scenario CT-14a: Title is required
 
@@ -784,7 +770,6 @@ The system MUST enforce validation rules when creating or modifying case types.
 The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 **Feature tier**: MVP (General, Statuses), V1 (Results, Roles, Properties, Docs)
-
 
 #### Scenario CT-15a: Tab layout
 
@@ -842,7 +827,6 @@ The system MUST handle error scenarios gracefully for case type operations.
 
 **Feature tier**: MVP
 
-
 #### Scenario CT-16a: Publish incomplete case type
 
 - GIVEN a case type with title and processing deadline filled but no purpose, trigger, or subject
@@ -868,7 +852,325 @@ The system MUST handle error scenarios gracefully for case type operations.
 - THEN the system MUST warn: "This case type is referenced by 5 closed cases. Deleting it will remove the type reference from those cases."
 - AND if confirmed, the deletion SHOULD proceed
 
+### Requirement: Case Type Pre-Seeded Data
+
+@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
+
+The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
+
+**Feature tier**: V1
+
+The repair step SHALL import the following new case types alongside existing ones:
+
+| Case Type | Processing Deadline | Extension | Suspension | Origin |
+|-----------|-------------------|-----------|------------|--------|
+| Bezwaar | P6W | P6W | Yes | external |
+| Beroep | P26W | No | Yes | external |
+
+Each case type SHALL include its associated:
+- Status types (see bezwaar-lifecycle and beroep-escalation specs)
+- Role types (see bezwaar-lifecycle spec)
+- Workflow template (see workflow-definition-model spec)
+
+#### Scenario: Bezwaar and Beroep case types are available after installation
+
+- **WHEN** the Dossiq app repair step runs for the first time or after an update
+- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
+- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
+- **AND** existing case types SHALL NOT be affected by the addition
+
+#### Scenario: Pre-seeded case types are not duplicated on re-run
+
+- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
+- **THEN** the system SHALL NOT create duplicate case types
+- **AND** existing customizations to the case types SHALL be preserved
+
+<!-- BEGIN retrofit-2026-05-24-case-types -->
+
+### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
+
+@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
+
+`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
+
+#### Scenario: Export a published case type
+- **GIVEN** a published case type with workflow templates + roles
+- **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
+- **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
+
+### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
+
+@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
+
+`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
+
+`CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
+
+`CaseDefinitionController::validate()` SHALL expose validation-only HTTP access (`POST /api/case-definitions/import?dryRun=true`) so admins can review a package before committing.
+
+#### Scenario: Dry-run validates without persisting
+- **WHEN** an admin calls `POST /api/case-definitions/import?dryRun=true` with a ZIP body
+- **THEN** the response SHALL include the structured validation report and no objects SHALL be created
+
+<!-- END retrofit-2026-05-24-case-types -->
+
 ---
+
+### Requirement: You give each status a colour and a list visibility (REQ-CT-19)
+
+You give each status a colour and choose whether it shows in lists. The
+`statusType` schema SHALL carry `colour`, one of the NL Design System hue
+names, and `hiddenInLists`, a boolean. The status badge on the case and the
+Workflow board column SHALL render in that colour. The Cases index SHALL
+leave cases in a hidden status out unless you ask for closed cases.
+
+**Feature tier**: MVP
+
+#### Scenario: A coloured status shows on the board
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status In behandeling of a type has the colour orange
+- **WHEN** you open the Workflow board for that type
+- **THEN** the In behandeling column header SHALL render in the orange token
+
+#### Scenario: A hidden status keeps its cases out of the list
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status Afgehandeld is marked hidden in lists
+- **AND** three cases sit in Afgehandeld
+- **WHEN** you open the Cases index
+- **THEN** none of the three SHALL be listed
+- **AND** the Closed chip SHALL list them
+
+### Requirement: You derive a case type from a parent (REQ-CT-20)
+
+You derive a case type from a parent and change only what differs. The
+`caseType` schema SHALL carry `parentCaseType`, a reference to another case
+type. A child SHALL inherit the parent's statuses, results, properties and
+deadlines, and a row the child declares with the same name SHALL replace the
+parent's. A chain that returns to itself SHALL be refused on save.
+
+**Feature tier**: MVP
+
+#### Scenario: A child shows its parent's statuses
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the type Bezwaar has four statuses
+- **AND** the type Bezwaar (verkort) names Bezwaar as its parent and declares none
+- **WHEN** you open Bezwaar (verkort)
+- **THEN** its Statuses tab SHALL list the four statuses marked Inherited
+
+#### Scenario: A child overrides one deadline
+@e2e tests/e2e/case-type-status-authoring.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (verkort) sets its own deadline to 6 weeks
+- **WHEN** you file a case of Bezwaar (verkort)
+- **THEN** the case's deadline SHALL be 6 weeks after its start date
+
+#### Scenario: A child inherits a deadline it does not declare
+@e2e tests/e2e/case-type-parent-chain.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (standaard) names Bezwaar as its parent and sets no deadline of its own
+- **WHEN** you file a case of Bezwaar (standaard)
+- **THEN** the case's deadline SHALL be 12 weeks after its start date
+
+#### Scenario: A cycle is refused
+@e2e tests/e2e/case-type-parent-chain.spec.ts
+
+- **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
+- **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
+- **THEN** the save SHALL fail with a message naming the cycle
+
+### Requirement: You configure everything a status is, on the page (REQ-CT-10)
+
+You configure a status without editing register JSON. The Statuses tab of a
+case type SHALL edit every property the `statusType` schema declares: name,
+order, description, colour, role, whether it is final, whether cases in it stay
+out of the Cases index, and its checklist. The add form and the edit form SHALL
+be the same form. A status saved before a property existed SHALL open with that
+property unset rather than with a guessed value, and saving it SHALL NOT write
+back any property the schema does not declare.
+
+**Feature tier**: MVP
+
+#### Scenario: A functional administrator gives a status a colour and a role
+@e2e tests/e2e/case-type-status-authoring.spec.ts
+
+- **GIVEN** a case type with a status called In behandeling
+- **WHEN** the administrator edits it, picks the colour orange and the role in progress, and saves
+- **THEN** the status row SHALL show that colour
+- **AND** a flow addressing the in-progress role SHALL resolve to this status
+
+#### Scenario: A status asks for a checklist
+@e2e tests/e2e/case-type-status-authoring.spec.ts
+
+- **GIVEN** a status being edited
+- **WHEN** the administrator adds the checklist item Check identity and marks it required
+- **AND** saves
+- **THEN** the status row SHALL report one checklist item
+- **AND** a case entering that status SHALL get a task called Check identity
+
+#### Scenario: A blank checklist row is not saved
+@e2e exclude Pure mapping, covered by tests/vitest/statusTypeForm.spec.js.
+
+- **GIVEN** a status with one filled checklist item and one empty row
+- **WHEN** the administrator saves
+- **THEN** only the filled item SHALL be stored, because a task with no title is unactionable
+
+#### Scenario: An older status opens without inventing values
+@e2e exclude Pure mapping, covered by tests/vitest/statusTypeForm.spec.js.
+
+- **GIVEN** a status saved before colour, role, hiddenInLists and checklist existed
+- **WHEN** the administrator opens it
+- **THEN** its colour SHALL be unset rather than grey, because a form that opens on grey saves grey
+- **AND** saving it SHALL NOT carry back the notifyInitiator and notificationText properties it arrived with
+
+### Requirement: A grant scheme is a case type (REQ-CT-21)
+
+A grant scheme is the blueprint a category of cases is governed by, which is the
+sentence that defines a case type. The system SHALL model a subsidieregeling as
+a `caseType` plus its `propertyDefinition` records, and SHALL NOT carry a
+parallel `subsidieRegeling` schema for the same concept.
+
+Four of the retired schema's properties map onto fields the case type already
+has: `schemeName` onto `title`, `termStart` and `termEnd` onto `validFrom` and
+`validUntil`, `requestTermWeeks` onto `processingDeadline`, and `legalBasis`
+onto `purpose`. The remaining grant-specific properties become
+`propertyDefinition` records scoped to that case type.
+
+`requestTermWeeks` was a bare integer and `processingDeadline` is an ISO-8601
+duration. The migration SHALL convert it, because an integer stores happily and
+is understood by neither the renderer nor the Awb 4:13 deadline calculation.
+
+`subsidieAanvraag.subsidyScheme` SHALL `$ref` `caseType`. It was already a uuid
+reference, so the shape of the property does not change.
+
+#### Scenario: A migrated scheme carries its fields, not just its name
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **GIVEN** an instance holding subsidieRegeling objects
+- **WHEN** the migration has run
+- **THEN** each scheme SHALL exist as a `caseType`
+- **AND** its `validFrom`, `validUntil` and `purpose` SHALL be non-empty, not merely present
+
+#### Scenario: The decision term becomes a duration, not an integer
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **GIVEN** a scheme whose `requestTermWeeks` was 13
+- **WHEN** the migration has run
+- **THEN** the case type's `processingDeadline` SHALL read as an ISO-8601 duration such as `P13W`
+
+#### Scenario: The grant-specific properties survive as property definitions
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **GIVEN** a scheme carrying `plafond`, `targetGroup` and `auditorsStatementThreshold`
+- **WHEN** the migration has run
+- **THEN** each SHALL exist as a `propertyDefinition` on the migrated case type
+
+### Requirement: A property definition can carry an enum or a JSON document (REQ-CT-22)
+
+`propertyDefinition.propertyType` SHALL offer `enum` and `json` alongside the
+scalar types. An `enum` carries its allowed values in `enumValues`. A `json`
+carries a JSON Schema and is validated as a document rather than as a scalar.
+
+Both exist because of what the alternative does. Flattening a four-value enum to
+a bare string keeps the value and loses the constraint, and flattening a JSON
+Schema keeps the text and loses the shape. Neither loss raises anything, so a
+migration that flattened would report the same success as one that did not.
+
+#### Scenario: An enum property keeps its allowed values
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **GIVEN** a scheme carrying `interimReportFrequency` with four allowed values
+- **WHEN** the migration has run
+- **THEN** its `propertyDefinition` SHALL have `propertyType` `enum`
+- **AND** its `enumValues` SHALL still list those values, because an enum with no `enumValues` is indistinguishable from a string
+
+### Requirement: Schemes are administered on the Case types index (REQ-CT-23)
+
+The `/subsidieregelingen` page and its Subsidy schemes menu entry SHALL be
+retired. A grant scheme is administered where every other case type is
+administered, on the Case types index, so there is one index over blueprints
+rather than two.
+
+Retiring the route SHALL NOT break it. The route SHALL fall through rather than
+error, so a bookmark or an old link lands somewhere rather than on a server
+error.
+
+The `subsidieRegeling` schema SHALL be retained for one release, marked
+deprecated, and removed only once the migration has run everywhere. A schema the
+register no longer carries returns zero rows, and a migration that reads nothing
+reports the same success as one that had nothing to do. For the same reason the
+repair step SHALL report the counts it converted rather than reporting success.
+
+#### Scenario: The menu offers Case types and not Subsidy schemes
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **WHEN** a handler opens the app navigation
+- **THEN** it SHALL NOT carry a Subsidy schemes entry
+- **AND** it SHALL carry a Case types entry, because the absence check alone would pass on a build where the capability vanished
+
+#### Scenario: The retired route falls through rather than erroring
+@e2e tests/e2e/spec-coverage/subsidieregeling-is-a-casetype.spec.ts
+
+- **WHEN** a handler opens `/subsidieregelingen`
+- **THEN** no scheme index SHALL render, tested on the page's own create control rather than a heading
+- **AND** the page SHALL NOT show a server error
+
+### Requirement: Creating a case type asks the twelve authoring fields, in two columns (REQ-CT-24)
+
+The Add control on the Case types index SHALL open a form scoped to the fields
+an author fills when naming a new blueprint, laid out in two columns at large
+dialog width.
+
+The form SHALL ask for `title`, `identifier`, `category`, `handlingModel`,
+`confidentiality`, `processingDeadline`, `validFrom`, `isDraft`,
+`parentCaseType`, `description`, `purpose` and `trigger`, and SHALL NOT ask for
+the other twenty-nine properties the `caseType` schema declares. Every field it
+omits SHALL remain editable on the case type's own detail page, so narrowing the
+create form takes nothing away.
+
+The form SHALL open on `title`. Not one of the schema's properties carries an
+`order`, so the field sort falls through to alphabetical and an unordered form
+opens on `category` with `title` in tenth place.
+
+`description`, `purpose` and `trigger` SHALL render as multi-line fields and
+SHALL span both columns. The schema declares all three as plain strings with no
+`maxLength`, which resolves to a single-line input for what is a paragraph.
+
+The form SHALL NOT ask for `initialStatus`. It is a reference to a `statusType`
+filtered by `caseType`, and at create time the case type has no id and therefore
+no statuses, so the picker would fetch unfiltered and offer every other type's
+statuses. A type's statuses are authored on its detail page, once it exists.
+
+#### Scenario: The create form asks the twelve authoring fields and not the rest
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the Add control on the Case types index
+- **THEN** the form SHALL ask for each of the twelve authoring fields
+- **AND** it SHALL NOT ask for the versioning, relation, privacy or specialist coding fields
+
+#### Scenario: The form opens on the title rather than alphabetically
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the first field SHALL be the title
+- **AND** the fields SHALL follow the declared authoring order rather than an alphabetical one
+
+#### Scenario: The fields are laid out in two columns
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the single-line fields SHALL occupy exactly two columns, measured from their rendered positions rather than from a class name
+- **AND** the three prose fields SHALL each span the full width of the form
+
+#### Scenario: The starting status is not asked for at create time
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** it SHALL NOT offer a starting status field
 
 ## UI References
 
@@ -924,39 +1226,6 @@ This is a comprehensive, highly detailed spec that is implementation-ready for b
 
 **Strengths:** Exhaustive data model tables with type/required/mapping columns. 16 requirements with detailed scenarios. Clear feature tier separation. Validation rules explicitly specified.
 
-### Requirement: Case Type Pre-Seeded Data
-
-@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
-
-The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
-
-**Feature tier**: V1
-
-The repair step SHALL import the following new case types alongside existing ones:
-
-| Case Type | Processing Deadline | Extension | Suspension | Origin |
-|-----------|-------------------|-----------|------------|--------|
-| Bezwaar | P6W | P6W | Yes | external |
-| Beroep | P26W | No | Yes | external |
-
-Each case type SHALL include its associated:
-- Status types (see bezwaar-lifecycle and beroep-escalation specs)
-- Role types (see bezwaar-lifecycle spec)
-- Workflow template (see workflow-definition-model spec)
-
-#### Scenario: Bezwaar and Beroep case types are available after installation
-
-- **WHEN** the Dossiq app repair step runs for the first time or after an update
-- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the dossiq register
-- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
-- **AND** existing case types SHALL NOT be affected by the addition
-
-#### Scenario: Pre-seeded case types are not duplicated on re-run
-
-- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
-- **THEN** the system SHALL NOT create duplicate case types
-- **AND** existing customizations to the case types SHALL be preserved
-
 ---
 
 **Missing/Ambiguous:**
@@ -969,32 +1238,3 @@ Each case type SHALL include its associated:
 1. Should editing a published case type require unpublishing first, or can it be edited in-place with a warning?
 2. How should the system handle changes to a case type that affect existing cases (e.g., removing a status type that cases are currently at)?
 3. Should the `subCaseTypes` field enforce a tree structure (no cycles) and how is this validated?
-
-<!-- BEGIN retrofit-2026-05-24-case-types -->
-
-### REQ-CT-17: Dossiq SHALL expose case-definition export endpoints + ZIP package format
-
-@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
-
-`OCA\Dossiq\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another dossiq instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
-
-#### Scenario: Export a published case type
-- **GIVEN** a published case type with workflow templates + roles
-- **WHEN** a behandelaar calls `GET /api/case-definitions/{id}/export`
-- **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
-
-### REQ-CT-18: Dossiq SHALL validate + import case-definition packages with explicit conflict reporting
-
-@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
-
-`CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the dossiq instance.
-
-`CaseDefinitionImportService::importCaseDefinition()` SHALL run validation first, then create the case type and all linked objects atomically. On collision, the importer SHALL accept a caller-provided `conflictResolution` mode (`reject`, `rename`, `replace`) and SHALL surface its decisions in the response so the admin can audit what was created versus replaced.
-
-`CaseDefinitionController::validate()` SHALL expose validation-only HTTP access (`POST /api/case-definitions/import?dryRun=true`) so admins can review a package before committing.
-
-#### Scenario: Dry-run validates without persisting
-- **WHEN** an admin calls `POST /api/case-definitions/import?dryRun=true` with a ZIP body
-- **THEN** the response SHALL include the structured validation report and no objects SHALL be created
-
-<!-- END retrofit-2026-05-24-case-types -->

@@ -50,6 +50,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
 
 /**
@@ -68,14 +69,25 @@ class DashboardController extends Controller {
 	private const PUBLIC_DIR = __DIR__ . '/../../public';
 
 	/**
+	 * The committed feature list the Features & roadmap page reads (ADR-018).
+	 *
+	 * @var string
+	 */
+	private const FEATURES_JSON = __DIR__ . '/../../docs/features.json';
+
+	/**
 	 * Constructor.
 	 *
 	 * Supplies the dossiq app id so Nextcloud's DI can auto-wire this
-	 * controller from `IRequest` alone.
+	 * controller from its two collaborators alone.
 	 *
-	 * @param IRequest $request HTTP request.
+	 * @param IRequest      $request      HTTP request.
+	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
 	 */
-	public function __construct(IRequest $request) {
+	public function __construct(
+		IRequest $request,
+		private readonly IInitialState $initialState,
+	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
 
@@ -112,11 +124,50 @@ class DashboardController extends Controller {
 	/**
 	 * Build the `index` TemplateResponse.
 	 *
+	 * Hands the Features & roadmap page its feature list on the way. The
+	 * page (`type: roadmap`) reads `features_roadmap_features` from initial
+	 * state when the manifest gives it no `config.features`; dossiq supplied
+	 * neither, so the Features tab was empty while `docs/features.json` held
+	 * every shipped capability (ADR-018).
+	 *
 	 * @return TemplateResponse The rendered dossiq index template.
+	 *
+	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
 	 */
 	protected function renderIndex(): TemplateResponse {
+		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
+
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * The committed feature list, or an empty list when it cannot be read.
+	 *
+	 * The roadmap page falls back to `[]` itself, so a missing or malformed
+	 * file degrades to the empty tab it showed before rather than a 500 on
+	 * every page load.
+	 *
+	 * @return array<int, array<string, mixed>> The features from docs/features.json.
+	 *
+	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+	 */
+	private function roadmapFeatures(): array {
+		if (is_readable(self::FEATURES_JSON) === false) {
+			return [];
+		}
+
+		$raw = file_get_contents(self::FEATURES_JSON);
+		if ($raw === false) {
+			return [];
+		}
+
+		$decoded = json_decode($raw, true);
+		if (is_array($decoded) === false) {
+			return [];
+		}
+
+		return array_values(array_filter($decoded, 'is_array'));
+	}//end roadmapFeatures()
 
 	/**
 	 * Serve the mobiel-inspectie-offline Service Worker script.

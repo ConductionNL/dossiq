@@ -56,21 +56,6 @@ use RuntimeException;
 class BeschikkingService {
 
 	/**
-	 * Fields that may NOT be edited once a beschikking is immutable.
-	 *
-	 * @var array<int, string>
-	 */
-	private const CONTENT_FIELDS = [
-		'rationale',
-		'decision',
-		'addressee',
-		'decisionType',
-		'legalRemediesClause',
-		'feeAmount',
-		'templateId',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param StateMachineService $stateMachine The state-machine guard.
@@ -127,6 +112,14 @@ class BeschikkingService {
 			'caseId' => $caseId,
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
+			// The resolved version is STORED, not just resolved. It was
+			// computed here and dropped on the floor: every beschikking
+			// recorded which template made it and never which version of it,
+			// so a template edited after a decision issued left the appeal
+			// against that decision reading the wrong text. `draftVersion`
+			// below counts re-renders of this beschikking and answers a
+			// different question.
+			'templateVersion' => $version['version'],
 			'draftVersion' => 1,
 			'currentStatus' => 'draft',
 			'compositeContent' => $composition,
@@ -325,15 +318,8 @@ class BeschikkingService {
 	 */
 	public function updateFields(string $decisionId, array $updates): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$status = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->isImmutable($status) === true) {
-			foreach (array_keys($updates) as $field) {
-				if (in_array($field, self::CONTENT_FIELDS, true) === true) {
-					throw new RuntimeException('immutable');
-				}
-			}
-		}
+		$this->stateMachine->assertMutable(stored: $decision, changed: $updates);
 
 		foreach ($updates as $field => $value) {
 			$decision[$field] = $value;

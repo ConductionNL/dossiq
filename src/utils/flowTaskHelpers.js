@@ -26,29 +26,58 @@
  *
  * @param {object|null|undefined} task The task object as the store returns it.
  * @return {string|null} The case id, or null when no case is waiting.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function waitingCaseIdFrom(task) {
 	if (!task || typeof task !== 'object') {
 		return null
 	}
 
-	const run = String(task.flowRun ?? '').trim()
+	// `runUuid` is the engine's name for it; `flowRun` was caseTask's. Both
+	// are read so a row from either store resolves during the cutover.
+	const run = String(task.runUuid ?? task.flowRun ?? '').trim()
 	if (run === '') {
 		return null
 	}
 
-	return caseIdFrom(task.case)
+	return caseIdFrom(taskCaseRef(task))
+}
+
+/**
+ * The case a task names, whichever store it came from.
+ *
+ * An engine task carries `objectUuid`, because the case IS the object and
+ * OpenRegister has no case entity. `caseTask` carried a typed `case` $ref.
+ * Reading only one of them makes every task on the other store look like a
+ * task with no case, which renders as nothing at all rather than as an
+ * error.
+ *
+ * @param {object} task The task row.
+ * @return {string|object|null} The case reference.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function taskCaseRef(task) {
+	if (!task || typeof task !== 'object') {
+		return null
+	}
+
+	return task.objectUuid ?? task.case ?? null
 }
 
 /**
  * Read a case reference in either of the shapes the store returns.
  *
+ * Exported since task-on-the-case: TaskCaseCard asks the same question of
+ * the same field for a different reason (which case is this task ON, rather
+ * than which run is waiting on me), and a second reader of `$ref` shapes is
+ * exactly the copy that drifts.
+ *
  * @param {string|object|null|undefined} ref The task's case reference.
  * @return {string|null} The case id, or null when unreadable.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
-function caseIdFrom(ref) {
+export function caseIdFrom(ref) {
 	if (typeof ref === 'string') {
 		const id = ref.trim()
 		return id === '' ? null : id
@@ -67,7 +96,7 @@ function caseIdFrom(ref) {
  *
  * @param {string} caseId The case id.
  * @return {string} The vue-router path for the manifest CaseDetail page.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function caseRouteFor(caseId) {
 	return `/cases/${encodeURIComponent(caseId)}`

@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,16 +44,16 @@ use Psr\Log\LoggerInterface;
  */
 class ChecklistGuard implements GuardEvaluatorInterface {
 
-	use SearchesObjects;
-
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister + config
+	 * @param EngineTaskInbox $engineTasks The engine's task reader.
+	 * @param EngineTaskGateway $engineTask The seam that reads one task.
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly EngineTaskInbox $engineTasks,
+		private readonly EngineTaskGateway $engineTask,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -72,33 +72,17 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return new GuardResult(passed: false, failureMessage: 'Opslag niet beschikbaar');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
-		if ($register === '' || $taskSchema === '') {
-			return new GuardResult(passed: false, failureMessage: 'Taak-register niet geconfigureerd');
-		}
-
 		$taskId = (string)($guardConfig['taskId'] ?? '');
 		if ($taskId !== '') {
 			return $this->evaluateNamedTask(
-				objectService: $objectService,
-				register: $register,
-				taskSchema: $taskSchema,
 				taskId: $taskId,
 				requiredItems: ($guardConfig['requiredItems'] ?? null),
 			);
 		}
 
 		return $this->evaluateCaseTasks(
-			objectService: $objectService,
-			register: $register,
-			taskSchema: $taskSchema,
 			case: $case,
+			userId: $userId,
 			requiredItems: ($guardConfig['requiredItems'] ?? null),
 		);
 	}//end evaluate()
@@ -106,25 +90,23 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	/**
 	 * Evaluate the checklist of the one task the guard names.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register identifier.
-	 * @param string $taskSchema The task schema identifier.
 	 * @param string $taskId The task the guard names.
 	 * @param mixed $requiredItems Optional allow-list of required labels.
 	 *
 	 * @return GuardResult
 	 */
-	private function evaluateNamedTask(
-		object $objectService,
-		string $register,
-		string $taskSchema,
-		string $taskId,
-		mixed $requiredItems,
-	): GuardResult {
-		try {
-			$task = $this->toArray(value: $objectService->find($taskId, register: $register, schema: $taskSchema));
-		} catch (\Throwable $e) {
-			$this->logger->error('ChecklistGuard: task load failed', ['exception' => $e->getMessage()]);
+	private function evaluateNamedTask(string $taskId, mixed $requiredItems): GuardResult {
+		$task = $this->engineTask->find(taskId: $taskId);
+		if ($task === null) {
+			// FAIL-CLOSED, and it matters here. A guard that passes because
+			// the task could not be read is a guard that stops guarding the
+			// moment the engine is unavailable, which is precisely when a
+			// transition should not slip through.
+			$this->logger->error(
+				'ChecklistGuard: task load failed',
+				['task' => $taskId, 'engine' => $this->engineTask->lastError()]
+			);
+
 			return new GuardResult(passed: false, failureMessage: 'Gekoppelde taak niet gevonden');
 		}
 
@@ -134,35 +116,32 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	/**
 	 * Evaluate the checklists of every task linked to the case.
 	 *
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $register The register identifier.
-	 * @param string $taskSchema The task schema identifier.
 	 * @param array<string, mixed> $case The case object.
+	 * @param string $userId The acting identity the engine records.
 	 * @param mixed $requiredItems Optional allow-list of required labels.
 	 *
 	 * @return GuardResult
 	 */
-	private function evaluateCaseTasks(
-		object $objectService,
-		string $register,
-		string $taskSchema,
-		array $case,
-		mixed $requiredItems,
-	): GuardResult {
+	private function evaluateCaseTasks(array $case, string $userId, mixed $requiredItems): GuardResult {
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 		if ($caseId === '') {
 			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor checklistcontrole');
 		}
 
-		try {
-			$tasks = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $taskSchema,
-				filters: ['case' => $caseId, '_limit' => 200],
+		$tasks = $this->engineTasks->forCase(caseId: $caseId, actor: $userId);
+
+		// A case with no tasks and an engine that could not be read both
+		// answer with an empty list, and the difference decides the
+		// transition: no tasks means no unchecked items, which PASSES. So
+		// the failure is asked for by name rather than inferred from the
+		// count, and an unreadable engine fails closed.
+		$failure = $this->engineTasks->lastError();
+		if ($failure !== '') {
+			$this->logger->error(
+				'ChecklistGuard: case task list failed',
+				['case' => $caseId, 'engine' => $failure]
 			);
-		} catch (\Throwable $e) {
-			$this->logger->error('ChecklistGuard: case task list failed', ['exception' => $e->getMessage()]);
+
 			return new GuardResult(passed: false, failureMessage: 'Taken van de zaak niet gevonden');
 		}
 
@@ -268,19 +247,14 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 * @return array<int|string, mixed>
 	 */
 	private function resolveItems(array $task): array {
+		// NO JSON-STRING BRANCH ANY MORE. `caseTask` stored `checklist` as a
+		// JSON-encoded string and this method decoded it, because reading it
+		// as an array yielded no items and every guard passed on the one
+		// shape the store actually held. The engine refuses a string at write
+		// time (`TaskBuilder::validChecklist`), so no engine row can carry
+		// one, and tolerance nothing can produce is the kind of dead branch
+		// that makes a guard look tested.
 		$items = $task['checklist'] ?? ($task['items'] ?? []);
-
-		// The task schema stores `checklist` as a JSON-encoded string, which is
-		// the shape the frontend decodes. Reading it as an array yielded an
-		// empty item list, so every checklist guard passed on the one shape the
-		// store actually holds.
-		if (is_string($items) === true) {
-			$decoded = json_decode($items, true);
-			$items = [];
-			if (is_array($decoded) === true) {
-				$items = $decoded;
-			}
-		}
 
 		if (is_array($items) === false) {
 			return [];
@@ -300,25 +274,4 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 		return (string)($item['label'] ?? ($item['name'] ?? ''));
 	}//end itemLabel()
 
-	/**
-	 * Coerce ObjectService results to array.
-	 *
-	 * @param mixed $value Mixed result from ObjectService
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function toArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$serialized = $value->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return [];
-	}//end toArray()
 }//end class

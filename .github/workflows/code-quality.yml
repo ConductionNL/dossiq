@@ -151,6 +151,10 @@ permissions:
 jobs:
   quality:
     if: (github.event_name != 'pull_request' || github.head_ref != 'development')
+    # `e2e-shards` below is declared by ConductionNL/.github#758 (merged
+    # 2026-09-11). This call must stay at @main: an input the called workflow
+    # does not declare makes the whole call fail, so pinning to a ref that
+    # predates #758 breaks every run.
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: dossiq
@@ -205,7 +209,20 @@ jobs:
       # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
       # needs the `settings#load` route it ships — `development` is where that
       # plumbing lands first.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
+      #
+      # decidiq is here so the e2e suite can reach the surfaces that need it.
+      # Without it, `retired-surfaces.spec.ts` ("decidiq registers the
+      # decisions leaf") and the three live-journeys tests that raise and
+      # conclude decisions skipped on EVERY run: the skip-discipline gate
+      # classed the first a V2, a state CI decides and should not stand down
+      # on. It goes in `additional-apps` and not `e2e-additional-apps` because
+      # the shared quality.yml only runs `occ app:enable` for this list; apps
+      # under `e2e-additional-apps` are cloned and built but never enabled,
+      # which looks like a shared-workflow bug and is tracked separately. The
+      # cost is that decidiq also loads during PHPUnit. `app` is the `<id>` in
+      # decidiq's appinfo/info.xml on `development` (verified: `decidiq`, NC
+      # 32-34); the repo was renamed from decidesk, which still redirects.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"}]'
       # SBOM was disabled here until @conduction/nextcloud-vue's dependency
       # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
       # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
@@ -273,6 +290,24 @@ jobs:
       # and `visual` (whose own README records that a CI Linux runner cannot
       # byte-match a dev-container PNG baseline).
       playwright-test-path: tests/e2e
+      # ── THREE SHARDS, EACH ON ITS OWN RUNNER ─────────────────────────────
+      #
+      # One job no longer fits. Run 34591162181 on `development`, the first
+      # at five workers (#2485): 336 passed, 5 flaky, 19 skipped, 34 did not
+      # run, stopped by the 38 minute globalTimeout. The job took 44m09s
+      # against a 45 minute cap. The run before it, at four workers, left 33
+      # unrun. More workers did not close the gap, and #2485 names the
+      # ceiling: `SQLSTATE[53200] out of shared memory` under four workers,
+      # against one Nextcloud and one Postgres. A shard gets its own
+      # Nextcloud and its own Postgres, so sharding sidesteps that ceiling
+      # instead of pushing against it.
+      #
+      # Each shard runs the config's own worker count (E2E_WORKERS, default 4
+      # on CI, see the config for why five was measured and reversed) and its
+      # own 25 minute globalTimeout. See
+      # tests/e2e/playwright.config.ts for both, and for why the
+      # instance-mutating specs become a teardown that runs on every shard.
+      e2e-shards: 3
       # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
       # that has never run here; enable it in a follow-up once this job has a
       # measured baseline. The threshold below is inert while this is false.
@@ -298,10 +333,17 @@ jobs:
       # Integration Tests (Newman) stays OFF here, deliberately. The
       # `enable-newman: false` further up is not a default nobody chose: it
       # records that the ZGW compliance collections fail at 95%+ because the ZGW
-      # API implementation is still in progress. Four collections are committed
-      # under `data/` and would all meet that same known cause — a guaranteed
-      # red that teaches nothing the comment does not already say. Flipped back
-      # on in the commit that gets the core CRUD assertions passing.
+      # API implementation is still in progress. Two collections are committed
+      # under `data/`, the ZGW OAS and business rules suites, and both would
+      # meet that known cause: a guaranteed red that teaches nothing this
+      # comment does not already say. Flipped back on in the commit that gets
+      # the core CRUD assertions passing.
+      #
+      # This used to say FOUR, and two of those four were never ZGW at all:
+      # the leges and zaakportaal collections called controllers that had
+      # been removed, so they could not have passed for any reason. They are
+      # deleted. Every collection left carries an `@newman exclude` reason in
+      # its own info.description, which is where hydra gate-112 reads it.
 
       # ── Frontend Check legs ──────────────────────────────────────────────
       # `frontend-checks` defaults to `[]`, and an empty list means the shared
@@ -331,7 +373,23 @@ jobs:
       # renders the English source inside an otherwise translated form, silently.
       # The fleet had 30,459 such strings, so this records the current count and
       # fails only when it GROWS — burning it down stays an ordinary PR.
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js"]'
+      # `check:debt-ratchet` is a RATCHET on SUPPRESSED findings, and it rides
+      # in this node leg on purpose: the census is plain text over psalm.xml,
+      # phpstan.neon, lib/, src/ and eslint-suppressions.json, so it needs no
+      # composer install and adds about a second to a job that already has a
+      # checkout.
+      #
+      # Why it is needed at all. Measured on `development` 2026-09-12, PHPCS,
+      # PHPMD, Psalm, PHPStan and eslint each report ZERO findings. That is
+      # true, and it is zero because 1,117 findings are hidden: 31 blanket
+      # psalm issue handlers (worth 1,360 findings on their own), 294 inline
+      # @psalm-suppress tags, 278 @SuppressWarnings, 388 eslint violations
+      # parked in eslint-suppressions.json, 11 phpstan ignore patterns.
+      #
+      # So the only way to add static-analysis debt here is to add a
+      # suppression, and until now that cost nothing and showed up nowhere.
+      # The number a reviewer looks at did not move. This makes it move.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed
@@ -370,3 +428,14 @@ jobs:
       # `enable-axe` is deliberately still NOT set — a vanilla Nextcloud 34
       # reports serious/critical violations on core's OWN routes that DOM
       # scoping does not remove. Enabling axe is a separate decision.
+      # ── Cost controls (see ConductionNL/.github#596, #599) ───────────────
+      # Run PHPUnit and Playwright only when the diff could change their
+      # verdict. Fails safe TOWARDS running: an unreadable diff, a force-push,
+      # a branch creation or a dispatch all run everything, and a filtered
+      # skip is a declared state in the Quality Report, not a missing one.
+      enable-path-filtering: true
+      # PR-time PHPUnit runs the primary PHP against the newest declared
+      # Nextcloud; the full matrix still runs on every push to a default
+      # branch and on the release PR into beta. Breadth moves from
+      # per-commit to per-merge, it is not dropped.
+      reduce-pr-matrix: true

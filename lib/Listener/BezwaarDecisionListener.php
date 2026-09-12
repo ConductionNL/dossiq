@@ -35,7 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -51,6 +53,9 @@ use Throwable;
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
 class BezwaarDecisionListener implements IEventListener {
+
+	use SearchesObjects;
+
 	/**
 	 * Target status the guard protects.
 	 */
@@ -70,10 +75,12 @@ class BezwaarDecisionListener implements IEventListener {
 	 *
 	 * @param SettingsService $settingsService Schema slug bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -223,15 +230,21 @@ class BezwaarDecisionListener implements IEventListener {
 	/**
 	 * Scan bezwaarDecision rows for one that counts as decided.
 	 *
-	 * @param array<int, mixed> $decisions The bezwaarDecision rows.
+	 * `findAll()` returns `ObjectEntity` objects, not arrays. This scan used to
+	 * skip every row that was not an array, so it skipped all of them: no
+	 * decision ever counted as decided, and every bezwaar entering
+	 * "Decision on objection" was reverted, including one decidesk had just
+	 * decided. Each row is now read through {@see OpenRegisterRowNormaliser}.
+	 * A row it cannot read comes back empty, carries neither marker, and so
+	 * never counts as decided.
+	 *
+	 * @param array<int, mixed> $decisions The bezwaarDecision rows as findAll() returned them.
 	 *
 	 * @return bool
 	 */
 	private function containsDecidedDecision(array $decisions): bool {
-		foreach ($decisions as $decision) {
-			if (is_array($decision) === false) {
-				continue;
-			}
+		foreach ($decisions as $row) {
+			$decision = $this->rowNormaliser->normalise(row: $row)['data'];
 
 			$status = (string)($decision['status'] ?? '');
 			$decisionRef = (string)($decision['decisionRef'] ?? '');
@@ -281,11 +294,12 @@ class BezwaarDecisionListener implements IEventListener {
 		}
 
 		try {
-			$objectService->saveObject(
-				object: ['status' => $previous],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $objectionSchema,
-				uuid: (string)$objectionId
+				id: (string)$objectionId,
+				changes: ['status' => $previous]
 			);
 			$this->logger->warning(
 				'Dossiq bezwaar-decision: blocked transition into "'

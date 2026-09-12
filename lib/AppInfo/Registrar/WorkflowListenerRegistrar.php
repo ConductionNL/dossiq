@@ -28,11 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
+use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -93,6 +94,18 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
 		);
+
+		// The case number is DECLARED on the schema, as an OpenRegister
+		// calculation using the `sequence` operator. On an install whose
+		// OpenRegister ships that operator this listener writes nothing: it
+		// reads the number back off the created case and returns. On an older
+		// one the declaration evaluates to nothing at all — in the register, at
+		// evaluation time, where no gate here can see it — and every case is
+		// filed without a number. This is the backfill for exactly that case.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CaseNumberListener::class
+		);
 	}//end registerTermijnListeners()
 
 	/**
@@ -139,21 +152,30 @@ class WorkflowListenerRegistrar {
 	/**
 	 * Register the listener that resumes a run when its task is completed.
 	 *
-	 * A task is an ordinary OpenRegister object, so completing one is an object
-	 * UPDATE — there is no dossiq task endpoint this could hang on instead.
+	 * A task is an OpenRegister `Task` row owned by the flow engine, and the
+	 * engine announces its own terminality: `TaskService` dispatches
+	 * `TaskTerminalEvent` once the terminal write has committed.
 	 *
-	 * Registered unconditionally: unlike the decision events, `ObjectUpdatedEvent`
+	 * Registered unconditionally: unlike the decision events, `TaskTerminalEvent`
 	 * is OpenRegister's own and OpenRegister is a hard dependency of this app.
+	 * The class ships from openregister v2.0.13 onward (openregister#3269), and
+	 * `FlowRunSignalService::signalAs()`, which the listener signals through,
+	 * from openregister#3332.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function registerHumanStepListeners(IRegistrationContext $context): void {
+		// The ENGINE's terminal event, not an object update. Tasks are
+		// OpenRegister `Task` rows now, so nothing writes a `caseTask` object
+		// and an ObjectUpdatedEvent listener would never fire again: the run
+		// would only resume on DossiqAskPersonNode's 30-minute heartbeat, and
+		// a wedge that recovers half an hour late still reads as a wedge.
 		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
+			event: TaskTerminalEvent::class,
 			listener: TaskCompletionResumeListener::class
 		);
 

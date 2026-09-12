@@ -1,7 +1,7 @@
 <template>
 	<div class="case-type-detail">
 		<div class="case-type-detail__header">
-			<NcButton type="tertiary" @click="$emit('back')">
+			<NcButton variant="tertiary" @click="$emit('back')">
 				<template #icon>
 					<ArrowLeftIcon :size="20" />
 				</template>
@@ -17,21 +17,36 @@
 			</h3>
 
 			<div class="case-type-detail__actions">
+				<span v-if="!isCreate" class="case-type-detail__version">
+					{{ t('dossiq', 'Version {version}', { version: version }) }}
+				</span>
 				<NcButton
 					v-if="!isCreate && form.isDraft"
-					type="secondary"
-					@click="publish">
+					variant="secondary"
+					data-testid="case-type-publish"
+					@click="publishDialogOpen = true">
 					{{ t('dossiq', 'Publish') }}
 				</NcButton>
 				<NcButton
 					v-if="!isCreate && !form.isDraft"
-					type="secondary"
+					variant="secondary"
 					@click="unpublish">
 					{{ t('dossiq', 'Unpublish') }}
 				</NcButton>
 				<NcButton
+					v-if="!isCreate && !form.isDraft && isCurrentVersion"
+					variant="secondary"
+					:disabled="versioning"
+					data-testid="case-type-new-version"
+					@click="newVersion">
+					<template v-if="versioning" #icon>
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('dossiq', 'New version') }}
+				</NcButton>
+				<NcButton
 					v-if="!isCreate"
-					type="secondary"
+					variant="secondary"
 					:disabled="duplicating"
 					@click="duplicate">
 					<template v-if="duplicating" #icon>
@@ -39,7 +54,7 @@
 					</template>
 					{{ t('dossiq', 'Duplicate') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -48,33 +63,34 @@
 			</div>
 		</div>
 
-		<!-- Active case warning -->
+		<!-- Superseded version notice -->
 		<div
-			v-if="activeCaseCount > 0 && !isCreate"
-			class="case-type-detail__warning">
+			v-if="!isCreate && !isCurrentVersion"
+			class="case-type-detail__warning"
+			data-testid="case-type-superseded">
 			<p>
 				{{
 					t(
 						'dossiq',
-						'There are {count} active cases of this type. Changes will only apply to new cases.',
-						{ count: activeCaseCount },
+						'A newer version has replaced this one. Cases already running on it carry on here. New cases go on the newer version.',
 					)
 				}}
 			</p>
 		</div>
 
-		<!-- Publish errors -->
+		<!-- Running cases warning -->
 		<div
-			v-if="publishErrors.length > 0"
-			class="case-type-detail__publish-errors">
+			v-if="hasRunningCases && !isCreate && !form.isDraft && isCurrentVersion"
+			class="case-type-detail__warning"
+			data-testid="case-type-running-cases">
 			<p>
-				<strong>{{ t('dossiq', 'Cannot publish:') }}</strong>
+				{{
+					t(
+						'dossiq',
+						'Cases are running on this version. Editing it changes them too. Make a new version instead, and the running cases stay on this one.',
+					)
+				}}
 			</p>
-			<ul>
-				<li v-for="(err, i) in publishErrors" :key="i">
-					{{ err }}
-				</li>
-			</ul>
 		</div>
 
 		<!-- Save feedback -->
@@ -144,6 +160,11 @@
 					:caseTypeId="caseTypeId" />
 			</div>
 		</template>
+
+		<CaseTypePublishDialog
+			v-if="publishDialogOpen"
+			:caseTypeId="caseTypeId"
+			@close="onPublishDialogClosed" />
 	</div>
 </template>
 
@@ -152,6 +173,7 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
+import CaseTypePublishDialog from '../../dialogs/CaseTypePublishDialog.vue'
 import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
 import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
 import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
@@ -163,10 +185,9 @@ import StatusesTab from './tabs/StatusesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import {
-	validateCaseType,
-	validateForPublish,
-} from '../../utils/caseTypeValidation.js'
+import { publishRefusalMessage } from '../../utils/caseTypePublish.js'
+import { validateCaseType } from '../../utils/caseTypeValidation.js'
+import { isCurrentCaseTypeVersion } from '../../utils/caseValidation.js'
 
 const EMPTY_FORM = {
 	title: '',
@@ -201,6 +222,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		ArrowLeftIcon,
+		CaseTypePublishDialog,
 		GeneralTab,
 		StatusesTab,
 		WorkflowTab,
@@ -231,10 +253,11 @@ export default {
 			saveSuccess: false,
 			loadingDetail: false,
 			validationErrors: {},
-			publishErrors: [],
 			statusTypes: [],
-			activeCaseCount: 0,
+			hasRunningCases: false,
 			duplicating: false,
+			versioning: false,
+			publishDialogOpen: false,
 		}
 	},
 
@@ -246,6 +269,50 @@ export default {
 
 		isCreate() {
 			return !this.caseTypeId
+		},
+
+		/**
+		 * The sentences a refused gesture can carry, already translated.
+		 *
+		 * Literal t() calls here rather than inside the helper, because
+		 * `tests/l10n/check-l10n.js` extracts by finding a literal inside a
+		 * t() call for this app: a string that only ever passes through a
+		 * callback never reaches a translator.
+		 *
+		 * @return {object} The messages.
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		refusalMessages() {
+			return {
+				signIn: t('dossiq', 'Sign in again and retry.'),
+				forbidden: t('dossiq', 'Your account may not do this.'),
+				missing: t('dossiq', 'This case type no longer exists.'),
+				generic: t(
+					'dossiq',
+					'That did not work. Try again, or ask an administrator.',
+				),
+			}
+		},
+
+		/**
+		 * Which version of this case type is open.
+		 *
+		 * @return {number} The version; one for a type nobody has versioned.
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		version() {
+			const version = Number(this.form.version)
+			return Number.isFinite(version) && version > 0 ? version : 1
+		},
+
+		/**
+		 * Whether this is the version new cases are filed on.
+		 *
+		 * @return {boolean} True while nothing has replaced it.
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		isCurrentVersion() {
+			return isCurrentCaseTypeVersion(this.form)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
@@ -285,15 +352,18 @@ export default {
 			if (data) {
 				this.form = { ...EMPTY_FORM, ...data }
 			}
-			// Count active cases of this type
+			// Whether ANY case runs on this version, not how many. The store
+			// answers a page of rows and no total, so the old count read one
+			// row and rendered it as "there are 1 active cases". The banner
+			// only ever needed the yes or no.
 			try {
 				const cases = await this.objectStore.fetchCollection('case', {
 					caseType: this.caseTypeId,
 					_limit: 1,
 				})
-				this.activeCaseCount = cases?.length || 0
+				this.hasRunningCases = (cases?.length || 0) > 0
 			} catch (e) {
-				this.activeCaseCount = 0
+				this.hasRunningCases = false
 			}
 			this.loadingDetail = false
 		},
@@ -317,7 +387,6 @@ export default {
 		async save() {
 			this.saveError = ''
 			this.saveSuccess = false
-			this.publishErrors = []
 
 			const validation = validateCaseType(this.form)
 			this.validationErrors = validation.errors
@@ -349,29 +418,51 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
-		async publish() {
-			this.publishErrors = []
+		/**
+		 * Reload after the publish dialog closes, whether it published or not.
+		 *
+		 * 🔴 PUBLISHING IS THE SERVER'S, AND THIS PAGE USED TO DO IT ITSELF.
+		 * It validated in the browser and wrote `isDraft: false` straight to
+		 * the store, while the in-app case type page called
+		 * `POST /api/case-types/{id}/publish`. Two implementations of one
+		 * gesture, and only the server one closes the version being replaced,
+		 * so publishing from here left two versions of a case type both open
+		 * for new cases with nothing to say which was current. One path now,
+		 * and it is the one that owns the write.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		async onPublishDialogClosed() {
+			this.publishDialogOpen = false
+			await this.loadCaseType()
+		},
+
+		/**
+		 * Start the next version of this case type and navigate to it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
+		 */
+		async newVersion() {
 			this.saveError = ''
-
-			// Fetch status types for validation
-			const statusTypes = await this.objectStore.fetchCollection(
-				'statusType',
-				{
-					caseType: this.caseTypeId,
-					_limit: 100,
-				},
-			)
-
-			const result = validateForPublish(this.form, statusTypes || [])
-			if (!result.valid) {
-				this.publishErrors = result.errors
-				// Re-fetch case type data since fetchCollection may have changed state
-				return
+			this.versioning = true
+			try {
+				const response = await axios.post(
+					generateUrl(
+						'/apps/dossiq/api/case-definitions/{id}/new-version',
+						{ id: this.caseTypeId },
+					),
+				)
+				const newId = response.data?.id
+				if (newId) {
+					this.$emit('duplicated', newId)
+				}
+			} catch (err) {
+				this.saveError = publishRefusalMessage(err, this.refusalMessages)
+			} finally {
+				this.versioning = false
 			}
-
-			this.form.isDraft = false
-			await this.save()
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
@@ -407,9 +498,7 @@ export default {
 					this.$emit('duplicated', newId)
 				}
 			} catch (err) {
-				this.saveError =
-					err.response?.data?.error
-					|| t('dossiq', 'Failed to duplicate case type')
+				this.saveError = publishRefusalMessage(err, this.refusalMessages)
 			} finally {
 				this.duplicating = false
 			}
@@ -446,21 +535,10 @@ export default {
 	color: var(--color-warning-text);
 }
 
-.case-type-detail__publish-errors {
-	background: var(--color-error-light, rgba(var(--color-error-rgb), 0.1));
-	border: 1px solid var(--color-error);
-	border-radius: var(--border-radius);
-	padding: 12px;
-	margin-bottom: 16px;
-}
-
-.case-type-detail__publish-errors ul {
-	margin: 8px 0 0 16px;
-	padding: 0;
-}
-
-.case-type-detail__publish-errors li {
-	color: var(--color-error);
+.case-type-detail__version {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	align-self: center;
 }
 
 .case-type-detail__error {

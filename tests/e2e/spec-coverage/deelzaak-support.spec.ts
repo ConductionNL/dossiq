@@ -25,12 +25,17 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
+	createObject,
 	ensureCaseType,
 	getRequestToken,
+	listObjects,
 	objectId,
+	REGISTER,
+	RUN_PREFIX,
 	seedCase,
+	showObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog, navTo } from '../helpers/nav.ts'
+import { dismissSupportDialog } from '../helpers/nav.ts'
 
 /** OpenRegister's object API for this app's own register. */
 const CASES_API = '/index.php/apps/openregister/api/objects/dossiq/case'
@@ -86,18 +91,52 @@ async function ensureCaseId(page): Promise<string | null> {
 	}
 }
 
-/** Open the Cases list, or skip when it does not render. */
-async function openCasesListOrSkip(page) {
-	// NOT wrapped in `.catch(() => {})`. A missing sidebar label is a rename
-	// this suite has to notice, and swallowing it here would run every test
-	// below against whatever the Dashboard happens to render — green, and
-	// asserting nothing. The skip below is for absent DATA, not a broken menu.
-	await navTo(page, /^(All cases|Alle zaken)$/)
-	await dismissSupportDialog(page).catch(() => {})
-	const caseId = await ensureCaseId(page)
-	if (!caseId) return false
-	await expect(page.locator('body')).not.toContainText('Internal Server Error')
-	return true
+/**
+ * Seed a parent case, and by default one sub-case hanging off it.
+ *
+ * The orphan-deletion branch is decided by how many sub-cases the parent has
+ * (`requiresOrphanWarning` in src/utils/deelzaakHelpers.js), so a test that
+ * reads whatever the register happens to hold asserts whichever branch it
+ * lands on. Each side seeds its own shape instead.
+ *
+ * @param  options            Seeding options.
+ * @param  options.withChild  Seed a sub-case referencing the parent.
+ * @param  options.title      Title for the parent, when the caller has to find
+ *                            its row in a list.
+ * @return The seeded ids.
+ */
+async function seedParentWithSubCase(
+	options: { withChild?: boolean; title?: string } = {},
+): Promise<{ parentId: string; childId: string | null }> {
+	const withChild = options.withChild !== false
+	const api = await request.newContext({ storageState: STORAGE_STATE })
+	try {
+		const token = await getRequestToken(api)
+		const caseType = await ensureCaseType(api, token)
+		const parent = await seedCase(api, token, {
+			title:
+				options.title
+				?? `E2E deelzaak parent ${withChild ? 'with' : 'without'} sub-case`,
+			caseType: caseType.id,
+			description:
+				'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+		})
+		const parentId = objectId(parent)
+		let childId: string | null = null
+		if (withChild) {
+			const child = await seedCase(api, token, {
+				title: 'E2E deelzaak child',
+				caseType: caseType.id,
+				parentCase: parentId,
+				description:
+					'Seeded by deelzaak-support.spec.ts (orphan-deletion legs).',
+			})
+			childId = objectId(child)
+		}
+		return { parentId, childId }
+	} finally {
+		await api.dispose()
+	}
 }
 
 /**
@@ -110,6 +149,11 @@ async function openCasesListOrSkip(page) {
  * ever shipped. The manifest declares `DeelzaakList` as a `type: "custom"`
  * PAGE at `/cases/:id/deelzaken`, and `CaseDetail` carried only the
  * `case-kpis-sub-cases` COUNT.
+ *
+ * It is a section in the literal sense now: the sub-cases list is the second
+ * SECTION of the Related tab, reached by opening that tab. There was briefly a
+ * Sub-cases tab, between the widget landing and the strip coming down from
+ * fourteen tabs to six.
  *
  * The spec is the authority and it says section, not tab:
  *
@@ -143,7 +187,7 @@ async function openSubCasesSectionOrSkip(page) {
 	// Asserting the container alone would pass while the list below never renders.
 	const tab = page
 		.locator('.cn-tabs-widget')
-		.getByRole('tab', { name: /Sub-cases|Deelzaken/i })
+		.getByRole('tab', { name: 'Related', exact: true })
 		.first()
 	if ((await tab.count()) > 0) {
 		await expect(
@@ -158,7 +202,14 @@ async function openSubCasesSectionOrSkip(page) {
 		// cannot retry — it fired against an empty panel and reported the
 		// section missing. Same trap the comment above guards for the tab
 		// itself; making the panel lazy moved it one step later.
-		const panel = page.locator('.cn-tabs-widget [role="tabpanel"]:not([hidden])')
+		// Scoped to the sub-cases SECTION and not to the whole panel. Since the
+		// strip came down from fourteen tabs to six, the Related tab holds the
+		// related-cases list ABOVE this one, so an unscoped `table` count is
+		// satisfied by the neighbouring table and this test would pass with the
+		// sub-cases list missing entirely.
+		const panel = page.locator(
+			'.cn-tabs-widget .cn-tabs__content > [role="tabpanel"]:not([hidden]) [data-testid="case-section-case-sub-cases"]',
+		)
 		await expect
 			.poll(
 				async () =>
@@ -192,103 +243,215 @@ async function openSubCasesSectionOrSkip(page) {
 	return true
 }
 
+/**
+ * Open the Cases list narrowed to one seeded title.
+ *
+ * @param page  The page.
+ * @param title The exact seeded title to narrow to.
+ */
+async function visitCases(page, title: string): Promise<void> {
+	await page.goto(
+		`/index.php/apps/dossiq/cases?title=${encodeURIComponent(title)}`,
+		{ timeout: 90_000 },
+	)
+	await dismissSupportDialog(page).catch(() => {})
+	await expect(
+		page.locator('table, .viewTable, [role="table"]').first(),
+	).toBeVisible({ timeout: 60_000 })
+}
+
 test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () => {
 	// @e2e deelzaak-support::case-list-shows-sub-case-count
 	// @e2e deelzaak-support::case-without-sub-cases-has-no-badge
 	// @e2e deelzaak-support::sub-case-counts-batch-loaded-per-page
-	// FIXME(#719): data-dependent. Measured on /cases with an unseeded list:
-	// table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body
-	// renders an empty state, so there is no table to assert against.
-	test('the case list renders and may show an "N deelzaken" badge in a single batch', async ({
+	// UNPARKED, AND IT SEEDS THE ROW IT MEANS TO READ.
+	//
+	// The old FIXME(#719) said "data-dependent … the body renders an empty
+	// state, so there is no table to assert against", which was true of the
+	// register it was measured on and is a reason to seed, not to stand down.
+	// The old body also annotated the no-badge outcome as a note instead of
+	// asserting it, so a run where nothing had sub-cases passed while proving
+	// neither branch.
+	//
+	// It also navigated three times inside one test (navTo, reload, navTo) and
+	// then slept 1500ms. Six workers on one `php -S` put a page load at 13 to
+	// 23 seconds, so that overran the 60s test budget before it asserted
+	// anything: measured on CI run 34578033755 as `page.goto: Test timeout of
+	// 60000ms exceeded`. One navigation now, and `test.slow()` for the budget.
+	test('the case list shows a sub-case badge, and only on a parent', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): data-dependent. Measured on /cases with an unseeded list: table=0, [role=table]=0, .viewTable=0, [class*=card]=0 — the body renders an empty state, so there is no table to assert against.',
-		)
-		const opened = await openCasesListOrSkip(page)
-		if (!opened) return
+		test.slow()
+		// 🔴 THE OLD LOCATOR WAS DUTCH AND THE INSTANCE IS ENGLISH.
+		// It matched `/\d+ deelzaken/i`. `subCaseCountBadge()` in
+		// src/utils/deelzaakHelpers.js returns `t('dossiq', '{count}
+		// sub-cases')`, and "N deelzaken" is only what l10n/nl.json renders
+		// that into. So on the English CI instance the badge is on the page and
+		// the assertion could not see it, which is why the old body could only
+		// ever take its own "no badge present" branch. Both spellings now.
+		const BADGE = /\d+ (sub-cases|deelzaken)/i
+		const withTitle = `${RUN_PREFIX} DZ badge parent`
+		const loneTitle = `${RUN_PREFIX} DZ badge lone`
+		await seedParentWithSubCase({ title: withTitle })
+		await seedParentWithSubCase({ withChild: false, title: loneTitle })
 
-		// Capture network calls to assert the batch query (one /counts request).
+		// Counted BEFORE the navigation, so the render's own fetches are the
+		// ones observed. `deelzaken/counts` is the batch endpoint: the claim is
+		// one request per rendered page, not one per row.
 		const countCalls: string[] = []
 		page.on('request', (req) => {
 			if (req.url().includes('/api/deelzaken/counts'))
 				countCalls.push(req.url())
 		})
-		await page.reload().catch(() => {})
-		await openCasesListOrSkip(page)
-		await page.waitForTimeout(1500)
 
+		// Narrowed by title rather than paged through. Fixtures accumulate
+		// across runs, so the row this test seeded need not be on page one of
+		// an unfiltered list, and a `getByRole('row')` filter would then be
+		// asserting an absence it had not earned.
+		await visitCases(page, withTitle)
+		const withChild = page.getByRole('row').filter({ hasText: withTitle })
 		await expect(
-			page.locator('table, .viewTable, [role="table"]').first(),
-		).toBeVisible({ timeout: 10000 })
-		// Badge shown only for cases WITH sub-cases; absent otherwise (no-badge branch).
-		const badge = page.getByText(/\d+ deelzaken/i).first()
-		if ((await badge.count()) > 0) {
-			await expect(badge).toBeVisible()
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No badge present — seeded deelzaak demo not deployed (no-badge branch).',
-			})
-		}
-		// Batch (not N+1): if counts were fetched, they collapse to a single call per render.
-		if (countCalls.length > 0) {
-			expect(countCalls.length).toBeLessThanOrEqual(2)
-		}
+			withChild.getByText(BADGE).first(),
+			'a case with one sub-case shows the sub-case badge',
+		).toBeVisible({ timeout: 60_000 })
+
+		// Batched, not N+1. The endpoint is asked once for the page, twice at
+		// most when the list re-renders after its first data arrives.
+		expect(
+			countCalls.length,
+			`deelzaken counts must be batched per page, saw ${countCalls.length} requests`,
+		).toBeLessThanOrEqual(2)
+
+		// THE OTHER HALF. `subCaseCountBadge()` returns '' for a count of zero
+		// (REQ-DZS-005-B), so a badge stamped on every row would satisfy the
+		// assertion above on its own.
+		await visitCases(page, loneTitle)
+		const withoutChild = page.getByRole('row').filter({ hasText: loneTitle })
+		await expect(withoutChild.first()).toBeVisible({ timeout: 60_000 })
+		await expect(
+			withoutChild.getByText(BADGE),
+			'a case with no sub-cases shows no badge',
+		).toHaveCount(0)
 		await expect(page.locator('body')).not.toContainText('TypeError')
 	})
 })
 
 test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion protection)', () => {
 	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
-	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
-	test('the sub-cases page delete control warns about orphans for a parent with sub-cases', async ({
+	//
+	// 🔴 `delete-case-without-sub-cases-proceeds-normally` WAS CITED HERE TOO
+	// AND HAS BEEN TAKEN DOWN. This test seeds a parent WITH a sub-case and
+	// only ever exercises the orphan branch, so nothing in it says what a
+	// childless case's delete dialog looks like: breaking the plain
+	// confirmation left every assertion in here green. The scenario keeps two
+	// citations that do prove it, the sibling test directly below and
+	// `deleting a case with no sub-cases takes the plain confirmation` further
+	// down this file, so nothing is lost by removing the claim that was false.
+	//
+	// UNPARKED, AND POINTED AT THE PAGE THE CONTROL IS ON.
+	//
+	// This skipped on every run, and its reason was right that nothing was
+	// missing and wrong about where to look. The delete control is declared in
+	// `src/views/cases/DeelzaakList.vue`, which the manifest mounts as the
+	// `type: "custom"` page at `/cases/:id/deelzaken`. The old body reached
+	// CaseDetail's Related tab instead, where the `case-sub-cases` object-list
+	// widget renders the sub-case LIST and no delete action at all. So the
+	// control could never attach, on any build, and the five-second wait was
+	// measuring the wrong page.
+	//
+	// BOTH BRANCHES, NOT WHICHEVER THE INSTANCE HAPPENED TO HOLD. The old body
+	// took whatever the first case in the register gave it and annotated the
+	// other outcome as a note, so a run where no case had sub-cases asserted
+	// the orphan warning never appeared. Each branch now seeds the shape it
+	// needs: `requiresOrphanWarning(count)` in src/utils/deelzaakHelpers.js is
+	// the fork, and the two scenarios are its two sides.
+	test('the sub-cases page warns about orphans for a parent with sub-cases', async ({
 		page,
 	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
+		const { parentId } = await seedParentWithSubCase()
+
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`, {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
+		await dismissSupportDialog(page).catch(() => {})
 
 		const deleteBtn = page
 			.getByRole('button', {
-				name: /Delete case|Zaak verwijderen|Delete parent case|Hoofdzaak verwijderen/i,
+				name: /Delete parent case|Hoofdzaak verwijderen/i,
 			})
 			.first()
-		// `count()` takes ONE snapshot and cannot retry, so this fired before
-		// the section had painted and then blamed a deployment for it.
-		const present = await deleteBtn
-			.waitFor({ state: 'attached', timeout: 5_000 })
-			.then(() => true)
-			.catch(() => false)
-		if (!present) {
-			test.skip(
-				true,
-				'the delete-case control did not attach within 5s. NOT a deploy gap — "Delete case" appears in 3 files under src/ and "Delete parent case" in 1, so the control ships in this commit. The locator already accepts the Dutch strings. Debug why it does not render on the sub-cases section rather than waiting for a build.',
-			)
-			return
-		}
-		await expect(deleteBtn).toBeVisible({ timeout: 10000 })
-		// Auto-dismiss the standard window.confirm taken on the no-sub-cases branch.
-		page.on('dialog', (d) => d.dismiss().catch(() => {}))
+		await expect(
+			deleteBtn,
+			'DeelzaakList renders the parent delete control once the parent loads',
+		).toBeVisible({ timeout: 30_000 })
 		await deleteBtn.click()
-		await page.waitForTimeout(600)
-		const warning = page
-			.getByText(/unlink the sub-cases|losgekoppeld van hun hoofdzaak/i)
+
+		// The orphan dialog, by its own title and its own sentence. Asserting
+		// the sentence alone would also match the plain confirm dialog if the
+		// copy ever converged; asserting both pins the branch.
+		await expect(
+			page.getByText('Delete case with sub-cases').first(),
+			'a parent with sub-cases takes the orphan-warning branch, not the plain confirm',
+		).toBeVisible({ timeout: 15_000 })
+		await expect(
+			page.getByText(/unlink the sub-cases from their parent/i).first(),
+		).toBeVisible()
+		// Cancel — this test proves the warning, not the deletion.
+		await page
+			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
 			.first()
-		if ((await warning.count()) > 0) {
-			await expect(warning).toBeVisible({ timeout: 5000 })
-			const cancel = page
-				.getByRole('button', { name: /Cancel|Annuleren/i })
-				.first()
-			if ((await cancel.count()) > 0) await cancel.click().catch(() => {})
-		} else {
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'No orphan warning — case has no sub-cases (standard-delete branch).',
+			.click()
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+
+	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`:
+	// the served bundle was rewritten on its way to the browser, so the broken
+	// fork really ran while nothing on disk moved.
+	//
+	//   find    /onDeleteParent\(\)\{!function\(\w+\)\{const \w+=Number\(\w+\);return Number\.isFinite\(\w+\)&&\w+>0\}/
+	//   replace 'onDeleteParent(){!function(){return true}'
+	//   red on  "a childless case takes the standard deletion confirmation"
+	//
+	// `requiresOrphanWarning()` forced true sends a childless case down the
+	// orphan branch, which is the state this scenario forbids. That is also
+	// why the citation was taken off the orphan-branch test above: this break
+	// leaves every assertion in that one green.
+	test('a parent with no sub-cases takes the plain delete confirmation', async ({
+		page,
+	}) => {
+		const { parentId } = await seedParentWithSubCase({ withChild: false })
+
+		await page.goto(`/index.php/apps/dossiq/cases/${parentId}/deelzaken`, {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
+		await dismissSupportDialog(page).catch(() => {})
+
+		const deleteBtn = page
+			.getByRole('button', {
+				name: /Delete parent case|Hoofdzaak verwijderen/i,
 			})
-		}
+			.first()
+		await expect(deleteBtn).toBeVisible({ timeout: 30_000 })
+		await deleteBtn.click()
+
+		// The OTHER side of requiresOrphanWarning(): the plain CnConfirmDialog.
+		await expect(
+			page.getByText('Are you sure you want to delete this case?').first(),
+			'a childless case takes the standard deletion confirmation',
+		).toBeVisible({ timeout: 15_000 })
+		// And NOT the orphan copy.
+		await expect(
+			page.getByText(/unlink the sub-cases from their parent/i),
+			'a case with nothing hanging off it must not be told its sub-cases will be unlinked',
+		).toHaveCount(0)
+		await page
+			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
+			.first()
+			.click()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
@@ -296,7 +459,17 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 test.describe('Sub-cases list + create (deelzaak-support REQ — section / creation)', () => {
 	// @e2e deelzaak-support::parent-case-shows-sub-cases-list
 	// @e2e deelzaak-support::parent-case-with-no-sub-cases-shows-empty-state
-	// @e2e deelzaak-support::case-without-sub-case-type-support-hides-section
+	// `case-without-sub-case-type-support-hides-section` USED TO BE CITED HERE
+	// and has been moved to a reason-bearing `@e2e exclude` on the scenario.
+	// That requirement says the section MUST NOT render for a case type with an
+	// empty `subCaseTypes`; the assertion below is `hasTable || hasEmpty`, which
+	// requires it TO render, so it passed precisely when the requirement was
+	// violated. The spec's own body records the section as unimplemented (a
+	// manifest widget has no conditional-visibility key), and the fixture in
+	// the eligibility block further down confirms it: a case on a case type with
+	// no sub-case types still draws the section, explaining itself in the empty
+	// state. An exclude naming that is the honest citation until the renderer
+	// grows the capability.
 	test('the Sub-cases tab renders either a list or an empty state without error', async ({
 		page,
 	}) => {
@@ -313,52 +486,6 @@ test.describe('Sub-cases list + create (deelzaak-support REQ — section / creat
 		const hasEmpty = (await empty.count()) > 0
 		expect(hasTable || hasEmpty).toBeTruthy()
 		await expect(page.locator('body')).not.toContainText('TypeError')
-	})
-
-	// @e2e deelzaak-support::create-sub-case-from-parent-case-detail
-	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-has-no-sub-case-types
-	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-case-is-closed
-	// @e2e deelzaak-support::sub-case-of-sub-case-is-prohibited
-	test('the Create sub-case control opens a filtered dialog when allowed, and is hidden otherwise', async ({
-		page,
-	}) => {
-		const opened = await openSubCasesSectionOrSkip(page)
-		if (!opened) return
-
-		const createBtn = page
-			.getByRole('button', {
-				name: /Create sub-case|Create first sub-case|Deelzaak aanmaken|Create Sub-case/i,
-			})
-			.first()
-		if ((await createBtn.count()) === 0) {
-			// Button absent is a VALID state: parent closed, parent is itself a
-			// sub-case (zrc-013c), or caseType has no subCaseTypes. The page must
-			// still render cleanly.
-			test.info().annotations.push({
-				type: 'note',
-				description:
-					'Create sub-case button hidden — parent not eligible (closed / itself a sub-case / no subCaseTypes).',
-			})
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-			return
-		}
-		await createBtn.click()
-		await page.waitForTimeout(600)
-		// The DeelzaakCreateModal opens with a sub-case type picker restricted to
-		// the parent's subCaseTypes.
-		await expect(
-			page
-				.getByText(
-					/Sub-case type|Parent case type|No allowed sub-case types/i,
-				)
-				.first(),
-		).toBeVisible({ timeout: 8000 })
-		const cancel = page
-			.getByRole('button', { name: /Cancel|Annuleren|Close/i })
-			.first()
-		if ((await cancel.count()) > 0) await cancel.click().catch(() => {})
 	})
 })
 
@@ -408,5 +535,497 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 			})
 		}
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
+})
+
+/*
+ * The six refusal/protection citations, rebuilt against their own fixtures.
+ *
+ * WHAT THESE REPLACED. All six used to hang off two tests that navigated to
+ * `/cases/:id` and looked for controls that do not live there. The Create
+ * sub-case action and the Delete case action are on `DeelzaakList`, the page
+ * at `/cases/:id/deelzaken`; the case detail carries only the sub-cases
+ * LISTING. So the creation test found no button, took its `if (count === 0)`
+ * early return, annotated "parent not eligible" and passed — every run, on
+ * whatever case the register happened to hold first. A Create sub-case button
+ * wrongly offered on a closed case, on a sub-case, or on a case type with no
+ * `subCaseTypes` would have taken the happy path and passed too.
+ *
+ * Three properties this block has that the old one did not:
+ *
+ *   - Each refusal has its OWN seeded fixture, so the precondition the
+ *     scenario names is established rather than hoped for.
+ *   - The decisive assertion is the SERVER's answer. Hiding a button is a
+ *     courtesy; `POST /api/deelzaken/validate` is the protection, and
+ *     `DeelzaakCreateModal` calls it before every write. A build that hid the
+ *     button and dropped the guard would pass a UI-only test and fails these.
+ *   - Absence is asserted only NEXT TO presence: `openSubCasesPage` first
+ *     proves the page painted (heading + Delete action) and each refusal test
+ *     then requires the page's own explanation of the refusal. "Correctly
+ *     refused" and "surface missing" are no longer the same green.
+ */
+
+/** The app's own sub-case validation endpoint — the server-side refusal. */
+const VALIDATE_URL = '/index.php/apps/dossiq/api/deelzaken/validate'
+
+let api: APIRequestContext
+let fixtureToken: string
+
+/** Case type that ALLOWS two child types. */
+let parentTypeId = ''
+/** The two allowed child types, by id and by title. */
+let childTypeAId = ''
+let childTypeBId = ''
+let childTypeATitle = ''
+let childTypeBTitle = ''
+/** A third type that is NOT on the parent's allow-list. */
+let strangerTypeId = ''
+let strangerTypeTitle = ''
+/** Case type that allows NO child types (empty `subCaseTypes`). */
+let barrenTypeId = ''
+
+/** Open, childless parent on `parentTypeId` — the eligible case. */
+let eligibleParentId = ''
+/** Closed parent (endDate set) on `parentTypeId`. */
+let closedParentId = ''
+/** Open, childless case on `barrenTypeId`. */
+let barrenParentId = ''
+/** A case that is itself a sub-case of `eligibleParentId`. */
+let subCaseId = ''
+/** A parent carrying exactly two sub-cases, for the deletion warning. */
+let twoChildParentId = ''
+let childOneId = ''
+let childTwoId = ''
+/** A childless case used for the plain deletion confirmation. */
+let childlessCaseId = ''
+
+/**
+ * Seed a published case type.
+ *
+ * `isDraft: false` is load-bearing: `case.caseType` carries
+ * `x-relation-filter: {isDraft: false}` and the caseType schema defaults
+ * `isDraft` to true, so a draft type is invisible to every picker.
+ *
+ * @param label        A short, human-readable suffix for the title.
+ * @param subCaseTypes The case type ids this type may parent (empty allows none).
+ * @return The created case type object.
+ */
+async function seedCaseType(
+	label: string,
+	subCaseTypes: string[] = [],
+): Promise<any> {
+	const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+	return createObject(api, fixtureToken, 'caseType', {
+		title: `${RUN_PREFIX} ${label}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-${slug}`,
+		description: 'Seeded by deelzaak-support.spec.ts.',
+		isDraft: false,
+		// SET ON PURPOSE, and it hides a product defect this test is not
+		// about. `DeelzaakCreateModal` copies the child type's confidentiality
+		// onto the new case and falls back to 'public' when there is none, but
+		// the case schema's enum is Dutch ('openbaar', 'intern', ...) and
+		// refuses 'public' with a 400. Without this line the create fails
+		// before `parentCase` is ever written. Measured 2026-09-11.
+		confidentiality: 'openbaar',
+		subCaseTypes,
+	})
+}
+
+/**
+ * Ask the server whether a sub-case of `childCaseTypeId` may hang off
+ * `parentCaseUuid`.
+ *
+ * This is the protection itself rather than a rendering of it: hiding the
+ * button without this endpoint answering would leave the refusal unenforced
+ * for every caller that is not a mouse click.
+ *
+ * @param page            The Playwright page (carries the session).
+ * @param parentCaseUuid  The proposed parent case.
+ * @param childCaseTypeId The proposed child's case type.
+ * @return The HTTP status and the parsed body.
+ */
+async function validateSubCase(
+	page,
+	parentCaseUuid: string,
+	childCaseTypeId: string,
+): Promise<{ status: number; body: any }> {
+	const res = await page.request.post(VALIDATE_URL, {
+		headers: {
+			requesttoken: fixtureToken,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		},
+
+		data: { parentCaseUuid, childCaseTypeId },
+	})
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}
+
+/**
+ * Open `/cases/:id/deelzaken` and assert the surface itself rendered.
+ *
+ * This is the control group for every "the control must not be visible" claim
+ * below. `DeelzaakList` draws its heading and its Delete case action once the
+ * parent has loaded, whatever the eligibility verdict — so seeing both proves
+ * the page is present and merely withholding the Create control, which is what
+ * the requirement asks for and what a page that failed to render looks exactly
+ * like without this.
+ *
+ * @param page The Playwright page.
+ * @param id   The case whose sub-cases page to open.
+ */
+async function openSubCasesPage(page, id: string): Promise<void> {
+	await page.goto(`/index.php/apps/${REGISTER}/cases/${id}/deelzaken`, {
+		waitUntil: 'domcontentloaded',
+	})
+	await dismissSupportDialog(page).catch(() => {})
+
+	await expect(
+		page.getByRole('heading', { name: 'Sub-cases', exact: true }),
+		'DeelzaakList must render its "Sub-cases" heading, so an absent Create '
+			+ 'control below reads as a refusal and not as a blank page',
+	).toBeVisible({ timeout: 30_000 })
+
+	await expect(
+		page
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
+			.first(),
+		'DeelzaakList must render its Delete case action once the parent has '
+			+ 'loaded — the second half of the proof that this page painted',
+	).toBeVisible({ timeout: 15_000 })
+
+	await expect(page.locator('body')).not.toContainText('Internal Server Error')
+}
+
+/** The Create sub-case control, in both of its labels and both languages. */
+function createControl(page) {
+	return page.getByRole('button', {
+		name: /Create sub-case|Create first sub-case|Deelzaak aanmaken/i,
+	})
+}
+
+/** The orphan warning copy, which only the with-children path may show. */
+const ORPHAN_WARNING =
+	/unlink the sub-case|unlinked from their parent|losgekoppeld van hun hoofdzaak/i
+
+test.describe('Deelzaak creation eligibility and deletion protection', () => {
+	test.setTimeout(180_000)
+
+	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		// A describe-level `setTimeout` governs TESTS, not HOOKS: a hook keeps
+		// the config's 30s until it is widened from inside itself. Seeding a
+		// dozen objects on a loaded instance does not fit in 30s, and the
+		// failure then reads `"beforeAll" hook timeout` against whichever test
+		// ran first, which points at the wrong thing entirely.
+		test.setTimeout(300_000)
+		const context = await browser.newContext()
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: await context.storageState(),
+		})
+		await context.close()
+		fixtureToken = await getRequestToken(api)
+
+		const childA = await seedCaseType('Child type A')
+		const childB = await seedCaseType('Child type B')
+		const stranger = await seedCaseType('Stranger type')
+		childTypeAId = objectId(childA)
+		childTypeBId = objectId(childB)
+		strangerTypeId = objectId(stranger)
+		childTypeATitle = String(childA.title)
+		childTypeBTitle = String(childB.title)
+		strangerTypeTitle = String(stranger.title)
+
+		parentTypeId = objectId(
+			await seedCaseType('Parent type', [childTypeAId, childTypeBId]),
+		)
+		barrenTypeId = objectId(await seedCaseType('Barren type', []))
+
+		eligibleParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} eligible parent`,
+				caseType: parentTypeId,
+			}),
+		)
+		closedParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} closed parent`,
+				caseType: parentTypeId,
+				endDate: '2026-01-31T17:00:00Z',
+			}),
+		)
+		barrenParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} barren parent`,
+				caseType: barrenTypeId,
+			}),
+		)
+		subCaseId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} existing sub-case`,
+				caseType: childTypeAId,
+				parentCase: eligibleParentId,
+			}),
+		)
+
+		twoChildParentId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} parent of two`,
+				caseType: parentTypeId,
+			}),
+		)
+		childOneId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} child one`,
+				caseType: childTypeAId,
+				parentCase: twoChildParentId,
+			}),
+		)
+		childTwoId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} child two`,
+				caseType: childTypeBId,
+				parentCase: twoChildParentId,
+			}),
+		)
+		childlessCaseId = objectId(
+			await seedCase(api, fixtureToken, {
+				title: `${RUN_PREFIX} childless case`,
+				caseType: parentTypeId,
+			}),
+		)
+	})
+
+	test.afterAll(async () => {
+		// NO SWEEP HERE, by the same rule `case-documents.spec.ts` follows. The
+		// cases are archival, so removing them takes an occ purge per row, and
+		// on a loaded instance that walk overruns the 120s the helper allows
+		// itself: the run then reports `"afterAll" hook timeout` against the
+		// last test, whose assertions all passed. Every row here carries the
+		// family prefix, and global-setup's residue sweep removes cases before
+		// their case types, which is the order a teardown here would need too.
+		await api?.dispose()
+	})
+
+	// @e2e deelzaak-support::create-sub-case-from-parent-case-detail
+	test('an eligible parent offers Create sub-case, filtered to its own subCaseTypes, and the created case carries parentCase', async ({
+		page,
+	}) => {
+		// The positive half of the guard the three refusals below assert.
+		// Without it, "the button is hidden" would be satisfied by a build that
+		// hides the button everywhere.
+		const allowed = await validateSubCase(page, eligibleParentId, childTypeAId)
+		expect(
+			allowed.status,
+			'an allowed child type on an open, top-level parent must validate: '
+				+ JSON.stringify(allowed.body),
+		).toBe(200)
+		expect(allowed.body.ok).toBe(true)
+
+		// A type the parent does NOT list is refused by the same endpoint, so
+		// the 200 above is a verdict rather than a rubber stamp.
+		const stranger = await validateSubCase(
+			page,
+			eligibleParentId,
+			strangerTypeId,
+		)
+		expect(stranger.status, JSON.stringify(stranger.body)).toBe(409)
+		expect(stranger.body.reason).toBe('case_type_not_allowed')
+
+		await openSubCasesPage(page, eligibleParentId)
+		await expect(createControl(page).first()).toBeVisible({ timeout: 15_000 })
+		await createControl(page).first().click()
+
+		const dialog = page.getByRole('dialog').filter({ hasText: /Sub-case type/ })
+		await expect(dialog).toBeVisible({ timeout: 15_000 })
+
+		// The scenario's second clause: the dropdown MUST offer only the types
+		// on the parent's allow-list. Reading the option list is what makes it
+		// falsifiable — the previous test accepted the string "No allowed
+		// sub-case types" as a pass for this same anchor.
+		await dialog.getByRole('combobox', { name: /Sub-case type/i }).click()
+		const options = page.getByRole('option')
+		await expect(options).toHaveCount(2, { timeout: 15_000 })
+		await expect(options.filter({ hasText: childTypeATitle })).toHaveCount(1)
+		await expect(options.filter({ hasText: childTypeBTitle })).toHaveCount(1)
+		await expect(options.filter({ hasText: strangerTypeTitle })).toHaveCount(0)
+
+		await options.filter({ hasText: childTypeATitle }).click()
+
+		const subTitle = `${RUN_PREFIX} created sub-case`
+		await dialog.getByRole('textbox').first().fill(subTitle)
+		await dialog.getByRole('button', { name: /Create sub-case/i }).click()
+
+		// THE STORED ROW, not a toast. "on submit, the created case MUST have
+		// `parentCase` set to the parent case's UUID" is a claim about the
+		// register, and only the register can answer it.
+		let created: any
+		await expect(async () => {
+			// By TITLE, not by parentCase. Filtering on the field under test
+			// would turn "stored without parentCase" into "not stored at all",
+			// and the red would name the wrong defect.
+			const rows = await listObjects(api, 'case', {
+				title: subTitle,
+				_limit: '50',
+			})
+			created = rows.find((row: any) => String(row.title ?? '') === subTitle)
+			expect(created, `no case titled ${subTitle} was stored`).toBeTruthy()
+		}).toPass({ timeout: 30_000 })
+		expect(String(created.parentCase)).toBe(eligibleParentId)
+		expect(String(created.caseType)).toBe(childTypeAId)
+	})
+
+	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-has-no-sub-case-types
+	test('a parent whose case type allows no sub-case types is refused server-side and offers no Create control', async ({
+		page,
+	}) => {
+		const refused = await validateSubCase(page, barrenParentId, childTypeAId)
+		expect(
+			refused.status,
+			'an empty subCaseTypes allow-list must be refused by the server, not '
+				+ 'merely hidden in the UI',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('case_type_not_allowed')
+
+		await openSubCasesPage(page, barrenParentId)
+		await expect(createControl(page)).toHaveCount(0)
+		// The page must SAY why, which is how a refusal is told apart from a
+		// page that simply failed to draw the control.
+		await expect(
+			page.getByText(/The parent case type does not allow any sub-cases/i),
+		).toBeVisible({ timeout: 15_000 })
+	})
+
+	// @e2e deelzaak-support::sub-case-creation-blocked-when-parent-case-is-closed
+	test('a closed parent is refused server-side and offers no Create control', async ({
+		page,
+	}) => {
+		const refused = await validateSubCase(page, closedParentId, childTypeAId)
+		expect(
+			refused.status,
+			'a parent carrying an endDate must be refused by the server',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('parent_closed')
+
+		// The same child type IS allowed on the open parent of the same case
+		// type, so the refusal is attributable to the endDate and nothing else.
+		const openTwin = await validateSubCase(page, eligibleParentId, childTypeAId)
+		expect(openTwin.status, JSON.stringify(openTwin.body)).toBe(200)
+
+		await openSubCasesPage(page, closedParentId)
+		await expect(createControl(page)).toHaveCount(0)
+		await expect(
+			page.getByText(/This case is closed; sub-cases can no longer be added/i),
+		).toBeVisible({ timeout: 15_000 })
+	})
+
+	// @e2e deelzaak-support::sub-case-of-sub-case-is-prohibited
+	test('a case that is itself a sub-case is refused server-side and offers no Create control', async ({
+		page,
+	}) => {
+		// The fixture is the point: this case has a non-null `parentCase`, which
+		// nothing in the previous test established about whatever case it
+		// happened to open first.
+		const stored = await showObject(api, 'case', subCaseId)
+		expect(String(stored.parentCase)).toBe(eligibleParentId)
+
+		const refused = await validateSubCase(page, subCaseId, childTypeBId)
+		expect(
+			refused.status,
+			'grandparenting must be refused by the server, not merely hidden',
+		).toBe(409)
+		expect(refused.body.ok).toBe(false)
+		expect(refused.body.reason).toBe('grandparenting_forbidden')
+
+		await openSubCasesPage(page, subCaseId)
+		await expect(createControl(page)).toHaveCount(0)
+		await expect(
+			page.getByText(/Sub-cases cannot themselves have sub-cases/i),
+		).toBeVisible({ timeout: 15_000 })
+	})
+
+	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
+	test('deleting a parent with sub-cases warns about the orphans and nulls parentCase on every child', async ({
+		page,
+	}) => {
+		await openSubCasesPage(page, twoChildParentId)
+
+		// Both children are on the page, so the "2 sub-cases" the warning names
+		// is a number this run produced rather than one read off the demo set.
+		await expect(page.locator('table.viewTable tbody tr')).toHaveCount(2)
+
+		await page
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
+			.first()
+			.click()
+
+		// UNCONDITIONAL. This assertion used to sit inside
+		// `if ((await warning.count()) > 0)` with an annotation in the else
+		// branch, so a parent deleted with no warning at all was
+		// indistinguishable from one correctly warned.
+		await expect(
+			page.getByText(ORPHAN_WARNING).first(),
+			'a parent with sub-cases must warn that deletion unlinks them',
+		).toBeVisible({ timeout: 15_000 })
+
+		await page
+			.getByRole('dialog')
+			.filter({ hasText: ORPHAN_WARNING })
+			.getByRole('button', { name: /^(Delete|Verwijderen)$/ })
+			.click()
+
+		// The scenario's real subject: the children survive as standalone cases.
+		// Asserted on the stored rows, because a dialog can say anything.
+		await expect(async () => {
+			for (const childId of [childOneId, childTwoId]) {
+				const child = await showObject(api, 'case', childId)
+				expect(
+					child.parentCase ?? null,
+					`case ${childId} must be unlinked, not left pointing at a deleted parent`,
+				).toBeFalsy()
+			}
+		}).toPass({ timeout: 45_000 })
+	})
+
+	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
+	test('deleting a case with no sub-cases takes the plain confirmation, with no orphan warning', async ({
+		page,
+	}) => {
+		await openSubCasesPage(page, childlessCaseId)
+		// EXACT, because the empty state's description also contains the words
+		// "no sub-cases yet" and a loose match resolves to both.
+		await expect(
+			page.getByText(/^(No sub-cases yet|Nog geen deelzaken)$/).first(),
+		).toBeVisible({ timeout: 15_000 })
+
+		await page
+			.getByRole('button', {
+				name: /Delete (parent )?case|(Hoofd)?zaak verwijderen/i,
+			})
+			.first()
+			.click()
+
+		// The standard confirmation, asserted by its own copy. The only
+		// unconditional assertion this anchor used to carry was "the body does
+		// not say Internal Server Error", which a page showing no dialog at all
+		// satisfies just as well.
+		await expect(
+			page.getByText(/Are you sure you want to delete this case/i),
+		).toBeVisible({ timeout: 15_000 })
+
+		// And NOT the orphan warning. This half is what makes the pair a
+		// discrimination rather than two unrelated smoke checks.
+		await expect(page.getByText(ORPHAN_WARNING)).toHaveCount(0)
+
+		await page
+			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
+			.first()
+			.click()
 	})
 })

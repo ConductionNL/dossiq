@@ -37,6 +37,14 @@ use Psr\Log\LoggerInterface;
 class GuardRegistry {
 
 	/**
+	 * The guard type every transition is checked against, template or not.
+	 *
+	 * The list it reads is authored on the STATUS, so a transition that never
+	 * names it is still subject to it — see StatusChecklistGuard.
+	 */
+	public const STATUS_CHECKLIST = 'statusChecklist';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -51,6 +59,7 @@ class GuardRegistry {
 	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
 	 * @param RoleGuard $roleGuard Built-in role evaluator
 	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
+	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
 	 */
 	public function __construct(
@@ -59,6 +68,7 @@ class GuardRegistry {
 		RequiredDocumentGuard $requiredDocument,
 		RoleGuard $roleGuard,
 		MandaatGuard $mandateGuard,
+		StatusChecklistGuard $statusChecklist,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->evaluators = [
@@ -67,6 +77,9 @@ class GuardRegistry {
 			'requiredDocument' => $requiredDocument,
 			'roleGuard' => $roleGuard,
 			'mandaatGuard' => $mandateGuard,
+			// Registered like any other type, but declared by no template: the
+			// engine appends it to every transition's guard list itself.
+			self::STATUS_CHECKLIST => $statusChecklist,
 		];
 	}//end __construct()
 
@@ -91,7 +104,7 @@ class GuardRegistry {
 	 * @param array<string, mixed> $case The case
 	 * @param string $userId Current user UID
 	 *
-	 * @return array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
+	 * @return array<int, array{type: string, passed: bool, failureMessage: ?string, details?: array<string, mixed>}>
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -117,12 +130,46 @@ class GuardRegistry {
 			}
 
 			$result = $this->evaluators[$type]->evaluate(guardConfig: $guard, case: $case, userId: $userId);
-			$results[] = [
+
+			$snapshot = [
 				'type' => $type,
 				'passed' => $result->passed,
 				'failureMessage' => $result->failureMessage,
-				'details' => $result->details,
 			];
+
+			// EMPTY DETAILS ARE OMITTED. The key carries no value at all here,
+			// and every other spelling of "nothing to report" is refused.
+			//
+			// This snapshot is persisted as `statusRecord.evaluatedGuards`,
+			// whose `details` is declared `type: object` and is NOT required.
+			// All four shapes were posted to a running register and read back:
+			//
+			//     omitted   accepted
+			//     {"x": 1}  accepted
+			//     {}        refused, "expects object but got empty ({})"
+			//     []        refused, the same message
+			//     null      refused, "should be type 'object' but is 'null'"
+			//
+			// ⚠️ The refusal of `{}` ADVISES null: "For non-required object
+			// properties, set this to null to clear the field." Following that
+			// advice is what #1941 did, and null is refused in turn, so every
+			// status transition answered 500 from that merge until this one.
+			// Omission is the only shape the validator accepts.
+			//
+			// `GuardResult::$details` defaults to `[]`, and a guard that
+			// simply PASSES has nothing to report, so the empty case is the
+			// common one. It went unnoticed until the status checklist guard
+			// was appended to every transition: before that, a transition with
+			// no declared guards produced no snapshot entries at all, so there
+			// was nothing to reject. Afterwards every transition had at least
+			// entry 0, and `StatusTransitionController::execute()` catches
+			// Throwable and answers 500, so the failure surfaces as a dialog
+			// that never closes rather than as a validation message.
+			if ($result->details !== []) {
+				$snapshot['details'] = $result->details;
+			}
+
+			$results[] = $snapshot;
 		}//end foreach
 
 		return $results;

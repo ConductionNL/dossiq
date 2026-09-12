@@ -18,7 +18,7 @@
 				{{
 					t(
 						'dossiq',
-						'Decision types are now managed by decidesk (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the decidesk integration (ADR-019).',
+						'Decision types are now managed by Decidiq (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the Decidiq integration (ADR-019).',
 					)
 				}}
 			</NcNoteCard>

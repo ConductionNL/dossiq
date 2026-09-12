@@ -6,7 +6,7 @@
 
  Lists tasks where task.case === the parent case id (ported from the
  pre-manifest CaseDetail.vue task card). Clicking a task opens the
- TaskDetail page; "New task" opens TaskNew pre-linked to this case.
+ TaskDetail page; "New task" opens the Tasks index create dialog scoped to this case.
  Receives `objectId` from CnObjectSidebar's sharedTabProps, with a
  route fallback for standalone use.
 -->
@@ -73,7 +73,7 @@
 <script>
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { useObjectStore } from '../../store/modules/object.js'
+import { useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
 
@@ -102,8 +102,8 @@ export default {
 	},
 
 	computed: {
-		objectStore() {
-			return useObjectStore()
+		engineTasks() {
+			return useEngineTaskStore()
 		},
 
 		resolvedCaseId() {
@@ -156,9 +156,14 @@ export default {
 			}
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('caseTask', {
-					case: this.resolvedCaseId,
-					_limit: 50,
+				// The case IS the object, and `scope: all` because this tab
+				// lists the CASE's tasks, not the reader's. No state filter:
+				// the header shows a completed/total count, so the closed ones
+				// have to be in the list.
+				const results = await this.engineTasks.list({
+					objectUuid: this.resolvedCaseId,
+					scope: 'all',
+					limit: 50,
 				})
 				this.tasks = results || []
 			} catch (err) {
@@ -169,10 +174,21 @@ export default {
 			}
 		},
 
+		/**
+		 * Open the task create dialog on the Tasks index, scoped to this case.
+		 *
+		 * The `TaskNew` page this used to push was a `type: detail` page at
+		 * `/tasks/new`: CnDetailPage fetched the object "new" and rendered an
+		 * empty page. The Tasks index owns the create dialog (`?action=create`
+		 * opens it) and `case` keeps the list behind it scoped to this case.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/task-management/spec.md#requirement-task-list-must-be-reached-via-mijn-werk-not-a-sibling-top-level-menu
+		 */
 		onNewTask() {
 			this.$router.push({
-				name: 'TaskNew',
-				query: { caseId: this.resolvedCaseId },
+				name: 'Tasks',
+				query: { action: 'create', case: this.resolvedCaseId },
 			})
 		},
 

@@ -142,19 +142,35 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await expect(row).toContainText(assignedIdentifier)
 	})
 
-	// FIXME(#719): the case DETAIL page never displays the zaaknummer. A case
-	// with assigned identifier 2026-0001 renders CASE / title / Assignee /
-	// Case type / Confidentiality, with the identifier absent from the page
-	// text entirely. It DOES render in the case LIST, which is why the
-	// list-view assertion above passes.
-	// @e2e openspec/specs/case-management/spec.md#case-detail-page-renders
+	// UNPARKED. The old FIXME(#719) said the case detail page never displays
+	// the zaaknummer, and at the time it was right. It does now, in two places,
+	// and they are covered by two different specs:
+	//
+	//   1. Under the title, by dossiq's own `CaseHeaderRow.vue`
+	//      (`data-testid="case-header-identifier"`). case-header.spec.ts owns
+	//      that one.
+	//   2. In the case INFO PANEL: `identifier` in the `case-core` widget's
+	//      `content.include`, with an override re-admitting it as
+	//      `readOnly: false` (the widget's `_note` records that
+	//      `fieldsFromSchema` drops a readOnly property outright). This test
+	//      owns that one, because the scenario it cites is the info panel.
+	//
+	// 🔴 `config.subtitleField` IS NOT A THIRD PLACE. CaseDetail declares it
+	// and its `_subtitleNote` says the number "reads under the title", but in
+	// @conduction/nextcloud-vue 2.46.0 and 2.48.1 alike only CnIndexPage,
+	// CnObjectRow and CnObjectList read `subtitleField`. CnDetailPage never
+	// maps it onto its `subtitle` prop. Mutating it on CI run 34583207838
+	// changed nothing. CaseHeaderRow is what actually does that job.
+	//
+	// 🔴 SCOPED, BECAUSE UNSCOPED IT COULD NOT FAIL. This used to be
+	// `page.getByText(identifier).first()`, which the header copy satisfies on
+	// its own. On CI run 34592678724 the number was removed from the info panel
+	// and this test stayed green. It now looks in the info panel only, with the
+	// locator case-identity.spec.ts uses for the same fact.
+	// @e2e openspec/specs/case-management/spec.md#scenario-cm-06a-case-info-panel
 	test('opening the row shows the case detail with its values', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): the case DETAIL page never displays the zaaknummer. A case with assigned identifier 2026-0001 renders CASE / title / Assignee / Case type / Confidentiality, with the identifier absent from the page text entirely. It DOES render in the case LIST, which is why the list-view assertion above passes.',
-		)
 		const title = `${RUN_PREFIX} Detail case`
 		const identifier = `${RUN_PREFIX}-DETAIL`
 		const kase = await seedCase(api, token, {
@@ -163,8 +179,10 @@ test.describe('Cases — full CRUD with persistence', () => {
 			identifier,
 			description: 'Detail-leg description.',
 		})
-		// dossiq assigns the zaaknummer and ignores the supplied identifier;
-		// assert the ASSIGNED value the create returned.
+		// The number the create RETURNED, whatever it is. The `case` schema's
+		// own description says a number supplied on create is kept and one left
+		// out is calculated as YEAR-NNNN, so reading it back from the response
+		// holds under either rule rather than guessing which one applied.
 		const assignedIdentifier = String(
 			(kase as Record<string, unknown>).identifier ?? identifier,
 		)
@@ -175,17 +193,25 @@ test.describe('Cases — full CRUD with persistence', () => {
 		// Click the seeded case's row to open its detail view.
 		await row.getByText(title, { exact: false }).first().click()
 
-		// CaseDetail (manifest `type:"detail"`) renders the case title + the
-		// detail chrome. Assert the title and (assigned) identifier surface.
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
-			timeout: 15000,
-		})
+		// The case info panel: the active panel of the detail page's tab strip,
+		// which opens on `case-core`.
+		const infoPanel = page
+			.locator('.cn-tabs-widget')
+			.locator('.cn-tabs__content > [role="tabpanel"]:not([hidden])')
 		await expect(
-			page.getByText(assignedIdentifier, { exact: false }).first(),
-		).toBeVisible()
+			infoPanel,
+			'the case info panel carries the title',
+		).toContainText(title, { timeout: 30_000 })
+		await expect(
+			infoPanel,
+			'the case info panel carries the zaaknummer',
+		).toContainText(assignedIdentifier, { timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#edit-a-case
+	// @e2e exclude REQ-CM-02 carries scenarios for the description, the
+	// priority and the handler; none of them covers editing the TITLE,
+	// which is what this test edits. FIXME(#1454) tracks the defect it
+	// pins.
 	test('editing a case persists the change', async ({ page }) => {
 		test.fixme(
 			true,
@@ -258,7 +284,12 @@ test.describe('Cases — full CRUD with persistence', () => {
 			.toBe(newTitle)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#delete-a-case
+	// @e2e exclude This anchor used to read #delete-a-case, which prefix-resolves to
+	// Scenario CM-03a "Delete a case in initial status", a scenario that says the
+	// delete SUCCEEDS, while this test asserts a 403 because the case schema declares
+	// x-openregister-archival. It resolved, so no count caught it. No scenario states
+	// that a user delete of an archival case is refused and the record survives;
+	// REQ-CM-03 still describes the pre-archival behaviour and needs amending.
 	// The `case` schema declares x-openregister-archival, so a case is a record:
 	// user-driven deletion is rejected (Archiefwet immutability) and removal is
 	// reserved for the retention-sweep cron. This asserts that guarantee rather
@@ -308,7 +339,16 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// the real create flow and asserts the new case persists + lists; it is
 	// guarded so the suite stays green where the generic-dialog regression is
 	// present. Re-enable verification once #427 is resolved.
-	// @e2e openspec/specs/case-management/spec.md#create-a-case
+	// @e2e exclude #create-a-case has never existed in case-management/spec.md.
+	// The governing scenario is CM-01a, and it requires the auto-generated
+	// identifier, the defaulted startDate, the deadline computed from the case
+	// type's processingDeadline, the inherited confidentiality and the first
+	// status by order. This test reads none of the five: it proves that a case
+	// with the typed title exists afterwards and shows up in the list. Citing
+	// CM-01a would report those five as verified. CM-01a is also spelled
+	// "Scenario CM-01a:", which gate-19 does not slug, so nothing there can be
+	// credited until the heading is rewritten as "Scenario:". Note too that the
+	// body below is fixme'd whenever #427 leaves the generic dialog in place.
 	test('creating a case via the UI form persists and lists it', async ({
 		page,
 	}) => {
@@ -316,19 +356,31 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await dismissSupportDialog(page)
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 
-		const customDialog = page.locator('.case-create-dialog')
-		const isCustom = await customDialog.isVisible().catch(() => false)
-		test.fixme(
-			!isCustom,
-			'BUG #427: Cases "Add" opens the generic empty CnFormDialog instead of CaseCreateDialog — case fields do not resolve, cannot create via UI.',
-		)
+		// UNPARKED, AND THE CONDITION IT STOOD DOWN ON COULD NEVER BECOME TRUE.
+		// `test.fixme(!isCustom, …)` waited for `.case-create-dialog` to
+		// appear. `CaseCreateDialog` does not exist — neither that class nor
+		// the component name occurs anywhere under src/ — so the guard read as
+		// an environment condition while being permanently satisfied, which is
+		// the shape the skip-discipline gate exists to catch. The generic
+		// CnFormDialog the FIXME called a bug IS the shipped create form; the
+		// `friendly-case-create-form` spec is the one that says so.
+		const dialog = page.getByRole('dialog').filter({
+			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
+		})
+		await expect(dialog).toBeVisible({ timeout: 30_000 })
 
 		const newTitle = `${RUN_PREFIX} UI created case`
-		await customDialog.getByPlaceholder('Enter case title').fill(newTitle)
-		// Pick the first available case type in the combobox.
-		await customDialog.getByRole('combobox').first().click()
+		// `data-cn-field` is the form's per-field hook; the input inside it is
+		// what takes the text. Addressing the wrapper alone fills nothing.
+		await dialog.locator('[data-cn-field="title"] input').first().fill(newTitle)
+		// Case type is required by the create form; pick the first offered.
+		await dialog
+			.locator('[data-cn-field="caseType"]')
+			.getByRole('combobox')
+			.first()
+			.click()
 		await page.getByRole('option').first().click()
-		await customDialog.getByRole('button', { name: 'Create case' }).click()
+		await dialog.getByRole('button', { name: 'Create' }).click()
 
 		// Persistence: the new case shows up in the API listing and the list.
 		await expect

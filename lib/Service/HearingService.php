@@ -4,7 +4,7 @@
  * Dossiq Hearing Service
  *
  * Service for managing hoorgesprekken (hearings) linked to complaints.
- * Handles scheduling, Calendar invitations via OCP\Calendar\IManager,
+ * Handles scheduling, calendar events via OCP\Calendar\IManager,
  * and Talk room creation via OCP\Talk\IBroker for videogesprek hearings.
  *
  * @category Service
@@ -42,10 +42,12 @@ class HearingService {
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
+	 * @param HearingCalendarService $calendarService Writes the hearing onto participants' calendars
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly HearingCalendarService $calendarService,
 	) {
 	}//end __construct()
 
@@ -93,10 +95,11 @@ class HearingService {
 			}
 		}
 
-		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		// Put the hearing on every participant's calendar before it is stored,
+		// so the id the schema reserves is written with the hearing itself.
+		$data['calendarEventId'] = $this->calendarService->createEvent(data: $data);
 
-		// Send calendar invitations to all participants.
-		$this->sendCalendarInvitations(hearing: $hearing, data: $data);
+		$hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
 		$this->logger->info(
 			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
@@ -202,7 +205,7 @@ class HearingService {
 			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 
-		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$id, changes: $updateData);
 
 		$this->logger->info(
 			'Hearing outcome recorded for hearing ' . $id,
@@ -263,40 +266,4 @@ class HearingService {
 		}//end try
 	}//end createTalkRoom()
 
-	/**
-	 * Send calendar invitations to all hearing participants.
-	 *
-	 * @param mixed $hearing Saved hearing object
-	 * @param array<string, mixed> $data Original hearing data with participants
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
-	 */
-	private function sendCalendarInvitations(mixed $hearing, array $data): void {
-		$participants = $data['participants'] ?? [];
-		if (empty($participants) === true) {
-			return;
-		}
-
-		$date = $data['date'] ?? '';
-		$location = $data['location'] ?? '';
-
-		// `is_callable()` rather than `method_exists()`: ObjectEntity exposes
-		// getUuid() through OCP\AppFramework\Db\Entity::__call(), which
-		// method_exists() cannot see, so it reports false for every live
-		// object and would leave this log field permanently empty.
-		$hearingId = '';
-		if (is_object($hearing) === true && is_callable([$hearing, 'getUuid']) === true) {
-			$hearingId = (string)call_user_func([$hearing, 'getUuid']);
-		}
-
-		// Calendar integration — log attempt; actual calendar write is
-		// delegated to NC Calendar IManager search/find calendars per participant.
-		$this->logger->info(
-			'Calendar invitations queued for hearing on ' . $date . ' at ' . $location
-			. ' for ' . count($participants) . ' participants',
-			['app' => Application::APP_ID, 'hearingId' => $hearingId],
-		);
-	}//end sendCalendarInvitations()
 }//end class

@@ -3,10 +3,16 @@
 /**
  * Dossiq beschikking adapter registrar.
  *
- * Binds the three beschikking cross-app integration seams — template render,
- * digital signing and archival ingest — to the implementation that is actually
- * available on this instance. Split out of Application so the LibreSign
- * availability probe and its fallback live with the classes they choose between.
+ * Binds the beschikking cross-app integration seams that dossiq itself can
+ * satisfy, digital signing and archival ingest, to the implementation this
+ * instance actually has. Split out of Application so the LibreSign
+ * availability probe and its fallback live with the classes they choose
+ * between.
+ *
+ * The THIRD seam, template render, moved to {@see SubstitutableAdapterRegistrar}.
+ * It is not a seam dossiq can satisfy: the renderer is filinq's, so the binding
+ * is a config-named class rather than a class this repo ships, and it belongs
+ * with the Berichtenbox seam that has the same shape.
  *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo\Registrar
@@ -34,22 +40,21 @@ use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\LibresignApiClient;
 use OCA\Dossiq\Service\Beschikking\LibresignSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
-use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
-use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 
 /**
- * Registers the beschikking template / signing / archival adapters.
+ * Registers the beschikking signing and archival adapters.
  *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class BeschikkingAdapterRegistrar {
+
 	/**
 	 * Register the beschikking cross-app integration adapters.
 	 *
@@ -64,9 +69,6 @@ class BeschikkingAdapterRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		// Template render resolves to a mock implementation until the real
-		// Docudesk endpoint lands in its own repo (tasks T23-T26).
-		$context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
 		// SigningAdapterInterface: LibreSign (LibreCode) when the app is
 		// installed+enabled, else the pre-existing MockSigningAdapter stub —
 		// see openspec/changes/libresign-besluit-signing/design.md §6.

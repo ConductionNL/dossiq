@@ -24,12 +24,15 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\MandaatGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
+use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -187,11 +190,18 @@ class GuardDialectTest extends TestCase {
 		$userManager->method('get')->willReturn($this->createMock(IUser::class));
 
 		return new GuardRegistry(
-			new ChecklistGuard($settings, new NullLogger()),
+			// The checklist guard reads the engine now. These tests are about
+			// the REGISTRY, so it gets an inert pair rather than a fixture.
+			new ChecklistGuard(
+				$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
+				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+				new NullLogger()
+			),
 			new RequiredFieldGuard(),
 			new RequiredDocumentGuard(),
 			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
 			new MandaatGuard($this->createMock(MandaatValidationService::class)),
+			$this->createMock(StatusChecklistGuard::class),
 			$logger,
 		);
 	}//end buildRegistry()

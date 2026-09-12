@@ -22,6 +22,14 @@ The system SHALL allow inspectors to synchronize their daily schedule to local s
 
 #### Scenario: Download daily schedule with cases and checklists
 
+@e2e exclude The day sync this scenario describes no longer exists in dossiq.
+062d9dede removed the mobile-inspection frontend together with the DailySync,
+Sync and Inspection backend, so there is no "Dag synchroniseren" action, no
+progress indicator, no `ready_offline` flag and no /api/sync route to drive.
+The service worker in public/service-worker.js survives, and
+tests/e2e/spec-coverage/service-worker-scope.spec.ts still guards its CSP and
+its pass-through, but neither proves a download.
+
 - **GIVEN** an inspector opens the mobiel-inspectie PWA at the office with active network connection
 - **WHEN** they tap "Dag synchroniseren" (Synchronize day)
 - **THEN** the system SHALL download:
@@ -35,7 +43,10 @@ The system SHALL allow inspectors to synchronize their daily schedule to local s
 
 #### Scenario: Sync updates incomplete sync on connection loss
 
-@e2e exclude Resumable chunked download is a Service Worker / browser-network concern; not deterministically drivable headless. Replay-ordering logic is covered by tests/vitest/syncQueueEngine.spec.js.
+@e2e exclude resumable chunked download is a Service Worker and browser-network
+concern, not deterministically drivable headless. The replay-ordering engine
+this reason used to name was removed by 062d9dede with the rest of the
+orphaned mobile-inspection backend, so nothing in this app tests it.
 
 - **GIVEN** a sync download is in progress (15% complete) when network connection drops
 - **WHEN** the inspector taps "Dag synchroniseren" again and network is restored
@@ -235,7 +246,10 @@ The system SHALL detect when a colleague has edited the same case while the insp
 
 #### Scenario: Detect conflict on sync replay
 
-@e2e exclude Requires an offline-created result + a concurrent server edit to trigger a 409; not headless-deterministic. Conflict classification + record building is covered by PHPUnit (SyncControllerTest, ConflictDetectionServiceTest) and vitest (classifyConflict).
+@e2e exclude requires an offline-created result and a concurrent server edit to
+trigger a 409, which is not headless-deterministic. The conflict classification
+backend was removed by 062d9dede, so the two PHPUnit classes this reason used
+to name no longer exist here and this scenario has no coverage.
 
 - **GIVEN** inspector Anja completed a checklist offline with answer "goedgekeurd" for "Keuring afgewerkt?"
 - **AND** while she was offline, her colleague Piet (back at the office) changed the same case's inspection status to "afgekeurd"
@@ -260,7 +274,10 @@ The system SHALL detect when a colleague has edited the same case while the insp
 
 #### Scenario: Inspector resolves conflict
 
-@e2e exclude Resolution flow needs a live ConflictRecord; not headless-deterministic. The resolve → re-queue / discard policy is covered by PHPUnit (SyncControllerTest client_wins/server_wins) and vitest (resolveConflictChoice).
+@e2e exclude the resolution flow needs a live ConflictRecord and is not
+headless-deterministic. The resolve, re-queue and discard policy was removed by
+062d9dede, so the PHPUnit class this reason used to name no longer exists here
+and this scenario has no coverage.
 
 - **GIVEN** the merge UI is displayed
 - **WHEN** the inspector taps "Mijn versie gebruiken"
@@ -272,7 +289,10 @@ The system SHALL detect when a colleague has edited the same case while the insp
 
 #### Scenario: Permission lost during offline work
 
-@e2e exclude Requires revoking case permission while offline to force a 403 on replay; not headless-deterministic. Terminal permission_lost handling is covered by PHPUnit (SyncControllerTest) and vitest (classifyConflict/isConflictRetryable).
+@e2e exclude requires revoking case permission while offline to force a 403 on
+replay, which is not headless-deterministic. The terminal permission_lost
+handling went with the sync backend in 062d9dede, so the PHPUnit class this
+reason used to name no longer exists here.
 
 - **GIVEN** an inspector worked offline on a sensitive case (e.g., social-welfare home visit)
 - **AND** while she was offline, a manager revoked her read permission on that case
@@ -339,7 +359,10 @@ The system SHALL record all conflict resolution decisions in an immutable audit 
 
 #### Scenario: Audit log entry for conflict resolution
 
-@e2e exclude Immutable audit-trail persistence depends on a resolved live ConflictRecord + the OR audit log; not headless-deterministic. The conflict-resolution record (resolvedBy/resolvedAt/resolution) is built + asserted by PHPUnit (ConflictDetectionService.applyResolution, SyncControllerTest).
+@e2e exclude immutable audit-trail persistence depends on a resolved live
+ConflictRecord and the OpenRegister audit log, and is not headless-deterministic.
+The conflict-resolution record building was removed by 062d9dede, so the
+PHPUnit class this reason used to name no longer exists here.
 
 - **GIVEN** inspector Anja resolves a conflict by choosing her local version
 - **WHEN** the resolution is processed

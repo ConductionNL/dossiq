@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V.",
+    "description": "Mandate matrix schemas, plus two organisatieRol rows (parties-on-the-case task 3.2) so the Team picker on a case and a task, and the Team facet on both indexes, have something to show on a fresh instance. Without them the field renders an empty picker, which reads exactly like a broken reference rather than an instance that has no teams yet. The e2e seeds its own rows and does not read these."
+  },
   "components": {
     "registers": {
       "dossiq": {
@@ -67,10 +72,14 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
+        "_note": "Without this OpenRegister leaves `@self.name` unset and `ObjectEntity` answers the uuid, so the Team picker listed uuids and the Team facet bucket read `3c26f5c4…` instead of `Team Permits`. The fallback OpenRegister applies when no field is configured tries `naam`, `name`, `title`, `label`, `titel`, and this schema has none of them. `roleName` is the property the Team COLUMN already extends the reference to read, so naming rows by it makes the three surfaces agree. It is `required`, so the name can never resolve empty. NOTE: `@self.name` is denormalised at SAVE time, so rows written before this landed keep their uuid until they are written again.",
+        "configuration": {
+          "objectNameField": "roleName"
+        },
         "required": ["roleName"],
         "properties": {
           "roleName":         {"type": "string", "title": "Role Name", "description": "Human-readable name of this organisational role.", "facetable": true, "maxLength": 255},
@@ -138,6 +147,32 @@
           "resolvedAt":      {"type": "string", "title": "Resolved At", "description": "Date and time at which this escalation was resolved.", "format": "date-time"}
         }
       }
-    }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "organisatieRol",
+          "slug": "org-rol-team-vergunningen"
+        },
+        "roleName": "Team Vergunningen",
+        "roleType": "ambtelijk",
+        "department": "Ruimte",
+        "team": "Vergunningen",
+        "mandateLevel": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "organisatieRol",
+          "slug": "org-rol-team-handhaving"
+        },
+        "roleName": "Team Handhaving",
+        "roleType": "ambtelijk",
+        "department": "Ruimte",
+        "team": "Handhaving",
+        "mandateLevel": 2
+      }
+    ]
   }
 }

@@ -76,7 +76,7 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Bind openconnector source slug `ztc-catalogi` (per-receiver JWT + catalogi.lezen scope) '
+				'note' => 'Bind integriq source slug `ztc-catalogi` (per-receiver JWT + catalogi.lezen scope) '
 					. 'and override ZtcCatalogiAdapterInterface in Application::register() to enable real ZaakType resolution.',
 				'receiverSourceSlug' => $receiverSourceSlug,
 			],
@@ -108,7 +108,7 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Bind openconnector source slug `ztc-catalogi` + catalogi.aanmaken scope '
+				'note' => 'Bind integriq source slug `ztc-catalogi` + catalogi.aanmaken scope '
 					. 'on the tenant-local Catalogi-API to enable cross-tenant ZaakType import.',
 			],
 		);

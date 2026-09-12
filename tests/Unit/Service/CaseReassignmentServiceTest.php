@@ -27,6 +27,8 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Notification\IManager;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -57,6 +59,21 @@ class CaseReassignmentServiceTest extends TestCase {
 	private $logger;
 
 	/**
+	 * The engine's task reader. Tasks live in the engine, not the register,
+	 * so the object-service double no longer answers for them.
+	 *
+	 * @var EngineTaskInbox|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $engineTasks;
+
+	/**
+	 * The engine's task verbs, which is how a task is handed over now.
+	 *
+	 * @var EngineTaskGateway|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $engineTask;
+
+	/**
 	 * Set up fixtures.
 	 *
 	 * @return void
@@ -65,7 +82,57 @@ class CaseReassignmentServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->notificationManager = $this->createMock(IManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$this->engineTask = $this->getMockBuilder(EngineTaskGateway::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$this->engineTasks->method('openForAssignee')->willReturn([]);
+		$this->engineTask->method('reassign')->willReturn(true);
 	}//end setUp()
+
+	/**
+	 * Require the engine's `reassign` verb to be called exactly once.
+	 *
+	 * The assertion that matters most in this file. Reassigning a task used
+	 * to be an object write, so the old test could read the new assignee
+	 * back off `updateObject`. Through a verb there is nothing to read back,
+	 * and without this the suite would pass with the task loop deleted.
+	 *
+	 * @param string $taskId The task expected to move.
+	 * @param string $toUser Who it should be handed to.
+	 * @param string $actor  The acting coordinator.
+	 *
+	 * @return void
+	 */
+	private function engineExpectsReassign(string $taskId, string $toUser, string $actor): void {
+		$this->engineTask = $this->getMockBuilder(EngineTaskGateway::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$this->engineTask->expects($this->once())
+			->method('reassign')
+			->with($taskId, $toUser, $actor)
+			->willReturn(true);
+	}//end engineExpectsReassign()
+
+	/**
+	 * The open tasks the engine answers with for this test.
+	 *
+	 * The engine applies `isTerminal: false` itself, so a double that
+	 * returned completed rows would be modelling something the engine
+	 * cannot produce.
+	 *
+	 * @param array<int, array<string, mixed>> $tasks The open tasks.
+	 *
+	 * @return void
+	 */
+	private function engineHoldsOpenTasks(array $tasks): void {
+		$this->engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$this->engineTasks->method('openForAssignee')->willReturn($tasks);
+	}//end engineHoldsOpenTasks()
 
 	/**
 	 * Configure SettingsService to expose the given ObjectService via the slug path.
@@ -88,7 +155,13 @@ class CaseReassignmentServiceTest extends TestCase {
 			}
 		);
 
-		return new CaseReassignmentService($this->settingsService, $this->notificationManager, $this->logger);
+		return new CaseReassignmentService(
+			$this->settingsService,
+			$this->engineTasks,
+			$this->engineTask,
+			$this->notificationManager,
+			$this->logger
+		);
 	}//end makeService()
 
 
@@ -120,14 +193,16 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'title' => 'Closed', 'assignee' => 'jan', 'status' => 'st-final', 'caseType' => 'vth'],
 					];
 				}
-				if ($schema === 'caseTask') {
-					return [
-						['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
-						['id' => 't2', 'title' => 'Done task', 'assignee' => 'jan', 'status' => 'completed', 'case' => 'c1'],
-					];
-				}
 				return [];
 			}
+		);
+
+		// The engine already applied `isTerminal: false`, so the closed task
+		// never reaches dossiq. That split moved: it used to be a status
+		// check in `filterOpenTasks`, and keeping a second copy of the three
+		// state names here is exactly what this change removes.
+		$this->engineHoldsOpenTasks(
+			[['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
 		);
 
 		$preview = $this->makeService($os)->preview('jan');
@@ -155,14 +230,15 @@ class CaseReassignmentServiceTest extends TestCase {
 						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'objectionProceeding'],
 					];
 				}
-				if ($schema === 'caseTask') {
-					return [
-						['id' => 't1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
-						['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c2'],
-					];
-				}
 				return [];
 			}
+		);
+
+		$this->engineHoldsOpenTasks(
+			[
+				['id' => 't1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
+				['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c2'],
+			]
 		);
 
 		$preview = $this->makeService($os)->preview('jan', ['caseType' => 'vth']);
@@ -200,12 +276,14 @@ class CaseReassignmentServiceTest extends TestCase {
 				if ($schema === 'case') {
 					return [['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]']];
 				}
-				if ($schema === 'caseTask') {
-					return [['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']];
-				}
 				return [];
 			}
 		);
+
+		$this->engineHoldsOpenTasks(
+			[['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
+		);
+		$this->engineExpectsReassign(taskId: 't1', toUser: 'pieter', actor: 'coord');
 
 		$updated = [];
 		$os->method('updateObject')->willReturnCallback(
@@ -229,9 +307,12 @@ class CaseReassignmentServiceTest extends TestCase {
 		$this->assertSame(2, $result['succeeded']);
 		$this->assertSame(0, $result['failed']);
 		$this->assertStringStartsWith('batch-', $result['batchId']);
-		// Case reassigned to pieter.
+		// Case reassigned to pieter, through the register.
 		$this->assertSame('pieter', $updated['c1']['assignee']);
-		$this->assertSame('pieter', $updated['t1']['assignee']);
+		// The TASK is not: it goes through the engine's `reassign` verb, so
+		// there is no object write to inspect and the engine writes its own
+		// audit row. `$this->engineTask` is asserted on below.
+		$this->assertArrayNotHasKey('t1', $updated);
 		// Audit entry on the case carries the batch id.
 		$activity = json_decode($updated['c1']['activity'], true);
 		$this->assertSame($result['batchId'], $activity[0]['batchId']);

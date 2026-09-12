@@ -16,7 +16,7 @@
 
   Self-fetching from the route task id, same pattern as InitiatorSection.
 
-  @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<div
@@ -45,6 +45,7 @@
 
 <script>
 import CheckboxMarkedCircleOutline from 'vue-material-design-icons/CheckboxMarkedCircleOutline.vue'
+import { useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { caseRouteFor, waitingCaseIdFrom } from '../../utils/flowTaskHelpers.js'
@@ -63,22 +64,33 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/**
+		 * The task engine. The TASK is an engine row; the CASE it names is
+		 * still an OpenRegister object, so both stores are in play here.
+		 *
+		 * @return {object} The engine task store.
+		 * @spec openspec/changes/remove-casetask/tasks.md
+		 */
+		engineTasks() {
+			return useEngineTaskStore()
+		},
+
+		/** @spec openspec/specs/task-management/spec.md */
 		waitingCaseId() {
 			return waitingCaseIdFrom(this.task)
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		caseRoute() {
 			return caseRouteFor(this.waitingCaseId)
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		caseLabel() {
 			return this.caseTitle || t('dossiq', 'Open the case')
 		},
@@ -87,7 +99,7 @@ export default {
 	/**
 	 * Resolve the stores, then load the task and its waiting case.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	async mounted() {
 		// CnAppRoot mounts manifest slot widgets before App.vue's
@@ -106,7 +118,7 @@ export default {
 		 * fact of the task, the title is only a nicer label for the link.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
 			const taskId = this.$route?.params?.id
@@ -115,8 +127,7 @@ export default {
 			}
 
 			try {
-				this.task =
-					(await this.objectStore.fetchObject('caseTask', taskId)) || null
+				this.task = (await this.engineTasks.fetch(taskId)) || null
 			} catch {
 				// An unreadable task renders nothing, same as a non-flow task.
 				this.task = null

@@ -26,6 +26,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
+import { PAGE_LOAD } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
@@ -47,11 +48,11 @@ test.describe('Queue', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
 	test('the queue page renders for a deep link', async ({ page }) => {
 		// A PATH, not `#/queue`: dossiq runs on createWebHistory, so a hash deep
 		// link navigates nowhere and lands on the dashboard without throwing.
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 
 		await expect(
 			page.locator('[data-testid="cn-page"]'),
@@ -64,7 +65,7 @@ test.describe('Queue', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-holds-unassigned-open-cases
 	test('an assigned case is on the case index and NOT in the queue', async ({
 		page,
 	}) => {
@@ -93,7 +94,7 @@ test.describe('Queue', () => {
 		})
 
 		const rowsMatching = async (path: string): Promise<number> => {
-			await page.goto(`${path}?title=${encodeURIComponent(title)}`)
+			await page.goto(`${path}?title=${encodeURIComponent(title)}`, PAGE_LOAD)
 			await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 				timeout: 60_000,
 			})
@@ -119,14 +120,14 @@ test.describe('Queue', () => {
 		).toBe(0)
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#an-empty-queue-says-so
+	// @e2e openspec/specs/add-work-queue/spec.md#an-empty-queue-says-so
 	test('an empty result renders the empty state, not a bare table', async ({
 		page,
 	}) => {
 		// Drive the filter to a slice that cannot match. The page must answer with
 		// its empty state rather than a blank region: "mounted and empty" and
 		// "never mounted" look identical without a marker to probe.
-		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__')
+		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__', PAGE_LOAD)
 
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 			timeout: 60_000,
@@ -137,12 +138,22 @@ test.describe('Queue', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/add-work-queue/specs/add-work-queue/spec.md#the-queue-narrows-by-case-type
+	// @e2e openspec/specs/add-work-queue/spec.md#the-queue-narrows-by-case-type
 	test('the case-type sidebar narrows the queue', async ({ page }) => {
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 		await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 			timeout: 60_000,
 		})
+		// 🔴 COUNT ONLY ONCE THE LIST HAS ANSWERED. `before` used to be read the
+		// moment the page shell appeared, while the first fetch was still in
+		// flight, so it could capture a half-filled or empty table. Narrowing
+		// then produced MORE rows than the baseline and the assertion below
+		// failed reporting that a filter had widened the set — a race in the
+		// test reported as a defect in the product.
+		await expect(
+			page.locator('.cn-index-page__empty, table tbody tr').first(),
+			'the queue must answer before its rows are counted',
+		).toBeVisible({ timeout: 30_000 })
 		const before = await page.locator('table tbody tr').count()
 
 		// The folder sidebar is the same control the Cases index carries; picking

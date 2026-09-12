@@ -220,7 +220,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function resumeWaitingRun(string $caseId, string $decisionRef, string $status): void {
 		if ($this->runs === null || $this->runner === null || trim($decisionRef) === '') {
@@ -281,7 +281,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return boolean True when a slot records this ref.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function awaitsDecision(object $run, string $decisionRef): bool {
 		$context = ($run->getContext() ?? []);

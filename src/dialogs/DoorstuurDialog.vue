@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcDialog
-		:name="t('dossiq', 'Forward verzoek — Doorsturen')"
+		:name="t('dossiq', 'Forward verzoek: Doorsturen')"
 		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
@@ -40,7 +40,7 @@
 					{{
 						t(
 							'dossiq',
-							'Verzoek successfully forwarded to OpenConnector for DSO-LV transmission.',
+							'Verzoek successfully forwarded to Integriq for DSO-LV transmission.',
 						)
 					}}
 				</div>

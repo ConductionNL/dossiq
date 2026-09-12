@@ -8,7 +8,7 @@
  * and parses — see OpenRegister's `Service\Object\SchemaTypeConverter::
  * convertString()`, which does this deliberately for schemas that historically
  * declared `type: string` while storing array/object data. Dossiq's register
- * declares them on fourteen schemas (`case.statusHistory`,
+ * declares them on thirteen schemas (`case.statusHistory`,
  * `caseType.referenceProcess`, …): every one of them is written JSON-encoded
  * and read back DECODED.
  *
@@ -24,11 +24,11 @@
  * recorded. Measured on a fresh rig: every concluded parafering stranded on
  * `in_parafering` / `currentStep: 1`, unable to reach `geaccordeerd`.
  *
- * THE ENCODED STRING IS THE DECLARED SHAPE, NOT A WORKAROUND. Fifteen
+ * THE ENCODED STRING IS THE DECLARED SHAPE, NOT A WORKAROUND. Nineteen
  * properties across the register are declared this way, the Vue side already
  * reads `routeSnapshot` as string-or-object, and turning one of them into a
  * real `array` would be a breaking schema change that migrates stored rows
- * while leaving its fourteen siblings broken. So the write side re-encodes,
+ * while leaving its eighteen siblings broken. So the write side re-encodes,
  * and this class is the single place that knows which properties that is.
  *
  * @category Service
@@ -86,7 +86,6 @@ class JsonEncodedStringProperties {
 		'notificationChannel' => ['filters'],
 		'objection' => ['attachments'],
 		'resultType' => ['sourceDateArchiveProcedure'],
-		'caseTask' => ['checklist'],
 		'workflowTemplate' => ['nodePositions', 'steps', 'transitions'],
 	];
 

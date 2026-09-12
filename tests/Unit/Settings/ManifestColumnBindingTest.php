@@ -131,6 +131,22 @@ class ManifestColumnBindingTest extends TestCase {
 				$schema = (string)($content['schema'] ?? ($source['schema'] ?? $pageSchema));
 				$widgetLabel = $label . '/' . (string)(((array)$widget)['id'] ?? '?');
 
+				// A `metadata` widget's `include` names METADATA keys, not schema
+				// properties. It renders CnObjectMetadataWidget, which reads the
+				// `@self` envelope — `version`, `locked`, and the keys of the
+				// resolved `_retention` decision — none of which a schema
+				// declares, and none of which it should.
+				//
+				// Checking those against the schema is not a stricter version of
+				// this guard, it is a different question with a guaranteed wrong
+				// answer: every metadata key would be reported as undeclared, so
+				// the only way to keep the suite green would be to stop using the
+				// widget. The envelope allowlist below covers `@self.*`, but these
+				// keys are addressed bare.
+				if ((string)(((array)$widget)['type'] ?? '') === 'metadata') {
+					continue;
+				}
+
 				$this->collect(
 					bindings: $bindings,
 					where: $widgetLabel . '.content.columns',

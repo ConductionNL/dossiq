@@ -32,6 +32,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -69,6 +70,7 @@ class CaseEmailService {
 	 * @param CaseEmailRepository $repository OpenRegister reads/writes for case email
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
+	 * @param RecipientAllowlist $allowlist Outbound recipient policy
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -77,6 +79,7 @@ class CaseEmailService {
 		private readonly CaseEmailRepository $repository,
 		private readonly CaseContactDirectory $contactDirectory,
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
+		private readonly RecipientAllowlist $allowlist,
 	) {
 	}//end __construct()
 
@@ -115,14 +118,22 @@ class CaseEmailService {
 		// C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
 		// has read access. If the case is not found (or the user has no access), OR
 		// returns null — we treat that as 403.
-		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
+		// The RAW record, not loadCaseVariables()'s six-key projection: the
+		// recipient policy reads the case's contact fields, and the projection
+		// drops every field it does not name.
+		$caseData = $this->repository->loadCaseRecord(caseId: $caseId);
 		if (empty($caseData) === true) {
 			throw new RuntimeException('Zaak niet gevonden of geen toegang.');
 		}
 
-		// H4: Validate the recipient against the case's registered contact emails.
-		// This prevents open-relay abuse where any email address could be supplied.
-		$this->assertRecipientAllowed(recipient: $to, caseData: $caseData, caseId: $caseId);
+		// H4: Validate the recipient against the allow-list. This prevents
+		// open-relay abuse where any email address could be supplied.
+		$this->assertRecipientAllowed(
+			recipient: $to,
+			caseData: $caseData,
+			caseId: $caseId,
+			fromAddress: $fromAddress,
+		);
 
 		$message = $this->mailer->createMessage();
 		$message->setFrom([$fromAddress => $fromName]);
@@ -186,35 +197,65 @@ class CaseEmailService {
 	}//end resolveFromAddress()
 
 	/**
-	 * Assert that a recipient address is well-formed and registered on the case.
+	 * Assert that a recipient address is well-formed and allowed.
 	 *
-	 * H4: prevents open-relay abuse where any address could be supplied. When the
-	 * case registers no contacts at all the address list is empty and no
-	 * restriction applies.
+	 * H4: prevents open-relay abuse where any address could be supplied. The
+	 * recipient must match the allow-list (`RecipientAllowlist`) or be a contact
+	 * registered on the case. Anything else is rejected — including the case
+	 * where neither source yields a single address, which is why the allow-list
+	 * carries a default rather than being allowed to arrive empty.
+	 *
+	 * This guard rejected nothing at all until 2026-09-10: it was handed
+	 * `loadCaseVariables()`'s six-key projection, which carries none of the
+	 * contact fields `CaseContactDirectory` reads, so the address list was
+	 * always empty and an empty list meant "no restriction".
 	 *
 	 * @param string $recipient The recipient email address
-	 * @param array<string, mixed> $caseData The case data array
+	 * @param array<string, mixed> $caseData The raw case record
 	 * @param string $caseId The case UUID (logging context)
+	 * @param string $fromAddress The resolved envelope from-address
 	 *
 	 * @return void
 	 *
-	 * @throws \RuntimeException If the address is invalid or not a case contact
+	 * @throws \RuntimeException If the address is invalid or not allowed
 	 */
-	private function assertRecipientAllowed(string $recipient, array $caseData, string $caseId): void {
+	private function assertRecipientAllowed(
+		string $recipient,
+		array $caseData,
+		string $caseId,
+		string $fromAddress,
+	): void {
 		if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
 			throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
 		}
 
-		$allowedEmails = $this->contactDirectory->collectAddresses(caseData: $caseData);
-		if (count($allowedEmails) > 0) {
-			if (in_array(strtolower($recipient), $allowedEmails, true) === false) {
-				$this->logger->warning(
-					'Blocked email to non-case-contact address',
-					['app' => Application::APP_ID, 'to' => $recipient, 'caseId' => $caseId]
-				);
-				throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
-			}
+		$entries = $this->allowlist->entriesFor(fromAddress: $fromAddress);
+		$caseContacts = $this->contactDirectory->collectAddresses(caseData: $caseData);
+
+		$permitted = $this->allowlist->permits(
+			recipient: $recipient,
+			entries: $entries,
+			caseContacts: $caseContacts,
+		);
+		if ($permitted === true) {
+			return;
 		}
+
+		$this->logger->warning(
+			'Blocked email to a recipient outside the allow-list',
+			[
+				'app' => Application::APP_ID,
+				'to' => $recipient,
+				'caseId' => $caseId,
+				'allowlistEntries' => count($entries),
+				'caseContacts' => count($caseContacts),
+			]
+		);
+
+		throw new RuntimeException(
+			'Ontvanger staat niet op de lijst met toegestane e-mailadressen. '
+			. 'Voeg het adres of het domein toe bij de e-mailinstellingen.'
+		);
 	}//end assertRecipientAllowed()
 
 	/**

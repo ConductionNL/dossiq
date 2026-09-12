@@ -193,7 +193,13 @@ class DispositionService {
 			'goedkeurder' => $approverId,
 		];
 
-		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$dispositionId);
+		$result = $this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: (string)$dispositionId,
+			changes: $updateData
+		);
 
 		$this->logger->info(
 			'Disposition ' . $dispositionId . ' approved by ' . $approverId,
@@ -233,7 +239,13 @@ class DispositionService {
 			'goedkeurder' => $rejectorId,
 		];
 
-		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$dispositionId);
+		$result = $this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: (string)$dispositionId,
+			changes: $updateData
+		);
 
 		$this->logger->info(
 			'Disposition ' . $dispositionId . ' rejected by ' . $rejectorId,
@@ -309,7 +321,7 @@ class DispositionService {
 			'complaintId' => $complaintId,
 			'dispositionId' => $dispositionId,
 			'status' => 'queued',
-			'message' => 'Letter generation queued via Docudesk',
+			'message' => 'Letter generation queued via Filinq',
 		];
 	}//end generateResponseLetter()
 

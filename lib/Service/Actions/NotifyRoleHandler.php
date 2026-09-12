@@ -7,6 +7,13 @@
  * notification to each. In dry-run mode it returns the resolved recipient
  * list and rendered message without queuing any notifications.
  *
+ * Notifications go to Nextcloud's notification manager, the route
+ * MentionNotificationService, AdviceNotifier and the transition `notify`
+ * action already take. The subject key is rendered by
+ * {@see \OCA\Dossiq\Notification\Notifier}; a subject that notifier does not
+ * know is refused in `prepare()` and dropped before anyone sees it, so the
+ * sender and the renderer change together.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\Actions
  *
@@ -28,8 +35,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Actions;
 
+use DateTime;
 use OCA\Dossiq\AppInfo\Application;
-use Psr\Container\ContainerInterface;
+use OCA\Dossiq\Notification\Notifier;
+use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -43,14 +52,13 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor for NotifyRoleHandler.
 	 *
-	 * @param ContainerInterface $container DI container — used to resolve
-	 *                                      NotificatieService lazily.
+	 * @param IManager $notificationManager Nextcloud notification manager.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ContainerInterface $container,
+		private readonly IManager $notificationManager,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -75,7 +83,7 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult The outcome of the role notification.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/specs/automatic-actions/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
@@ -100,17 +108,18 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
 			}
 
-			$notification = $this->resolveNotificationService();
-			if ($notification === null) {
-				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			if ($caseId === '') {
+				// The notification manager rejects an empty object id, and a
+				// notification that names no case cannot be opened anyway.
+				return new ActionResult(succeeded: false, error: 'missing_case_id', data: $preview);
 			}
 
 			foreach ($recipients as $userId) {
-				if (method_exists($notification, 'notifyUser') === true) {
-					// @phpstan-ignore-next-line — signature owned by service.
-					$notification->notifyUser($userId, $message);
-				}
+				$this->notifyOne(userId: $userId, caseId: $caseId, roleSlug: $roleSlug, message: $message);
 			}
+
+			$preview['notified'] = count($recipients);
 
 			return new ActionResult(succeeded: true, data: $preview);
 		} catch (\Throwable $e) {
@@ -125,6 +134,40 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 			return new ActionResult(succeeded: false, error: 'notify_role_failed');
 		}//end try
 	}//end handle()
+
+	/**
+	 * Dispatch one notification.
+	 *
+	 * The role slug travels as a subject parameter rather than into the
+	 * wording: it is workflow-configuration vocabulary, and a recipient who
+	 * never opened the workflow editor has no way to read it.
+	 *
+	 * @param string $userId The recipient's user identifier.
+	 * @param string $caseId The case the notification points at.
+	 * @param string $roleSlug The role the recipient holds on the case.
+	 * @param string $message The rendered message, possibly empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/automatic-actions/spec.md
+	 */
+	private function notifyOne(string $userId, string $caseId, string $roleSlug, string $message): void {
+		$notification = $this->notificationManager->createNotification();
+		$notification->setApp(Application::APP_ID)
+			->setUser($userId)
+			->setDateTime(new DateTime())
+			->setObject('case', $caseId)
+			->setSubject(
+				Notifier::SUBJECT_CASE_ROLE_NOTIFIED,
+				[
+					'caseId' => $caseId,
+					'roleSlug' => $roleSlug,
+					'message' => $message,
+				]
+			);
+
+		$this->notificationManager->notify($notification);
+	}//end notifyOne()
 
 	/**
 	 * Resolve a role slug to a list of user identifiers on the case.
@@ -183,17 +226,4 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 
 		return (string)($member['id'] ?? ($member['userId'] ?? ''));
 	}//end memberId()
-
-	/**
-	 * Resolve NotificatieService lazily.
-	 *
-	 * @return object|null
-	 */
-	private function resolveNotificationService(): ?object {
-		try {
-			return $this->container->get('OCA\Dossiq\Service\NotificatieService');
-		} catch (\Throwable $e) {
-			return null;
-		}
-	}//end resolveNotificatieService()
 }//end class

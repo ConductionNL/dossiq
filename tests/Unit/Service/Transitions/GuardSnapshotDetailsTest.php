@@ -1,0 +1,302 @@
+<?php
+
+/**
+ * The shape of the guard snapshot that gets persisted on the status record.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Transitions
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
+
+use OCA\Dossiq\Service\MandaatValidationService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\GuardEvaluatorInterface;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\GuardResult;
+use OCA\Dossiq\Service\Transitions\MandaatGuard;
+use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
+use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
+use OCA\Dossiq\Service\Transitions\RoleGuard;
+use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
+use OCP\IGroupManager;
+use OCP\IUser;
+use OCP\IUserManager;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+
+/**
+ * A guard that reports nothing must OMIT `details`, not send an empty one.
+ *
+ * `evaluateAll()` output is persisted verbatim as `statusRecord.evaluatedGuards`,
+ * whose `details` is declared `type: object` in `dossiq_register.json` and is
+ * not required. Every shape was posted to a running register and read back
+ * before this test was written, because the earlier version of this file
+ * asserted a shape the register refuses and passed anyway:
+ *
+ *     omitted   accepted
+ *     {"x": 1}  accepted
+ *     {}        refused, "expects object but got empty ({})"
+ *     []        refused, the same message
+ *     null      refused, "should be type 'object' but is 'null'"
+ *
+ * The refusal of `{}` advises null: "For non-required object properties, set
+ * this to null to clear the field." That advice is wrong, #1941 followed it,
+ * and every status transition answered 500 from that merge until the fix.
+ *
+ * `GuardResult::$details` defaults to `[]` and a guard that simply passes has
+ * nothing to report, so the empty case is the COMMON one. It went unnoticed
+ * until the status checklist guard began being appended to every transition:
+ * before that, a transition declaring no guards produced no snapshot entries
+ * at all, so there was nothing to reject. Afterwards every transition had at
+ * least entry 0, `StatusTransitionController::execute()` caught the throwable
+ * and answered 500, and the UI showed a transition dialog that never closed.
+ *
+ * The coverage-metadata list below matches GuardDialectTest's, because this
+ * test builds the same registry with the same real evaluators: constructing
+ * one executes its constructor, and phpunit.xml sets
+ * beStrictAboutCoverageMetadata with failOnRisky, so an unlisted class exits 1
+ * with zero failures reported.
+ *
+ * Note the wording, which avoids writing a tag name in prose at all. An
+ * earlier draft opened this paragraph with the uses tag followed by the word
+ * "set", and PHPUnit parsed that as an annotation carrying the value "set",
+ * reporting it as invalid on all three tests. A docblock is parsed, not just
+ * read, and the parser does not care that the tag sits mid-sentence.
+ *
+ * @covers \OCA\Dossiq\Service\Transitions\GuardRegistry
+ * @uses \OCA\Dossiq\Service\Transitions\ChecklistGuard
+ * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Service\Transitions\MandaatGuard
+ * @uses \OCA\Dossiq\Service\Transitions\RequiredDocumentGuard
+ * @uses \OCA\Dossiq\Service\Transitions\RequiredFieldGuard
+ * @uses \OCA\Dossiq\Service\Transitions\RoleGuard
+ */
+class GuardSnapshotDetailsTest extends TestCase {
+	/**
+	 * A guard with nothing to report carries no `details` key at all.
+	 *
+	 * @return void
+	 */
+	public function testAGuardWithNothingToReportOmitsDetails(): void {
+		// `checklist` is the guard that produces the empty case in
+		// production: every one of its early returns, and its PASSING verdict,
+		// construct a GuardResult without details.
+		$results = $this->registry()->evaluateAll(
+			guards: [['type' => 'checklist']],
+			case: ['id' => 'case-1'],
+			userId: 'admin',
+		);
+
+		self::assertCount(1, $results);
+		self::assertArrayNotHasKey(
+			'details',
+			$results[0],
+			'Omission is the only empty shape the register accepts: {}, [] and null are all refused.',
+		);
+	}//end testAGuardWithNothingToReportOmitsDetails()
+
+	/**
+	 * A guard that DOES report details keeps them untouched.
+	 *
+	 * The control, through a REAL EVALUATOR. An unknown guard type answers
+	 * from the registry's own early branch and never reaches the line that
+	 * copies an evaluator's details onto the snapshot, so a control written
+	 * that way leaves the branch this fix adds unexecuted — which is exactly
+	 * what the coverage ratchet caught. `requiredField` reports
+	 * `['field' => …]` on both verdicts, so it exercises the copy either way.
+	 *
+	 * @return void
+	 */
+	public function testAGuardWithDetailsKeepsThem(): void {
+		$results = $this->registry()->evaluateAll(
+			guards: [
+				['type' => 'requiredField', 'field' => 'title'],
+				['type' => 'requiredField', 'field' => 'absent'],
+			],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+
+		self::assertCount(2, $results);
+
+		self::assertTrue($results[0]['passed']);
+		self::assertSame(['field' => 'title'], $results[0]['details']);
+
+		self::assertFalse($results[1]['passed']);
+		self::assertSame(['field' => 'absent'], $results[1]['details']);
+	}//end testAGuardWithDetailsKeepsThem()
+
+	/**
+	 * An unknown guard type still records why it failed.
+	 *
+	 * A separate case rather than the control above, because it answers from
+	 * the registry's own branch and proves something different: a guard nobody
+	 * registered is refused with a reason rather than skipped.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownGuardTypeIsRefusedWithAReason(): void {
+		$results = $this->registry()->evaluateAll(
+			guards: [['type' => 'no_such_guard_type']],
+			case: [],
+			userId: 'admin',
+		);
+
+		self::assertCount(1, $results);
+		self::assertFalse($results[0]['passed']);
+		self::assertSame(['unknown' => true], $results[0]['details']);
+	}//end testAnUnknownGuardTypeIsRefusedWithAReason()
+
+	/**
+	 * Every snapshot entry is safe to persist, whatever the guard decided.
+	 *
+	 * This is the invariant the schema actually cares about, stated once so a
+	 * new guard cannot reintroduce the defect by defaulting `details` again.
+	 * An entry either omits the key or carries a non-empty object; the three
+	 * shapes in between are the ones the register refuses.
+	 *
+	 * @return void
+	 */
+	public function testNoSnapshotEntryCarriesAnEmptyDetailsObject(): void {
+		$results = $this->registry()->evaluateAll(
+			guards: [
+				['type' => 'checklist'],
+				['type' => 'requiredField', 'field' => 'title'],
+				['type' => 'requiredField', 'field' => 'absent'],
+				['type' => 'no_such_guard_type'],
+			],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+
+		self::assertCount(4, $results);
+		foreach ($results as $index => $entry) {
+			if (array_key_exists('details', $entry) === false) {
+				continue;
+			}
+
+			self::assertIsArray(actual: $entry['details']);
+			self::assertNotSame(
+				[],
+				$entry['details'],
+				sprintf('evaluatedGuards.%d.details is an empty object', $index),
+			);
+		}
+	}//end testNoSnapshotEntryCarriesAnEmptyDetailsObject()
+
+	/**
+	 * A registered evaluator answers for its own type, details and all.
+	 *
+	 * `registerEvaluator()` is how a caller extends the set without editing
+	 * this class, and an evaluator reached that way has to travel the same
+	 * path as a built-in one: its verdict, its message and its details land on
+	 * the snapshot unchanged.
+	 *
+	 * @return void
+	 */
+	public function testARegisteredEvaluatorAnswersForItsOwnType(): void {
+		$evaluator = $this->createMock(GuardEvaluatorInterface::class);
+		$evaluator->method('evaluate')->willReturn(
+			new GuardResult(
+				passed: false,
+				failureMessage: 'Nope',
+				details: ['because' => 'testing'],
+			)
+		);
+
+		$registry = $this->registry();
+		$registry->registerEvaluator(type: 'e2e_custom', evaluator: $evaluator);
+
+		$results = $registry->evaluateAll(
+			guards: [['type' => 'e2e_custom']],
+			case: [],
+			userId: 'admin',
+		);
+
+		self::assertCount(1, $results);
+		self::assertFalse($results[0]['passed']);
+		self::assertSame('Nope', $results[0]['failureMessage']);
+		self::assertSame(['because' => 'testing'], $results[0]['details']);
+	}//end testARegisteredEvaluatorAnswersForItsOwnType()
+
+	/**
+	 * `allPassed()` reads the snapshot this class produces.
+	 *
+	 * It is the question the transition engine actually asks of a snapshot, so
+	 * it is tested against real `evaluateAll()` output rather than a
+	 * hand-built array: an array literal would still answer correctly if the
+	 * snapshot's shape moved underneath it.
+	 *
+	 * @return void
+	 */
+	public function testAllPassedReadsTheSnapshot(): void {
+		$registry = $this->registry();
+
+		$satisfied = $registry->evaluateAll(
+			guards: [['type' => 'requiredField', 'field' => 'title']],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+		self::assertTrue($registry->allPassed(results: $satisfied));
+
+		$refused = $registry->evaluateAll(
+			guards: [
+				['type' => 'requiredField', 'field' => 'title'],
+				['type' => 'requiredField', 'field' => 'absent'],
+			],
+			case: ['title' => 'Present'],
+			userId: 'admin',
+		);
+		self::assertFalse($registry->allPassed(results: $refused));
+
+		// A transition declaring no guards is not a transition that failed.
+		self::assertTrue($registry->allPassed(results: []));
+	}//end testAllPassedReadsTheSnapshot()
+
+	/**
+	 * A registry wired with the real evaluators.
+	 *
+	 * @return GuardRegistry
+	 */
+	private function registry(): GuardRegistry {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('');
+
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->willReturn($this->createMock(IUser::class));
+
+		return new GuardRegistry(
+			// The checklist guard reads the engine now. These tests are about
+			// the REGISTRY, so it gets an inert pair rather than a fixture.
+			new ChecklistGuard(
+				$this->getMockBuilder(EngineTaskInbox::class)->disableOriginalConstructor()->getMock(),
+				$this->getMockBuilder(EngineTaskGateway::class)->disableOriginalConstructor()->getMock(),
+				new NullLogger()
+			),
+			new RequiredFieldGuard(),
+			new RequiredDocumentGuard(),
+			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
+			new MandaatGuard($this->createMock(MandaatValidationService::class)),
+			$this->createMock(StatusChecklistGuard::class),
+			new NullLogger(),
+		);
+	}//end registry()
+}//end class

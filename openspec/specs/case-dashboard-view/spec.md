@@ -84,7 +84,6 @@ The system MUST provide a single integrated view that combines all case-related 
 
 **Feature tier**: MVP
 
-
 #### Scenario CDV-01a: Load case dashboard
 
 - GIVEN case "Bouwvergunning Keizersgracht 100" (identifier "2026-042")
@@ -125,7 +124,6 @@ The system MUST provide a single integrated view that combines all case-related 
 Actions in one panel MUST immediately reflect in other panels without requiring a page reload, using Pinia store reactivity.
 
 **Feature tier**: MVP
-
 
 #### Scenario CDV-02a: Status change updates timeline
 
@@ -169,7 +167,6 @@ Actions in one panel MUST immediately reflect in other panels without requiring 
 The case dashboard MUST provide quick actions for the most common operations without opening modal dialogs.
 
 **Feature tier**: MVP
-
 
 #### Scenario CDV-03a: Quick status change
 
@@ -218,7 +215,6 @@ The case dashboard MUST display contactmomenten (contact moments) linked to the 
 
 **Feature tier**: V1
 
-
 #### Scenario CDV-04a: Display contactmomenten in timeline
 
 - GIVEN a case with 3 contactmomenten from Pipelinq:
@@ -250,7 +246,6 @@ The case dashboard MUST display contactmomenten (contact moments) linked to the 
 The case dashboard MUST display linked cases (parent/child, related) and linked objects (BAG addresses, BRP persons).
 
 **Feature tier**: V1
-
 
 #### Scenario CDV-05a: Display sub-cases
 
@@ -297,7 +292,6 @@ The case dashboard MUST display a document checklist showing required and upload
 
 **Feature tier**: V1
 
-
 #### Scenario CDV-06a: Display required documents
 
 - GIVEN a case type "Omgevingsvergunning Bouw" with required documents: bouwtekening, constructieberekening, situatietekening, welstandsadvies, foto's bestaande situatie
@@ -330,7 +324,6 @@ The case dashboard MUST be usable on different screen sizes, following Nextcloud
 
 **Feature tier**: MVP
 
-
 #### Scenario CDV-07a: Desktop layout (>1200px)
 
 - GIVEN a desktop screen with width 1440px
@@ -358,7 +351,6 @@ The case dashboard MUST be usable on different screen sizes, following Nextcloud
 The case dashboard SHALL support keyboard shortcuts for power users, consistent with Nextcloud keyboard shortcut conventions.
 
 **Feature tier**: V1
-
 
 #### Scenario CDV-08a: Keyboard shortcuts
 
@@ -392,7 +384,6 @@ The case dashboard MUST display case-specific custom properties defined by the c
 
 **Feature tier**: V1
 
-
 #### Scenario CDV-09a: Display custom properties
 
 - GIVEN a case type "Omgevingsvergunning" with property definitions: bouwkosten (currency), oppervlakte (number + unit m2), aantal bouwlagen (integer)
@@ -420,7 +411,6 @@ The case dashboard MUST display case-specific custom properties defined by the c
 The case dashboard MUST validate edits before saving and provide clear feedback on validation errors.
 
 **Feature tier**: MVP
-
 
 #### Scenario CDV-10a: Validate required fields
 
@@ -452,7 +442,6 @@ The case dashboard MUST render in read-only mode when the case is at a final sta
 
 **Feature tier**: MVP
 
-
 #### Scenario CDV-11a: Final status read-only
 
 - GIVEN a case at final status "Afgehandeld"
@@ -477,7 +466,6 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 
 **Feature tier**: MVP
 
-
 #### Scenario CDV-12a: Delete case with linked tasks
 
 - GIVEN a case with 5 linked tasks
@@ -497,6 +485,297 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 - GIVEN a case at final status "Afgehandeld"
 - THEN the Delete button MUST still be available (cases may need to be purged)
 - BUT a stronger warning MUST be shown: "Deze zaak is afgehandeld. Verwijderen is onomkeerbaar."
+
+### Requirement: The case names itself in the header (REQ-CDV-14)
+
+You see which case you are on without reading the data widget. `CaseDetail`
+SHALL set `config.subtitleField` to `identifier`, so the case number reads
+under the title. The page SHALL render a header row widget `case-header`
+on the first layout row that shows a `CnStatusBadge` with the name of the
+case's status type and the deadline countdown (days left, or days overdue
+in the danger variant), replacing the Time left tile. A case without a
+status record SHALL show the badge as Unknown rather than nothing; a case
+without a deadline SHALL show no countdown. The subtitle line built from
+identifier, case type and assignee together is a nextcloud-vue need
+(`CnDetailPage` has `subtitleField` only); until it lands the identifier
+alone is the subtitle.
+
+#### Scenario: The number reads under the title
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a case with identifier 2026-0015 and title Aanbouw Beethovenlaan 8
+- **WHEN** the handler opens the case page
+- **THEN** the page title SHALL read Aanbouw Beethovenlaan 8
+- **AND** the subtitle SHALL read 2026-0015
+
+#### Scenario: Status and deadline sit in the header row
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a case in status In behandeling with a deadline 26 days ago
+- **WHEN** the handler opens the case page
+- **THEN** the header row SHALL show a status badge reading In behandeling
+- **AND** the header row SHALL show 26 days overdue in the danger variant
+- **AND** no tile labelled Time left SHALL render in the KPI row
+
+#### Scenario: A case without a status or a deadline still has a header
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a case with no status record and no deadline
+- **WHEN** the handler opens the case page
+- **THEN** the status badge SHALL read Unknown
+- **AND** the header row SHALL show no countdown
+
+#### Scenario: The full subtitle line waits on nextcloud-vue
+@e2e exclude The templated subtitle (identifier, case type, assignee) needs a `subtitle` template on `CnDetailPage`, which 2.40.0 does not have; the manifest unit test asserts the interim `subtitleField` and the tasks.md marker tracks the block.
+
+- **GIVEN** nextcloud-vue ships a templated `subtitle` on the detail page
+- **WHEN** `CaseDetail` sets it to identifier, case type and assignee
+- **THEN** the subtitle SHALL read 2026-0015, Omgevingsvergunning, Jan de Vries
+
+### Requirement: The case page carries no breadcrumb (REQ-CDV-15)
+
+The case page SHALL NOT render a breadcrumb trail. The way back to the case
+list is the app menu, which every other detail page in this app uses.
+
+This requirement used to say the opposite: `CaseDetail` declared a trail of
+Cases followed by the case title, rendered through `CnBreadcrumbs` above the
+title. It was withdrawn because the trail's LAST crumb was the case title,
+rendered one line below the page header that already printed that title, so
+the page read `Cases > Dakkapel Kerkstraat 12` directly under
+`Dakkapel Kerkstraat 12`. A trail whose final segment repeats the heading
+beside it states a location the reader is already looking at, and it cost the
+top of the page a row that the content below it needed.
+
+It is stated as a requirement rather than simply deleted so the absence is
+legible: without it the next reader finds the `_breadcrumbsNote` in the
+manifest, reads it as an oversight, and adds the trail back.
+
+#### Scenario: No trail is rendered
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a case titled Aanbouw Beethovenlaan 8
+- **WHEN** the handler opens the case page
+- **THEN** the page SHALL render no breadcrumb trail
+- **AND** no element SHALL carry both the case title and `aria-current="page"`,
+  which is the signature the trail's last crumb left
+
+### Requirement: The case shows its step (REQ-CDV-13)
+
+You see which step the case is in and how many steps remain. `CaseDetail`
+SHALL render a stepper over the case type's status types in their `order`,
+with the current status marked as active and the statuses before it as done.
+The stepper SHALL take the place of the milestone progress tile.
+
+#### Scenario: The current step is marked
+@e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
+
+- **GIVEN** a case type with statuses Ontvangen, In behandeling, Afgehandeld in that order
+- **AND** a case in status In behandeling
+- **WHEN** the handler opens the case page
+- **THEN** the stepper SHALL show three stages
+- **AND** Ontvangen SHALL be done, In behandeling active, Afgehandeld pending
+
+#### Scenario: The stepper follows a transition
+@e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** the handler moves it to Afgehandeld
+- **THEN** the stepper SHALL mark Afgehandeld as active without a reload
+
+#### Scenario: The progress tile is gone
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+
+- **WHEN** the handler opens any case page
+- **THEN** no tile labelled Completed SHALL render in the KPI row
+- **AND** the page SHALL make no request to `/milestones/progress`
+
+### Requirement: The case keeps one history (REQ-CDV-17)
+
+You read what happened on the case in one list, newest first, with who did
+it. The `CaseDetail` sidebar SHALL carry exactly one history tab: the
+`audit` tab labelled History, rendering `CnAuditTrailTab` over the case's
+OpenRegister audit trail. The `version-history` tab
+(`VersionHistoryLeafTab`) SHALL be absent from the `CaseDetail` sidebar.
+Other detail pages keep their version history tab; this requirement
+covers the case page only. Each row SHALL show the action, the user and
+the time, and the list SHALL order newest first.
+
+#### Scenario: One history tab in the sidebar
+@e2e tests/e2e/case-timeline.spec.ts
+
+- **GIVEN** a case with identifier 2026-0015
+- **WHEN** the handler opens the case page and opens the sidebar
+- **THEN** the sidebar SHALL offer a tab with id `audit`
+- **AND** no tab with id `version-history` SHALL be present
+
+#### Scenario: The newest write reads first, with its actor
+@e2e tests/e2e/case-timeline.spec.ts
+
+- **GIVEN** a case whose description admin changed one minute ago
+- **WHEN** the handler opens the History tab
+- **THEN** the first row SHALL read action update, user admin
+- **AND** the row that created the case SHALL sit below it
+
+#### Scenario: Other detail pages keep their version history
+@e2e exclude The other 13 sidebars are `ncvue-w2-leaves-adoption`'s surface; the manifest unit test in `tests/vitest/manifestCaseTimeline.spec.js` asserts their tab counts are unchanged, and no journey opens them.
+
+- **GIVEN** the `TaskDetail` page
+- **WHEN** the handler opens its sidebar
+- **THEN** the Version history tab SHALL still be there
+
+### Requirement: The timeline shows writes, with reads on request (REQ-CDV-18)
+
+You are not scrolling past your own reads to find a change. The History
+tab SHALL open on writes (create, update, delete) and SHALL keep reads
+behind the Action filter. Presetting the filter is a nextcloud-vue need:
+`CnAuditTrailTab` holds `actionFilter` as internal state and the `audit`
+sidebar widget declares no prop for it. Until it lands the tab opens
+unfiltered and the Action and User filters the tab already renders SHALL
+work, not sit on Loading.
+
+#### Scenario: The Action filter narrows to updates
+@e2e tests/e2e/case-timeline.spec.ts
+
+- **GIVEN** a case with one create, one update and several reads on its trail
+- **WHEN** the handler picks update in the Action filter
+- **THEN** the list SHALL show the update row only
+- **AND** the filter SHALL not read Loading
+
+#### Scenario: The tab opens on writes
+@e2e exclude The preset needs an `actions` (or equivalent) prop on the `audit` sidebar widget, placement section 3 row A05; the tasks.md marker tracks the block and the interim is the unfiltered tab with a working filter.
+
+- **GIVEN** nextcloud-vue ships a preset for `actionFilter` on the `audit` sidebar widget
+- **WHEN** the handler opens the History tab
+- **THEN** no row with action read SHALL show until the handler widens the filter
+
+### Requirement: The timeline can be exported (REQ-CDV-19)
+
+You hand the history of a case to someone outside the system. The History
+tab SHALL offer an Export action that downloads the rows under the current
+filter as CSV with time, action, user and the changed fields. The action is
+a nextcloud-vue need on `CnAuditTrailTab`; until it lands there is no
+export and the tab says nothing about one.
+
+#### Scenario: Export follows the filter
+@e2e exclude `CnAuditTrailTab` has no export; placement section 3 row A05 files it against nextcloud-vue and the tasks.md marker tracks the block.
+
+- **GIVEN** the History tab filtered to updates
+- **WHEN** the handler clicks Export
+- **THEN** a CSV SHALL download holding the update rows only
+
+### Requirement: Documents, notes and mail land on the same timeline (REQ-CDV-20)
+
+You see a document upload or a sent mail in the same list as a status
+change. The History tab SHALL merge document, note and mail events for the
+case with its audit rows, in one order by time. A merged feed per object
+is the OpenRegister `activity` leaf, which does not exist yet:
+`[blocked: openregister activity leaf]`. Interim: the audit trail over
+writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
+
+#### Scenario: A document upload appears in the history
+@e2e exclude The merged feed is the OpenRegister `activity` leaf (placement section 3, A05); until it ships the History tab holds audit rows only and the tasks.md marker tracks the block.
+
+- **GIVEN** a case to which the handler uploaded bouwtekening.pdf after a status change
+- **WHEN** the handler opens the History tab
+- **THEN** the upload SHALL read above the status change, with the handler as actor
+
+### Requirement: Six tabs hold every panel of the case (REQ-CDV-16)
+
+You reach every panel of the case from one row of six tabs. The `case-panels`
+widget on `CaseDetail` SHALL list exactly six tabs, in the order Data
+(`case-core`), Documents (`case-documents-panel`), People
+(`case-people-panel`), Work (`case-work-panel`), Related
+(`case-related-panel`) and Objects and locations (`case-objects-panel`). The
+strip SHALL sit above the fold at 1024 pixels wide, and all six SHALL be
+visible there without a scroll or a gesture.
+
+A tab MAY hold more than one panel, as a `case-sections` widget whose sections
+render stacked under their own headings. Documents SHALL hold the dossier list
+and the case folder; People SHALL hold the parties and the contact moments;
+Work SHALL hold the tasks and the appointments; Related SHALL hold the related
+cases and the sub-cases; Objects and locations SHALL hold the case objects and
+the case locations.
+
+A section SHALL be absent or non-empty, never a heading over a void.
+`CnDetailWidgetHost` renders nothing, and logs nothing, for a widget type it
+cannot resolve, so a section naming an unresolvable widget would leave its
+heading as the only thing on screen. That is worse than the tab it replaced: as
+a whole tab an unresolvable panel was merely an empty tab, and folding it under
+a heading makes it look broken. Such a section SHALL withhold its heading, its
+divider and its padding, so it reserves no space and reads as absent.
+
+An empty state is content, and keeps its heading. A list that renders "no
+documents yet" tells the handler the section exists and holds nothing, which is
+the line of text the paragraph below is about. Only a section that renders
+literally nothing goes silent.
+
+The strip SHALL carry no Notes, Mail, Decisions or Timeline tab. Each of those
+duplicates a sidebar tab on the same page, and one surface in two places is
+duplication rather than coverage (REQ-CDV-17). A panel SHALL NOT be removed
+from the strip unless it is reachable elsewhere on the page: folding it into a
+tab and deleting it look identical in a tab count.
+
+The strip SHALL NOT need `visibleIf` on a tab entry. That was wanted so a
+collection holding nothing could be absent rather than empty; with six tabs
+each holding two collections, an empty section is a line of text inside a tab
+the handler opened deliberately.
+
+#### Scenario: The strip holds six tabs and no more
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a case with three tasks and one document
+- **WHEN** the handler opens the case page
+- **THEN** the tab strip SHALL contain exactly six tabs
+- **AND** they SHALL read Data, Documents, People, Work, Related, Objects and locations, in that order
+- **AND** the strip SHALL carry no tab named Files, Notes, Mail or Decisions
+
+#### Scenario: The six tabs fit a laptop screen
+@e2e tests/e2e/case-header.spec.ts
+
+- **GIVEN** a viewport 1024 pixels wide
+- **WHEN** the handler opens the case page
+- **THEN** the tab strip SHALL sit above the fold
+- **AND** every one of the six tabs SHALL be visible without a scroll or a gesture
+
+> Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
+> tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
+> at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
+> scrolling strip hides tabs behind an edge with nothing to say they are there. What the
+> handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
+
+#### Scenario: Every folded panel still renders, inside the tab it moved to
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+
+- **GIVEN** a case page whose strip holds six tabs
+- **WHEN** the handler opens each tab in turn
+- **THEN** each `case-sections` tab SHALL render both of its sections
+- **AND** each section SHALL carry its own heading
+
+#### Scenario: A section whose widget does not resolve stays silent
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+
+- **GIVEN** a `case-sections` tab holding a section whose widget type the registry cannot resolve
+- **WHEN** the handler opens that tab
+- **THEN** that section SHALL render no heading
+- **AND** it SHALL reserve no vertical space and draw no divider
+- **AND** every section on the tab that did resolve SHALL keep its own heading
+
+#### Scenario: Files keeps its share and comment surface
+@e2e tests/e2e/case-documents.spec.ts
+@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
+
+- **GIVEN** a case page
+- **WHEN** the handler opens the Documents tab
+- **THEN** the dossier list SHALL render first
+- **AND** the case folder SHALL render under it, as a section rather than a tab
+
+#### Scenario: A panel that leaves the strip is still on the page
+@e2e exclude The three removed panels are sidebar tabs, and each already has its own e2e coverage on the sidebar; what needs guarding is that a LATER change cannot drop one body tab without the sidebar tab existing, which is a manifest shape rather than a rendered page. Asserted in tests/vitest/caseTabConsolidation.spec.js, which pairs each removed widget id with the sidebar tab id that carries it and fails when either half is missing.
+
+- **GIVEN** the Notes, Mail and Decisions panels are gone from the strip
+- **WHEN** the manifest is read
+- **THEN** the sidebar SHALL declare a notes, an email and a besluitvorming tab
 
 ## Dependencies
 

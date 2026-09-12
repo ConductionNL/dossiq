@@ -6,6 +6,7 @@ import {
 	CnPageRenderer,
 	defaultPageTypes,
 	fieldInspectionIntegration,
+	registerBuiltinDashboardWidgets,
 	registerIcons,
 	registerIntegration,
 	registerTranslations,
@@ -22,14 +23,17 @@ import { generateUrl } from '@nextcloud/router'
 import { createApp, h, markRaw } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
+import { registerCaseSections } from './components/case/registerCaseSections.js'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
+import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { routerBase } from './utils/routerBase.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
@@ -52,6 +56,22 @@ import './assets/app.css'
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)
+
+// The built-in dashboard widget catalog (`stat`, `delta`, `gauge`, `countdown`,
+// `object-table`, ...) registers itself when its module runs, and nothing in
+// this bundle runs it: nc-vue's barrel is tree-shaken out (its `sideEffects`
+// list only names CSS) and the one remaining importer is the LAZY detail-page
+// chunk. On a fresh load of the dashboard the five `stat` tiles therefore
+// rendered "Widget not available" while `chart` (a template branch) and
+// `object-table` (a BUILT_IN_WIDGETS fallback) worked, and every tile came back
+// once any detail page had been visited. Register the catalog explicitly, the
+// way doriath and hermiq do, before the first page renders.
+registerBuiltinDashboardWidgets()
+
+// The `case-sections` container type, which is what lets the case page's tab
+// strip hold six tabs instead of fourteen. See the module for why it goes in
+// the SHARED catalog and not in `registry.js`.
+registerCaseSections()
 try {
 	registerTranslations()
 } catch (e) {
@@ -155,28 +175,6 @@ const { manifest: resolvedManifest } = useAppManifest('dossiq', builtManifest)
 // component-options object without altering the lib's internals.
 const RoutePageRenderer = { ...CnPageRenderer }
 
-/**
- * Build the vue-router config from the manifest. Each manifest page becomes
- * one route; the route's `name` IS `page.id` (per the lib's manifest contract).
- * Routes whose path declares a `:` parameter receive `props: true` so the
- * underlying detail/custom component receives the route param.
- *
- * @param {object} manifest The bundled manifest (with `pages[]`).
- * @return {Array<object>} vue-router 3 routes config.
- */
-function routesFromManifest(manifest) {
-	const routes = manifest.pages.map((page) => ({
-		name: page.id,
-		path: page.route,
-		component: RoutePageRenderer,
-		props: page.route.includes(':'),
-	}))
-	// Catch-all redirect to dashboard, preserving prior router behaviour.
-	// vue-router 4 syntax: the bare '*' catch-all became a named param matcher.
-	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })
-	return routes
-}
-
 // Routes are built from the built manifest only. The backend delta merely adds
 // menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
 // it introduces no new pages, so the route table needs no reactive rebuild.
@@ -193,8 +191,13 @@ const router = createRouter({
 	history: createWebHistory(
 		routerBase(window.location.pathname, generateUrl('/apps/dossiq')),
 	),
-	routes: routesFromManifest(builtManifest),
+	routes: routesFromManifest(builtManifest, RoutePageRenderer),
 })
+
+// The route half of the manifest's `permission` field. See
+// `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
+// redirects rather than errors, and what it deliberately does NOT close.
+router.beforeEach(permissionGuard)
 
 tryLoadTranslations()
 
@@ -210,6 +213,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
+const cellWidgetsProp = { ...cellWidgets }
 
 const app = createApp({
 	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
@@ -243,6 +247,7 @@ const app = createApp({
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
+			cellWidgets: cellWidgetsProp,
 		})
 	},
 })

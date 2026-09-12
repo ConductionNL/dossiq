@@ -143,7 +143,7 @@ export default {
 	computed: {
 		/** @spec openspec/specs/consultation-management/spec.md */
 		workflowDocsUrl() {
-			return 'https://docs.procest.nl/n8n-consultation-workflows'
+			return 'https://procest.conduction.nl/docs/n8n-consultation-workflows'
 		},
 	},
 

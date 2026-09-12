@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -57,10 +58,12 @@ class ContactMomentService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service.
+	 * @param IUserSession $userSession The session, for the handling employee default.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -68,15 +71,21 @@ class ContactMomentService {
 	/**
 	 * Create a contactmoment.
 	 *
+	 * A contact logged from the case page arrives with the channel, the
+	 * direction, the summary and `case` only: the KCC fields the schema
+	 * requires are defaulted here, and `relatedCases` is seeded from `case`
+	 * so the KCC voorblad lists the contact as before.
+	 *
 	 * @param array<string, mixed> $data The contactmoment fields.
 	 *
 	 * @return array<string, mixed> The created contactmoment record.
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable, schema unconfigured, or input invalid.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
 	 */
 	public function createContactMoment(array $data): array {
+		$data = array_merge($data, $this->defaultsFor(record: $data));
 		$this->validateInput(data: $data);
 
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
@@ -90,18 +99,23 @@ class ContactMomentService {
 			'endTime' => ($data['endTime'] ?? null),
 			'callerIdentification' => (string)($data['callerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($data['geidentificeerdeBurgerId'] ?? null),
-			'identificationMethod' => (string)($data['identificationMethod'] ?? 'non_geidentificeerd'),
+			'identificationMethod' => (string)$data['identificationMethod'],
 			'identificationScore' => ($data['identificationScore'] ?? null),
 			'kccEmployeeId' => trim((string)$data['kccEmployeeId']),
+			'case' => (string)($data['case'] ?? ''),
 			'relatedCases' => array_values((array)($data['relatedCases'] ?? [])),
 			'newCaseIds' => array_values((array)($data['newCaseIds'] ?? [])),
-			'nature' => (string)($data['nature'] ?? 'informatieverzoek'),
+			'nature' => (string)$data['nature'],
 			'summary' => (string)($data['summary'] ?? ''),
 			'accordingToIntent' => (string)($data['accordingToIntent'] ?? ''),
 			'firstTimeFix' => (bool)($data['firstTimeFix'] ?? false),
 			'transcript' => (string)($data['transcript'] ?? ''),
 			'transferTo' => (string)($data['transferTo'] ?? ''),
 		];
+
+		if ($record['case'] === '') {
+			unset($record['case']);
+		}
 
 		$duration = $this->calculateDuration(data: $data);
 		if ($duration !== null) {
@@ -120,6 +134,53 @@ class ContactMomentService {
 
 		return $this->normalize(result: $created);
 	}//end createContactMoment()
+
+	/**
+	 * The fields a contact logged from a case leaves out, with their defaults.
+	 *
+	 * Returns only the keys that need setting, so a caller can merge them
+	 * into a payload it is about to write, or hand them to an OpenRegister
+	 * pre-persist hook as modified data. A filled field is never touched:
+	 * a KCC write that carries its own `relatedCases` keeps that list.
+	 *
+	 * - `relatedCases`: seeded with `case` when `case` is set and the list
+	 *   is empty, so the KCC voorblad sees the contact.
+	 * - `kccEmployeeId`: the signed-in user when absent.
+	 * - `identificationMethod`: `non_geidentificeerd` when absent.
+	 * - `nature`: `informatieverzoek` when absent.
+	 *
+	 * @param array<string, mixed> $record The contactmoment fields as supplied.
+	 *
+	 * @return array<string, mixed> The keys to set, possibly empty.
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
+	 */
+	public function defaultsFor(array $record): array {
+		$defaults = [];
+
+		$case = trim((string)($record['case'] ?? ''));
+		$relatedCases = array_values(array_filter((array)($record['relatedCases'] ?? [])));
+		if ($case !== '' && $relatedCases === []) {
+			$defaults['relatedCases'] = [$case];
+		}
+
+		if (trim((string)($record['kccEmployeeId'] ?? '')) === '') {
+			$uid = $this->userSession->getUser()?->getUID() ?? '';
+			if ($uid !== '') {
+				$defaults['kccEmployeeId'] = $uid;
+			}
+		}
+
+		if (trim((string)($record['identificationMethod'] ?? '')) === '') {
+			$defaults['identificationMethod'] = 'non_geidentificeerd';
+		}
+
+		if (trim((string)($record['nature'] ?? '')) === '') {
+			$defaults['nature'] = 'informatieverzoek';
+		}
+
+		return $defaults;
+	}//end defaultsFor()
 
 	/**
 	 * Validate the required input fields for a new contactmoment.
@@ -303,15 +364,16 @@ class ContactMomentService {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
 
 		try {
-			$updated = $objectService->saveObject(
-				object: [
+			$updated = $this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $interactionId,
+				changes: [
 					'geidentificeerdeBurgerId' => $burgerId,
 					'identificationMethod' => $method,
 					'identificationScore' => round($score, 2),
 				],
-				register: $register,
-				schema: $schema,
-				uuid: $interactionId,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
