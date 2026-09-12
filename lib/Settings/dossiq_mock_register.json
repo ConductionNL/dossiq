@@ -17898,6 +17898,54 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-zgw",
+          "id": "5b3f9c07-1a48-4e6d-8c92-0f7d41ba2e53"
+        },
+        "key": "zgw",
+        "title": "ZGW API's",
+        "description": "Zaken, catalogi, besluiten en documenten over de VNG ZGW API's.",
+        "status": "configured",
+        "statusMessage": "Laatste controle geslaagd.",
+        "checkedAt": "2026-09-01T09:00:00+00:00",
+        "settingsUrl": "/settings/admin/dossiq",
+        "order": 1
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-brp",
+          "id": "a72e5041-6cb3-4f19-85da-937c1e0b48f2"
+        },
+        "key": "brp",
+        "title": "BRP personen",
+        "description": "Persoonsgegevens bevragen via Haal Centraal BRP.",
+        "status": "simulated",
+        "statusMessage": "Draait op de personen-mock.",
+        "checkedAt": "2026-09-01T09:05:00+00:00",
+        "settingsUrl": "/settings/admin/dossiq",
+        "order": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiqintegration-mailbox",
+          "id": "e18c2d64-97b5-41a0-b3f7-25c8d0e6491f"
+        },
+        "key": "mailbox",
+        "title": "Postbus",
+        "description": "Inkomende post die als zaak wordt geregistreerd.",
+        "status": "unconfigured",
+        "statusMessage": "Nog geen postbus ingesteld.",
+        "checkedAt": "2026-09-01T09:10:00+00:00",
+        "settingsUrl": "/settings/admin/dossiq",
+        "order": 3
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "dwangsomUitbetaling",
           "slug": "dwangsomuitbetaling-dwangsomuitbetaling-1-1",
           "id": "1de29ee9-d6f9-494c-92cd-4bf39cdcbbce"
@@ -24122,6 +24170,45 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-hoofdcatalogus",
+          "id": "9f1d6b2e-4c3a-4b71-9a5e-1c0d8f2a7b31"
+        },
+        "domein": "HOOFD",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Sanne de Wit",
+        "contactPersonManagementPhoneNumber": "0612345678",
+        "contactPersonManagementEmailAddress": "catalogusbeheer@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-vergunningen",
+          "id": "2a7c4e91-8d60-4f2b-bc13-6e94a05d3c78"
+        },
+        "domein": "VERG",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Joost Prins",
+        "contactPersonManagementPhoneNumber": "0687654321",
+        "contactPersonManagementEmailAddress": "vergunningen@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-handhaving",
+          "id": "c40b8f15-7e22-4d8a-9f36-b5127ae0d964"
+        },
+        "domein": "HAND",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Amina Yildiz",
+        "contactPersonManagementPhoneNumber": "0611223344",
+        "contactPersonManagementEmailAddress": "handhaving@example.invalid"
       }
     ]
   }

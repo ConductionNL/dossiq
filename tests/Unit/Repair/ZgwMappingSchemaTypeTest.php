@@ -111,7 +111,7 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 
 		$this->assertGreaterThan(100, count($schemas), 'The register decoded far fewer schemas than it ships.');
 		$this->assertArrayHasKey('caseType', $schemas);
-		$this->assertArrayHasKey('catalog', $schemas, 'The ZGW catalogussen endpoint has no schema to write into.');
+		$this->assertArrayHasKey('zgwCatalogus', $schemas, 'The ZGW catalogussen endpoint has no schema to write into.');
 	}//end testTheRegisterCarriesSchemas()
 
 	/**

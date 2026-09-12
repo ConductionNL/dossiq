@@ -46,7 +46,9 @@ class SchemaSlugMap {
 	 * @var array<string, string>
 	 */
 	public const SLUG_TO_CONFIG_KEY = [
-		'catalog' => 'catalogus_schema',
+		// NOT 'catalog': opencatalogi owns that slug, and slugs are global on a
+		// shared OpenRegister, so both definitions would resolve to each other.
+		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
 		// `caseTask` is gone. remove-casetask deleted the schema from both
 		// descriptors, so a mapping left here would ask SchemaKeyReconciler to

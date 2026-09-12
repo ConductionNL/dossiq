@@ -3,13 +3,13 @@
         "registers": {
             "dossiq": {
                 "schemas": [
-                    "catalog"
+                    "zgwCatalogus"
                 ]
             }
         },
         "schemas": {
-            "catalog": {
-                "slug": "catalog",
+            "zgwCatalogus": {
+                "slug": "zgwCatalogus",
                 "icon": "FolderMultipleOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Collection",
