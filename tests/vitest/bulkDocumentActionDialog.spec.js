@@ -32,7 +32,12 @@ vi.mock('@nextcloud/router', () => ({
 			String((params && params[key]) ?? `{${key}}`),
 		),
 }))
-vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
+const mockSuccess = vi.fn()
+const mockError = vi.fn()
+vi.mock('@nextcloud/dialogs', () => ({
+	showSuccess: (...a) => mockSuccess(...a),
+	showError: (...a) => mockError(...a),
+}))
 const mockEmit = vi.fn()
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
 
@@ -76,6 +81,8 @@ beforeEach(() => {
 	mockPost.mockReset()
 	mockGet.mockReset()
 	mockEmit.mockReset()
+	mockSuccess.mockReset()
+	mockError.mockReset()
 	mockPost.mockResolvedValue({
 		data: { results: [{ success: true }, { success: true }] },
 	})
@@ -126,6 +133,50 @@ describe('BulkDocumentActionDialog — mark-final', () => {
 			{ ids: ['doc-1', 'doc-2'], status: 'final' },
 		)
 		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
+	})
+
+	// 🔴 A 200 IS NOT A RESULT. The endpoint answers 200 with a per-item list,
+	// and the dialog used to say "Bulk action applied" over a response in which
+	// every item had failed. That toast is why nothing on screen contradicted
+	// the join-id bug for as long as it shipped.
+	it('says nothing changed when every item failed', async () => {
+		mockPost.mockResolvedValue({
+			data: {
+				results: [
+					{ id: 'doc-1', success: false, error: 'not found' },
+					{ id: 'doc-2', success: false, error: 'not found' },
+				],
+			},
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-2'] },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockSuccess).not.toHaveBeenCalled()
+		expect(mockError).toHaveBeenCalledWith('Bulk action changed nothing')
+	})
+
+	it('counts what actually succeeded when only some items did', async () => {
+		mockPost.mockResolvedValue({
+			data: {
+				results: [
+					{ id: 'doc-1', success: true },
+					{ id: 'doc-2', success: false, error: 'not found' },
+				],
+			},
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-2'] },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockError).not.toHaveBeenCalled()
+		expect(mockSuccess).toHaveBeenCalledWith('1 of 2 document(s) updated')
 	})
 
 	it('drops a join whose document cannot be resolved', async () => {

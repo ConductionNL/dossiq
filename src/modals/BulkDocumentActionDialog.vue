@@ -292,7 +292,25 @@ export default {
 					...extra,
 				})
 				this.results = data.results || []
-				showSuccess(this.t('dossiq', 'Bulk action applied'))
+
+				// 🔴 A 200 IS NOT A RESULT. Both endpoints answer 200 with a
+				// per-item list, and each entry carries its own `success`, so a
+				// request where every single item failed came back 200 and this
+				// said "Bulk action applied" over the top of it. That toast is
+				// why nothing on screen contradicted the join-id bug for as long
+				// as it shipped. The reader is told what actually happened now.
+				if (this.results.length > 0 && this.succeededCount === 0) {
+					this.error = this.t('dossiq', 'Bulk action changed nothing')
+					showError(this.error)
+				} else {
+					showSuccess(
+						this.t('dossiq', '{count} of {total} document(s) updated', {
+							count: this.succeededCount,
+							total: this.results.length,
+						}),
+					)
+				}
+
 				emit('cn:page:refresh')
 			} catch {
 				this.error = this.t('dossiq', 'Bulk action failed')
