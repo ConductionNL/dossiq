@@ -684,15 +684,30 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeVisible()
 		})
 
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		// @e2e exclude the scenario's facet clause is about what the reader
+		// sees, and no test can see it on this build: `CnIndexPage` passes
+		// `:facet-data="resolvedSidebar.facets || {}"` to `CnIndexSidebar`,
+		// which is the MANIFEST's sidebar block and never the live facets the
+		// store parsed, so `getFilterOptions` falls through to
+		// `filter.options` and every filter in the Cases sidebar renders with
+		// no options at all. Reported against @conduction/nextcloud-vue
+		// 2.48.2. What this test asserts is the facet PAYLOAD, which is a real
+		// and breakable fact but not the sentence the scenario writes, so the
+		// citation it used to carry claimed coverage the body does not give.
 		//
-		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
-		// citation is unverified. Break, then the assertion that must redden:
-		//   lib/Settings/dossiq_register.json `case.assignedGroup.facetable: false`,
-		//   imported with `version` pinned on both the break and the restore
-		//     -> "the Team facet must list the team with a count of one"
-		test('the Team facet lists the team with a count of one', async ({
+		// 🔴 WITHDRAWN 2026-09-12, and nothing is lost by it. This carried
+		// `role-routing-via-or-rbac#assign-a-case-to-a-team` in both citation
+		// forms, graded partial on 2026-09-12 for exactly the reason above.
+		// The scenario's other three clauses are proven by the two tests
+		// above, both of which cite it by anchor and both of which the same
+		// audit graded verified, so gate-19 still credits the scenario. The
+		// facet clause is now an honest zero instead of a claim that cannot
+		// fail.
+		//
+		// The test stays as the guard on `case.assignedGroup.facetable`: a
+		// facet the page never receives is the first thing that breaks when
+		// that flag moves, and it would break silently.
+		test('the Cases page is served a Team facet counting the team once', async ({
 			page,
 		}) => {
 			// Self-contained rather than relying on the test above having run:
@@ -752,23 +767,15 @@ test.describe('Case detail — the Parties tab', () => {
 				)
 				.toBe(1)
 
-			// 🔴 AND THE SIDEBAR SHOWS NONE OF IT. The rendered Team filter is
-			// asserted NOWHERE here because it lists nothing to assert:
-			// `CnIndexPage` passes `:facet-data="resolvedSidebar.facets || {}"`,
-			// which is the MANIFEST's sidebar config and never the live facets
-			// the store just parsed, so `getFilterOptions` falls through to
-			// `filter.options` and every filter in the sidebar renders "No
-			// results" — Team, Case type, Status and the rest alike. Measured
-			// on this instance with the bucket above present in the response.
-			// Two more presentation defects sit behind it: `organisatieRol`
-			// declares no name field, so OpenRegister labels the bucket with a
-			// shortened uuid rather than Team Permits, and the Team cell on the
-			// case page renders that uuid too.
-			//
-			// So the scenario's "lists Team Permits" half is NOT proven by this
-			// test, and cannot be until the sidebar is fed the live facets. All
-			// three are reported with this change. What is asserted is the
-			// facet itself, which is the fact the sidebar would render.
+			// 🔴 AND THE SIDEBAR SHOWS NONE OF IT, which is why the citation
+			// above is withdrawn rather than repaired. Every filter in the
+			// Cases sidebar renders with no options, Team and Case type and
+			// Status alike, measured on this instance with the bucket above
+			// present in the response. Two more presentation defects sit
+			// behind it: `organisatieRol` declares no name field, so
+			// OpenRegister labels the bucket with a shortened uuid rather than
+			// Team Permits, and the Team cell on the case page renders that
+			// uuid too. All three are reported with this change.
 		})
 
 		// 🔴 REMOVED 2026-09-11: `a task with a team shows it on its row and
