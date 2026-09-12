@@ -116,7 +116,7 @@ export const SHARED_INSTANCE_FLAGS = [
 export function permittingFlag(
 	target: string,
 	env: NodeJS.ProcessEnv = process.env,
-): { name: string, value: string } | null {
+): { name: string; value: string } | null {
 	const wanted = normaliseOrigin(target)
 	for (const name of SHARED_INSTANCE_FLAGS) {
 		const value = (env[name] ?? '').trim()
@@ -204,8 +204,10 @@ function refusalMessage(target: string): string {
 	const mismatch = SHARED_INSTANCE_FLAGS.map((name) => {
 		const value = (process.env[name] ?? '').trim()
 		if (value === '') return ''
-		return `${name} is set to "${value}", which normalises to `
+		return (
+			`${name} is set to "${value}", which normalises to `
 			+ `${normaliseOrigin(value)} and does not match ${origin}.\n`
+		)
 	}).join('')
 
 	return (
