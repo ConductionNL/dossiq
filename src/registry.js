@@ -315,9 +315,9 @@ const registry = {
 	// --- The Related cases tab, with the follow-ups still to come
 	//     (case-actions-menu, row A26). ---
 	//
-	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the reason
-	// `case-task-pane` and `dossier-tab` are: this is a child of the
-	// `case-panels` tabs widget, and a tab child has no layout grid item and
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the same
+	// reason `case-task-pane` is: this is a child of the `case-panels` tabs
+	// widget, and a tab child has no layout grid item and
 	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
 	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
 	// key answers.
