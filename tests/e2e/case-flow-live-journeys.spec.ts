@@ -106,7 +106,7 @@ const OR = '/index.php/apps/openregister/api'
  * status of the case type, so "In behandeling" is on the page whatever the case
  * is in, and "Wacht op aanvulling" is never absent from it.
  */
-const STATUS_BADGE = '[data-testid="case-header-status"]'
+const STATUS_BADGE = '.cn-kpi-card:has(.cn-kpi-card__title span:text-is("Status")) .cn-kpi-card__value'
 
 /** Copy the applicant supplies when asked to complete their case. */
 const SUPPLIED_DESCRIPTION =

@@ -102,23 +102,62 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 		expect(registrySource).toContain('component: CaseTransitionsWidget,')
 	})
 
-	it('leads with the identity row, and the panels sit straight under it', () => {
-		// The identity row leads the page full width, as KPI cards.
+	it('leads with five loose KPI tiles, and the panels sit straight under them', () => {
+		// The case's facts lead the page as five cards, one per fact, each its
+		// own grid cell on row 0, dividing the twelve columns between them.
 		//
-		// It has been both ways. The row was once a full-width band, moved into
-		// the right rail as a card because a line of three to five short facts
-		// left more than half of twelve columns empty, and moved back out once
-		// each fact became a card that divides the row evenly. What survived
-		// both moves is the reading order: a handler sees WHICH case they are
-		// on before WHAT they may do to it. With the strip gone from the grid,
-		// the panels take the rows it held, with no gutter row between.
-		const header = cells('case-header')[0]
+		// It has been three ways. The facts were a full-width band, then a
+		// titled card in the right rail, then one `case-header` widget drawing
+		// five cards inside a single two-row cell, which clipped them and read
+		// as one strip. Five cells is what "individual KPI cards" means to the
+		// grid: each has its own chrome and Buildiq edit mode can move each.
+		// What survived every move is the reading order: a handler sees WHICH
+		// case they are on before WHAT they may do to it. The panels take the
+		// rows straight under the tiles, with no gutter row between.
+		const tiles = caseDetail().config.layout
+			.filter((cell) => cell.widgetId.startsWith('case-kpi-'))
+			.sort((a, b) => a.gridX - b.gridX)
+		expect(tiles.map((cell) => cell.widgetId)).toEqual([
+			'case-kpi-number',
+			'case-kpi-casetype',
+			'case-kpi-status',
+			'case-kpi-assignee',
+			'case-kpi-deadline',
+		])
+		let x = 0
+		for (const cell of tiles) {
+			expect([cell.widgetId, cell.gridY], 'every tile sits on row 0').toEqual([cell.widgetId, 0])
+			expect([cell.widgetId, cell.gridX], 'the tiles abut, in order').toEqual([cell.widgetId, x])
+			x += cell.gridWidth
+		}
+		expect(x, 'the five tiles fill the twelve columns').toBe(12)
+		expect(widget('case-header'), 'the one-cell identity row is gone').toBeUndefined()
+		expect(cells('case-header')).toHaveLength(0)
+
 		const panels = cells('case-panels')[0]
-		expect(header.gridY).toBe(0)
-		expect(header.gridX).toBe(0)
-		expect(header.gridWidth).toBe(12)
-		expect(panels.gridY).toBe(header.gridY + header.gridHeight)
+		expect(panels.gridY).toBe(tiles[0].gridY + tiles[0].gridHeight)
 		expect(panels.gridX).toBe(0)
+	})
+
+	it('reads each KPI off the loaded record, resolving references to names', () => {
+		// Built-in first (ADR-049): `stat` in object-field mode and `countdown`
+		// read the record the page already loaded, so the row costs no request
+		// of its own and no custom component. A reference field holds a uuid,
+		// which is not something to show a person, so the two references name
+		// the register and schema to resolve the label in.
+		expect(widget('case-kpi-number').type).toBe('stat')
+		expect(widget('case-kpi-number').content.objectField).toBe('identifier')
+		expect(widget('case-kpi-assignee').content.objectField).toBe('assignee')
+		expect(widget('case-kpi-casetype').content.objectField).toEqual({
+			field: 'caseType',
+			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' },
+		})
+		expect(widget('case-kpi-status').content.objectField).toEqual({
+			field: 'status',
+			resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name' },
+		})
+		expect(widget('case-kpi-deadline').type).toBe('countdown')
+		expect(widget('case-kpi-deadline').content.field).toBe('deadline')
 	})
 
 	it('gives the stepper the cell the milestone tile had', () => {

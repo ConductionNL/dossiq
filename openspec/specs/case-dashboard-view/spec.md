@@ -490,12 +490,20 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 
 You see which case you are on without reading the data widget. `CaseDetail`
 SHALL set `config.subtitleField` to `identifier`, so the case number reads
-under the title. The page SHALL render a header row widget `case-header`
-on the first layout row that shows a `CnStatusBadge` with the name of the
-case's status type and the deadline countdown (days left, or days overdue
-in the danger variant), replacing the Time left tile. A case without a
-status record SHALL show the badge as Unknown rather than nothing; a case
-without a deadline SHALL show no countdown. The subtitle line built from
+under the title. The first layout row SHALL hold five loose KPI cards, one
+per fact and each its own grid cell: the case number, the case type, the
+status, the assignee and the deadline. Four are built-in `stat` tiles in
+object-field mode, reading the fact straight off the loaded record and
+resolving the case type and the status through the store to their names,
+never their uuids. The deadline is the built-in `countdown` tile: days left,
+or days overdue in the danger variant. A case without a deadline SHALL show
+the countdown tile empty rather than a count. Five cells rather than one
+row widget, because one widget drawing five cards inside a two-row cell
+clipped them and read as a single strip, and because a cell is what Buildiq
+edit mode can move. What the tiles do not carry is the status type's
+configured colour: a `stat` tile has no variant that follows a resolved
+reference, so the status reads as text until nextcloud-vue's stat widget
+takes a `variantField` on its resolve. The subtitle line built from
 identifier, case type and assignee together is a nextcloud-vue need
 (`CnDetailPage` has `subtitleField` only); until it lands the identifier
 alone is the subtitle.
@@ -513,8 +521,8 @@ alone is the subtitle.
 
 - **GIVEN** a case in status In behandeling with a deadline 26 days ago
 - **WHEN** the handler opens the case page
-- **THEN** the header row SHALL show a status badge reading In behandeling
-- **AND** the header row SHALL show 26 days overdue in the danger variant
+- **THEN** the Status tile SHALL read In behandeling, and never the uuid
+- **AND** the Deadline tile SHALL show 26 days overdue in the danger variant
 - **AND** no tile labelled Time left SHALL render in the KPI row
 
 #### Scenario: A case without a status or a deadline still has a header
@@ -522,8 +530,8 @@ alone is the subtitle.
 
 - **GIVEN** a case with no status record and no deadline
 - **WHEN** the handler opens the case page
-- **THEN** the status badge SHALL read Unknown
-- **AND** the header row SHALL show no countdown
+- **THEN** the Status tile SHALL render, with no uuid and no fabricated name
+- **AND** the Deadline tile SHALL show no count of days
 
 #### Scenario: The full subtitle line waits on nextcloud-vue
 @e2e exclude The templated subtitle (identifier, case type, assignee) needs a `subtitle` template on `CnDetailPage`, which 2.40.0 does not have; the manifest unit test asserts the interim `subtitleField` and the tasks.md marker tracks the block.

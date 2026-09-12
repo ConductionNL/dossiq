@@ -27,6 +27,8 @@
  * green-looking page is not evidence on this surface.
  */
 
+import type {Locator, Page} from '@playwright/test';
+
 import { expect, test } from '@playwright/test'
 import { openCasePanel } from './helpers/case-panels.ts'
 import {
@@ -124,6 +126,23 @@ const RETIRED_TAB_LABELS = [
  */
 const COLUMN_TITLES = [/Flow runs|Flow-uitvoeringen/, /Tasks|Taken/]
 
+/**
+ * One KPI tile in the case's top row, found by its label.
+ *
+ * The row is five built-in tiles now (`stat` in object-field mode and one
+ * `countdown`), not the custom `case-header` widget with its testids, so a
+ * tile is addressed by the label it prints, in either language.
+ *
+ * @param page The page.
+ * @param label The tile's label.
+ * @return The tile.
+ */
+function tile(page: Page, label: RegExp): Locator {
+	return page
+		.locator('.cn-kpi-card')
+		.filter({ has: page.locator('.cn-kpi-card__title', { hasText: label }) })
+}
+
 test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test.setTimeout(180_000)
 
@@ -188,75 +207,47 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
-		const header = page.getByTestId('case-header')
-		await expect(header).toBeVisible({ timeout: 30_000 })
+		const number = tile(page, /^(Case number|Zaaknummer)$/)
+		await expect(number).toBeVisible({ timeout: 30_000 })
 
-		// Time left is COMPUTED from the deadline, not printed from it. It used
-		// to be its own KPI tile; case-header folded it into the identity row,
-		// which is why this reads a testid rather than `.cn-countdown-widget`.
-		const countdown = header.getByTestId('case-header-countdown')
+		// Time left is COMPUTED from the deadline, not printed from it. It is the
+		// built-in countdown tile, one per page, and a deadline in the past on
+		// this case puts it in the danger band.
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toHaveCount(1)
 		await expect(countdown).toContainText(/\d+ (days?|dagen?)/, {
 			timeout: 15_000,
 		})
-
-		// The countdown is painted with a FOREGROUND token. The band tokens on
-		// Nextcloud 34 are pale FILL colours (#FFE7E7 for error): "26 days
-		// overdue" once rendered pink on white. The row paints `-text` with the
-		// raw token only as a fallback, so a banded countdown must never come
-		// out as the fill colour.
-		const paint = await countdown.evaluate((el) => {
-			const root = getComputedStyle(document.documentElement)
-			const resolve = (token: string) => {
-				const probe = document.createElement('span')
-				probe.style.color = root.getPropertyValue(token).trim()
-				document.body.appendChild(probe)
-				const color = getComputedStyle(probe).color
-				probe.remove()
-				return color
-			}
-			const band = el.classList.contains('is-danger')
-				? 'error'
-				: el.classList.contains('is-warning')
-					? 'warning'
-					: ''
-			return {
-				band,
-				color: getComputedStyle(el).color,
-				fill: band ? resolve(`--color-${band}`) : '',
-				text: band ? resolve(`--color-${band}-text`) : '',
-			}
-		})
-		if (paint.band && paint.text && paint.fill && paint.text !== paint.fill) {
-			expect(paint.color, `${paint.band} band paints the -text token`).toBe(
-				paint.text,
-			)
-		}
+		await expect(countdown).toHaveClass(/cn-countdown-widget--(danger|error)/)
 
 		// The case type field holds a uuid. Showing the uuid would be a pass for
 		// "renders something" and a failure for the feature.
-		const caseTypeChip = header.getByTestId('case-header-casetype')
+		const caseTypeChip = tile(page, /^(Case type|Zaaktype)$/).locator(
+			'.cn-kpi-card__value',
+		)
 		await expect(caseTypeChip).toContainText(caseTypeTitle, { timeout: 20_000 })
 		// A uuid is 36 chars with four dashes; the row must show a NAME.
 		await expect(caseTypeChip).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
-		// The identity row also carries the case number and a status badge, so
-		// the page says which case you are on without opening the Data tab.
-		await expect(header.getByTestId('case-header-identifier')).toBeVisible({
+		// The row also carries the case number and the status as tiles of their
+		// own, so the page says which case you are on without opening the Data
+		// tab.
+		await expect(number.locator('.cn-kpi-card__value')).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(header.getByTestId('case-header-status')).toBeVisible({
-			timeout: 15_000,
-		})
+		await expect(
+			tile(page, /^Status$/).locator('.cn-kpi-card__value'),
+		).toBeVisible({ timeout: 15_000 })
 
-		// Both folded tiles are GONE (case-header, row A01). Asserting only that
-		// the row shows the two facts would still pass if the tiles had stayed
-		// and the page simply grew, which is the duplication the fold retires.
-		await expect(page.locator('.cn-countdown-widget')).toHaveCount(0)
+		// The facts are loose tiles again, one each: exactly one countdown and
+		// exactly one Case type tile. A second of either would be the
+		// duplication the earlier fold retired, and none would be the fold.
+		await expect(page.locator('.cn-countdown-widget')).toHaveCount(1)
 		await expect(
 			page.locator('.cn-kpi-card').filter({ hasText: /Case type|Zaaktype/ }),
-		).toHaveCount(0)
+		).toHaveCount(1)
 		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
 
 		// The Completed tile is GONE (case-lifecycle-on-the-page, REQ-CDV-13).
@@ -342,67 +333,38 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
 	})
 
-	test('the identity row carries no heading and no actions menu', async ({
+	test('the KPI tiles carry no grid heading and no actions menu', async ({
 		page,
 	}) => {
-		// THIS ASSERTION HAS NOW FLIPPED TWICE, so both turns are recorded.
-		//
-		// It began as a full-width band with `showTitle: false`, because facts
-		// laid out in a line label themselves and a heading over them printed
-		// the same word twice. dossiq#2322 rebuilt it as a titled card in the
-		// four-column rail, where the same facts STACK: a stacked group with no
-		// heading says nothing about what the group is, so the heading became
-		// the design and this assertion flipped to require it.
-		//
-		// dossiq#2360 moved it back to full width, and the reason the first
-		// objection does not return is that the facts are no longer a line of
-		// text: each is a card with `flex: 1 1 0`, so the row divides evenly
-		// across twelve columns instead of ending in dead space. Cards label
-		// themselves, so `showTitle` is false again and the heading is gone.
-		//
-		// The second half did NOT flip, and the reason is worth keeping. This
-		// is a consumer slot widget (`#widget-case-header`), so CnDetailPage
-		// renders a bare grid `<h3 class="cn-detail-page__widget-title">` for
-		// it — not a CnWidgetWrapper header. Only the wrapper carries the
-		// overflow Actions menu, and it nests that menu inside its own
-		// `v-if="showTitle"` header, so a titled slot widget gains the heading
-		// without gaining the menu. Read-only content still must not offer one.
-		//
-		// The absence half regressed once already on the tiles this row
-		// replaced: rebuilding the layout from a list of tuples silently
-		// dropped the flag from five cells, and nothing failed. Every gate
-		// passed and the E2E passed, because no assertion described what the
-		// cell is supposed to look like. This is still that assertion, pointed
-		// at the shape the page has now.
+		// Five tiles label themselves, so no cell prints a heading over them,
+		// and read-only facts offer no Actions menu of their own. This
+		// assertion has flipped twice while the facts were one widget (a band,
+		// then a titled rail card, then a band again); as five built-in tiles
+		// the question is settled the way every KPI row on a dashboard settles
+		// it: the tile is the label.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
 
-		const header = page.getByTestId('case-header')
-		await expect(header).toBeVisible({ timeout: 20_000 })
+		const number = tile(page, /^(Case number|Zaaknummer)$/)
+		await expect(number).toBeVisible({ timeout: 20_000 })
 
-		const cell = page
+		const cells = page
 			.locator('.cn-widget-grid__item, .grid-stack-item')
-			.filter({ has: page.getByTestId('case-header') })
-			.first()
+			.filter({ has: page.locator('.cn-kpi-card') })
+		await expect(cells).toHaveCount(5)
 
-		// A row of self-labelling cards names nothing above itself.
 		expect(
-			await cell.getByText(/^(Case identity|Zaakgegevens)$/).count(),
-			'the identity row must carry no grid heading',
+			await cells.getByText(/^(Case identity|Zaakgegevens)$/).count(),
+			'no tile cell carries a grid heading',
 		).toBe(0)
-
-		// The facts themselves are still there, which is what makes the absent
-		// heading a design rather than a widget that failed to render.
-		await expect(header.getByTestId('case-header-casetype')).toBeVisible({
-			timeout: 15_000,
-		})
-		await expect(header.getByTestId('case-header-status')).toBeVisible()
-
-		// And read-only content carries no Actions menu of its own.
 		await expect(
-			cell.getByRole('button', { name: /^(Actions|Acties)$/ }),
+			tile(page, /^(Case type|Zaaktype)$/).locator('.cn-kpi-card__value'),
+		).toBeVisible({ timeout: 15_000 })
+		await expect(tile(page, /^Status$/).locator('.cn-kpi-card__value')).toBeVisible()
+		await expect(
+			cells.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)
 	})
 

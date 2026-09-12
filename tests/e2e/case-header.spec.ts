@@ -22,6 +22,8 @@
  * same in either locale.
  */
 
+import type {Locator, Page} from '@playwright/test';
+
 import { expect, test } from '@playwright/test'
 import {
 	createObject,
@@ -58,6 +60,23 @@ const WORK_TABS = [
 	'Related',
 	'Objects and locations',
 ]
+
+/**
+ * One KPI tile in the case's top row, found by its label.
+ *
+ * The row is five built-in tiles now (`stat` in object-field mode and one
+ * `countdown`), not the custom `case-header` widget with its testids, so a
+ * tile is addressed by the label it prints, in either language.
+ *
+ * @param page The page.
+ * @param label The tile's label.
+ * @return The tile.
+ */
+function tile(page: Page, label: RegExp): Locator {
+	return page
+		.locator('.cn-kpi-card')
+		.filter({ has: page.locator('.cn-kpi-card__title', { hasText: label }) })
+}
 
 test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test.setTimeout(180_000)
@@ -183,8 +202,8 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const header = page.getByTestId('case-header')
-		await expect(header).toBeVisible({ timeout: 30_000 })
+		const number = tile(page, /^(Case number|Zaaknummer)$/)
+		await expect(number).toBeVisible({ timeout: 30_000 })
 
 		// THEN the page title reads the case title.
 		const pageTitle = page.locator('.cn-detail-page__title')
@@ -193,18 +212,16 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 			'the case page must name the case in its own title',
 		).toHaveText(caseTitle, { timeout: 20_000 })
 
-		await expect(page.getByTestId('case-header-identifier')).toHaveText(
+		await expect(number.locator('.cn-kpi-card__value')).toHaveText(
 			caseIdentifier,
 			{ timeout: 20_000 },
 		)
 
-		// AND the number reads UNDER it. `case-header-identifier` is where the
-		// number actually renders, so this is the clause the scenario states,
-		// measured against the element that delivers it.
+		// AND the number reads UNDER it: the tile is where the number renders,
+		// so this is the clause the scenario states, measured against the
+		// element that delivers it.
 		const titleBox = await pageTitle.boundingBox()
-		const numberBox = await page
-			.getByTestId('case-header-identifier')
-			.boundingBox()
+		const numberBox = await number.boundingBox()
 		expect(titleBox, 'the page title must have a box').not.toBeNull()
 		expect(numberBox, 'the case number must have a box').not.toBeNull()
 		expect(
@@ -212,76 +229,71 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 			`the case number must read under the title, not beside or above it: `
 				+ `title at y=${titleBox!.y}, number at y=${numberBox!.y}`,
 		).toBeGreaterThan(titleBox!.y)
-		await expect(page.getByTestId('case-header-casetype')).toHaveText(
-			caseTypeTitle,
-			{ timeout: 20_000 },
-		)
-		await expect(page.getByTestId('case-header-assignee')).toHaveText('admin')
+		await expect(
+			tile(page, /^(Case type|Zaaktype)$/).locator('.cn-kpi-card__value'),
+		).toHaveText(caseTypeTitle, { timeout: 20_000 })
+		await expect(
+			tile(page, /^(Assignee|Behandelaar)$/).locator('.cn-kpi-card__value'),
+		).toHaveText('admin')
 
-		// The row sits ABOVE the tab strip: an identity a reader has to scroll
-		// to is the state this row replaced.
-		const headerBox = await header.boundingBox()
+		// The tiles sit ABOVE the tab strip: an identity a reader has to
+		// scroll to is the state this row replaced.
 		const stripBox = await page.locator('.cn-tabs-widget').boundingBox()
-		expect(headerBox, 'the identity row must have a box').not.toBeNull()
 		expect(stripBox, 'the tab strip must have a box').not.toBeNull()
-		expect(headerBox!.y).toBeLessThan(stripBox!.y)
+		expect(numberBox!.y).toBeLessThan(stripBox!.y)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
-	test('the status badge and the overdue countdown sit in the row', async ({
+	test('the status tile and the overdue countdown sit in the row', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-header')).toBeVisible({
+
+		// The case carries a status UUID. A tile showing the uuid would pass
+		// "renders something" and fail the feature.
+		const status = tile(page, /^Status$/)
+		await expect(status.locator('.cn-kpi-card__value')).toHaveText(statusName, {
 			timeout: 30_000,
 		})
-
-		// The case carries a status UUID. A badge showing the uuid would pass
-		// "renders something" and fail the feature.
-		const badge = page.getByTestId('case-header-status')
-		await expect(badge).toHaveText(statusName, { timeout: 20_000 })
-		await expect(badge).not.toContainText(
+		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
 		// A start date in early 2024 puts the computed deadline behind us
 		// whatever term the case type carries, so the countdown reads overdue
 		// and paints in the danger band.
-		const countdown = page.getByTestId('case-header-countdown')
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toHaveCount(1)
 		await expect(countdown).toBeVisible({ timeout: 20_000 })
-		await expect(countdown).toHaveClass(/is-danger/)
+		await expect(countdown).toHaveClass(/cn-countdown-widget--(danger|error)/)
 		await expect(countdown).toContainText(/\d+ (days?|dagen?)/)
 
-		// And the tile the row replaced is gone from the page. Asserting only
-		// that the row shows the deadline would still pass if the tile had
-		// stayed, which is the duplication this fold retires.
-		await expect(page.locator('.cn-countdown-widget')).toHaveCount(0)
+		// The deadline is the countdown tile and nothing else: no second tile
+		// labelled Time left, which is the duplication the earlier fold retired.
+		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
-	test('a case with no status and no deadline still has a header', async ({
+	test('a case with no status and no deadline still has its tiles', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const header = page.getByTestId('case-header')
-		await expect(header).toBeVisible({ timeout: 30_000 })
-
-		// Unknown, not nothing: an absent badge and an unset status look
-		// identical, and only one of the two is a data problem.
-		// `\s*` on both sides: CnStatusBadge contributes a leading space, and
-		// `toHaveText` compares the element's WHOLE text, so a bare anchor
-		// fails on a correct badge — the run reports `" Unknown"` against
-		// `/^(Unknown|Onbekend)$/`. Same trap decidiq hit on its status chips.
-		await expect(page.getByTestId('case-header-status')).toHaveText(
-			/^\s*(Unknown|Onbekend)\s*$/,
-			{ timeout: 20_000 },
+		// The tile is there, and it names nothing it does not know: no uuid, and
+		// no name the record does not carry. An absent tile and an unset status
+		// look identical, and only one of the two is a data problem.
+		const status = tile(page, /^Status$/)
+		await expect(status).toBeVisible({ timeout: 30_000 })
+		await expect(status).not.toContainText(
+			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
-		// And no countdown at all. "0 days left" would be a claim this case
+		// And no count of days at all. "0 days left" would be a claim this case
 		// has not made.
-		await expect(page.getByTestId('case-header-countdown')).toHaveCount(0)
+		const countdown = page.locator('.cn-countdown-widget')
+		await expect(countdown).toHaveCount(1)
+		await expect(countdown).not.toContainText(/\d+ (days?|dagen?)/)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#no-trail-is-rendered
@@ -292,7 +304,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// it cost the top of the page a row.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-header')).toBeVisible({
+		await expect(tile(page, /^(Case number|Zaaknummer)$/)).toBeVisible({
 			timeout: 30_000,
 		})
 

@@ -221,7 +221,7 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(page.getByTestId('case-transitions')).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByTestId('case-header-status')).toBeVisible({
+		await expect(page.locator('.cn-kpi-card:has(.cn-kpi-card__title span:text-is("Status"))')).toBeVisible({
 			timeout: 30_000,
 		})
 	}

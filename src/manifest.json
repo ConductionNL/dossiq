@@ -1224,6 +1224,42 @@
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
+						"id": "case-kpi-number",
+						"type": "stat",
+						"title": "Case number",
+						"icon": "BadgeAccountOutline",
+						"_note": "Five loose KPI cards, one per fact, each its own grid cell, so the row reads as five cards rather than one strip and Buildiq edit mode can move each. They replace the `case-header` custom widget (`CaseHeaderRow`), which drew the same five facts inside a single two-row cell that clipped them. Built-in first (ADR-049): `stat` in object-field mode reads the fact straight off the loaded record, resolving a reference through the store, and `countdown` reads the deadline the same way. What this does NOT carry: the status type's configured colour. A stat tile has no variant that follows a resolved reference, so the status reads as text; the colour needs a `variantField` on the stat widget's resolve, which is a nextcloud-vue change.",
+						"content": {"label": "Case number", "objectField": "identifier"}
+					},
+					{
+						"id": "case-kpi-casetype",
+						"type": "stat",
+						"title": "Case type",
+						"icon": "FileDocumentOutline",
+						"content": {"label": "Case type", "objectField": {"field": "caseType", "resolve": {"register": "dossiq", "schema": "caseType", "labelField": "title"}}}
+					},
+					{
+						"id": "case-kpi-status",
+						"type": "stat",
+						"title": "Status",
+						"icon": "ListStatus",
+						"content": {"label": "Status", "objectField": {"field": "status", "resolve": {"register": "dossiq", "schema": "statusType", "labelField": "name"}}}
+					},
+					{
+						"id": "case-kpi-assignee",
+						"type": "stat",
+						"title": "Assignee",
+						"icon": "AccountOutline",
+						"content": {"label": "Assignee", "objectField": "assignee"}
+					},
+					{
+						"id": "case-kpi-deadline",
+						"type": "countdown",
+						"title": "Deadline",
+						"icon": "CalendarClock",
+						"content": {"label": "Deadline", "field": "deadline", "thresholds": {"warn": 14, "danger": 5}}
+					},
+					{
 						"id": "case-core",
 						"type": "data",
 						"title": "Core case data",
@@ -1313,19 +1349,6 @@
 							"pollSeconds": 15,
 							"rowRoute": "FlowDetail",
 							"emptyText": "No flow is running for this case"
-						}
-					},
-					{
-						"id": "case-header",
-						"type": "custom",
-						"title": "Case identity",
-						"icon": "BadgeAccountOutline",
-						"_note": "Placement row A01: the case identity, as a titled card at the top of the page's right-hand column (page slot widget-case-header -> CaseHeaderRow). It carries the case number, the case type, the status badge, the assignee and the deadline countdown. It is a `custom` widget rather than the built-in `header` one because that built-in is a DASHBOARD BANNER (title, subtitle, call to action): it can bind neither a $ref status nor a countdown. It folds in two tiles that are now gone from this page: `case-kpi-time-left` (its `warn 14, danger 5` thresholds live on in the countdown) and `case-kpi-casetype` (its uuid-to-title resolve lives on in the type chip). Leaving them beside the row would print the same two facts twice. IT WAS A FULL-WIDTH BAND AND IT WAS MOSTLY AIR: two grid rows tall and twelve columns wide for three to five short facts laid out in a line, so on a real case more than half of it was empty and the two rows came out of the content below. As a card in the four-column right rail the same facts stack, read as a labelled group, and the page gets its two rows back. It also rendered a breadcrumb whose last crumb repeated the page title one line above it; that trail is gone, see the page config note. The widget takes no `objectId` prop: CnDetailPage hands a `widget-<id>` slot the whole widget definition plus the LOADED object (`item`, `widget`, `objectId`, `object`, `objectData`, `objectType`, `register`, `schema`), so the card reads the case the page already has rather than fetching it again, and reads its own manifest `props` off `widget.props`.",
-						"props": {
-							"thresholds": {
-								"warn": 14,
-								"danger": 5
-							}
 						}
 					},
 					{
@@ -1736,11 +1759,47 @@
 				],
 				"layout": [
 					{
-						"id": "1",
-						"widgetId": "case-header",
+						"id": "kpi-1",
+						"widgetId": "case-kpi-number",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 12,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "kpi-2",
+						"widgetId": "case-kpi-casetype",
+						"gridX": 2,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "kpi-3",
+						"widgetId": "case-kpi-status",
+						"gridX": 5,
+						"gridY": 0,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "kpi-4",
+						"widgetId": "case-kpi-assignee",
+						"gridX": 7,
+						"gridY": 0,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "kpi-5",
+						"widgetId": "case-kpi-deadline",
+						"gridX": 9,
+						"gridY": 0,
+						"gridWidth": 3,
 						"gridHeight": 2,
 						"showTitle": false
 					},
@@ -2050,7 +2109,6 @@
 				]
 			},
 			"slots": {
-				"widget-case-header": "CaseHeaderRow",
 				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection",
 				"widget-cmmn-case-plan": "CasePlanPanel"
