@@ -74,6 +74,9 @@ can configure the app from within the SPA. This is a browser-verifiable UI surfa
 distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 
 #### Scenario: In-app settings page renders configuration sections
+
+@e2e exclude Two of this scenario's clauses are false against the product and cannot be made true by a test. The in-app `/settings` page it names was retired by page-topology-cleanup (B1), because reaching an administration component through the in-app router bypasses the settings framework's server-side checks (ADR-004); administration lives at `/settings/admin/dossiq`. And the "Version Information" section was removed, so the string exists nowhere in `src/`. The two surviving headings, Configuration and Case Type Management, plus the Save control, are asserted against the real surface by `tests/e2e/pages.spec.ts` "renders the configuration section and its save control", which is deliberately uncited until this scenario is rewritten to describe the page that exists.
+
 - **GIVEN** an authenticated admin user on the Dossiq app
 - **WHEN** they navigate to the in-app Settings page
 - **THEN** the page MUST render a "Version Information" section heading
