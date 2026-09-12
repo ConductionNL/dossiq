@@ -10,7 +10,7 @@
  * `props.row` for an open-modal row action (nextcloud-vue#1117).
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
- * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
@@ -19,7 +19,9 @@ import { defineComponent, h } from 'vue'
 
 const mockRequest = vi.fn()
 
-vi.mock('@nextcloud/axios', () => ({ default: { request: (...a) => mockRequest(...a) } }))
+vi.mock('@nextcloud/axios', () => ({
+	default: { request: (...a) => mockRequest(...a) },
+}))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
 const mockEmit = vi.fn()
@@ -32,7 +34,11 @@ function control(name) {
 		props: ['size', 'disabled', 'title', 'type', 'name'],
 		emits: ['close'],
 		render() {
-			return h('div', { class: name }, this.$slots.default?.() ?? this.$slots.icon?.() ?? [])
+			return h(
+				'div',
+				{ class: name },
+				this.$slots.default?.() ?? this.$slots.icon?.() ?? [],
+			)
 		},
 	})
 }
@@ -43,10 +49,12 @@ vi.mock('@nextcloud/vue', () => ({
 	NcLoadingIcon: control('NcLoadingIcon'),
 	NcModal: control('NcModal'),
 }))
-vi.mock('vue-material-design-icons/History.vue', () => ({ default: control('History') }))
+vi.mock('vue-material-design-icons/History.vue', () => ({
+	default: control('History'),
+}))
 
 const { default: VersionHistoryPanel } =
-	await import('../../src/views/cases/components/VersionHistoryPanel.vue')
+	await import('../../src/modals/VersionHistoryPanel.vue')
 
 /** A PROPFIND multistatus body with two version entries plus the live node. */
 const PROPFIND_XML = `<?xml version="1.0"?>
@@ -64,14 +72,19 @@ beforeEach(() => {
 
 describe('VersionHistoryPanel', () => {
 	it('reads the document off row.informatieobject, not a document prop', async () => {
-		const row = { id: 'zio-1', informatieobject: { fileId: 42, status: 'draft' } }
+		const row = {
+			id: 'zio-1',
+			informatieobject: { fileId: 42, status: 'draft' },
+		}
 		const wrapper = mount(VersionHistoryPanel, { props: { open: true, row } })
 		await flushPromises()
 
-		expect(mockRequest).toHaveBeenCalledWith(expect.objectContaining({
-			method: 'PROPFIND',
-			url: expect.stringContaining('/versions/42'),
-		}))
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'PROPFIND',
+				url: expect.stringContaining('/versions/42'),
+			}),
+		)
 		expect(wrapper.vm.versions).toHaveLength(2)
 	})
 
@@ -88,13 +101,19 @@ describe('VersionHistoryPanel', () => {
 
 	it('disables restore for a final document, not for a draft one', async () => {
 		const draft = mount(VersionHistoryPanel, {
-			props: { open: true, row: { informatieobject: { fileId: 1, status: 'draft' } } },
+			props: {
+				open: true,
+				row: { informatieobject: { fileId: 1, status: 'draft' } },
+			},
 		})
 		await flushPromises()
 		expect(draft.vm.restoreDisabled).toBe(false)
 
 		const final = mount(VersionHistoryPanel, {
-			props: { open: true, row: { informatieobject: { fileId: 1, status: 'final' } } },
+			props: {
+				open: true,
+				row: { informatieobject: { fileId: 1, status: 'final' } },
+			},
 		})
 		await flushPromises()
 		expect(final.vm.restoreDisabled).toBe(true)
@@ -110,16 +129,21 @@ describe('VersionHistoryPanel', () => {
 
 		await wrapper.vm.restoreVersion({ id: '/dav/versions/admin/versions/42/v1' })
 
-		expect(mockRequest).toHaveBeenCalledWith(expect.objectContaining({
-			method: 'MOVE',
-			url: '/dav/versions/admin/versions/42/v1',
-		}))
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'MOVE',
+				url: '/dav/versions/admin/versions/42/v1',
+			}),
+		)
 		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
 	})
 
 	it('renders no modal at all when open is false', () => {
 		const wrapper = mount(VersionHistoryPanel, {
-			props: { open: false, row: { informatieobject: { fileId: 1, status: 'draft' } } },
+			props: {
+				open: false,
+				row: { informatieobject: { fileId: 1, status: 'draft' } },
+			},
 		})
 		expect(wrapper.find('.NcModal').exists()).toBe(false)
 	})

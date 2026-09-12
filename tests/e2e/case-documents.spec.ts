@@ -154,7 +154,9 @@ async function openDocumentsTab(page, id: string) {
  * @return The group locator.
  */
 function group(panel, typeName: string) {
-	return panel.locator('[data-testid="object-list-group"]').filter({ hasText: typeName })
+	return panel
+		.locator('[data-testid="object-list-group"]')
+		.filter({ hasText: typeName })
 }
 
 /**
@@ -281,14 +283,38 @@ test.describe('Case detail — the Documents tab', () => {
 		caseTypeId = objectId(caseTypes[0])
 
 		const seeded = await Promise.all([
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents empty`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents drop`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents filter`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents sort`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents bulk`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents generate`, caseType: caseTypeId }),
-			seedCase(api, token, { title: `${RUN_PREFIX} Documents versions`, caseType: caseTypeId }),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents empty`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents drop`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents filter`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents sort`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents bulk`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents generate`,
+				caseType: caseTypeId,
+			}),
+			seedCase(api, token, {
+				title: `${RUN_PREFIX} Documents versions`,
+				caseType: caseTypeId,
+			}),
 		])
 		;[
 			caseId,
@@ -318,6 +344,7 @@ test.describe('Case detail — the Documents tab', () => {
 		// caseId: one of EACH type, so the widget renders two groups.
 		await seedDocument(caseId, {
 			title: OBJECTION_TITLE,
+			fileName: 'objection.pdf',
 			informatieobjecttype: objectionTypeId,
 			direction: 'incoming',
 			keywords: ['bezwaar'],
@@ -325,6 +352,7 @@ test.describe('Case detail — the Documents tab', () => {
 		})
 		await seedDocument(caseId, {
 			title: ACKNOWLEDGEMENT_TITLE,
+			fileName: 'acknowledgement.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			status: 'final',
@@ -334,6 +362,7 @@ test.describe('Case detail — the Documents tab', () => {
 		// The filter case: one tagged document and one with no keywords at all.
 		await seedDocument(filterCaseId, {
 			title: TAGGED_TITLE,
+			fileName: 'tagged-drawing.pdf',
 			informatieobjecttype: objectionTypeId,
 			direction: 'incoming',
 			keywords: ['bezwaar'],
@@ -341,6 +370,7 @@ test.describe('Case detail — the Documents tab', () => {
 		})
 		await seedDocument(filterCaseId, {
 			title: `${RUN_PREFIX} Untagged letter`,
+			fileName: 'untagged-letter.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			auteur: 'Piet de Boer',
@@ -350,16 +380,19 @@ test.describe('Case detail — the Documents tab', () => {
 		// table), so a header-click reorder is directly observable in row order.
 		await seedDocument(sortCaseId, {
 			title: `${RUN_PREFIX} Sort B`,
+			fileName: 'sort-b.pdf',
 			informatieobjecttype: objectionTypeId,
 			creatiedatum: '2026-05-02',
 		})
 		await seedDocument(sortCaseId, {
 			title: `${RUN_PREFIX} Sort A`,
+			fileName: 'sort-a.pdf',
 			informatieobjecttype: objectionTypeId,
 			creatiedatum: '2026-05-01',
 		})
 		await seedDocument(sortCaseId, {
 			title: `${RUN_PREFIX} Sort C`,
+			fileName: 'sort-c.pdf',
 			informatieobjecttype: objectionTypeId,
 			creatiedatum: '2026-05-03',
 		})
@@ -368,15 +401,18 @@ test.describe('Case detail — the Documents tab', () => {
 		// something to do to both.
 		await seedDocument(bulkCaseId, {
 			title: `${RUN_PREFIX} Bulk one`,
+			fileName: 'bulk-one.pdf',
 			informatieobjecttype: objectionTypeId,
 		})
 		await seedDocument(bulkCaseId, {
 			title: `${RUN_PREFIX} Bulk two`,
+			fileName: 'bulk-two.pdf',
 			informatieobjecttype: objectionTypeId,
 		})
 
 		versionedDocumentId = await seedDocument(versionCaseId, {
 			title: `${RUN_PREFIX} Final report`,
+			fileName: 'final-report.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			status: 'final',
@@ -398,14 +434,25 @@ test.describe('Case detail — the Documents tab', () => {
 	// REQ-ZAK-011 "Documents visible on the case" governs it and lives in the open
 	// change documents-on-the-case; canonical REQ-ZAK-004a describes the older
 	// grouped dossier view, which is a different surface.
-	test('the tab lists this case documents with all six columns', async ({ page }) => {
+	test('the tab lists this case documents with all six columns', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, caseId)
 		const objectionGroup = group(panel, OBJECTION_TYPE_NAME)
 		await expect(objectionGroup).toBeVisible({ timeout: 20_000 })
 
-		for (const column of ['Title', 'Type', 'Status', 'Direction', 'Date', 'Author']) {
+		for (const column of [
+			'Title',
+			'Type',
+			'Status',
+			'Direction',
+			'Date',
+			'Author',
+		]) {
 			await expect(
-				objectionGroup.getByRole('columnheader', { name: new RegExp(column, 'i') }),
+				objectionGroup.getByRole('columnheader', {
+					name: new RegExp(column, 'i'),
+				}),
 			).toBeVisible()
 		}
 
@@ -426,7 +473,9 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude No canonical scenario covers row grouping on the Documents tab.
 	// documents-on-the-case task 2.2 (option b) and
 	// openspec/changes/object-list-widget-grouping-select-facet govern it.
-	test('documents group by type, one heading per type in use', async ({ page }) => {
+	test('documents group by type, one heading per type in use', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, caseId)
 
 		const objectionGroup = group(panel, OBJECTION_TYPE_NAME)
@@ -435,30 +484,46 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(acknowledgementGroup).toBeVisible({ timeout: 20_000 })
 
 		await expect(
-			objectionGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: OBJECTION_TITLE }),
+			objectionGroup
+				.locator('[data-testid="cn-object-row"]')
+				.filter({ hasText: OBJECTION_TITLE }),
 		).toHaveCount(1)
 		await expect(
-			acknowledgementGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
+			acknowledgementGroup
+				.locator('[data-testid="cn-object-row"]')
+				.filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
 		).toHaveCount(1)
 		// A document is not ALSO in the other group.
 		await expect(
-			objectionGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
+			objectionGroup
+				.locator('[data-testid="cn-object-row"]')
+				.filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
 		).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-004b-empty-dossier-shows-upload-cta-with-drag-and-drop-zone
-	test('a case without documents says so and still offers upload', async ({ page }) => {
+	test('a case without documents says so and still offers upload', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, emptyCaseId)
 
-		await expect(panel).toContainText(/No documents yet|Nog geen documenten/, { timeout: 20_000 })
-		await expect(panel.locator('[data-testid="object-list-upload"]')).toBeVisible()
-		await expect(panel.locator('[data-testid="object-list-group"]')).toHaveCount(0)
+		await expect(panel).toContainText(/No documents yet|Nog geen documenten/, {
+			timeout: 20_000,
+		})
+		await expect(
+			panel.locator('[data-testid="object-list-upload"]'),
+		).toBeVisible()
+		await expect(panel.locator('[data-testid="object-list-group"]')).toHaveCount(
+			0,
+		)
 	})
 
 	// @e2e exclude No canonical scenario covers filing an uploaded file on the case
 	// with its type and direction. REQ-ZAK-011 and REQ-ZAK-013 govern it and live in
 	// the open change documents-on-the-case.
-	test('an uploaded file is filed on the case with its type and direction', async ({ page }) => {
+	test('an uploaded file is filed on the case with its type and direction', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, dropCaseId)
 
 		await uploadThroughDialog(page, panel, {
@@ -478,8 +543,12 @@ test.describe('Case detail — the Documents tab', () => {
 		expect(String(stored.informatieobjecttype)).toBe(objectionTypeId)
 		expect(String(stored.direction)).toBe('incoming')
 
-		const joins = await listObjects(api, 'zaakinformatieobject', { _limit: '200' })
-		const join = joins.find((r) => String(r.informatieobject) === objectId(stored))
+		const joins = await listObjects(api, 'zaakinformatieobject', {
+			_limit: '200',
+		})
+		const join = joins.find(
+			(r) => String(r.informatieobject) === objectId(stored),
+		)
 		expect(join, 'the upload must write the case link').toBeTruthy()
 		expect(String(join.case)).toBe(dropCaseId)
 	})
@@ -487,79 +556,127 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude The keyword facet is not in the canonical spec. REQ-ZAK-012
 	// "Filter the list on a keyword" governs it and lives in the open change
 	// documents-on-the-case; canonical REQ-ZAK-004c is status and date filtering.
-	test('the keyword facet narrows the list, and clearing it restores both', async ({ page }) => {
+	test('the keyword facet narrows the list, and clearing it restores both', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, filterCaseId)
 
-		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, { timeout: 20_000 })
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, {
+			timeout: 20_000,
+		})
 
-		const chip = panel.locator('[data-testid="object-list-facet-chip"]').filter({ hasText: 'bezwaar' })
+		const chip = panel
+			.locator('[data-testid="object-list-facet-chip"]')
+			.filter({ hasText: 'bezwaar' })
 		await expect(chip).toBeVisible({ timeout: 20_000 })
 		await chip.click()
 
-		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(1, { timeout: 20_000 })
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(1, {
+			timeout: 20_000,
+		})
 		await expect(panel.getByText(TAGGED_TITLE)).toBeVisible()
 
 		await chip.click()
-		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, { timeout: 20_000 })
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, {
+			timeout: 20_000,
+		})
 	})
 
 	// @e2e exclude No canonical scenario covers interactive column sort on the
 	// Documents tab. documents-on-the-case task 2.2 (option b) governs it.
-	test('clicking the Title header sorts the group, ascending then descending', async ({ page }) => {
+	test('clicking the Title header sorts the group, ascending then descending', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, sortCaseId)
 		const sortGroup = group(panel, OBJECTION_TYPE_NAME)
-		await expect(sortGroup.locator('[data-testid="cn-object-row"]')).toHaveCount(3, { timeout: 20_000 })
+		await expect(sortGroup.locator('[data-testid="cn-object-row"]')).toHaveCount(
+			3,
+			{ timeout: 20_000 },
+		)
 
 		const titleHeader = sortGroup.getByRole('columnheader', { name: /^Title$/i })
 		await titleHeader.click()
 		await expect
-			.poll(async () => (await sortGroup.locator('[data-testid="cn-object-row"]').allTextContents())
-				.map((t) => t.match(/Sort [ABC]/)?.[0]))
+			.poll(async () =>
+				(
+					await sortGroup
+						.locator('[data-testid="cn-object-row"]')
+						.allTextContents()
+				).map((t) => t.match(/Sort [ABC]/)?.[0]),
+			)
 			.toEqual(['Sort A', 'Sort B', 'Sort C'])
 
 		await titleHeader.click()
 		await expect
-			.poll(async () => (await sortGroup.locator('[data-testid="cn-object-row"]').allTextContents())
-				.map((t) => t.match(/Sort [ABC]/)?.[0]))
+			.poll(async () =>
+				(
+					await sortGroup
+						.locator('[data-testid="cn-object-row"]')
+						.allTextContents()
+				).map((t) => t.match(/Sort [ABC]/)?.[0]),
+			)
 			.toEqual(['Sort C', 'Sort B', 'Sort A'])
 	})
 
 	// @e2e exclude No canonical scenario covers multi-select bulk actions on the
 	// Documents tab. documents-on-the-case task 2.2 (option b) governs it.
-	test('selecting rows and marking them final applies to every selected document', async ({ page }) => {
+	test('selecting rows and marking them final applies to every selected document', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, bulkCaseId)
 		const bulkGroup = group(panel, OBJECTION_TYPE_NAME)
 		const rows = bulkGroup.locator('[data-testid="cn-object-row"]')
 		await expect(rows).toHaveCount(2, { timeout: 20_000 })
 
-		await expect(panel.locator('[data-testid="object-list-bulk-bar"]')).toHaveCount(0)
+		await expect(
+			panel.locator('[data-testid="object-list-bulk-bar"]'),
+		).toHaveCount(0)
 
 		for (let i = 0; i < 2; i++) {
-			await rows.nth(i).locator('.cn-table-col--checkbox input, .cn-table-col--checkbox [role="checkbox"]').first().click()
+			await rows
+				.nth(i)
+				.locator(
+					'.cn-table-col--checkbox input, .cn-table-col--checkbox [role="checkbox"]',
+				)
+				.first()
+				.click()
 		}
 
 		const bulkBar = panel.locator('[data-testid="object-list-bulk-bar"]')
 		await expect(bulkBar).toBeVisible({ timeout: 10_000 })
 		await bulkBar.getByText(/2/).first().waitFor()
 
-		await bulkBar.locator('[data-testid="object-list-bulk-action"]').filter({ hasText: /Mark final/i }).click()
+		await bulkBar
+			.locator('[data-testid="object-list-bulk-action"]')
+			.filter({ hasText: /Mark final/i })
+			.click()
 
 		const dialog = page.locator('[data-testid="bulk-document-dialog"]')
 		await expect(dialog).toBeVisible({ timeout: 10_000 })
 		await dialog.locator('[data-testid="bulk-document-confirm"]').click()
-		await expect(dialog.locator('[data-testid="bulk-document-results"]')).toBeVisible({ timeout: 20_000 })
+		await expect(
+			dialog.locator('[data-testid="bulk-document-results"]'),
+		).toBeVisible({ timeout: 20_000 })
 
 		await expect(async () => {
-			const stored = await listObjects(api, 'informatieobject', { _limit: '200' })
-			const bulkOne = stored.find((r) => String(r.title) === `${RUN_PREFIX} Bulk one`)
-			const bulkTwo = stored.find((r) => String(r.title) === `${RUN_PREFIX} Bulk two`)
+			const stored = await listObjects(api, 'informatieobject', {
+				_limit: '200',
+			})
+			const bulkOne = stored.find(
+				(r) => String(r.title) === `${RUN_PREFIX} Bulk one`,
+			)
+			const bulkTwo = stored.find(
+				(r) => String(r.title) === `${RUN_PREFIX} Bulk two`,
+			)
 			expect(bulkOne?.status, 'Bulk one must be final').toBe('final')
 			expect(bulkTwo?.status, 'Bulk two must be final').toBe('final')
 		}).toPass({ timeout: 20_000 })
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-006b-restore-is-disabled-for-definitief-documents
-	test('Versions on a row opens the panel, and restore is refused on a final document', async ({ page }) => {
+	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
+		page,
+	}) => {
 		const panel = await openDocumentsTab(page, versionCaseId)
 		const finalGroup = group(panel, ACKNOWLEDGEMENT_TYPE_NAME)
 		const row = finalGroup
@@ -573,10 +690,14 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(versionPanel).toBeVisible({ timeout: 20_000 })
 
 		const entries = versionPanel.locator('.dossier-version-panel__item')
-		const downloads = versionPanel.locator('.dossier-version-panel__item button:has-text("Download")')
+		const downloads = versionPanel.locator(
+			'.dossier-version-panel__item button:has-text("Download")',
+		)
 		expect(await downloads.count()).toBe(await entries.count())
 
-		const restore = versionPanel.getByRole('button', { name: /Restore|Herstellen/ })
+		const restore = versionPanel.getByRole('button', {
+			name: /Restore|Herstellen/,
+		})
 		for (let index = 0; index < (await restore.count()); index++) {
 			await expect(restore.nth(index)).toBeDisabled()
 		}
@@ -587,16 +708,25 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude No canonical scenario covers the Generate document picker listing
 	// the library. REQ-005 "The picker lists the library" governs it and lives in the
 	// open change documents-on-the-case.
-	test('the Generate document picker lists the library by name', async ({ page }) => {
+	test('the Generate document picker lists the library by name', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${generateCaseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		await clickHeaderAction(page, 'cn-action-generate-document')
 
-		const dialog = page.getByRole('dialog').filter({ hasText: /Generate|Genereren/ })
+		const dialog = page
+			.getByRole('dialog')
+			.filter({ hasText: /Generate|Genereren/ })
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await dialog.locator('[data-testid="generate-document-template"]').getByRole('combobox').click()
+		await dialog
+			.locator('[data-testid="generate-document-template"]')
+			.getByRole('combobox')
+			.click()
 
 		await expect(
 			page.getByRole('option').filter({ hasText: 'Ontvangstbevestiging' }),
@@ -609,17 +739,29 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude No canonical scenario covers generating a letter onto the
 	// Documents tab. REQ-BES-012 governs it and lives in the open change
 	// documents-on-the-case; canonical REQ-BES-001 is a different flow.
-	test('Generate document files a draft outgoing letter on the case', async ({ page }) => {
+	test('Generate document files a draft outgoing letter on the case', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${generateCaseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		await clickHeaderAction(page, 'cn-action-generate-document')
 
-		const dialog = page.getByRole('dialog').filter({ hasText: /Generate|Genereren/ })
+		const dialog = page
+			.getByRole('dialog')
+			.filter({ hasText: /Generate|Genereren/ })
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await dialog.locator('[data-testid="generate-document-template"]').getByRole('combobox').click()
-		await page.getByRole('option').filter({ hasText: 'Ontvangstbevestiging' }).click()
+		await dialog
+			.locator('[data-testid="generate-document-template"]')
+			.getByRole('combobox')
+			.click()
+		await page
+			.getByRole('option')
+			.filter({ hasText: 'Ontvangstbevestiging' })
+			.click()
 
 		await dialog.locator('[data-testid="generate-document-confirm"]').click()
 		await expect(dialog).toContainText(
@@ -629,22 +771,33 @@ test.describe('Case detail — the Documents tab', () => {
 
 		let stored: any
 		await expect(async () => {
-			const rows = await listObjects(api, 'informatieobject', { _limit: '200' })
+			const rows = await listObjects(api, 'informatieobject', {
+				_limit: '200',
+			})
 			stored = rows.find((row) => String(row.title) === 'Ontvangstbevestiging')
 			expect(stored, 'the letter should have been filed').toBeTruthy()
 		}).toPass({ timeout: 30_000 })
 
 		expect(String(stored.status)).toBe('draft')
 		expect(String(stored.direction)).toBe('outgoing')
-		expect(String(stored.auteur ?? ''), 'the signed-in user is the author').not.toBe('')
+		expect(
+			String(stored.auteur ?? ''),
+			'the signed-in user is the author',
+		).not.toBe('')
 
-		const joins = await listObjects(api, 'zaakinformatieobject', { _limit: '200' })
-		const join = joins.find((row) => String(row.informatieobject) === objectId(stored))
+		const joins = await listObjects(api, 'zaakinformatieobject', {
+			_limit: '200',
+		})
+		const join = joins.find(
+			(row) => String(row.informatieobject) === objectId(stored),
+		)
 		expect(join, 'the letter must be linked to the case').toBeTruthy()
 		expect(String(join.case)).toBe(generateCaseId)
 
 		const panel = await openDocumentsTab(page, generateCaseId)
-		const row = panel.locator('[data-testid="cn-object-row"]').filter({ hasText: 'Ontvangstbevestiging' })
+		const row = panel
+			.locator('[data-testid="cn-object-row"]')
+			.filter({ hasText: 'Ontvangstbevestiging' })
 		await expect(row).toHaveCount(1, { timeout: 30_000 })
 		await expect(rowCell(row, 3)).toHaveText(/Outgoing|Uitgaand/)
 	})

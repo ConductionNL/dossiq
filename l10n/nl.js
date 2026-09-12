@@ -3932,7 +3932,14 @@ OC.L10N.register(
         "Saved. New mail is checked every five minutes.": "Opgeslagen. Nieuwe mail wordt elke vijf minuten gecontroleerd.",
         "Could not save. Try again.": "Opslaan is mislukt. Probeer het opnieuw.",
         "That mail account is not yours.": "Dat mailaccount is niet van u.",
-        "Choose a mail account first.": "Kies eerst een mailaccount."
+        "Choose a mail account first.": "Kies eerst een mailaccount.",
+        "{count} document(s) selected": "{count} document(en) geselecteerd",
+        "{ok} of {total} succeeded": "{ok} van {total} geslaagd",
+        "A ZIP of the selected documents will download to your browser.": "Een ZIP van de geselecteerde documenten wordt naar uw browser gedownload.",
+        "Bulk action applied": "Bulkactie toegepast",
+        "Download ZIP": "ZIP downloaden",
+        "Mark final": "Markeer als definitief",
+        "New confidentiality": "Nieuwe vertrouwelijkheid"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -119,7 +119,7 @@ import {
  * still hold the unresolved `@objectId` token, the route otherwise.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
- * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
 	name: 'DocumentMetadataDialog',
@@ -201,7 +201,7 @@ export default {
 		 * BeschikkingComposerDialog.resolvedCaseId).
 		 *
 		 * @return {string} The case id, or empty string.
-		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
@@ -291,16 +291,16 @@ export default {
 			}
 		},
 
-		/**
-		 * Load the type catalog the moment the dialog opens — mirrors
-		 * BeschikkingComposerDialog's `open` watcher, since this dialog is now
-		 * self-sufficient rather than fed props by a parent tab.
-		 *
-		 * @param {boolean} isOpen Whether the dialog is showing.
-		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
-		 */
 		open: {
 			immediate: true,
+			/**
+			 * Load the type catalog the moment the dialog opens — mirrors
+			 * BeschikkingComposerDialog's `open` watcher, since this dialog is
+			 * now self-sufficient rather than fed props by a parent tab.
+			 *
+			 * @param {boolean} isOpen Whether the dialog is showing.
+			 * @spec openspec/specs/document-zaakdossier/spec.md
+			 */
 			handler(isOpen) {
 				if (isOpen) {
 					this.fetchTypes()
@@ -338,7 +338,7 @@ export default {
 		 * manifest `open-modal` action, so it makes the request itself.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async submit() {
 			if (!this.canSubmit || this.resolvedCaseId === '') {
@@ -375,7 +375,9 @@ export default {
 							if (event.total) {
 								this.progress = {
 									...this.progress,
-									[index]: Math.round((event.loaded / event.total) * 100),
+									[index]: Math.round(
+										(event.loaded / event.total) * 100,
+									),
 								}
 							}
 						},

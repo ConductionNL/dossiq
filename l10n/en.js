@@ -3932,7 +3932,14 @@ OC.L10N.register(
         "Saved. New mail is checked every five minutes.": "Saved. New mail is checked every five minutes.",
         "Could not save. Try again.": "Could not save. Try again.",
         "That mail account is not yours.": "That mail account is not yours.",
-        "Choose a mail account first.": "Choose a mail account first."
+        "Choose a mail account first.": "Choose a mail account first.",
+        "{count} document(s) selected": "{count} document(s) selected",
+        "{ok} of {total} succeeded": "{ok} of {total} succeeded",
+        "A ZIP of the selected documents will download to your browser.": "A ZIP of the selected documents will download to your browser.",
+        "Bulk action applied": "Bulk action applied",
+        "Download ZIP": "Download ZIP",
+        "Mark final": "Mark final",
+        "New confidentiality": "New confidentiality"
     },
     "nplurals=2; plural=(n != 1);"
 )

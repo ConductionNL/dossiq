@@ -9,7 +9,7 @@
  * that CnObjectListWidget's `bulkActions` open a modal instead of running a
  * handler directly (documents-on-the-case task 2.2).
  *
- * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
@@ -27,10 +27,25 @@ vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
 function control(name) {
 	return defineComponent({
 		name,
-		props: ['modelValue', 'inputLabel', 'label', 'options', 'reduce', 'clearable', 'disabled', 'canClose', 'name', 'type'],
+		props: [
+			'modelValue',
+			'inputLabel',
+			'label',
+			'options',
+			'reduce',
+			'clearable',
+			'disabled',
+			'canClose',
+			'name',
+			'type',
+		],
 		emits: ['update:modelValue', 'closing'],
 		render() {
-			return h('div', { class: name }, this.$slots.default?.() ?? this.$slots.actions?.() ?? [])
+			return h(
+				'div',
+				{ class: name },
+				this.$slots.default?.() ?? this.$slots.actions?.() ?? [],
+			)
 		},
 	})
 }
@@ -48,7 +63,9 @@ const { default: BulkDocumentActionDialog } =
 beforeEach(() => {
 	mockPost.mockReset()
 	mockEmit.mockReset()
-	mockPost.mockResolvedValue({ data: { results: [{ success: true }, { success: true }] } })
+	mockPost.mockResolvedValue({
+		data: { results: [{ success: true }, { success: true }] },
+	})
 	// jsdom has no createObjectURL/revokeObjectURL by default.
 	window.URL.createObjectURL = vi.fn(() => 'blob:mock')
 	window.URL.revokeObjectURL = vi.fn()
@@ -102,7 +119,11 @@ describe('BulkDocumentActionDialog — zip', () => {
 	it('downloads a blob scoped to the case and closes', async () => {
 		mockPost.mockResolvedValue({ data: new Blob(['zip-bytes']) })
 		const wrapper = mount(BulkDocumentActionDialog, {
-			props: { mode: 'zip', selectedIds: ['doc-1', 'doc-2'], caseId: 'case-9' },
+			props: {
+				mode: 'zip',
+				selectedIds: ['doc-1', 'doc-2'],
+				caseId: 'case-9',
+			},
 		})
 
 		await wrapper.vm.onConfirm()

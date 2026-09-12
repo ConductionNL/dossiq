@@ -76,8 +76,9 @@ import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // "object-list"` CnObjectListWidget, resolved by the library, not a
 // registry widget entry — only the two modals it dispatches to are ours).
 // @spec openspec/specs/document-zaakdossier/spec.md
-// @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md
+// @spec openspec/specs/document-zaakdossier/spec.md
 import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -99,7 +100,6 @@ import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
-import VersionHistoryPanel from './views/cases/components/VersionHistoryPanel.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
 // /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
@@ -373,11 +373,11 @@ const registry = {
 	// here -- only the two dialogs its `dropZone`/upload and `bulkActions`
 	// dispatch to are dossiq's own.
 	// @spec openspec/specs/document-zaakdossier/spec.md
-	// @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md
+	// @spec openspec/specs/document-zaakdossier/spec.md
 	DocumentMetadataDialog: {
 		kind: 'modal',
 		component: DocumentMetadataDialog,
-		_note: 'Upload metadata dialog. Opened by the Documents tab\'s object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action\'s `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog\'s is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.',
+		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
 	},
 	BulkDocumentActionDialog: {
 		kind: 'modal',

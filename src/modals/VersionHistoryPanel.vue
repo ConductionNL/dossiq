@@ -32,15 +32,18 @@
 						</span>
 					</div>
 					<div class="dossier-version-panel__actions">
-						<NcButton type="tertiary" @click="downloadVersion(version)">
+						<NcButton variant="tertiary" @click="downloadVersion(version)">
 							{{ t('dossiq', 'Download') }}
 						</NcButton>
 						<NcButton
-							type="tertiary"
+							variant="tertiary"
 							:disabled="restoreDisabled"
 							:title="
 								restoreDisabled
-									? t('dossiq', 'Final documents cannot be modified')
+									? t(
+											'dossiq',
+											'Final documents cannot be modified',
+										)
 									: ''
 							"
 							@click="restoreVersion(version)">
@@ -77,7 +80,7 @@ import History from 'vue-material-design-icons/History.vue'
  * for it any more.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
- * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
 	name: 'VersionHistoryPanel',
@@ -115,17 +118,20 @@ export default {
 		 * The informatieobject the version history belongs to.
 		 *
 		 * @return {object} The referenced informatieobject, or an empty object.
-		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		document() {
 			const informatieobject = this.row && this.row.informatieobject
-			return (informatieobject && typeof informatieobject === 'object') ? informatieobject : {}
+			return informatieobject && typeof informatieobject === 'object'
+				? informatieobject
+				: {}
 		},
 
 		/**
 		 * The signed-in user id, for the versions DAV path.
 		 *
 		 * @return {string} The user id, or empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		userId() {
 			const user = getCurrentUser()

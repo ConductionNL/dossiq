@@ -15,7 +15,7 @@
 	the result reporting, so this dialog makes the call itself, the same
 	shape `runBulk()` used to.
 
-	Spec: openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+	Spec: openspec/specs/document-zaakdossier/spec.md
 -->
 <template>
 	<NcDialog
@@ -25,7 +25,11 @@
 		@closing="onClose">
 		<div class="bulk-document-dialog">
 			<p class="bulk-document-dialog__count">
-				{{ t('dossiq', '{count} document(s) selected', { count: selectedIds.length }) }}
+				{{
+					t('dossiq', '{count} document(s) selected', {
+						count: selectedIds.length,
+					})
+				}}
 			</p>
 
 			<NcSelect
@@ -40,15 +44,28 @@
 				:disabled="busy" />
 
 			<p v-if="mode === 'zip'" class="bulk-document-dialog__intro">
-				{{ t('dossiq', 'A ZIP of the selected documents will download to your browser.') }}
+				{{
+					t(
+						'dossiq',
+						'A ZIP of the selected documents will download to your browser.',
+					)
+				}}
 			</p>
 
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}
 			</NcNoteCard>
 
-			<NcNoteCard v-if="results.length > 0" type="success" data-testid="bulk-document-results">
-				{{ t('dossiq', '{ok} of {total} succeeded', { ok: succeededCount, total: results.length }) }}
+			<NcNoteCard
+				v-if="results.length > 0"
+				type="success"
+				data-testid="bulk-document-results">
+				{{
+					t('dossiq', '{ok} of {total} succeeded', {
+						ok: succeededCount,
+						total: results.length,
+					})
+				}}
 			</NcNoteCard>
 		</div>
 
@@ -91,7 +108,8 @@ export default {
 		mode: {
 			type: String,
 			default: 'mark-final',
-			validator: (value) => ['mark-final', 'confidentiality', 'zip'].includes(value),
+			validator: (value) =>
+				['mark-final', 'confidentiality', 'zip'].includes(value),
 		},
 
 		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
@@ -113,10 +131,25 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Confidentiality dropdown options for the `confidentiality` mode.
+		 *
+		 * @return {Array} The classification options.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		classificationOptions() {
 			return buildClassificationOptions(this.t.bind(this))
 		},
 
+		/**
+		 * The case the `zip` mode downloads, resolved the same defensive way
+		 * as BeschikkingComposerDialog / DocumentMetadataDialog: an
+		 * `open-modal` action's `props` are forwarded verbatim, so a prop
+		 * still holding an `@` token is not a case id — the route is.
+		 *
+		 * @return {string} The case id, or empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
 			if (fromProp !== '' && !fromProp.startsWith('@')) {
@@ -125,26 +158,59 @@ export default {
 			return (this.$route && this.$route.params && this.$route.params.id) || ''
 		},
 
+		/**
+		 * The dialog title for the active mode.
+		 *
+		 * @return {string} The title.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		title() {
-			if (this.mode === 'confidentiality') return this.t('dossiq', 'Change confidentiality')
+			if (this.mode === 'confidentiality')
+				return this.t('dossiq', 'Change confidentiality')
 			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
 			return this.t('dossiq', 'Mark as final')
 		},
 
+		/**
+		 * The confirm button's label for the active mode.
+		 *
+		 * @return {string} The label.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		confirmLabel() {
 			if (this.mode === 'zip') return this.t('dossiq', 'Download')
 			return this.t('dossiq', 'Apply')
 		},
 
+		/**
+		 * How many of the bulk endpoint's per-item results succeeded.
+		 *
+		 * @return {number} The success count.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		succeededCount() {
 			return this.results.filter((r) => r && r.success !== false).length
 		},
 	},
 
 	methods: {
+		/**
+		 * Run the gesture for the active `mode`.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		async onConfirm() {
-			if (this.mode === 'mark-final') return this.runBulk('/apps/dossiq/api/informatieobjecten/bulk/status', { status: 'final' })
-			if (this.mode === 'confidentiality') return this.runBulk('/apps/dossiq/api/informatieobjecten/bulk/metadata', { metadata: { vertrouwelijkheidaanduiding: this.level } })
+			if (this.mode === 'mark-final')
+				return this.runBulk(
+					'/apps/dossiq/api/informatieobjecten/bulk/status',
+					{ status: 'final' },
+				)
+			if (this.mode === 'confidentiality')
+				return this.runBulk(
+					'/apps/dossiq/api/informatieobjecten/bulk/metadata',
+					{ metadata: { vertrouwelijkheidaanduiding: this.level } },
+				)
 			return this.downloadZip()
 		},
 
@@ -155,6 +221,7 @@ export default {
 		 * @param {string} path The API path.
 		 * @param {object} extra The mode-specific request body fields.
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async runBulk(path, extra) {
 			this.busy = true
@@ -179,6 +246,7 @@ export default {
 		 * Download the selection as a ZIP, scoped to the current case.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async downloadZip() {
 			if (this.resolvedCaseId === '') return
@@ -208,6 +276,12 @@ export default {
 			}
 		},
 
+		/**
+		 * Close the dialog.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
 		onClose() {
 			this.$emit('close')
 		},

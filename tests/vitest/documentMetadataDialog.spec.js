@@ -20,7 +20,7 @@
  * would.
  *
  * @spec openspec/specs/document-zaakdossier/spec.md
- * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -121,7 +121,9 @@ function postedMetadata() {
 beforeEach(() => {
 	mockGet.mockReset()
 	mockPost.mockReset()
-	mockGet.mockResolvedValue({ data: { results: [{ id: 'iot-1', description: 'Advies' }] } })
+	mockGet.mockResolvedValue({
+		data: { results: [{ id: 'iot-1', description: 'Advies' }] },
+	})
 	mockPost.mockResolvedValue({ data: {} })
 })
 
@@ -245,7 +247,10 @@ describe('DocumentMetadataDialog', () => {
 			global: { mocks: { $route: { params: { id: 'route-case' } } } },
 		})
 		await flushPromises()
-		await wrapper.setData({ selectedType: 'iot-1', selectedClassification: 'openbaar' })
+		await wrapper.setData({
+			selectedType: 'iot-1',
+			selectedClassification: 'openbaar',
+		})
 
 		await wrapper.vm.submit()
 
