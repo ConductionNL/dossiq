@@ -50,16 +50,18 @@ base filter `{ assignee: <current uid> }`). It is a `type: "custom"` manifest
 page because the stock index base-filter resolves only `@route.*` tokens, not
 the `@me` current-user token; the wrapper injects the resolved uid.
 
+#### Scenario: View assigned cases
 @e2e exclude Requires cases pre-assigned to the current user; the data-dependent
 list contents are not assertable without pre-seeded per-user data.
 
-#### Scenario: View assigned cases
 - GIVEN user "Jan" is `assignee` on 3 cases and on 0 other cases
 - WHEN Jan navigates to "My Work"
 - THEN the system MUST display exactly those 3 cases
 - AND a case where Jan is NOT the assignee MUST NOT appear
 
 #### Scenario: Card and table view
+@e2e tests/e2e/spec-coverage/my-work.spec.ts
+
 - GIVEN Jan is viewing My Work
 - THEN the list MUST default to card view and offer a card/table toggle
 - AND the table view MUST show the columns: identifier, title, case type,

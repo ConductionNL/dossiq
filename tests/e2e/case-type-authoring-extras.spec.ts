@@ -381,9 +381,14 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
-	// The badge half of the same requirement: the case page draws the status
-	// in its own colour, which is where a handler actually reads it.
+	// @e2e case-types::a-coloured-status-shows-on-the-case
+	//
+	// The badge half of REQ-CT-19: "the status badge on the case AND the
+	// Workflow board column SHALL render in that colour". Only the board half
+	// had a scenario, so this test had nothing to cite and credited nothing.
+	// The scenario was written rather than the citation bent onto the board
+	// one, which this test does not drive: the SHALL was already there with
+	// nothing checkable attached to half of it.
 	test('the case page draws the current status in its status’s colour', async ({
 		page,
 	}) => {
@@ -429,7 +434,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	})
 
 	// @e2e openspec/specs/case-types/spec.md
-	// Scenario: A child overrides one deadline
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS. `case-types::a-child-overrides-one-deadline`
+	// ends "WHEN you file a case of Bezwaar (verkort), THEN the CASE's deadline
+	// SHALL be 6 weeks after its start date". This test reads the BLUEPRINT and
+	// asserts the case TYPE resolves `P6W` over its parent's `P12W`. That is
+	// the input to the rule, not the rule's outcome: a case whose deadline was
+	// computed from the parent anyway, or not computed at all, satisfies every
+	// assertion here.
+	//
+	// The comment below argues the case deadline follows from the type's
+	// stored value, and it does, through OpenRegister at save time. But the
+	// scenario is about the step this test does not take. File a case and read
+	// its deadline, then anchor.
 	test('a child’s own deadline beats its parent’s', async () => {
 		// Through the API rather than through the page: the deadline a case
 		// gets is computed by OpenRegister at save time from the case TYPE's
@@ -524,8 +541,14 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-PDM-01 / REQ-PDM-02: folders and shared attributes ─────────────
 
-	// @e2e openspec/specs/property-definition-management/spec.md
-	// Scenario: A folder narrows the index
+	// @e2e property-definition-management::a-folder-narrows-the-index
+	//
+	// The citation named the spec FILE and the scenario sat in prose on the
+	// next line, so gate-19 credited it to nothing. The test proves the
+	// scenario in BOTH directions, which is what makes the anchor honest: the
+	// two types in the category are visible AND the one outside it is gone
+	// (count 0). "The index SHALL list the two only" needs the second half;
+	// a folder that narrowed nothing would still show the two that belong.
 	// UNPARKED. This was `test.fixme` on OpenRegister#3560, and that cause is
 	// fixed in the OpenRegister this suite runs against.
 	//
@@ -631,8 +654,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-AVG-01: the personal data block ────────────────────────────────
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md
-	// Scenario: The block reads back what you saved
+	// @e2e avg-verwerkingenlogging::the-block-reads-back-what-you-saved
+	//
+	// The scenario's THEN names three values, `naw`, `bsn` and `public_task`,
+	// and the fixture seeds all three: `personalDataCategories: ['naw','bsn']`
+	// and `legalBasis: 'public_task'`. Only two were asserted, so the first
+	// category could have been dropped by the widget and this stayed green.
+	// `naw` is asserted below, which is what makes the anchor honest.
+	//
+	// ⚠️ `naw` is a three-character substring check, in the same loose
+	// `toContainText` form as its siblings, so it is the weakest of the three:
+	// any word on the page containing those letters satisfies it. The stronger
+	// form reads the categories out of the block itself rather than the whole
+	// detail page, and wants an instance to pin the selector.
 	test('the personal data block reads back the categories and the basis', async ({
 		page,
 	}) => {
@@ -644,6 +678,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		// like success in a screenshot.
 		const detail = page.locator('.cn-detail-page')
 		await expect(detail).toContainText('public_task', { timeout: 30_000 })
+		await expect(detail).toContainText('naw')
 		await expect(detail).toContainText('bsn')
 		await expect(detail).toContainText('behandelen-bezwaarschrift')
 	})
@@ -651,7 +686,21 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	// ── REQ-WIE-01: export, import, duplicate ──────────────────────────────
 
 	// @e2e openspec/specs/workflow-import-export/spec.md
-	// Scenario: Export downloads the bundle
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS. The obvious target is
+	// `workflow-import-export::export-downloads-the-bundle`, whose THEN is
+	// "a download SHALL start whose name carries the type's identifier". This
+	// test asserts the filename ends in `.zip` and nothing about the
+	// identifier, so it cannot tell the type's own bundle from any other
+	// type's. Its own comment already says asserting that something
+	// downloaded would pass on an empty error blob; `/\.zip$/` is barely more
+	// than that.
+	//
+	// Anchoring here would credit the identifier clause to a test that cannot
+	// see it break. The repair is to assert the name carries the identifier
+	// and then anchor, which needs a run to establish whether the endpoint
+	// names the file by uuid, title or slug. Guessing that from source is how
+	// a test gets written that reddens on a working build.
 	test('Export starts a download whose name carries the type’s identifier', async ({
 		page,
 	}) => {
@@ -667,7 +716,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	})
 
 	// @e2e openspec/specs/workflow-import-export/spec.md
-	// Scenario: Duplicate opens the copy
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS, for the narrower of two reasons. The
+	// scenario says you land on a type TITLED `Bezwaar (kopie)` with the same
+	// statuses. The landing is proven well: the URL is asserted NOT to be the
+	// original, which is the half an api-call refresh would have passed.
+	//
+	// What is missing is the title. Nothing here reads the copy's name, so a
+	// Duplicate that lands on a correctly-structured copy called anything at
+	// all satisfies every assertion. The status check is a COUNT of 2 as
+	// well, so it holds for two differently-named statuses.
+	//
+	// Assert the title and read the status names, then anchor. Both are cheap
+	// on an instance and neither is safe to write blind.
 	test('Duplicate lands you on the copy, with the same statuses', async ({
 		page,
 	}) => {
@@ -699,8 +760,11 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-ZV-01: publish with a validation check and a change note ───────
 
-	// @e2e openspec/specs/zaaktype-versioning/spec.md
-	// Scenario: A draft with findings is not published
+	// @e2e zaaktype-versioning::a-draft-with-findings-is-not-published
+	//
+	// Both clauses of the scenario are asserted: the page lists the finding
+	// (`case-type-publish-findings` visible) and the type stays a draft, read
+	// back off the STORED object rather than off the dialog that refused.
 	test('a draft with findings lists them and stays a draft', async ({ page }) => {
 		await openCaseType(page, incomplete.caseType)
 
@@ -721,8 +785,11 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(stored.isDraft).toBe(true)
 	})
 
-	// @e2e openspec/specs/zaaktype-versioning/spec.md
-	// Scenario: A valid draft is published
+	// @e2e zaaktype-versioning::a-valid-draft-is-published
+	//
+	// Both clauses: the type is no longer a draft, read off the stored
+	// object, and the change note reaches the version, asserted on the stored
+	// template AND on the page a reader actually looks at.
 	test('a valid draft is published with its change note, and the version says so', async ({
 		page,
 	}) => {

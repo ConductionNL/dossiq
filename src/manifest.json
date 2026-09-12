@@ -1341,6 +1341,13 @@
 						"_note": "Which step the case is in, over its case type's statusType rows in `order` (page slot widget-case-steps -> CaseStepsWidget). It renders WITH its title (`showTitle: true`): the stepper sat in the right rail as a bare column of four labelled dots with nothing saying what the column was, so a reader had to infer that it was the case progressing rather than, say, a checklist. It takes the cell the milestone progress tile had, and that tile is gone: milestones are configured on almost no case type, so `Completed` read 0% on every demo case and told a handler nothing, while every case has a status because a case cannot exist without one. The milestone endpoint stays for its other readers; this page simply stops calling it. A `stepper` widget type over a reference field's ordered sibling rows would make this a config declaration (tasks 3.3); until nextcloud-vue ships one, the custom widget is the interim. Many statuses in a four-column cell scroll sideways rather than clipping, which is the honest failure mode for a case type with a long process."
 					},
 					{
+						"id": "cmmn-case-plan",
+						"type": "custom",
+						"title": "Case plan",
+						"icon": "Sitemap",
+						"_note": "The adaptive case plan of a caseType with `handlingModel: cmmn` (page slot widget-cmmn-case-plan -> CasePlanPanel). The stages, tasks and milestones are rows OpenRegister holds in its case layer and serves on /api/cases, not a `casePlanState` blob this app decodes. It renders nothing for a BPMN caseType, whose status transitions keep flowing through the case-transitions widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan, because an outage and a case with no work left look identical from the browser and only one of them is safe to act on. It sits at the foot of the page and takes the full width, because a plan tree is wide and a right-rail cell would wrap every item name. Deleted the day the manifest vocabulary has a case-plan widget type over /api/cases (retire-cmmn-caseplanstate)."
+					},
+					{
 						"id": "case-panels",
 						"type": "tabs",
 						"title": "Case panels",
@@ -1803,6 +1810,15 @@
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
+					},
+					{
+						"id": "12",
+						"widgetId": "cmmn-case-plan",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 12,
+						"gridHeight": 6,
+						"showTitle": true
 					}
 				],
 				"sidebar": {
@@ -2051,7 +2067,8 @@
 				"widget-case-header": "CaseHeaderRow",
 				"widget-case-transitions": "CaseTransitionsWidget",
 				"widget-case-steps": "CaseStepsWidget",
-				"widget-initiator": "InitiatorSection"
+				"widget-initiator": "InitiatorSection",
+				"widget-cmmn-case-plan": "CasePlanPanel"
 			}
 		},
 		{

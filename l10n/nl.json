@@ -3933,6 +3933,15 @@
         "That mail account is not yours.": "Dat mailaccount is niet van u.",
         "Choose a mail account first.": "Kies eerst een mailaccount.",
         "Create your first case type to start handling cases.": "Maak het eerste zaaktype aan om zaken te behandelen.",
-        "No case types configured yet": "Nog geen zaaktypen ingesteld"
+        "No case types configured yet": "Nog geen zaaktypen ingesteld",
+        "Case plan": "Zaakplan",
+        "Try again": "Probeer het opnieuw",
+        "Stop": "Stoppen",
+        "Ready to start": "Klaar om te starten",
+        "Stopped": "Gestopt",
+        "The case plan is unavailable": "Het zaakplan is niet beschikbaar",
+        "This case type has no adaptive plan": "Dit zaaktype heeft geen adaptief plan",
+        "You are not allowed to see the plan for this case.": "U mag het plan van deze zaak niet inzien.",
+        "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw."
     }
 }

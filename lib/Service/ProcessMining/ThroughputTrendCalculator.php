@@ -83,7 +83,9 @@ class ThroughputTrendCalculator {
 			$out[] = ['week' => $week, 'count' => $count];
 		}
 
-		ksort($out);
+		// `$out` is built with `$out[] =`, so its keys are already 0..n and
+		// the ksort() that stood here sorted nothing. The usort below is what
+		// puts the weeks in order.
 		usort($out, static fn (array $left, array $right): int => strcmp($left['week'], $right['week']));
 
 		return $out;

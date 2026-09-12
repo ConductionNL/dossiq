@@ -55,7 +55,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
+import { generateRemoteUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
@@ -136,8 +136,21 @@ export default {
 			}
 			this.loading = true
 			try {
-				const url = generateUrl(
-					`/remote.php/dav/versions/${this.userId}/versions/${this.document.fileId}`,
+				// 🔴 `generateRemoteUrl`, NOT `generateUrl`. `generateUrl` builds an
+				// index.php-routed APP url: where the front controller is inactive it
+				// prefixes `/index.php`, and this PROPFIND went to
+				// `/index.php/remote.php/dav/versions/…`, which routes nowhere. The
+				// catch below turns that into an empty list, so the panel said "No
+				// previous versions" on every such instance and never said why.
+				//
+				// The flag is `modRewriteWorking`, which Nextcloud derives from
+				// `SetEnv front_controller_active true` in its own `.htaccess`. An
+				// Apache instance has it and a `php -S` instance does not, so this
+				// worked on every developer box and was dark in CI. Measured
+				// 2026-09-12: flipping that one line in `.htaccess` reproduced the
+				// CI failure exactly, on the same instance that had just passed.
+				const url = generateRemoteUrl(
+					`dav/versions/${this.userId}/versions/${this.document.fileId}`,
 				)
 				const { data } = await axios.request({
 					method: 'PROPFIND',

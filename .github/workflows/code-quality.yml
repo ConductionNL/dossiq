@@ -193,9 +193,8 @@ jobs:
       enable-eslint: true
       enable-phpunit: true
       enable-coverage-guard: true
-      # Newman disabled: ZGW compliance tests have 95%+ failure rate because
-      # the ZGW API implementation is still in progress. Re-enable once the
-      # API passes at least the core CRUD assertions.
+      # Newman stays off, and the reason below is measured rather than
+      # remembered. See the long note further down, and #2460.
       enable-newman: false
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
@@ -330,14 +329,42 @@ jobs:
       # cwd for this step is the Nextcloud server root.
       playwright-seed-command: 'bash apps/dossiq/tests/e2e/ci-seed.sh'
 
-      # Integration Tests (Newman) stays OFF here, deliberately. The
-      # `enable-newman: false` further up is not a default nobody chose: it
-      # records that the ZGW compliance collections fail at 95%+ because the ZGW
-      # API implementation is still in progress. Two collections are committed
-      # under `data/`, the ZGW OAS and business rules suites, and both would
-      # meet that known cause: a guaranteed red that teaches nothing this
-      # comment does not already say. Flipped back on in the commit that gets
-      # the core CRUD assertions passing.
+      # Integration Tests (Newman) stays OFF here, and the reason is MEASURED.
+      #
+      # It used to read "the ZGW compliance collections fail at 95%+ because the
+      # ZGW API implementation is still in progress". Nobody had run them. On a
+      # clean Nextcloud 34 provisioned exactly the way this job provisions, on
+      # 2026-09-12, it was 78%: OAS 127 of 177 assertions failed and business
+      # rules 289 of 354. After #2569 it is OAS 57 of 177 and business rules 128
+      # of 351.
+      #
+      # "The implementation is in progress" was also the wrong cause. Most of
+      # the red came from defects with names: two routes pointed at mapping keys
+      # nothing writes, the catalogue schema did not exist, the write throttle
+      # was 30 a minute against a suite that peaks at 180, an array property was
+      # written as a JSON string, four mappings had their two sides swapped, and
+      # four enums were half translated. All fixed in #2569, each with a test.
+      #
+      # WHY IT IS STILL OFF. 25 of the 31 error responses left in the OAS
+      # collection come from one defect in the collection itself. Its ZTC
+      # section replaces `created_zaaktype_url` with `pm.globals.set` while an
+      # earlier request wrote the same name to the environment, and Postman
+      # resolves the environment first, so every later ZTC write targets the
+      # zaaktype the section just published. ZTC forbids deleting a published
+      # type and forbids changing its child types, so those writes answer 400
+      # against any conformant implementation. Two more are a Postman variable
+      # left unquoted, which truncates the JSON body at the first double slash,
+      # and one is an `inhoud` that no implementation can decode.
+      # tests/zgw/zgw_observations.md records each of them, and records what is
+      # left on OUR side: a full PUT of a zaak is refused on a readOnly
+      # property, which needs the inbound mapping to differ between create and
+      # update.
+      #
+      # Turning the switch on today would also do nothing: both collections
+      # carry an `@newman exclude` marker in their own info.description, and
+      # ConductionNL/.github#714 taught the runner to honour it. The job would
+      # report green having run zero requests. The switch and the two markers
+      # come off in the same commit, and not before.
       #
       # This used to say FOUR, and two of those four were never ZGW at all:
       # the leges and zaakportaal collections called controllers that had
@@ -373,7 +400,23 @@ jobs:
       # renders the English source inside an otherwise translated form, silently.
       # The fleet had 30,459 such strings, so this records the current count and
       # fails only when it GROWS — burning it down stays an ordinary PR.
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js"]'
+      # `check:debt-ratchet` is a RATCHET on SUPPRESSED findings, and it rides
+      # in this node leg on purpose: the census is plain text over psalm.xml,
+      # phpstan.neon, lib/, src/ and eslint-suppressions.json, so it needs no
+      # composer install and adds about a second to a job that already has a
+      # checkout.
+      #
+      # Why it is needed at all. Measured on `development` 2026-09-12, PHPCS,
+      # PHPMD, Psalm, PHPStan and eslint each report ZERO findings. That is
+      # true, and it is zero because 1,117 findings are hidden: 31 blanket
+      # psalm issue handlers (worth 1,360 findings on their own), 294 inline
+      # @psalm-suppress tags, 278 @SuppressWarnings, 388 eslint violations
+      # parked in eslint-suppressions.json, 11 phpstan ignore patterns.
+      #
+      # So the only way to add static-analysis debt here is to add a
+      # suppression, and until now that cost nothing and showed up nowhere.
+      # The number a reviewer looks at did not move. This makes it move.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed
