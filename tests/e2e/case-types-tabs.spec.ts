@@ -43,18 +43,65 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	})
 
 	// @e2e openspec/specs/admin-settings/spec.md#empty-case-type-list
-	test('admin settings surface has an add-control for case types', async ({
+	//
+	// 🔴 THE SCENARIO'S GIVEN IS "no case types have been created", AND THIS
+	// TEST NEVER ESTABLISHED IT. It opened the admin page against whatever the
+	// register held, which on any seeded instance is a populated list, and
+	// asserted an add control that renders identically either way. Both of the
+	// scenario's own sentences, the empty state message and the guidance,
+	// went unasserted, so nothing here could tell an empty list from a full
+	// one.
+	//
+	// The register is emptied at the network, not on the instance. Deleting
+	// every case type would take the surface away from every other spec in
+	// this run and cannot be undone; a 200 with no results is the same input
+	// the component sees on a fresh install, and it lands on this page alone.
+	// The interception is COUNTED, because a route that matched nothing leaves
+	// the real list answering and turns this straight back into the test it
+	// used to be.
+	test('an empty case type register says so and points at the first one', async ({
 		page,
 	}) => {
+		let emptied = 0
+		await page.route('**/apps/openregister/api/objects/*/caseType*', async (route) => {
+			emptied++
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({ results: [], total: 0, page: 1, pages: 1 }),
+			})
+		})
+
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
-		// The CnIndexPage management surface always renders an add control;
-		// the exact label depends on whether the schema is seeded ("Add Case
-		// Type") or generic ("Add Item"). Either is acceptable.
-		const addBtn = page.getByRole('button', { name: /^Add (Item|Case Type)$/ })
-		await expect(addBtn).toBeVisible({ timeout: 15000 })
+
+		// THEN an empty state message, and guidance towards the first case
+		// type. Both are dossiq's own strings: `CnIndexPage`'s default is
+		// "No items found", which is what this section used to show and what
+		// the scenario asks it not to.
+		await expect(
+			page.getByText('No case types configured yet'),
+			'the empty register says it is empty',
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByText('Create your first case type to start handling cases.'),
+			'and says what to do about it',
+		).toBeVisible({ timeout: 15000 })
+
+		// AND the add control, which is the thing that guidance points at.
+		// The label depends on whether the schema resolved ("Add Case Type")
+		// or not ("Add Item"); either is the same control.
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case Type)$/ }),
+		).toBeVisible({ timeout: 15000 })
+
+		expect(
+			emptied,
+			'the case type fetch was never intercepted, so the real register '
+				+ 'answered and this run proves nothing about an empty one',
+		).toBeGreaterThan(0)
 	})
 
 	/**
