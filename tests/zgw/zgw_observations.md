@@ -70,6 +70,17 @@ prerequisite 400s reports its own bugs as ENOTFOUND on an unset variable.
 - **Observation**: The setUp versions of the same tests (e.g., "Add Gebruiksrechten to EnkelvoudigInformatieObject") correctly quote the variable. Only the main test section templates are missing quotes.
 - **Attempted fix**: Server-side regex to re-quote truncated values. It works for curl but NOT for Newman because the truncation happens at the JavaScript level before the HTTP request is sent.
 
+## The ZTC section cannot pass against a conformant implementation
+
+### `created_zaaktype_url` is replaced in the wrong variable scope
+
+- **Sequence**: "Maak een ZAAKTYPE aan." creates zaaktype A and stores its URL with `pm.environment.set("created_zaaktype_url", ...)`. The section then PUTs, PATCHes, **publishes** A, and DELETEs it. "Create concept Zaaktype" then creates a fresh concept B and stores it with `pm.globals.set("created_zaaktype_url", ...)`.
+- **The bug**: Postman resolves an environment variable ahead of a global one. The environment entry still holds A, so `{{created_zaaktype_url}}` never becomes B. Every later ZTC section, eigenschappen included, targets the published A.
+- **Why no implementation can pass it**: ZTC forbids deleting a zaaktype that is not a concept, and forbids changing the types of a published zaaktype. So the DELETE answers 400, and so does every eigenschap, statustype, roltype and relatie write that follows.
+- **Measured 2026-09-12**: 25 of the 31 error responses left in the OAS collection, and most of the 19 requests that are never sent. The four distinct messages are "Het is niet toegestaan om een zaaktype met concept=false te verwijderen" and its besluittype and informatieobjecttype equivalents, plus "Het is niet toegestaan om typen van een gepubliceerd zaaktype aan te passen".
+- **Our behaviour is correct and stays.** Relaxing either rule to make the assertions green would turn a standard into a suggestion.
+- **The fix belongs upstream**: `pm.environment.set` in "Create concept Zaaktype", or an `pm.environment.unset` before the global write.
+
 ## Invalid base64 in a request body
 
 ### EIO `inhoud` is not decodable base64
