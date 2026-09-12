@@ -23,18 +23,17 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-// The case's own state on the case page: the transition strip, the stepper
-// over the case type's statuses, and the reason dialog the Actions menu opens.
+// The case's own state on the case page is no longer a registry component at
+// all: the identity band is four configured library tiles (stat + countdown)
+// and the stepper is the library `stages` widget, which is also how the case
+// is moved. CaseHeaderRow, CaseStepsWidget and CaseTransitionsWidget are gone.
 // @spec openspec/specs/status-transition-engine/spec.md
 // @spec openspec/specs/case-dashboard-view/spec.md
-import CaseHeaderRow from './components/case/CaseHeaderRow.vue'
 import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // The adaptive case plan, served by OpenRegister's case layer rather than by
 // dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
-import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
-import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -246,27 +245,17 @@ const registry = {
 	},
 
 	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---
-	// @spec openspec/specs/status-transition-engine/spec.md
-	CaseTransitionsWidget: {
-		// @custom-widget-ratchet exclude the transitions a case allows come from dossiq's own engine (workflow template, role filter, guard verdicts) and no declarative widget reads them: CnLifecycleActions asks OpenRegister, which answers nothing for a $ref status field
-		kind: 'widget',
-		component: CaseTransitionsWidget,
-		_note: 'CaseDetail header strip: the transitions this user may take from the current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button a suspended case needs in front of the handler. Deleted when OpenRegister can express a per-caseType graph over a reference field (tasks 4.4).',
-	},
-	// @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
-	CaseHeaderRow: {
-		// @custom-widget-ratchet exclude the identity row binds a $ref status to a badge and a date field to a countdown in one cell, and the built-in `header` widget is a dashboard banner (title, subtitle, cta) that binds neither; a templated `subtitle` plus a `breadcrumbs` page key on CnDetailPage would make this a config declaration (case-header tasks 1.2 and 3.2)
-		kind: 'widget',
-		component: CaseHeaderRow,
-		_note: 'CaseDetail first row: the case number, the case type, the status badge, the assignee, the deadline countdown and the breadcrumb back to Cases. It folds in the retired `case-kpi-time-left` and `case-kpi-casetype` tiles, whose facts it now carries, and it renders the breadcrumb and the subtitle that CnDetailPage 2.41.0 declares no key for.',
-	},
-	// @spec openspec/specs/case-dashboard-view/spec.md
-	CaseStepsWidget: {
-		// @custom-widget-ratchet exclude a stepper over a reference field's ordered sibling rows; the manifest vocabulary has no such widget type (tasks 3.3 asks for one)
-		kind: 'widget',
-		component: CaseStepsWidget,
-		_note: "CaseDetail: which step the case is in, over its case type's statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.",
-	},
+	//
+	// THREE ENTRIES USED TO LIVE HERE AND ALL THREE ARE GONE, with their
+	// components: CaseTransitionsWidget, CaseHeaderRow and CaseStepsWidget. Each
+	// carried a `@custom-widget-ratchet exclude` naming something the library
+	// could not express, and the library expresses all three now. The identity
+	// band is four configured tiles (`stat` twice for the case type and the
+	// status badge, `stat` for the assignee, `countdown` for the deadline), and
+	// the stepper is the `stages` widget, which reads OpenRegister
+	// /available-actions and moves the case when a stage is clicked. dossiq
+	// answers that endpoint through CaseActionProvider, so the moves are still
+	// its own engine's, asked for in the vocabulary the library speaks.
 	// --- The case type's effective blueprint (case-type-authoring-extras). ---
 	// @spec openspec/specs/case-types/spec.md
 	CaseTypeBlueprintWidget: {
