@@ -36,6 +36,39 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * The `findAll`/`saveObject` seam this test drives.
+ *
+ * Declared here rather than borrowed from `TenantScopedLookupsTest`, which
+ * also declares one: that only resolves because PHPUnit loads every test file
+ * in the suite, so a borrowed interface makes this file depend on another
+ * file's load order rather than on anything it imports.
+ */
+interface QuotaWritePathObjectServiceStub {
+	/**
+	 * Find objects.
+	 *
+	 * @param array<string, mixed> $config        Query configuration.
+	 * @param bool                 $_rbac         Whether RBAC applies.
+	 * @param bool                 $_multitenancy Whether multitenancy applies.
+	 *
+	 * @return array<int, mixed> The rows.
+	 */
+	public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array;
+
+	/**
+	 * Save an object.
+	 *
+	 * @param array<string, mixed> $object   The object data.
+	 * @param string               $register The register.
+	 * @param string               $schema   The schema.
+	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 *
+	 * @return array<string, mixed> The saved object.
+	 */
+	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+}
+
+/**
  * @covers \OCA\Dossiq\Service\TenantQuotaService
  *
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
@@ -67,7 +100,7 @@ class TenantQuotaWritePathsTest extends TestCase {
 	 * @return TenantQuotaService The service.
 	 */
 	private function quotaService(array $rows = []): TenantQuotaService {
-		$objectService = $this->createMock(TenantLookupObjectServiceStub::class);
+		$objectService = $this->createMock(QuotaWritePathObjectServiceStub::class);
 		$objectService->method('findAll')->willReturn($rows);
 		$objectService->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null): array {
