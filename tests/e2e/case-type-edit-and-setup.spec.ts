@@ -442,6 +442,20 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	// only trusted once the live payload stopped reporting it (24 seconds after
 	// the file was clean). A mutation check that trusts the file instead can
 	// run against the unmutated code and report a guard as unable to fail.
+	//
+	// 🔑 #2543 SETTLED THIS THE OTHER WAY AND THE MERGE KEPT BOTH HALVES. It
+	// took the citation DOWN and put a reason-bearing `@e2e exclude` on the two
+	// scenarios instead, on the grounds that the spec was the stale half and
+	// the test should stay uncited "until this requirement and REQ-SETUP-PRO-002
+	// are rewritten to describe the wizard that ships". That rewrite is what
+	// this branch does, so its own precondition is met: the anchor below now
+	// exists and says what the product does. #2543's exclusion survives on
+	// "Optional seed does not gate", which is a different scenario and is still
+	// about an offered `seed` step that no longer exists.
+	//
+	// Nothing about the test body changed in either branch. It still proves
+	// `register-check` is reported, which is the half of REQ-SETUP-PRO-001 that
+	// survives.
 	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,

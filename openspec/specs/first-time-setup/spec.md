@@ -22,7 +22,9 @@ The declared step list and the reported step list SHALL agree in both directions
 
 #### Scenario: Optional seed does not gate
 
-- **GIVEN** the register is initialised and an optional step is still outstanding
+@e2e exclude The `seed` step was RETIRED, so this scenario's second clause is false against the product and no test can make it true. Its payload is parked: the bezwaar/beroep case types live under `_caseTypes_disabled` in `lib/Settings/bezwaar_seed_data.json`, so the seeder returned success with every counter at zero, which made the affordance one-shot and silently useless. Reporting that honestly instead left a step whose every click was a 422, so the step went and the action stayed for an operator who un-parks the data. The rewrite this exclusion was waiting on has now landed: REQ-SETUP-PRO-001 above states the retirement, and "No step is offered that the wizard cannot fulfil" below describes the wizard that ships, which is where `tests/e2e/case-type-edit-and-setup.spec.ts` "the wizard offers no step the seed action cannot fulfil" is now cited. THIS scenario stays excluded, because its own second clause is still about an offered `seed` step and rewording it to mean some other optional step would quietly change what it requires.
+
+- **GIVEN** the register is initialised but no bezwaar/beroep data is seeded
 - **WHEN** an admin opens the app
 - **THEN** the app SHALL be usable, its shell reachable behind the wizard
 - **AND** the outstanding optional step SHALL be offered (auto-opened once, dismissible) and re-runnable from the admin page
@@ -41,6 +43,8 @@ The declared step list and the reported step list SHALL agree in both directions
 dossiq SHALL expose `POST /apps/dossiq/api/setup/action/{actionId}` (admin-only, CSRF-protected) whose `seed` action runs `SeedDataService::seedBezwaarBeroepData()` and the other `Seed*` repair steps **server-side with system privileges** (admin-context or `_rbac:false`), so OpenRegister `saveObject` succeeds regardless of the requesting user's object-create rights. The wizard SHALL NOT write OpenRegister objects directly from the browser.
 
 #### Scenario: Wizard seed action succeeds where a browser write would be denied
+
+@e2e exclude There is no `seed` step to be on, and the action cannot create the case types this scenario names: they are parked under `_caseTypes_disabled` in `lib/Settings/bezwaar_seed_data.json`, so the call answers 422 by design rather than creating anything. See the exclusion on "Optional seed does not gate" above. The privilege claim this requirement is really about, that seeding runs server-side rather than as a browser write, survives the retirement and needs a scenario that does not depend on the parked payload.
 
 - **GIVEN** an admin on the `seed` step and bezwaar/beroep not yet seeded
 - **WHEN** the wizard POSTs `setup/action/seed`
