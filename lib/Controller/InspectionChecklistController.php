@@ -29,6 +29,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\InspectionChecklistService;
 use OCA\Dossiq\Settings\AdminSettings;
+use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
+use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -45,6 +47,16 @@ use Throwable;
  * Controller for inspection checklist CRUD and inspection result submission.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen declared types, and
+ * the rule asks for twelve. This was already failing before the 4xx arm below
+ * was written, so it is not the exceptions: it is five injected collaborators,
+ * the framework's Controller / IRequest / JSONResponse / Http, the OCS
+ * forbidden exception, and the two error types the catch arms name. Reducing
+ * it means splitting admin checklist CRUD from per-case result submission into
+ * two controllers, which is a routing change and a different PR. Same
+ * suppression and same reasoning as ZrcController, DrcController,
+ * StufController and SubsidieController carry.
  *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
@@ -113,6 +125,18 @@ class InspectionChecklistController extends Controller {
 		try {
 			$result = $this->checklistService->createChecklist(data: $data);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
+		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+			// Same narrow arm as submitResult() below, for the same reason: a
+			// checklist OpenRegister refuses is the author's payload, not a
+			// server fault, and its message already names the property.
+			$this->logger->info(
+				'Rejected inspection checklist create: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return new JSONResponse(
+				['message' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to create inspection checklist: ' . $e->getMessage(),
@@ -144,6 +168,18 @@ class InspectionChecklistController extends Controller {
 		try {
 			$result = $this->checklistService->updateChecklist(id: $id, data: $data);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_OK);
+		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+			// Same narrow arm as submitResult() below, for the same reason: a
+			// checklist OpenRegister refuses is the author's payload, not a
+			// server fault, and its message already names the property.
+			$this->logger->info(
+				'Rejected inspection checklist update for ' . $id . ': ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return new JSONResponse(
+				['message' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Failed to update inspection checklist ' . $id . ': ' . $e->getMessage(),
@@ -257,6 +293,39 @@ class InspectionChecklistController extends Controller {
 				completedBy: $user->getUID()
 			);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
+		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+			// A REJECTED PAYLOAD IS THE CALLER'S FAULT, NOT THE SERVER'S.
+			//
+			// OpenRegister validates every write against the schema and throws
+			// its own ValidationException with a message that already names the
+			// offending property -- `Property 'checklist' should match format
+			// 'uuid' but 'e2e-checklist' does not`. Without this arm that
+			// exception fell through to the `Throwable` catch below and came
+			// back as a 500, so a caller sending a bad payload was told the
+			// server had broken and every such submission read as an outage.
+			// It stayed invisible because the e2e citation covering this
+			// endpoint asserted `not.toBe(403)`, which a 500 satisfies.
+			//
+			// 400 rather than the 422 the RuntimeException arm returns, because
+			// this is OpenRegister's verdict on OpenRegister's schema and
+			// OpenRegister answers 400 for it on its own endpoints
+			// (ValidateObject::handleValidationException); the two APIs should
+			// not disagree about the same rejection. 422 stays for the checks
+			// this app makes itself, such as a required photo that is missing.
+			//
+			// NARROW ON PURPOSE. Widening the arm below to return 4xx for every
+			// Throwable would make the symptom go away by reporting real server
+			// faults as the caller's fault, which is the worse failure: a
+			// genuine fault must still be a 500 and must still be logged as an
+			// error, and it is, immediately below.
+			$this->logger->info(
+				'Rejected inspection result for case ' . $id . ': ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return new JSONResponse(
+				['message' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST
+			);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(
 				['message' => $e->getMessage()],

@@ -42,7 +42,7 @@ namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantProvisioningService;
-use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantSessionService;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -76,7 +76,7 @@ class TenantContextMiddleware extends Middleware {
 	 *
 	 * @param IRequest $request Request.
 	 * @param TenantSessionService $tenantSession Session-held active tenant.
-	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
+	 * @param TenantOrganisationResolver $tenantResolver Resolves the tenant as an OpenRegister Organisation.
 	 * @param TenantProvisioningService $provisioning Provisioning service (schema-name builder).
 	 * @param TenantContext $context Request-scoped context.
 	 * @param LoggerInterface $logger Logger.
@@ -84,7 +84,7 @@ class TenantContextMiddleware extends Middleware {
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly TenantSessionService $tenantSession,
-		private readonly TenantSaasService $tenantSaasService,
+		private readonly TenantOrganisationResolver $tenantResolver,
 		private readonly TenantProvisioningService $provisioning,
 		private readonly TenantContext $context,
 		private readonly LoggerInterface $logger,
@@ -115,7 +115,7 @@ class TenantContextMiddleware extends Middleware {
 			return;
 		}
 
-		$tenant = $this->tenantSaasService->getById($tenantId);
+		$tenant = $this->tenantResolver->resolve(tenantId: $tenantId);
 		if ($tenant === null) {
 			$this->logger->info(
 				'Dossiq: TenantContextMiddleware could not resolve tenant',

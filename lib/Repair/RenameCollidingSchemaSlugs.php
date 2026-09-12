@@ -213,7 +213,9 @@ class RenameCollidingSchemaSlugs implements IRepairStep {
 				[$slug, self::APPLICATION]
 			)->fetchAll(\PDO::FETCH_COLUMN);
 
-			return array_values((array)$rows);
+			// `fetchAll(PDO::FETCH_COLUMN)` already hands back a list, so the
+			// array_values() that used to wrap this was a no-op.
+			return (array)$rows;
 		} catch (Exception $e) {
 			$this->logger->warning(
 				'RenameCollidingSchemaSlugs: could not read the schema table; skipping.',

@@ -308,7 +308,43 @@ test.describe('Case detail — the Communication tab', () => {
 
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#a-contact-logged-on-the-case-carries-the-case
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#a-logged-call-shows-up-in-the-list
-	test('a logged call carries the case and shows up in the tab', async ({
+	// 🔴 AND THE SECOND CLAUSE OF THE TWO FORM SCENARIOS, which is why they are
+	// cited HERE as well as on the form test above. Each of them is two
+	// sentences, and the form test can only ever reach the first:
+	//
+	//   the-form-does-not-ask-for-the-kcc-fields
+	//     THEN it SHALL NOT ask for the identification method, the nature or
+	//          the KCC employee            <- the form test, KCC_FIELDS count 0
+	//     AND  the saved contact SHALL still carry the signed-in user as
+	//          `kccEmployeeId`             <- here, and nowhere else
+	//   the-form-never-asks-which-case
+	//     THEN it SHALL NOT ask which case <- the form test, `case` count 0
+	//     AND  the saved contact SHALL still carry the open case in `case`
+	//                                      <- here
+	//
+	// The form test saves nothing, so on its own each citation claimed a
+	// scenario it proved half of. Two tests citing one scenario is the right
+	// shape when they prove DIFFERENT clauses; it is only double-counting when
+	// the second proves less of the same thing.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`
+	// against a private disposable instance. The manifest seeds the token, so
+	// the break needs no PHP:
+	//
+	//   find    /"kccEmployeeId":"@me"/
+	//   replace '"kccEmployeeId":"somebody-else"'
+	//   red on  "`@me` must resolve to the account that logged the contact"
+	//           Expected: "admin", Received: "somebody-else"
+	//
+	// 🔴 AND THE ASSERTION THIS REPLACED WOULD HAVE PASSED THAT UNCHANGED.
+	// It read `expect(String(stored.kccEmployeeId)).not.toBe('')`, and
+	// "somebody-else" is not the empty string. A negation against a wide value
+	// space standing in for an identity the scenario names by role is the
+	// shape worth watching: ask how many values satisfy a `not.toBe(...)`
+	// before trusting it to carry a requirement.
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-does-not-ask-for-the-kcc-fields
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-never-asks-which-case
+	test('a logged call carries the case, the signed-in user, and shows up in the tab', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
@@ -376,8 +412,27 @@ test.describe('Case detail — the Communication tab', () => {
 		).toContain(formCaseId)
 		expect(String(stored.notificationChannel)).toBe('phone')
 		expect(String(stored.direction)).toBe('inbound')
-		// The signed-in user, seeded through `@me` rather than typed.
-		expect(String(stored.kccEmployeeId)).not.toBe('')
+		// 🔴 THE SIGNED-IN USER, BY NAME. This read `not.toBe('')`, which is
+		// satisfied by any non-empty string: the manifest seeds
+		// `kccEmployeeId: "@me"`, and a build that resolved that token to a
+		// literal, to the case's handler, or to whoever last touched the row
+		// would have passed it. The scenario says "the signed-in user", so the
+		// session is asked who it is and the stored value has to be that.
+		const whoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(
+			whoami.ok(),
+			`the session must answer whoami, got ${whoami.status()}`,
+		).toBeTruthy()
+		const me = String((await whoami.json())?.ocs?.data?.id ?? '')
+		expect(me, 'whoami must name a user, or the assertion below is empty').not.toBe(
+			'',
+		)
+		expect(
+			String(stored.kccEmployeeId),
+			'`@me` must resolve to the account that logged the contact',
+		).toBe(me)
 
 		const widget = await openCommunicationTab(page, formCaseId)
 		const row = widget.locator('tbody tr').filter({ hasText: TYPED_SUMMARY })

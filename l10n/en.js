@@ -3939,7 +3939,16 @@ OC.L10N.register(
         "Bulk action applied": "Bulk action applied",
         "Download ZIP": "Download ZIP",
         "Mark final": "Mark final",
-        "New confidentiality": "New confidentiality"
+        "New confidentiality": "New confidentiality",
+        "Case plan": "Case plan",
+        "Ready to start": "Ready to start",
+        "Stop": "Stop",
+        "Stopped": "Stopped",
+        "The case plan could not be loaded. Try again.": "The case plan could not be loaded. Try again.",
+        "The case plan is unavailable": "The case plan is unavailable",
+        "This case type has no adaptive plan": "This case type has no adaptive plan",
+        "Try again": "Try again",
+        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case."
     },
     "nplurals=2; plural=(n != 1);"
 )

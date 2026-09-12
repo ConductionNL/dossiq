@@ -393,17 +393,50 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 	})
 
 	// @e2e openspec/specs/initiator-selection/spec.md#contacts-source-degrades-gracefully
+	//
+	// 🔴 THE GIVEN WAS NEVER ESTABLISHED, AND HAS BEEN. The scenario's GIVEN is
+	// "the Nextcloud Contacts app is not installed". `/contactsmenu/contacts`
+	// is a CORE endpoint: it is there on every runner and answers 200 with no
+	// matches, so this test was reading an ordinary empty result set and
+	// calling it a degrade. Deleting the `catch` in `searchContacts` that
+	// implements the degrade would not have reddened a line of it.
+	//
+	// The source is taken away at the network instead. A 404 on that endpoint
+	// is what an absent Contacts app produces, and it is the input the degrade
+	// exists to survive. The route is COUNTED, because a route that matched
+	// nothing leaves the real endpoint answering and turns this back into the
+	// test it used to be.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`.
+	//
+	//   find    /emptyDescription\(\)\{return"contact"===this\.activeTab\?/
+	//   replace 'emptyDescription(){return false?'
+	//   red on  "the picker must say the contacts source may be unavailable"
+	//
+	// That is the clause worth guarding: an empty list and an unavailable
+	// source look identical to a reader unless the picker says which it is.
 	test('contact tab shows an explicit empty state, never an error toast', async ({
 		page,
 	}) => {
+		// GIVEN the Contacts app is not installed: its endpoint is simply not
+		// there. Installed before the dialog opens, so no search can slip past.
+		let contactsCalls = 0
+		await page.route('**/contactsmenu/contacts*', async (route) => {
+			contactsCalls++
+			await route.fulfill({
+				status: 404,
+				contentType: 'text/html; charset=UTF-8',
+				body: '<html><body>Not found</body></html>',
+			})
+		})
+
 		const dialog = await openInitiatorStep(page)
 		await dialog.getByText('Contact', { exact: true }).click()
 
 		// Wait for the contacts search to ANSWER before judging the result.
 		// The picker shows its empty state as soon as a query is typed, so an
 		// assertion without this would pass before the source was ever asked,
-		// and could not tell a graceful degrade from a search never made. Any
-		// status is accepted: an unavailable source is the case under test.
+		// and could not tell a graceful degrade from a search never made.
 		const answered = page.waitForResponse(
 			(res) => res.url().includes('/contactsmenu/contacts'),
 			{ timeout: 30_000 },
@@ -411,16 +444,37 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		await dialog.getByLabel('Search initiator').fill('zzz-no-such-contact-zzz')
 		await answered
 
-		await expect(dialog.getByText('No contacts found')).toBeVisible({
+		expect(
+			contactsCalls,
+			'the contacts source must have been asked and refused, or this proves nothing about a degrade',
+		).toBeGreaterThan(0)
+
+		// THEN the picker shows an explicit empty/unavailable state. BOTH
+		// halves: the title alone is also what an ordinary no-match search
+		// shows, and only the description tells the reader the source itself
+		// may be missing.
+		await expect(
+			dialog.getByText('No contacts found'),
+			'the picker must show an explicit empty state for the contact source',
+		).toBeVisible({
 			timeout: 15_000,
 		})
+		await expect(
+			dialog.getByText(/Contacts app may not be installed/i),
+			'the picker must say the contacts source may be unavailable',
+		).toBeVisible({ timeout: 15_000 })
+
+		// AND no error toast.
 		// `role="alert"` as well as `.toast-error`. @nextcloud/dialogs 7.5,
 		// which dossiq bundles, renders an error toast as an assertive live
 		// region with CSS-module classes, so the class selector alone matched
 		// nothing even with a toast on screen and this assertion could not
 		// fail. The class stays for core's own toasts on this page, which ship
 		// with whatever dialogs version the server was built with.
-		await expect(page.locator('[role="alert"], .toast-error')).toHaveCount(0)
+		await expect(
+			page.locator('[role="alert"], .toast-error'),
+			'a source that is not installed is an empty state, never an error toast',
+		).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/initiator-selection/spec.md#selection-persists-on-the-case

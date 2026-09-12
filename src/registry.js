@@ -29,6 +29,10 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseHeaderRow from './components/case/CaseHeaderRow.vue'
 import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
+// The adaptive case plan, served by OpenRegister's case layer rather than by
+// dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
+// @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
+import CasePlanPanel from './components/case/CasePlanPanel.vue'
 import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
 import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
@@ -327,6 +331,21 @@ const registry = {
 		kind: 'widget',
 		component: CasePlannedWidget,
 		_note: 'CaseDetail Related cases tab: what is related to this case, and what is about to be. The planned rows come from /api/case/{id}/planned, which lists the scheduled flows for this case that have not fired; once one fires its case is an ordinary related case and the row is gone. The Plan follow-up button sits here as well as in the Actions menu, because the tab is where a handler is already looking at what this case is connected to.',
+	},
+
+	// --- The adaptive case plan, over OpenRegister's case layer
+	//     (retire-cmmn-caseplanstate, group 1). ---
+	//
+	// Same widget slot as the retiring CMMN panel, new data source: the plan is
+	// rows in `openregister_case_items` read over /api/cases, not a blob this
+	// app decodes. The local engine and its `casePlanState` are untouched here;
+	// they retire in groups 3 to 5, gated on a clean drain report.
+	// @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
+	CasePlanPanel: {
+		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
+		kind: 'widget',
+		component: CasePlanPanel,
+		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
 	},
 
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---

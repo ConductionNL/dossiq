@@ -10,8 +10,8 @@
  * properties a person deals with and which are engine plumbing, and the New
  * case action narrows itself to the ten a handler fills. On top of that,
  * `case.caseType` declares `x-openregister-extends-form`, so choosing a case
- * type adds that type's own questions to the form and the answers land in
- * `caseProperty` rows.
+ * type adds that type's own questions to the form and the answers land in the
+ * case's own `properties` array, in the same write that creates the case.
  *
  * These assertions are all against the rendered DOM. The API is used only to
  * seed and tear down the case type and its property definitions.
@@ -29,6 +29,7 @@ import {
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	trackCreatedObject,
 	updateObject,
 } from './helpers/fixtures.ts'
 
@@ -229,7 +230,7 @@ test.describe('New case dialog', () => {
 		return dialog
 	}
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-carries-no-schema-inspection-tabs
 	test('opens the plain form, not the properties and JSON table', async ({
 		page,
 	}) => {
@@ -242,7 +243,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Create' })).toBeVisible()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-asks-only-for-create-time-fields
 	test('asks only for the fields a handler fills', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -267,7 +268,7 @@ test.describe('New case dialog', () => {
 		}
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#choosing-a-case-type-adds-its-questions
 	test('adds the chosen case type own questions, and drops them again on a change', async ({
 		page,
 	}) => {
@@ -282,7 +283,10 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByText(AUDIENCE)).toBeVisible()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// Cited at the SCENARIO, not at the requirement heading. Gate-19 slugs
+	// `#### Scenario:` headings only, so a `#requirement-…` anchor credits
+	// nothing however well it reads on GitHub.
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#answers-are-stored-on-the-case-not-as-a-dynamic-key
 	test('files a case with its case type answers', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Aanvraag`
@@ -311,37 +315,37 @@ test.describe('New case dialog', () => {
 			const cases = await listObjects(api, 'case', { _limit: '200' })
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
+			// The dialog created this case, so `createObject` never saw it and
+			// teardown has no id for it. Record it here, where the id is already
+			// in hand, or it survives the run as an untracked leftover.
+			trackCreatedObject('case', objectId(created))
 
-			// EITHER STORE, because both are live during the transition.
-			// 7882afdc moved these answers onto the case as a `properties`
-			// array, so they save in the same write as the case instead of a
-			// second write that can be left behind. FoldCasePropertiesOntoCase
-			// backfills that array and deliberately leaves the old
-			// `caseProperty` rows in place.
+			// ONE STORE, NAMED. This block used to read `case.properties` OR
+			// the `caseProperty` rows, whichever was non-empty, and that is
+			// the shape the requirement forbids passing under: the clause
+			// "never as a dynamic key beside the declared properties" cannot
+			// fail against a test that accepts whatever it finds.
 			//
-			// Which store a given instance uses depends on whether its `case`
-			// schema carries the array, and that is NOT uniform: 7882afdc added
-			// the property without bumping the schema's version (1.12.0 before
-			// and after), and OpenRegister's importer gates on version, so a
-			// fresh install has the array and an upgraded one does not. This
-			// test failed on CI and passed locally for exactly that reason.
+			// The live store is the array on the case. `f7c9f87c` switched the
+			// `x-openregister-extends-form` declaration to `mode: array` /
+			// `arrayKey: properties` once nextcloud-vue 2.35.0 shipped array
+			// mode, so the answers save in the same write as the case. The
+			// `caseProperty` rows FoldCasePropertiesOntoCase projected are
+			// left in place on purpose — the projection can be redone from
+			// them — but nothing writes a new one, which is why the absence
+			// assertion below is safe to make about THIS run's case.
 			//
-			// Reading both is not the same as asserting nothing: if the answer
-			// is written to neither, this still fails, which is the defect
-			// worth catching. The `value` assertions below are unchanged.
-			const onCase = Array.isArray(created.properties)
+			// The earlier either-store reading was written when `case` was
+			// still at schema version 1.12.0 on both sides of the move, so an
+			// upgraded instance had no array and a fresh one did. The schema
+			// is at 1.19.0 now and the array is importable everywhere, so the
+			// ambiguity that justified reading both is gone.
+			const answers = Array.isArray(created.properties)
 				? created.properties
 				: []
-			const answers =
-				onCase.length > 0
-					? onCase
-					: await listObjects(api, 'caseProperty', {
-							case: objectId(created),
-							_limit: '50',
-						})
 			expect(
 				answers.length,
-				'the case type answer should have been written, on the case or as a caseProperty row',
+				"the case type answer should have been written into the case's own `properties` array",
 			).toBeGreaterThan(0)
 			// Name the row, do not index it. Both questions are answered (the
 			// enum carries a default), and the API does not promise an order —
@@ -355,9 +359,36 @@ test.describe('New case dialog', () => {
 				'the ceiling answer should have been written',
 			).toBeTruthy()
 			expect(String(ceilingRow.value)).toBe('50000')
+			expect(String(ceilingRow.name)).toBe(CEILING)
+
+			// THE HALF THE REQUIREMENT IS ACTUALLY ABOUT. An unsplit payload
+			// posts the answer to the case under the definition's own name,
+			// and OpenRegister drops an undeclared key with a 200 and no error
+			// anywhere — so the only way to see it is to look for it. Neither
+			// the name nor the uuid may appear as a key of the case itself.
+			expect(
+				Object.keys(created),
+				'the answer must not be written as a dynamic key on the case',
+			).not.toContain(CEILING)
+			expect(
+				Object.keys(created),
+				'the answer must not be written under the definition uuid either',
+			).not.toContain(ceilingDefId)
+
+			// And the legacy store stays empty. `caseProperty` rows are no
+			// longer written; a row against THIS run's case would mean the
+			// second write came back.
+			const legacy = await listObjects(api, 'caseProperty', {
+				case: objectId(created),
+				_limit: '50',
+			})
+			expect(
+				legacy.length,
+				`no caseProperty row may be written any more, saw ${legacy.length}`,
+			).toBe(0)
 		}).toPass({ timeout: 30000 })
 	})
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-case-type-fills-the-title
 	test('fills the title the chosen case type already answers', async ({
 		page,
 	}) => {
@@ -385,7 +416,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(CASE_TYPE_TITLE, { timeout: 15000 })
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#a-typed-title-survives
 	test('leaves a title the handler typed alone', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const typed = `${RUN_PREFIX} Mijn eigen titel`
@@ -403,7 +434,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(typed)
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-starting-status-is-stored-but-never-asked-for
 	test('stores the case type starting status without asking for it', async ({
 		page,
 	}) => {
@@ -433,11 +464,18 @@ test.describe('New case dialog', () => {
 			const cases = await listObjects(api, 'case', { _limit: '200' })
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
+			// Created by the dialog, so teardown learns its id here or not at all.
+			trackCreatedObject('case', objectId(created))
 			expect(String(created.status)).toBe(startStatusId)
 		}).toPass({ timeout: 30000 })
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// The second half of that scenario, not the first: it is the sibling test
+	// above that proves the tabs are absent, and this one that proves the
+	// "disabled until the required fields are answered" clause on the Create
+	// button. Neither proves the scenario alone, and no other scenario in the
+	// spec states the rule this body asserts.
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-carries-no-schema-inspection-tabs
 	test('keeps Create disabled until a required case type question is answered', async ({
 		page,
 	}) => {
@@ -459,7 +497,7 @@ test.describe('New case dialog', () => {
 		await expect(create).toBeEnabled()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-create-form-uses-two-columns
 	test('lays the fields out in two columns', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -509,7 +547,7 @@ test.describe('New case dialog', () => {
 			dialog.getByText(IDENTIFIER_LABEL, { exact: true }),
 		).toBeVisible()
 	})
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#parent-case-is-an-edit-time-field
 	test('keeps parent case off the create form and on the case itself', async ({
 		page,
 	}) => {

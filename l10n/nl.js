@@ -3939,7 +3939,16 @@ OC.L10N.register(
         "Bulk action applied": "Bulkactie toegepast",
         "Download ZIP": "ZIP downloaden",
         "Mark final": "Markeer als definitief",
-        "New confidentiality": "Nieuwe vertrouwelijkheid"
+        "New confidentiality": "Nieuwe vertrouwelijkheid",
+        "Case plan": "Zaakplan",
+        "Try again": "Probeer het opnieuw",
+        "Stop": "Stoppen",
+        "Ready to start": "Klaar om te starten",
+        "Stopped": "Gestopt",
+        "The case plan is unavailable": "Het zaakplan is niet beschikbaar",
+        "This case type has no adaptive plan": "Dit zaaktype heeft geen adaptief plan",
+        "You are not allowed to see the plan for this case.": "U mag het plan van deze zaak niet inzien.",
+        "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw."
     },
     "nplurals=2; plural=(n != 1);"
 )

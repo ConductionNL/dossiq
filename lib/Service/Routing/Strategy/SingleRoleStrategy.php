@@ -92,11 +92,12 @@ class SingleRoleStrategy implements RoutingStrategyInterface {
 			},
 		);
 
-		return array_values(
-			array_map(
-				static fn (array $match): string => (string)$match['participant'],
-				$matches,
-			)
+		// The array_values() that used to wrap this was a no-op: usort() above
+		// reindexes `$matches` to a list, and array_map() over a list gives a
+		// list back.
+		return array_map(
+			static fn (array $match): string => (string)$match['participant'],
+			$matches,
 		);
 	}//end resolve()
 }//end class

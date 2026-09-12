@@ -27,7 +27,6 @@ import {
 	STORAGE_STATE,
 	storageStatePath,
 } from '../helpers/auth.ts'
-import { becomesVisible } from '../helpers/becomes-visible.js'
 import {
 	createObject,
 	deleteObject,
@@ -367,7 +366,21 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await plainApi?.dispose()
 	})
 
-	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
+	/**
+	 * Deliberately carries no `@e2e` anchor any more.
+	 *
+	 * It used to cite `#handler-registers-their-own-substitution`, whose THEN
+	 * is a stored object: `absentee = jan`, `substitute = marieke`,
+	 * `status = active`, `createdBy = jan`. A mount point and a button prove
+	 * none of those four. Every one of them can be wrong — or the write can be
+	 * dropped entirely — while this page renders exactly as it does now, and
+	 * the affordance-present assertion is the shape the audit that produced
+	 * this file's rewrite found under most of its citations.
+	 *
+	 * The registration itself is asserted in the test below, on the stored row.
+	 * This stays as what it is: the personal-settings section mounts and offers
+	 * the action that opens the form.
+	 */
 	test('substitution renders under personal settings with a register action', async ({
 		page,
 	}) => {
@@ -450,6 +463,220 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 			after.length,
 			'the rejected submission must not have changed the substitution count',
 		).toBe(before.length)
+	})
+
+	/**
+	 * THE REGISTRATION, READ BACK OFF THE STORED ROW.
+	 *
+	 * The scenario's THEN is four fields on an object: `absentee = jan`,
+	 * `substitute = marieke`, `status = active`, `createdBy = jan`. So this
+	 * submits one and reads all four back, and it submits as the ORDINARY
+	 * account rather than the coordinator, because "handler registers their
+	 * own" is a claim about a principal who holds no role: the coordinator can
+	 * register for anybody, so a coordinator-driven registration would be green
+	 * on a build that had lost the self-registration path entirely.
+	 *
+	 * `createdBy` is the field worth naming. `SubstitutionService::create()`
+	 * defaults it to the absentee and overwrites that with its `$createdBy`
+	 * argument whenever one is passed, and the controller always passes the
+	 * acting uid. Here those two are the same user, which is exactly the point:
+	 * the row must record the handler, not the session that happened to have a
+	 * role. The coordinator case below is the other side of that fork.
+	 *
+	 * THE PERIOD IS IN THE FUTURE ON PURPOSE. A `scope: all` substitution whose
+	 * period contains today would route every one of the absentee's cases to
+	 * the substitute, and the scope-limited test further down asserts that the
+	 * out-of-scope case is withheld. A fixture that quietly widened another
+	 * test's scope would make that one fail for a reason that is not its
+	 * subject.
+	 *
+	 * ✅ MUTATION-CHECKED 2026-09-12, on a private disposable instance rather
+	 * than the shared one. Both clauses now have a break their own assertion
+	 * catches:
+	 *
+	 *   `createdBy`  SubstitutionService::create(), `$createdByValue =
+	 *                $createdBy` -> `= $substitute`
+	 *                red: Expected "e2euser", Received "admin"
+	 *   `status`     the same `$row`, `'status' => 'active'` -> `'ended'`
+	 *                red: "a registration is stored active, which is what makes
+	 *                it route work", Expected "active", Received "ended"
+	 *
+	 * 🔴 AND THE TWO MUTATIONS THIS COMMENT USED TO PRESCRIBE BOTH LEAVE IT
+	 * GREEN, which is why the prescriptions are gone rather than corrected in
+	 * place. It said to delete the `if ($createdBy !== '')` branch and to drop
+	 * `'status' => 'active'`. Run:
+	 *
+	 *   - deleting the branch: 2 passed. This test registers for ITSELF, so
+	 *     absentee and registrar are the same account and `$createdByValue`
+	 *     lands on an identical value either way.
+	 *   - dropping the status key: 2 passed. The substitution schema in
+	 *     `lib/Settings/register.d/62-handler-vervanging.json` declares
+	 *     `"default": "active"`, so OpenRegister refills the field the service
+	 *     stopped sending.
+	 *
+	 * Neither reason is visible from the line being mutated: one lives in this
+	 * file's fixture, the other in a schema in another directory. A predicted
+	 * outcome written while reading `create()` could not have been better than
+	 * a guess. So when a mutation has not been run, name the POINT and stop;
+	 * anything further reads as analysis and closes the question for the next
+	 * person.
+	 */
+	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
+	test('a handler registering their own substitution stores the pair, an active status and themselves as creator', async () => {
+		const marker = `${RUN_PREFIX} own registration`
+		const res = await postDossiq(plainApi, plainToken, '/substitutions', {
+			absentee: PLAIN_USER,
+			substitute: ADMIN_USER,
+			startDate: isoDay(30),
+			endDate: isoDay(37),
+			scope: 'all',
+			reason: 'verlof',
+			comment: marker,
+		})
+		expect(
+			res.status(),
+			`a handler must be able to register their own substitution; body was ${await res.text()}`,
+		).toBe(201)
+
+		const id = objectId(await res.json())
+		expect(
+			id,
+			'the created substitution must have an id, or the assertions below address nothing',
+		).not.toBe('')
+		seededSubstitutions.push(id)
+
+		// THE STORED ROW, not the response body. A controller that answered 201
+		// with a well-formed echo and wrote something else — or wrote nothing —
+		// would satisfy a body-only assertion.
+		const stored = await showObject(api, 'substitution', id)
+		expect(String(stored?.absentee ?? ''), 'absentee = the handler').toBe(
+			PLAIN_USER,
+		)
+		expect(String(stored?.substitute ?? ''), 'substitute = the waarnemer').toBe(
+			ADMIN_USER,
+		)
+		expect(
+			String(stored?.status ?? ''),
+			'a registration is stored active, which is what makes it route work',
+		).toBe('active')
+		expect(
+			String(stored?.createdBy ?? ''),
+			'createdBy = the handler who registered it, not the coordinator path',
+		).toBe(PLAIN_USER)
+	})
+
+	/**
+	 * ON BEHALF OF SOMEBODY ELSE, WHICH IS THE HALF THAT NEEDS THE ROLE.
+	 *
+	 * This citation used to sit on a page test that asserted the coordinator
+	 * console offers "Bulk reassign" and "Preview affected work". Those two
+	 * buttons belong to a different requirement — bulk reassignment — and the
+	 * whole body sat behind a `becomesVisible` guard that skipped the test when
+	 * the heading did not appear, so the citation was credited by a run in
+	 * which nothing was asserted at all.
+	 *
+	 * What the scenario actually claims is that a coordinator may register for
+	 * a handler who is not themselves, and that the row then records the
+	 * COORDINATOR as creator. Three identities keep that unambiguous: the
+	 * absentee is the ordinary account, the substitute is a third id that is
+	 * neither party, and the creator is the coordinator. A build that stamped
+	 * `createdBy` from the absentee (the service's default) or from the
+	 * substitute would fail on the same line.
+	 *
+	 * The refusal is asserted first and with the principal the requirement
+	 * names. Without it, "a coordinator may register for another" would be
+	 * green on a build where anybody may.
+	 *
+	 * ✅ MUTATION-CHECKED 2026-09-12, all three clauses, on a private
+	 * disposable instance:
+	 *
+	 *   the refusal  SubstitutionController::create(), delete the
+	 *                `if ($absentee !== $actorId && ...isCoordinator(...)
+	 *                === false)` guard
+	 *                red: "registering on behalf of another handler is
+	 *                coordinator-only", Expected 403, Received 201 — and the
+	 *                body shows `e2euser`, an account in no groups, creating a
+	 *                row with absentee "admin". That is the bypass itself, not
+	 *                a status code.
+	 *   `createdBy`  SubstitutionService::create(), two different breaks, and
+	 *                they land on different values here, which is what makes
+	 *                the assertion discriminating rather than merely equal:
+	 *                deleting the `if ($createdBy !== '')` branch gives the
+	 *                ABSENTEE (Received "e2euser"), while
+	 *                `= $substitute` gives the SUBSTITUTE
+	 *                (Received "e2euser-waarnemer").
+	 *   `status`     `'status' => 'active'` -> `'ended'`,
+	 *                red: Expected "active", Received "ended". Dropping the
+	 *                key instead leaves this green: the schema declares
+	 *                `"default": "active"` and OpenRegister refills it.
+	 *
+	 * The handler test above stays GREEN under the guard deletion, and
+	 * correctly: it registers for itself, so `$absentee !== $actorId` is false
+	 * and the branch never decides anything there. That is why the refusal is
+	 * asserted here and with the principal the requirement names.
+	 */
+	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
+	test('a coordinator registers for an absent handler and the row names the coordinator as creator, where an ordinary user is refused', async () => {
+		const deputy = `${PLAIN_USER}-waarnemer`
+		const refusedMarker = `${RUN_PREFIX} on-behalf refusal probe`
+
+		// The ordinary account, registering for somebody who is not itself.
+		const refused = await postDossiq(plainApi, plainToken, '/substitutions', {
+			absentee: ADMIN_USER,
+			substitute: deputy,
+			startDate: isoDay(60),
+			endDate: isoDay(67),
+			scope: 'all',
+			reason: 'ziekte',
+			comment: refusedMarker,
+		})
+		expect(
+			refused.status(),
+			`registering on behalf of another handler is coordinator-only; body was ${await refused.text()}`,
+		).toBe(403)
+
+		// AND it wrote nothing. A 403 returned after the row was stored would
+		// satisfy the status line and leave the protection unenforced.
+		const afterRefusal = await listSubstitutions(api, token)
+		expect(
+			afterRefusal.filter(
+				(row) => String(row?.comment ?? '') === refusedMarker,
+			),
+			'the refused submission must not have left a substitution behind',
+		).toHaveLength(0)
+
+		// The coordinator, same shape, same period.
+		const marker = `${RUN_PREFIX} on-behalf registration`
+		const res = await postDossiq(api, token, '/substitutions', {
+			absentee: PLAIN_USER,
+			substitute: deputy,
+			startDate: isoDay(60),
+			endDate: isoDay(67),
+			scope: 'all',
+			reason: 'ziekte',
+			comment: marker,
+		})
+		expect(
+			res.status(),
+			`a coordinator must be able to register for an absent handler; body was ${await res.text()}`,
+		).toBe(201)
+
+		const id = objectId(await res.json())
+		expect(id).not.toBe('')
+		seededSubstitutions.push(id)
+
+		const stored = await showObject(api, 'substitution', id)
+		expect(
+			String(stored?.absentee ?? ''),
+			'the absentee is the handler being covered, not the coordinator',
+		).toBe(PLAIN_USER)
+		expect(String(stored?.substitute ?? '')).toBe(deputy)
+		expect(
+			String(stored?.createdBy ?? ''),
+			'createdBy = the coordinator who registered it, and neither of the two '
+				+ 'parties named on the row',
+		).toBe(ADMIN_USER)
+		expect(String(stored?.status ?? '')).toBe('active')
 	})
 
 	/**
@@ -585,10 +812,26 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		expect(afterOut?.['@self']?.updated).toBe(beforeOut?.['@self']?.updated)
 	})
 
-	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
-	test('My Work renders without error and supports the substituted filter when present', async ({
-		page,
-	}) => {
+	/**
+	 * Deliberately carries no `@e2e` anchor, and the toggle branch is gone.
+	 *
+	 * This used to cite `#waarnemer-sees-substituted-work-in-my-work` and to
+	 * click a `substituted-toggle` inside an `if` that stood down when the
+	 * toggle was absent. It is absent on every build: `getByTestId(
+	 * 'substituted-toggle')` matched nothing in `src/` at all, because the My
+	 * Work substitution integration has no call site. `fetchSubstitutedWork()`
+	 * is never called, every helper in `src/utils/substitutionHelpers.js` is
+	 * imported by nothing, and neither `MyWorkCards.vue` nor `MyWorkWidget.vue`
+	 * mentions substitution. So the `if` could only ever take its empty branch,
+	 * and the two unconditional assertions left — a button and the absence of a
+	 * 500 — are satisfied by a build that routes no substituted work whatsoever.
+	 *
+	 * The scenario now carries a reason-bearing `@e2e exclude` naming that gap.
+	 * What survives here is what the body actually did: a My Work page-load
+	 * regression check, kept because the route is worth guarding and honest
+	 * because it claims nothing else.
+	 */
+	test('My Work renders without a server error', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq/my-work')
 		await dismissSupportDialog(page)
 		// The My Work route renders no page heading (measured on a CI runner
@@ -596,16 +839,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
 			timeout: 15000,
 		})
-		// The "Show substituted work" toggle appears only when the user is an
-		// active waarnemer; its presence (or graceful absence) must not error.
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		const toggle = page.getByTestId('substituted-toggle')
-		if (await becomesVisible(toggle, 3000)) {
-			await toggle.locator('input').click()
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-		}
 	})
 
 	/**
@@ -689,33 +923,56 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		}
 	})
 
-	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
+	/**
+	 * Deliberately carries no `@e2e` anchor any more.
+	 *
+	 * It used to cite `#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler`,
+	 * which is about a registration and its `createdBy`. Bulk reassign and its
+	 * preview belong to a different requirement, and this body also sits behind
+	 * a `becomesVisible` guard whose else branch is `test.skip` — so the
+	 * scenario could be credited by a run that asserted nothing. The
+	 * registration is asserted on the stored row further up.
+	 *
+	 * The two buttons are still worth a check, so the test stays. Both halves
+	 * of the requirement they belong to — that the preview is coordinator-only,
+	 * and that it lists the departing handler's open work while mutating
+	 * nothing — are asserted over HTTP by the two tests that cite them.
+	 *
+	 * 🔴 AND THE `becomesVisible` GUARD IS GONE, WITH ITS `test.skip` ELSE.
+	 * Withdrawing the citation stopped this body crediting a scenario, but it
+	 * left a test that still could not fail: on a build where the coordinator
+	 * console never rendered, the run reported SKIPPED, which is a colour
+	 * nobody reads as a defect. The skip reason argued the point itself —
+	 * "NOT a deploy gap, SubstitutionAdminView is registered in
+	 * src/registry.js" — so the branch existed to tolerate exactly the failure
+	 * it said could not happen. The heading is required now, and a console that
+	 * does not appear fails here naming it.
+	 *
+	 * ✅ MEASURED 2026-09-12 on a private disposable instance, unguarded: this
+	 * test and the page-load one below both pass, 2 passed in 1.8m. So the
+	 * branch was standing down for a case that does not occur, which is the
+	 * worst kind: it never fired, so it never looked wrong, and it would have
+	 * absorbed the first real regression in silence.
+	 */
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			const reassign = page
-				.getByRole('button', { name: /Bulk reassign/ })
-				.first()
-			await expect(reassign).toBeVisible()
-			await reassign.click()
-			// The preview button gates execute — the modal must show it. What the
-			// preview RETURNS, and that it mutates nothing, is asserted over HTTP
-			// above; this is the affordance only.
-			await expect(
-				page.getByRole('button', { name: /Preview affected work/ }).first(),
-			).toBeVisible({ timeout: 8000 })
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator substitution console must render, and a build where it '
+				+ 'does not is the defect this test exists to report',
+		).toBeVisible({ timeout: 30_000 })
+		const reassign = page.getByRole('button', { name: /Bulk reassign/ }).first()
+		await expect(reassign).toBeVisible()
+		await reassign.click()
+		// The preview button gates execute — the modal must show it. What the
+		// preview RETURNS, and that it mutates nothing, is asserted over HTTP
+		// above; this is the affordance only.
+		await expect(
+			page.getByRole('button', { name: /Preview affected work/ }).first(),
+		).toBeVisible({ timeout: 8000 })
 	})
 
 	/**
@@ -727,22 +984,20 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * scenarios are handled above and on the spec respectively. This is kept as
 	 * what it always was — a page-load regression check on the coordinator
 	 * console.
+	 *
+	 * 🔴 THE `becomesVisible` GUARD IS GONE HERE TOO, and this one was the
+	 * worse of the pair: a page-load regression check whose whole body sat
+	 * behind "if the page loaded" has nothing left to report. The 500 it looks
+	 * for is one of the ways the heading fails to appear, so the guard stood
+	 * down in precisely the case the test exists for.
 	 */
 	test('coordinator admin renders without a server error', async ({ page }) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator console must render its own heading, not merely avoid a 500',
+		).toBeVisible({ timeout: 30_000 })
 	})
 })

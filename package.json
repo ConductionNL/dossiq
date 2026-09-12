@@ -14,6 +14,7 @@
     "l10n:build": "node scripts/build-l10n-js.js",
     "check:l10n-js": "node scripts/build-l10n-js.js --check",
     "check:schema-l10n": "node scripts/check-schema-l10n.js",
+    "check:debt-ratchet": "node scripts/debt-ratchet.js",
     "check:manifest": "node tests/validate-manifest.js",
     "test:unit:watch": "vitest",
     "test:l10n": "node tests/l10n/check-l10n.js",

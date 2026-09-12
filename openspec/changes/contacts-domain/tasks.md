@@ -45,7 +45,13 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   - `@spec openspec/specs/initiator-display/spec.md`
   - `npm run check:manifest` exits 0; `_note` on the page says why the
     second folder is hidden
-- [ ] 2.2 STILL BLOCKED, and the folderSidebar of 2.1 is NOT SHIPPED AT ALL
+- [ ] 2.2 [moved: nextcloud-vue `cnindexpage-folder-schema`] MOVED
+  2026-09-11, Ruben's decision: a folder that carries its own schema changes
+  how every index page in the fleet loads its list, not only this one, so
+  the fix lives with the component, not with this change. This task stays
+  unticked; the measurement history below is the evidence that justified
+  opening `cnindexpage-folder-schema`, not work this change still owes.
+  Until that change ships, the folderSidebar of 2.1 is NOT SHIPPED AT ALL
   rather than shipped hidden, because two things measured against the
   installed dist say the hidden form would be a defect. FIRST, there is no
   `hidden`: `CnFolderTree` renders every entry of `folders[]`, so the
@@ -96,13 +102,16 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   `useObjectSubscription(…)`, neither of which watches it. Switching the
   queried schema at runtime therefore means making `objectType` reactive
   through both composables, in the component every index page in the fleet
-  renders. That is a real change with real blast radius, and it should be its
-  own openspec change with its own mutation-checked tests — not a rushed edit
+  renders. That is a real change with real blast radius, so it is now
+  `openspec/changes/cnindexpage-folder-schema` in nextcloud-vue (design and
+  spec only as of 2026-09-11; implementation not started), not a rushed edit
   bolted onto this one.
 
-  Until then 2.1 stays as shipped: no `folderSidebar`, and organisations are
-  reached through the separate Organisations index that `contacts-you-can-find`
-  added.
+  Until that change ships, 2.1 stays as shipped: no `folderSidebar`, and
+  organisations are reached through the separate Organisations index that
+  `contacts-you-can-find` added. Once it ships, this task becomes: drop
+  `hidden` from the Organisations folder per the block quoted above — no
+  other manifest change.
 
 ## 3. The contact pages
 
@@ -234,9 +243,14 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
     new PHPUnit test: it reads two JSON files and needs no PHP, and it sits
     beside the manifest assertions that fail for the same reason
   - `@spec openspec/specs/kcc-klantcontact-integratie/spec.md`
-- [ ] 4.2 [blocked: Tier B B20, the KCC panel with caller context] Link the
-  identified caller to `ContactDetail` from the panel; the spec scenario is
-  excluded until then.
+- [ ] 4.2 [moved: pipelinq `kcc-agent-panel`] MOVED 2026-09-11, Ruben's
+  decision: pipelinq builds the agent panel as the shared contact-centre
+  surface (Tier B B20), integriq's `kcc-cti-adapter` supplies the call
+  events, and dossiq links to the panel rather than hosting it. Design and
+  spec only as of 2026-09-11; implementation not started on either side.
+  When both ship, this task becomes: link the identified caller from
+  pipelinq's panel to `ContactDetail`/`OrganisationDetail`, and the spec
+  scenario currently excluded on `kcc-klantcontact-integratie` is included.
 - [ ] 4.3 [blocked: Tier B B22, BRP and KvK subscriptions through integriq]
   Refresh `brpPerson` and `kvkCompany` rows from the source; the index reads
   whatever the register set holds until then.
@@ -281,3 +295,24 @@ distinction is the whole fix. A MODIFIED block replaces the requirement wholesal
 this change with its ORIGINAL wording would have quietly put the folderSidebar requirement back
 over the measured one that replaced it, turning a refused archive into a successful regression.
 `openspec validate contacts-domain --strict` no longer reports the archive-refusal INFO.
+
+## Can this change archive yet? Recorded 2026-09-11
+
+Not yet. Tasks 2.2 and 4.2 are MOVED, not done, so they still read as open
+work on this change's own board even though the fix no longer lives here.
+Task 4.3 is still open in place: it is Tier B item B22 (BRP and KvK
+subscriptions through integriq), which another agent is implementing
+directly against `openregister#3645` rather than as a dossiq-side change, so
+there is nothing to move it to yet. Archive this change once:
+
+- `openregister#3645` (or whatever it lands as) resolves 4.3, and
+- `cnindexpage-folder-schema` (nextcloud-vue) ships far enough that 2.2's
+  remaining dossiq-side step (drop `hidden`) can be done, and
+- `kcc-agent-panel` (pipelinq) plus integriq's `kcc-cti-adapter` ship far
+  enough that 4.2's remaining dossiq-side step (the link) can be done.
+
+Everything else in this change (sections 1, 2.1, 3, 5) already shipped.
+Moving 2.2 and 4.2 does not shrink this change's own scope of what it still
+owes: it removes the two pieces that were never dossiq's to own, so the
+change waits on three other repos' work instead of carrying it as unowned
+blockers.

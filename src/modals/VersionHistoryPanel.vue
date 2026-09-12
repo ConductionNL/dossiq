@@ -61,7 +61,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
-import { generateUrl } from '@nextcloud/router'
+import { generateRemoteUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
@@ -180,8 +180,15 @@ export default {
 			}
 			this.loading = true
 			try {
-				const url = generateUrl(
-					`/remote.php/dav/versions/${this.userId}/versions/${this.document.fileId}`,
+				// 🔴 `generateRemoteUrl`, NOT `generateUrl` (dossiq#2477). `generateUrl`
+				// builds an index.php-routed APP url: where the front controller is
+				// inactive it prefixes `/index.php`, so this PROPFIND went to
+				// `/index.php/remote.php/dav/versions/…`, which routes nowhere. The
+				// catch below turns that into an empty list, so the panel silently
+				// said "No previous versions" on every such instance — including the
+				// `php -S` instance this app's own E2E job runs on.
+				const url = generateRemoteUrl(
+					`dav/versions/${this.userId}/versions/${this.document.fileId}`,
 				)
 				const { data } = await axios.request({
 					method: 'PROPFIND',
@@ -292,8 +299,12 @@ export default {
 					method: 'MOVE',
 					url: version.id,
 					headers: {
-						Destination: generateUrl(
-							`/remote.php/dav/versions/${this.userId}/restore/target`,
+						// The same generateRemoteUrl rule and the same defect
+						// (dossiq#2477): a remote.php path built with generateUrl gains
+						// an /index.php prefix wherever the front controller is
+						// inactive, which lands here in a MOVE Destination header.
+						Destination: generateRemoteUrl(
+							`dav/versions/${this.userId}/restore/target`,
 						),
 					},
 				})

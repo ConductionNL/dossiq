@@ -52,12 +52,14 @@ import {
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
+	listAllObjects,
 	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	tryDeleteObject,
 } from './helpers/fixtures.ts'
 import { clickHeaderAction } from './helpers/nav.ts'
 
@@ -74,6 +76,18 @@ const PDF_BYTES = Buffer.from(
 	'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'
 		+ '2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\n'
 		+ 'trailer<</Root 1 0 R>>\n%%EOF\n',
+	'utf8',
+)
+
+/**
+ * A second, DIFFERENT valid PDF for the version-history fixture. Nextcloud's
+ * version list holds PREVIOUS contents, not the current one, so a document
+ * needs a second write with changed bytes before it has anything to list.
+ */
+const PDF_BYTES_V2 = Buffer.from(
+	'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'
+		+ '2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\n'
+		+ 'trailer<</Root 1 0 R>>\n%%EOF\n\n% v2\n',
 	'utf8',
 )
 
@@ -127,6 +141,117 @@ async function seedDocument(
 		registrationDate: '2026-05-04T10:02:00+00:00',
 		natureRelationshipDisplay: 'Hoort at omgekeerd',
 	})
+	return id
+}
+
+/**
+ * Seed a document that actually has a previous Nextcloud file version, for
+ * the version-history / restore-guard assertion.
+ *
+ * A plain `seedDocument()` POSTs an informatieobject row and nothing else:
+ * no file is written, so no `fileId` is stamped, and
+ * `VersionHistoryPanel.fetchVersions()` returns before it asks the server
+ * anything — the panel then renders "No previous versions", which looks
+ * identical to a panel whose PROPFIND failed and to one that lost its
+ * buttons entirely. This goes through the product's own APIs instead of
+ * naming the storage path: the upload endpoint writes version one and stamps
+ * the fileId, a second write through OpenRegister's file endpoint makes the
+ * version (Nextcloud's version list holds PREVIOUS contents, not the
+ * current one), and the draft -> final transition finalises it last,
+ * because a final document is meant to refuse further writes.
+ *
+ * @param onCase The case the document hangs on.
+ * @param options Title, filename, type and author for the seeded document.
+ * @return The created informatieobject id.
+ */
+async function seedVersionedDocument(
+	onCase: string,
+	options: {
+		title: string
+		fileName: string
+		typeId: string
+		auteur: string
+	},
+): Promise<string> {
+	const uploaded = await api.post(
+		`/index.php/apps/${REGISTER}/api/cases/${onCase}/dossier`,
+		{
+			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			multipart: {
+				files: {
+					name: options.fileName,
+					mimeType: 'application/pdf',
+					buffer: PDF_BYTES,
+				},
+				metadata: JSON.stringify({
+					title: options.title,
+					informatieobjecttype: options.typeId,
+					direction: 'outgoing',
+					auteur: options.auteur,
+				}),
+			},
+		},
+	)
+	// 201 ONLY IF SOMETHING WAS CREATED, and the per-file result read as well
+	// as the status: the endpoint answers 201 for a PARTIAL success, so a run
+	// where the one file failed would otherwise seed nothing and report fine.
+	expect(
+		uploaded.status(),
+		`upload -> ${uploaded.status()} ${await uploaded.text()}`,
+	).toBe(201)
+	const [result] = (await uploaded.json()).results ?? []
+	expect(result?.success, `the upload reported ${JSON.stringify(result)}`).toBe(
+		true,
+	)
+	const id = String(result.informatieobject.id)
+
+	const stored = await showObject(api, 'informatieobject', id)
+	const fileId = Number(stored.fileId ?? 0)
+	expect(
+		fileId,
+		`the upload must stamp a fileId, and the stored document carries ${JSON.stringify(stored.fileId)}`,
+	).toBeGreaterThan(0)
+
+	const rewritten = await api.put(
+		`/index.php/apps/openregister/api/objects/${REGISTER}/informatieobject/${id}/files/${fileId}`,
+		{
+			headers: {
+				requesttoken: token,
+				'OCS-APIRequest': 'true',
+				'Content-Type': 'application/json',
+			},
+			data: { content: PDF_BYTES_V2.toString('base64') },
+		},
+	)
+	expect(
+		rewritten.ok(),
+		`second write -> ${rewritten.status()} ${await rewritten.text()}`,
+	).toBeTruthy()
+	// THE SIZE, NOT THE STATUS. A 200 that changed no bytes is a write that
+	// did nothing, and a file whose content never changed has no previous
+	// content to list — which lands back on the empty panel this helper
+	// exists to prevent, wearing a green fixture.
+	expect(
+		Number((await rewritten.json()).size ?? 0),
+		'the second write must change the stored bytes, or there is no previous version to list',
+	).toBe(PDF_BYTES_V2.length)
+
+	const finalised = await api.patch(
+		`/index.php/apps/${REGISTER}/api/informatieobjecten/${id}/status`,
+		{
+			headers: {
+				requesttoken: token,
+				'OCS-APIRequest': 'true',
+				'Content-Type': 'application/json',
+			},
+			data: { status: 'final' },
+		},
+	)
+	expect(
+		finalised.ok(),
+		`draft -> final -> ${finalised.status()} ${await finalised.text()}`,
+	).toBeTruthy()
+
 	return id
 }
 
@@ -410,18 +535,65 @@ test.describe('Case detail — the Documents tab', () => {
 			informatieobjecttype: objectionTypeId,
 		})
 
-		versionedDocumentId = await seedDocument(versionCaseId, {
+		versionedDocumentId = await seedVersionedDocument(versionCaseId, {
 			title: `${RUN_PREFIX} Final report`,
 			fileName: 'final-report.pdf',
-			informatieobjecttype: acknowledgementTypeId,
-			direction: 'outgoing',
-			status: 'final',
+			typeId: acknowledgementTypeId,
 			auteur: 'Piet de Boer',
 		})
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
+
+		// 🔴 THE JOINS FIRST, BY THEIR CASE, BECAUSE THE PREFIX SWEEP CANNOT SEE
+		// THEM (dossiq#2477). `cleanupRunObjects`'s prefix sweep matches a row
+		// by finding `RUN_PREFIX` anywhere in its JSON, and a
+		// `zaakinformatieobject` is two uuids, a date and
+		// `natureRelationshipDisplay` — which the schema declares as an ENUM of
+		// exactly "Hoort at omgekeerd" and "Legt vast, omgekeerd", so no prefix
+		// can ever land there. Calling `cleanupRunObjects` on
+		// 'zaakinformatieobject' below never fails; it also never deletes
+		// anything, so every join this spec creates would otherwise survive.
+		//
+		// The sweep's other arm, `matchesCase`, is the one that fits, and it
+		// arms only when `case` is in the schema's own field list — which it
+		// must not be here, since a case is archival and the sweep would then
+		// report every one of them as a survivor and fail this hook. So the
+		// joins are collected by their `case` field and removed directly.
+		const ourCases = new Set(
+			[
+				caseId,
+				emptyCaseId,
+				dropCaseId,
+				filterCaseId,
+				sortCaseId,
+				bulkCaseId,
+				generateCaseId,
+				versionCaseId,
+			].filter((id) => id !== ''),
+		)
+		// The documents the joins point at go with them: the letter the
+		// Generate document test files is titled after its TEMPLATE
+		// ("Ontvangstbevestiging"), carries no run prefix, and the prefix
+		// sweep cannot see it either. Its join names it, which is the only
+		// handle on it there is, so it is collected here while readable.
+		const ourDocuments = new Set<string>()
+		for (const row of await listAllObjects(api, 'zaakinformatieobject')) {
+			if (ourCases.has(String(row.case ?? '')) === false) continue
+			const document = String(row.informatieobject ?? '')
+			if (document !== '') ourDocuments.add(document)
+			await tryDeleteObject(api, token, 'zaakinformatieobject', objectId(row))
+		}
+		for (const document of ourDocuments) {
+			await tryDeleteObject(api, token, 'informatieobject', document)
+		}
+
+		// The type catalog rows do carry the run prefix in their description,
+		// so the ordinary sweep finds those. The cases are archival and
+		// cannot be removed by a user; they carry the family prefix, so
+		// global-setup's residue sweep takes them before the next run rather
+		// than this teardown failing on a 403 it was never going to win.
 		await cleanupRunObjects(api, token, [
 			'zaakinformatieobject',
 			'informatieobject',
@@ -677,6 +849,12 @@ test.describe('Case detail — the Documents tab', () => {
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
 	}) => {
+		// THE VERSIONS ARE REAL. `seedVersionedDocument()` uploads through the
+		// product's own endpoint and writes the file a second time, so the
+		// panel below has something to list — a plain `seedDocument()` stamps
+		// no `fileId` at all, which renders the identical "No previous
+		// versions" text a failed PROPFIND and a panel with no buttons also
+		// produce (dossiq#2477).
 		const panel = await openDocumentsTab(page, versionCaseId)
 		const finalGroup = group(panel, ACKNOWLEDGEMENT_TYPE_NAME)
 		const row = finalGroup
@@ -690,17 +868,51 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(versionPanel).toBeVisible({ timeout: 20_000 })
 
 		const entries = versionPanel.locator('.dossier-version-panel__item')
-		const downloads = versionPanel.locator(
-			'.dossier-version-panel__item button:has-text("Download")',
-		)
-		expect(await downloads.count()).toBe(await entries.count())
 
+		// THE LIST HAS TO BE THERE BEFORE IT CAN BE COUNTED. The panel mounts
+		// with a spinner and fills in when its PROPFIND lands, so
+		// `toBeVisible()` above is satisfied by the EMPTY moment; a plain
+		// `.count()` read there returns 0 and never looks again. This is also
+		// the precondition the rest depends on: looping over
+		// `restore.count()` alone lets a panel rendering zero Restore buttons
+		// run the body zero times and report green — "the button MUST be
+		// disabled on every version" satisfied by there being no button to
+		// disable at all.
+		await expect(
+			entries,
+			'the version panel must list at least one version, or there is nothing to refuse restoring',
+		).not.toHaveCount(0, { timeout: 20_000 })
+		const versionCount = await entries.count()
+
+		// EVERY listed version offers a download — asserted as an invariant,
+		// not a fixed number, since how many previous versions exist depends
+		// on Nextcloud's own file-versions retention.
+		await expect(
+			versionPanel.locator(
+				'.dossier-version-panel__item button:has-text("Download")',
+			),
+			'every listed version must offer a Download control',
+		).toHaveCount(versionCount)
+
+		// The half that is fully deterministic: the document is final, the
+		// server refuses to change it, so the UI must not offer to. Every
+		// version offers a Restore control (hiding it instead of disabling it
+		// would redden here, same as a panel that lists versions but paints
+		// no actions), and every one of them is refused.
 		const restore = versionPanel.getByRole('button', {
 			name: /Restore|Herstellen/,
 		})
-		for (let index = 0; index < (await restore.count()); index++) {
-			await expect(restore.nth(index)).toBeDisabled()
+		await expect(
+			restore,
+			'every listed version must offer a Restore control, so the refusal is visible rather than absent',
+		).toHaveCount(versionCount)
+		for (let index = 0; index < versionCount; index++) {
+			await expect(
+				restore.nth(index),
+				`version ${index + 1} of a final document must refuse restore`,
+			).toBeDisabled()
 		}
+
 		const stored = await showObject(api, 'informatieobject', versionedDocumentId)
 		expect(String(stored.status)).toBe('final')
 	})

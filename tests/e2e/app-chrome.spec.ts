@@ -52,6 +52,29 @@ const RIVALS: string[] = COMPARISON.systems
 /** The rows a later reading round added, which no competitor was read against. */
 const ADDED_ROWS: any[] = COMPARISON.capabilities.filter((row: any) => row.addedOn)
 
+/**
+ * Format an ISO date the way the page formats it.
+ *
+ * The same shape as `src/utils/capabilityComparison.js#formatComparedOn`, and
+ * the reason this test can assert the DATE rather than only its year: the page
+ * renders through `Intl`, so writing "7 September 2026" in here would be an
+ * assertion about the runner's month spelling rather than about the page.
+ *
+ * @param iso An ISO 8601 date, e.g. `2026-09-07`.
+ * @return The date as a reader of this instance sees it.
+ */
+function comparisonDate(iso: string): string {
+	return new Intl.DateTimeFormat('en', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'UTC',
+	}).format(new Date(`${iso}T00:00:00Z`))
+}
+
+/** The date the comparison was read on, as the disclaimer must state it. */
+const COMPARED_ON_TEXT = comparisonDate(COMPARISON.comparedOn)
+
 test.describe('app chrome (ADR-114)', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto(`${APP_BASE}/`, {
@@ -207,8 +230,23 @@ test.describe('app chrome (ADR-114)', () => {
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-accounts-for-rows-a-later-round-added
 	//
-	// MUTATION CHECK, NOT YET RUN. The permission to break the product for
-	// these checks is pending, so the two clauses below are unverified. Each
+	// ✅ MUTATION CHECK RUN 2026-09-12 for `a-reader-can-date-the-claim`, with
+	// `tests/e2e/helpers/mutate-bundle.ts`: the served bundle was rewritten on
+	// its way to the browser, so no PHP, no disk and no other session's
+	// instance moved. The break, and what it produced:
+	//
+	//   find    /readingDateText\(\)\{const (\w+)=\w+\(\w+\.comparedOn,this\.locale\)/
+	//   replace 'readingDateText(){const $1=""'
+	//   page    "We read 4 of the 5 systems on . Open source moves fast, …"
+	//   red on  "the disclaimer must date the reading as September 7, 2026"
+	//
+	// 🔴 AND THE ASSERTION THIS REPLACED STAYED GREEN UNDER THAT SAME BREAK,
+	// which is the whole reason the clause was repaired: `toContainText('2026')`
+	// over the container is still satisfied by the added-rows sentence below it.
+	//
+	// MUTATION CHECK, NOT YET RUN for the two clauses below. The permission to
+	// break the product SERVER-SIDE is pending; these two are reachable the
+	// same client-side way as the one above and are the next to settle. Each
 	// line names the break and the assertion that must redden; restore after.
 	//   areas-summarise-before-they-expand
 	//     FeaturesRoadmapView.vue: add `open` to `<details class="features-roadmap__area">`
@@ -257,10 +295,37 @@ test.describe('app chrome (ADR-114)', () => {
 		// alone, so a rewrite that DROPS one fails here.
 		await expect(comparison).toContainText('open source software we could')
 		await expect(comparison).toContainText('already out of date')
-		// The year of the reading date, interpolated into that same sentence.
-		// Asserting the year rather than the formatted date keeps this off
-		// Intl's month spelling while still failing if the date goes missing.
-		await expect(comparison).toContainText('2026')
+		// `a-reader-can-date-the-claim`, clause by clause. THEN the date the
+		// comparison was made is shown, in the reader's own language.
+		//
+		// 🔴 THIS ASSERTION REGRESSED AND WAS REPAIRED. It read
+		// `expect(comparison).toContainText('2026')`, over the WHOLE comparison
+		// container — and the added-rows sentence several paragraphs down
+		// already carries a 2026 date of its own. So deleting `comparedOn` from
+		// the disclaimer entirely left this green, which is the opposite of
+		// what the scenario is about. Two things are pinned instead: the
+		// paragraph that carries the claim, and the date the data file says the
+		// reading was made on.
+		const readingDate = comparison
+			.locator('p')
+			.filter({ hasText: 'already out of date' })
+		await expect(
+			readingDate,
+			'the disclaimer must carry exactly one reading-date sentence',
+		).toHaveCount(1)
+		await expect(
+			readingDate,
+			`the disclaimer must date the reading as ${COMPARED_ON_TEXT}`,
+		).toContainText(COMPARED_ON_TEXT)
+		// AND in the reader's own language, not as the ISO date the file
+		// stores. `formatComparedOn` falls back to the raw string when the
+		// runtime has no Intl data for the locale, which is still a date a
+		// reader can act on but is NOT one in their language — and it is the
+		// only way this clause breaks without the date going missing outright.
+		await expect(
+			readingDate,
+			'the reading date must be written for the reader, not left as the raw ISO date',
+		).not.toContainText(COMPARISON.comparedOn)
 		await expect(comparison).toContainText('is not proof')
 		// The advice to go and test. This is the caveat that tells the reader
 		// what to DO, and it was missing from the first cut of this panel: the
@@ -296,12 +361,7 @@ test.describe('app chrome (ADR-114)', () => {
 		const latestAddition = ADDED_ROWS.map((row) => row.addedOn)
 			.sort()
 			.at(-1)
-		const latestAdditionText = new Intl.DateTimeFormat('en', {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric',
-			timeZone: 'UTC',
-		}).format(new Date(`${latestAddition}T00:00:00Z`))
+		const latestAdditionText = comparisonDate(latestAddition as string)
 		expect(ADDED_ROWS.length, 'the data file holds added rows').toBeGreaterThan(
 			0,
 		)

@@ -22,7 +22,7 @@ const mockRequest = vi.fn()
 vi.mock('@nextcloud/axios', () => ({
 	default: { request: (...a) => mockRequest(...a) },
 }))
-vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
+vi.mock('@nextcloud/router', () => ({ generateRemoteUrl: (u) => u }))
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
 const mockEmit = vi.fn()
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
