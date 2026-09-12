@@ -53,6 +53,7 @@ import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 const TAB_LABELS = [
 	'Data',
 	'Documents',
+	'Notes',
 	'People',
 	'Work',
 	'Related',
@@ -508,15 +509,16 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
-	test('the strip holds exactly six tabs, in order, and no more', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-seven-tabs-and-no-more
+	test('the strip holds exactly seven tabs, in order, and no more', async ({
 		page,
 	}) => {
 		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
 		// over one programme while the app menu held at four, because the menu
 		// had a stated ceiling and the strip had nothing counting it. This is
 		// the thing that counts it, and it has to be an exact count: asserting
-		// that six named tabs are PRESENT would pass on a strip of nine.
+		// that seven named tabs are PRESENT would pass on a strip of nine. Seven,
+		// not six, since the Notes tab joined the strip on 2026-09-12.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,

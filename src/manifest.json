@@ -1362,6 +1362,10 @@
 									"label": "Documents"
 								},
 								{
+									"widgetId": "case-notes-panel",
+									"label": "Notes"
+								},
+								{
 									"widgetId": "case-people-panel",
 									"label": "People"
 								},
@@ -1379,6 +1383,13 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "case-notes-panel",
+						"type": "case-notes-pane",
+						"title": "Notes",
+						"icon": "NoteTextOutline",
+						"_note": "The Notes tab of the case panels, beside Documents: the same mention-aware notes surface the sidebar offers, registered as a widget TYPE (`case-notes-pane` in registry.js) because a tab child renders by type. The sidebar tab stays: one reads the notes while working in the tabs, the other while the sidebar is open on any tab. The strip's ceiling moved from six to seven for it (Ruben, 2026-09-12)."
 					},
 					{
 						"id": "case-documents-panel",

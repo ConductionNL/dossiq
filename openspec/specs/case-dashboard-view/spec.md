@@ -690,14 +690,14 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 - **WHEN** the handler opens the History tab
 - **THEN** the upload SHALL read above the status change, with the handler as actor
 
-### Requirement: Six tabs hold every panel of the case (REQ-CDV-16)
+### Requirement: Seven tabs hold every panel of the case (REQ-CDV-16)
 
-You reach every panel of the case from one row of six tabs. The `case-panels`
-widget on `CaseDetail` SHALL list exactly six tabs, in the order Data
-(`case-core`), Documents (`case-documents-panel`), People
+You reach every panel of the case from one row of seven tabs. The `case-panels`
+widget on `CaseDetail` SHALL list exactly seven tabs, in the order Data
+(`case-core`), Documents (`case-documents-panel`), Notes (`case-notes-panel`), People
 (`case-people-panel`), Work (`case-work-panel`), Related
 (`case-related-panel`) and Objects and locations (`case-objects-panel`). The
-strip SHALL sit above the fold at 1024 pixels wide, and all six SHALL be
+strip SHALL sit above the fold at 1024 pixels wide, and all seven SHALL be
 visible there without a scroll or a gesture.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
@@ -727,27 +727,29 @@ from the strip unless it is reachable elsewhere on the page: folding it into a
 tab and deleting it look identical in a tab count.
 
 The strip SHALL NOT need `visibleIf` on a tab entry. That was wanted so a
-collection holding nothing could be absent rather than empty; with six tabs
+collection holding nothing could be absent rather than empty; with seven tabs
 each holding two collections, an empty section is a line of text inside a tab
 the handler opened deliberately.
 
-#### Scenario: The strip holds six tabs and no more
+> The ceiling moved from six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Documents, the same mention-aware surface the sidebar offers, so a handler reading the case file leaves a note without opening the sidebar. The laptop measurement below predates it.
+
+#### Scenario: The strip holds seven tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly six tabs
-- **AND** they SHALL read Data, Documents, People, Work, Related, Objects and locations, in that order
-- **AND** the strip SHALL carry no tab named Files, Notes, Mail or Decisions
+- **THEN** the tab strip SHALL contain exactly seven tabs
+- **AND** they SHALL read Data, Documents, Notes, People, Work, Related, Objects and locations, in that order
+- **AND** the strip SHALL carry no tab named Files, Mail or Decisions
 
-#### Scenario: The six tabs fit a laptop screen
+#### Scenario: The seven tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the six tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the seven tabs SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
@@ -758,7 +760,7 @@ the handler opened deliberately.
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
-- **GIVEN** a case page whose strip holds six tabs
+- **GIVEN** a case page whose strip holds seven tabs
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading
