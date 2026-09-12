@@ -532,7 +532,19 @@ test.describe('New case dialog', () => {
 		expect(widths.description).toBeGreaterThan(widths.title * 1.5)
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	// @e2e friendly-case-create-form::a-definition-name-is-shown-as-words
+	//
+	// The old anchor named REQ-FCF-006's REQUIREMENT HEADING, which
+	// resolves to no scenario, so gate-19 credited it nothing. It was also
+	// the wrong requirement: REQ-FCF-006 is about two columns and a
+	// full-width multi-line widget, and breaking that layout leaves every
+	// assertion here green.
+	//
+	// The rule this test proves lives in REQ-FCF-003's prose and had no
+	// scenario, so one is written rather than the citation bent onto a
+	// layout claim. Both halves are asserted: `auditorsStatementThreshold`
+	// renders as `Auditors statement threshold`, and a name carrying a
+	// space renders exactly as typed.
 	test('labels a case type question in words, not as an identifier', async ({
 		page,
 	}) => {

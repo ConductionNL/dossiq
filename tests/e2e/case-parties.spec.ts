@@ -703,9 +703,15 @@ test.describe('Case detail — the Parties tab', () => {
 		// pins.
 		//
 		// So the citation comes down rather than claiming a rendered list
-		// nobody can see. The scenario keeps its spec-side `@e2e
-		// tests/e2e/case-parties.spec.ts`, and its first THEN, the Team
-		// column, is proven by the two tests above.
+		// nobody can see. The scenario keeps its own spec-side pointer at this
+		// file, and its first THEN, the Team column, is proven by the two
+		// tests above.
+		//
+		// (That sentence deliberately does not spell the directive out. The
+		// audit extractor matches the token anywhere in a comment, prose
+		// included, and a line break after it made the target parse as `//`,
+		// so this paragraph was being counted as a broken citation. Prose
+		// about citations should not look like one.)
 		//
 		// The test stays, and proves what IS true: OpenRegister computes the
 		// facet, counts one for this team over two marked cases, and that
