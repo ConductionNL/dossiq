@@ -947,6 +947,12 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * src/registry.js" — so the branch existed to tolerate exactly the failure
 	 * it said could not happen. The heading is required now, and a console that
 	 * does not appear fails here naming it.
+	 *
+	 * ✅ MEASURED 2026-09-12 on a private disposable instance, unguarded: this
+	 * test and the page-load one below both pass, 2 passed in 1.8m. So the
+	 * branch was standing down for a case that does not occur, which is the
+	 * worst kind: it never fired, so it never looked wrong, and it would have
+	 * absorbed the first real regression in silence.
 	 */
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
