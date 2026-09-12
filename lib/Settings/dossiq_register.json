@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.7.0",
+                "version": "1.8.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -170,11 +170,10 @@
                     "productsOrServices": {
                         "type": "array",
                         "title": "Products or Services",
-                        "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "description": "Products/services (fees) that apply to this case type. An entry is either a Pipelinq product uuid (ADR-003), where the charge on a concrete case is a Pipelinq financial transaction, or the product URL a ZGW client sent as productenOfDiensten. The items constraint was format uuid, which made the ZTC zaaktypen endpoint refuse every conformant ZGW body, since that field is a list of URLs.",
                         "x-external-register": "pipelinq",
                         "items": {
-                            "type": "string",
-                            "format": "uuid"
+                            "type": "string"
                         }
                     },
                     "selectionListProcessType": {

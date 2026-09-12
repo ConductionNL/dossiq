@@ -475,7 +475,9 @@ class ZtcController extends ZgwController {
 
 			// Re-encode fields that are stored as JSON strings but auto-decoded
 			// by jsonSerialize. Only string-typed schema fields need re-encoding.
-			$jsonStringFields = ['productsOrServices', 'referenceProcess', 'relatedCaseTypes'];
+			// productsOrServices is NOT in this list: it is declared as an array,
+			// so re-encoding it here wrote a string into an array property.
+			$jsonStringFields = ['referenceProcess', 'relatedCaseTypes'];
 			foreach ($jsonStringFields as $field) {
 				if (isset($existingData[$field]) === true && is_array($existingData[$field]) === true) {
 					$existingData[$field] = json_encode($existingData[$field]);

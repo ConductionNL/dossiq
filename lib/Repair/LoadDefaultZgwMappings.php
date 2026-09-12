@@ -545,7 +545,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'extensionPossible' => '{{ extensionAllowed }}',
 				'verlengingstermijn' => '{{ extensionPeriod }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
-				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
+				// NOT json_encode'd, unlike referentieproces and gerelateerdeZaaktypen
+				// beside it. Those two are backed by string properties holding JSON
+				// text; productsOrServices is declared as an array, so encoding it
+				// made OpenRegister refuse the write with "should be type 'array or
+				// null' but is 'string'" and the whole ZTC setUp fell over behind it.
+				'productenOfDiensten' => '{{ productsOrServices }}',
 				'selectielijstDossiqype' => '{{ selectionListProcessType }}',
 				'referentieproces' => '{{ referenceProcess | json_encode }}',
 				'responsible' => '{{ responsible }}',
@@ -575,7 +580,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'publicationRequired' => '{{ publicatieIndicatie }}',
 				'selectionListProcessType' => '{{ selectielijstDossiqype }}',
 				'responsible' => '{{ verantwoordelijke }}',
-				'productsOrServices' => '{{ productenOfDiensten | json_encode }}',
+				'productsOrServices' => '{{ productenOfDiensten }}',
 				'referenceProcess' => '{{ referentieproces | json_encode }}',
 				'relatedCaseTypes' => '{{ gerelateerdeZaaktypen | json_encode }}',
 				'versionDate' => '{{ versiedatum }}',
@@ -591,7 +596,6 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'opschortingEnAanhoudingMogelijk' => 'bool',
 				'extensionPossible' => 'bool',
 				'publicatieIndicatie' => 'bool',
-				'productenOfDiensten' => 'jsonToArray',
 				'gerelateerdeZaaktypen' => 'jsonToArray',
 				'informatieobjecttypen' => 'jsonToArray',
 				'referentieproces' => 'jsonToArray',

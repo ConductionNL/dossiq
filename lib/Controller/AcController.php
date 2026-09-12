@@ -166,6 +166,7 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
@@ -308,6 +309,7 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
@@ -415,6 +417,7 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
@@ -433,6 +436,7 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
