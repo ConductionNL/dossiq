@@ -32,11 +32,19 @@
  * apps it looked for; leave the flag off where humaniq IS enabled and the
  * absence half fails naming the flag to set. Neither state can pass quietly.
  *
- * 🔴 THE JOURNEY HALF IS UNPROVEN. It is written against the leaf's published
- * `data-testid` contract and has not been run against an instance serving the
- * `humaniq-hours` bundle, because that bundle is not shipped yet
- * (humaniq `hours-leaf-for-any-object`). Read a first green run as evidence,
- * not this comment.
+ * THE JOURNEY HALF HAS NOW RUN. That bundle used to be unshipped, and this
+ * comment used to say so. It ships: `humaniq/js/humaniq-leaves.js` carries
+ * `humaniq-hours` and the `hq-hours-*` hooks, and on an instance with humaniq
+ * enabled the leaf mounts, reads and books. First run 2026-09-11.
+ *
+ * That first run found a defect in this file rather than in the leaf, which is
+ * the usual result of running a test nobody has run: see `pollFigure`.
+ *
+ * 🔴 IT STILL DOES NOT RUN IN CI. The journey half registers only under
+ * `DOSSIQ_E2E_HUMANIQ=1`, and nothing in this repo or in the shared workflow
+ * sets it, so every assertion below is one no pipeline executes. CI installs
+ * openregister and nothing else, so enabling it there means adding humaniq to
+ * `additional-apps` as well as setting the flag.
  *
  * WHERE THE CITATIONS POINT. The delta is not synced into `openspec/specs/`
  * yet, so a citation naming the canonical path would resolve to nothing. They
@@ -96,6 +104,79 @@ const HOOK = {
 
 /** The hours booked by this run's booking test. */
 const BOOKED_HOURS = 2.5
+
+/**
+ * The `<app>:<schema>` literal the leaf must derive for a dossiq case.
+ *
+ * Nothing in `src/manifest.json` declares it. The widget host forwards
+ * `register`, `schema` and `objectId` to every leaf it mounts, and this page's
+ * config carries `dossiq` and `case`, so the literal comes out `dossiq:case`.
+ * Hard-coding the expectation here is the point: if the derivation ever starts
+ * reading the widget definition instead, this is what catches it.
+ */
+const HOST_TYPE = 'dossiq:case'
+
+/** One host-filtered read the leaf made, as it went over the wire. */
+type HostRead = { url: string; type: string | null; ref: string | null }
+
+/** One host-referencing write the leaf made, as it went over the wire. */
+type HostWrite = { body: string; type: unknown; ref: unknown }
+
+/**
+ * Collect every OpenRegister object read that carries a host-object filter.
+ *
+ * Attach BEFORE navigating: the leaf's first read fires as it mounts.
+ *
+ * A read with no `domainObjectRef` is deliberately not collected, so an
+ * unfiltered leaf produces an EMPTY list rather than a list that passes a
+ * per-item check vacuously. The empty list is the failure.
+ *
+ * @param page The page to listen on.
+ * @return The list, filled as requests are made.
+ */
+function collectHostFilteredReads(page: Page): HostRead[] {
+	const reads: HostRead[] = []
+	page.on('request', (request) => {
+		if (request.method() !== 'GET') return
+		const url = new URL(request.url())
+		if (!url.pathname.includes('/apps/openregister/api/objects/')) return
+		if (!url.searchParams.has('domainObjectRef')) return
+		reads.push({
+			url: request.url(),
+			type: url.searchParams.get('domainObjectType'),
+			ref: url.searchParams.get('domainObjectRef'),
+		})
+	})
+	return reads
+}
+
+/**
+ * Collect every OpenRegister object write whose body names a host object.
+ *
+ * @param page The page to listen on.
+ * @return The list, filled as requests are made.
+ */
+function collectHostWrites(page: Page): HostWrite[] {
+	const writes: HostWrite[] = []
+	page.on('request', (request) => {
+		if (request.method() !== 'POST') return
+		if (!request.url().includes('/apps/openregister/api/objects/')) return
+		const body = request.postData() ?? ''
+		let parsed: Record<string, unknown>
+		try {
+			parsed = JSON.parse(body) as Record<string, unknown>
+		} catch {
+			return
+		}
+		if (parsed.domainObjectRef === undefined) return
+		writes.push({
+			body,
+			type: parsed.domainObjectType,
+			ref: parsed.domainObjectRef,
+		})
+	})
+	return writes
+}
 
 const FLAG = (process.env.DOSSIQ_E2E_HUMANIQ ?? '').trim().toLowerCase()
 
@@ -290,10 +371,11 @@ async function openCase(page: Page, caseId: string): Promise<void> {
 }
 
 /**
- * Read the number a leaf figure prints.
+ * Read the number a leaf figure prints, failing when it does not print one.
  *
- * The leaf formats its own figures and may print a unit or a Dutch decimal
- * comma, so the number is extracted rather than compared as text.
+ * For ONE-SHOT reads, where a placeholder is a real failure. Inside an
+ * `expect.poll` use `pollFigure`: this one throws, and a throw inside the
+ * polled function aborts the poll rather than retrying it.
  *
  * @param figure The locator holding the figure.
  * @param what   What the figure is, for the failure message.
@@ -627,36 +709,65 @@ if (!HUMANIQ_DECLARED) {
 			).toBeLessThan(Number(actionsBox?.x))
 		})
 
-		// 🔴 CITATION WITHDRAWN 2026-09-12: A CONSISTENTLY WRONG CASE PASSES
-		// THIS TEST. It cited `#the-leaf-reads-the-right-case`, whose THEN is
-		// that the leaf filters time entries on `domainObjectType` =
-		// `dossiq:case` and `domainObjectRef` = the case's uuid, and derives
-		// that literal from the page config rather than the widget
-		// definition.
-		//
-		// This test books hours from this case's dialog and asserts the
-		// headline rises by what it booked. The write and the read go through
-		// the same leaf with the same literal, so a leaf pointed at the WRONG
-		// case would book there, read back from there, and raise the headline
-		// by exactly the same amount. Neither half of the scenario is
-		// distinguished, and the derivation clause is never touched at all.
-		//
-		// WHAT WOULD CLOSE IT: watch the leaf's own requests and assert the
-		// filter it sends carries `dossiq:case` and this case's uuid, which is
-		// observable on the network without humaniq's cooperation. That
-		// assertion is not written here on purpose: this half of the file has
-		// never run anywhere (see the 🔴 in the header, the `humaniq-hours`
-		// bundle is not shipped), and a strengthening nobody has watched fail
-		// is the thing this programme exists to remove, not to add.
-		//
-		// The test stays as the booking journey. It just does not prove that
-		// scenario.
-		test('booking hours through the dialog raises the headline', async ({
+		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
+		test('the leaf reads and books against this case, and the headline follows', async ({
 			page,
 		}) => {
+			// THE DELTA IS NOT THE REQUIREMENT. This test used to book 2.5
+			// hours and assert the headline rose by 2.5, which is exactly what
+			// an UNFILTERED leaf summing every case's hours in the instance
+			// also does: the booking lands, the sum rises by the same amount,
+			// and the scenario's actual clause — filter on `domainObjectType`
+			// = `dossiq:case` and `domainObjectRef` = this case's uuid — was
+			// never read. On a one-case instance the two are indistinguishable,
+			// which is every CI instance this file has ever run on.
+			//
+			// MUTATION CHECKED 2026-09-11 against a live instance with humaniq
+			// enabled. humaniq's `fetchEntries` was made to send `_limit` only,
+			// dropping both filter keys, so the leaf reads EVERY time entry in
+			// the instance. This test reddened on the read assertion:
+			//
+			//   the leaf must read its hours filtered to this case; no request
+			//   carried a domainObjectRef at all
+			//   Expected: > 0   Received: 0
+			//
+			// The delta assertion alone would NOT have caught it: the booking
+			// still lands and the unfiltered sum still rises by 2.5.
+			//
+			// So the filter is asserted on the wire, before the arithmetic.
+			// The listener is attached BEFORE the navigation: the leaf's first
+			// read happens as it mounts, and a listener attached afterwards
+			// misses exactly the request that matters.
+			const reads = collectHostFilteredReads(page)
+			const writes = collectHostWrites(page)
+
 			await openCase(page, caseId)
 			const widget = page.getByTestId(HOOK.widget)
 			await expect(widget).toBeVisible({ timeout: 30_000 })
+
+			// The read half of the scenario. An unfiltered leaf sends no
+			// request carrying `domainObjectRef` at all, so this is the
+			// assertion that reddens on it, and the message prints every
+			// openregister object read the page made so the absence can be
+			// read rather than guessed.
+			await expect
+				.poll(() => reads.length, {
+					timeout: 20_000,
+					message:
+						'the leaf must read its hours filtered to this case; no request carried a domainObjectRef at all, '
+						+ 'which is what an unfiltered leaf summing every case looks like',
+				})
+				.toBeGreaterThan(0)
+			for (const read of reads) {
+				expect(
+					read.type,
+					`the leaf must filter on the host type derived from the page config: ${read.url}`,
+				).toBe(HOST_TYPE)
+				expect(
+					read.ref,
+					`the leaf must filter on THIS case's uuid, not another object's: ${read.url}`,
+				).toBe(caseId)
+			}
 
 			const before = await readFigure(
 				widget.getByTestId(HOOK.total),
@@ -687,9 +798,29 @@ if (!HUMANIQ_DECLARED) {
 				'the dialog must close once the booking is accepted',
 			).toBeHidden({ timeout: 15_000 })
 
-			// Poll the headline rather than read it once: the tile refetches after
-			// the write, and reading between the two is a race that reports the
-			// booking as lost.
+			// The write half. The entry has to be FILED against this case, or
+			// the headline that rises is counting somebody else's hours. Read
+			// off the posted body rather than off the tile, because the tile
+			// is a rendering of the answer and this is the answer.
+			expect(
+				writes.length,
+				'booking must POST a time entry; nothing was posted to the objects endpoint',
+			).toBeGreaterThan(0)
+			for (const write of writes) {
+				expect(
+					write.type,
+					`the booking must carry the host type: ${write.body}`,
+				).toBe(HOST_TYPE)
+				expect(
+					write.ref,
+					`the booking must be filed against THIS case: ${write.body}`,
+				).toBe(caseId)
+			}
+
+			// Only now the arithmetic, which is a consequence of the two
+			// assertions above rather than a substitute for them. Poll rather
+			// than read once: the tile refetches after the write, and reading
+			// between the two is a race that reports the booking as lost.
 			await expect
 				.poll(async () => pollFigure(widget.getByTestId(HOOK.total)), {
 					timeout: 20_000,

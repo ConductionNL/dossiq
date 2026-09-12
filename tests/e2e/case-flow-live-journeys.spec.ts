@@ -73,7 +73,7 @@ import { expect, request, test } from '@playwright/test'
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
-import { BASE_URL } from './base-url.ts'
+import { BASE_URL, refuseOnSharedInstance } from './base-url.ts'
 import {
 	getRequestToken,
 	invokeFlowTask,
@@ -88,6 +88,26 @@ import { occFlowWorkerPass } from './helpers/occ.ts'
 // gave this file. The CI config's 60s default does not fit a test that runs
 // two occ bootstraps and then loads two pages on a loaded runner.
 test.describe.configure({ mode: 'serial', timeout: 180_000 })
+
+/**
+ * The refusal the header describes, made mechanical.
+ *
+ * The sentence "could not run on the shared dev instance" has sat at the top of
+ * this file since it was written, and a sentence stops nobody. This spec needs
+ * the shipped flow ENABLED on the instance, and on a shared instance that runs
+ * the flow on every case anybody creates, including cases that are not tests.
+ *
+ * It throws rather than skips. The spec already skips when it finds the flow
+ * present and disabled, which is the correct state on the shared container, so
+ * a destructive spec aimed at the wrong box reported green.
+ */
+test.beforeAll(() => {
+	refuseOnSharedInstance(
+		'case-flow-live-journeys',
+		'It needs the case flow enabled on the instance. Enabling it there starts a '
+			+ 'run on every case anybody creates, including cases nobody is testing.',
+	)
+})
 
 const FLOW_NAME = 'Case behandeling'
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'

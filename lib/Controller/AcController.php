@@ -71,6 +71,98 @@ class AcController extends ZgwController {
 	}//end __construct()
 
 	/**
+	 * Refuse a caller that is not a ZGW consumer holding the given scope.
+	 *
+	 * THE CREDENTIAL THESE ENDPOINTS AUTHENTICATE WITH is the ZGW consumer's
+	 * JSON Web Token, presented as `Authorization: Bearer <token>`.
+	 * {@see ZgwService::validateJwtAuth()} reads that header and verifies the
+	 * signature against the consumer's secret; {@see
+	 * ZgwService::consumerHasScope()} reads the same header again to resolve
+	 * the `client_id` and look the consumer's scopes up.
+	 *
+	 * These four writes are `@PublicPage` because a ZGW consumer has no
+	 * Nextcloud session: without it the middleware rejects the caller before
+	 * this controller runs, which is exactly what used to happen. So this guard
+	 * is the only thing between a caller and the credentials every other ZGW
+	 * call authenticates with.
+	 *
+	 * The body it returns was written out three times, once per write, with
+	 * nothing holding the three copies in agreement.
+	 *
+	 * @param string $scope The ac.* scope this action requires
+	 * @param string $title The ZGW error title for this action
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may proceed
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function requireAcScope(string $scope, string $title): ?JSONResponse {
+		$presentedToken = str_replace('Bearer ', '', $this->request->getHeader('Authorization'));
+
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		if ($this->zgwService->consumerHasScope($this->request, 'ac', $scope) === true) {
+			return null;
+		}
+
+		return new JSONResponse(
+			data: [
+				'type' => 'PermissionDenied',
+				'code' => 'permission_denied',
+				'title' => $title,
+				'status' => Http::STATUS_FORBIDDEN,
+				'detail' => sprintf(
+					'Consumer %s heeft scope %s niet.',
+					$this->clientIdOf(presentedToken: $presentedToken),
+					$scope
+				),
+			],
+			statusCode: Http::STATUS_FORBIDDEN
+		);
+	}//end requireAcScope()
+
+	/**
+	 * Read the client_id out of the token the caller presented.
+	 *
+	 * Only for the refusal message. A 403 that says nothing but "scope X is
+	 * required" leaves an integrator guessing which of their consumers made the
+	 * call, and `consumerHasScope()` answers false for four different reasons
+	 * without distinguishing them.
+	 *
+	 * Nothing here is trusted: the signature was already verified by
+	 * {@see ZgwService::validateJwtAuth()} before this runs, and a token this
+	 * cannot read yields "onbekend" rather than an error.
+	 *
+	 * @param string $presentedToken The bearer token, without its scheme
+	 *
+	 * @return string The client_id, or 'onbekend' when it cannot be read
+	 *
+	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
+	 */
+	private function clientIdOf(string $presentedToken): string {
+		$parts = explode('.', $presentedToken);
+		if (count($parts) !== 3) {
+			return 'onbekend';
+		}
+
+		$payload = json_decode((string)base64_decode($parts[1], true), true);
+		if (is_array($payload) === false) {
+			return 'onbekend';
+		}
+
+		$clientId = ($payload['client_id'] ?? ($payload['iss'] ?? null));
+
+		if (is_string($clientId) === false || $clientId === '') {
+			return 'onbekend';
+		}
+
+		return $clientId;
+	}//end clientIdOf()
+
+	/**
 	 * List all applicaties, optionally filtered by clientId.
 	 *
 	 * Supports both 'clientId' and 'clientIds' query parameters.
@@ -84,7 +176,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -166,26 +258,19 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// C2: Gate writes on ac.aanmaken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.aanmaken') === false) {
-			return new JSONResponse(
-				data: [
-					'type' => 'PermissionDenied',
-					'code' => 'permission_denied',
-					'title' => 'U heeft geen toestemming om autorisaties aan te maken.',
-					'status' => Http::STATUS_FORBIDDEN,
-					'detail' => 'Scope ac.aanmaken is vereist.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+		// C2: Gate writes on the ac.aanmaken scope. The credential, the refusal and
+		// the ZGW error body all live in requireAcScope().
+		$refused = $this->requireAcScope(
+			scope: 'ac.aanmaken',
+			title: 'U heeft geen toestemming om autorisaties aan te maken.'
+		);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		if ($this->zgwService->getConsumerMapper() === null) {
@@ -255,7 +340,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -307,26 +392,19 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// C2: Gate writes on ac.bijwerken scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.bijwerken') === false) {
-			return new JSONResponse(
-				data: [
-					'type' => 'PermissionDenied',
-					'code' => 'permission_denied',
-					'title' => 'U heeft geen toestemming om autorisaties bij te werken.',
-					'status' => Http::STATUS_FORBIDDEN,
-					'detail' => 'Scope ac.bijwerken is vereist.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+		// C2: Gate writes on the ac.bijwerken scope. The credential, the refusal and
+		// the ZGW error body all live in requireAcScope().
+		$refused = $this->requireAcScope(
+			scope: 'ac.bijwerken',
+			title: 'U heeft geen toestemming om autorisaties bij te werken.'
+		);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		if ($this->zgwService->getConsumerMapper() === null) {
@@ -413,8 +491,10 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $uuid): JSONResponse {
 		return $this->update(uuid: $uuid);
 	}//end patch()
@@ -430,26 +510,19 @@ class AcController extends ZgwController {
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
 	 *
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		// C2: Gate writes on ac.verwijderen scope.
-		if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.verwijderen') === false) {
-			return new JSONResponse(
-				data: [
-					'type' => 'PermissionDenied',
-					'code' => 'permission_denied',
-					'title' => 'U heeft geen toestemming om autorisaties te verwijderen.',
-					'status' => Http::STATUS_FORBIDDEN,
-					'detail' => 'Scope ac.verwijderen is vereist.',
-				],
-				statusCode: Http::STATUS_FORBIDDEN
-			);
+		// C2: Gate writes on the ac.verwijderen scope. The credential, the refusal and
+		// the ZGW error body all live in requireAcScope().
+		$refused = $this->requireAcScope(
+			scope: 'ac.verwijderen',
+			title: 'U heeft geen toestemming om autorisaties te verwijderen.'
+		);
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		if ($this->zgwService->getConsumerMapper() === null) {
