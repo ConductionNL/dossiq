@@ -210,7 +210,12 @@ test.describe('New case type dialog', () => {
 		}
 	})
 
-	// @e2e case-types::the-fields-are-laid-out-in-two-columns
+	// No citation, on purpose. `the-fields-are-laid-out-in-two-columns` is
+	// about positions: two columns of single-line fields, and prose fields
+	// spanning the width. This test asserts textarea-ness, which survives a
+	// total collapse of the layout (e2e-citation-integrity, audit group 3).
+	// The two tests above measure both halves and carry the citation. The
+	// multi-line clause lives in REQ-CT-24's prose and has no scenario.
 	test('renders the prose fields as multi-line inputs', async ({ page }) => {
 		const dialog = await openDialog(page)
 

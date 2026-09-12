@@ -13242,8 +13242,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "Reference to the parent Organisation in OpenRegister",
             "title": "Tenant Reference"
           },
           "eventType": {
@@ -13304,8 +13304,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "Reference to the parent Organisation in OpenRegister",
             "title": "Tenant Reference"
           },
           "branding": {
@@ -13393,8 +13393,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "Reference to the parent Organisation in OpenRegister",
             "title": "Tenant Reference"
           },
           "mandateMatrixRef": {
@@ -13504,8 +13504,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "Reference to the parent Organisation in OpenRegister",
             "title": "Tenant Reference"
           },
           "quotaType": {
@@ -13521,7 +13521,7 @@
           },
           "limit": {
             "type": "integer",
-            "description": "Hard limit value (NULL = unlimited)",
+            "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
             "title": "Limit"
           },
           "currentUsage": {
@@ -13570,8 +13570,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "Reference to the parent Organisation in OpenRegister",
             "title": "Tenant Reference"
           },
           "userRef": {

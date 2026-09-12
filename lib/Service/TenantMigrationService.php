@@ -11,14 +11,14 @@
  * each onto an Organisation, preserving the row UUID so stored `_tenantId`
  * references keep resolving.
  *
- * Idempotent: an Organisation whose `slug` already exists is never created a
- * second time, so the migration is safe to re-run.
+ * Idempotent BY UUID, and that is the whole point of the key. See migrateOne()
+ * for why the slug was the wrong one and what a slug collision now does.
  *
  * Re-running also REPAIRS. An earlier version of this service mapped
  * `terminated` onto `archived` and `onboarding` onto `provisioning`, and the
- * slug guard means a plain re-run would skip straight over the rows it wrote.
- * A run now corrects those two statuses where it still finds them, and only
- * where it still finds them, so the second run of any pair is a no-op.
+ * idempotency guard means a plain re-run would skip straight over the rows it
+ * wrote. A run now corrects those two statuses where it still finds them, and
+ * only where it still finds them, so the second run of any pair is a no-op.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -76,6 +76,7 @@ class TenantMigrationService {
 	 */
 	private const TENANT_GROUP_PREFIX = 'tenant_';
 
+
 	/**
 	 * Map of legacy procest tenant status → OR Organisation lifecycle status.
 	 *
@@ -109,9 +110,24 @@ class TenantMigrationService {
 	 * dossiq's, and they are not the same question.
 	 */
 	private const STATUS_MAP = [
+		// Decision 2f. NOT `provisioning`, which the June map chose. While a
+		// user's active Organisation is `provisioning`, openregister's
+		// TenantQuotaMiddleware answers 403 to every request that user makes on
+		// openregister's routes unless they are an instance admin, and dossiq's
+		// frontend reads and writes through those routes. A dossiq tenant in
+		// `onboarding` is one whose tenant admin is still working through the
+		// onboarding steps, so it stays `active` on the Organisation with
+		// dossiq's own onboarding progress kept beside it in tenantOnboardingTask.
 		'onboarding' => 'active',
 		'active' => 'active',
 		'suspended' => 'suspended',
+		// Decision 2e, resolved upstream rather than chosen between two bad
+		// options. `retained` is openregister's terminal state for an
+		// organisation with a retention duty: access ends, nothing is deleted,
+		// and TenantPurgeJob can only ever delete a row in PURGEABLE_STATUS,
+		// which is `archived` alone. The June map sent `terminated` to
+		// `archived`, which is both terminal AND the one purgeable state, and
+		// unreachable from a live termination without passing `deprovisioning`.
 		'terminated' => 'retained',
 	];
 
@@ -170,7 +186,9 @@ class TenantMigrationService {
 	 * Reads all legacy `tenant` objects and inserts one OR Organisation per
 	 * tenant whose slug is not already present.
 	 *
-	 * @return array{migrated:int, repaired:int, skipped:int, failed:int, total:int, mappings:array<int,array{tenant:string, organisation:string}>}
+	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
+	 *               mappings:array<int,array{tenant:string, organisation:string}>,
+	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
 	 *
 	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
 	 */
@@ -179,9 +197,11 @@ class TenantMigrationService {
 			'migrated' => 0,
 			'repaired' => 0,
 			'skipped' => 0,
+			'refused' => 0,
 			'failed' => 0,
 			'total' => 0,
 			'mappings' => [],
+			'collisions' => [],
 		];
 
 		$objectService = $this->settingsService->getObjectService();
@@ -215,6 +235,16 @@ class TenantMigrationService {
 				continue;
 			}
 
+			if ($result['refused'] === true) {
+				$summary['refused']++;
+				$summary['collisions'][] = [
+					'tenant' => $result['tenantUuid'],
+					'slug' => ($result['slug'] ?? ''),
+					'heldBy' => $result['organisationUuid'],
+				];
+				continue;
+			}
+
 			if ($result['created'] === false) {
 				// A repair is reported separately from a skip. Both leave the
 				// row count alone, but one of them CHANGED a tenant's
@@ -243,6 +273,7 @@ class TenantMigrationService {
 				'migrated' => $summary['migrated'],
 				'repaired' => $summary['repaired'],
 				'skipped' => $summary['skipped'],
+				'refused' => $summary['refused'],
 				'failed' => $summary['failed'],
 			],
 		);
@@ -256,31 +287,68 @@ class TenantMigrationService {
 	 * @param object $mapper OR OrganisationMapper.
 	 * @param array<string, mixed> $row Legacy tenant object.
 	 *
-	 * @return array{created:bool, repaired?:bool, tenantUuid:string, organisationUuid:string}|null
+	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug?:string}|null
 	 *                                                                              Result, or null on failure.
 	 */
 	private function migrateOne(object $mapper, array $row): ?array {
-		$tenantUuid = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-		$slug = (string)($row['slug'] ?? '');
+		$tenantUuid = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
+		$slug = trim((string)($row['slug'] ?? ''));
+		if ($tenantUuid === '') {
+			// The uuid is the key, so a row without one cannot be migrated at
+			// all: there is nothing to preserve onto the Organisation and
+			// nothing for a satellite `tenantRef` to keep resolving to.
+			$this->logger->warning('Dossiq: tenant migration skipped a row with no id', ['slug' => $slug]);
+			return null;
+		}
+
 		if ($slug === '') {
 			$this->logger->warning('Dossiq: tenant migration skipped a row with no slug', ['tenantUuid' => $tenantUuid]);
 			return null;
 		}
 
 		try {
-			// Idempotency guard: an Organisation already owns this slug, so
-			// nothing is created. It may still need repairing — see
-			// SUPERSEDED_STATUS_REPAIRS for why a skip alone is not enough.
-			$existing = $this->findOrganisationBySlug(mapper: $mapper, slug: $slug);
+			// 🔴 THE UUID IS THE IDEMPOTENCY KEY, NOT THE SLUG.
+			//
+			// This used to be keyed by slug, and that is an isolation hazard
+			// rather than a style question. A tenant whose slug some OTHER
+			// Organisation already holds was reported as "already migrated"
+			// against that other Organisation's uuid. Rewriting `tenantRef`
+			// from that report would attach one tenant's users, mandates and
+			// quotas to a different organisation, and every scoping filter
+			// downstream would then agree, because the rows really would say so.
+			//
+			// The uuid is exact: it is what the satellites already reference
+			// and what this migration preserves onto the Organisation.
+			$existing = $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantUuid);
 			if ($existing !== null) {
 				$repaired = $this->repairSupersededStatus(mapper: $mapper, organisation: $existing, row: $row, slug: $slug);
 
 				return [
 					'created' => false,
+					'refused' => false,
 					'repaired' => $repaired,
 					'tenantUuid' => $tenantUuid,
 					'organisationUuid' => (string)$existing->getUuid(),
 				];
+			}
+
+			// A DIFFERENT Organisation holding this slug is refused, not
+			// merged and not skipped. `slug` is unique on Organisation, so
+			// inserting would fail anyway; refusing says WHICH organisation is
+			// in the way, which is the thing an operator needs in order to fix
+			// it. Nothing is written and nothing is reported as mapped.
+			//
+			// 🔴 AND IT IS NOT REPAIRED. The repair above runs on the uuid
+			// path, where the Organisation is provably this tenant. Here it is
+			// provably NOT: the uuid did not match, so this row belongs to
+			// somebody else and only shares a name. Repairing it would write a
+			// lifecycle status onto another organisation on the strength of a
+			// slug, which is exactly the write the refusal exists to prevent,
+			// and it would be a write rather than a mis-report. The repair is
+			// deliberately absent from this branch.
+			$collision = $this->findOrganisationBySlug(mapper: $mapper, slug: $slug);
+			if ($collision !== null) {
+				return $this->refuseCollision(collision: $collision, tenantUuid: $tenantUuid, slug: $slug);
 			}
 
 			$organisation = $this->buildOrganisation(row: $row, slug: $slug, tenantUuid: $tenantUuid);
@@ -293,6 +361,8 @@ class TenantMigrationService {
 
 			return [
 				'created' => true,
+				'refused' => false,
+				'repaired' => false,
 				'tenantUuid' => $tenantUuid,
 				'organisationUuid' => (string)$saved->getUuid(),
 			];
@@ -304,6 +374,56 @@ class TenantMigrationService {
 			return null;
 		}//end try
 	}//end migrateOne()
+
+	/**
+	 * Refuse a tenant whose slug another Organisation already holds.
+	 *
+	 * Nothing is written, including no repair: see the call site for why a
+	 * slug match is the one place a lifecycle correction must not fire.
+	 *
+	 * @param object $collision  The Organisation holding the slug.
+	 * @param string $tenantUuid The tenant uuid.
+	 * @param string $slug       The contested slug.
+	 *
+	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug:string}
+	 *         The refusal, for the summary to report.
+	 */
+	private function refuseCollision(object $collision, string $tenantUuid, string $slug): array {
+		$this->logger->error(
+			'Dossiq: tenant migration refused a slug already held by another organisation',
+			[
+				'tenant' => $tenantUuid,
+				'slug' => $slug,
+				'heldBy' => (string)$collision->getUuid(),
+			],
+		);
+
+		return [
+			'created' => false,
+			'refused' => true,
+			'repaired' => false,
+			'tenantUuid' => $tenantUuid,
+			'organisationUuid' => (string)$collision->getUuid(),
+			'slug' => $slug,
+		];
+	}//end refuseCollision()
+
+	/**
+	 * Find an Organisation by uuid, returning null when absent.
+	 *
+	 * @param object $mapper OR OrganisationMapper.
+	 * @param string $uuid   Uuid to look up.
+	 *
+	 * @return object|null The Organisation, or null when none matches.
+	 */
+	private function findOrganisationByUuid(object $mapper, string $uuid): ?object {
+		try {
+			return $mapper->findByUuid($uuid);
+		} catch (Throwable $e) {
+			// DoesNotExistException, and any other lookup failure, reads as absent.
+			return null;
+		}
+	}//end findOrganisationByUuid()
 
 	/**
 	 * Repair an Organisation this migration previously wrote a superseded status onto.
@@ -410,6 +530,15 @@ class TenantMigrationService {
 		$active = ($organisation->getStatus() === 'active');
 		$organisation->setActive($active);
 
+		// A terminated tenant becomes `retained`, and the moment the retention
+		// began is stamped on `retainedAt`, which is what openregister's own
+		// retain() writes. `deprovisionedAt` is deliberately left untouched:
+		// TenantPurgeJob measures its window from that column, so writing it
+		// would schedule a deletion dossiq's termination does not have.
+		if ($organisation->getStatus() === self::STATUS_RETAINED) {
+			$organisation->setRetainedAt($this->resolveRetainedAt(row: $row));
+		}
+
 		$storageQuota = $this->resolveStorageQuotaBytes(row: $row);
 		if ($storageQuota !== null) {
 			$organisation->setStorageQuota($storageQuota);
@@ -441,6 +570,34 @@ class TenantMigrationService {
 
 		return 'active';
 	}//end resolveStatus()
+
+	/**
+	 * Resolve when retention began for a terminated tenant.
+	 *
+	 * The tenant's own `terminatedAt` when it has one, so a retention period
+	 * that started years ago is not reset to today by the migration. Now
+	 * otherwise, because a retained organisation with no start date has no
+	 * computable end of retention.
+	 *
+	 * @param array<string, mixed> $row Legacy tenant object.
+	 *
+	 * @return DateTime When retention began.
+	 */
+	private function resolveRetainedAt(array $row): DateTime {
+		$terminatedAt = trim((string)($row['terminatedAt'] ?? ''));
+		if ($terminatedAt !== '') {
+			try {
+				return new DateTime($terminatedAt);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'Dossiq: tenant migration could not read terminatedAt, stamping retention from now',
+					['terminatedAt' => $terminatedAt],
+				);
+			}
+		}
+
+		return new DateTime();
+	}//end resolveRetainedAt()
 
 	/**
 	 * Resolve a storage quota in bytes from the legacy `maxStorageMb` field.
