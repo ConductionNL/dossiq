@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * Projects integriq's terminal delivery outcome onto the case publication
  * record.
  *
+ * @implements IEventListener<Event>
+ *
  * @psalm-suppress UnusedClass -- registered via ListenerRegistrar by FQN string.
  *
  * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md

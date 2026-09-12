@@ -138,8 +138,16 @@ class TenantProvisioningService {
 
 			$this->rollback(schemaName: $schemaName, steps: $steps);
 
+			// `$steps[count($steps) - 1]` reads offset -1 when nothing has run
+			// yet, which is why psalm called it InvalidArrayOffset. The `??`
+			// caught it at runtime, so this names the empty case instead.
+			$lastStep = 'createSchema';
+			if ($steps !== []) {
+				$lastStep = $steps[array_key_last($steps)];
+			}
+
 			throw new RuntimeException(
-				'Provisioning failed at step ' . ($steps[count($steps) - 1] ?? 'createSchema') . ': ' . $e->getMessage(),
+				'Provisioning failed at step ' . $lastStep . ': ' . $e->getMessage(),
 				0,
 				$e
 			);
