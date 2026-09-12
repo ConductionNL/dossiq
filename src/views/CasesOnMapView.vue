@@ -17,6 +17,7 @@
 				:options="caseTypeOptions"
 				:placeholder="t('dossiq', 'All case types')"
 				:clearable="true"
+				label="label"
 				class="cases-on-map__filter"
 				@update:modelValue="reload" />
 
@@ -60,7 +61,10 @@ import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import AlertIcon from 'vue-material-design-icons/Alert.vue'
-import { registerCasesOnMapOverview } from '../services/casesOnMapApi.js'
+import {
+	fetchCaseTypeOptions,
+	registerCasesOnMapOverview,
+} from '../services/casesOnMapApi.js'
 import { shapeMarkerFeatures } from '../services/mapFormatters.js'
 
 /**
@@ -109,6 +113,11 @@ export default {
 			filterCaseType: null,
 			filterStatus: null,
 			statusOptions: ['open', 'in_progress', 'blocked', 'closed'],
+			// Filled by loadCaseTypes() on mount. It was declared empty and
+			// left that way: nothing ever wrote to it, so the Case type filter
+			// rendered with no options and could not narrow anything. The
+			// clustering clause of the case-map scenario and this one both
+			// read as met because the control was on the page.
 			caseTypeOptions: [],
 		}
 	},
@@ -191,10 +200,27 @@ export default {
 	 */
 	mounted() {
 		registerCasesOnMapOverview({ register: this.register, schema: this.schema })
+		this.loadCaseTypes()
 		this.reload()
 	},
 
 	methods: {
+		/**
+		 * Fill the Case type filter from the `caseType` collection, the same
+		 * source the Cases index narrows by.
+		 *
+		 * Never blocks the map: an empty list leaves the filter as it was, and
+		 * the markers load regardless.
+		 *
+		 * @return {Promise<void>} Resolves when the options are in place.
+		 * @spec openspec/specs/case-map-overview/spec.md
+		 */
+		async loadCaseTypes() {
+			this.caseTypeOptions = await fetchCaseTypeOptions({
+				register: this.register,
+			})
+		},
+
 		/**
 		 * Fetch the RBAC-scoped case points from OR for the active filters.
 		 *
@@ -212,7 +238,13 @@ export default {
 			// coordinate, a Polygon its centroid — to `{ lat, lng }` for the map.
 			const params = new URLSearchParams({ _limit: '500' })
 			if (this.filterCaseType) {
-				params.set('caseType', this.filterCaseType)
+				// The options are `{ id, label }` objects, so the filter value
+				// is the option's id. Setting the option itself would stringify
+				// to `[object Object]` and match no case at all.
+				params.set(
+					'caseType',
+					this.filterCaseType.id ?? this.filterCaseType,
+				)
 			}
 			if (this.filterStatus) {
 				params.set('status', this.filterStatus)

@@ -118,3 +118,60 @@ export async function fetchCasePoints({
 		return []
 	}
 }
+
+/**
+ * Fetch the case types this instance declares, shaped as NcSelect options.
+ *
+ * THE SAME SOURCE THE CASES INDEX USES. That page narrows by case type through
+ * its `folderSidebar`, which is declared in `src/manifest.json` as
+ * `{ source: 'register', register: 'dossiq', schema: 'caseType',
+ * idField: '@self.id', nameField: 'title', filterField: 'caseType' }` — the
+ * `caseType` collection of the same register, keyed on the object id and
+ * labelled with its title. This reads the same collection the same way, so the
+ * map's filter and the list's filter offer the same set and send the same
+ * value for it. A narrower set on the map would be a second, silently
+ * divergent answer to "which case types are there".
+ *
+ * Both sides label with `title`; `name` and the bare id are fallbacks for a
+ * type that was created without one, so an option is never blank.
+ *
+ * Returns an empty array on any failure: the filter then renders with no
+ * options, which is exactly the state this function exists to end, but a map
+ * that still draws every case is better than a map that throws.
+ *
+ * @param {object} [options] Query options.
+ * @param {string} [options.register] Register slug (default `dossiq`).
+ * @param {number} [options.limit] Maximum case types to read (default 200).
+ * @return {Promise<Array<{id: string, label: string}>>} The options.
+ * @spec openspec/specs/case-map-overview/spec.md
+ */
+export async function fetchCaseTypeOptions({
+	register = 'dossiq',
+	limit = 200,
+} = {}) {
+	const url = generateUrl(
+		'/apps/openregister/api/objects/{register}/{schema}',
+		{ register, schema: 'caseType' },
+	)
+	try {
+		const response = await axios.get(url, { params: { _limit: limit } })
+		const data = response.data || {}
+		const rows = Array.isArray(data) ? data : data.results || data.data || []
+		const options = []
+		for (const row of rows) {
+			const id = row.id || (row['@self'] && row['@self'].id)
+			if (!id) {
+				continue
+			}
+			options.push({
+				id: String(id),
+				label: row.title || row.name || String(id),
+			})
+		}
+		return options
+	} catch (err) {
+		// eslint-disable-next-line no-console
+		console.warn('[dossiq] case-type options fetch failed', err)
+		return []
+	}
+}
