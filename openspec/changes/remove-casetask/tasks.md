@@ -116,19 +116,29 @@ the resume listener that already moved.
 - [x] 3.1 `lib/Service/Transitions/CreateTaskHandler.php` (dossiq#2363) — stop writing the
       register object. `EngineTaskGateway::mirrorCreate()` becomes the only
       write, and the `task_engine_write` flag goes with the dual-run.
-- [ ] 3.2 **The migration half is done; the retirement question is open.**
-      The node writes and re-reads through `AskPersonTaskStore`, which is the
-      engine since 3.3b, so no `caseTask` object is created or read on any
-      path. What is still open is whether the node should exist at all beside
-      OpenRegister's `UserTaskNode`, and that is a decision about duplication
-      rather than about this schema. Section 4 does not wait on it.
+- [x] 3.2 `lib/Flow/DossiqAskPersonNode.php` — created a `caseTask` and
+      re-read it on heartbeat. Both moved to the engine.
 
-- [ ] 3.2 `lib/Flow/DossiqAskPersonNode.php` — creates a `caseTask` and
-      re-reads it on heartbeat. Both move to the engine. **Consider retiring
-      the node entirely** in favour of OpenRegister's `UserTaskNode`
-      (`flow-user-task-node`, 19/19 done), which does the same thing against
-      the engine natively. That is a separate decision and should be made
-      before this task is started, not during it.
+      **DONE, and this entry used to be TWO entries both numbered 3.2**, which
+      made the change's own count wrong: the file listed 38 tasks where 37 were
+      distinct. The duplicate was the original wording plus the note written
+      when the migration landed; they are one task and are now one entry.
+
+      The migration half is done and verified. The node writes and re-reads
+      through `AskPersonTaskStore`, which is the engine since 3.3b, so no
+      `caseTask` object is created or read on any path.
+
+      **The retirement question is RE-FILED to section 7, not answered here**,
+      and deliberately left unanswered rather than decided in passing. Whether
+      `dossiq.askPerson` should exist beside OpenRegister's `UserTaskNode` is a
+      decision about duplication, and it is not free: the node carries three
+      behaviours `UserTaskNode` has no reason to have — `AssigneeResolver`
+      rendering with a declared fallback, the case-id extraction that makes the
+      task hang off the case, and placing the answer under a configured
+      `signalKey`. The shipped `Case behandeling` flow names `dossiq.askPerson`
+      in two nodes, and every suspended run's resume slot names that node id, so
+      a swap is a data migration and not an edit. Section 4 never waited on it
+      and neither does the archive of this change.
 - [x] 3.3 `lib/Service/Transitions/ChecklistGuard.php` — reads task rows to
       decide whether a transition may proceed.
 - [x] 3.3b `lib/Flow/AskPersonTaskStore.php` — the flow node's own task
@@ -170,11 +180,38 @@ Only after 1 to 3 are green.
       `task_engine_write` flag, `mirrorCreate`'s trusted path, and
       `TaskBackfillService` with `occ dossiq:tasks:mirror`. They exist for the
       migration and should not outlive it.
-- [x] 4.4 `git grep -i casetask` over the WHOLE repo returns nothing. Not
-      `lib src tests`: seed data, `tests/e2e/ci-seed.sh`, demo data and
-      fixtures all carry it, and a miss in `ci-seed.sh` exits before
+- [x] 4.4 The slug is gone from every place that RESOLVES it. Not
+      `lib src tests` alone: seed data, `tests/e2e/ci-seed.sh`, demo data and
+      fixtures all carried it, and a miss in `ci-seed.sh` exits before
       Playwright starts, which reports every spec as NOT RUN rather than as
       one broken seed.
+
+      ⚠️ **THE TEST AS FIRST WRITTEN — "`git grep -i casetask` returns
+      nothing" — IS FALSE, AND WAS FALSE WHEN IT WAS TICKED.** Measured on
+      `development` 2026-09-11: **124 files still match**, and every one of
+      them is a hit this change kept ON PURPOSE. Leaving the claim standing is
+      worse than having no claim, because the next person runs the stated
+      command, gets 124 files, and has no way to tell a kept concept-name from
+      a live binding.
+
+      What the 124 are: component and file names that name the CONCEPT a task
+      on a case (`CaseTaskPane.vue`, `CaseTasksTab.vue`,
+      `caseTaskPaneHelpers.js`, the `caseTasks` parameters in `workflow.js`),
+      prose and `_note` blocks recording why the schema went, archived
+      openspec changes, and ONE live literal:
+      `EngineTaskGateway::sourceKey()`'s `'dossiq:caseTask:' . $id`, kept
+      deliberately as the only written-down form of the backfill key (see 4.1).
+
+      The test that actually holds, and the one to re-run before archiving —
+      the slug as a STRING a store is asked for, rather than the word:
+
+          git grep -n "dossiq/caseTask\|'caseTask'\|\"caseTask\"" -- lib src appinfo
+
+      Verified 2026-09-11: exit 1, no matches. `tests/` is deliberately NOT in
+      that list and must not be added: 20-odd unit tests use the literal
+      `caseTask` as an arbitrary schema NAME to drive a resolver or a slug map,
+      which is fixture data rather than a binding, and including them would
+      make the check permanently red for no defect.
 
 ## 5. e2e
 
@@ -184,10 +221,161 @@ Only after 1 to 3 are green.
       `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
       Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
       / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
-- [ ] 5.2 One new spec for the cutover itself: a task created by a transition,
+- [x] 5.2 One new spec for the cutover itself: a task created by a transition,
       completed through the engine's verb, resuming a suspended flow run. That
       is the path `TaskCompletionResumeListener` now serves and no existing
       spec covers it end to end.
+
+      DONE as `tests/e2e/task-completion-resumes-the-run.spec.ts`, and what it
+      asserts is narrower than this line asked for, on purpose.
+
+      **The transition half was already covered and re-asserting it would have
+      proved nothing.** `checklist-per-status` drives a real transition, reads
+      the tasks it created out of `/api/flow-tasks`, and completes one through
+      the engine's verb. What no spec covered was the WAKE, and the reason it
+      went uncovered is the reason it needed its own file:
+      `case-flow-live-journeys` completes a task and then drives the flow
+      worker, so a run woken by `TaskCompletionResumeListener` and a run woken
+      by its own heartbeat are indistinguishable from there. The heartbeat is
+      the safety net by design (`DossiqAskPersonNode` re-reads the task on
+      re-entry), which means the listener can be entirely dead while every
+      journey assertion stays green and the only symptom is a case that moves
+      up to half an hour late.
+
+      So the new spec asserts the wake through the one field that separates
+      them. `FlowRunService::signal()` sets `resumeAt` to now;
+      `DossiqAskPersonNode::heartbeatAt()` sets it minutes out. The run is read
+      before and after the completion and must go from parked to due.
+
+      It also covers the half that fails SILENTLY and had no test at any level
+      above the unit: the engine announces terminality for `completed`,
+      `terminated` and `disabled` alike, and only a completion is an answer. A
+      second case has its task CANCELLED, and its run's `resumeAt` must not
+      move.
+
+      🔴 **THE MUTATION CHECK RECORDED HERE EARLIER WAS NOT ONE, AND THE
+      CORRECTION IS THE MOST USEFUL THING IN THIS ENTRY.**
+
+      Two runs were made. The first went red on the wrong test (a fourth
+      assertion wrongly expected a run ending on `openregister.end` to finish
+      `completed`, where it finishes `stopped`), and because the file is
+      `serial`, the cancel test never executed and reported as SKIPPED. The
+      second, after that fix, went red on exactly the cancel test with its own
+      message, and was recorded here as clean.
+
+      **It was not clean. The cancel test fails identically WITHOUT the
+      mutation** — `-801ms` on the unmutated PR head against `-1073ms` under
+      the mutation. It had never passed on the branch. A mutation check has
+      two halves, red-with and green-without, and only the first was done:
+      what was actually measured was a test that always fails, which is the
+      mirror image of a test that cannot fail.
+
+      **Why it always failed, established from the code rather than by
+      re-running.** `resumeAt` cannot measure dossiq's listener, because
+      dossiq's listener is not the only one on the event. OpenRegister
+      registers `UserTaskTerminalListener` on the same `TaskTerminalEvent`; it
+      filters on nothing but "committed" and "carries a run uuid" — no state
+      check — and calls `FlowTaskBridge::continueRun()`, which calls
+      `signal(run, payload: [])`. So the run is made due on EVERY terminal
+      state, cancellation included, whatever dossiq does.
+
+      That is CORRECT behaviour, not a defect: the run has to re-enter so the
+      node can fail the step, which is this repo's own scenario "A withdrawn
+      ask fails the step ... WHEN the run next re-enters the step". Waking it
+      is how that happens in seconds instead of thirty minutes.
+
+      So the assertion was measuring another app's listener and calling it
+      dossiq's guard. The withdrawn-ask test now asserts what is real and was
+      genuinely uncovered: **a withdrawn ask does not advance its step, and its
+      run fails rather than reaching the end.** Dossiq's own refusal — that it
+      delivers no ANSWER for a terminated task — stays unit-pinned in
+      `TaskCompletionResumeListenerTest`, which is the right level, because two
+      listeners share the event and the refusal has no signature of its own in
+      the run.
+
+      The same correction applies to the completion half: "makes the run due at
+      once" would pass with dossiq's listener deleted. It is kept because the
+      behaviour matters to whoever is waiting on the case, and the comment now
+      says plainly what it does and does not prove.
+
+## 5. e2e
+
+- [x] 5.1 The nine specs that name the slug:
+      `case-flow-live-journeys`, `case-list-lenses`, `case-parties`,
+      `case-task-pane`, `checklist-per-status`, `dashboard-tiles`,
+      `demo-caseload`, `pages`, plus `helpers/fixtures.ts` and `ci-seed.sh`.
+      Landed as dossiq#2417 (six specs + the `seedFlowTask` / `invokeFlowTask`
+      / `listFlowTasks` / `cleanupFlowTasks` helpers) and the three below.
+- [x] 5.2 One new spec for the cutover itself: a task created by a transition,
+      completed through the engine's verb, resuming a suspended flow run. That
+      is the path `TaskCompletionResumeListener` now serves and no existing
+      spec covers it end to end.
+
+      DONE as `tests/e2e/task-completion-resumes-the-run.spec.ts`, and what it
+      asserts is narrower than this line asked for, on purpose.
+
+      **The transition half was already covered and re-asserting it would have
+      proved nothing.** `checklist-per-status` drives a real transition, reads
+      the tasks it created out of `/api/flow-tasks`, and completes one through
+      the engine's verb. What no spec covered was the WAKE, and the reason it
+      went uncovered is the reason it needed its own file:
+      `case-flow-live-journeys` completes a task and then drives the flow
+      worker, so a run woken by `TaskCompletionResumeListener` and a run woken
+      by its own heartbeat are indistinguishable from there. The heartbeat is
+      the safety net by design (`DossiqAskPersonNode` re-reads the task on
+      re-entry), which means the listener can be entirely dead while every
+      journey assertion stays green and the only symptom is a case that moves
+      up to half an hour late.
+
+      So the new spec asserts the wake through the one field that separates
+      them. `FlowRunService::signal()` sets `resumeAt` to now;
+      `DossiqAskPersonNode::heartbeatAt()` sets it minutes out. The run is read
+      before and after the completion and must go from parked to due.
+
+      It also covers the half that fails SILENTLY and had no test at any level
+      above the unit: the engine announces terminality for `completed`,
+      `terminated` and `disabled` alike, and only a completion is an answer. A
+      second case has its task CANCELLED, and its run's `resumeAt` must not
+      move.
+
+      **The first mutation run proved nothing, and it is worth recording why.**
+      `proof/task-resume-withdrawn-guard` widened the listener's guard to
+      accept all three terminal states, and the job went red — on the WRONG
+      test. A fourth assertion in the same file expected the finished run's
+      status to be `completed`, where a run ending on `openregister.end`
+      finishes as `stopped`. That failure had nothing to do with the mutation,
+      and because the file runs `serial`, the cancel test never ran at all: it
+      reported as skipped, which is not a result.
+
+      Two lessons, both already in the fleet memory and both re-earned here:
+      a red job is not a mutation check until you have read WHICH test failed
+      and with what message, and a `serial` file can only be mutation-checked
+      one assertion at a time, because the first failure hides every test
+      after it.
+
+      The status vocabulary is fixed and the mutation re-run. **Second run
+      (dossiq 34581112375), and this one is a real check:**
+
+      | Test | Result |
+      |---|---|
+      | the ask suspends its run and parks it on a heartbeat minutes away | ✓ |
+      | the task the ask created is reachable on dossiq's own task page | ✓ |
+      | completing it through the engine verb makes the run due at once | ✓ |
+      | and one worker pass then carries the run past the ask to a terminal state | ✓ |
+      | **cancelling the task leaves its run parked on the heartbeat** | **✘, and only this one** |
+
+      It failed with its own message — "A cancelled task must NOT make the run
+      due. A run resumed here would walk past the ask as though somebody had
+      answered it, and nobody did." — and the numbers say exactly what the
+      guard buys:
+
+          Expected: > 60000      (parked, ~30 minutes out)
+          Received:   -1073      (due, 1.07 seconds in the PAST)
+
+      So with the guard widened, cancelling a task signals the run within a
+      second. That is the behaviour the guard exists to refuse, and nothing
+      else in the file moved. The listener was restored and verified
+      byte-identical afterwards; the proof branch is deleted.
 - [x] 5.3 `seedTask()` in `helpers/fixtures.ts` writes a register object.
       It becomes an engine create, and every spec that seeds a task inherits
       the change.
@@ -406,7 +594,100 @@ them is a refactor with no functional change and is out of scope here.
   step, a completedBy, a completedAt and a blockedReason, which is a `Task`),
   but it is its own migration and should not ride along with this one.
 
-## 7. Follow-up: `tenantOnboardingTask`
+## 7. Follow-ups
+
+### 7.0 🔴 ARCHIVING THIS CHANGE BREAKS 14 `@spec` CITATIONS
+
+Found 2026-09-11, while checking what archiving would cost. This is a blocker
+on the archive, not on the work.
+
+- [ ] 7.0 Repoint the 14 `@spec` citations that name
+      `openspec/changes/remove-casetask/tasks.md`. Measured:
+
+          git grep -c 'openspec/changes/remove-casetask' -- lib src tests   # 14
+
+      across `AskPersonTaskStore`, `EngineTaskGateway` (2), `EngineTaskInbox`
+      (2), `EngineTaskInboxTest`, `TaskWaitingCaseSection.vue`,
+      `CaseTaskPane.vue` (2), `TaskCaseCard.vue`, `engineTask.js` (3) and
+      `flowTaskHelpers.js`.
+
+      **Every one names a tasks.md, which is a PLAN and not a requirement.**
+      Gate 16 is satisfied by the path existing, so all 14 are green today and
+      stay green right up to the moment the archive moves the file, at which
+      point they resolve to nothing — the same failure dossiq#2057 left behind
+      as 119 dangling citations.
+
+      🔴 **AND THE OBVIOUS TARGET IS NOT YET A VALID ONE.**
+      `openspec/specs/task-management/spec.md` is where these requirements
+      belong, but it still describes dossiq's tasks as "JSON objects with
+      CMMN-compliant lifecycle states" (line 23) and four of its requirements
+      still name the deleted schema. Repointing 14 citations at a spec that
+      describes the pre-cutover model would LOOK resolved and be worse than
+      the dangle, because nothing would then prompt anyone to fix it.
+
+      So the order is fixed: bring `task-management/spec.md` up to the engine
+      first (the follow-up "Section 4 did NOT do" already names, whose subject
+      is the spec rather than the schema), THEN repoint, THEN archive.
+
+      **UPDATE 2026-09-11: the first step is done, by a parallel session.**
+      dossiq#2457 ("the four task specs follow the engine, not the deleted
+      schema") rewrote the requirement bodies of `task-management`,
+      `case-management`, `case-search-via-or-unified-search` and
+      `role-routing-via-or-rbac`. `task-management/spec.md` is now a valid
+      target, so this task is UNBLOCKED and is the next slice: repoint, then
+      the archive can follow.
+
+      One stale sentence survives #2457 and should go in the same slice. The
+      competitive-context paragraph (line 23) still says dossiq's tasks "are
+      JSON objects with CMMN-compliant lifecycle states, avoiding the
+      complexity of an embedded workflow engine". The tasks now live in
+      exactly such an engine. It is prose rather than a requirement, so no
+      gate reads it, which is why it survived.
+
+### 7.2 🔴 TWO LISTENERS SIGNAL THE SAME RUN AND THE EMPTY PAYLOAD WINS
+
+Found 2026-09-11 by the spec 5.2 added. The first filing of this blamed
+`RegistryStepDispatcher::scopeSignal()`; that was wrong, and the real cause is
+both simpler and worse.
+
+- [ ] 7.2 Stop OpenRegister's empty signal payload from overwriting dossiq's.
+
+      **Two listeners are registered on `TaskTerminalEvent` and both signal
+      the run:**
+
+      | Listener | Payload |
+      |---|---|
+      | dossiq `TaskCompletionResumeListener` | `decision`, `node`, `taskId`, `completedBy` |
+      | openregister `UserTaskTerminalListener` -> `FlowTaskBridge::continueRun()` | **`[]`** |
+
+      `FlowRunService::signal()` assigns `$context['signal'] = $payload`
+      outright, so this is last-writer-wins, and the empty one is a legitimate
+      winner. That is exactly what the run log shows: the answer carries
+      `recovered: true`, which is `DossiqAskPersonNode::answerFor()`'s name for
+      `$signal === []`.
+
+      **What it costs.** `completedBy` is the one thing the payload carries
+      that the task row does not, so nothing after the ask can route on who
+      answered. And the node logs "a heartbeat delivered the answer to task X;
+      its completion signal never reached the run" at INFO on the normal path,
+      every time — an alarm that always fires is an alarm nobody reads the day
+      it is true.
+
+      **It also makes dossiq's listener very nearly redundant.** Waking the
+      run is done by OpenRegister's listener already; the payload is dossiq's
+      only distinctive contribution, and it is discarded. Worth asking whether
+      the right fix is for dossiq to stop signalling and instead have
+      OpenRegister carry the outcome bag — `FlowTaskBridge::outcomeBagFor()`
+      already assembles exactly those fields, `completedBy` included, and
+      passes `[]` anyway.
+
+      Likely an openregister issue rather than a dossiq one. Establish
+      ownership before writing a fix.
+
+      NOT asserted in the spec: pinning `recovered: false` ships a red test,
+      pinning `recovered: true` freezes the defect.
+
+### 7.1 Follow-up: `tenantOnboardingTask`
 
 Re-filed from `tenancy-onto-openregister-organisation` (decision 2c,
 2026-09-11). It is a follow-up to this change, not part of it.

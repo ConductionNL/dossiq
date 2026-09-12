@@ -21,9 +21,16 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect } from '@playwright/test'
 import { FIXTURE_PREFIX } from './fixtures.ts'
+import { occFlowWorkerPass } from './occ.ts'
 
 /** OpenRegister's API root, which owns flows and their runs. */
 export const OR_API = '/index.php/apps/openregister/api'
+
+/** A flow graph, as `POST /api/flows` takes it. */
+export interface FlowGraph {
+	nodes: Array<Record<string, unknown>>
+	edges: Array<Record<string, unknown>>
+}
 
 /** The object a run is about, as OpenRegister's FlowRunRow stores it. */
 export interface FlowSubject {
@@ -90,12 +97,17 @@ async function orPost(
  * @param token       CSRF request-token.
  * @param name        The flow's name. Must carry RUN_PREFIX, see the header.
  * @param description Which spec made it, for whoever finds it left behind.
+ * @param graph       A graph of the caller's own, when the manual start into an
+ *                    end is not the shape it needs. The RUN_PREFIX check, the
+ *                    `enabled: false` and the uuid assertion are the reason to
+ *                    come through here rather than posting `/flows` directly.
  */
 export async function createFlow(
 	api: APIRequestContext,
 	token: string,
 	name: string,
 	description: string,
+	graph?: FlowGraph,
 ): Promise<string> {
 	expect(
 		name,
@@ -107,7 +119,7 @@ export async function createFlow(
 		description,
 		app: 'dossiq',
 		enabled: false,
-		nodes: [
+		nodes: graph?.nodes ?? [
 			{
 				id: 'start',
 				type: 'openregister.trigger-manual',
@@ -121,7 +133,7 @@ export async function createFlow(
 				position: { x: 0, y: 160 },
 			},
 		],
-		edges: [{ id: 'start-end', from: 'start', to: 'end' }],
+		edges: graph?.edges ?? [{ id: 'start-end', from: 'start', to: 'end' }],
 	})
 	const flowId = String(flow.uuid ?? '')
 	expect(flowId, 'The created flow must carry a uuid.').not.toBe('')
@@ -182,6 +194,86 @@ export async function runFlow(
 		`/flows/${flowId}/run`,
 		subject === undefined ? { sync: true } : { subject, sync: true },
 	)
+}
+
+/**
+ * Read one run back, as `GET /api/flow-runs/{uuid}` serves it.
+ *
+ * @param api Authenticated request context.
+ * @param run The run's uuid.
+ */
+export async function readFlowRun(
+	api: APIRequestContext,
+	run: string,
+): Promise<Record<string, unknown>> {
+	const response = await api.get(`${OR_API}/flow-runs/${run}`)
+	expect(
+		response.ok(),
+		`read run ${run} -> ${response.status()} ${await response.text()}`,
+	).toBeTruthy()
+	const body = (await response.json()) as Record<string, unknown>
+	return (body.results ?? body) as Record<string, unknown>
+}
+
+/**
+ * Whether the worker still owes this run a pass.
+ *
+ * Queued and running are the obvious two. A SUSPENDED run is owed one too once
+ * its `resumeAt` has come: that is how a completed task wakes it —
+ * `FlowRunService::signal()` sets `resumeAt` to now and leaves the rest to the
+ * worker. A run suspended with a `resumeAt` in the FUTURE is parked on a
+ * person, which is an answer rather than a state to drive out of.
+ *
+ * @param run The run, as `readFlowRun` answers it.
+ */
+export function owedAPass(run: Record<string, unknown>): boolean {
+	const status = String(run.status ?? '')
+	if (status === 'queued' || status === 'running') {
+		return true
+	}
+
+	if (status !== 'suspended' || !run.resumeAt) {
+		return false
+	}
+
+	return Date.parse(String(run.resumeAt)) <= Date.now()
+}
+
+/**
+ * Walk a run until the worker owes it nothing: parked on a person, or done.
+ *
+ * 🔴 A RUN DOES NOT MOVE ON ITS OWN HERE. OpenRegister's `FlowRunWorker` is a
+ * cron job, and CI serves Nextcloud with `php -S` and no cron at all, so a
+ * spec that merely waited would time out on a run that was never going to be
+ * touched. Each pass is performed the way an operator would, through
+ * `occ background-job:execute` (see `helpers/occ.ts`).
+ *
+ * The pass's exit code is checked but is NOT the evidence: Nextcloud logs a
+ * background job that throws and still exits 0. The run is read back after
+ * every pass and the loop stops on what it says.
+ *
+ * @param api    Authenticated request context.
+ * @param run    The run's uuid.
+ * @param passes The most passes to spend. A linear flow needs one per wait.
+ * @return The run as the last pass left it.
+ */
+export async function advanceFlowRun(
+	api: APIRequestContext,
+	run: string,
+	passes = 4,
+): Promise<Record<string, unknown>> {
+	let current = await readFlowRun(api, run)
+
+	for (let pass = 0; pass < passes && owedAPass(current); pass++) {
+		const worked = await occFlowWorkerPass()
+		expect(
+			worked.code,
+			`The flow worker pass exited ${worked.code}: ${worked.output.trim().slice(0, 400)}`,
+		).toBe(0)
+		current = await readFlowRun(api, run)
+	}
+
+	return current
 }
 
 /**

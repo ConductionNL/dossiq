@@ -274,26 +274,84 @@ programme and the reason wave 1 goes first.
       resumes only on `completed` (the engine fires the event for all three
       terminal states, and `terminated`/`disabled` are the ask being
       withdrawn). Both guards mutation-checked.
-- [ ] 2.4 The dossiq task detail page reads `Task` and keeps its own surface
+- [x] 2.4 The dossiq task detail page reads `Task` and keeps its own surface
       (D-3): same route, same page id, same deep links, case card and the two
       leaves intact.
+
+      DONE by `remove-casetask` 2.1 (dossiq#2411). Verified on `development`
+      2026-09-11: `src/manifest.json`'s `TaskDetail` page is `type: "custom"`
+      over `TaskDetailView`, route `/tasks/:id` and page id both unchanged, so
+      bookmarks and notification links resolve exactly as before.
+
+      D-3 held, with ONE loss that is recorded rather than hidden: the
+      version-history tab is gone, because an engine task is not an object and
+      nothing writes a version of it, so the tab was an always-empty drawer.
+      The notes and appointment leaves moved to the task-anchored endpoints
+      (openregister#3594) and the audit tab became a page section over
+      `/api/flow-tasks/{uuid}/audit`.
+
+      `tests/e2e/task-completion-resumes-the-run.spec.ts` opens that page on a
+      task the flow engine created, which is the one shape that can only
+      resolve through this rebuild.
 - [ ] 2.5 `DossiqAskPersonNode` carries a form, so the answer is recorded and
       not merely the fact of an answer. This is the capability dossiq cannot
       have today and gets for free from the abstraction.
 - [ ] 2.6 Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
       that ticking it off there completes the engine task through
       `TaskVtodoWriteBackGate`. Dossiq writes no CalDAV code (D-4).
-- [ ] 2.7 Remove `caseTask`. **Planned in full as its own change,
+
+      NOT DONE, and it is a CONFIRMATION rather than a build, so it needs an
+      instance rather than a diff. Checked 2026-09-11 that dossiq holds up its
+      half: `git grep -il 'vtodo\|caldav\|TaskVtodoWriteBackGate' -- lib src`
+      finds nothing task-related (the four hits are the hearing calendar and
+      the task events leaf, neither of which is the projection), which is
+      exactly what D-4 asks for. What is unconfirmed is the OTHER half — that
+      OpenRegister's projection actually lands in NC Tasks for a task dossiq
+      created, and that ticking it there writes back.
+
+      It cannot be confirmed from CI: the E2E rig serves Nextcloud with
+      `php -S` and no cron, and the projection is a background job. Do it on a
+      provisioned instance, or drive the job the way
+      `helpers/occ.ts#occFlowWorkerPass` drives the flow worker.
+- [x] 2.7 Remove `caseTask`. **Planned in full as its own change,
       `openspec/changes/remove-casetask/`**, because it is 70 files and two
       of them are rewrites rather than repoints: `Tasks` and `TaskDetail` are
       generic manifest pages that bind a register and a schema, and the
       engine is not an OpenRegister object, so both become `type: custom`.
-      The done test is a grep over the WHOLE repo, not `lib/ src/ tests/`:
-      seed data, fixtures and `ci-seed.sh` all carry the slug, and a miss in
-      `ci-seed.sh` exits before Playwright starts, reporting every spec as
-      NOT RUN rather than as one broken seed.
+
+      DONE. `remove-casetask` section 4 is complete and the schema was deleted
+      from both register descriptors in dossiq#2424. Verified 2026-09-11:
+      `git grep -n "dossiq/caseTask\|'caseTask'\|\"caseTask\"" -- lib src
+      appinfo` exits 1.
+
+      ⚠️ **The done test as written in that change was FALSE and is corrected
+      there.** "A grep over the whole repo returns nothing" does not hold and
+      never did: 124 files still match the WORD, and all of them are hits the
+      change kept on purpose — component names that name the concept a task on
+      a case, prose recording why the schema went, and one composed backfill
+      key. The test that holds is the slug as a STRING a store is asked for,
+      over `lib src appinfo` and not `tests` (20-odd unit tests use the literal
+      as an arbitrary schema name, which is fixture data).
+
+      This cluster is therefore the FIRST to reach its done state, and it is
+      the one row the proposal graded field-verified.
 - [ ] 2.8 e2e: a task created by a transition, completed with a form, resuming
       a suspended flow run.
+
+      TWO OF THE THREE ARE COVERED. The middle one is not, and cannot be
+      until 2.5 exists.
+
+      | Half | Where |
+      |---|---|
+      | created by a transition | `checklist-per-status.spec.ts` — a real transition, its tasks read back out of `/api/flow-tasks`, one completed through the engine's verb |
+      | completed **with a form** | NOWHERE. Blocked on 2.5: the ask carries no form, so there is no answer for a test to submit |
+      | resuming a suspended run | `task-completion-resumes-the-run.spec.ts` (remove-casetask 5.2), which isolates the wake from the heartbeat and also pins the withdrawn-ask refusal |
+
+      Left unticked on purpose. Ticking it on two of three would record the
+      form as covered, and the form is the capability this whole cluster says
+      dossiq gains from the abstraction — the one thing `caseTask` could not
+      do. A scoreboard that claims it before it exists is the failure this
+      change's proposal is written against.
 
 ## 3. Wave 2 — the clusters that become tasks
 
@@ -359,8 +417,63 @@ continued, not replaced.
       is deliberately NO target schema count: two attempts at one were both
       wrong, and a total hides the difference between a clean row and a
       partial one.
-- [ ] 5.2 Every retired slug returns zero hits from a case-insensitive
-      `git grep` across the whole repo, including seed data, demo data, e2e
-      fixtures and `ci-seed.sh`.
+- [ ] 5.2 Every retired slug is gone from every place that RESOLVES it —
+      including seed data, demo data, e2e fixtures and `ci-seed.sh`, which is
+      where the first pass of the caseTask removal nearly left one.
+
+      🔴 **THIS LINE USED TO SAY "zero hits from a case-insensitive `git grep`
+      across the whole repo", AND THAT TEST DOES NOT WORK.** It was applied to
+      `caseTask`, ticked, and is false: 124 files still match the word. Every
+      one is a hit that cluster kept on purpose — component names that name
+      the CONCEPT (`CaseTaskPane.vue`, the `caseTasks` parameters in
+      `workflow.js`), prose recording why the schema went, archived openspec
+      changes, and one composed backfill key.
+
+      A test that cannot pass gets ticked anyway, which is worse than having
+      none: the next person runs it, gets 124 files, and has no way to tell a
+      kept concept-name from a live binding. Corrected here rather than only
+      in `remove-casetask`, because this line is what every remaining cluster
+      inherits — eleven chances to repeat it.
+
+      The test that holds is the slug as a **string a store is asked for**:
+
+          git grep -n "dossiq/<slug>\|'<slug>'\|\"<slug>\"" -- lib src appinfo
+
+      `tests/` is deliberately outside it. Unit tests use a retired slug as an
+      arbitrary schema NAME to drive a resolver or a slug map — fixture data,
+      not a binding — and including them makes the check permanently red for
+      no defect. Measured for `caseTask` 2026-09-11: exit 1.
+
+      The prose, the component names and the `_note` blocks STAY. They name a
+      concept the app still has, and renaming them is a refactor with no
+      functional change.
 - [ ] 5.3 No sibling app's duck-typed lookup points at a removed slug
       (the table from 0.3, re-run).
+
+      **Re-run 2026-09-11 for the one cluster that has actually retired, and
+      it is CLEAN.** 0.3 says to re-run before each removal because it
+      measures the day it runs, not the day of the merge; `caseTask` was
+      removed in dossiq#2424, so this is that re-run. Done over the ORG rather
+      than over local checkouts (`gh search code --owner ConductionNL
+      "caseTask"`), because a local sweep only sees the siblings somebody
+      happened to clone.
+
+      Four hits outside dossiq, and none of them is a lookup:
+
+      | Where | What it is |
+      |---|---|
+      | `openregister/lib/Listener/CaseTaskTerminalListener.php` | OpenRegister's own CMMN **CaseTask** plan item. It listens to `TaskTerminalEvent`, the engine's event, and never names a dossiq schema |
+      | `openregister/lib/AppInfo/Application.php` | registers that listener |
+      | `pipelinq/lib/Repair/RenameCollidingSchemaSlugs.php` | a PROSE comment, "dossiq took caseTask", beside its own `task` -> `crmTask` rename. Now stale, and harmless: it resolves nothing |
+      | `nextcloud-vue`, `market-intelligence`, `spectr` | documentation and research prose |
+
+      So removing the slug could not silently no-op another app, which is the
+      failure 0.3 exists to catch. **This line stays UNTICKED**: it is a
+      programme done-condition over every retired slug, and exactly one
+      cluster has retired. It is ticked when 5.1 is.
+
+      ⚠️ Noted while here, for whoever does the next cluster: OpenRegister and
+      dossiq now BOTH listen to `TaskTerminalEvent` — `CaseTaskTerminalListener`
+      drives the plan item, `TaskCompletionResumeListener` resumes the flow
+      run. Different concerns on one event, which is fine, but a future
+      listener on it should know it is the third.

@@ -29,17 +29,44 @@ is the accurate signal. Do not silence it with a placeholder capability.
   the claim binds the tenant. Recorded in the proposal under "Decided: the PHP
   session is the source of truth for tenant".
 - [~] 4 **Move.** Repoint the five middlewares, migrate the data, retire the
-  schemas. THE REVERSIBLE HALF IS DONE, 2026-09-11. What remains is the
-  destructive half, listed under "What step 4 left for step 5" at the end of
-  this file. Was, before that: The irreversible act this note used to name, the
-  three field drops, turned out to be done already (see 2a). What blocks it
-  now is 2e and 2f: every part of the move runs through the tenant becoming
-  an Organisation, and that needs a status to become. It no longer inherits
-  2g: the four lookups that read OpenRegister rows as arrays were fixed
-  together ahead of the move (see 2g). The pins in 2h are still what shows
-  the re-pointed filters scope. The upstream half,
-  `legalName` on `Organisation` (openregister#3603), does not depend on the
-  status question and is not held by it.
+  schemas. **THE REVERSIBLE HALF IS DONE, 2026-09-11** (dossiq#2523). What
+  remains is the destructive half, listed under "What step 4 left for step 5"
+  at the end of this file.
+
+  Nothing blocks it any more. The irreversible act this note used to name,
+  the three field drops, turned out to be done already (see 2a), and
+  everything else that held it has since cleared:
+
+  - **2e and 2f, decided 2026-09-11.** Neither needs anything upstream:
+    `retained` and `retainedAt` are already on `TenantLifecycleService` with
+    `PURGEABLE_STATUS` pinned to `archived`, and `legalName` landed in
+    openregister#3603 beside the `kvk` column that was always there.
+  - **2g, fixed and merged.** dossiq#2436 repaired all four lookups together,
+    `listTenantsForUser()`, `resolveUserRole()` and `loadActiveMatrix()` in
+    `TenantAuthenticationService` plus `getQuota()` in `TenantQuotaService`.
+    It was held on purpose for a while, because it makes a layer step 4
+    retires actually enforce, and Ruben ruled on 2026-09-11 to merge it and
+    then start step 4. Do not confuse it with dossiq#2449, which fixed the
+    same reading defect in five other services and never gated this step.
+  - The pins in 2h are what shows the re-pointed filters still scope.
+
+  **Decided 2026-09-11 by Ruben, and it belongs to this step: dossiq stops
+  counting request quota, and OpenRegister alone enforces it.** 2b found that
+  one shared limit was being counted twice, by OpenRegister's
+  `TenantQuotaMiddleware` on its own routes and by dossiq's
+  `QuotaEnforcementMiddleware` on dossiq's, so a tenant could spend the full
+  limit on each. Measured: OpenRegister registers its middleware through
+  `$context->registerMiddleware()` with no `global` flag, so it guards only
+  OpenRegister's own controllers.
+
+  So step 4 retires dossiq's `QuotaEnforcementMiddleware` rather than teaching
+  it to share a counter. **State the consequence plainly rather than leaving
+  it to be discovered: dossiq's own routes then carry no request quota at
+  all.** The alternative considered and rejected was making OpenRegister's
+  middleware global, which would have closed that gap and started counting
+  every app's routes fleet-wide. If the unguarded routes later matter, that is
+  the change to make, and it belongs upstream in OpenRegister rather than in a
+  second dossiq middleware.
 - [ ] 5 **Remove the surface.** The `Tenants` and `TenantDetail` pages are
   both still in `src/manifest.json`. They go once the store they administer is
   gone, not before.
@@ -136,7 +163,8 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
         `kvk`, so `kvkNumber` is a rename. `legalName` is added by
         openregister#3603 (`legal_name`, nullable, no default and no
         fallback to `name`, since a copied name would read as a verified
-        legal name).
+        legal name). **#3603 merged 2026-09-11**, so both halves are now on
+        `Organisation` and this sub-decision needs nothing further upstream.
       - **Keep `tier` in dossiq.** Once `tenant` retires, its home is
         `tenantConfiguration`, which is already dossiq's one-row-per-tenant
         settings store. Its quota role moves to `Organisation`: the
@@ -244,31 +272,51 @@ The third of those is a product decision and blocks step 4 (Move). Step 3
       `archived` is terminal in openregister and a live termination cannot
       reach it without passing `deprovisioning`. Recorded here and left
       alone: changing it would be choosing a mapping.
-- [x] 2e Decided by option (c), and it is no longer hypothetical: openregister
-      GREW the terminal state. Measured 2026-09-11 on
-      `ConductionNL/openregister@development`,
-      `lib/Service/TenantLifecycleService.php`. `STATUS_RETAINED = 'retained'`
-      is entered from `active` or `suspended`, the same two states
-      `deprovisioning` is entered from, and its only exit is
-      `deprovisioning`, taken on purpose when retention ends.
-      `PURGEABLE_STATUS` is `STATUS_ARCHIVED` alone, declared beside the
-      transitions so deletability is a property of the lifecycle rather than
-      of the job, and `TenantPurgeJob` re-checks every row against it. So a
-      retained organisation is never purged. `retain()` stamps `retainedAt`
-      and leaves `deprovisionedAt` untouched, which is the column the purge
-      window is measured from.
-      The migration maps `terminated` to `retained`, stamps `retainedAt` from
-      the tenant's own `terminatedAt` so an old retention period is not reset
-      to today, and writes no `deprovisionedAt`. No longer blocks step 4.
-- [x] 2f Decided 2026-09-11: the Organisation stays `active` and dossiq's
-      onboarding state is kept beside it, in `tenantOnboardingTask`. Not
-      `provisioning`, for exactly the 403 recorded in 2d: while a user's
-      active Organisation is `provisioning`, openregister's
-      `TenantQuotaMiddleware` answers 403 to every request that user makes on
-      openregister's routes unless they are an instance admin, and dossiq's
-      frontend reads and writes through those routes. A dossiq tenant in
-      `onboarding` is one whose tenant admin is still working through the
-      onboarding steps, so it must be able to work. No longer blocks step 4.
+- [x] 2e **Decided 2026-09-11: option (c).** OpenRegister grows a terminal
+      state that is retained rather than purged, and `terminated` maps to it.
+      Options (a) and (b) were both rejected for the same reason: each makes
+      dossiq's retention a property of how dossiq happens to write the row.
+      (a) reaches `archived` while leaving `deprovisionedAt` null, so the
+      purge skips it only for as long as nobody sets that field, and the
+      protection is an omission rather than a rule. (b) accepts the purge and
+      then tries to outrun it by setting `tenantRetentionDays`, which makes
+      every consumer of the platform responsible for knowing dossiq's
+      retention period. A retained terminal state says the thing once, in the
+      lifecycle, where every app reads it.
+
+      **OpenRegister already implements it.** Checked against
+      `openregister/development` on 2026-09-11, not against the local
+      checkout, which sits on an older branch and still shows the earlier
+      lifecycle. `TenantLifecycleService::STATUS_RETAINED` exists, `retain()`
+      stamps `retainedAt` and leaves `deprovisionedAt` untouched, and
+      `PURGEABLE_STATUS` is pinned to `archived` so `TenantPurgeJob` selects
+      on it and re-checks every row before deleting. Retained is entered from
+      `active` or `suspended`, the same two states `deprovisioning` is entered
+      from, so ending a tenancy is a choice between deleting and keeping. The
+      one way out is `deprovisioning`, taken deliberately once the retention
+      period is over.
+
+      So this needs nothing upstream. `terminated` maps to `retained`, and
+      dossiq's retention period stops being dossiq's to enforce. Unblocks
+      step 4.
+
+      **What the migration actually does with it** (dossiq#2523): maps
+      `terminated` to `retained`, stamps `retainedAt` from the tenant's own
+      `terminatedAt` rather than from today, so an old retention period is not
+      silently restarted, and writes no `deprovisionedAt`, which is the column
+      the purge measures its window from.
+- [x] 2f **Decided 2026-09-11: the Organisation is `active` during
+      onboarding.** dossiq keeps its own onboarding state beside it rather
+      than holding the Organisation in `provisioning`.
+
+      The 403 above is the reason. `provisioning` is not a state a tenant can
+      transact from, so an Organisation held there cannot carry the very
+      writes onboarding consists of, and onboarding would have to be
+      performed by something outside the tenant it is onboarding. Making the
+      Organisation `active` from the start keeps the platform's question
+      ("may this organisation act?") separate from dossiq's question ("has
+      this customer finished setting up?"), which is the split the whole
+      change is built on. Unblocks step 4.
 - [x] 2g Found while mutation-checking, 2026-09-11: **the tenant lookups
       read OpenRegister rows in a shape OpenRegister does not return.**
       `ObjectService::findAll()` returns `ObjectEntity` objects (measured on
