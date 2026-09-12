@@ -232,9 +232,9 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		await expect(
 			tile(page, /^(Case type|Zaaktype)$/).locator('.cn-kpi-card__value'),
 		).toHaveText(caseTypeTitle, { timeout: 20_000 })
-		await expect(
-			tile(page, /^(Assignee|Behandelaar)$/).locator('.cn-kpi-card__value'),
-		).toHaveText('admin')
+		// The assignee is not a tile: it reads in the Data tab, which is the
+		// open tab on load.
+		await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Assignee")) .cn-object-data-widget__value')).toContainText('admin')
 
 		// The tiles sit ABOVE the tab strip: an identity a reader has to
 		// scroll to is the state this row replaced.
@@ -244,18 +244,17 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
-	test('the status tile and the overdue countdown sit in the row', async ({
+	test('the status reads in the Data tab and the overdue countdown sits in the row', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		// The case carries a status UUID. A tile showing the uuid would pass
-		// "renders something" and fail the feature.
-		const status = tile(page, /^Status$/)
-		await expect(status.locator('.cn-kpi-card__value')).toHaveText(statusName, {
-			timeout: 30_000,
-		})
+		// The case carries a status UUID. A field showing the uuid would pass
+		// "renders something" and fail the feature. The status is not a tile
+		// any more; it reads in the Data tab, the open tab on load.
+		const status = page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')
+		await expect(status).toHaveText(statusName, { timeout: 30_000 })
 		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
@@ -281,11 +280,14 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		// The tile is there, and it names nothing it does not know: no uuid, and
-		// no name the record does not carry. An absent tile and an unset status
-		// look identical, and only one of the two is a data problem.
-		const status = tile(page, /^Status$/)
-		await expect(status).toBeVisible({ timeout: 30_000 })
+		// The number tile is there, and the Data tab's status field names
+		// nothing it does not know: no uuid, and no name the record does not
+		// carry.
+		await expect(tile(page, /^(Case number|Zaaknummer)$/)).toBeVisible({
+			timeout: 30_000,
+		})
+		const status = page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')
+		await expect(status).toBeVisible({ timeout: 20_000 })
 		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)

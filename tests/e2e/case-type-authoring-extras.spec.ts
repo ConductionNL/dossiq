@@ -410,7 +410,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${objectId(openCase)}`)
 		await dismissSupportDialog(page)
 
-		await expect(page.locator('.cn-kpi-card:has(.cn-kpi-card__title span:text-is("Status"))')).toHaveAttribute(
+		await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')).toHaveAttribute(
 			'data-colour',
 			'orange',
 			{ timeout: 30_000 },

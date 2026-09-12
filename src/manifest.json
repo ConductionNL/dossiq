@@ -1228,7 +1228,7 @@
 						"type": "stat",
 						"title": "Case number",
 						"icon": "BadgeAccountOutline",
-						"_note": "Five loose KPI cards, one per fact, each its own grid cell, so the row reads as five cards rather than one strip and Buildiq edit mode can move each. They replace the `case-header` custom widget (`CaseHeaderRow`), which drew the same five facts inside a single two-row cell that clipped them. Built-in first (ADR-049): `stat` in object-field mode reads the fact straight off the loaded record, resolving a reference through the store, and `countdown` reads the deadline the same way. What this does NOT carry: the status type's configured colour. A stat tile has no variant that follows a resolved reference, so the status reads as text; the colour needs a `variantField` on the stat widget's resolve, which is a nextcloud-vue change.",
+						"_note": "Three loose KPI cards (the status and the assignee tiles were dropped by hand in Buildiq edit mode on 2026-09-12: both facts read in the Data tab, and the row had five where three carry the page). Laid out the way the page was arranged in edit mode, copied here because dossiq wires no persistManifestDelta and an in-app edit lives only in that tab. One per fact, each its own grid cell, so the row reads as five cards rather than one strip and Buildiq edit mode can move each. They replace the `case-header` custom widget (`CaseHeaderRow`), which drew the same five facts inside a single two-row cell that clipped them. Built-in first (ADR-049): `stat` in object-field mode reads the fact straight off the loaded record, resolving a reference through the store, and `countdown` reads the deadline the same way. What this does NOT carry: the status type's configured colour. A stat tile has no variant that follows a resolved reference, so the status reads as text; the colour needs a `variantField` on the stat widget's resolve, which is a nextcloud-vue change.",
 						"content": {"label": "Case number", "objectField": "identifier"}
 					},
 					{
@@ -1237,20 +1237,6 @@
 						"title": "Case type",
 						"icon": "FileDocumentOutline",
 						"content": {"label": "Case type", "objectField": {"field": "caseType", "resolve": {"register": "dossiq", "schema": "caseType", "labelField": "title"}}}
-					},
-					{
-						"id": "case-kpi-status",
-						"type": "stat",
-						"title": "Status",
-						"icon": "ListStatus",
-						"content": {"label": "Status", "objectField": {"field": "status", "resolve": {"register": "dossiq", "schema": "statusType", "labelField": "name"}}}
-					},
-					{
-						"id": "case-kpi-assignee",
-						"type": "stat",
-						"title": "Assignee",
-						"icon": "AccountOutline",
-						"content": {"label": "Assignee", "objectField": "assignee"}
 					},
 					{
 						"id": "case-kpi-deadline",
@@ -1329,13 +1315,6 @@
 						"title": "Hours booked",
 						"icon": "History",
 						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
-					},
-					{
-						"id": "initiator",
-						"type": "custom",
-						"title": "Initiator",
-						"icon": "Account",
-						"_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set."
 					},
 					{
 						"id": "case-flow-runs",
@@ -1763,40 +1742,31 @@
 						"widgetId": "case-kpi-number",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 2,
+						"gridWidth": 3,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "kpi-2",
 						"widgetId": "case-kpi-casetype",
-						"gridX": 2,
+						"gridX": 3,
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
-						"id": "kpi-3",
-						"widgetId": "case-kpi-status",
-						"gridX": 5,
-						"gridY": 0,
-						"gridWidth": 2,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "kpi-4",
-						"widgetId": "case-kpi-assignee",
-						"gridX": 7,
-						"gridY": 0,
-						"gridWidth": 2,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
 						"id": "kpi-5",
 						"widgetId": "case-kpi-deadline",
+						"gridX": 6,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "6",
+						"widgetId": "case-kpis-hours",
 						"gridX": 9,
 						"gridY": 0,
 						"gridWidth": 3,
@@ -1804,54 +1774,36 @@
 						"showTitle": false
 					},
 					{
-						"id": "3",
-						"widgetId": "case-steps",
-						"gridX": 8,
-						"gridY": 2,
-						"gridWidth": 4,
-						"gridHeight": 5,
-						"showTitle": false
-					},
-					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 8,
-						"gridHeight": 20,
+						"gridWidth": 9,
+						"gridHeight": 9,
 						"showTitle": false
 					},
 					{
-						"id": "9",
-						"widgetId": "initiator",
-						"gridX": 8,
-						"gridY": 7,
-						"gridWidth": 4,
+						"id": "3",
+						"widgetId": "case-steps",
+						"gridX": 9,
+						"gridY": 2,
+						"gridWidth": 3,
 						"gridHeight": 3,
-						"showTitle": false
-					},
-					{
-						"id": "6",
-						"widgetId": "case-kpis-hours",
-						"gridX": 8,
-						"gridY": 10,
-						"gridWidth": 4,
-						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "7",
 						"widgetId": "case-flow-runs",
-						"gridX": 8,
-						"gridY": 12,
-						"gridWidth": 4,
-						"gridHeight": 7
+						"gridX": 9,
+						"gridY": 5,
+						"gridWidth": 3,
+						"gridHeight": 6
 					},
 					{
 						"id": "11",
 						"widgetId": "case-terms",
-						"gridX": 8,
-						"gridY": 19,
+						"gridX": 0,
+						"gridY": 11,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -1859,9 +1811,9 @@
 					{
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
-						"gridX": 0,
-						"gridY": 22,
-						"gridWidth": 12,
+						"gridX": 4,
+						"gridY": 11,
+						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
 					}
@@ -2110,7 +2062,6 @@
 			},
 			"slots": {
 				"widget-case-steps": "CaseStepsWidget",
-				"widget-initiator": "InitiatorSection",
 				"widget-cmmn-case-plan": "CasePlanPanel"
 			}
 		},

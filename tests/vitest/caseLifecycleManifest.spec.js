@@ -102,9 +102,9 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 		expect(registrySource).toContain('component: CaseTransitionsWidget,')
 	})
 
-	it('leads with five loose KPI tiles, and the panels sit straight under them', () => {
-		// The case's facts lead the page as five cards, one per fact, each its
-		// own grid cell on row 0, dividing the twelve columns between them.
+	it('leads with three loose KPI tiles, and the panels sit straight under them', () => {
+		// The case's facts lead the page as three cards, one per fact, each its
+		// own grid cell on row 0, with the hours card beside them.
 		//
 		// It has been three ways. The facts were a full-width band, then a
 		// titled card in the right rail, then one `case-header` widget drawing
@@ -120,8 +120,6 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 		expect(tiles.map((cell) => cell.widgetId)).toEqual([
 			'case-kpi-number',
 			'case-kpi-casetype',
-			'case-kpi-status',
-			'case-kpi-assignee',
 			'case-kpi-deadline',
 		])
 		let x = 0
@@ -130,7 +128,13 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 			expect([cell.widgetId, cell.gridX], 'the tiles abut, in order').toEqual([cell.widgetId, x])
 			x += cell.gridWidth
 		}
-		expect(x, 'the five tiles fill the twelve columns').toBe(12)
+		// The hours card heads the right column beside them, so the row is full.
+		const hours = cells('case-kpis-hours')[0]
+		expect([hours.gridX, hours.gridY]).toEqual([x, 0])
+		expect(x + hours.gridWidth, 'the three tiles and the hours card fill the twelve columns').toBe(12)
+		// The status and the assignee are not tiles: both read in the Data tab.
+		expect(widget('case-kpi-status')).toBeUndefined()
+		expect(widget('case-kpi-assignee')).toBeUndefined()
 		expect(widget('case-header'), 'the one-cell identity row is gone').toBeUndefined()
 		expect(cells('case-header')).toHaveLength(0)
 
@@ -147,23 +151,22 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 		// the register and schema to resolve the label in.
 		expect(widget('case-kpi-number').type).toBe('stat')
 		expect(widget('case-kpi-number').content.objectField).toBe('identifier')
-		expect(widget('case-kpi-assignee').content.objectField).toBe('assignee')
 		expect(widget('case-kpi-casetype').content.objectField).toEqual({
 			field: 'caseType',
 			resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' },
-		})
-		expect(widget('case-kpi-status').content.objectField).toEqual({
-			field: 'status',
-			resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name' },
 		})
 		expect(widget('case-kpi-deadline').type).toBe('countdown')
 		expect(widget('case-kpi-deadline').content.field).toBe('deadline')
 	})
 
-	it('gives the stepper the cell the milestone tile had', () => {
+	it('keeps the stepper at the head of the right column, under the hours card', () => {
+		// The right column is three wide now and starts at column 9, with the
+		// hours card on row 0 and the stepper straight under it.
 		const steps = cells('case-steps')[0]
-		expect(steps.gridX).toBe(8)
-		expect(steps.gridWidth).toBe(4)
+		const hours = cells('case-kpis-hours')[0]
+		expect(steps.gridX).toBe(9)
+		expect(steps.gridWidth).toBe(3)
+		expect(steps.gridY).toBe(hours.gridY + hours.gridHeight)
 	})
 
 	it('has retired the milestone progress tile from this page', () => {

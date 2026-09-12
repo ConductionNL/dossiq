@@ -490,13 +490,16 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 
 You see which case you are on without reading the data widget. `CaseDetail`
 SHALL set `config.subtitleField` to `identifier`, so the case number reads
-under the title. The first layout row SHALL hold five loose KPI cards, one
-per fact and each its own grid cell: the case number, the case type, the
-status, the assignee and the deadline. Four are built-in `stat` tiles in
-object-field mode, reading the fact straight off the loaded record and
-resolving the case type and the status through the store to their names,
-never their uuids. The deadline is the built-in `countdown` tile: days left,
-or days overdue in the danger variant. A case without a deadline SHALL show
+under the title. The first layout row SHALL hold three loose KPI cards, one
+per fact and each its own grid cell: the case number, the case type and the
+deadline, with the hours card beside them at the head of the right column.
+Two are built-in `stat` tiles in object-field mode, reading the fact straight
+off the loaded record and resolving the case type through the store to its
+name, never its uuid. The deadline is the built-in `countdown` tile: days
+left, or days overdue in the danger variant. The status and the assignee are
+not tiles: both read in the Data tab, which is the open tab on load, and a
+row of five tiles carried two the page did not need (laid out by hand in
+Buildiq edit mode on 2026-09-12 and copied into the manifest). A case without a deadline SHALL show
 the countdown tile empty rather than a count. Five cells rather than one
 row widget, because one widget drawing five cards inside a two-row cell
 clipped them and read as a single strip, and because a cell is what Buildiq
@@ -521,7 +524,7 @@ alone is the subtitle.
 
 - **GIVEN** a case in status In behandeling with a deadline 26 days ago
 - **WHEN** the handler opens the case page
-- **THEN** the Status tile SHALL read In behandeling, and never the uuid
+- **THEN** the Status field in the Data tab SHALL read In behandeling, and never the uuid
 - **AND** the Deadline tile SHALL show 26 days overdue in the danger variant
 - **AND** no tile labelled Time left SHALL render in the KPI row
 
@@ -530,7 +533,7 @@ alone is the subtitle.
 
 - **GIVEN** a case with no status record and no deadline
 - **WHEN** the handler opens the case page
-- **THEN** the Status tile SHALL render, with no uuid and no fabricated name
+- **THEN** the Status field in the Data tab SHALL render, with no uuid and no fabricated name
 - **AND** the Deadline tile SHALL show no count of days
 
 #### Scenario: The full subtitle line waits on nextcloud-vue

@@ -231,15 +231,14 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
-		// The row also carries the case number and the status as tiles of their
-		// own, so the page says which case you are on without opening the Data
-		// tab.
+		// The row also carries the case number as a tile of its own; the status
+		// reads in the Data tab, which is the open tab on load.
 		await expect(number.locator('.cn-kpi-card__value')).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(
-			tile(page, /^Status$/).locator('.cn-kpi-card__value'),
-		).toBeVisible({ timeout: 15_000 })
+		await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')).toBeVisible({
+			timeout: 15_000,
+		})
 
 		// The facts are loose tiles again, one each: exactly one countdown and
 		// exactly one Case type tile. A second of either would be the
@@ -336,12 +335,14 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test('the KPI tiles carry no grid heading and no actions menu', async ({
 		page,
 	}) => {
-		// Five tiles label themselves, so no cell prints a heading over them,
+		// Three tiles label themselves, so no cell prints a heading over them,
 		// and read-only facts offer no Actions menu of their own. This
 		// assertion has flipped twice while the facts were one widget (a band,
 		// then a titled rail card, then a band again); as five built-in tiles
 		// the question is settled the way every KPI row on a dashboard settles
-		// it: the tile is the label.
+		// it: the tile is the label. Three, not five: the status and the
+		// assignee tiles were dropped in edit mode, both facts read in the
+		// Data tab.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -353,7 +354,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const cells = page
 			.locator('.cn-widget-grid__item, .grid-stack-item')
 			.filter({ has: page.locator('.cn-kpi-card') })
-		await expect(cells).toHaveCount(5)
+		await expect(cells).toHaveCount(3)
 
 		expect(
 			await cells.getByText(/^(Case identity|Zaakgegevens)$/).count(),
@@ -362,7 +363,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(
 			tile(page, /^(Case type|Zaaktype)$/).locator('.cn-kpi-card__value'),
 		).toBeVisible({ timeout: 15_000 })
-		await expect(tile(page, /^Status$/).locator('.cn-kpi-card__value')).toBeVisible()
+		await expect(tile(page, /^(Deadline|Termijn)$/)).toBeVisible()
 		await expect(
 			cells.getByRole('button', { name: /^(Actions|Acties)$/ }),
 		).toHaveCount(0)

@@ -312,7 +312,7 @@ async function openCase(page: Page, id: string): Promise<void> {
 	await expect(page.getByTestId('case-transitions')).toBeVisible({
 		timeout: 30_000,
 	})
-	await expect(page.locator('.cn-kpi-card:has(.cn-kpi-card__title span:text-is("Status"))')).toBeVisible({
+	await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')).toBeVisible({
 		timeout: 30_000,
 	})
 }
