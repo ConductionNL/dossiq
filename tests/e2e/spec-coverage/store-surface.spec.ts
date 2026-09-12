@@ -39,13 +39,37 @@ test.describe('Store surface', () => {
 	// component renders `class="material-design-icon store-outline-icon"`, so
 	// the icon the manifest declares is readable off the DOM by that class.
 	//
-	// 🔴 AND THE NEGATIVE IS THE ONE THAT MATTERS, because a wrong icon name is
-	// not an error here. `isUnresolvedIcon()` catches any PascalCase name the
+	// 🔴 WHY A WRONG NAME IS NOT AN ERROR, which is what makes this worth
+	// asserting at all: `isUnresolvedIcon()` catches any PascalCase name the
 	// registry does not hold and `CnAppNav` renders `HelpCircleOutline`
 	// instead, so a typo, a rename or an icon dropped from `src/icons.js` ships
 	// a generic question mark in the navigation and nothing anywhere reports
-	// it. Asserting the absence of `.help-circle-outline-icon` is what makes
-	// the declared name falsifiable rather than merely present.
+	// it.
+	//
+	// ⚠️ AND A SECOND ASSERTION HERE WOULD HAVE BEEN DECORATION. This carried
+	// `expect('.help-circle-outline-icon').toHaveCount(0)` beside the positive,
+	// described as the load-bearing half. It is not, and the mutation below
+	// showed it: CnAppNav's icon slot is `v-if mdiIconComponent` /
+	// `v-else-if isUnresolvedIcon` / `v-else CnMenuItemIcon`, three mutually
+	// exclusive branches, so "the StoreOutline glyph is absent" and "the
+	// fallback is present" are ONE event rather than two. The positive throws
+	// first and the negative never ran. What it was actually good for — naming
+	// the fallback in the failure — is kept by reading the rendered class list
+	// in a single assertion, so the diagnostic lands in the message instead of
+	// in a check that cannot fire.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`
+	// against a private disposable instance. The manifest's declared name was
+	// rewritten on the way to the browser, leaving the `src/icons.js` registry
+	// intact, which is the defect this clause guards:
+	//
+	//   find    /"label":"Store","icon":"StoreOutline"/
+	//   replace '"label":"Store","icon":"StoreOutlineXX"'
+	//   red on  Expected substring: "store-outline-icon"
+	//           Received string:    "material-design-icon help-circle-outline-icon"
+	//
+	// The footer-placement clause below stayed green throughout, which is why
+	// it could never have stood in for this one.
 	//
 	// @e2e openspec/specs/dossiq-store-surface/spec.md#the-entry-carries-the-tier-a-glyph
 	test('the store entry carries the StoreOutline glyph and sits between Documentation and Reports', async ({
@@ -68,14 +92,30 @@ test.describe('Store surface', () => {
 			'the Store entry must render under the id the manifest gives it',
 		).toHaveCount(1, { timeout: 30_000 })
 		await expect(
-			entry.locator('.store-outline-icon'),
-			'the Store entry must render the StoreOutline glyph the manifest declares',
-		).toHaveCount(1, { timeout: 30_000 })
-		await expect(
-			entry.locator('.help-circle-outline-icon'),
-			'an icon name the registry cannot resolve renders the fallback question '
-				+ 'mark rather than failing, so its absence is the assertion',
-		).toHaveCount(0)
+			entry.locator('.material-design-icon').first(),
+			'the Store entry must render an icon at all',
+		).toBeAttached({ timeout: 30_000 })
+		// ONE assertion, reading the glyph the entry actually rendered. A
+		// second `toHaveCount(0)` on `.help-circle-outline-icon` was here and
+		// is gone: the branches are exclusive, so it could never fail on its
+		// own, and written after this line it never even ran. Reading the class
+		// list instead keeps the single claim and puts the fallback in the
+		// failure message, which is the part that was worth having.
+		await expect
+			.poll(
+				async () =>
+					(await entry.locator('.material-design-icon').evaluateAll(
+						(nodes) => nodes.map((node) => node.className),
+					)).join(' '),
+				{
+					timeout: 30_000,
+					message:
+						'the Store entry must render the StoreOutline glyph the manifest '
+						+ 'declares; `help-circle-outline-icon` here means the name did '
+						+ 'not resolve in the registry and CnAppNav fell back',
+				},
+			)
+			.toContain('store-outline-icon')
 
 		// Order, not merely presence. The entry was placed at order 92
 		// deliberately, and an entry that exists in the wrong place is the
