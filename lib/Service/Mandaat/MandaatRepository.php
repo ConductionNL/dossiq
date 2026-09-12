@@ -66,7 +66,7 @@ class MandaatRepository {
 	/**
 	 * Resolve the object service, register and schemas needed to approve an import.
 	 *
-	 * @return array<string, mixed> {objectService, register, bSchema, mSchema}
+	 * @return array<string, mixed> carrying objectService, register, bSchema and mSchema.
 	 *
 	 * @throws RuntimeException When the mandaat services are not configured.
 	 *
