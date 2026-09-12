@@ -452,8 +452,61 @@ test.describe('Tasks page', () => {
 })
 
 test.describe('My Work page', () => {
+	/**
+	 * ONE CASE ASSIGNED TO THE SIGNED-IN USER, SO THE TABLE CAN EXIST.
+	 *
+	 * `CnDataTable` renders its `<table>` only once it has rows, so on an
+	 * instance where this user holds nothing the table view is a headline and
+	 * no headers, and "the table view shows these five columns" would read as
+	 * a missing column rather than as an empty list. The row is never located
+	 * or counted: it is there so the list has something to draw.
+	 */
+	let api: APIRequestContext
+	let token = ''
+
+	/** The signed-in uid, which is what My Work filters on. */
+	const ME = process.env.ADMIN_USER ?? 'admin'
+
+	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		const context = await browser.newContext()
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: await context.storageState(),
+		})
+		await context.close()
+		token = await getRequestToken(api)
+
+		const caseType = await ensureCaseType(api, token)
+		await seedCase(api, token, {
+			title: `${RUN_PREFIX} My Work case`,
+			caseType: caseType.id,
+			assignee: ME,
+		})
+	})
+
+	test.afterAll(async () => {
+		if (api === undefined) return
+		await cleanupRunObjects(api, token)
+		await api.dispose()
+	})
+
 	// @e2e openspec/specs/my-work/spec.md#scenario-card-and-table-view
+	//
+	// 🔴 WHAT THE SCENARIO ASKS, AND WHAT THIS USED TO ASSERT. "The list MUST
+	// default to card view and offer a card/table toggle, AND the table view
+	// MUST show the columns: identifier, title, case type, status, deadline."
+	// The body asserted the two sort buttons and that a Cards button was
+	// visible. It never switched to Table, never read a column and never said
+	// which view the page opens in, so a My Work that opened as a table with
+	// three columns passed every line of it.
+	//
+	// The requirement above the scenario carries an `@e2e exclude` for being
+	// data dependent, and that reason is about the list's CONTENTS: which
+	// cases a named user holds. This scenario is about the view shell and its
+	// columns, which one seeded row makes assertable without asserting
+	// anything about who holds what.
 	test('renders as a card index scoped to the current user', async ({ page }) => {
+		test.setTimeout(120_000)
 		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
 		// nav link and used to burn the whole test budget inside navTo.
 		await navTo(page, /^(Assigned to me|Aan mij toegewezen)$/)
@@ -465,9 +518,49 @@ test.describe('My Work page', () => {
 			timeout: 15000,
 		})
 		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
+
+		// THE DEFAULT IS CARDS, AND THE TOGGLE PROVES IT RATHER THAN THE
+		// ABSENCE OF A TABLE. Both view buttons carry `aria-pressed`, so the
+		// pressed one IS the current view; "no table on screen" would also be
+		// satisfied by a list that had not answered yet.
+		const cards = page.getByRole('button', { name: /Cards/ }).first()
+		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
+		await expect(cards, 'the card/table toggle offers cards').toBeVisible()
+		await expect(tableToggle, 'and a table').toBeVisible()
 		await expect(
-			page.getByRole('button', { name: /Cards/ }).first(),
-		).toBeVisible()
+			cards,
+			'My Work opens in card view, which is what the scenario calls the default',
+		).toHaveAttribute('aria-pressed', 'true')
+		await expect(tableToggle).toHaveAttribute('aria-pressed', 'false')
+
+		// AND THE FIVE COLUMNS THE SCENARIO NAMES. Switching views is the
+		// other half of the toggle claim, and the headers are the half that
+		// says what a reader gets when they switch.
+		// `.mywork-card` is this page's own card, not the library's generic
+		// row: MyWorkCards fills CnIndexPage's `#card` slot with
+		// MyWorkCaseCard, so `cn-object-row` never appears in card view here.
+		await expect(
+			page.locator('.mywork-card').first(),
+			'the list has answered, so an absent column is a decision',
+		).toBeVisible({ timeout: 30_000 })
+		await tableToggle.click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 30_000 })
+		// The SORTED column carries its direction glyph inside the header, so
+		// its accessible name reads "Deadline\u25b2" and an end-anchored
+		// pattern misses exactly the column the page is sorted on.
+		for (const column of [
+			/^(Identifier|Kenmerk|Identificatie)[\u25b2\u25bc]?$/,
+			/^(Title|Titel)[\u25b2\u25bc]?$/,
+			/^(Case type|Zaaktype)[\u25b2\u25bc]?$/,
+			/^(Status)[\u25b2\u25bc]?$/,
+			/^(Deadline|Uiterlijke datum)[\u25b2\u25bc]?$/,
+		]) {
+			await expect(
+				table.getByRole('columnheader', { name: column }),
+				`the table view must carry the ${column} column`,
+			).toBeVisible({ timeout: 20_000 })
+		}
 	})
 })
 
