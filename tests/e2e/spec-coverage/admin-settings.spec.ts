@@ -231,6 +231,32 @@ test.describe('Admin Settings spec coverage', () => {
 	 * do about it. Writing the assertion first and the copy afterwards would be
 	 * the tail wagging the dog; the gap is recorded here and in the spec's own
 	 * wording, which already marks it as the weakest of the three.
+	 *
+	 * ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`.
+	 * The served bundle was rewritten on its way to the browser, so no PHP, no
+	 * disk and no other session's instance moved. The break, and what it
+	 * produced:
+	 *
+	 *   chunk   dossiq-shared-nc-vue.js
+	 *   find    /emptyText:\{type:String,default:"No items found"\}/
+	 *   replace 'emptyText:{type:String,default:""}'
+	 *   page    an empty `<div class="cn-index-page__empty">` with its icon and
+	 *           no sentence
+	 *   red on  "the empty state must carry a message a reader can act on",
+	 *           Expected: not "", Received: ""
+	 *
+	 * 🔴 AND THE TWO ASSERTIONS THIS REPLACED STAYED GREEN UNDER THAT SAME
+	 * BREAK. The mutation touches the empty-state copy and nothing else, so the
+	 * Case Type Management heading and the add control the old body asserted
+	 * both still render; the heading assertion ran and passed on that very run,
+	 * twenty lines above the failure.
+	 *
+	 * ✅ AND THE FIXTURE GUARD FIRED FOR REAL, on the first run of this test:
+	 * the settings ids turned out to live under a `config` key rather than at
+	 * the top level, the route matched nothing, the real forty-row list
+	 * rendered, and the run stopped on "the case-type collection read must have
+	 * been answered with an empty page, or nothing below establishes the
+	 * scenario" instead of reporting a green that meant nothing.
 	 */
 	// @e2e openspec/specs/admin-settings/spec.md#empty-case-type-list
 	test('with no case types the list says so, and still offers the add control', async ({
@@ -244,10 +270,19 @@ test.describe('Admin Settings spec coverage', () => {
 			cfgRes.ok(),
 			`reading the dossiq settings -> ${cfgRes.status()}`,
 		).toBe(true)
-		const cfg = await cfgRes.json()
-		const register = String(cfg.register ?? 'dossiq')
-		// The same fallback `src/store/store.js` applies, for the same reason.
-		const schema = String(cfg.case_type_schema || 'caseType')
+		// ⚠️ THE IDS ARE UNDER `config`, not at the top level. The endpoint
+		// answers `{success, openRegisters, isAdmin, config: {register, …}}`,
+		// and reading `cfg.register` gave `undefined` on every instance: the
+		// fallbacks below then produced `/objects/dossiq/caseType`, the route
+		// matched nothing, and the real forty-row list rendered. The hit count
+		// asserted further down is what turned that into a failure naming the
+		// fixture instead of a green naming nothing.
+		const config = (await cfgRes.json())?.config ?? {}
+		const register = String(config.register || 'dossiq')
+		// The same fallback `src/store/store.js` applies, for the same reason:
+		// the numeric schema id can be blank on a fresh register, and the
+		// object API resolves the canonical slug too.
+		const schema = String(config.case_type_schema || 'caseType')
 		const collection = `/apps/openregister/api/objects/${register}/${schema}`
 
 		let intercepted = 0
