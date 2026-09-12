@@ -160,7 +160,14 @@ describe('CaseDetail — the identity row is four configured tiles', () => {
 		// authored purple silently falls back to the default grey pill.
 		const map = content.objectField.resolve.variantMap
 		expect(Object.keys(map).sort()).toEqual([...STATUS_COLOURS].sort())
-		const variants = ['default', 'primary', 'success', 'warning', 'error', 'info']
+		const variants = [
+			'default',
+			'primary',
+			'success',
+			'warning',
+			'error',
+			'info',
+		]
 		for (const [colour, variant] of Object.entries(map)) {
 			expect(variants, `${colour} maps to a real badge variant`).toContain(
 				variant,

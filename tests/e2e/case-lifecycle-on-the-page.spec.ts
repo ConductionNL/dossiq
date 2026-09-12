@@ -693,9 +693,7 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-stepper-follows-a-transition
-	test('the timeline follows its own move without a reload', async ({
-		page,
-	}) => {
+	test('the timeline follows its own move without a reload', async ({ page }) => {
 		await openCase(page, 'stepper')
 		const stages = page
 			.getByTestId('cn-stages-widget')

@@ -3949,7 +3949,9 @@
         "The case plan is unavailable": "The case plan is unavailable",
         "This case type has no adaptive plan": "This case type has no adaptive plan",
         "Try again": "Try again",
-        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case."
+        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case.",
+        "Not issued": "Not issued",
+        "Not possible from the current status": "Not possible from the current status"
     },
     "plurals": ""
 }
