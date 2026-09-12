@@ -413,7 +413,23 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		await expect(page.locator('main')).toBeAttached()
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// 🔴 NO CITATION, AND THE SPEC IS THE STALE HALF. This carried an
+	// anchorless `openspec/specs/first-time-setup/spec.md` citation, and it was
+	// anti-coverage: the spec says a `seed` step SHALL be declared
+	// (REQ-SETUP-PRO-001) and that the seed action SHALL create the bezwaar and
+	// beroep case types (REQ-SETUP-PRO-002), and this test asserts the inverse
+	// of both, that `seed` is absent from the steps and that the action answers
+	// 422 with success false. One of the two had to be wrong, and it is the
+	// spec: the retirement below is deliberate and the payload is parked.
+	//
+	// The citation comes down and both scenarios carry a reason-bearing `@e2e
+	// exclude` naming the retirement and the parked payload, so a spec reader
+	// meets the contradiction where the repair is owed. The test is right and
+	// stays as it is; nothing about it changed.
+	//
+	// It still proves `register-check` is reported, which is the half of
+	// REQ-SETUP-PRO-001 that survives, and the sibling tests above cite the
+	// gating scenarios that are still true.
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
