@@ -34,7 +34,14 @@ These say a refusal, a permission or a guard is proven. None of them prove one.
 - [ ] 1.6 `deelzaak-support#delete-parent-case-with-sub-cases-shows-warning` and `#delete-case-without-sub-cases-proceeds-normally`. The orphan warning is asserted inside `if ((await warning.count()) > 0)`, so a missing warning passes; the sibling auto-dismisses dialogs and falls back to the no-500 check. Seed both fixtures, assert the two dialogs differ, and assert `parentCase` is nulled on the orphans.
 - [ ] 1.7 `document-zaakdossier`, four citations on unconditionally fixme'd tests: `#req-zak-005a` (dialog must not close before required fields), `#req-zak-005c` (executable uploads blocked by extension and magic bytes), `#req-zak-006b` (restore disabled on definitief), `#req-zak-008c` (per-document bulk result). The tests are blocked on a seeded case fixture (#764). Until that fixture exists, these anchors are claims nothing backs: move them to `@e2e exclude` naming #764, or land the fixture. The upload guard is the one to land first.
 - [ ] 1.8 `document-zaakdossier#req-zak-006b` again, its second home in `case-documents.spec.ts`. The `toBeDisabled()` check sits in a loop over `restore.count()`, so a panel with zero Restore buttons is green. Assert the button exists before asserting it is disabled.
-- [ ] 1.9 `first-time-setup` REQ-SETUP-PRO-001. The test asserts the wizard's step list does **not** contain `seed` while the cited requirement mandates a `seed` step. This is the only anti-coverage in the set: implementing the cited requirement turns the test red. Settle which of the two is current, then fix the other. Do not fix the test without reading the spec.
+- [x] 1.9 `first-time-setup` REQ-SETUP-PRO-001. The test asserts the wizard's step list does **not** contain `seed` while the cited requirement mandates a `seed` step. This is the only anti-coverage in the set: implementing the cited requirement turns the test red. Settle which of the two is current, then fix the other. Do not fix the test without reading the spec.
+      **Settled 2026-09-12 (#2584).** The requirement was the stale half. Measured against
+      `src/manifest.json`: the wizard ships `welcome`, `demo-data`, `load-demo-data`,
+      `register-check` (a run-action, not config-fields), `dwangsom-secret` and `done`. The
+      scenario below it already carried a reason-bearing exclude asking for exactly this
+      rewrite. REQ-SETUP-PRO-002 was checked and needed no change: `SetupController::runAction()`
+      still answers `seed` and still calls `seedBezwaarBeroepData()`. The step went, the action
+      stayed.
 - [ ] 1.10 `case-types` cycle refusal. The test saves the cyclical parent successfully and asserts only that blueprint traversal terminates. The scenario requires the save to fail with a message naming the cycle. Assert the refusal and the message.
 - [ ] 1.11 `friendly-case-create-form#req-fcf-003`. The test accepts the answer on `case.properties` OR as a `caseProperty` row, so the "never as properties of the case itself" clause cannot fail. If both stores really are live during a transition, the requirement is wrong and should say so; if not, assert the single store.
 - [ ] 1.12 `handler-vervanging-waarneming#scope-limited-substitution-only-routes-matching-items`, `#all-actions-under-a-substitution-are-queryable`, `#timeline-shows-the-substituted-capacity`, `#preview-before-execution`. Four more on the same file, all page-load or affordance-present assertions. This file is the densest cluster in the audit: 9 of 9 citations non-verified, three of its five tests falling back to `test.skip` when a heading fails to appear. Rewrite the file against seeded substitutions or exclude its scenarios with reasons.
@@ -73,6 +80,14 @@ Mechanical, and the cheapest wins in the set. Fix the pointer, do not rewrite th
 Without these, the same 149 come back. Each is a hydra-side or convention-side decision, not a dossiq test fix, so they are listed last and separately.
 
 - [ ] 5.1 **42 citations use a GitHub anchor the gate cannot read.** `#scenario-req-zak-004b-…` resolves when a human clicks it and credits zero in gate-19, whose slug has no `scenario-` prefix. Zero of the 42 are credited today. Either normalise the prefix in the gate, or rewrite all 42. A defect that is correct by the human check and wrong by the machine check will keep recurring until one of the two moves.
+      **Re-measured 2026-09-12 against the CURRENT gate: 37 citations use the prefix and 25 of
+      them are credited.** `.github#753` taught `covering_ref` to accept GitHub's `scenario-`
+      form, so most of this task is already closed upstream and only 12 remain, which fail for
+      other reasons. 🔴 Do NOT re-measure with the `.github` submodule checked out in this
+      workspace: it is 64 commits behind, has no `github_anchor_ref`, and `extract-citations.py`
+      falls back to a pre-#753 shim silently, so it will confirm the original number and send
+      someone to fix what is already fixed. Extraction recipe is in
+      `remeasurement-2026-09-12-current-gate.md`.
 
       **Ruled 2026-09-11: the gate moves, not the citations.** Confirmed
       against `document-zaakdossier/spec.md:179`, whose heading is
@@ -91,6 +106,13 @@ Without these, the same 149 come back. Each is a hydra-side or convention-side d
 - [ ] 5.2 **79 citations carry no anchor.** `@e2e openspec/specs/<x>/spec.md` with no `#` names a file, not a requirement, and credits nothing. Propose that gate-19 reject an anchorless citation rather than ignore it, since ignoring it is what makes it survive review.
 - [ ] 5.3 **23 citations point into `openspec/changes/**`.** Delta specs, `tasks.md`, `proposal.md`. The gate parses only `openspec/specs/`. Archiving a change silently breaks every one of them, which is how group 4 was created. Either teach the gate to resolve change-local specs, or require citations to name the canonical spec.
 - [ ] 5.4 **26 citations claim a scenario the spec itself marks `@e2e exclude`.** Two statements contradict, nothing detects it, and the gate silently discards the test's claim. Add a check that flags a scenario carrying both.
+      **Detector proposed 2026-09-12 in `.github#764`, advisory not blocking.** gate-19 now names
+      each scenario carrying both an exclusion and a live citation, and asks for a decision
+      rather than guessing which half is wrong. Measured on this app: 28 scenarios, across 8
+      files, led by `case-lifecycle-on-the-page.spec.ts` and `checklist-per-status.spec.ts`.
+      Both directions occur: `vth-inspection-result-authz.spec.ts` is a STALE EXCLUSION, since
+      the test was repaired to assert 201 and read the result back, while the opposite case is
+      what exclusions exist for. Settling the 28 is still this task.
 - [ ] 5.5 **Reconcile the counts.** 330 citations resolve onto 180 distinct scenarios. Citation count is not coverage and reads 1.8x high. If a citation count appears on any dashboard, replace it with the distinct-scenario count.
 - [x] 5.6 **Re-run this audit after the repair.** Done 2026-09-12, pinned to `4a4fdb1e`. See `remeasurement-2026-09-12.md` for the report, `audit-2026-09-12.csv` for the rows and `worklist-2026-09-12.md` for what is left. The 2026-09-11 file is kept as `audit-2026-09-11.csv`.
 
