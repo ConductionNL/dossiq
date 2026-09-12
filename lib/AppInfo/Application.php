@@ -11,6 +11,8 @@
  * subsystem instead of accumulating on the bootstrap class. Application only
  * knows the three phases: bind services, wire listeners, boot.
  *
+ * reqchk: throwaway probe comment, removed with the branch.
+ *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo
  *
