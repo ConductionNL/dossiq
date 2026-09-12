@@ -436,7 +436,30 @@ if (!HUMANIQ_DECLARED) {
 			}
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
+		// 🔴 CITATION WITHDRAWN 2026-09-12, BECAUSE THE SCENARIO IS NOT THE
+		// CLAIM THIS TEST MAKES. It cited
+		// `#no-cross-app-register-query-survives`, whose WHEN is literally
+		// "`src/manifest.json` is searched for `"register": "humaniq"`" and
+		// whose THEN is "no match at all, in a widget or anywhere else". That
+		// is a source-level claim over the whole manifest. This test watches
+		// the network on ONE case page, so it cannot see a declaration on a
+		// widget that is not on this page, or on a page nobody opened, and a
+		// reader taking the citation at face value would believe the whole
+		// manifest had been searched.
+		//
+		// The test stays, because the runtime consequence is the regression
+		// the change exists to prevent and nothing else asserts it: a
+		// manifest query against another app's register 404s and renders `0`,
+		// which is indistinguishable from a case with no hours booked.
+		//
+		// WHAT WOULD CLOSE THE SCENARIO: a unit test reading `src/manifest.json`
+		// off disk and asserting no `"register": "humaniq"` anywhere. It is not
+		// browser-shaped, so no e2e belongs on it. Measured 2026-09-12: nothing
+		// in `tests/Unit` mentions the hours widget or that register, so this
+		// scenario is uncovered rather than covered elsewhere. The same is true
+		// of its two siblings `#the-layout-entry-still-resolves` and
+		// `#no-requiredapp-anywhere-on-an-integration-widget`, which are also
+		// pure manifest assertions and carry no citation at all.
 		test('the page asks humaniq for nothing', async ({ page }) => {
 			// This is the regression the change exists to prevent, and it is
 			// assertable exactly where humaniq is absent: a manifest query
@@ -604,7 +627,30 @@ if (!HUMANIQ_DECLARED) {
 			).toBeLessThan(Number(actionsBox?.x))
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
+		// 🔴 CITATION WITHDRAWN 2026-09-12: A CONSISTENTLY WRONG CASE PASSES
+		// THIS TEST. It cited `#the-leaf-reads-the-right-case`, whose THEN is
+		// that the leaf filters time entries on `domainObjectType` =
+		// `dossiq:case` and `domainObjectRef` = the case's uuid, and derives
+		// that literal from the page config rather than the widget
+		// definition.
+		//
+		// This test books hours from this case's dialog and asserts the
+		// headline rises by what it booked. The write and the read go through
+		// the same leaf with the same literal, so a leaf pointed at the WRONG
+		// case would book there, read back from there, and raise the headline
+		// by exactly the same amount. Neither half of the scenario is
+		// distinguished, and the derivation clause is never touched at all.
+		//
+		// WHAT WOULD CLOSE IT: watch the leaf's own requests and assert the
+		// filter it sends carries `dossiq:case` and this case's uuid, which is
+		// observable on the network without humaniq's cooperation. That
+		// assertion is not written here on purpose: this half of the file has
+		// never run anywhere (see the 🔴 in the header, the `humaniq-hours`
+		// bundle is not shipped), and a strengthening nobody has watched fail
+		// is the thing this programme exists to remove, not to add.
+		//
+		// The test stays as the booking journey. It just does not prove that
+		// scenario.
 		test('booking hours through the dialog raises the headline', async ({
 			page,
 		}) => {
