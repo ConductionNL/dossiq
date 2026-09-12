@@ -326,6 +326,22 @@ test.describe('Case detail — the Communication tab', () => {
 	// scenario it proved half of. Two tests citing one scenario is the right
 	// shape when they prove DIFFERENT clauses; it is only double-counting when
 	// the second proves less of the same thing.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`
+	// against a private disposable instance. The manifest seeds the token, so
+	// the break needs no PHP:
+	//
+	//   find    /"kccEmployeeId":"@me"/
+	//   replace '"kccEmployeeId":"somebody-else"'
+	//   red on  "`@me` must resolve to the account that logged the contact"
+	//           Expected: "admin", Received: "somebody-else"
+	//
+	// 🔴 AND THE ASSERTION THIS REPLACED WOULD HAVE PASSED THAT UNCHANGED.
+	// It read `expect(String(stored.kccEmployeeId)).not.toBe('')`, and
+	// "somebody-else" is not the empty string. A negation against a wide value
+	// space standing in for an identity the scenario names by role is the
+	// shape worth watching: ask how many values satisfy a `not.toBe(...)`
+	// before trusting it to carry a requirement.
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-does-not-ask-for-the-kcc-fields
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#the-form-never-asks-which-case
 	test('a logged call carries the case, the signed-in user, and shows up in the tab', async ({
