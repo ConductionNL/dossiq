@@ -1,0 +1,12 @@
+{
+  "eslint.inlineDisables": 16,
+  "eslint.suppressedViolations": 388,
+  "phpcs.inlineIgnores": 8,
+  "phpmd.suppressWarnings": 278,
+  "phpstan.ignorePatterns": 11,
+  "phpstan.inlineIgnores": 7,
+  "phpunit.skips": 7,
+  "psalm.blanketHandlers": 31,
+  "psalm.inlineSuppressions": 294,
+  "psalm.referencedClasses": 77
+}
