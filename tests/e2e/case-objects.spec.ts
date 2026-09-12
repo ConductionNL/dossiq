@@ -338,8 +338,14 @@ test.describe('Case objects', () => {
 		})
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
-	// @e2e case-management::a-linked-object-shows-up-in-the-tab
+	// No citation, on purpose. This test used to carry
+	// `case-management::a-linked-object-shows-up-in-the-tab` twice, and that
+	// scenario's THENs are the saved row in the Objects tab and the stored
+	// `case` on it. This test saves nothing, so it could not fail on either
+	// (e2e-citation-integrity, audit group 3). The test below links an object,
+	// reads the stored `case` back and finds the row in the tab, and that is
+	// where the scenario is proven. This one guards the field list REQ-CM-29
+	// names, which no scenario states.
 	test('the Link object form asks for the object fields and never for the case', async ({
 		page,
 	}) => {

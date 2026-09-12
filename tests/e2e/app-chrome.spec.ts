@@ -22,9 +22,35 @@
  */
 
 import { expect, test } from '@playwright/test'
+import * as fs from 'fs'
+import * as path from 'path'
 import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
+
+/**
+ * The comparison data the Features & roadmap page renders, read from the same
+ * file the bundle imports. The page DERIVES every number it shows from this
+ * file (src/utils/capabilityComparison.js), so the test derives the expected
+ * numbers the same way and asserts that the page states them. Reading it
+ * rather than writing the numbers in keeps the test from going red every time
+ * a reading round adds a row, while still failing when the page stops saying
+ * what the file holds.
+ */
+const COMPARISON = JSON.parse(
+	fs.readFileSync(
+		path.join(__dirname, '..', '..', 'src', 'data', 'capabilityComparison.json'),
+		'utf8',
+	),
+)
+
+/** The competitor columns: every system except dossiq's own. */
+const RIVALS: string[] = COMPARISON.systems
+	.filter((system: any) => !system.isSelf)
+	.map((system: any) => system.key)
+
+/** The rows a later reading round added, which no competitor was read against. */
+const ADDED_ROWS: any[] = COMPARISON.capabilities.filter((row: any) => row.addedOn)
 
 test.describe('app chrome (ADR-114)', () => {
 	test.beforeEach(async ({ page }) => {
@@ -121,7 +147,16 @@ test.describe('app chrome (ADR-114)', () => {
 		}
 	})
 
-	// @e2e openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+	// No citation, on purpose. This test used to cite
+	// openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+	// with no anchor, which names a change-local file gate 19 cannot read and
+	// credits no scenario. Every scenario in it is about page topology (dashboard type,
+	// one heading, no nesting) and this test asserts none of that. The nearest
+	// canonical scenario, `termijn-reporting::dashboard-kpi-endpoint-returns-aggregates`,
+	// names a path, a field and a cache the endpoint does not have, so moving
+	// the citation there would make it false. It stays as the regression
+	// guard for the rename it was written for (e2e-citation-integrity, audit
+	// group 3).
 	test('the deadline-monitoring report loads its KPIs from the dossiq route', async ({
 		page,
 	}) => {
@@ -171,6 +206,24 @@ test.describe('app chrome (ADR-114)', () => {
 	// @e2e openspec/specs/features-roadmap/spec.md#a-reader-can-date-the-claim
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-advises-the-reader-to-test-for-themselves
 	// @e2e openspec/specs/features-roadmap/spec.md#the-panel-accounts-for-rows-a-later-round-added
+	//
+	// MUTATION CHECK, NOT YET RUN. The permission to break the product for
+	// these checks is pending, so the two clauses below are unverified. Each
+	// line names the break and the assertion that must redden; restore after.
+	//   areas-summarise-before-they-expand
+	//     FeaturesRoadmapView.vue: add `open` to `<details class="features-roadmap__area">`
+	//       -> "area intake must start collapsed"
+	//     areaSummary(): `total: area.capabilities.length + 1`
+	//       -> "area intake must state its capability count and how dossiq scored"
+	//   the-panel-accounts-for-rows-a-later-round-added
+	//     addedRowsText(): `count: added.length + 1`
+	//       -> "the panel must say how many rows later rounds added"
+	//     addedRowsText(): `date: formatComparedOn(comparison.comparedOn, ...)`
+	//       -> "the panel must say when the most recent rows were added"
+	//     addedRowsText(): `others: comparison.systems.length - 2`
+	//       -> "the panel must say every competitor column is unrated on the added rows"
+	//     capabilityComparison.json row 1.14: `"opencase": "yes"`
+	//       -> "an added row must read Unknown for every competitor, never a guess"
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -233,13 +286,147 @@ test.describe('app chrome (ADR-114)', () => {
 		// And that column was read on its own day, not on the shared one.
 		await expect(comparison).toContainText('not on the date above')
 
+		// `the-panel-accounts-for-rows-a-later-round-added`, clause by clause.
+		// The two sentences above were all this test used to read, and neither
+		// carries a number or a date, so a panel reporting the wrong count, no
+		// date, or a guessed rating on an added row stayed green.
+		//
+		// THEN the panel says how many rows were added, and when. The date is
+		// the most recent addition, formatted the way formatComparedOn does it.
+		const latestAddition = ADDED_ROWS.map((row) => row.addedOn)
+			.sort()
+			.at(-1)
+		const latestAdditionText = new Intl.DateTimeFormat('en', {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+			timeZone: 'UTC',
+		}).format(new Date(`${latestAddition}T00:00:00Z`))
+		expect(ADDED_ROWS.length, 'the data file holds added rows').toBeGreaterThan(
+			0,
+		)
+		await expect(
+			comparison,
+			'the panel must say how many rows later rounds added',
+		).toContainText(`we added ${ADDED_ROWS.length} capabilities to the list`)
+		await expect(
+			comparison,
+			'the panel must say when the most recent rows were added',
+		).toContainText(`the most recent of them on ${latestAdditionText}`)
+		// AND it says every competitor column is unrated on those rows.
+		await expect(
+			comparison,
+			'the panel must say every competitor column is unrated on the added rows',
+		).toContainText(`The other ${RIVALS.length} columns read Unknown`)
+		// AND those rows show Unknown for every competitor, never a guess. Read
+		// off the rendered cells: the rows are in the DOM while their area is
+		// collapsed, so one pass covers all of them without opening seventeen
+		// disclosures.
+		const addedIds = ADDED_ROWS.map((row) => String(row.id))
+		const cells = await comparison
+			.locator('.features-roadmap__area tbody tr')
+			.evaluateAll(
+				(rows, ids) =>
+					rows
+						.map((row) => ({
+							id: (
+								row.querySelector('.features-roadmap__num')
+									?.textContent ?? ''
+							).trim(),
+							chips: Array.from(
+								row.querySelectorAll(
+									'td:not(.features-roadmap__num)',
+								),
+							)
+								.filter(
+									(cell) =>
+										!cell.classList.contains(
+											'features-roadmap__col--self',
+										),
+								)
+								.map(
+									(cell) =>
+										cell.querySelector('.features-roadmap__chip')
+											?.className ?? '',
+								),
+						}))
+						.filter((row) => ids.includes(row.id)),
+				addedIds,
+			)
+		expect(
+			cells.map((row) => row.id).sort(),
+			'every added row must be on the page',
+		).toEqual([...addedIds].sort())
+		const guessed = cells
+			.filter(
+				(row) =>
+					row.chips.length !== RIVALS.length
+					|| row.chips.some(
+						(chip) => !chip.includes('features-roadmap__chip--unknown'),
+					),
+			)
+			.map((row) => row.id)
+		expect(
+			guessed,
+			'an added row must read Unknown for every competitor, never a guess',
+		).toEqual([])
+
 		// Seventeen areas, collapsed. Thirteen came from the audit and round 4
 		// added four more, for capabilities that had nowhere to go: a case
 		// plan of services, money on the case, offline field work, and one
 		// instance serving several organisations. The rows live behind the
 		// disclosure so the landing view stays readable; if a change flattens
 		// 329 rows onto the page, this count is what notices.
-		await expect(comparison.locator('.features-roadmap__area')).toHaveCount(17)
+		const areas = comparison.locator('.features-roadmap__area')
+		await expect(areas).toHaveCount(17)
+
+		// `areas-summarise-before-they-expand`. THEN each area states how many
+		// capabilities it holds and how dossiq scored, and AND its rows stay
+		// collapsed until the reader opens it. This test used to count the
+		// areas and stop, so a summary with the wrong numbers, or none, and an
+		// area that opened on its own, all passed.
+		//
+		// The numbers are read as a sequence, not as a sentence, so the check
+		// does not depend on the instance's language: total, then dossiq's
+		// yes, partly and missing, in the order `areaSummary` states them.
+		const expected = COMPARISON.areas.map((area: any) => {
+			const rows = COMPARISON.capabilities.filter(
+				(row: any) => row.area === area.key,
+			)
+			const count = (rating: string) =>
+				rows.filter((row: any) => row.dossiq === rating).length
+			return {
+				key: area.key,
+				total: rows.length,
+				numbers: [rows.length, count('yes'), count('partial'), count('no')],
+			}
+		})
+		await expect(areas).toHaveCount(expected.length)
+		for (const [index, area] of expected.entries()) {
+			const disclosure = areas.nth(index)
+			await expect(
+				disclosure,
+				`area ${area.key} must start collapsed`,
+			).not.toHaveAttribute('open')
+			await expect(
+				disclosure.locator('tbody tr').first(),
+				`the rows of area ${area.key} must stay hidden until it is opened`,
+			).toBeHidden()
+			const summary = await disclosure
+				.locator('.features-roadmap__area-count')
+				.innerText()
+			expect(
+				(summary.match(/\d+/g) ?? []).map(Number),
+				`area ${area.key} must state its capability count and how dossiq scored: "${summary}"`,
+			).toEqual(area.numbers)
+		}
+
+		// Opening an area is what shows its rows, and all of them.
+		const first = areas.first()
+		await first.locator('summary').click()
+		await expect(first).toHaveAttribute('open', '')
+		await expect(first.locator('tbody tr')).toHaveCount(expected[0].total)
+		await expect(first.locator('tbody tr').first()).toBeVisible()
 	})
 
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({
