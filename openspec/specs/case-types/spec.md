@@ -781,10 +781,29 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15b: General tab content
 
+@e2e exclude Three of the fields this scenario enumerates cannot be honestly
+asserted today, and one of them is a defect rather than a gap. `serviceTarget`
+IS rendered by `GeneralTab.vue` and DOES take input, but it is declared in no
+schema, so OpenRegister discards it on save while the page reports success:
+measured 2026-09-12, a write of `serviceTarget: "P14D"` came back absent from a
+fresh read while `suspensionAllowed` on the same write survived. See #2592. A
+test asserting the field renders would pass and would certify data loss, which
+is worse than no test. `suspensionAllowed` is in the schema but `GeneralTab`
+renders no control for it, and `isDraft` (the published/draft status this
+scenario names) has no control on this tab either. The exclusion is protective,
+not stale: the rendered control a later reader will see is exactly the problem.
+
 - GIVEN the admin on the "General" tab
 - THEN the tab MUST display editable fields for: title, description, purpose, trigger, subject, processing deadline (with ISO 8601 helper), service target, extension allowed (with conditional period), suspension allowed, origin, confidentiality, publication required (with conditional text), valid from, valid until, status (published/draft)
 
 #### Scenario CT-15c: Statuses tab content
+
+@e2e exclude The ordered list, the drag handles, the order number, the name,
+the isFinal checkbox and the Add control all ship. `notifyInitiator`, with its
+conditional text field, does not exist: it is absent from the `statusType`
+schema and from `StatusesTab.vue`. Asserting only the clauses that happen to
+pass would be the shape this programme exists to remove, so the scenario is
+excluded whole until the field is built or the clause is dropped.
 
 - GIVEN the admin on the "Statuses" tab
 - THEN the tab MUST display an ordered list of status types with drag handles
@@ -807,12 +826,24 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15f: Properties tab content (V1)
 
+@e2e exclude Wording drift only, and recorded rather than repaired so nobody
+re-opens it: every clause ships. The scenario says "format" and
+`PropertiesTab.vue` labels the control Type while binding the `format` field,
+so the requirement holds and the label does not match it. Worth one rename in
+whichever direction the product prefers; not worth a test asserting a label.
+
 - GIVEN the admin on the "Properties" tab
 - THEN the tab MUST display a list of property definitions
 - AND each property MUST show: name, format, max length (if set), required at status (if set)
 - AND an "Add" button MUST be available
 
 #### Scenario CT-15g: Docs tab content (V1)
+
+@e2e exclude The Docs tab ships and lists document types with a name and an
+Add control, but `direction` (incoming/internal/outgoing) exists in neither the
+`documentType` schema nor `DocumentTypesTab.vue`. The tab instead shows
+Category and Confidentiality, which this scenario does not mention, so the
+requirement and the surface have drifted apart in both directions.
 
 - GIVEN the admin on the "Docs" tab
 - THEN the tab MUST display a list of document types
