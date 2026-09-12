@@ -413,23 +413,50 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		await expect(page.locator('main')).toBeAttached()
 	})
 
-	// 🔴 NO CITATION, AND THE SPEC IS THE STALE HALF. This carried an
-	// anchorless `openspec/specs/first-time-setup/spec.md` citation, and it was
-	// anti-coverage: the spec says a `seed` step SHALL be declared
-	// (REQ-SETUP-PRO-001) and that the seed action SHALL create the bezwaar and
-	// beroep case types (REQ-SETUP-PRO-002), and this test asserts the inverse
-	// of both, that `seed` is absent from the steps and that the action answers
-	// 422 with success false. One of the two had to be wrong, and it is the
-	// spec: the retirement below is deliberate and the payload is parked.
+	// THE ONE ANTI-COVERAGE IN THE AUDIT, SETTLED. This test asserts the
+	// wizard's step list does NOT contain `seed`, while REQ-SETUP-PRO-001 used
+	// to mandate a `seed` step and REQ-SETUP-PRO-003 a `seed.done` key:
+	// implementing the cited requirement would have turned this test red, and
+	// the anchorless citation made the contradiction invisible.
 	//
-	// The citation comes down and both scenarios carry a reason-bearing `@e2e
-	// exclude` naming the retirement and the parked payload, so a spec reader
-	// meets the contradiction where the repair is owed. The test is right and
-	// stays as it is; nothing about it changed.
+	// The product is the current half. `SetupController::status()` carries the
+	// reasoning and `testEveryActionableManifestStepIsReported` compares the
+	// declared and reported step sets in both directions. So the spec moved:
+	// the step list it mandates is now the one the manifest ships, and the
+	// retirement of `seed` is stated rather than contradicted.
 	//
-	// It still proves `register-check` is reported, which is the half of
-	// REQ-SETUP-PRO-001 that survives, and the sibling tests above cite the
-	// gating scenarios that are still true.
+	// MUTATION CHECKED 2026-09-11 against a live instance. `status()` was made
+	// to report `'seed' => ['done' => true]` again. Settled rather than
+	// outstanding on purpose, so the wizard never opened over anyone else's
+	// page loads while the mutation was live. This test reddened on its first
+	// assertion:
+	//
+	//   Error: a step the wizard cannot render is one it can never prompt for
+	//   Expected value: not "seed"
+	//   Received array: ["demo-data", "load-demo-data", "register-check",
+	//                    "seed", "dwangsom-secret"]
+	//
+	// 🔴 OPCACHE. The instance serves PHP with `opcache.revalidate_freq=60`, so
+	// an edit is on disk for up to a minute before it is served. The mutation
+	// was only run once the LIVE payload reported `seed`, and the restore was
+	// only trusted once the live payload stopped reporting it (24 seconds after
+	// the file was clean). A mutation check that trusts the file instead can
+	// run against the unmutated code and report a guard as unable to fail.
+	//
+	// 🔑 #2543 SETTLED THIS THE OTHER WAY AND THE MERGE KEPT BOTH HALVES. It
+	// took the citation DOWN and put a reason-bearing `@e2e exclude` on the two
+	// scenarios instead, on the grounds that the spec was the stale half and
+	// the test should stay uncited "until this requirement and REQ-SETUP-PRO-002
+	// are rewritten to describe the wizard that ships". That rewrite is what
+	// this branch does, so its own precondition is met: the anchor below now
+	// exists and says what the product does. #2543's exclusion survives on
+	// "Optional seed does not gate", which is a different scenario and is still
+	// about an offered `seed` step that no longer exists.
+	//
+	// Nothing about the test body changed in either branch. It still proves
+	// `register-check` is reported, which is the half of REQ-SETUP-PRO-001 that
+	// survives.
+	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {

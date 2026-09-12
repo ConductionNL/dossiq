@@ -94,6 +94,15 @@
                 <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
                 <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
+                <!-- OpenRegister's two validation exceptions. Caught BY TYPE in
+                     InspectionChecklistController and BelplanController so a payload
+                     the schema refuses answers 400 instead of falling through to the
+                     500 arm. Same runtime-resolved, optional-app situation as
+                     LockedException above: PHP matches a catch type without
+                     autoloading, so an absent OpenRegister makes the arm inert rather
+                     than fatal. -->
+                <referencedClass name="OCA\OpenRegister\Exception\ValidationException"/>
+                <referencedClass name="OCA\OpenRegister\Exception\CustomValidationException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
@@ -154,36 +163,22 @@
                 <referencedClass name="GuzzleHttp\Exception\GuzzleException"/>
             </errorLevel>
         </UndefinedClass>
-        <UndefinedMagicMethod errorLevel="suppress"/>
         <UnusedClass errorLevel="suppress"/>
         <PossiblyUnusedMethod errorLevel="suppress"/>
         <UnusedMethod errorLevel="suppress"/>
         <UnusedProperty errorLevel="suppress"/>
         <PossiblyUnusedParam errorLevel="suppress"/>
-        <UnusedDocblockParam errorLevel="suppress"/>
         <UnusedVariable errorLevel="suppress"/>
         <PossiblyUnusedReturnValue errorLevel="suppress"/>
         <RedundantCondition errorLevel="suppress"/>
-        <RedundantFunctionCall errorLevel="suppress"/>
         <RedundantCast errorLevel="suppress"/>
-        <InvalidDocblock errorLevel="suppress"/>
         <MoreSpecificImplementedParamType errorLevel="suppress"/>
         <MissingDependency errorLevel="suppress"/>
-        <UnevaluatedCode errorLevel="suppress"/>
-        <NoValue errorLevel="suppress"/>
-        <TypeDoesNotContainNull errorLevel="suppress"/>
         <TypeDoesNotContainType errorLevel="suppress"/>
-        <InvalidArrayOffset errorLevel="suppress"/>
-        <InvalidCast errorLevel="suppress"/>
         <InvalidArgument errorLevel="suppress"/>
         <InvalidReturnType errorLevel="suppress"/>
         <InvalidReturnStatement errorLevel="suppress"/>
-        <MismatchingDocblockReturnType errorLevel="suppress"/>
-        <EmptyArrayAccess errorLevel="suppress"/>
-        <ImplementedReturnTypeMismatch errorLevel="suppress"/>
-        <InvalidMethodCall errorLevel="suppress"/>
         <UndefinedInterfaceMethod errorLevel="suppress"/>
-        <MissingTemplateParam errorLevel="suppress"/>
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />

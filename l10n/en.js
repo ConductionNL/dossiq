@@ -3932,7 +3932,16 @@ OC.L10N.register(
         "Saved. New mail is checked every five minutes.": "Saved. New mail is checked every five minutes.",
         "Could not save. Try again.": "Could not save. Try again.",
         "That mail account is not yours.": "That mail account is not yours.",
-        "Choose a mail account first.": "Choose a mail account first."
+        "Choose a mail account first.": "Choose a mail account first.",
+        "Case plan": "Case plan",
+        "Ready to start": "Ready to start",
+        "Stop": "Stop",
+        "Stopped": "Stopped",
+        "The case plan could not be loaded. Try again.": "The case plan could not be loaded. Try again.",
+        "The case plan is unavailable": "The case plan is unavailable",
+        "This case type has no adaptive plan": "This case type has no adaptive plan",
+        "Try again": "Try again",
+        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case."
     },
     "nplurals=2; plural=(n != 1);"
 )

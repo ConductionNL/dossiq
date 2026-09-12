@@ -10,8 +10,8 @@
  * properties a person deals with and which are engine plumbing, and the New
  * case action narrows itself to the ten a handler fills. On top of that,
  * `case.caseType` declares `x-openregister-extends-form`, so choosing a case
- * type adds that type's own questions to the form and the answers land in
- * `caseProperty` rows.
+ * type adds that type's own questions to the form and the answers land in the
+ * case's own `properties` array, in the same write that creates the case.
  *
  * These assertions are all against the rendered DOM. The API is used only to
  * seed and tear down the case type and its property definitions.
@@ -282,7 +282,10 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByText(AUDIENCE)).toBeVisible()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// Cited at the SCENARIO, not at the requirement heading. Gate-19 slugs
+	// `#### Scenario:` headings only, so a `#requirement-…` anchor credits
+	// nothing however well it reads on GitHub.
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#answers-are-stored-on-the-case-not-as-a-dynamic-key
 	test('files a case with its case type answers', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const title = `${RUN_PREFIX} Aanvraag`
@@ -312,36 +315,32 @@ test.describe('New case dialog', () => {
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
 
-			// EITHER STORE, because both are live during the transition.
-			// 7882afdc moved these answers onto the case as a `properties`
-			// array, so they save in the same write as the case instead of a
-			// second write that can be left behind. FoldCasePropertiesOntoCase
-			// backfills that array and deliberately leaves the old
-			// `caseProperty` rows in place.
+			// ONE STORE, NAMED. This block used to read `case.properties` OR
+			// the `caseProperty` rows, whichever was non-empty, and that is
+			// the shape the requirement forbids passing under: the clause
+			// "never as a dynamic key beside the declared properties" cannot
+			// fail against a test that accepts whatever it finds.
 			//
-			// Which store a given instance uses depends on whether its `case`
-			// schema carries the array, and that is NOT uniform: 7882afdc added
-			// the property without bumping the schema's version (1.12.0 before
-			// and after), and OpenRegister's importer gates on version, so a
-			// fresh install has the array and an upgraded one does not. This
-			// test failed on CI and passed locally for exactly that reason.
+			// The live store is the array on the case. `f7c9f87c` switched the
+			// `x-openregister-extends-form` declaration to `mode: array` /
+			// `arrayKey: properties` once nextcloud-vue 2.35.0 shipped array
+			// mode, so the answers save in the same write as the case. The
+			// `caseProperty` rows FoldCasePropertiesOntoCase projected are
+			// left in place on purpose — the projection can be redone from
+			// them — but nothing writes a new one, which is why the absence
+			// assertion below is safe to make about THIS run's case.
 			//
-			// Reading both is not the same as asserting nothing: if the answer
-			// is written to neither, this still fails, which is the defect
-			// worth catching. The `value` assertions below are unchanged.
-			const onCase = Array.isArray(created.properties)
+			// The earlier either-store reading was written when `case` was
+			// still at schema version 1.12.0 on both sides of the move, so an
+			// upgraded instance had no array and a fresh one did. The schema
+			// is at 1.19.0 now and the array is importable everywhere, so the
+			// ambiguity that justified reading both is gone.
+			const answers = Array.isArray(created.properties)
 				? created.properties
 				: []
-			const answers =
-				onCase.length > 0
-					? onCase
-					: await listObjects(api, 'caseProperty', {
-							case: objectId(created),
-							_limit: '50',
-						})
 			expect(
 				answers.length,
-				'the case type answer should have been written, on the case or as a caseProperty row',
+				"the case type answer should have been written into the case's own `properties` array",
 			).toBeGreaterThan(0)
 			// Name the row, do not index it. Both questions are answered (the
 			// enum carries a default), and the API does not promise an order —
@@ -355,6 +354,33 @@ test.describe('New case dialog', () => {
 				'the ceiling answer should have been written',
 			).toBeTruthy()
 			expect(String(ceilingRow.value)).toBe('50000')
+			expect(String(ceilingRow.name)).toBe(CEILING)
+
+			// THE HALF THE REQUIREMENT IS ACTUALLY ABOUT. An unsplit payload
+			// posts the answer to the case under the definition's own name,
+			// and OpenRegister drops an undeclared key with a 200 and no error
+			// anywhere — so the only way to see it is to look for it. Neither
+			// the name nor the uuid may appear as a key of the case itself.
+			expect(
+				Object.keys(created),
+				'the answer must not be written as a dynamic key on the case',
+			).not.toContain(CEILING)
+			expect(
+				Object.keys(created),
+				'the answer must not be written under the definition uuid either',
+			).not.toContain(ceilingDefId)
+
+			// And the legacy store stays empty. `caseProperty` rows are no
+			// longer written; a row against THIS run's case would mean the
+			// second write came back.
+			const legacy = await listObjects(api, 'caseProperty', {
+				case: objectId(created),
+				_limit: '50',
+			})
+			expect(
+				legacy.length,
+				`no caseProperty row may be written any more, saw ${legacy.length}`,
+			).toBe(0)
 		}).toPass({ timeout: 30000 })
 	})
 	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-case-type-fills-the-title

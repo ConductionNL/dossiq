@@ -114,16 +114,25 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// its version panel. Re-declaring the anchor on a fixme'd body would only
 	// put the scenario back where this audit found it.
 	//
-	// REQ-ZAK-006a stays quarantined, and the reason is narrower than it was:
-	// not "no seeded case" — that fixture exists — but no seeded document with
-	// MORE THAN ONE Nextcloud file version. Versions come from successive writes
-	// through the Files backend, and nothing here writes a document twice.
+	// REQ-ZAK-006a stays quarantined, but the reason has MOVED and saying so is
+	// the point: the missing piece is no longer missing. It used to be that
+	// nothing in this suite wrote a document twice, so no informatieobject
+	// carried more than one Nextcloud file version.
+	// `case-documents.spec.ts#seedVersionedDocument` now does exactly that, and
+	// its docblock carries the storage path and the three calls it takes.
+	//
+	// What is still absent is a fixture HERE. This file seeds no case and no
+	// document at all; it navigates and asserts the page does not 500. Lifting
+	// the fixme means giving this body a draft document with two versions and
+	// then mutation-checking that the ENABLED restore it asserts can actually
+	// go red. Nobody has done that, so the fixme stays rather than becoming a
+	// second citation nothing backs.
 	test('version history needs a multi-version document, blocked by #764', async ({
 		page,
 	}) => {
 		test.fixme(
 			true,
-			'#764: REQ-ZAK-006a needs an informatieobject carrying more than one Nextcloud file version. The seeded-case fixture exists; a second file version does not, because nothing in this suite writes the same document twice through the Files backend.',
+			'#764: REQ-ZAK-006a needs a draft informatieobject with two Nextcloud file versions, seeded in THIS file. The recipe exists (case-documents.spec.ts#seedVersionedDocument); the fixture here does not, and the enabled-restore assertion has never been mutation-checked.',
 		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')
