@@ -52,7 +52,6 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { mutateBundle } from './helpers/mutate-bundle.ts'
 import {
 	dateTokenPattern,
 	dismissSupportDialog,
@@ -920,28 +919,17 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		// owns: skipping the whole test on an old engine used to take
 		// dossiq's own claim down with openregister's. Probed by behaviour in
 		// `beforeAll`, never off a version string.
-		// MUTATION-CHECK SCAFFOLD — REMOVE BEFORE COMMIT
-		const broken = await mutateBundle(
-			page,
-			[
-				{
-					label: 'the Due this week lens loses its near edge',
-					find: /"dueAfter":"@today"/,
-					replace: '"dueAfterX":"@today"',
-				},
-			],
-			/dossiq-main\.js/,
-		)
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
-		broken.assertApplied()
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await chip(page, CHIPS.dueThisWeek).click()
-		// On an engine that drops the predicates the lens answers everything
-		// non-terminal, so the seeded row is there either way; this is a
-		// "the list has answered" signal and nothing more.
-		await listSettled(page, 'task-this-week')
 
+		// 🔴 THE REQUEST FIRST, THE ROW AFTER. See the Overdue test below for
+		// what this ordering is for: a break to the lens widens the list past
+		// its 25-row page, the seeded row falls off it, and the mutation then
+		// reddens a row wait rather than the predicate the citation is about.
+		// This test's mutation happened to survive that in the near edge, and
+		// surviving by luck is not a property worth keeping.
 		const windowed = await firstQueryWith(asked, 'dueAfter')
 		expect(
 			windowed.get('dueBefore'),
@@ -961,6 +949,11 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 			`the window the chip asks for is a week, not ${days} days`,
 		).toBeGreaterThan(6)
 		expect(days).toBeLessThan(8)
+
+		// On an engine that drops the predicates the lens answers everything
+		// non-terminal, so the seeded row is there either way; this is a
+		// "the list has answered" signal and nothing more.
+		await listSettled(page, 'task-this-week')
 
 		// AND THE ENGINE'S OWN EDGES, where this instance answers them, with
 		// pagination out of the way — every task this file seeds hangs off
@@ -1007,26 +1000,21 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('the Overdue lens asks for the projection, and a task due later today is not late', async ({
 		page,
 	}) => {
-		// MUTATION-CHECK SCAFFOLD — REMOVE BEFORE COMMIT
-		const broken = await mutateBundle(
-			page,
-			[
-				{
-					label: 'the Overdue lens becomes a date comparison',
-					find: /"label":"Overdue","filter":\{"scope":"all","overdue":true\}/,
-					replace:
-						'"label":"Overdue","filter":{"scope":"all","dueBefore":"@today"}',
-				},
-			],
-			/dossiq-main\.js/,
-		)
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
-		broken.assertApplied()
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await chip(page, CHIPS.overdue).click()
-		await listSettled(page, 'task-overdue')
 
+		// 🔴 THE REQUEST IS READ BEFORE ANY ROW IS WAITED FOR, AND THE ORDER
+		// IS THE POINT. A mutation check on this test twice reddened
+		// `listSettled` instead of the assertion below, because ANY break to
+		// this lens widens the result set: `scope=all` alone is 69 tasks and
+		// `scope=all&isTerminal=false` is 27, both past the 25-row page, so
+		// the seeded row falls off page one and the test fails before it ever
+		// reads the predicate. A red on a setup line looks exactly like a
+		// proof and is just as empty. What this test claims is about the
+		// REQUEST, which exists the moment the chip is clicked, so it is
+		// asserted first and the row is waited for afterwards.
 		const asksLate = await firstQueryWith(asked, 'overdue')
 		expect(asksLate.get('overdue'), 'the lens asks the engine, not a date').toBe(
 			'true',
@@ -1041,6 +1029,10 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 			asksLate.get('dueBefore'),
 			'the Overdue lens must not express lateness as a date window',
 		).toBeNull()
+
+		// And the list answered, which is what makes the API assertions below
+		// about a page a reader could be looking at.
+		await listSettled(page, 'task-overdue')
 
 		// The other side of the same boundary, and deliberately NOT gated on
 		// the due-window predicates: `overdue` is the engine's own derived
