@@ -167,6 +167,7 @@ export default {
 	 * Read the plan once the panel is on the page.
 	 *
 	 * @return {Promise<void>}
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 	 */
 	async mounted() {
 		subscribe(PAGE_REFRESH, this.load)
@@ -260,6 +261,7 @@ export default {
 		 * Read the case record, for its `casePlanState` blob and nothing else.
 		 *
 		 * @return {Promise<object>} The case, or an empty object.
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-004-the-blob-retires-after-the-drain-not-before
 		 */
 		async readCase() {
 			try {
@@ -274,6 +276,7 @@ export default {
 		 *
 		 * @param {object} item The plan item.
 		 * @return {Array<string>} The targets.
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		transitionsFor(item) {
 			return offeredTransitions(item)
@@ -321,6 +324,7 @@ export default {
 		 *
 		 * @param {() => Promise<object>} write The write to run.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		async act(write) {
 			this.busy = true
@@ -340,6 +344,7 @@ export default {
 		 *
 		 * @param {string} state The state.
 		 * @return {string} The label.
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		stateLabel(state) {
 			return {
@@ -357,6 +362,7 @@ export default {
 		 *
 		 * @param {string} target The target state.
 		 * @return {string} The label.
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		transitionLabel(target) {
 			return {
