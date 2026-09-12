@@ -82,17 +82,39 @@ export interface AppliedMutations {
  *
  * Install this BEFORE the `page.goto` whose load should run the broken code.
  *
+ * ⚠️ SCOPE IT WITH `only` WHEN THE PAGE PULLS SEVERAL CHUNKS. Every
+ * intercepted request is fetched, decoded to text and re-encoded, and the app's
+ * chunks run to several megabytes each. On the Nextcloud dashboard, which loads
+ * a widget chunk beside the shared vendor bundle, rewriting all of them pushed
+ * `page.goto` past its 45 second budget and the test failed as a navigation
+ * timeout rather than on any assertion. Naming the one chunk that carries the
+ * code under test costs nothing and avoids that: the count assertion still
+ * fails loudly if the mutation is not in the chunk you named.
+ *
  * @param page The page to install the route on.
  * @param mutations The edits to apply, in order.
+ * @param only Narrow the interception to bundles whose URL matches this.
  * @return A handle whose `assertApplied()` fails when a mutation matched nothing.
  */
 export async function mutateBundle(
 	page: Page,
 	mutations: BundleMutation[],
+	only?: RegExp,
 ): Promise<AppliedMutations> {
 	const hits = new Map<string, number>(mutations.map((m) => [m.label, 0]))
 
-	await page.route(BUNDLE_URL, async (route) => {
+	// 🔴 `only` NARROWS THE MATCHER, IT DOES NOT FILTER INSIDE THE HANDLER.
+	// Filtering inside and calling `route.continue()` still routes every
+	// matching request through Playwright, and the app ships well over a
+	// hundred lazily-loaded chunks (every date-fns locale is one). Continuing
+	// each of them cost enough round trips that the Nextcloud dashboard never
+	// reached its `load` event inside 45 seconds and the test failed as a
+	// navigation timeout. Requests that fail this predicate are never
+	// intercepted at all.
+	const matcher = (url: URL): boolean =>
+		BUNDLE_URL.test(url.href) && (only === undefined || only.test(url.href))
+
+	await page.route(matcher, async (route) => {
 		const response = await route.fetch()
 		let body = await response.text()
 		for (const mutation of mutations) {
