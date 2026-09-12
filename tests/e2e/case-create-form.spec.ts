@@ -229,7 +229,7 @@ test.describe('New case dialog', () => {
 		return dialog
 	}
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-carries-no-schema-inspection-tabs
 	test('opens the plain form, not the properties and JSON table', async ({
 		page,
 	}) => {
@@ -242,7 +242,7 @@ test.describe('New case dialog', () => {
 		await expect(dialog.getByRole('button', { name: 'Create' })).toBeVisible()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-001-the-new-case-dialog-is-the-plain-form
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-asks-only-for-create-time-fields
 	test('asks only for the fields a handler fills', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -267,7 +267,7 @@ test.describe('New case dialog', () => {
 		}
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#choosing-a-case-type-adds-its-questions
 	test('adds the chosen case type own questions, and drops them again on a change', async ({
 		page,
 	}) => {
@@ -357,7 +357,7 @@ test.describe('New case dialog', () => {
 			expect(String(ceilingRow.value)).toBe('50000')
 		}).toPass({ timeout: 30000 })
 	})
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-case-type-fills-the-title
 	test('fills the title the chosen case type already answers', async ({
 		page,
 	}) => {
@@ -385,7 +385,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(CASE_TYPE_TITLE, { timeout: 15000 })
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#a-typed-title-survives
 	test('leaves a title the handler typed alone', async ({ page }) => {
 		const dialog = await openDialog(page)
 		const typed = `${RUN_PREFIX} Mijn eigen titel`
@@ -403,7 +403,7 @@ test.describe('New case dialog', () => {
 		await expect(titleInput).toHaveValue(typed)
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-005-the-form-answers-what-the-case-type-already-knows
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-starting-status-is-stored-but-never-asked-for
 	test('stores the case type starting status without asking for it', async ({
 		page,
 	}) => {
@@ -437,7 +437,12 @@ test.describe('New case dialog', () => {
 		}).toPass({ timeout: 30000 })
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-003-a-case-type-brings-its-own-questions
+	// The second half of that scenario, not the first: it is the sibling test
+	// above that proves the tabs are absent, and this one that proves the
+	// "disabled until the required fields are answered" clause on the Create
+	// button. Neither proves the scenario alone, and no other scenario in the
+	// spec states the rule this body asserts.
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-dialog-carries-no-schema-inspection-tabs
 	test('keeps Create disabled until a required case type question is answered', async ({
 		page,
 	}) => {
@@ -459,7 +464,7 @@ test.describe('New case dialog', () => {
 		await expect(create).toBeEnabled()
 	})
 
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-006-the-dialog-reads-as-a-form-not-a-schema
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#the-create-form-uses-two-columns
 	test('lays the fields out in two columns', async ({ page }) => {
 		const dialog = await openDialog(page)
 
@@ -509,7 +514,7 @@ test.describe('New case dialog', () => {
 			dialog.getByText(IDENTIFIER_LABEL, { exact: true }),
 		).toBeVisible()
 	})
-	// @e2e openspec/specs/friendly-case-create-form/spec.md#requirement-req-fcf-007-a-field-kept-off-the-create-form-stays-reachable-on-the-case
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#parent-case-is-an-edit-time-field
 	test('keeps parent case off the create form and on the case itself', async ({
 		page,
 	}) => {

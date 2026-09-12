@@ -548,7 +548,16 @@ class ZaakdossierService {
 			return ['id' => $infoObjectId, 'updated' => false];
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
+		// Only the edited fields, applied to the stored document: a bare
+		// saveObject() with the uuid replaces the document with $updateData,
+		// which the schema refuses for the required properties it drops.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $infoSchema,
+			id: $infoObjectId,
+			changes: $updateData,
+		);
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()

@@ -51,7 +51,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import { PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
  * The personas this spec files cases for.
@@ -296,7 +296,7 @@ test.describe('The requester on the case', () => {
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
-		await page.goto(DASHBOARD_URL)
+		await page.goto(DASHBOARD_URL, PAGE_LOAD)
 
 		await page.getByRole('button', { name: /New case|Nieuwe zaak/ }).click()
 		const dialog = page.getByRole('dialog')
@@ -340,7 +340,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-selection/spec.md
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
 		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
 		// no stat tile at all. `case-kpis-hours` is an integration widget that
@@ -379,7 +379,7 @@ test.describe('The requester on the case', () => {
 		expect(before.requester).toBe(plainPersonId)
 		expect(before.initiatorDisplayName ?? '').toBe('')
 
-		await page.goto(`${DASHBOARD_URL}cases/${bareRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${bareRequesterCaseId}`, PAGE_LOAD)
 		await expect(page.locator('[data-testid="initiator-name"]')).toHaveText(
 			PLAIN.name,
 			{ timeout: 30_000 },
@@ -403,7 +403,26 @@ test.describe('The requester on the case', () => {
 		expect(after.initiatorSourceId).toBe(PLAIN.bsn)
 	})
 
-	// @e2e openspec/specs/initiator-selection/spec.md
+	// 🔴 NO CITATION, AND THAT IS THE REPAIR. This carried an anchorless
+	// `openspec/specs/initiator-selection/spec.md` citation, read as verified
+	// on 2026-09-11 and as partial on 2026-09-12. The downgrade is right and
+	// the citation is worse than partial: `beforeAll` seeds this case through
+	// the API with `requester`, `initiatorType`, `initiatorSourceId` and
+	// `initiatorDisplayName` written in, and this test reads those same four
+	// fields back. It is a tautology. It proves OpenRegister stores what you
+	// send it, and no picker, form or save-path breakage can redden it,
+	// because it never opens a page and never exercises the write the
+	// requirement is about.
+	//
+	// The requirement IS proven, by the test that drives the picker:
+	// `tests/e2e/spec-coverage/brp-kvk-initiator.spec.ts`, "picked persona
+	// persists as projection and shows on case detail with source link",
+	// which cites `selection-persists-on-the-case` by anchor. So the claim
+	// comes down and nothing is lost.
+	//
+	// The test stays, uncited, as the round-trip guard for the company shape:
+	// it is the fixture every browser test below reads from, and a projection
+	// that did not survive the seed would surface here first.
 	test('a company requester persists as the uuid and the projection', async () => {
 		const saved = await showObject(api, 'case', companyCaseId)
 		expect(saved.requester, 'the uuid of the kvkCompany row').toBe(companyId)
@@ -416,7 +435,7 @@ test.describe('The requester on the case', () => {
 	test('the case page names the person, the number and the address', async ({
 		page,
 	}) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
 
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
@@ -447,7 +466,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a company card links to the KvK record', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`, PAGE_LOAD)
 
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
@@ -469,7 +488,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a case without a requester shows no card', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
 		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
 		// no stat tile at all. `case-kpis-hours` is an integration widget that
@@ -505,7 +524,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('the requester is a column on the case list', async ({ page }) => {
-		await page.goto(CASES_URL)
+		await page.goto(CASES_URL, PAGE_LOAD)
 		const table = page.getByRole('table')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 
@@ -524,6 +543,7 @@ test.describe('The requester on the case', () => {
 		// cell of the row that comes back.
 		await page.goto(
 			`${CASES_URL}?title=${encodeURIComponent(`${RUN_PREFIX} Gewone aanvrager`)}`,
+			PAGE_LOAD,
 		)
 		const row = page
 			.getByRole('row')
@@ -551,14 +571,43 @@ test.describe('The requester on the case', () => {
 		).toBe(false)
 
 		// The sidebar offers the filter because the field is facetable.
-		await page.goto(CASES_URL)
+		//
+		// 🔴 SCOPED TO THE SIDEBAR, AND IT WAS NOT.
+		//
+		// ✅ MUTATION CHECK RUN 2026-09-12. The sidebar derives its filters
+		// from the SCHEMA's `facetable` properties (CnFacetSidebar ->
+		// `filtersFromSchema`), so the schema read was rewritten on its way
+		// into the browser and nothing on disk moved:
+		//
+		//   route   /\/apps\/openregister\/api\/schemas\//
+		//   break   properties.initiatorDisplayName.facetable = false
+		//   red on  "the sidebar names the requester filter"
+		//
+		// The first attempt stripped `initiatorDisplayName` from the `facets`
+		// block of the OBJECTS response instead. It matched, and the filter
+		// stayed on screen, so that was the wrong input and a green there
+		// would have meant nothing. Worth recording: a mutation that lands and
+		// changes nothing is the one that looks most like a passing test.
+		//
+		// This read
+		// `page.getByText(/^(Requester|Aanvrager)$/).first()` over the WHOLE
+		// page, and the cases table carries a column header reading exactly
+		// that, which the sibling test above asserts. So the clause was
+		// satisfied by the header alone and a list page offering no requester
+		// filter at all still passed. The locator is scoped to `.app-sidebar`
+		// now, which is the control the requirement is about.
+		await page.goto(CASES_URL, PAGE_LOAD)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await page
 			.getByRole('button', { name: /Open sidebar|Filters|Zijbalk/ })
 			.first()
 			.click()
+		const sidebar = page.locator('.app-sidebar')
+		await expect(sidebar, 'the filters sidebar opens').toBeVisible({
+			timeout: 15_000,
+		})
 		await expect(
-			page.getByText(/^(Requester|Aanvrager)$/).first(),
+			sidebar.getByText(/^(Requester|Aanvrager)$/).first(),
 			'the sidebar names the requester filter',
 		).toBeVisible({ timeout: 15_000 })
 	})
@@ -575,7 +624,7 @@ test.describe('The requester on the case', () => {
 			}
 		})
 
-		await page.goto(`${DASHBOARD_URL}cases/${protectedCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${protectedCaseId}`, PAGE_LOAD)
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
 
@@ -600,7 +649,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('an unprotected person is not masked', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
 

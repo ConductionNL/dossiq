@@ -34,7 +34,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
  * The tab order placement row A33 asks for, which is now the WHOLE strip.
@@ -144,19 +144,74 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	// neighbours; this one leaves nothing dangling instead.
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-number-reads-under-the-title
+	//
+	// 🔴 THIS GUARDED THE MECHANISM THE SCENARIO DOES NOT NAME. It measured as
+	// verified on 2026-09-11 and as partial on 2026-09-12. The scenario has two
+	// THENs: the page TITLE reads the case title, and the SUBTITLE under it
+	// reads the identifier. This test asserted neither. It read
+	// `case-header-identifier`, a `dd` in `CaseHeaderRow.vue`, so two
+	// mechanisms print the case number and the test guarded the one the
+	// scenario is not about; the page title was never asserted at all.
+	//
+	// ⚠️ AND THE MECHANISM REQ-CDV-14 NAMES RENDERS NOTHING. The requirement
+	// says `CaseDetail` SHALL set `config.subtitleField` to `identifier`, "so
+	// the case number reads under the title". The manifest does set it. Nothing
+	// consumes it: in @conduction/nextcloud-vue 2.41 `subtitleField` is read by
+	// `CnObjectRow`, `CnIndexPage` and `CnObjectList`, and by no detail-page
+	// code at all, so a `type: "detail"` page's `config.subtitleField` is inert.
+	// That is why deleting it from the manifest changes nothing on screen, and
+	// it is a finding about the product rather than about this test.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`:
+	//
+	//   find    /displayTitle\(\)\{return this\.objectDisplayName\|\|this\.resolvedTitle\}/
+	//   replace 'displayTitle(){return this.resolvedTitle}'
+	//   page    the header read "Case", the manifest's page title
+	//   red on  "the case page must name the case in its own title"
+	//
+	// The assertions this test carried before proved nothing about the page
+	// title at all, so they stay green through that break.
+	//
+	// So the clause is asserted by what it MEANS rather than by the key that
+	// was supposed to deliver it: the case number is on the page, and it is
+	// BELOW the title. Both halves, because either alone is satisfied by a
+	// layout the requirement exists to rule out. The page title is asserted
+	// outright, which closes the THEN that was never covered by anything.
 	test('the case number, type, status and assignee read under the title', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const header = page.getByTestId('case-header')
 		await expect(header).toBeVisible({ timeout: 30_000 })
 
+		// THEN the page title reads the case title.
+		const pageTitle = page.locator('.cn-detail-page__title')
+		await expect(
+			pageTitle,
+			'the case page must name the case in its own title',
+		).toHaveText(caseTitle, { timeout: 20_000 })
+
 		await expect(page.getByTestId('case-header-identifier')).toHaveText(
 			caseIdentifier,
 			{ timeout: 20_000 },
 		)
+
+		// AND the number reads UNDER it. `case-header-identifier` is where the
+		// number actually renders, so this is the clause the scenario states,
+		// measured against the element that delivers it.
+		const titleBox = await pageTitle.boundingBox()
+		const numberBox = await page
+			.getByTestId('case-header-identifier')
+			.boundingBox()
+		expect(titleBox, 'the page title must have a box').not.toBeNull()
+		expect(numberBox, 'the case number must have a box').not.toBeNull()
+		expect(
+			numberBox!.y,
+			`the case number must read under the title, not beside or above it: `
+				+ `title at y=${titleBox!.y}, number at y=${numberBox!.y}`,
+		).toBeGreaterThan(titleBox!.y)
 		await expect(page.getByTestId('case-header-casetype')).toHaveText(
 			caseTypeTitle,
 			{ timeout: 20_000 },
@@ -176,7 +231,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('the status badge and the overdue countdown sit in the row', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.getByTestId('case-header')).toBeVisible({
 			timeout: 30_000,
@@ -208,7 +263,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('a case with no status and no deadline still has a header', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const header = page.getByTestId('case-header')
@@ -235,7 +290,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// header that already printed it: `Cases > Dakkapel Kerkstraat 12`
 		// directly below `Dakkapel Kerkstraat 12`. A repeat, not a location, and
 		// it cost the top of the page a row.
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.getByTestId('case-header')).toBeVisible({
 			timeout: 30_000,
@@ -267,7 +322,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const strip = page.locator('.cn-tabs-widget')
@@ -295,7 +350,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// one the handler actually loses when this breaks: a tab that is clipped,
 		// off-screen, or below the fold.
 		await page.setViewportSize({ width: 1024, height: 768 })
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const strip = page.locator('.cn-tabs-widget')

@@ -225,6 +225,16 @@ export default {
 				const res = await fetch(url + '?' + params.toString(), {
 					headers: { 'OCS-APIRequest': 'true' },
 				})
+				// ANY unsuccessful status is a failed load, body or no body.
+				// `fetch()` does not reject on an HTTP error, so a 500 that
+				// answers with JSON used to be read like a normal response: no
+				// `results` key, no markers, no notice, and a server error
+				// reached the user as "there are no cases here". Thrown rather
+				// than handled here so it lands in the same catch as a request
+				// that never arrived, which already shows the notice.
+				if (!res.ok) {
+					throw new Error(`Case rows request failed (${res.status})`)
+				}
 				const json = await res.json()
 				const rows = Array.isArray(json)
 					? json

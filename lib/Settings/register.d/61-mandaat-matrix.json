@@ -72,10 +72,14 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
+        "_note": "Without this OpenRegister leaves `@self.name` unset and `ObjectEntity` answers the uuid, so the Team picker listed uuids and the Team facet bucket read `3c26f5c4…` instead of `Team Permits`. The fallback OpenRegister applies when no field is configured tries `naam`, `name`, `title`, `label`, `titel`, and this schema has none of them. `roleName` is the property the Team COLUMN already extends the reference to read, so naming rows by it makes the three surfaces agree. It is `required`, so the name can never resolve empty. NOTE: `@self.name` is denormalised at SAVE time, so rows written before this landed keep their uuid until they are written again.",
+        "configuration": {
+          "objectNameField": "roleName"
+        },
         "required": ["roleName"],
         "properties": {
           "roleName":         {"type": "string", "title": "Role Name", "description": "Human-readable name of this organisational role.", "facetable": true, "maxLength": 255},

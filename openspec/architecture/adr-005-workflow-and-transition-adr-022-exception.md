@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-11
 - **Sunset:** 2027-01-31
+- **Gate 23 rules:** 5
 - **Deciders:** Ruben van der Linde, dossiq architecture
 - **Scope:** dossiq, case status machinery and the CMMN case plan
 - **References:** hydra ADR-022 (apps consume OpenRegister abstractions), exception clause. Hydra gate 23, `or-abstraction-anti-patterns`, rule 5. Change `retire-cmmn-caseplanstate`. Canonical specs `status-transition-engine`, `case-status-machinery`, `case-bulk-status-transition`, `beschikking-generatie`.
@@ -41,8 +42,12 @@ validates on every save, so this one is a duplicate too.
 
 ## Decision
 
-Per the ADR-022 exception clause, the gate suppresses these paths. Every
-suppression is printed on every gate run with this ADR named beside it.
+Per the ADR-022 exception clause, the gate suppresses these paths under gate 23
+rule 5, the state-machine and workflow-engine name rule, and under no other
+rule. The `Gate 23 rules: 5` line in the header is what tells the gate so. If
+one of these files later trips a different rule, that finding is reported as
+usual. Every suppression is printed on every gate run with this ADR named
+beside it.
 
 - `lib/Service/Cmmn/PlanItemStateMachine.php`
 - `lib/Service/StateMachineService.php`

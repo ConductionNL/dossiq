@@ -79,17 +79,22 @@ class BackfillAdviceRequestObjectionTest extends TestCase {
 			/**
 			 * Record the patch.
 			 *
-			 * @param array<string, mixed> $object The patch.
+			 * The backfill writes one key, so it goes through OpenRegister's
+			 * PATCH seam. It used to call saveObject() with the uuid and only
+			 * `bezwaar`, which replaces the advice request and is refused for
+			 * the advisor and type it requires.
+			 *
+			 * @param string $objectId The row uuid.
+			 * @param array<string, mixed> $data The patch.
 			 * @param string $register The register.
 			 * @param string $schema The schema.
-			 * @param string $uuid The row uuid.
 			 *
 			 * @return array<string, mixed> The saved object.
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
-				$this->saves[] = ['uuid' => $uuid, 'object' => $object];
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+				$this->saves[] = ['uuid' => $objectId, 'object' => $data];
 
-				return $object;
+				return $data;
 			}
 		};
 	}

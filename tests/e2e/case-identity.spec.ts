@@ -51,6 +51,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { PAGE_LOAD } from './helpers/nav.ts'
 
 /** The processing deadline this run's case type declares. */
 const PROCESSING_DEADLINE = 'P56D'
@@ -123,7 +124,7 @@ async function highestNumberOfYear(year: string): Promise<number> {
  * @param caseId The case to open.
  */
 async function openCase(page: Page, caseId: string): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 }
 
@@ -281,7 +282,7 @@ test.describe('Case identity', () => {
 	}) => {
 		const before = await highestNumberOfYear(String(new Date().getFullYear()))
 
-		await page.goto(`/apps/${REGISTER}/`)
+		await page.goto(`/apps/${REGISTER}/`, PAGE_LOAD)
 		await expect(page).not.toHaveURL(/login/, { timeout: 15_000 })
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
 
@@ -436,6 +437,7 @@ test.describe('Case identity', () => {
 		// than the widget that requests it.
 		await page.goto(
 			`/apps/${REGISTER}/cases?tags=${encodeURIComponent(FILTER_TAG)}`,
+			PAGE_LOAD,
 		)
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 
@@ -517,7 +519,7 @@ test.describe('Case identity', () => {
 		const metadata = await openMetadataPanel(page)
 
 		await expect(
-			metadata.getByText('Archiving', { exact: true }),
+			metadata.getByText(/^(Archiving|Archivering)$/),
 			'the panel groups the archival facts under their own heading',
 		).toBeVisible({ timeout: 15_000 })
 		await expect(metadata).toContainText(
@@ -526,66 +528,62 @@ test.describe('Case identity', () => {
 	})
 
 	// @e2e openspec/specs/case-management/spec.md
-	test('an empty archive action date is shown empty, not hidden', async ({
+	test('an archival fact the case does not carry is shown empty, not hidden', async ({
 		page,
 	}) => {
-		// PARKED, AND THE SCENARIO IS WHAT HAS TO MOVE, NOT THIS TEST.
+		// THIS REPLACES "an empty archive action date is shown empty, not
+		// hidden", which was parked and could never have passed. Both halves
+		// of that were measured on 2026-09-11 against a purpose-built stack,
+		// so the next reader does not have to measure them again.
 		//
-		// The reason goes through `test.fixme(true, reason)` rather than
-		// `test.fixme(title, body)`. The second form records no description,
-		// so the run report carried this as an exclusion with no reason, and
-		// the skip gate is right to reject that.
+		// WHY THE OLD SCENARIO WAS UNREACHABLE. "A case with no archive action
+		// date" does not exist in this register. `case` declares
+		// `x-openregister-archival` with a retention default of P10Y
+		// (lib/Settings/dossiq_register.json), so OpenRegister resolves
+		// `@self._retention.disposalDate` to the start date plus ten years for
+		// a case with no `archiveActionDate`, and to the `archiveActionDate`
+		// itself when there is one. The row is therefore ALWAYS populated. The
+		// requirement was not wrong, it was aimed at a field that is never
+		// blank here; REQ-CM-27 now states the guarantee over any archival
+		// fact instead.
 		//
-		// Two things stand between this scenario and a green run, and the
-		// first one is not a bug:
+		// WHAT IS GENUINELY ABSENT. `recordState` resolves to null on every
+		// case, because nothing writes an archiefstatus until something
+		// actually happens to the record. So Record state is the fact this
+		// case does not carry, and it is the one that proves the guarantee.
 		//
-		//  1. THE GIVEN CANNOT BE SEEDED. "A case with no archive action date"
-		//     does not exist in this register. The `case` schema declares
-		//     `x-openregister-archival` with a retention default of P10Y, and
-		//     OpenRegister's render layer evaluates it on every case into
-		//     `retention.annotation.expiresAt` (`_created` plus the period).
-		//     ArchivalDecisionResolver then falls back to that value for
-		//     `disposalDate` whenever the record carries no
-		//     `archiveActionDate`. So `termsCaseId`, seeded without one, still
-		//     shows a disposal date ten years out. A blank row cannot be
-		//     arranged from a spec: only a schema without the annotation
-		//     would produce one.
+		// WHY THIS TEST CAN FAIL, which is the point of it existing:
 		//
-		//  2. EVEN THEN THE ROW WOULD BE DROPPED. CnObjectMetadataWidget in
-		//     the pinned @conduction/nextcloud-vue 2.46.0 still skips an
-		//     archival key whose value is null (`if (raw === undefined ||
-		//     raw === null) continue`), and ConductionNL/nextcloud-vue#1062,
-		//     which asks for a way to keep it, is open.
+		//  - on @conduction/nextcloud-vue 2.46.0 the Archiving section had 13
+		//    rows and NO Record state row at all, because the widget dropped
+		//    any archival key whose value was null;
+		//  - on 2.47.0 (nextcloud-vue#1084) it has 14, and the Record state
+		//    value div carries `cn-detail-grid__value--empty`.
 		//
-		// What changed since this was first parked, so the next reader does
-		// not re-measure it: the key is `disposalDate`, not `actionDate`
-		// (openregister#3584 moved the archival keys to MDTO names), its row
-		// is labelled "Disposal date", and since dossiq#2428 there is no
-		// `case-archival` card. The archival facts are read in the object
-		// metadata panel. The body below is pointed at that panel and asserts
-		// a row that is present AND blank, so it cannot pass on the derived
-		// date by accident if it is ever unparked.
-		test.fixme(
-			true,
-			'REQ-CM-27 "Empty fields stay visible" cannot be seeded: no case in '
-				+ 'this register lacks a disposal date. The case schema declares '
-				+ 'x-openregister-archival with a P10Y default, and OpenRegister '
-				+ 'falls back to that for _retention.disposalDate whenever a case '
-				+ 'has no archiveActionDate. Separately, CnObjectMetadataWidget in '
-				+ 'nextcloud-vue 2.46.0 drops a null archival key '
-				+ '(ConductionNL/nextcloud-vue#1062, open). The scenario needs '
-				+ 'amending before this test can run.',
-		)
-
+		// The assertion is on that MODIFIER, not on the text. A row reading
+		// "-" and a row reading a real value are both one row, and the whole
+		// guarantee is that this one is present AND blank.
 		await openCase(page, termsCaseId)
 		const metadata = await openMetadataPanel(page)
 
-		// "Disposal date" is the library's own English literal: the
-		// archival labels in CnObjectMetadataWidget are not translated.
+		// Both languages: #1084 also made the widget translate its archival
+		// labels, which it did not do before, so an English-only pattern would
+		// pass here and fail on a Dutch instance.
 		const row = metadata
 			.locator('.cn-detail-grid__item')
-			.filter({ hasText: /Disposal date/ })
+			.filter({ hasText: /Record state|Archiefstatus/ })
+
 		await expect(row).toHaveCount(1)
-		await expect(row.locator('.cn-detail-grid__value')).toHaveText(/^\s*-?\s*$/)
+		await expect(row.locator('.cn-detail-grid__value--empty')).toHaveCount(1)
+
+		// The populated neighbour, so a panel that rendered nothing at all
+		// cannot satisfy this test by being uniformly blank.
+		const appraisal = metadata
+			.locator('.cn-detail-grid__item')
+			.filter({ hasText: /Appraisal|Waardering/ })
+		await expect(appraisal).toHaveCount(1)
+		await expect(appraisal.locator('.cn-detail-grid__value--empty')).toHaveCount(
+			0,
+		)
 	})
 })

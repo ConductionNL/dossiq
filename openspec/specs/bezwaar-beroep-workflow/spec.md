@@ -497,6 +497,12 @@ for index or detail pages.
 
 #### Scenario: Bezwaar index shows only bezwaar cases with correct columns
 
+@e2e exclude The bezwaarzaken index this scenario names was retired on
+2026-09-02 (dossiq#1682) and is gone from src/manifest.json. Only the
+objection's own page, `/bezwaren/:id`, remains. With no index page there is
+nothing to render or filter; re-scope the scenario to what the manifest now
+declares before citing it again.
+
 - **GIVEN** the manifest declares the bezwaarzaken page with
   `filter: { caseType: ["bezwaar"] }`
 - **WHEN** a behandelaar opens `/index.php/apps/dossiq/bezwaarzaken`
