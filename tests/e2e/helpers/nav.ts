@@ -20,6 +20,57 @@ import type { Locator, Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 /**
+ * The budget ONE full page load gets, in milliseconds.
+ *
+ * Measured, not guessed. A dossiq page load fetches and parses about 39 MB of
+ * JavaScript (dossiq's own 17.1 MB in three bundles, decidiq's 12.0 MB
+ * integration bundle, core's 5.6 MB and openregister's 4.4 MB, byte counts
+ * from the network log of a CI trace), and on CI several Chromes do that at
+ * once against one `php -S` on a four-vCPU runner. In the HTML report of run
+ * 34585313834, a slow runner at four workers, all 354 page loads finished
+ * within 27.4s, p99 25.6s, median 17.6s; on the green run 34581297676 the
+ * median was 13.1s. Not one of the 87 four-worker jobs on 2026-09-10 and 11
+ * logged a `page.goto` timeout — but #2517 later measured two of six SHARDED
+ * runs failing on exactly that at the 30s this constant used to hold, and
+ * #2513's own verification run hit an unrelated one that passed clean on
+ * re-run. So this stays at 45s, the margin #2517 measured, until a run on
+ * the current config (four workers, sharded) shows 30s holds again.
+ *
+ * It equals the config's `navigationTimeout` on purpose. Passing it at a call
+ * site says that the budget of that load was sized, and keeps it sized if the
+ * config default ever moves.
+ */
+export const PAGE_LOAD_MS = 45_000
+
+/** `page.goto(url, PAGE_LOAD)`: one page load, at its measured budget. */
+export const PAGE_LOAD = { timeout: PAGE_LOAD_MS } as const
+
+/**
+ * The test budget a journey of `loads` full page loads needs.
+ *
+ * 🔴 THE BUDGET HAS TO HOLD EVERY STEP'S OWN BUDGET, OR A FAILURE NAMES
+ * NOTHING. The default test budget is 60s. A test that loads two pages gives
+ * each load 45s, so two loads alone can spend more than it, and then the test
+ * budget runs out before any load's does. Playwright then reports
+ * `Test timeout of 60000ms exceeded.` and nothing else: the trace of
+ * case-flow-human-steps.spec.ts:205 on run 34578124024 shows loads of 21.8s
+ * and 21.0s and a third one 15s in when the budget ran out, with a message
+ * that named none of them. Sized as below, a slow load fails as a slow load,
+ * `page.goto: Timeout 45000ms exceeded`, naming its URL.
+ *
+ * `restMs` is everything that is not a page load. 30s covers the most any
+ * two-load test spent outside its loads in the slow run's report (25.6s).
+ *
+ * @param loads  Full page loads the test makes, including those inside
+ *               helpers such as `navTo`, which makes two.
+ * @param restMs Budget for everything else the test does.
+ * @return Milliseconds, for `test.setTimeout`.
+ */
+export function journeyBudget(loads: number, restMs = 30_000): number {
+	return loads * PAGE_LOAD_MS + restMs
+}
+
+/**
  * The app's sidebar navigation container.
  *
  * @param page
@@ -133,7 +184,10 @@ async function readNavLinks(
  *              or `/^(All cases|Alle zaken)$/`
  */
 export async function navTo(page: Page, label: string | RegExp): Promise<void> {
-	await page.goto('/index.php/apps/dossiq')
+	// TWO page loads, not one: this one to read the sidebar's links, the one
+	// below to open the target. A test that calls this needs
+	// `journeyBudget(2)` for this call alone.
+	await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 	await dismissSupportDialog(page)
 
 	const matches = (l: string) =>
@@ -157,7 +211,7 @@ export async function navTo(page: Page, label: string | RegExp): Promise<void> {
 		)
 	}
 
-	await page.goto(target.href)
+	await page.goto(target.href, PAGE_LOAD)
 	await dismissSupportDialog(page)
 }
 
@@ -194,7 +248,7 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 	// helper correct under either configuration rather than under the one the
 	// CI runner happened to have.
 	for (const url of [`/apps/dossiq${route}`, `/index.php/apps/dossiq${route}`]) {
-		await page.goto(url)
+		await page.goto(url, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		// The catch-all redirect drops the requested path entirely, so a URL
 		// that still carries it is the tell that the route resolved.

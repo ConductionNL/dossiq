@@ -302,8 +302,9 @@ jobs:
       # Nextcloud and its own Postgres, so sharding sidesteps that ceiling
       # instead of pushing against it.
       #
-      # Each shard runs the config's own worker count (E2E_WORKERS, default 5
-      # on CI) and its own 25 minute globalTimeout. See
+      # Each shard runs the config's own worker count (E2E_WORKERS, default 4
+      # on CI, see the config for why five was measured and reversed) and its
+      # own 25 minute globalTimeout. See
       # tests/e2e/playwright.config.ts for both, and for why the
       # instance-mutating specs become a teardown that runs on every shard.
       e2e-shards: 3

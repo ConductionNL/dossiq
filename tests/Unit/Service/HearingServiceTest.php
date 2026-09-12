@@ -69,6 +69,18 @@ interface HearingObjectServiceStub {
 	 * @return array<string,mixed>
 	 */
 	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+
+	/**
+	 * Merge fields onto a stored object (OpenRegister's PATCH seam).
+	 *
+	 * @param string $objectId The object uuid.
+	 * @param array $data The fields to change.
+	 * @param string|null $register Register id.
+	 * @param string|null $schema Schema id.
+	 *
+	 * @return array
+	 */
+	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
 }//end interface
 
 /**
@@ -223,9 +235,19 @@ class HearingServiceTest extends TestCase {
 			'dateCompleted' => '2026-04-01',
 		];
 
-		$objectServiceMock->method('saveObject')->willReturn($outcome);
+		// The outcome PATCHES its own fields onto the stored hearing; a bare
+		// uuid save replaced the hearing and lost its complaint, date and type.
+		$objectServiceMock->expects($this->never())->method('saveObject');
+		$objectServiceMock
+			->expects($this->once())
+			->method('patchObject')
+			->with('hearing-uuid', $this->anything())
+			->willReturnCallback(
+				static fn (string $objectId, array $data): array => array_merge(['complaint' => 'c-1', 'type' => 'oral'], $data)
+			);
 
 		$result = $this->service->recordOutcome('hearing-uuid', $outcome);
+		$this->assertSame('c-1', $result['complaint'], 'the stored hearing comes back whole');
 		$this->assertSame('Klager heeft zijn standpunt toegelicht.', $result['minutes']);
 	}//end testRecordOutcomeSucceedsWithVerslag()
 

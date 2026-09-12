@@ -50,6 +50,22 @@ class Organisation {
 	private ?int $storageQuota = null;
 
 	/**
+	 * When the organisation entered `retained` — access ended, data kept.
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $retainedAt = null;
+
+	/**
+	 * When deprovisioning began. `TenantPurgeJob` measures its retention
+	 * window from this, and purges nothing while it is null — which is why a
+	 * test can tell "retained by rule" apart from "not deleted by accident".
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $deprovisionedAt = null;
+
+	/**
 	 * 🔴 THE STUB HAS TO MIRROR THE REAL CLASS, FIELD FOR FIELD.
 	 *
 	 * The real Organisation extends Entity, whose `__call` synthesises a
@@ -127,16 +143,6 @@ class Organisation {
 	 * @var \DateTime|null
 	 */
 	private ?\DateTime $provisionedAt = null;
-
-	/**
-	 * @var \DateTime|null
-	 */
-	private ?\DateTime $deprovisionedAt = null;
-
-	/**
-	 * @var \DateTime|null
-	 */
-	private ?\DateTime $retainedAt = null;
 
 	// phpcs:disable Squiz.Commenting.FunctionComment.Missing
 

@@ -213,7 +213,34 @@ criteria under a task are plain bullets.
   while `DossiqMergeTemplateNode::requiredConfigKeys()` demands `templateSlug`.
   Those two names have to be reconciled by any migration.
 
-## 4. Seed
+  **2026-09-11, Ruben decided "design it now" rather than defer, upstream
+  piece included. Two proposals opened, re-verifying all four Ds against
+  live `development` code (not re-trusting this file's own account):**
+
+  - `openregister` `feat/or-flow-run-node`
+    (`openspec/changes/or-flow-run-node/`): a `POST
+    /api/flows/{flowId}/nodes/{nodeId}/run` endpoint, gated by an opt-in
+    `IFlowDirectlyInvokable` marker on the node type PLUS the caller's
+    object-RBAC permission on the subject — not `flow.run`, which was
+    verified to be a flat, subject-blind, `@authenticated`-seeded right that
+    on its own would let any signed-in user run this against any case they
+    can name the id of. **Its RN-1 (which authorization shape) is an open
+    decision for Ruben, not resolved in that proposal** — it is the first
+    time OpenRegister's object-RBAC and flow named-rights would need to
+    cooperate, and that is fleet-wide surface, not a dossiq detail.
+  - `nextcloud-vue` `feat/manifest-run-node-action`
+    (`openspec/changes/manifest-run-node-action/`): a `run-node` action type
+    (not `run-action`, resolving D-4) that sources its picker from
+    OpenRegister's existing `IFlowNodeConfigForm` declaration on the node
+    type — resolving D-2 without new manifest grammar — and follows the
+    `open-form` precedent (open a dialog, return immediately, let the
+    dialog's submit make the follow-up call) rather than inventing an
+    async/suspending sentinel token — resolving D-3 without touching
+    `sentinelTokens.js` at all. This proposal has no open decision of its
+    own; it is blocked only on the openregister endpoint existing.
+
+  **3.3 stays unticked.** Implementation (here and upstream) is blocked on
+  Ruben resolving RN-1. 3.2 remains the shipped interim.
 
 - [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
   dossier seed beside it): two `informatieobject` rows on one demo case

@@ -6,8 +6,12 @@
  * One-shot, idempotent migration of legacy dossiq `tenant` schema objects onto
  * OpenRegister Organisations (`migrate-tenant-to-or-tenant`, ADR-022). Reads any
  * pre-existing `tenant` rows, projects each onto an OR Organisation (preserving
- * the row UUID + lifecycle status), and reports a migrated/skipped/failed
- * summary. Safe to re-run — Organisations whose slug already exists are skipped.
+ * the row UUID + lifecycle status), and reports a
+ * migrated/repaired/skipped/failed summary. Safe to re-run: an Organisation
+ * whose slug already exists is never created twice. A re-run also REPAIRS the
+ * two lifecycle statuses an earlier version of the migration mapped wrongly,
+ * and `repaired` counts those separately from `skipped` so an operator can see
+ * that a status actually changed.
  *
  * @category Command
  * @package  OCA\Dossiq\Command
@@ -30,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
+use OCA\Dossiq\Service\SatelliteOrphanScanner;
 use OCA\Dossiq\Service\TenantMigrationService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -44,10 +49,12 @@ class MigrateTenantsCommand extends Command {
 	/**
 	 * Wire the command against the migration service.
 	 *
-	 * @param TenantMigrationService $migrationService Tenant → Organisation migrator.
+	 * @param TenantMigrationService  $migrationService Tenant → Organisation migrator.
+	 * @param SatelliteOrphanScanner  $orphanScanner    Read-only audit of the five satellites.
 	 */
 	public function __construct(
 		private readonly TenantMigrationService $migrationService,
+		private readonly SatelliteOrphanScanner $orphanScanner,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -87,6 +94,7 @@ class MigrateTenantsCommand extends Command {
 		$output->writeln('<info>dossiq:migrate-tenants done</info>');
 		$output->writeln('  total    = ' . $summary['total']);
 		$output->writeln('  migrated = ' . $summary['migrated']);
+		$output->writeln('  repaired = ' . $summary['repaired']);
 		$output->writeln('  skipped  = ' . $summary['skipped']);
 		$output->writeln('  refused  = ' . $summary['refused']);
 		$output->writeln('  failed   = ' . $summary['failed']);
@@ -130,7 +138,7 @@ class MigrateTenantsCommand extends Command {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
 	private function reportOrphans(OutputInterface $output): void {
-		$report = $this->migrationService->reportOrphans();
+		$report = $this->orphanScanner->reportOrphans();
 
 		$output->writeln('');
 		$output->writeln('<info>satellite scan</info>');

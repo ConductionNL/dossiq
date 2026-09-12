@@ -60,6 +60,7 @@ import {
 	RUN_PREFIX,
 	showObject,
 } from '../helpers/fixtures.ts'
+import { PAGE_LOAD } from '../helpers/nav.ts'
 
 /** Nextcloud's own dashboard, where StartCaseWidget renders. */
 const NC_DASHBOARD_URL = '/index.php/apps/dashboard/'
@@ -180,7 +181,7 @@ async function writeLayout(layout: string[]): Promise<void> {
  * @return The initiator dialog.
  */
 async function openInitiatorStep(page: Page): Promise<Locator> {
-	await page.goto(NC_DASHBOARD_URL)
+	await page.goto(NC_DASHBOARD_URL, PAGE_LOAD)
 	const card = page.locator('.start-case-widget__card', {
 		hasText: caseTypeTitle,
 	})

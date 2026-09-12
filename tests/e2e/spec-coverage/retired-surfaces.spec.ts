@@ -17,7 +17,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { navToRoute } from '../helpers/nav.ts'
+import { journeyBudget, navToRoute } from '../helpers/nav.ts'
 
 // NO trackDossiqErrors HERE, deliberately.
 //
@@ -39,6 +39,9 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 	test('the retired route no longer renders an automatic-actions view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/settings/automatic-actions')
 
 		// The create control the page used to own. Asserting on THIS rather than
@@ -82,6 +85,9 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	test('the agenda compiler route no longer renders its view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/besluitvorming/agenda')
 
 		// The compiler's own control. A "no error" assertion alone would pass on
@@ -97,6 +103,9 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	test('the vergadering detail route no longer renders its view', async ({
 		page,
 	}) => {
+		// A retired route resolves under neither URL form, so navToRoute loads
+		// both: two page loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navToRoute(page, '/besluitvorming/vergaderingen/does-not-exist')
 
 		await expect(page).toHaveURL(/\/apps\/dossiq\/?$/)

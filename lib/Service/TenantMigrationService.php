@@ -14,6 +14,12 @@
  * Idempotent BY UUID, and that is the whole point of the key. See migrateOne()
  * for why the slug was the wrong one and what a slug collision now does.
  *
+ * Re-running also REPAIRS. An earlier version of this service mapped
+ * `terminated` onto `archived` and `onboarding` onto `provisioning`, and the
+ * idempotency guard means a plain re-run would skip straight over the rows it
+ * wrote. A run now corrects those two statuses where it still finds them, and
+ * only where it still finds them, so the second run of any pair is a no-op.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service
  *
@@ -70,49 +76,38 @@ class TenantMigrationService {
 	 */
 	private const TENANT_GROUP_PREFIX = 'tenant_';
 
-	/**
-	 * The five satellites that reference a tenant and stay in dossiq.
-	 *
-	 * `tenantOnboardingTask` is not here on purpose: it is re-filed onto the
-	 * engine `Task` as follow-up 7.1 of remove-casetask, and it still points at
-	 * the `tenant` schema.
-	 *
-	 * @var array<int, string>
-	 */
-	private const SATELLITE_SCHEMAS = [
-		'tenantConfiguration',
-		'tenantQuota',
-		'tenantUser',
-		'tenantMandate',
-		'tenantBillingEvent',
-	];
-
-	/**
-	 * The `tenantRef` values that are shipped seed data, not a broken reference.
-	 *
-	 * These are the three tier quota templates in `lib/Settings/dossiq_register.json`,
-	 * one sentinel per tier, four `tenantQuota` rows each. They belong to no
-	 * tenant by design and they are on EVERY install, so an orphan report that
-	 * did not know them would open with twelve false alarms and teach an
-	 * operator to skim the list. tasks.md 2b read the same twelve rows off the
-	 * dev instance and called them test fixtures written on 2026-08-30; they
-	 * are not, they are the register seed.
-	 *
-	 * @var array<int, string>
-	 */
-	private const TIER_TEMPLATE_REFS = [
-		'00000000-0000-0000-0000-000000000000',
-		'00000000-0000-0000-0000-000000000001',
-		'00000000-0000-0000-0000-000000000002',
-	];
-
-	/**
-	 * How many satellite rows to read per schema when scanning for orphans.
-	 */
-	private const ORPHAN_SCAN_LIMIT = 5000;
 
 	/**
 	 * Map of legacy procest tenant status → OR Organisation lifecycle status.
+	 *
+	 * TWO OF THESE FOUR ROWS WERE WRONG, and both were decided against on
+	 * 2026-09-11 (tenancy-onto-openregister-organisation, 2e and 2f).
+	 *
+	 * `terminated` mapped to `archived`. `archived` is
+	 * `TenantLifecycleService::PURGEABLE_STATUS`: it is the one status
+	 * `TenantPurgeJob` selects on, and everything it then deletes is
+	 * permanent. dossiq's termination is deliberately NOT destructive — the
+	 * irreversible whole-tenant delete was removed from this app on purpose —
+	 * so projecting it onto the one status that exists to be deleted from
+	 * inverted the decision it was migrating. It does not purge TODAY only
+	 * because the purge also requires `deprovisionedAt`, which this service
+	 * never sets; that is an omission, not a rule, and anything that later
+	 * stamps that field turns every terminated tenant into a scheduled
+	 * delete. `retained` is the rule: OpenRegister added it precisely so a
+	 * tenancy can end without the data ending, `retain()` stamps `retainedAt`
+	 * and leaves `deprovisionedAt` alone, and the purge's own re-check refuses
+	 * any row not in `archived`.
+	 *
+	 * `onboarding` mapped to `provisioning`. An Organisation in
+	 * `provisioning` is not a state a tenant can transact from —
+	 * OpenRegister's `TenantQuotaMiddleware` answers 403 to every request the
+	 * tenant admin makes on OR routes unless they are an instance admin — and
+	 * dossiq's frontend reads and writes through exactly those routes. So the
+	 * tenant admin could not perform the onboarding they were in the middle
+	 * of. The Organisation goes to `active` and dossiq keeps its own
+	 * onboarding state beside it: "may this organisation act?" is the
+	 * platform's question, "has this customer finished setting up?" is
+	 * dossiq's, and they are not the same question.
 	 */
 	private const STATUS_MAP = [
 		// Decision 2f. NOT `provisioning`, which the June map chose. While a
@@ -137,9 +132,37 @@ class TenantMigrationService {
 	];
 
 	/**
-	 * The lifecycle status that ends access while keeping the data.
+	 * Lifecycle status meaning "access ended, data kept" (OR `STATUS_RETAINED`).
 	 */
 	private const STATUS_RETAINED = 'retained';
+
+	/**
+	 * The status OR's `TenantPurgeJob` selects on (OR `PURGEABLE_STATUS`).
+	 */
+	private const STATUS_PURGEABLE = 'archived';
+
+	/**
+	 * Superseded mappings this migration itself wrote, and their correction.
+	 *
+	 * Fixing STATUS_MAP only fixes tenants migrated from here on. The June
+	 * change shipped the two rows above and any instance that ran it already
+	 * has terminated tenants sitting in `archived`, and onboarding tenants
+	 * sitting in `provisioning` unable to onboard. The slug guard in
+	 * `migrateOne()` skips exactly those rows on a re-run, so without a repair
+	 * step the damage is permanent and a re-run reports "skipped" over it.
+	 *
+	 * Keyed by legacy status → [status this migration wrongly wrote, correct
+	 * status]. The repair fires ONLY when the Organisation still carries the
+	 * superseded value, so a lifecycle move an operator made since — a
+	 * terminated tenant they deliberately deprovisioned, say — is never
+	 * overwritten, and a second run finds nothing left to repair.
+	 *
+	 * @var array<string, array{0:string, 1:string}>
+	 */
+	private const SUPERSEDED_STATUS_REPAIRS = [
+		'terminated' => [self::STATUS_PURGEABLE, self::STATUS_RETAINED],
+		'onboarding' => ['provisioning', 'active'],
+	];
 
 	/**
 	 * Constructor.
@@ -163,7 +186,7 @@ class TenantMigrationService {
 	 * Reads all legacy `tenant` objects and inserts one OR Organisation per
 	 * tenant whose slug is not already present.
 	 *
-	 * @return array{migrated:int, skipped:int, refused:int, failed:int, total:int,
+	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
 	 *               mappings:array<int,array{tenant:string, organisation:string}>,
 	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
 	 *
@@ -172,6 +195,7 @@ class TenantMigrationService {
 	public function migrate(): array {
 		$summary = [
 			'migrated' => 0,
+			'repaired' => 0,
 			'skipped' => 0,
 			'refused' => 0,
 			'failed' => 0,
@@ -222,6 +246,15 @@ class TenantMigrationService {
 			}
 
 			if ($result['created'] === false) {
+				// A repair is reported separately from a skip. Both leave the
+				// row count alone, but one of them CHANGED a tenant's
+				// lifecycle status and an operator must be able to see that in
+				// the summary rather than infer it from the log.
+				if (($result['repaired'] ?? false) === true) {
+					$summary['repaired']++;
+					continue;
+				}
+
 				$summary['skipped']++;
 				continue;
 			}
@@ -238,6 +271,7 @@ class TenantMigrationService {
 			[
 				'total' => $summary['total'],
 				'migrated' => $summary['migrated'],
+				'repaired' => $summary['repaired'],
 				'skipped' => $summary['skipped'],
 				'refused' => $summary['refused'],
 				'failed' => $summary['failed'],
@@ -248,124 +282,12 @@ class TenantMigrationService {
 	}//end migrate()
 
 	/**
-	 * Report every satellite row whose `tenantRef` resolves to nothing.
-	 *
-	 * 🔴 REPORTED, NEVER MAPPED. An orphan is a row pointing at a tenant that
-	 * does not exist, and there is no safe guess about which organisation it
-	 * meant. Attaching it to the nearest candidate would give one tenant
-	 * another tenant's mandates or quotas, and every scoping filter downstream
-	 * would then agree, because the row really would say so. So this method
-	 * reads and counts. It writes nothing, and it has no repair mode.
-	 *
-	 * Safe to run before the migration, after it, or instead of it.
-	 *
-	 * @return array{scanned:int, orphans:int, templates:int,
-	 *               bySchema:array<string, array{scanned:int, orphans:int, templates:int}>,
-	 *               rows:array<int, array{schema:string, row:string, tenantRef:string}>}
-	 *               What was scanned and what does not resolve.
-	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
-	 */
-	public function reportOrphans(): array {
-		$report = [
-			'scanned' => 0,
-			'orphans' => 0,
-			'templates' => 0,
-			'bySchema' => [],
-			'rows' => [],
-		];
-
-		$objectService = $this->settingsService->getObjectService();
-		$mapper = $this->getOrganisationMapper();
-		if ($objectService === null || $mapper === null) {
-			$this->logger->warning('Dossiq: orphan scan skipped, OpenRegister organisation services unavailable');
-			return $report;
-		}
-
-		// Resolution is cached per tenantRef: a register with thousands of
-		// satellite rows holds only a handful of distinct tenants, and the
-		// uncached form is one mapper read per row.
-		$resolves = [];
-
-		foreach (self::SATELLITE_SCHEMAS as $schema) {
-			$perSchema = ['scanned' => 0, 'orphans' => 0, 'templates' => 0];
-
-			foreach ($this->readSatelliteRows(objectService: $objectService, schema: $schema) as $row) {
-				$perSchema['scanned']++;
-				$tenantRef = trim((string)($row['tenantRef'] ?? ''));
-
-				if (in_array($tenantRef, self::TIER_TEMPLATE_REFS, true) === true) {
-					$perSchema['templates']++;
-					continue;
-				}
-
-				if (array_key_exists($tenantRef, $resolves) === false) {
-					$resolves[$tenantRef] = ($tenantRef !== ''
-						&& $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantRef) !== null);
-				}
-
-				if ($resolves[$tenantRef] === true) {
-					continue;
-				}
-
-				$perSchema['orphans']++;
-				$report['rows'][] = [
-					'schema' => $schema,
-					'row' => (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					'tenantRef' => $tenantRef,
-				];
-			}
-
-			$report['bySchema'][$schema] = $perSchema;
-			$report['scanned'] += $perSchema['scanned'];
-			$report['orphans'] += $perSchema['orphans'];
-			$report['templates'] += $perSchema['templates'];
-		}
-
-		$this->logger->info(
-			'Dossiq: satellite orphan scan complete',
-			[
-				'scanned' => $report['scanned'],
-				'orphans' => $report['orphans'],
-				'templates' => $report['templates'],
-			],
-		);
-
-		return $report;
-	}//end reportOrphans()
-
-	/**
-	 * Read one satellite schema's rows, or none when the schema is absent.
-	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $schema        The satellite schema slug.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function readSatelliteRows(object $objectService, string $schema): array {
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: self::REGISTER_SLUG,
-				schema: $schema,
-				filters: ['_limit' => self::ORPHAN_SCAN_LIMIT],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: orphan scan could not read a satellite schema',
-				['schema' => $schema, 'exception' => $e->getMessage()],
-			);
-			return [];
-		}
-	}//end readSatelliteRows()
-
-	/**
 	 * Migrate one legacy tenant row to an OR Organisation.
 	 *
 	 * @param object $mapper OR OrganisationMapper.
 	 * @param array<string, mixed> $row Legacy tenant object.
 	 *
-	 * @return array{created:bool, refused:bool, tenantUuid:string, organisationUuid:string, slug?:string}|null
+	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug?:string}|null
 	 *                                                                              Result, or null on failure.
 	 */
 	private function migrateOne(object $mapper, array $row): ?array {
@@ -399,9 +321,12 @@ class TenantMigrationService {
 			// and what this migration preserves onto the Organisation.
 			$existing = $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantUuid);
 			if ($existing !== null) {
+				$repaired = $this->repairSupersededStatus(mapper: $mapper, organisation: $existing, row: $row, slug: $slug);
+
 				return [
 					'created' => false,
 					'refused' => false,
+					'repaired' => $repaired,
 					'tenantUuid' => $tenantUuid,
 					'organisationUuid' => (string)$existing->getUuid(),
 				];
@@ -412,24 +337,18 @@ class TenantMigrationService {
 			// inserting would fail anyway; refusing says WHICH organisation is
 			// in the way, which is the thing an operator needs in order to fix
 			// it. Nothing is written and nothing is reported as mapped.
+			//
+			// 🔴 AND IT IS NOT REPAIRED. The repair above runs on the uuid
+			// path, where the Organisation is provably this tenant. Here it is
+			// provably NOT: the uuid did not match, so this row belongs to
+			// somebody else and only shares a name. Repairing it would write a
+			// lifecycle status onto another organisation on the strength of a
+			// slug, which is exactly the write the refusal exists to prevent,
+			// and it would be a write rather than a mis-report. The repair is
+			// deliberately absent from this branch.
 			$collision = $this->findOrganisationBySlug(mapper: $mapper, slug: $slug);
 			if ($collision !== null) {
-				$this->logger->error(
-					'Dossiq: tenant migration refused a slug already held by another organisation',
-					[
-						'tenant' => $tenantUuid,
-						'slug' => $slug,
-						'heldBy' => (string)$collision->getUuid(),
-					],
-				);
-
-				return [
-					'created' => false,
-					'refused' => true,
-					'tenantUuid' => $tenantUuid,
-					'organisationUuid' => (string)$collision->getUuid(),
-					'slug' => $slug,
-				];
+				return $this->refuseCollision(collision: $collision, tenantUuid: $tenantUuid, slug: $slug);
 			}
 
 			$organisation = $this->buildOrganisation(row: $row, slug: $slug, tenantUuid: $tenantUuid);
@@ -443,6 +362,7 @@ class TenantMigrationService {
 			return [
 				'created' => true,
 				'refused' => false,
+				'repaired' => false,
 				'tenantUuid' => $tenantUuid,
 				'organisationUuid' => (string)$saved->getUuid(),
 			];
@@ -454,6 +374,39 @@ class TenantMigrationService {
 			return null;
 		}//end try
 	}//end migrateOne()
+
+	/**
+	 * Refuse a tenant whose slug another Organisation already holds.
+	 *
+	 * Nothing is written, including no repair: see the call site for why a
+	 * slug match is the one place a lifecycle correction must not fire.
+	 *
+	 * @param object $collision  The Organisation holding the slug.
+	 * @param string $tenantUuid The tenant uuid.
+	 * @param string $slug       The contested slug.
+	 *
+	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug:string}
+	 *         The refusal, for the summary to report.
+	 */
+	private function refuseCollision(object $collision, string $tenantUuid, string $slug): array {
+		$this->logger->error(
+			'Dossiq: tenant migration refused a slug already held by another organisation',
+			[
+				'tenant' => $tenantUuid,
+				'slug' => $slug,
+				'heldBy' => (string)$collision->getUuid(),
+			],
+		);
+
+		return [
+			'created' => false,
+			'refused' => true,
+			'repaired' => false,
+			'tenantUuid' => $tenantUuid,
+			'organisationUuid' => (string)$collision->getUuid(),
+			'slug' => $slug,
+		];
+	}//end refuseCollision()
 
 	/**
 	 * Find an Organisation by uuid, returning null when absent.
@@ -471,6 +424,72 @@ class TenantMigrationService {
 			return null;
 		}
 	}//end findOrganisationByUuid()
+
+	/**
+	 * Repair an Organisation this migration previously wrote a superseded status onto.
+	 *
+	 * Narrow on purpose. It corrects a status ONLY when the legacy row still
+	 * says what it said in June AND the Organisation still carries exactly the
+	 * value this migration wrote for it. An operator who has since moved the
+	 * organisation somewhere else — deprovisioned a terminated tenant
+	 * deliberately, reactivated a suspended one — has made a lifecycle
+	 * decision, and a migration re-run is not the place to overrule it.
+	 *
+	 * That narrowness is also what makes the repair idempotent: after the
+	 * first run the status no longer matches the superseded value, so the
+	 * second run finds nothing to do and writes nothing.
+	 *
+	 * @param object $mapper OR OrganisationMapper.
+	 * @param object $organisation The existing Organisation.
+	 * @param array<string, mixed> $row Legacy tenant object.
+	 * @param string $slug Tenant slug, for logging.
+	 *
+	 * @return bool True when the organisation was repaired and saved.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 */
+	private function repairSupersededStatus(object $mapper, object $organisation, array $row, string $slug): bool {
+		$legacyStatus = (string)($row['status'] ?? '');
+		if (isset(self::SUPERSEDED_STATUS_REPAIRS[$legacyStatus]) === false) {
+			return false;
+		}
+
+		[$supersededStatus, $correctStatus] = self::SUPERSEDED_STATUS_REPAIRS[$legacyStatus];
+		if ((string)$organisation->getStatus() !== $supersededStatus) {
+			return false;
+		}
+
+		$organisation->setStatus($correctStatus);
+
+		if ($correctStatus === self::STATUS_RETAINED) {
+			// Date the retention, the way `retain()` does, but only if nothing
+			// has dated it already.
+			if ($organisation->getRetainedAt() === null) {
+				$organisation->setRetainedAt(new DateTime());
+			}
+
+			// Leaving `archived` means leaving the purgeable state, and a
+			// `deprovisionedAt` left behind from that state is a loaded gun:
+			// the purge measures its retention window from it, so anything
+			// that returned the row to `archived` would delete it at once.
+			$organisation->setDeprovisionedAt(null);
+		}
+
+		$mapper->update($organisation);
+
+		$this->logger->info(
+			'Dossiq: repaired a tenant Organisation this migration had written a superseded status onto',
+			[
+				'slug' => $slug,
+				'organisation' => (string)$organisation->getUuid(),
+				'legacyStatus' => $legacyStatus,
+				'from' => $supersededStatus,
+				'to' => $correctStatus,
+			],
+		);
+
+		return true;
+	}//end repairSupersededStatus()
 
 	/**
 	 * Build an OR Organisation entity from a legacy tenant row.
@@ -491,7 +510,18 @@ class TenantMigrationService {
 
 		$organisation->setSlug($slug);
 		$organisation->setName((string)($row['displayName'] ?? ($row['name'] ?? $slug)));
-		$organisation->setStatus($this->resolveStatus(row: $row));
+
+		$status = $this->resolveStatus(row: $row);
+		$organisation->setStatus($status);
+
+		// A retained organisation dates its retention from `retainedAt`, the
+		// way `TenantLifecycleService::retain()` does. `deprovisionedAt` stays
+		// null and is never set here: it is what the purge measures its window
+		// from, so writing it would schedule the delete this mapping exists to
+		// avoid.
+		if ($status === self::STATUS_RETAINED) {
+			$organisation->setRetainedAt(new DateTime());
+		}
 
 		// The NC group used by procest for tenant routing.
 		$groupId = (string)($row['groupId'] ?? (self::TENANT_GROUP_PREFIX . $slug));

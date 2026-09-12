@@ -172,12 +172,12 @@ class VaststellingService {
 				throw new OCSBadRequestException('Vaststelling niet gevonden');
 			}
 
-			$saved = ($this->saveObjectAsArray(
+			$saved = ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $patch,
-				uuid: (string)$determinationId
+				id: (string)$determinationId,
+				changes: $patch
 			) ?? array_merge($current, $patch));
 		} catch (OCSBadRequestException $e) {
 			throw $e;
