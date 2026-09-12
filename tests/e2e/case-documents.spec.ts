@@ -892,6 +892,21 @@ test.describe('Case detail — the Documents tab', () => {
 	// green, and the whole file is green in BOTH configurations. If this test
 	// ever goes red on the version count again, check `modRewriteWorking` on
 	// the instance before looking at the fixture.
+	//
+	// ABSENT IS NOT DISABLED, and both halves are pinned, because a control
+	// that vanishes tells the user nothing while a refused one says the
+	// document is final. Two more mutations, both measured 2026-09-12:
+	//
+	//   hide it on a final document (`v-if="!restoreDisabled"`)
+	//     -> "every listed version must offer a Restore control, so the
+	//        refusal is visible rather than absent", expected 2, received 0
+	//   remove it outright (`v-if="false"`)
+	//     -> `dossierTab.spec.js` reddens with
+	//        expected [ 'Download' ] to deeply equal [ 'Download', 'Restore' ]
+	//
+	// The two suites cover the two states and agree with the scenario. vitest
+	// mounts a DRAFT: both controls present, Restore issues the MOVE. This one
+	// mounts a FINAL: both present, Restore refused. Neither passes on absent.
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
