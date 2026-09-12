@@ -205,7 +205,35 @@ test.describe('PDOK via openconnector — shim routing', () => {
 		expect(seen.some((u) => u.includes('api.pdok.nl'))).toBe(false)
 	})
 
-	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-503-response-resolves-with-null-and-surfaces-message_key
+	// NO `@e2e` CITATION, FOR THE REASON WRITTEN ABOVE THE FIRST TEST IN THIS
+	// FILE, AND THE SAME DIAGNOSIS APPLIES HERE.
+	//
+	// The citation was `#scenario-503-response-resolves-with-null-and-surfaces-message_key`,
+	// and gate-19 reported it as matching no scenario: the heading carries an
+	// underscore in `message_key` and the slugifiers disagree about it, which
+	// is the same class of breakage as the dots in `api.pdok.nl` above. The
+	// anchor is not what is wrong with it.
+	//
+	// What the scenario requires is that THE SHIM'S FUNCTION resolves with
+	// `null` and surfaces the `message_key` to its caller. This test never
+	// calls the shim. It routes the openconnector URL to a 503 with a body,
+	// then does a raw `fetch` of that URL and asserts it came back 503 with
+	// that body: the mock echoing what the mock was told to say. Whatever
+	// `lookup()` does with a 503, including throwing, this passes.
+	//
+	// It cannot be repaired here either, for the reason the first test
+	// records: `suggest()` and `lookup()` are reachable from no mounted
+	// component and the bundle exports no global, so no page can call them.
+	// Verified rather than assumed, because a comment claiming the coverage
+	// is elsewhere is worth a minute: `tests/vitest/pdokService.spec.js:169`
+	// calls the real `lookup()` against a mocked 503, asserts it resolves
+	// `null`, and asserts `lastWarning` equals
+	// `{ messageKey: 'pdok.unavailable', status: 503 }` — every clause of the
+	// scenario, on the function the scenario is about. The scenario now
+	// carries a reason-bearing `@e2e exclude` naming it.
+	//
+	// What stays is what this test does prove: a 503 on that URL does not
+	// reject the fetch and does not take the page down.
 	test('503 from openconnector degrades gracefully without throwing', async ({
 		page,
 	}) => {
@@ -252,7 +280,21 @@ test.describe('PDOK via openconnector — shim routing', () => {
 		expect(outcome.messageKey).toBe('pdok.unavailable')
 	})
 
-	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-openconnector-absent-surfaces-warning-without-blocking-form
+	// NO `@e2e` CITATION, AND THIS ONE WAS CREDITED, WHICH MAKES IT WORSE THAN
+	// THE TWO ABOVE. The anchor resolved, gate-19 counted it, and the body is
+	// the same tautology: route the URL to a 404, fetch the URL, assert 404.
+	//
+	// The scenario asks for two things and this asserts neither. "The shim
+	// SHALL surface an inline warning on the address field" is about
+	// `lastWarning` and the field that renders it, and nothing here reads
+	// either. "Form submission SHALL remain possible" is asserted as
+	// `not.toHaveURL(/login/)`, which says the session survived, not that the
+	// form did.
+	//
+	// Checked rather than assumed: `tests/vitest/pdokService.spec.js:194`
+	// calls the real `free()` against a mocked 404, asserts the empty
+	// fallback and asserts the warning is non-blocking. The scenario carries a
+	// reason-bearing `@e2e exclude` naming it.
 	test('404 (openconnector absent) does not block the page', async ({ page }) => {
 		await openDossiq(page)
 		await page.route(`**${OC_PREFIX}/suggest**`, (route) =>
@@ -294,7 +336,21 @@ test.describe('PDOK via openconnector — shim routing', () => {
 })
 
 test.describe('PDOK via openconnector — OR address fixtures (live)', () => {
-	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-all-six-functions-are-exported-with-unchanged-signatures
+	// NO `@e2e` CITATION. It carried
+	// `#scenario-all-six-functions-are-exported-with-unchanged-signatures`,
+	// which resolved and was credited, and the two have nothing to do with
+	// each other: that scenario inspects the shim's export surface, and this
+	// test asserts that seeded OpenRegister address fixtures are retrievable.
+	// A citation that resolves onto an unrelated scenario reads as coverage
+	// and survives review, which is worse than one that names nothing.
+	//
+	// The scenario's own GIVEN is "the shim file is loaded in A TEST
+	// ENVIRONMENT", so a browser was never the place for it: the bundle
+	// exports no global and no page can inspect the module.
+	// `tests/vitest/pdokService.spec.js` imports and calls `suggest`,
+	// `lookup`, `free` and `reverse` directly, which is what "present and
+	// callable" means. The scenario carries a reason-bearing `@e2e exclude`
+	// naming it.
 	test('seeded OR addresses are retrievable without PDOK/openconnector being available', async () => {
 		const ctx = await request.newContext({
 			// Single source of truth — see tests/e2e/base-url.ts. This used to
