@@ -64,6 +64,40 @@ class ZgwService {
 	 * contract collections — 404ed on every request and took its setUp cascade
 	 * with it. ZgwResourceMapConsistencyTest now holds the two sides together.
 	 *
+	 * Requests per minute a ZGW consumer may spend on a plain read.
+	 *
+	 * The ZGW APIs are machine to machine. Nextcloud sees a JWT-authenticated
+	 * consumer as anonymous, so `#[AnonRateLimit]` is the only throttle on
+	 * them, and it buckets by remote address: behind a municipal reverse proxy
+	 * every consumer shares one bucket.
+	 *
+	 * The old ceilings were 120 reads and 30 writes a minute. Measured on this
+	 * tree, the two VNG contract collections peak at 180 writes and 35 reads
+	 * inside one 60 second window, so the write tier was exceeded four times
+	 * over by an ordinary conformance run. 133 of 646 business-rules requests
+	 * came back as a bare 429, and a probe of 45 posts to one endpoint answered
+	 * 30 times and then 429 fifteen times, exactly at the declared limit.
+	 *
+	 * These numbers keep a real ceiling, 20 reads and 10 writes a second, while
+	 * admitting the traffic a single integration actually makes.
+	 *
+	 * PER-CONSUMER KEYING IS THE REAL ANSWER and this is not it. `AnonRateLimit`
+	 * cannot key on the JWT client_id, so one noisy consumer still spends the
+	 * budget of every consumer sharing its address. Tracked in #2460.
+	 */
+	public const RATE_LIMIT_READ = 1200;
+
+	/**
+	 * Requests per minute a ZGW consumer may spend on a write.
+	 *
+	 * Also covers the two reads that cost like a write: `zaken/_zoek` runs a
+	 * full search, and the document download streams a file.
+	 *
+	 * See {@see self::RATE_LIMIT_READ} for the measurement behind both numbers.
+	 */
+	public const RATE_LIMIT_WRITE = 600;
+
+	/**
 	 * @var array<string, array<string, string>>
 	 */
 	public const RESOURCE_MAP = [

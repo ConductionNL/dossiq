@@ -84,7 +84,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -168,6 +168,7 @@ class AcController extends ZgwController {
 	 * @NoCSRFRequired
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -255,7 +256,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -309,6 +310,7 @@ class AcController extends ZgwController {
 	 * @NoCSRFRequired
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -415,6 +417,7 @@ class AcController extends ZgwController {
 	 * @NoCSRFRequired
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $uuid): JSONResponse {
 		return $this->update(uuid: $uuid);
 	}//end patch()
@@ -432,6 +435,7 @@ class AcController extends ZgwController {
 	 * @NoCSRFRequired
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
