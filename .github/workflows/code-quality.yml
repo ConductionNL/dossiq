@@ -373,7 +373,23 @@ jobs:
       # renders the English source inside an otherwise translated form, silently.
       # The fleet had 30,459 such strings, so this records the current count and
       # fails only when it GROWS — burning it down stays an ordinary PR.
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js"]'
+      # `check:debt-ratchet` is a RATCHET on SUPPRESSED findings, and it rides
+      # in this node leg on purpose: the census is plain text over psalm.xml,
+      # phpstan.neon, lib/, src/ and eslint-suppressions.json, so it needs no
+      # composer install and adds about a second to a job that already has a
+      # checkout.
+      #
+      # Why it is needed at all. Measured on `development` 2026-09-12, PHPCS,
+      # PHPMD, Psalm, PHPStan and eslint each report ZERO findings. That is
+      # true, and it is zero because 1,117 findings are hidden: 31 blanket
+      # psalm issue handlers (worth 1,360 findings on their own), 294 inline
+      # @psalm-suppress tags, 278 @SuppressWarnings, 388 eslint violations
+      # parked in eslint-suppressions.json, 11 phpstan ignore patterns.
+      #
+      # So the only way to add static-analysis debt here is to add a
+      # suppression, and until now that cost nothing and showed up nowhere.
+      # The number a reviewer looks at did not move. This makes it move.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed
