@@ -94,10 +94,7 @@ const CI_DEFAULT_BASE_URL = 'http://localhost:8080'
  * A disposable rig gets its own high port (8095, 8614, 8731 and so on), so it
  * never matches this list and needs no flag.
  */
-const SHARED_ORIGINS = [
-	'http://localhost:8080',
-	'http://localhost:80',
-] as const
+const SHARED_ORIGINS = ['http://localhost:8080', 'http://localhost:80'] as const
 
 /** Loopback spellings that all mean the same host. */
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'])
@@ -120,7 +117,8 @@ export function normaliseOrigin(value: string): string {
 		return value.trim().replace(/\/+$/, '')
 	}
 	const host = LOOPBACK.has(url.hostname) ? 'localhost' : url.hostname
-	const port = url.port !== '' ? url.port : url.protocol === 'https:' ? '443' : '80'
+	const port =
+		url.port !== '' ? url.port : url.protocol === 'https:' ? '443' : '80'
 	return `${url.protocol}//${host}:${port}`
 }
 

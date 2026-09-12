@@ -80,10 +80,13 @@ test.describe('fixture teardown scope', () => {
 				title: `${RUN_PREFIX} untracked`,
 				identifier: `${RUN_PREFIX.toLowerCase()}-untracked`,
 				description:
-					'Stands in for somebody else\'s row: same prefix, different owner.',
+					"Stands in for somebody else's row: same prefix, different owner.",
 			},
 		})
-		expect(posted.ok(), `seeding the untracked row -> ${posted.status()}`).toBeTruthy()
+		expect(
+			posted.ok(),
+			`seeding the untracked row -> ${posted.status()}`,
+		).toBeTruthy()
 		const theirsId = objectId(await posted.json())
 		expect(theirsId, 'the untracked caseType should have an id').not.toBe('')
 

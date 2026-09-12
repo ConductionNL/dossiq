@@ -129,7 +129,9 @@ function describeCheckout(): string {
 async function nextcloudVersion(baseURL: string): Promise<string | null> {
 	const ctx = await request.newContext()
 	try {
-		const res = await ctx.get(`${baseURL}/status.php`, { failOnStatusCode: false })
+		const res = await ctx.get(`${baseURL}/status.php`, {
+			failOnStatusCode: false,
+		})
 		const body = await res.json().catch(() => ({}))
 		return typeof body?.versionstring === 'string' ? body.versionstring : null
 	} catch {
@@ -162,7 +164,11 @@ export async function reportInstanceUnderTest(
 	const ncVersion = await nextcloudVersion(baseURL)
 	if (ncVersion !== null) lines.push(`nextcloud     ${ncVersion}`)
 
-	const appVersion = await occRun(['config:app:get', 'dossiq', 'installed_version'])
+	const appVersion = await occRun([
+		'config:app:get',
+		'dossiq',
+		'installed_version',
+	])
 		.then((r) => (r.code === 0 ? r.output.trim() : null))
 		.catch(() => null)
 	if (appVersion !== null) lines.push(`dossiq        ${appVersion}`)
@@ -170,7 +176,8 @@ export async function reportInstanceUnderTest(
 	const appPath = await occRun(['app:getpath', 'dossiq'])
 		.then((r) => (r.code === 0 ? r.output.trim() : null))
 		.catch(() => null)
-	if (appPath !== null) lines.push(`app path      ${appPath} (as the instance sees it)`)
+	if (appPath !== null)
+		lines.push(`app path      ${appPath} (as the instance sees it)`)
 
 	const instanceId = await occSystemGet('instanceid').catch(() => null)
 	if (instanceId !== null) lines.push(`instance id   ${instanceId}`)

@@ -1087,8 +1087,7 @@ export async function cleanupRunObjects(
 	// whose `case` or `parentCase` points at one of our cases still go, because
 	// that is a foreign key and not a content match: the transition engine writes
 	// `statusRecord` rows itself, carrying the case uuid and none of our text.
-	const ledger = (schema: string): Set<string> =>
-		new Set(trackedObjects(schema))
+	const ledger = (schema: string): Set<string> => new Set(trackedObjects(schema))
 	const ourIds = new Set(schemas.flatMap((schema) => trackedObjects(schema)))
 
 	const noticed: string[] = []
