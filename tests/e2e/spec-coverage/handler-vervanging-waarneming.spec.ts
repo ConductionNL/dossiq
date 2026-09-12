@@ -27,7 +27,6 @@ import {
 	STORAGE_STATE,
 	storageStatePath,
 } from '../helpers/auth.ts'
-import { becomesVisible } from '../helpers/becomes-visible.js'
 import {
 	createObject,
 	deleteObject,
@@ -904,33 +903,37 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * of the requirement they belong to — that the preview is coordinator-only,
 	 * and that it lists the departing handler's open work while mutating
 	 * nothing — are asserted over HTTP by the two tests that cite them.
+	 *
+	 * 🔴 AND THE `becomesVisible` GUARD IS GONE, WITH ITS `test.skip` ELSE.
+	 * Withdrawing the citation stopped this body crediting a scenario, but it
+	 * left a test that still could not fail: on a build where the coordinator
+	 * console never rendered, the run reported SKIPPED, which is a colour
+	 * nobody reads as a defect. The skip reason argued the point itself —
+	 * "NOT a deploy gap, SubstitutionAdminView is registered in
+	 * src/registry.js" — so the branch existed to tolerate exactly the failure
+	 * it said could not happen. The heading is required now, and a console that
+	 * does not appear fails here naming it. Measured 2026-09-12 against a
+	 * disposable instance: it appears.
 	 */
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			const reassign = page
-				.getByRole('button', { name: /Bulk reassign/ })
-				.first()
-			await expect(reassign).toBeVisible()
-			await reassign.click()
-			// The preview button gates execute — the modal must show it. What the
-			// preview RETURNS, and that it mutates nothing, is asserted over HTTP
-			// above; this is the affordance only.
-			await expect(
-				page.getByRole('button', { name: /Preview affected work/ }).first(),
-			).toBeVisible({ timeout: 8000 })
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator substitution console must render, and a build where it '
+				+ 'does not is the defect this test exists to report',
+		).toBeVisible({ timeout: 30_000 })
+		const reassign = page.getByRole('button', { name: /Bulk reassign/ }).first()
+		await expect(reassign).toBeVisible()
+		await reassign.click()
+		// The preview button gates execute — the modal must show it. What the
+		// preview RETURNS, and that it mutates nothing, is asserted over HTTP
+		// above; this is the affordance only.
+		await expect(
+			page.getByRole('button', { name: /Preview affected work/ }).first(),
+		).toBeVisible({ timeout: 8000 })
 	})
 
 	/**
@@ -942,22 +945,20 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * scenarios are handled above and on the spec respectively. This is kept as
 	 * what it always was — a page-load regression check on the coordinator
 	 * console.
+	 *
+	 * 🔴 THE `becomesVisible` GUARD IS GONE HERE TOO, and this one was the
+	 * worse of the pair: a page-load regression check whose whole body sat
+	 * behind "if the page loaded" has nothing left to report. The 500 it looks
+	 * for is one of the ways the heading fails to appear, so the guard stood
+	 * down in precisely the case the test exists for.
 	 */
 	test('coordinator admin renders without a server error', async ({ page }) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator console must render its own heading, not merely avoid a 500',
+		).toBeVisible({ timeout: 30_000 })
 	})
 })
