@@ -116,7 +116,7 @@ class AcController extends ZgwController {
 				'status' => Http::STATUS_FORBIDDEN,
 				'detail' => sprintf(
 					'Consumer %s heeft scope %s niet.',
-					$this->clientIdOf($presentedToken),
+					$this->clientIdOf(presentedToken: $presentedToken),
 					$scope
 				),
 			],
@@ -155,7 +155,11 @@ class AcController extends ZgwController {
 
 		$clientId = ($payload['client_id'] ?? ($payload['iss'] ?? null));
 
-		return is_string($clientId) === true && $clientId !== '' ? $clientId : 'onbekend';
+		if (is_string($clientId) === false || $clientId === '') {
+			return 'onbekend';
+		}
+
+		return $clientId;
 	}//end clientIdOf()
 
 	/**
@@ -261,7 +265,10 @@ class AcController extends ZgwController {
 	public function create(): JSONResponse {
 		// C2: Gate writes on the ac.aanmaken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope('ac.aanmaken', 'U heeft geen toestemming om autorisaties aan te maken.');
+		$refused = $this->requireAcScope(
+			scope: 'ac.aanmaken',
+			title: 'U heeft geen toestemming om autorisaties aan te maken.'
+		);
 		if ($refused !== null) {
 			return $refused;
 		}
@@ -392,7 +399,10 @@ class AcController extends ZgwController {
 	public function update(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.bijwerken scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope('ac.bijwerken', 'U heeft geen toestemming om autorisaties bij te werken.');
+		$refused = $this->requireAcScope(
+			scope: 'ac.bijwerken',
+			title: 'U heeft geen toestemming om autorisaties bij te werken.'
+		);
 		if ($refused !== null) {
 			return $refused;
 		}
@@ -507,7 +517,10 @@ class AcController extends ZgwController {
 	public function destroy(string $uuid): JSONResponse {
 		// C2: Gate writes on the ac.verwijderen scope. The credential, the refusal and
 		// the ZGW error body all live in requireAcScope().
-		$refused = $this->requireAcScope('ac.verwijderen', 'U heeft geen toestemming om autorisaties te verwijderen.');
+		$refused = $this->requireAcScope(
+			scope: 'ac.verwijderen',
+			title: 'U heeft geen toestemming om autorisaties te verwijderen.'
+		);
 		if ($refused !== null) {
 			return $refused;
 		}
