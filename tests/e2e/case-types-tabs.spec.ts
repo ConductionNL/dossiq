@@ -97,11 +97,15 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		// The test budget is 300s, so 180s here still fails as a test rather
 		// than hanging the shard.
 		await page.goto(ADMIN_SETTINGS_URL, { timeout: 180_000 })
-		// 🔬 PROBE: after the navigation that loads the bundle, never before.
-		mutation.assertApplied()
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
+		// 🔬 PROBE: after the heading, not after the navigation. The heading is
+		// rendered BY the chunk being rewritten, so reaching it proves the
+		// chunk was fetched. Asserting straight after `goto` would read a
+		// not-yet-fetched chunk as a mutation that matched nothing, and the
+		// red would be about the probe rather than about the copy.
+		mutation.assertApplied()
 
 		// THEN an empty state message, and guidance towards the first case
 		// type. Both are dossiq's own strings: `CnIndexPage`'s default is
