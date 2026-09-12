@@ -98,7 +98,16 @@ export default {
 	components: { NcButton, NcDialog, NcNoteCard, NcSelect },
 
 	props: {
-		/** The selected informatieobject ids, handed in by CnObjectListWidget's bulk-action dispatch. */
+		/**
+		 * The selected ZAAKINFORMATIEOBJECT ids, handed in by
+		 * CnObjectListWidget's bulk-action dispatch.
+		 *
+		 * 🔴 THESE ARE JOIN IDS, NOT DOCUMENT IDS. The widget lists
+		 * `zaakinformatieobject` and selects by `row.id`, so what arrives here
+		 * identifies the link between a case and a document, not the document.
+		 * Both bulk endpoints take informatieobject ids, so `resolveDocumentIds`
+		 * maps them before either request goes out.
+		 */
 		selectedIds: {
 			type: Array,
 			default: () => [],
@@ -215,6 +224,56 @@ export default {
 		},
 
 		/**
+		 * The informatieobject ids behind the selected join rows.
+		 *
+		 * 🔴 SENDING `selectedIds` STRAIGHT THROUGH IS A SILENT NO-OP, and it
+		 * shipped that way. `/api/informatieobjecten/bulk/status` resolves each
+		 * id in the `informatieobject` schema, and a `zaakinformatieobject` id
+		 * is not in it, so every item came back a miss, the dialog rendered its
+		 * per-item results as if something had happened, and both documents
+		 * stayed `draft`. The e2e test that reads the stored status after the
+		 * confirm is what caught it; the unit test did not, because it mocked
+		 * the POST and asserted the ids this component had assumed.
+		 *
+		 * One GET per selected row is the honest cost of a list over the join.
+		 * A selection is a handful of rows, and the widget hands over ids only,
+		 * not the extended rows it already holds.
+		 *
+		 * A row that cannot be resolved is dropped rather than passed on, so a
+		 * broken link never reaches an endpoint that would report it as a
+		 * document failure.
+		 *
+		 * @return {Promise<Array<string>>} The document ids to act on.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async resolveDocumentIds() {
+			const resolved = []
+
+			for (const joinId of this.selectedIds) {
+				const url = generateUrl(
+					'/apps/openregister/api/objects/{register}/{schema}/{id}',
+					{
+						register: 'dossiq',
+						schema: 'zaakinformatieobject',
+						id: joinId,
+					},
+				)
+				const { data } = await axios.get(url)
+				const document = (data && data.informatieobject) || ''
+				const id =
+					typeof document === 'object' && document !== null
+						? String(document.id || '')
+						: String(document)
+
+				if (id !== '') {
+					resolved.push(id)
+				}
+			}
+
+			return resolved
+		},
+
+		/**
 		 * Run one of the two bulk mutation endpoints and report the per-item
 		 * results, mirroring DossierTab's old `runBulk()`.
 		 *
@@ -227,8 +286,9 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
+				const ids = await this.resolveDocumentIds()
 				const { data } = await axios.post(generateUrl(path), {
-					ids: this.selectedIds,
+					ids,
 					...extra,
 				})
 				this.results = data.results || []
