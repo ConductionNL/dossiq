@@ -624,6 +624,12 @@ test.describe('Settings page', () => {
 	test('renders the configuration section and its save control', async ({
 		page,
 	}) => {
+		// The administration page mounts every section this app declares, a
+		// dozen of them, each fetching its own configuration. On a cold
+		// instance the first load runs past the file's 30s default and the
+		// failure reads as `page.goto: Test timeout`, which says nothing
+		// about administration at all.
+		test.setTimeout(120_000)
 		// page-topology-cleanup (B1) retired the IN-APP /settings page: it
 		// mounted the same AdminRoot.vue as /settings/admin/dossiq, and
 		// reaching an administration component through the in-app router
