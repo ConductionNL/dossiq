@@ -874,8 +874,24 @@ test.describe('Case detail — the Documents tab', () => {
 	//
 	// The version-count precondition PASSED in that run, which is the half
 	// that matters: the panel listed its two versions and the guard is what
-	// failed. Restored, rebuilt, green again, and green on two consecutive
-	// whole-file runs.
+	// failed. Restored, rebuilt, green again.
+	//
+	// 🔑 AND THEN IT WENT RED IN CI ANYWAY, ON A FIXTURE THAT WAS CORRECT.
+	// Worth the space, because "green on my instance" was the whole of the
+	// evidence and it was not enough. The panel built its PROPFIND with
+	// `generateUrl`, which prefixes `/index.php` wherever the front controller
+	// is inactive, so the request went to `/index.php/remote.php/dav/…` and
+	// routed nowhere. Nextcloud sets that flag from `SetEnv
+	// front_controller_active true` in its own `.htaccess`: an Apache instance
+	// has it, the `php -S` instance the E2E job runs does not. Every developer
+	// box passed and CI could not.
+	//
+	// So the mutation check was RE-RUN with that one `.htaccess` line flipped,
+	// which reproduced the CI failure exactly on an instance that had just
+	// passed. Broken guard reddens on the restore assertion, restored guard is
+	// green, and the whole file is green in BOTH configurations. If this test
+	// ever goes red on the version count again, check `modRewriteWorking` on
+	// the instance before looking at the fixture.
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
