@@ -657,13 +657,31 @@ test.describe('Settings page', () => {
 		// went missing. `ZGW API Mapping` is the one the cited scenario names
 		// beside case type management, and a Save button on its own is
 		// satisfied by any settings page the framework happens to mount.
+		//
+		// NOT `{ name, exact: true }`. A settings section that sets `doc-url`
+		// renders the documentation link INSIDE its own <h2>, so the heading's
+		// accessible name is the section name followed by that link's label.
+		// Measured on run 34703612328, where the page rendered
+		//
+		//   - heading "Configuration External documentation" [level=2]:
+		//     - text: Configuration
+		//     - link "External documentation"
+		//
+		// The section, its description and its Save control were all present;
+		// only the matcher was wrong. `Case Type Management` and `ZGW API
+		// Mapping` set no doc-url, which is why those two passed and this one
+		// did not. Anchored at the start and followed by whitespace or the end
+		// of the name, so a different section cannot satisfy it by prefix.
 		for (const heading of [
 			'Configuration',
 			'Case Type Management',
 			'ZGW API Mapping',
 		]) {
+			const sectionHeading = new RegExp(
+				`^${heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`,
+			)
 			await expect(
-				page.getByRole('heading', { name: heading, exact: true }).first(),
+				page.getByRole('heading', { name: sectionHeading }).first(),
 				`the administration surface must render the ${heading} section`,
 			).toBeVisible({ timeout: 15000 })
 		}
