@@ -338,7 +338,15 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 
 test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion protection)', () => {
 	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
-	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
+	//
+	// 🔴 `delete-case-without-sub-cases-proceeds-normally` WAS CITED HERE TOO
+	// AND HAS BEEN TAKEN DOWN. This test seeds a parent WITH a sub-case and
+	// only ever exercises the orphan branch, so nothing in it says what a
+	// childless case's delete dialog looks like: breaking the plain
+	// confirmation left every assertion in here green. The scenario keeps two
+	// citations that do prove it, the sibling test directly below and
+	// `deleting a case with no sub-cases takes the plain confirmation` further
+	// down this file, so nothing is lost by removing the claim that was false.
 	//
 	// UNPARKED, AND POINTED AT THE PAGE THE CONTROL IS ON.
 	//
@@ -398,6 +406,19 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 	})
 
 	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`:
+	// the served bundle was rewritten on its way to the browser, so the broken
+	// fork really ran while nothing on disk moved.
+	//
+	//   find    /onDeleteParent\(\)\{!function\(\w+\)\{const \w+=Number\(\w+\);return Number\.isFinite\(\w+\)&&\w+>0\}/
+	//   replace 'onDeleteParent(){!function(){return true}'
+	//   red on  "a childless case takes the standard deletion confirmation"
+	//
+	// `requiresOrphanWarning()` forced true sends a childless case down the
+	// orphan branch, which is the state this scenario forbids. That is also
+	// why the citation was taken off the orphan-branch test above: this break
+	// leaves every assertion in that one green.
 	test('a parent with no sub-cases takes the plain delete confirmation', async ({
 		page,
 	}) => {
@@ -420,11 +441,12 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 		// The OTHER side of requiresOrphanWarning(): the plain CnConfirmDialog.
 		await expect(
 			page.getByText('Are you sure you want to delete this case?').first(),
+			'a childless case takes the standard deletion confirmation',
 		).toBeVisible({ timeout: 15_000 })
-		// And NOT the orphan copy — a case with nothing hanging off it must not
-		// be told its sub-cases will be unlinked.
+		// And NOT the orphan copy.
 		await expect(
 			page.getByText(/unlink the sub-cases from their parent/i),
+			'a case with nothing hanging off it must not be told its sub-cases will be unlinked',
 		).toHaveCount(0)
 		await page
 			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
