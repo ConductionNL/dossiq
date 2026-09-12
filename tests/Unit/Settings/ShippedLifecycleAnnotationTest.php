@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * An invalid lifecycle block is ignored, and says so only in the log.
  *
- * OpenRegister's `LifecycleAnnotationValidator::validate()` has two modes:
+ * OpenRegister's `LifecycleAnnotationValidator::validate()` has three modes:
  *
  *  - STATIC, the default. `field`, `initial` and `transitions` are all
  *    required; `field` must be a `type: string` property carrying a non-empty
@@ -37,21 +37,27 @@ use PHPUnit\Framework\TestCase;
  *    form `{from, field}`, and `graph` must carry `schema`, `parentField`,
  *    `parentFrom`, `orderField`, `finalField` plus an `allowedMoves` of
  *    `forward|adjacent|any`.
+ *  - PROVIDER, entered when `provider` is present, and checked BEFORE graph.
+ *    `provider` must be a non-empty string naming a registered
+ *    `LifecycleActionProviderInterface`; `field` stays required and must exist
+ *    on the schema, with the enum constraint relaxed; `initial` is optional in
+ *    either form; a non-empty `transitions` or `graph` beside it is a conflict
+ *    and is refused, because a field has one lifecycle mode.
  *
- * A block that satisfies neither is REJECTED AND DROPPED: the import logs
+ * A block that satisfies none is REJECTED AND DROPPED: the import logs
  * `x-openregister-lifecycle is missing required key "transitions"` and carries
  * on, so the schema behaves as though it declared nothing. The `case` schema
- * shipped exactly that — object-form `initial` with no `graph` block — and
+ * shipped exactly that, object-form `initial` with no `graph` block, and
  * logged it eight times per install while the shipped comment on `case.status`
  * claimed OpenRegister was initialising the field.
  *
- * dossiq#1678 already ruled on which engine owns case status:
- * `StatusTransitionService` does, because OpenRegister cannot express a
- * per-caseType dynamic statusType graph. So the block was removed rather than
- * completed — declaring GRAPH mode would have installed OpenRegister's move
- * enforcement as a second engine over the same field, which is the outcome
- * #1678 refused. The initialisation it claimed to provide is delivered, and
- * validly, by `x-openregister-prefill` on `caseType`.
+ * dossiq#1678 ruled that `StatusTransitionService` owns case status, because
+ * OpenRegister could not express a per-caseType dynamic statusType graph. That
+ * ruling stands and provider mode honours it: `case` now declares PROVIDER,
+ * which asks `CaseActionProvider` rather than installing a second engine over
+ * the same field. Graph mode is still the wrong answer here, for the reason
+ * #1678 gave. Initialisation stays with `x-openregister-prefill` on `caseType`,
+ * which is what actually writes the field.
  *
  * This file sweeps the shipped registers so the next block cannot ship dead.
  *
@@ -200,6 +206,13 @@ class ShippedLifecycleAnnotationTest extends TestCase {
 			$annotation['field'] = $annotation['property'];
 		}
 
+		// Provider mode is checked BEFORE graph, as upstream does, so a block
+		// declaring both is reported as the mode conflict it is rather than as
+		// a graph block with a stray key.
+		if (isset($annotation['provider']) === true) {
+			return $this->validateProviderMode(annotation: $annotation, schema: $schema);
+		}
+
 		if (isset($annotation['graph']) === true && is_array($annotation['graph']) === true && $annotation['graph'] !== []) {
 			return $this->validateGraphMode(annotation: $annotation, schema: $schema);
 		}
@@ -247,6 +260,49 @@ class ShippedLifecycleAnnotationTest extends TestCase {
 
 		return $errors;
 	}//end validate()
+
+	/**
+	 * The provider-mode third of the contract.
+	 *
+	 * @param array<string, mixed> $annotation The declared block.
+	 * @param array<string, mixed> $schema The schema carrying it.
+	 *
+	 * @return array<int, string> Contract violations, empty when valid.
+	 */
+	private function validateProviderMode(array $annotation, array $schema): array {
+		$errors = [];
+
+		$provider = ($annotation['provider'] ?? null);
+		if (is_string($provider) === false || trim($provider) === '') {
+			$errors[] = '`provider` must be a non-empty string naming a registered LifecycleActionProviderInterface';
+		}
+
+		$field = ($annotation['field'] ?? null);
+		if (is_string($field) === false || $field === '') {
+			$errors[] = 'provider mode still requires a non-empty `field`';
+		}
+
+		if (is_string($field) === true && isset(($schema['properties'] ?? [])[$field]) === false) {
+			$errors[] = sprintf('field "%s" is not declared in `properties`', $field);
+		}
+
+		if (isset($annotation['initial']) === true && is_string($annotation['initial']) === false) {
+			$initial = $annotation['initial'];
+			$fromOk = (is_array($initial) === true && is_string($initial['from'] ?? null) === true && ($initial['from'] ?? '') !== '');
+			$fieldOk = (is_array($initial) === true && is_string($initial['field'] ?? null) === true && ($initial['field'] ?? '') !== '');
+			if ($fromOk === false || $fieldOk === false) {
+				$errors[] = '`initial` must be a string or an object carrying non-empty `from` and `field`';
+			}
+		}
+
+		foreach (['transitions', 'graph'] as $rival) {
+			if (isset($annotation[$rival]) === true && $annotation[$rival] !== []) {
+				$errors[] = sprintf('declares both `provider` and `%s`; a field has one lifecycle mode', $rival);
+			}
+		}
+
+		return $errors;
+	}//end validateProviderMode()
 
 	/**
 	 * The graph-mode half of the contract.

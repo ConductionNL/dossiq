@@ -27,7 +27,6 @@ import {
 	STORAGE_STATE,
 	storageStatePath,
 } from '../helpers/auth.ts'
-import { becomesVisible } from '../helpers/becomes-visible.js'
 import {
 	createObject,
 	deleteObject,
@@ -491,18 +490,36 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * test's scope would make that one fail for a reason that is not its
 	 * subject.
 	 *
-	 * 🔴 NOT MUTATION-CHECKED. The guard is PHP and the instance is shared, so
-	 * breaking it means editing deployed code. The mutation point is one line:
-	 * in `lib/Service/SubstitutionService.php::create()`, delete the
-	 * `if ($createdBy !== '') { $createdByValue = $createdBy; }` branch so the
-	 * row always records the absentee, and this test must redden on the
-	 * `createdBy` assertion; drop `'status' => 'active'` from the same `$row`
-	 * and it must redden on the status assertion instead.
+	 * ✅ MUTATION-CHECKED 2026-09-12, on a private disposable instance rather
+	 * than the shared one. Both clauses now have a break their own assertion
+	 * catches:
 	 *
-	 * What WAS run, and what it is worth: inverting the expectation to
-	 * `ADMIN_USER` reddened on `expected "admin", received "e2euser"`. That
-	 * proves the assertion reads the stored row and tells the two identities
-	 * apart. It does not prove the guard, because the guard was never broken.
+	 *   `createdBy`  SubstitutionService::create(), `$createdByValue =
+	 *                $createdBy` -> `= $substitute`
+	 *                red: Expected "e2euser", Received "admin"
+	 *   `status`     the same `$row`, `'status' => 'active'` -> `'ended'`
+	 *                red: "a registration is stored active, which is what makes
+	 *                it route work", Expected "active", Received "ended"
+	 *
+	 * 🔴 AND THE TWO MUTATIONS THIS COMMENT USED TO PRESCRIBE BOTH LEAVE IT
+	 * GREEN, which is why the prescriptions are gone rather than corrected in
+	 * place. It said to delete the `if ($createdBy !== '')` branch and to drop
+	 * `'status' => 'active'`. Run:
+	 *
+	 *   - deleting the branch: 2 passed. This test registers for ITSELF, so
+	 *     absentee and registrar are the same account and `$createdByValue`
+	 *     lands on an identical value either way.
+	 *   - dropping the status key: 2 passed. The substitution schema in
+	 *     `lib/Settings/register.d/62-handler-vervanging.json` declares
+	 *     `"default": "active"`, so OpenRegister refills the field the service
+	 *     stopped sending.
+	 *
+	 * Neither reason is visible from the line being mutated: one lives in this
+	 * file's fixture, the other in a schema in another directory. A predicted
+	 * outcome written while reading `create()` could not have been better than
+	 * a guess. So when a mutation has not been run, name the POINT and stop;
+	 * anything further reads as analysis and closes the question for the next
+	 * person.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
 	test('a handler registering their own substitution stores the pair, an active status and themselves as creator', async () => {
@@ -570,17 +587,33 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * names. Without it, "a coordinator may register for another" would be
 	 * green on a build where anybody may.
 	 *
-	 * 🔴 NOT MUTATION-CHECKED, for the same reason as the test above. The
-	 * mutation point for the refusal is
-	 * `lib/Controller/SubstitutionController.php::create()`: delete the
-	 * `if ($absentee !== $actorId && ...isCoordinator(...) === false)` guard and
-	 * the 403 assertion must redden. For the creator half it is the
-	 * `$createdBy !== ''` branch in `SubstitutionService::create()`, as above.
+	 * ✅ MUTATION-CHECKED 2026-09-12, all three clauses, on a private
+	 * disposable instance:
 	 *
-	 * What WAS run: inverting the creator expectation to `PLAIN_USER` reddened
-	 * on `expected "e2euser", received "admin"`. The assertion reads the row
-	 * and discriminates. The guard itself is still unbroken and so still
-	 * unproven.
+	 *   the refusal  SubstitutionController::create(), delete the
+	 *                `if ($absentee !== $actorId && ...isCoordinator(...)
+	 *                === false)` guard
+	 *                red: "registering on behalf of another handler is
+	 *                coordinator-only", Expected 403, Received 201 — and the
+	 *                body shows `e2euser`, an account in no groups, creating a
+	 *                row with absentee "admin". That is the bypass itself, not
+	 *                a status code.
+	 *   `createdBy`  SubstitutionService::create(), two different breaks, and
+	 *                they land on different values here, which is what makes
+	 *                the assertion discriminating rather than merely equal:
+	 *                deleting the `if ($createdBy !== '')` branch gives the
+	 *                ABSENTEE (Received "e2euser"), while
+	 *                `= $substitute` gives the SUBSTITUTE
+	 *                (Received "e2euser-waarnemer").
+	 *   `status`     `'status' => 'active'` -> `'ended'`,
+	 *                red: Expected "active", Received "ended". Dropping the
+	 *                key instead leaves this green: the schema declares
+	 *                `"default": "active"` and OpenRegister refills it.
+	 *
+	 * The handler test above stays GREEN under the guard deletion, and
+	 * correctly: it registers for itself, so `$absentee !== $actorId` is false
+	 * and the branch never decides anything there. That is why the refusal is
+	 * asserted here and with the principal the requirement names.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
 	test('a coordinator registers for an absent handler and the row names the coordinator as creator, where an ordinary user is refused', async () => {
@@ -904,33 +937,42 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * of the requirement they belong to — that the preview is coordinator-only,
 	 * and that it lists the departing handler's open work while mutating
 	 * nothing — are asserted over HTTP by the two tests that cite them.
+	 *
+	 * 🔴 AND THE `becomesVisible` GUARD IS GONE, WITH ITS `test.skip` ELSE.
+	 * Withdrawing the citation stopped this body crediting a scenario, but it
+	 * left a test that still could not fail: on a build where the coordinator
+	 * console never rendered, the run reported SKIPPED, which is a colour
+	 * nobody reads as a defect. The skip reason argued the point itself —
+	 * "NOT a deploy gap, SubstitutionAdminView is registered in
+	 * src/registry.js" — so the branch existed to tolerate exactly the failure
+	 * it said could not happen. The heading is required now, and a console that
+	 * does not appear fails here naming it.
+	 *
+	 * ✅ MEASURED 2026-09-12 on a private disposable instance, unguarded: this
+	 * test and the page-load one below both pass, 2 passed in 1.8m. So the
+	 * branch was standing down for a case that does not occur, which is the
+	 * worst kind: it never fired, so it never looked wrong, and it would have
+	 * absorbed the first real regression in silence.
 	 */
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
 	}) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			const reassign = page
-				.getByRole('button', { name: /Bulk reassign/ })
-				.first()
-			await expect(reassign).toBeVisible()
-			await reassign.click()
-			// The preview button gates execute — the modal must show it. What the
-			// preview RETURNS, and that it mutates nothing, is asserted over HTTP
-			// above; this is the affordance only.
-			await expect(
-				page.getByRole('button', { name: /Preview affected work/ }).first(),
-			).toBeVisible({ timeout: 8000 })
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator substitution console must render, and a build where it '
+				+ 'does not is the defect this test exists to report',
+		).toBeVisible({ timeout: 30_000 })
+		const reassign = page.getByRole('button', { name: /Bulk reassign/ }).first()
+		await expect(reassign).toBeVisible()
+		await reassign.click()
+		// The preview button gates execute — the modal must show it. What the
+		// preview RETURNS, and that it mutates nothing, is asserted over HTTP
+		// above; this is the affordance only.
+		await expect(
+			page.getByRole('button', { name: /Preview affected work/ }).first(),
+		).toBeVisible({ timeout: 8000 })
 	})
 
 	/**
@@ -942,22 +984,20 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * scenarios are handled above and on the spec respectively. This is kept as
 	 * what it always was — a page-load regression check on the coordinator
 	 * console.
+	 *
+	 * 🔴 THE `becomesVisible` GUARD IS GONE HERE TOO, and this one was the
+	 * worse of the pair: a page-load regression check whose whole body sat
+	 * behind "if the page loaded" has nothing left to report. The 500 it looks
+	 * for is one of the ways the heading fails to appear, so the guard stood
+	 * down in precisely the case the test exists for.
 	 */
 	test('coordinator admin renders without a server error', async ({ page }) => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
-		const heading = page
-			.getByRole('heading', { name: /Substitutions & reassignment/ })
-			.first()
-		if (await becomesVisible(heading)) {
-			await expect(page.locator('body')).not.toContainText(
-				'Internal Server Error',
-			)
-		} else {
-			test.skip(
-				true,
-				'the coordinator substitution admin did not appear. NOT a deploy gap — SubstitutionAdminView is registered in src/registry.js. If this persists it is an authorisation or routing problem, not a missing build.',
-			)
-		}
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+		await expect(
+			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			'the coordinator console must render its own heading, not merely avoid a 500',
+		).toBeVisible({ timeout: 30_000 })
 	})
 })

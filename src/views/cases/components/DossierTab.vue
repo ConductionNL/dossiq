@@ -146,7 +146,7 @@
 import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { generateUrl } from '@nextcloud/router'
+import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import FolderOpenOutline from 'vue-material-design-icons/FolderOpenOutline.vue'
 import Upload from 'vue-material-design-icons/Upload.vue'
@@ -636,8 +636,15 @@ export default {
 					method: 'MOVE',
 					url: version.id,
 					headers: {
-						Destination: generateUrl(
-							`/remote.php/dav/versions/${this.userId}/restore/target`,
+						// The same `generateRemoteUrl` rule as VersionHistoryPanel, and
+						// the same defect: a `remote.php` path built with `generateUrl`
+						// gains an `/index.php` prefix wherever the front controller is
+						// inactive. Here it lands in a MOVE Destination header, so the
+						// restore would 502 rather than return an empty list. This one
+						// has no test yet: a restore is only offered on a draft
+						// document, and no spec drives that path.
+						Destination: generateRemoteUrl(
+							`dav/versions/${this.userId}/restore/target`,
 						),
 					},
 				})

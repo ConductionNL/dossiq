@@ -94,6 +94,15 @@
                 <referencedClass name="OCA\OpenRegister\Event\FlowTimerFiredEvent"/>
                 <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
+                <!-- OpenRegister's two validation exceptions. Caught BY TYPE in
+                     InspectionChecklistController and BelplanController so a payload
+                     the schema refuses answers 400 instead of falling through to the
+                     500 arm. Same runtime-resolved, optional-app situation as
+                     LockedException above: PHP matches a catch type without
+                     autoloading, so an absent OpenRegister makes the arm inert rather
+                     than fatal. -->
+                <referencedClass name="OCA\OpenRegister\Exception\ValidationException"/>
+                <referencedClass name="OCA\OpenRegister\Exception\CustomValidationException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
