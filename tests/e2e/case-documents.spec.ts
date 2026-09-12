@@ -907,6 +907,30 @@ test.describe('Case detail — the Documents tab', () => {
 	// The two suites cover the two states and agree with the scenario. vitest
 	// mounts a DRAFT: both controls present, Restore issues the MOVE. This one
 	// mounts a FINAL: both present, Restore refused. Neither passes on absent.
+	//
+	// TO REPRODUCE IN SECONDS, use `helpers/mutate-bundle.ts` (#2543) rather
+	// than the edit-and-rebuild the checks above were originally done with. It
+	// rewrites the served bundle, so nothing on disk moves and no instance is
+	// locked. Install it BEFORE `openDocumentsTab`, which is the navigation
+	// that loads the chunk, and read the count back afterwards:
+	//
+	//   const broken = await mutateBundle(page, [{
+	//     label: 'restoreDisabled() never refuses',
+	//     find: /restoreDisabled\(\)\{return"final"===this\.document\.status\}/,
+	//     replace: 'restoreDisabled(){return false}',
+	//   }])
+	//   const panel = await openDocumentsTab(page, versionCaseId)
+	//   broken.assertApplied()
+	//
+	// Verified 2026-09-12: reddens on the same restore assertion as the
+	// rebuild did, same message.
+	//
+	// 🔑 NOTE THE YODA COMPARISON. The source reads
+	// `this.document.status === 'final'` and the minifier emits
+	// `return"final"===this.document.status`. A pattern written from the
+	// source matches nothing, and a mutation that matches nothing leaves the
+	// real code running. `assertApplied()` is what turns that into a named
+	// failure instead of a green, so never drop it.
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
