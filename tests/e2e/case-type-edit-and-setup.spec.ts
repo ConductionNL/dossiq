@@ -136,10 +136,40 @@ async function mainBundleSource(page: Page): Promise<string> {
 	})
 }
 
+// 🔴 SIX CITATIONS WITHDRAWN 2026-09-12, AND THEY NAMED A TASK, NOT A
+// REQUIREMENT. Every test in this describe and the next carried
+// `openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13`.
+//
+// Three things are wrong with that, and the first is the one that matters.
+// TASK-CT-13 is a task, and a `tasks.md` entry declares no scenario, so no
+// gate can ever credit it and no reader can check a claim against it. Read
+// it and the citation gets worse rather than better: the task is
+// `[x] DEFERRED`, and what it defers is a smoke run over the SEVEN-TAB case
+// type detail integration. None of these six tests opens a tab. They are
+// about the row action menu and about Edit opening a page instead of a
+// dialog, which is a different defect entirely.
+//
+// So the citation claimed a deferred task's subject while proving something
+// else, and it read as coverage of the seven tabs for as long as it stood.
+//
+// WHERE THE REAL REQUIREMENTS ARE, AND THAT THEY ARE UNCOVERED. The seven
+// tabs are `case-types` REQ-CT-15, scenarios CT-15a through CT-15g.
+// Measured 2026-09-12: not one of them is cited by any test in this suite,
+// so the integration TASK-CT-13 deferred is still unverified in a browser.
+// That is worth more as a stated gap than as six citations pointing at the
+// task that deferred it.
+//
+// NO SCENARIO STATES WHAT THESE SIX DO PROVE. `case-types` has no scenario
+// for row-menu labels, and none anywhere in `openspec/specs` states the
+// modal-versus-page rule these tests guard (searched 2026-09-12). Writing
+// one is not this file's call: the rule comes from ADR-044 and applies to
+// every index in the fleet, so it belongs in a capability, not invented
+// here to give six tests a home. They stay uncited and keep guarding the
+// defect they were written for.
 test.describe('Case types — the row action menu', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('every entry in the row menu has a visible label', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -159,7 +189,7 @@ test.describe('Case types — the row action menu', () => {
 		expect(labels.filter((l) => l === '')).toEqual([])
 	})
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the menu offers View and Edit exactly once each', async ({ page }) => {
 		// The manifest used to hand-roll a `view` action next to the built-in
 		// one; both now resolve to the same detail route, so only one should
@@ -176,7 +206,7 @@ test.describe('Case types — the row action menu', () => {
 test.describe('Case types — Edit goes to the detail page, not a modal', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('Edit navigates to the case type detail route', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -188,7 +218,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 		})
 	})
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('Edit does not open a dialog over the index', async ({ page }) => {
 		// The decisive half. Navigating AND opening the modal would satisfy the
 		// test above while changing nothing about the defect.
@@ -210,7 +240,7 @@ test.describe('Case types — Edit goes to the detail page, not a modal', () => 
 test.describe('Case type detail — the record can be edited there', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the detail page offers an Edit button', async ({ page }) => {
 		// Without this the change above would simply have made every case type
 		// read-only — which is what "0 of 233 detail pages declared an edit
@@ -227,7 +257,7 @@ test.describe('Case type detail — the record can be edited there', () => {
 		).toBeVisible({ timeout: 20000 })
 	})
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// Uncited on purpose: see the note above this describe.
 	test('the Edit button opens the record form', async ({ page }) => {
 		await gotoCaseTypes(page)
 		const menu = await openFirstRowMenu(page)
@@ -244,7 +274,19 @@ test.describe('Case type detail — the record can be edited there', () => {
 test.describe('Setup — every step it offers is one it can finish', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
+	//
+	// The scenario's SECOND clause, "it SHALL still report the steps the
+	// manifest does declare, `register-check` among them". The test below at
+	// "the wizard offers no step the seed action cannot fulfil" proves the
+	// other three, so this is the pair splitting one scenario rather than two
+	// tests claiming the same thing.
+	//
+	// ⚠️ IT CREDITS NO NEW SCENARIO, and that is worth saying rather than
+	// leaving to be rediscovered. Gate-19 counts distinct scenarios, and this
+	// one is already credited by that sibling, so the repair moves the
+	// citation from naming nothing to naming its requirement without moving
+	// coverage. The reader gains a checkable claim; the number does not move.
 	test('the server reports every actionable step, and reports the optional ones as outstanding', async ({
 		page,
 	}) => {
@@ -263,7 +305,22 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// 🔴 LEFT UNCITED 2026-09-12, BECAUSE THE TEST BRANCHES AND BOTH BRANCHES
+	// PASS. The body is `if (second.completed === true) { … } else { … }`, and
+	// on dossiq's CI instance the register is not provisioned, so the else
+	// branch is the only one that ever runs and it asserts
+	// `register-check.done === false`. That is the scenario's GIVEN, not a
+	// THEN: the claim in this test's own name, that a completed wizard settles
+	// the optional secret step, is never exercised where it runs.
+	//
+	// `#status-drives-gating-and-completion` is the nearest scenario and it
+	// asserts neither `completed === false` nor that the wizard gates, so
+	// naming it would claim two clauses this body never reaches.
+	//
+	// WHAT WOULD CLOSE IT: an instance with `register-check` done, which is a
+	// fixture question rather than a citation one. Not written here: I have no
+	// instance to watch it fail on, and a branch nobody has seen go red is
+	// what this programme removes.
 	test('a completed wizard does not keep the optional secret step outstanding', async ({
 		page,
 	}) => {
@@ -291,7 +348,15 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// 🔴 LEFT UNCITED 2026-09-12: IT SKIPS WHERE IT RUNS. The body calls
+	// `test.skip(status.completed !== true, …)`, and dossiq's CI instance has
+	// no provisioned register, so `completed` is false and this test skips on
+	// every run. A skip renders as a pass in every summary that counts
+	// failures, so a citation here would have reported the reopen defect as
+	// covered by a test that has never executed an assertion in CI.
+	//
+	// The skip itself is honest and well reasoned: a gating wizard genuinely
+	// is not the reopen defect. What is not honest is calling it coverage.
 	test('a completed wizard stays closed on a fresh browser profile', async ({
 		page,
 	}) => {
@@ -357,7 +422,19 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		}
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// 🔴 LEFT UNCITED 2026-09-12: THE ONLY SCENARIO THIS MATCHES IS EXCLUDED.
+	// What it proves is that an optional step does not gate, the shell stays
+	// reachable, and the wizard is on screen exactly when the server reports
+	// optional work outstanding. That is `#optional-seed-does-not-gate`, and
+	// that scenario carries a reason-bearing `@e2e exclude`: its second clause
+	// is about an offered `seed` step, which was retired, and the exclusion
+	// says plainly that rewording it to mean some other optional step would
+	// quietly change what it requires.
+	//
+	// An excluded scenario needs no citation and gets no credit, so naming it
+	// would add nothing and naming a different one would claim clauses this
+	// body does not reach. The honest state is uncited until a scenario
+	// describes the wizard that ships.
 	test('the wizard opens exactly when an optional step is outstanding', async ({
 		page,
 	}) => {
@@ -517,10 +594,38 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	})
 })
 
+// 🔴 FOUR CITATIONS WITHDRAWN 2026-09-12: THE WALKTHROUGH IS NOT THE SETUP
+// WIZARD, AND HAS NO CAPABILITY AT ALL. All four tests below cited
+// `openspec/specs/first-time-setup/spec.md` with no requirement. That spec
+// describes the setup WIZARD: the manifest `setup` block, its six steps,
+// `setup_completed_version`, the status endpoint and the seed action. It says
+// nothing about the walkthrough tour, which is a different surface with a
+// different dismissal key (`cn-walkthrough-seen:dossiq`).
+//
+// So every assertion here survives any breakage of the manifest setup block,
+// the seed action or the status endpoint, and vice versa. Re-anchoring onto
+// one of first-time-setup's four live scenarios would attach these to
+// requirements they never touch, which reads as coverage and survives review.
+//
+// Searched 2026-09-12: no `openspec/specs/**` capability mentions the
+// walkthrough at all, so there is no scenario to move to. The honest outcome
+// is an uncited group and a named gap. These four are good tests, one of them
+// reading the SERVED bundle rather than the manifest on disk precisely so a
+// stale build cannot pass; what they lack is a requirement that says the tour
+// should exist.
+//
+// ⚠️ AND ONE OF THEM CANNOT FAIL THE WAY IT READS. "the tour opens for a user
+// who has not seen it" ends on
+// `expect(recorded, …).not.toBe('')`, where `recorded` is the first value of
+// the seen-version object. EVERY non-empty string satisfies that, including a
+// version from another app, a `"false"` or a stray character, so it proves a
+// key exists rather than that a recorded seen-version explains the tour's
+// absence. Not tightened here: the stored shape is not established, and a
+// pattern guessed rather than observed is the same defect one layer along.
 test.describe('Walkthrough — it points at the configuration surfaces', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// Uncited on purpose: see the note above this describe.
 	test('the tour a user actually gets includes the Case types and Flows stops', async ({
 		page,
 	}) => {
@@ -541,7 +646,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		}
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// Uncited on purpose: see the note above this describe.
 	test('the tour opens for a user who has not seen it, and offers all seven steps', async ({
 		page,
 	}) => {
@@ -611,7 +716,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		).not.toBe('')
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// Uncited on purpose: see the note above this describe.
 	test('neither new stop forces the user to create anything', async ({ page }) => {
 		// "Show where, do not force" is the whole point of both steps. A tour
 		// step that only advances on `object-created` would make looking at the
@@ -635,7 +740,7 @@ test.describe('Walkthrough — it points at the configuration surfaces', () => {
 		}
 	})
 
-	// @e2e openspec/specs/first-time-setup/spec.md
+	// Uncited on purpose: see the note above this describe.
 	test('both new stops can actually anchor to their nav item', async ({
 		page,
 	}) => {
