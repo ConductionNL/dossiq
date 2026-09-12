@@ -32,7 +32,9 @@
 						</span>
 					</div>
 					<div class="dossier-version-panel__actions">
-						<NcButton variant="tertiary" @click="downloadVersion(version)">
+						<NcButton
+							variant="tertiary"
+							@click="downloadVersion(version)">
 							{{ t('dossiq', 'Download') }}
 						</NcButton>
 						<NcButton
