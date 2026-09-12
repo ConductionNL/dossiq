@@ -41,6 +41,33 @@ any dashboard. Where a number is meant to mean coverage, use the distinct
 scenario count; where it is meant to mean how much citation work is left, the
 citation count is the right one. Say which you are quoting.
 
+## The distinct-scenario count can legitimately go DOWN
+
+Measured 2026-09-12 on `pdok-via-openconnector.spec.ts`: citations 307 to 304,
+credited 208 to 206, and **distinct scenarios credited 168 to 166**.
+
+That is not a regression. Two of the withdrawn citations were being COUNTED as
+coverage while proving nothing:
+
+- one asserted `not.toHaveURL(/login/)` where its scenario asks for an inline
+  warning and a submittable form
+- one resolved onto a scenario about a module's export surface, from a test
+  about OpenRegister address fixtures
+
+Removing a false credit lowers the number and raises its accuracy. Both
+scenarios now carry a reason-bearing exclude, so nothing is left silently
+demanding coverage it does not have.
+
+🔑 So the count moves in three directions and only one of them is simple:
+
+- **up** when coverage is genuinely added
+- **flat** when citations start proving what they already claimed
+- **down** when counted coverage turns out to be false
+
+None of the three can be read off the number alone. Whoever quotes it says
+which of the three happened, or the next reader guesses, and two of the three
+guesses are wrong.
+
 ## Where the population stands
 
 308 citations. 206 credited by gate-19, 102 not.
