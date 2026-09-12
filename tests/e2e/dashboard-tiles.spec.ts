@@ -601,21 +601,45 @@ test.describe('Dashboard tiles', () => {
 			)
 		})
 
-		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-		test('a My work row opens the task, which is where Pick up and Complete are', async ({
+		// 🔴 THE CITATION THIS CARRIED WAS WITHDRAWN, AND THE TEST RE-AIMED.
+		//
+		// It cited `dashboard#scenario-you-complete-a-task-from-the-row`, a
+		// scenario whose own body reads `@e2e exclude blocked on nextcloud-vue
+		// row actions for object-table`. So the spec says nothing can prove it
+		// yet, and a citation on it said something did. What the body actually
+		// exercises is a row click landing on the task, which is a DIFFERENT
+		// scenario in the same spec, DASH-005d, and one nothing cited: it was
+		// in gate-19's uncovered list on 2026-09-12. Moving the citation turns
+		// a claim on an excluded scenario into coverage of an uncovered one.
+		//
+		// AND THE URL ASSERTION ALONE WAS NOT THE SCENARIO'S THEN. "navigate to
+		// the task detail view" is a view that rendered, not a path that
+		// matched: the row's identity is the engine's `uuid`, its numeric `id`
+		// sits beside it in the same response, and `/tasks/<numeric id>`
+		// satisfies `/\/tasks\/[^/]+$/` exactly as well while the page below it
+		// resolves no task at all. So the title the detail page prints is read
+		// back, and it has to be the row that was clicked.
+		//
+		// @e2e openspec/specs/dashboard/spec.md#dash-005d-my-work-item-click-navigates-to-detail
+		test('clicking a My work row opens that task on the task detail page', async ({
 			page,
 		}) => {
-			// Row actions are blocked on nextcloud-vue, so the declared interim
-			// is the row route. This test holds the interim, so the day a row
-			// action lands and the route is dropped, it says so. It also holds
-			// the row's IDENTITY: the engine's `uuid` is what `/tasks/:id`
-			// accepts, and its numeric `id`, which sits beside it in the same
-			// response, is not.
 			await openDashboard(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await rows(table).filter({ hasText: TASK_SOON }).first().click()
 			await expect(page).toHaveURL(/\/tasks\/[^/]+$/, { timeout: 15_000 })
+			// The view, by its own root, and then the task it resolved. Both:
+			// the root alone renders for an id that resolves to nothing, and
+			// the title alone cannot say which page is printing it.
+			await expect(
+				page.locator('[data-testid="task-detail-page"]'),
+				'the row must open the task detail view, not a route that merely matches',
+			).toBeVisible({ timeout: 30_000 })
+			await expect(
+				page.locator('[data-testid="task-detail-title"]'),
+				'the task detail page must show the task whose row was clicked',
+			).toHaveText(TASK_SOON, { timeout: 30_000 })
 		})
 	})
 

@@ -195,21 +195,116 @@ test.describe('Admin Settings spec coverage', () => {
 		await ctx.dispose()
 	})
 
+	/**
+	 * 🔴 THIS TEST DECLINED THE SCENARIO IT CITED, IN ITS OWN COMMENT.
+	 *
+	 * `Empty case type list` is about ONE state: a register holding no case
+	 * types. Its THENs are an empty-state message and the add control beside
+	 * it. The old body asserted the section heading and the add control, and
+	 * said why: "the list body is data-dependent", so it asserted "the
+	 * data-independent chrome" instead. Both assertions render identically over
+	 * a list of forty case types, which is what this instance normally has, so
+	 * the state the scenario is entirely about was the one thing never on
+	 * screen while the citation claimed it was covered.
+	 *
+	 * THE GIVEN IS ESTABLISHED RATHER THAN HOPED FOR. The register is not
+	 * emptied — that would destroy an instance for every other spec in the run,
+	 * and `case.caseType` points at these objects. The collection read the list
+	 * makes is answered with an empty page instead, the same technique
+	 * `gis-integration.spec.ts` uses to make the map's count a claim. The
+	 * schema segment is read off the app's own config rather than guessed:
+	 * `store.js` registers `caseType` under `config.case_type_schema` and falls
+	 * back to the slug only when that is blank, so a hard-coded URL would match
+	 * nothing on half the instances and leave the real list rendering.
+	 *
+	 * AND THE INTERCEPT IS COUNTED. A route that matched nothing leaves the
+	 * real, populated list on screen; on a rig whose register happens to be
+	 * empty every assertion below would then pass without this test having
+	 * established anything. The hit count is asserted, so "the fixture did not
+	 * apply" can never read as "the requirement holds".
+	 *
+	 * ONE CLAUSE IS NOT ASSERTED, and saying which is part of the citation. The
+	 * scenario's third line is a SHOULD: "the system SHOULD provide guidance
+	 * (e.g. 'Create your first case type to start managing cases')". No such
+	 * sentence ships. `CaseTypeList` passes no `emptyText`, so the message is
+	 * `CnIndexPage`'s default, which names the absence without saying what to
+	 * do about it. Writing the assertion first and the copy afterwards would be
+	 * the tail wagging the dog; the gap is recorded here and in the spec's own
+	 * wording, which already marks it as the weakest of the three.
+	 */
 	// @e2e openspec/specs/admin-settings/spec.md#empty-case-type-list
-	test('case type list renders its management surface and add control', async ({
+	test('with no case types the list says so, and still offers the add control', async ({
 		page,
 	}) => {
+		// Where the app looks for case types on THIS instance.
+		const cfgRes = await api.get('/index.php/apps/dossiq/api/settings', {
+			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+		})
+		expect(
+			cfgRes.ok(),
+			`reading the dossiq settings -> ${cfgRes.status()}`,
+		).toBe(true)
+		const cfg = await cfgRes.json()
+		const register = String(cfg.register ?? 'dossiq')
+		// The same fallback `src/store/store.js` applies, for the same reason.
+		const schema = String(cfg.case_type_schema || 'caseType')
+		const collection = `/apps/openregister/api/objects/${register}/${schema}`
+
+		let intercepted = 0
+		await page.route(
+			(url) => url.pathname.endsWith(collection),
+			(route) => {
+				if (route.request().method() !== 'GET') {
+					return route.fallback()
+				}
+				intercepted++
+				return route.fulfill({ json: { results: [], total: 0 } })
+			},
+		)
+
 		await page.goto(ADMIN_SETTINGS_URL)
-		// CnIndexPage renders the "Case Type Management" section with an add
-		// control. The list body is data-dependent: it shows "No items found"
-		// on a fresh register, or rows once the caseType object type is
-		// registered and seeded. Assert the data-independent chrome (heading +
-		// add control) rather than a specific empty/populated state.
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
+
+		// Scope every assertion below to the case-type section. The admin page
+		// mounts fourteen sections, several of them CnIndexPages of their own,
+		// and an empty state belonging to any other one would satisfy an
+		// unscoped locator.
+		const section = page.locator('.case-type-admin')
+		await expect(section).toBeVisible({ timeout: 30_000 })
+
+		// THE GIVEN, read back: the list is empty because the intercept
+		// answered it, and not because the page failed to ask.
+		expect(
+			intercepted,
+			'the case-type collection read must have been answered with an empty '
+				+ 'page, or nothing below establishes the scenario',
+		).toBeGreaterThan(0)
 		await expect(
-			page.getByRole('button', { name: /Add (Item|Case Type)/ }).first(),
+			section.locator('[data-testid="cn-object-row"]'),
+			'the list must hold no case types',
+		).toHaveCount(0)
+
+		// THEN an empty-state message. `CnIndexPage` renders it in
+		// `.cn-index-page__empty`, and the text is what a reader is told;
+		// asserting the container alone would pass over an empty box.
+		const empty = section.locator('.cn-index-page__empty')
+		await expect(
+			empty,
+			'a register with no case types must say so, not render a blank list',
+		).toBeVisible({ timeout: 30_000 })
+		await expect(
+			empty,
+			'the empty state must carry a message a reader can act on',
+		).not.toHaveText('')
+
+		// AND the add control, in the same state. Prominent is not a thing a
+		// test can read, but absent is: the scenario exists because an empty
+		// list with no way out of it is a dead end.
+		await expect(
+			section.getByRole('button', { name: /Add (Item|Case Type)/ }).first(),
+			'the add control must stay on screen when the list is empty',
 		).toBeVisible({ timeout: 10000 })
 	})
 
