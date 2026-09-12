@@ -355,6 +355,33 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 	})
 
 	test.afterAll(async () => {
+		// 🔴 THE RESULTS THIS FILE NOW CREATES ARE ITS OWN TO REMOVE. The
+		// acceptance test stores a real `inspectionResult`, and unlike every
+		// other fixture here its body carries no `RUN_PREFIX` string — only a
+		// case uuid and a uid — so the global-setup residue sweep, which
+		// matches on the prefix, cannot find it. Left alone these accumulate
+		// one row per run, for ever.
+		if (adminCleanup !== null && caseId !== '') {
+			const stored = await adminCleanup
+				.get(
+					`/index.php/apps/dossiq/api/vth/cases/${caseId}/inspection-results`,
+					{ headers: { 'OCS-APIRequest': 'true' } },
+				)
+				.then((res) => res.json())
+				.catch(() => null)
+			const rows = Array.isArray(stored) ? stored : (stored?.results ?? [])
+			for (const row of rows) {
+				const rowId = String(row?.id ?? row?.uuid ?? '')
+				if (rowId !== '') {
+					await deleteObject(
+						adminCleanup,
+						adminCleanupToken,
+						'inspectionResult',
+						rowId,
+					).catch(() => {})
+				}
+			}
+		}
 		if (adminCleanup !== null && checklistId !== '') {
 			await deleteObject(
 				adminCleanup,
