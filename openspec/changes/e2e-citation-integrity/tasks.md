@@ -92,4 +92,20 @@ Without these, the same 149 come back. Each is a hydra-side or convention-side d
 - [ ] 5.3 **23 citations point into `openspec/changes/**`.** Delta specs, `tasks.md`, `proposal.md`. The gate parses only `openspec/specs/`. Archiving a change silently breaks every one of them, which is how group 4 was created. Either teach the gate to resolve change-local specs, or require citations to name the canonical spec.
 - [ ] 5.4 **26 citations claim a scenario the spec itself marks `@e2e exclude`.** Two statements contradict, nothing detects it, and the gate silently discards the test's claim. Add a check that flags a scenario carrying both.
 - [ ] 5.5 **Reconcile the counts.** 330 citations resolve onto 180 distinct scenarios. Citation count is not coverage and reads 1.8x high. If a citation count appears on any dashboard, replace it with the distinct-scenario count.
-- [ ] 5.6 **Re-run this audit after the repair.** The measurement is scripted (packet generation plus a rubric); re-running it is how the repair gets proven rather than asserted. Numbers to beat: verified 181 of 330, gate-credited 156 of 330.
+- [x] 5.6 **Re-run this audit after the repair.** Done 2026-09-12, pinned to `4a4fdb1e`. See `remeasurement-2026-09-12.md` for the report, `audit-2026-09-12.csv` for the rows and `worklist-2026-09-12.md` for what is left. The 2026-09-11 file is kept as `audit-2026-09-11.csv`.
+
+      Verified 236 of 316, against 181 of 330. Gate-credited 202 of 316, against
+      156 of 330. Non-verified citations fell from 149 to 80.
+
+      **Dispatch the next wave from `worklist-2026-09-12.md`, never from the old
+      CSV.** Filtering `audit-2026-09-11.csv` on `verdict != verified` still
+      returns 149 rows and 69 of them are repaired. Groups 1 through 4 above are
+      superseded by that worklist; the items in group 5 that are still open are
+      5.2, 5.3 and 5.4, and 5.4 got worse rather than better (26 contradictions
+      then, 31 now).
+
+      Two cautions the report states in full. 64 citations are verified now
+      and were not verified before, and 48 of those 64 did not exist before,
+      so the headline overstates how much of the old debt was paid. And half of the gate-credit
+      gain is the gate: on the 2026-09-11 tree the current gate already credits
+      184 of 330 without a line of dossiq changing.
