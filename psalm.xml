@@ -164,7 +164,6 @@
         <RedundantCondition errorLevel="suppress"/>
         <RedundantFunctionCall errorLevel="suppress"/>
         <RedundantCast errorLevel="suppress"/>
-        <InvalidDocblock errorLevel="suppress"/>
         <MoreSpecificImplementedParamType errorLevel="suppress"/>
         <MissingDependency errorLevel="suppress"/>
         <TypeDoesNotContainType errorLevel="suppress"/>
