@@ -52,6 +52,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { mutateBundle } from './helpers/mutate-bundle.ts'
 import {
 	dateTokenPattern,
 	dismissSupportDialog,
@@ -565,7 +566,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// my-work — Lenses on the Cases index
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#all-is-the-lens-you-land-on-mine-is-one-click-away
 	test('All is the lens you land on, and Mine is one click away', async ({
 		page,
 	}) => {
@@ -585,7 +586,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'other-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#unclaimed-shows-what-nobody-has-picked-up
 	test('Unclaimed shows what nobody has picked up, and the Queue agrees', async ({
 		page,
 	}) => {
@@ -607,7 +608,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#all-shows-every-open-and-closed-case
 	test("All shows the other person's case and the closed one", async ({
 		page,
 	}) => {
@@ -622,7 +623,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		})
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#chips-replace-each-other
 	test('choosing a chip replaces the previous one rather than stacking', async ({
 		page,
 	}) => {
@@ -650,7 +651,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// case-management — open work by default, closed work on request
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-closed-case-leaves-mine
 	test('a closed case leaves Mine', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -660,7 +661,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-closed')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#closed-shows-the-closed-case
 	test('Closed shows the closed case and not the open one', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -674,7 +675,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// signalering-widgets — the countdown Deadline column
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#days-left-on-each-row
 	test('the Deadline cell counts the days left', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -688,7 +689,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(cell).not.toHaveClass(/is-overdue/)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#past-due-reads-red
 	test('a past deadline reads as overdue, and carries the overdue class', async ({
 		page,
 	}) => {
@@ -706,7 +707,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(cell).toHaveClass(/is-overdue/)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#overdue-shows-only-open-cases-past-their-deadline
 	test('Overdue shows the open overdue case only', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -717,7 +718,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#due-this-week-shows-the-case-due-in-three-days-and-neither-neighbour
 	test('Due this week shows the case due in three days and neither neighbour', async ({
 		page,
 	}) => {
@@ -736,7 +737,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-overdue')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#the-overdue-tile-keeps-its-filter
 	test('the Overdue stat tile links to exactly the Overdue chip filter', async ({
 		page,
 	}) => {
@@ -773,7 +774,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// this list has always meant "closed tasks".
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#all-is-the-default-lens-on-tasks-mine-is-one-click-away
 	test('the Tasks index lands on All and offers Mine', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
@@ -788,7 +789,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-other')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#unclaimed-shows-tasks-nobody-holds
 	test('Unclaimed on Tasks shows the open task nobody holds', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
@@ -802,7 +803,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-other')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#all-shows-every-task
 	test('All on Tasks shows the completed task too', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
@@ -815,7 +816,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		})
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#closed-shows-the-completed-task
 	test('Closed on Tasks shows the completed task and not the open one', async ({
 		page,
 	}) => {
@@ -827,7 +828,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-mine')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#a-task-due-later-today-is-not-overdue
 	test('Overdue on Tasks leaves out the task due later today', async ({
 		page,
 	}) => {
@@ -845,7 +846,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-next-month')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#due-this-week-holds-both-edges-of-the-window
 	test('Due this week on Tasks holds both edges of the window', async ({
 		page,
 	}) => {
@@ -872,7 +873,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-next-month')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#the-task-list-shows-a-priority-column
 	test('the task row shows the priority REQ-TASK-004 has always asked for', async ({
 		page,
 	}) => {
@@ -919,8 +920,21 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		// owns: skipping the whole test on an old engine used to take
 		// dossiq's own claim down with openregister's. Probed by behaviour in
 		// `beforeAll`, never off a version string.
+		// MUTATION-CHECK SCAFFOLD — REMOVE BEFORE COMMIT
+		const broken = await mutateBundle(
+			page,
+			[
+				{
+					label: 'the Due this week lens loses its near edge',
+					find: /"dueAfter":"@today"/,
+					replace: '"dueAfterX":"@today"',
+				},
+			],
+			/dossiq-main\.js/,
+		)
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
+		broken.assertApplied()
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await chip(page, CHIPS.dueThisWeek).click()
 		// On an engine that drops the predicates the lens answers everything
@@ -993,8 +1007,22 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('the Overdue lens asks for the projection, and a task due later today is not late', async ({
 		page,
 	}) => {
+		// MUTATION-CHECK SCAFFOLD — REMOVE BEFORE COMMIT
+		const broken = await mutateBundle(
+			page,
+			[
+				{
+					label: 'the Overdue lens becomes a date comparison',
+					find: /"label":"Overdue","filter":\{"scope":"all","overdue":true\}/,
+					replace:
+						'"label":"Overdue","filter":{"scope":"all","dueBefore":"@today"}',
+				},
+			],
+			/dossiq-main\.js/,
+		)
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
+		broken.assertApplied()
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await chip(page, CHIPS.overdue).click()
 		await listSettled(page, 'task-overdue')
@@ -1071,6 +1099,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR, AND THE MISSING HALF IS NAMED RATHER THAN GLOSSED.
+	// `#transition-moves-the-selection-with-a-reason` ends "AND each case
+	// SHALL show the new status ON ITS PAGE". This reads the STORED status of
+	// both cases, which is a stronger fact about the engine and a weaker one
+	// about the surface: a case page that rendered no status at all would
+	// leave every assertion here green. Anchoring would credit that clause to
+	// a test that cannot see it. To close this, open one of the two cases and
+	// assert the status on the page, then anchor.
 	test('Transition moves the selection, with a reason', async ({ page }) => {
 		const dialog = await openBulkAction(page, ['bulk-a', 'bulk-b'], 'transition')
 
@@ -1107,7 +1144,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	// @e2e openspec/specs/case-bulk-status-transition/spec.md#no-reason-no-execute
 	test('no reason, no execute', async ({ page }) => {
 		const dialog = await openBulkAction(page, ['suspend-me'], 'suspend')
 
@@ -1125,6 +1162,14 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR. `#suspend-and-resume-through-the-term` says "the
+	// CASE PAGE SHALL show the term as paused with that reason", and both
+	// halves here are read off the case's stored journal instead. The comment
+	// below is right that the journal is what the page reads, which is
+	// exactly why the page is worth asserting separately: a term widget that
+	// stopped rendering would not redden a line of this. To close this, open
+	// the case and assert the paused and running states, then anchor.
 	test('Suspend then Resume, each with its reason', async ({ page }) => {
 		const suspend = await openBulkAction(page, ['suspend-me'], 'suspend')
 		await suspend
@@ -1172,6 +1217,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR. `#extend-term-writes-the-new-end-date` has three
+	// clauses and this proves one of them on the surface it names: the dialog
+	// reporting 1 of 1. The other two, "the case page SHALL show the extended
+	// term with that reason" and "the DEADLINE COLUMN SHALL be unchanged",
+	// are both read off the stored object here. The deadline one is the
+	// sharper miss: the claim is about a column a reader sees, and the
+	// assertion is about a field. To close this, assert the case page and the
+	// Deadline cell of the row, then anchor.
 	test('Extend term writes the new end date, and leaves the Deadline column alone', async ({
 		page,
 	}) => {
@@ -1210,6 +1264,13 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 NO ANCHOR BECAUSE THERE IS NO SCENARIO TO NAME. The requirement
+	// "Bulk actions on the case index" states the five handlers in prose, and
+	// every scenario under it is about what one action DOES once opened, not
+	// about the strip offering them. Naming one of those would credit a
+	// transition, suspend or extend claim to a test that only counts buttons.
+	// The honest close is a scenario for the affordance, not an anchor.
 	test('the Cases list offers all five bulk actions on a selection', async ({
 		page,
 	}) => {
