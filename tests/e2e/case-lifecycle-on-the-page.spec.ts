@@ -43,6 +43,7 @@ import {
 import {
 	clickHeaderAction,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 	trackDossiqErrors,
 } from './helpers/nav.ts'
 
@@ -216,7 +217,7 @@ test.describe('Case lifecycle on the case page', () => {
 	 * @param key  Which seeded case to open.
 	 */
 	const openCase = async (page: any, key: string) => {
-		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`)
+		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`, PAGE_LOAD)
 		await expect(page.getByTestId('case-transitions')).toBeVisible({
 			timeout: 30_000,
 		})

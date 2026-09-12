@@ -51,6 +51,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { PAGE_LOAD } from './helpers/nav.ts'
 
 /** The processing deadline this run's case type declares. */
 const PROCESSING_DEADLINE = 'P56D'
@@ -123,7 +124,7 @@ async function highestNumberOfYear(year: string): Promise<number> {
  * @param caseId The case to open.
  */
 async function openCase(page: Page, caseId: string): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 }
 
@@ -281,7 +282,7 @@ test.describe('Case identity', () => {
 	}) => {
 		const before = await highestNumberOfYear(String(new Date().getFullYear()))
 
-		await page.goto(`/apps/${REGISTER}/`)
+		await page.goto(`/apps/${REGISTER}/`, PAGE_LOAD)
 		await expect(page).not.toHaveURL(/login/, { timeout: 15_000 })
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
 
@@ -436,6 +437,7 @@ test.describe('Case identity', () => {
 		// than the widget that requests it.
 		await page.goto(
 			`/apps/${REGISTER}/cases?tags=${encodeURIComponent(FILTER_TAG)}`,
+			PAGE_LOAD,
 		)
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 

@@ -22,7 +22,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	// enough to overrun even test.slow()'s tripled budget.
 	test.setTimeout(300_000)
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	test('admin settings surface renders the Case Type Management heading', async ({
 		page,
 	}) => {
@@ -33,7 +33,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
+	// @e2e openspec/specs/admin-settings/spec.md#empty-case-type-list
 	test('admin settings surface has an add-control for case types', async ({
 		page,
 	}) => {
@@ -48,7 +48,15 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		await expect(addBtn).toBeVisible({ timeout: 15000 })
 	})
 
-	// @e2e openspec/changes/archive/2026-06-13-case-types-02-backend-validation/tasks.md#TASK-CT-08-SMOKE
+	// @e2e exclude no scenario says the publish route must merely be reachable.
+	// case-type-publish-validation names outcomes instead — 422 with no status
+	// types, 422 with no final status, 422 without validFrom, 200 when every
+	// prerequisite is met — and this probe asserts none of them, only that a
+	// PATCH on a non-existent uuid stays under 500. Citing one of those
+	// scenarios here would read as verified coverage of a validator this test
+	// never exercises. The scenarios themselves are covered by
+	// ZgwZtcRulesServiceTest; what is missing is an e2e that drives a real
+	// publish and reads the status code back.
 	test('publish validation endpoint exists at the case-types route', async ({
 		page,
 		request,

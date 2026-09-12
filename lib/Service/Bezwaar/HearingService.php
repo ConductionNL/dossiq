@@ -402,12 +402,12 @@ class HearingService {
 		];
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $update,
-				uuid: (string)$sessionId
+				id: (string)$sessionId,
+				changes: $update
 			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -500,12 +500,12 @@ class HearingService {
 		);
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $update,
-				uuid: (string)$sessionId
+				id: (string)$sessionId,
+				changes: $update
 			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(

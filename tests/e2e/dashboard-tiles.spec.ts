@@ -39,6 +39,7 @@ import { expect, test } from '@playwright/test'
 import {
 	captureStorageState,
 	ensureUser,
+	provisioningContext,
 	STORAGE_STATE,
 	storageStatePath,
 } from './helpers/auth.ts'
@@ -256,10 +257,8 @@ test.describe('Dashboard tiles', () => {
 		})
 		token = await getRequestToken(api)
 
-		// Prove the seeding session is an admin BEFORE anything asks it to
-		// provision an account, the same way the WORK_USER session is proved
-		// below. `ensureUser` documents that it needs an admin context; this
-		// is where that requirement gets checked rather than assumed.
+		// Prove the seeding session is the admin before it seeds anything, the
+		// same way the WORK_USER session is proved below.
 		const seedWhoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
 			headers: { 'OCS-APIRequest': 'true' },
 		})
@@ -269,12 +268,45 @@ test.describe('Dashboard tiles', () => {
 		).toBeTruthy()
 		expect(
 			String((await seedWhoami.json())?.ocs?.data?.id ?? ''),
-			'the seeding session must be the admin, or nothing below can provision',
+			'the seeding session must be the admin, or nothing below can seed',
 		).toBe(process.env.ADMIN_USER ?? 'admin')
 
-		// The account the My work scenarios run as, and its session. See
-		// `WORK_USER` for why they cannot run as the admin.
-		await ensureUser(api, token, WORK_USER, WORK_PASSWORD)
+		// 🔴 PROVISIONING GETS ITS OWN, SESSION-FREE CONTEXT. Creating an
+		// account through the captured admin session is password-confirmation
+		// protected, and that confirmation expires thirty minutes after
+		// `global-setup.ts` logged in. Across 101 runs on 2026-09-10 and 11
+		// this file's first result landed 6.8 to 25.3 minutes into the run, so
+		// it has not failed yet. It would the day the suite grows, a shard
+		// reorders it or a runner is slow enough, and then as `OCS 403 Password
+		// confirmation is required`, which names neither the session nor the
+		// clock. `provisioningContext` sends basic
+		// auth and no session cookie, so there is no confirmation to expire.
+		// See it for the measurement on vth-inspection-result-authz.spec.ts.
+		const provisioning = await provisioningContext(playwright, String(baseURL))
+		try {
+			// Prove the basic-auth context IS the admin before anything asks it
+			// to provision. Without this a wrong or refused credential surfaces
+			// as `ensureUser`'s "could not provision" error, which reads as a
+			// broken provisioning API rather than a failed authentication.
+			const provWhoami = await provisioning.get(
+				'/ocs/v2.php/cloud/user?format=json',
+			)
+			expect(
+				String(
+					(await provWhoami.json().catch(() => ({})))?.ocs?.data?.id ?? '',
+				),
+				'the basic-auth provisioning context must resolve to the admin; got '
+					+ `HTTP ${provWhoami.status()}`,
+			).toBe(process.env.ADMIN_USER ?? 'admin')
+
+			// The account the My work scenarios run as. See `WORK_USER` for why
+			// they cannot run as the admin.
+			await ensureUser(provisioning, '', WORK_USER, WORK_PASSWORD)
+		} finally {
+			await provisioning.dispose()
+		}
+
+		// And its session.
 		await captureStorageState(browser, {
 			baseURL: String(baseURL),
 			user: WORK_USER,
@@ -485,7 +517,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-fresh-session-lands-on-the-dashboard
-	// @e2e dashboard::kpi-tiles-render-on-a-fresh-load
 	test('every KPI tile shows a number on the first load of a session', async ({
 		page,
 	}) => {
@@ -524,7 +555,6 @@ test.describe('Dashboard tiles', () => {
 		test.use({ storageState: WORK_STATE })
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-your-tasks-appear-once-with-days-left
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
 		test('My work lists each of your open tasks once, with days left', async ({
 			page,
 		}) => {
@@ -572,7 +602,6 @@ test.describe('Dashboard tiles', () => {
 		})
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
 		test('a My work row opens the task, which is where Pick up and Complete are', async ({
 			page,
 		}) => {
@@ -591,7 +620,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-overdue-and-near-deadline-cases-share-one-table
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('Deadlines holds the overdue and the nearly due, overdue first and in red', async ({
 		page,
 	}) => {
@@ -644,7 +672,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-closed-cases-stay-out
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('a closed case stays off Deadlines, however late it was', async ({
 		page,
 	}) => {
@@ -668,7 +695,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
-	// @e2e dashboard::view-all-keeps-the-tiles-filter
 	// @e2e openspec/specs/signalering-widgets/spec.md
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
@@ -743,7 +769,6 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-draft-case-types-are-absent
-	// @e2e dashboard::the-case-type-list-on-new-case-is-sorted-and-filtered
 	test('New case offers the published case type and not the draft', async ({
 		page,
 	}) => {

@@ -20,8 +20,12 @@
  *   - the status test drives that page: a seeded bezwaar shows its AWB
  *     reference and status there, a status change walked through the
  *     schema's lifecycle PERSISTS, and the page renders the new status; and
- *   - the list test stays switched off, with its reason recorded, because
- *     what it asserts no longer exists. It is obsolete, not flaky.
+ *   - the list test is gone. It was an unconditional `test.fixme` against the
+ *     retired index, so its body never ran and it could not redden, yet it
+ *     still carried the anchor for the bezwaarzaken index scenario. That
+ *     scenario now carries a reason-bearing `@e2e exclude` in
+ *     bezwaar-beroep-workflow/spec.md instead, until it is re-scoped to a page
+ *     the manifest declares.
  *
  * Fixtures seed and clean through the OpenRegister object API.
  */
@@ -42,27 +46,13 @@ import {
 	showObject,
 	updateObject,
 } from '../helpers/fixtures.ts'
-import { dismissSupportDialog, navToRoute } from '../helpers/nav.ts'
+import { journeyBudget, navToRoute } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
 let caseTypeId: string
 let caseTypeSeeded = false
 let caseId: string
-
-/**
- * Why the list test does not run, recorded where the Playwright report keeps it.
- *
- * It was a comment above a `describe.fixme` until now, and a comment is not a
- * reason the report can carry.
- */
-const RETIRED_INDEX =
-	'Obsolete: it asserts the Bezwaren index, retired on 2026-09-02 (dossiq#1682; '
-	+ 'the page is deleted from src/manifest.json). The Cases list it now opens '
-	+ 'renders `case` rows, so a seeded objectionProceeding can never appear there. '
-	+ 'The scenario it anchors (bezwaar-beroep-workflow REQ-BBW-011, the '
-	+ 'bezwaarzaken index) names a page the manifest no longer declares: re-scope '
-	+ 'that scenario rather than this test.'
 
 /** The status a bezwaar is filed in, in either locale the app renders. */
 const RECEIVED = /^\s*(Received|Ontvangen)\s*$/
@@ -111,21 +101,6 @@ test.describe('Complaint-family workflow: bezwaren (objections)', () => {
 	}
 
 	/**
-	 * Open the case list and wait for its rows to load.
-	 *
-	 * @param page The page.
-	 */
-	async function openBezwaren(page: Page): Promise<void> {
-		// Objections are cases, and the standalone /bezwaren index is retired, so
-		// the list to drive is Cases.
-		await page.goto('/index.php/apps/dossiq/cases')
-		await dismissSupportDialog(page)
-		await expect(page.locator('tbody tr').first()).toBeVisible({
-			timeout: 15000,
-		})
-	}
-
-	/**
 	 * Open one bezwaar's own page and wait for its core data widget.
 	 *
 	 * @param page The page.
@@ -147,27 +122,6 @@ test.describe('Complaint-family workflow: bezwaren (objections)', () => {
 		})
 	}
 
-	// @e2e openspec/specs/bezwaar-beroep-workflow/spec.md#scenario-bezwaar-index-shows-only-bezwaar-cases-with-correct-columns
-	test('a seeded bezwaar appears in the list with its workflow status', async ({
-		page,
-	}) => {
-		test.fixme(true, RETIRED_INDEX)
-
-		const awb = `${RUN_PREFIX}-AWB-LIST`
-		const bz = await seedBezwaar(awb, 'Received')
-		expect(objectId(bz)).not.toBe('')
-
-		await openBezwaren(page)
-
-		// The row renders the AWB reference …
-		const row = page.locator('tbody tr', { hasText: awb }).first()
-		await expect(row).toBeVisible({ timeout: 15000 })
-		// … and its workflow status ("Received") renders in that row.
-		await expect(
-			row.getByText('Received', { exact: false }).first(),
-		).toBeVisible()
-	})
-
 	// @e2e exclude No canonical spec covers a workflow status changed from the
 	// bezwaar UI and surviving a re-render. bezwaar-beroep-workflow specifies
 	// the transitions themselves, not the list re-rendering after one. This
@@ -178,6 +132,10 @@ test.describe('Complaint-family workflow: bezwaren (objections)', () => {
 	test('changing the bezwaar workflow status persists and re-renders', async ({
 		page,
 	}) => {
+		// The bezwaar's page is loaded twice, before and after, and each wait
+		// below has its own 15s. The budget holds all of them, so the step
+		// that runs out is the one named. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2, 60_000))
 		const awb = `${RUN_PREFIX}-AWB-STATUS`
 		const bz = await seedBezwaar(awb, 'Received')
 		const bzId = objectId(bz)

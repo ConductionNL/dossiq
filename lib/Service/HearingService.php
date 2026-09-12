@@ -205,7 +205,7 @@ class HearingService {
 			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 
-		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$id);
+		$result = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$id, changes: $updateData);
 
 		$this->logger->info(
 			'Hearing outcome recorded for hearing ' . $id,

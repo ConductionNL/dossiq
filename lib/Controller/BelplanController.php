@@ -178,7 +178,7 @@ class BelplanController extends Controller {
 		}
 
 		try {
-			$updated = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: $id);
+			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: $patch);
 		} catch (Throwable $e) {
 			return new JSONResponse(['error' => 'Could not update belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}

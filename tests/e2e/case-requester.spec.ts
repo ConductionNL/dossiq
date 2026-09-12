@@ -51,7 +51,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
-import { trackDossiqErrors } from './helpers/nav.ts'
+import { PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
  * The personas this spec files cases for.
@@ -296,7 +296,7 @@ test.describe('The requester on the case', () => {
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
-		await page.goto(DASHBOARD_URL)
+		await page.goto(DASHBOARD_URL, PAGE_LOAD)
 
 		await page.getByRole('button', { name: /New case|Nieuwe zaak/ }).click()
 		const dialog = page.getByRole('dialog')
@@ -340,7 +340,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-selection/spec.md
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
 		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
 		// no stat tile at all. `case-kpis-hours` is an integration widget that
@@ -379,7 +379,7 @@ test.describe('The requester on the case', () => {
 		expect(before.requester).toBe(plainPersonId)
 		expect(before.initiatorDisplayName ?? '').toBe('')
 
-		await page.goto(`${DASHBOARD_URL}cases/${bareRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${bareRequesterCaseId}`, PAGE_LOAD)
 		await expect(page.locator('[data-testid="initiator-name"]')).toHaveText(
 			PLAIN.name,
 			{ timeout: 30_000 },
@@ -416,7 +416,7 @@ test.describe('The requester on the case', () => {
 	test('the case page names the person, the number and the address', async ({
 		page,
 	}) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
 
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
@@ -447,7 +447,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a company card links to the KvK record', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`, PAGE_LOAD)
 
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
@@ -469,7 +469,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('a case without a requester shows no card', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
 		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
 		// no stat tile at all. `case-kpis-hours` is an integration widget that
@@ -505,7 +505,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('the requester is a column on the case list', async ({ page }) => {
-		await page.goto(CASES_URL)
+		await page.goto(CASES_URL, PAGE_LOAD)
 		const table = page.getByRole('table')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 
@@ -524,6 +524,7 @@ test.describe('The requester on the case', () => {
 		// cell of the row that comes back.
 		await page.goto(
 			`${CASES_URL}?title=${encodeURIComponent(`${RUN_PREFIX} Gewone aanvrager`)}`,
+			PAGE_LOAD,
 		)
 		const row = page
 			.getByRole('row')
@@ -551,7 +552,7 @@ test.describe('The requester on the case', () => {
 		).toBe(false)
 
 		// The sidebar offers the filter because the field is facetable.
-		await page.goto(CASES_URL)
+		await page.goto(CASES_URL, PAGE_LOAD)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await page
 			.getByRole('button', { name: /Open sidebar|Filters|Zijbalk/ })
@@ -575,7 +576,7 @@ test.describe('The requester on the case', () => {
 			}
 		})
 
-		await page.goto(`${DASHBOARD_URL}cases/${protectedCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${protectedCaseId}`, PAGE_LOAD)
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
 
@@ -600,7 +601,7 @@ test.describe('The requester on the case', () => {
 
 	// @e2e openspec/specs/initiator-display/spec.md
 	test('an unprotected person is not masked', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`)
+		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
 		const card = page.locator('[data-testid="initiator-section"]')
 		await expect(card).toBeVisible({ timeout: 30_000 })
 
