@@ -45,6 +45,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { inflateRawSync } from 'node:zlib'
 import { openCasePanel } from '../helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
@@ -77,14 +78,26 @@ test.describe('document-zaakdossier spec coverage', () => {
 		)
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004c-sort-and-filter-controls-work-per-column
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005b-per-file-upload-progress-with-shared-metadata
-	// REQ-ZAK-005a AND REQ-ZAK-005c HAVE LEFT THIS TEST. Both are refusals the
-	// spec marks safety-relevant, and a fixme'd body cannot observe either.
-	// They are real tests in the block below, against a seeded case. What is
-	// left here is genuinely unobservable in this suite: REQ-ZAK-004c needs the
-	// per-column sort and filter controls with their URL state, and REQ-ZAK-005b
-	// needs per-file progress read mid-upload.
+	// 🔴 THE TWO CITATIONS THAT WERE HERE ARE GONE, and taking them down is the
+	// repair rather than a retreat from it. Both sat on the `test.fixme(true,
+	// …)` below, so gate-19 credited neither and a reader met two anchors on a
+	// body that has never executed. The scenarios now carry reason-bearing
+	// `@e2e exclude` entries in the spec, where the next person to implement
+	// the surface will actually meet them.
+	//
+	// Each reason was RE-MEASURED rather than inherited, and one was wrong.
+	// This comment used to say REQ-ZAK-004c "needs the per-column sort and
+	// filter controls", implying the surface is absent. It is not:
+	// `DossierTab.vue` ships a `Sort by` NcSelect bound to `sortKey` and
+	// `sortDirection`. What is genuinely absent is the scenario's LAST clause,
+	// the filter and sort state being reflected in the URL: the component has
+	// no `$route`, `query` or `router.replace` anywhere in it. A citation that
+	// blames a missing control sends the next reader to build one that exists.
+	//
+	// REQ-ZAK-005b holds up: `uploadProgress` is bound, so the indicator is
+	// real, but the scenario asks for it to be READ mid-upload, and nothing in
+	// this suite can observe a value between the request starting and its
+	// promise resolving.
 	test('dossier sort and per-file progress are not observable here, blocked by #764', async ({
 		page,
 	}) => {
@@ -106,7 +119,11 @@ test.describe('document-zaakdossier spec coverage', () => {
 		expect(bodyText).not.toContain('Internal Server Error')
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006a-concept-document-version-history-shows-restore
+	// 🔴 THE REQ-ZAK-006a CITATION IS GONE TOO, for the same reason: it sat on
+	// a body that never runs, so it credited nothing and read as cover. The
+	// scenario now carries an `@e2e exclude` naming what is left to do, which
+	// is smaller and more specific than "#764".
+	//
 	// REQ-ZAK-006b IS NO LONGER CITED HERE. It is a refusal (restore must be
 	// disabled on a `definitief` document) and this body never runs, so the
 	// citation was a claim nothing backed. Its live home is
@@ -147,19 +164,25 @@ test.describe('document-zaakdossier spec coverage', () => {
 		)
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008a-zip-export-includes-manifestcsv-and-type-sub-folders
-	// REQ-ZAK-008c HAS LEFT THIS TEST for the block below, where the bulk
-	// endpoint is called with a mixed batch and the per-document result list is
-	// read back. The multi-document fixture the quarantine named is seeded
-	// there. REQ-ZAK-008a stays: a ZIP is a binary artefact whose manifest.csv
-	// and per-type sub-folders have to be unpacked to be asserted, which is the
-	// Newman collection's job rather than the browser's.
+	// 🔴 REQ-ZAK-008a HAS LEFT THIS TEST, and the premise it left behind was
+	// wrong rather than merely stale. It said a ZIP "has to be unpacked to be
+	// asserted, which is the Newman collection's job rather than the
+	// browser's". Unpacking it is the job of whoever asserts the requirement,
+	// and this suite can: Node ships `zlib`, the scenario names its own
+	// endpoint, and `readZipEntries` above reads a central directory in forty
+	// lines. The requirement is proven in the block below, mutation checked
+	// both ways.
+	//
+	// What stays here is nothing. This body asserts that `/cases` does not say
+	// "Internal Server Error", which is the smoke test at the top of the file,
+	// so the test is kept only because removing a fixme'd body and its issue
+	// reference is a separate decision from the citation work.
 	test('ZIP export contents are not asserted in the browser, blocked by #764', async ({
 		page,
 	}) => {
 		test.fixme(
 			true,
-			'#764: REQ-ZAK-008a needs the downloaded ZIP unpacked to assert manifest.csv and the per-type sub-folders. That is asserted at the API tier (tests/newman/document-zaakdossier.postman_collection.json) and in ZipManifestBuilderTest; this suite has no assertion for it.',
+			'#764 NO LONGER BLOCKS REQ-ZAK-008a: it is asserted in "the dossier ZIP carries a manifest row per document and one folder per type" below, against the real endpoint. This body is a duplicate of the smoke test at the top of the file and is a candidate for deletion.',
 		)
 		const response = await page
 			.goto('/index.php/apps/dossiq/cases')
@@ -206,6 +229,70 @@ const DISGUISED_EXE_BYTES = Buffer.concat([
 	Buffer.from('MZ', 'ascii'),
 	Buffer.from([0x90, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00]),
 ])
+
+/**
+ * Read a ZIP's entries without a dependency.
+ *
+ * The CENTRAL DIRECTORY is parsed, not the local file headers, and that is the
+ * difference between a reader that works and one that works until it does not:
+ * a local header may carry zeroed sizes with the real ones in a trailing data
+ * descriptor, while the central directory always has them. `ZipArchive`
+ * deflates `addFromString` content, so stored (method 0) and deflated
+ * (method 8) are both handled and anything else is reported rather than
+ * silently skipped.
+ *
+ * @param  zip The archive bytes.
+ * @return Each entry's name and its decompressed content.
+ */
+function readZipEntries(zip: Buffer): Array<{ name: string; content: Buffer }> {
+	// End of central directory: the last `PK\x05\x06`, scanned backwards
+	// because the comment field that follows it is variable length.
+	let eocd = -1
+	for (let at = zip.length - 22; at >= 0; at--) {
+		if (zip.readUInt32LE(at) === 0x06054b50) {
+			eocd = at
+			break
+		}
+	}
+	if (eocd < 0) throw new Error('not a ZIP: no end-of-central-directory record')
+
+	const count = zip.readUInt16LE(eocd + 10)
+	let at = zip.readUInt32LE(eocd + 16)
+	const entries: Array<{ name: string; content: Buffer }> = []
+
+	for (let index = 0; index < count; index++) {
+		if (zip.readUInt32LE(at) !== 0x02014b50) {
+			throw new Error(`central directory entry ${index} has a bad signature`)
+		}
+		const method = zip.readUInt16LE(at + 10)
+		const compressedSize = zip.readUInt32LE(at + 20)
+		const nameLength = zip.readUInt16LE(at + 28)
+		const extraLength = zip.readUInt16LE(at + 30)
+		const commentLength = zip.readUInt16LE(at + 32)
+		const localAt = zip.readUInt32LE(at + 42)
+		const name = zip.subarray(at + 46, at + 46 + nameLength).toString('utf8')
+
+		// The local header's own name/extra lengths decide where the bytes
+		// start; the central directory's extra field is a different length.
+		const localNameLength = zip.readUInt16LE(localAt + 26)
+		const localExtraLength = zip.readUInt16LE(localAt + 28)
+		const from = localAt + 30 + localNameLength + localExtraLength
+		const raw = zip.subarray(from, from + compressedSize)
+
+		let content: Buffer
+		if (method === 0) {
+			content = Buffer.from(raw)
+		} else if (method === 8) {
+			content = inflateRawSync(raw)
+		} else {
+			throw new Error(`entry ${name} uses unsupported compression ${method}`)
+		}
+		entries.push({ name, content })
+
+		at += 46 + nameLength + extraLength + commentLength
+	}
+	return entries
+}
 
 let api: APIRequestContext
 let token: string
@@ -330,6 +417,182 @@ test.describe('document-zaakdossier — the guards that refuse', () => {
 			'informatieobjecttype',
 		])
 		await api.dispose()
+	})
+
+	// 🔴 THIS CITATION MOVED OFF A TEST THAT NEVER RAN. It used to sit on
+	// `ZIP export contents are not asserted in the browser, blocked by #764`,
+	// an unconditional `test.fixme(true, …)`. A citation on a body that cannot
+	// execute is the purest form of the thing this programme removes: gate-19
+	// reports it as uncredited, and a reader sees an anchor and assumes cover.
+	//
+	// The premise was also wrong, which is why it is a test and not an
+	// exclusion. "Not observable in the browser" is true and beside the point:
+	// the scenario names its own endpoint, `POST /api/cases/{caseId}/dossier/
+	// zip`, and both of its content clauses are about the ARCHIVE. An API call
+	// and a ZIP reader settle them exactly, with no UI involved.
+	//
+	// ✅ BOTH CLAUSES MUTATION CHECKED 2026-09-12, against a live instance, by
+	// editing the exporter and flushing opcache with `apachectl -k graceful`
+	// rather than waiting out `opcache.revalidate_freq=60`. A mutation that is
+	// on disk but not yet served reports the unbroken code as green, which is
+	// the same lie as a test that never ran.
+	//
+	//   buildEntryName() prefixing every entry with one fixed folder
+	//     -> "three documents across two types must land in two folders, and
+	//        the archive held ["MUTATION-one-folder-for-everything"]",
+	//        expected 2 received 1
+	//   buildManifest() writing the header and no rows
+	//     -> "the manifest must carry a header and one row per document",
+	//        expected 4 received 1
+	//
+	// Restored, `php -l` clean, green again.
+	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008a-zip-export-includes-manifestcsv-and-type-sub-folders
+	test('the dossier ZIP carries a manifest row per document and one folder per type', async () => {
+		test.setTimeout(180_000)
+
+		// A SECOND type, because "sub-folders per informatieobjecttype" is not
+		// observable with one: a single folder is equally consistent with a
+		// layout that ignores the type entirely and names one folder for every
+		// archive.
+		const secondTypeId = objectId(
+			await createObject(api, token, 'informatieobjecttype', {
+				description: `${RUN_PREFIX} Besluit`,
+				informatieobjectcategorie: 'outgoing',
+				vertrouwelijkheidaanduiding: 'openbaar',
+			}),
+		)
+
+		const zipCaseId = objectId(
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} zip export case`,
+				caseType: caseTypeId,
+			}),
+		)
+
+		// UPLOADED, not `seedDocument`'d. The exporter reads bytes out of each
+		// informatieobject's file; a row with no file behind it contributes an
+		// entry with nothing in it, so a fixture that only writes objects would
+		// "pass" on an archive of empty files. The upload endpoint writes the
+		// file and makes the case join, and `collectDocuments` finds documents
+		// BY CASE, so the join is required here rather than avoided as it is
+		// for the bulk-transition fixtures above.
+		const uploaded: Array<{ id: string; title: string; type: string }> = []
+		for (const [index, typeId] of [
+			documentTypeId,
+			documentTypeId,
+			secondTypeId,
+		].entries()) {
+			const title = `${RUN_PREFIX} zip document ${index + 1}`
+			const res = await api.post(uploadUrl(zipCaseId), {
+				headers: writeHeaders(),
+				multipart: {
+					files: {
+						name: `zip-${index + 1}.pdf`,
+						mimeType: 'application/pdf',
+						buffer: PDF_BYTES,
+					},
+					metadata: JSON.stringify({
+						title,
+						informatieobjecttype: typeId,
+						direction: 'incoming',
+					}),
+				},
+			})
+			expect(
+				res.status(),
+				`upload ${index + 1} -> ${res.status()} ${await res.text()}`,
+			).toBe(201)
+			const result = (await res.json()).results[0]
+			expect(result?.success, JSON.stringify(result)).toBe(true)
+			uploaded.push({
+				id: String(result.informatieobject.id),
+				title,
+				type: typeId,
+			})
+		}
+
+		// The endpoint answers a binary body, so it is fetched through a
+		// context that does not try to read it as text.
+		const zipResponse = await api.post(
+			`/index.php/apps/dossiq/api/cases/${zipCaseId}/dossier/zip`,
+			{
+				headers: { ...writeHeaders(), 'Content-Type': 'application/json' },
+				data: { ids: uploaded.map((row) => row.id) },
+			},
+		)
+		expect(
+			zipResponse.status(),
+			`dossier zip -> ${zipResponse.status()} ${await zipResponse.text()}`,
+		).toBe(200)
+
+		const entries = readZipEntries(Buffer.from(await zipResponse.body()))
+		const names = entries.map((entry) => entry.name)
+
+		// 1. THE MANIFEST, at the root and populated. "All rows" is asserted as
+		// one row per document PLUS the header, not as "a manifest exists": an
+		// exporter that writes the header and no rows is exactly the failure
+		// the scenario's "with all 8 rows populated" guards against.
+		const manifest = entries.find((entry) => entry.name === 'manifest.csv')
+		expect(
+			manifest,
+			`the archive must carry manifest.csv at its root, and it held ${JSON.stringify(names)}`,
+		).toBeTruthy()
+		const manifestText = String(manifest?.content.toString('utf8'))
+		const manifestRows = manifestText
+			.split('\n')
+			.map((line) => line.trim())
+			.filter((line) => line !== '')
+		expect(
+			manifestRows.length,
+			`the manifest must carry a header and one row per document:\n${manifestText}`,
+		).toBe(uploaded.length + 1)
+		expect(
+			manifestRows[0],
+			'the manifest header must name the columns the exporter declares',
+		).toContain('fileName')
+		for (const row of uploaded) {
+			expect(
+				manifestText,
+				`the manifest must carry a row for ${row.title}`,
+			).toContain(row.title)
+		}
+
+		// 2. ONE FOLDER PER TYPE. The document entries are prefixed with the
+		// sanitised informatieobjecttype, so two types must produce two
+		// distinct prefixes across three documents. Asserted as the SET of
+		// prefixes rather than a count of entries, because three documents in
+		// three folders and three documents in one folder both have three
+		// entries and only one of them is the requirement.
+		const folders = new Set(
+			names
+				.filter((name) => name !== 'manifest.csv')
+				.map((name) => name.split('/')[0]),
+		)
+		expect(
+			names.filter((name) => name !== 'manifest.csv').length,
+			`every uploaded document must appear in the archive: ${JSON.stringify(names)}`,
+		).toBe(uploaded.length)
+		expect(
+			folders.size,
+			`three documents across two types must land in two folders, and the archive held ${JSON.stringify([...folders])}`,
+		).toBe(2)
+		for (const name of names) {
+			if (name === 'manifest.csv') continue
+			expect(
+				name,
+				'a document entry must sit inside its type folder, not at the root',
+			).toContain('/')
+		}
+
+		// 3. AND THE BYTES ARE REALLY THERE. An archive of correctly-named
+		// empty entries satisfies every assertion above.
+		for (const entry of entries) {
+			if (entry.name === 'manifest.csv') continue
+			expect(
+				entry.content.length,
+				`${entry.name} must carry the uploaded file's bytes`,
+			).toBe(PDF_BYTES.length)
+		}
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005c-file-validation-blocks-executable-uploads
