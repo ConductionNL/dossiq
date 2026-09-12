@@ -30,6 +30,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { OWNS_INSTANCE, SHARED_INSTANCE_FLAG } from '../base-url.ts'
 import { occPurge, OccUnavailableError } from './occ.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
@@ -50,6 +51,82 @@ export const FIXTURE_PREFIX = 'E2EZAAK-'
  * the rows this run created (never another run's or real demo data).
  */
 export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+
+/**
+ * Every object id this run created, by schema. THE delete key for teardown.
+ *
+ * Why a ledger replaced the prefix match
+ * --------------------------------------
+ * Teardown used to find its objects with `JSON.stringify(row).includes(prefix)`
+ * and delete what matched. That reads a row's CONTENT to decide whether to
+ * destroy it, and content is not ownership. Anything carrying the string wins:
+ * a colleague's case whose description quotes a prefix from a bug report, a
+ * demo record seeded from an old run's export, a second suite running the same
+ * family prefix at the same time. On a disposable rig the blast radius is a rig
+ * you were going to throw away. On the shared development container it is
+ * somebody else's work.
+ *
+ * So the id goes in here the moment the object is created, and teardown deletes
+ * ids. The prefix stays in every seeded title, because recognising residue by
+ * eye in a list view is genuinely useful. It is no longer what decides a delete.
+ *
+ * Objects created through the UI rather than through `createObject` are the one
+ * gap, and they close it by calling `trackCreatedObject` with the id the app
+ * navigated to. Anything neither seeded nor tracked is REPORTED by
+ * `cleanupRunObjects` and left in place.
+ */
+const RUN_LEDGER = new Map<string, Set<string>>()
+
+/**
+ * Record an object this run created, so teardown may delete it.
+ *
+ * Call this for anything created through the UI instead of through
+ * `createObject`. The id is usually in the URL the app lands on after a save,
+ * so `trackCreatedFromUrl` is normally the easier call.
+ *
+ * @param schema Schema slug the object belongs to.
+ * @param id     Object id/uuid.
+ * @return The id, so callers can inline the call.
+ */
+export function trackCreatedObject(schema: string, id: string): string {
+	if (id === '') return id
+	const ids = RUN_LEDGER.get(schema) ?? new Set<string>()
+	ids.add(id)
+	RUN_LEDGER.set(schema, ids)
+	return id
+}
+
+/**
+ * Record an object from the URL the app navigated to after creating it.
+ *
+ * Dossiq detail routes end in the object id, for example
+ * `/apps/dossiq/cases/4f1c…`. A UI-created row is therefore trackable, and
+ * tracking it is what keeps it out of the "found but not deleted" report.
+ *
+ * @param schema Schema slug the object belongs to.
+ * @param url    The URL the app is on after the save.
+ * @return The id that was tracked, or the empty string when the URL held none.
+ */
+export function trackCreatedFromUrl(schema: string, url: string): string {
+	const tail = url.split('?')[0].split('#')[0].replace(/\/+$/, '').split('/').pop() ?? ''
+	// A uuid, or OpenRegister's numeric fallback id. Anything else is a route
+	// segment like "new" or "cases", and tracking that would be worse than
+	// tracking nothing.
+	const looksLikeId =
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tail)
+		|| /^\d+$/.test(tail)
+	return looksLikeId ? trackCreatedObject(schema, tail) : ''
+}
+
+/**
+ * The ids this run recorded for one schema.
+ *
+ * @param schema Schema slug.
+ * @return The recorded ids, possibly empty.
+ */
+export function trackedObjects(schema: string): string[] {
+	return [...(RUN_LEDGER.get(schema) ?? [])]
+}
 
 const API_BASE = '/index.php/apps/openregister/api/objects'
 
@@ -169,7 +246,11 @@ export async function createObject(
 		res.ok(),
 		`create ${schema} -> ${res.status()} ${await res.text()}`,
 	).toBeTruthy()
-	return unwrapObject(await res.json())
+	const created = unwrapObject(await res.json())
+	// The single funnel every API-seeded object passes through, so this is the
+	// one line that has to run for teardown to know what it owns.
+	trackCreatedObject(schema, objectId(created))
+	return created
 }
 
 /**
@@ -613,8 +694,24 @@ export async function updateObject(
 }
 
 /**
- * Find every object of `schema` whose stringified body contains RUN_PREFIX
- * and delete it. Used by afterAll to guarantee no seeded data is left behind.
+ * Delete every object THIS RUN CREATED, and nothing else.
+ *
+ * The delete key is the run ledger, not the run prefix. See `RUN_LEDGER` for
+ * why: a prefix match reads a row's content to decide whether to destroy it,
+ * and content is not ownership.
+ *
+ * Two kinds of row qualify, and both are identified by id:
+ *
+ *  1. Ids in the ledger. Everything `createObject` seeded, plus anything a spec
+ *     handed to `trackCreatedObject` after creating it through the UI.
+ *  2. Rows whose `case` or `parentCase` points at a case id in the ledger. The
+ *     transition engine writes `statusRecord` rows itself, carrying the case
+ *     uuid and none of the fixture's text. They are still this run's residue,
+ *     and the link is an id, not a string search.
+ *
+ * Anything else carrying RUN_PREFIX is REPORTED and left alone. That report is
+ * the honest half: it says out loud that the run produced a row it cannot prove
+ * it owns, rather than deleting on a guess.
  *
  * @param api     Authenticated request context.
  * @param token   CSRF request-token.
@@ -640,10 +737,20 @@ export async function cleanupRunObjects(
 		// Called outside a running test/hook. Nothing to extend; carry on.
 	}
 
-	const survivors = [
-		...(await sweepPrefix(api, token, RUN_PREFIX, schemas)),
-		...(await sweepTrash(api, token, RUN_PREFIX)),
-	]
+	const { survivors, untracked, ids } = await sweepLedger(api, token, schemas)
+	survivors.push(...(await sweepTrashIds(api, token, ids)))
+
+	if (untracked.length > 0) {
+		console.warn(
+			`[dossiq e2e] ${untracked.length} object(s) carry ${RUN_PREFIX} but this run `
+				+ 'never recorded creating them, so teardown left them in place: '
+				+ `${untracked.join(', ')}\n`
+				+ 'If a spec created them through the UI, have it call '
+				+ 'trackCreatedFromUrl after the save. Otherwise they belong to somebody '
+				+ 'else and deleting them would have been the bug.',
+		)
+	}
+
 	if (survivors.length > 0) {
 		throw new Error(
 			'e2e teardown left objects behind, so the next run on this instance '
@@ -662,10 +769,18 @@ export async function cleanupRunObjects(
  * family prefix up front is what makes a second suite run on one rig start
  * from the same state as the first.
  *
- * Deliberately NOT an afterAll: the suite runs single-worker and owns its
- * instance (see `base-url.ts`, which refuses a default target for exactly this
- * reason), so a clean slate at the start is safe, where a family-wide sweep at
- * the end could tear down a concurrently running sibling suite.
+ * Deliberately NOT an afterAll: on a rig it owns, the suite runs single-worker
+ * and has the place to itself, so a clean slate at the start is safe, where a
+ * family-wide sweep at the end could tear down a concurrently running sibling
+ * suite.
+ *
+ * 🔴 ON A SHARED INSTANCE IT DELETES NOTHING. This sweep is the one place left
+ * that finds rows by content, and it has to be: residue from a crashed run
+ * belongs to no ledger, so there is nothing but the prefix to recognise it by.
+ * That is fine on a rig you own and wrong on a rig you share, where the same
+ * match may be a colleague's row, or a sibling run's live fixtures. So under
+ * `DOSSIQ_E2E_ALLOW_SHARED_INSTANCE` it lists what it found and leaves it, and
+ * the operator removes it themselves once they know it is theirs.
  *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
@@ -675,10 +790,187 @@ export async function sweepFixtureResidue(
 	api: APIRequestContext,
 	token: string,
 ): Promise<string[]> {
+	if (OWNS_INSTANCE === false) {
+		const found = [
+			...(await findPrefixMatches(api, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
+			...(await findTrashMatches(api, FIXTURE_PREFIX)),
+		]
+		if (found.length > 0) {
+			console.warn(
+				`[dossiq e2e] ${found.length} row(s) on this instance carry `
+					+ `${FIXTURE_PREFIX}: ${found.join(', ')}\n`
+					+ `Nothing was deleted. ${SHARED_INSTANCE_FLAG} is set, so the suite `
+					+ 'cannot tell your leftovers from a colleague\'s.\n'
+					+ 'Check the list, then remove the rows you recognise with '
+					+ '`occ openregister:objects:purge <uuid> --force --apply`.',
+			)
+		}
+		return []
+	}
+
 	return [
 		...(await sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
 		...(await sweepTrash(api, token, FIXTURE_PREFIX)),
 	]
+}
+
+/**
+ * Delete the ids this run recorded, child-first, and report what else carries
+ * RUN_PREFIX without being in the ledger.
+ *
+ * @param api     Authenticated request context.
+ * @param token   CSRF request-token.
+ * @param schemas Schema slugs to sweep, child-first.
+ * @return Survivors, untracked prefix matches, and every id that was targeted.
+ */
+async function sweepLedger(
+	api: APIRequestContext,
+	token: string,
+	schemas: string[],
+): Promise<{ survivors: string[]; untracked: string[]; ids: string[] }> {
+	const survivors: string[] = []
+	const untracked: string[] = []
+	const targeted: string[] = []
+
+	const caseIds = new Set(trackedObjects('case'))
+
+	for (const schema of schemas) {
+		const ledgerIds = new Set(trackedObjects(schema))
+
+		// Rows the app itself wrote against one of OUR cases. Listed rather than
+		// assumed, because the engine decides how many there are, and matched on
+		// a foreign key rather than on a string search.
+		let rows: any[] = []
+		if (caseIds.size > 0) {
+			rows = await listAllObjects(api, schema).catch(() => [])
+			for (const row of rows) {
+				const id = objectId(row)
+				if (id === '' || ledgerIds.has(id)) continue
+				if (
+					caseIds.has(String(row.case ?? '')) === true
+					|| caseIds.has(String(row.parentCase ?? '')) === true
+				) {
+					ledgerIds.add(id)
+				}
+			}
+		}
+
+		for (const id of ledgerIds) {
+			targeted.push(id)
+			// An OccUnavailableError is NOT a survivor: it means no row can be
+			// removed at all, so it must abort here rather than be reported once
+			// per fixture as though each one had individually resisted.
+			const gone = await purgeObject(api, token, schema, id).catch(
+				(error: unknown) => {
+					if (error instanceof OccUnavailableError) throw error
+					return false
+				},
+			)
+			if (gone === false) survivors.push(`${schema}/${id}`)
+		}
+
+		// The honesty half. Anything left carrying this run's prefix that the
+		// ledger never saw is named, not deleted.
+		if (rows.length === 0) {
+			rows = await listAllObjects(api, schema).catch(() => [])
+		}
+		for (const row of rows) {
+			const id = objectId(row)
+			if (id === '' || ledgerIds.has(id)) continue
+			if (JSON.stringify(row).includes(RUN_PREFIX)) {
+				untracked.push(`${schema}/${id}`)
+			}
+		}
+	}
+
+	return { survivors, untracked, ids: targeted }
+}
+
+/**
+ * Destroy the named ids if they are sitting in the trash.
+ *
+ * A spec that deletes its own object mid-test soft-deletes it: the row leaves
+ * the object API and stays in the trash for good. This finishes the job, by id.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param ids   Ids this run created.
+ * @return Trash ids that survived.
+ */
+async function sweepTrashIds(
+	api: APIRequestContext,
+	token: string,
+	ids: string[],
+): Promise<string[]> {
+	if (ids.length === 0) return []
+	const wanted = new Set(ids)
+
+	const matching = async (): Promise<string[]> => {
+		const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+		if (res === null || res.ok() === false) return []
+		const rows = unwrapList(await res.json().catch(() => ({})))
+		return rows
+			.map((row: any) => objectId(row))
+			.filter((id: string) => id !== '' && wanted.has(id))
+	}
+
+	for (const id of await matching()) {
+		await api
+			.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+			.catch(() => undefined)
+	}
+
+	const refused = await matching()
+	if (refused.length > 0) {
+		await occPurge(refused)
+	}
+
+	return (await matching()).map((id) => `deleted/${id}`)
+}
+
+/**
+ * List, without touching, every live row whose body carries `prefix`.
+ *
+ * @param api     Authenticated request context.
+ * @param prefix  Run prefix or family prefix.
+ * @param schemas Schema slugs to look through.
+ * @return `schema/id` labels for what was found.
+ */
+async function findPrefixMatches(
+	api: APIRequestContext,
+	prefix: string,
+	schemas: string[],
+): Promise<string[]> {
+	const found: string[] = []
+	for (const schema of schemas) {
+		for (const row of await listAllObjects(api, schema).catch(() => [])) {
+			const id = objectId(row)
+			if (id !== '' && JSON.stringify(row).includes(prefix)) {
+				found.push(`${schema}/${id}`)
+			}
+		}
+	}
+	return found
+}
+
+/**
+ * List, without touching, every trashed row whose body carries `prefix`.
+ *
+ * @param api    Authenticated request context.
+ * @param prefix Run prefix or family prefix.
+ * @return `deleted/id` labels for what was found.
+ */
+async function findTrashMatches(
+	api: APIRequestContext,
+	prefix: string,
+): Promise<string[]> {
+	const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+	if (res === null || res.ok() === false) return []
+	const rows = unwrapList(await res.json().catch(() => ({})))
+	return rows
+		.filter((row: any) => JSON.stringify(row).includes(prefix))
+		.map((row: any) => `deleted/${objectId(row)}`)
+		.filter((label: string) => label !== 'deleted/')
 }
 
 /**

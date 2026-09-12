@@ -43,9 +43,28 @@ import { expect, request, test } from '@playwright/test'
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
-import { BASE_URL } from './base-url.ts'
+import { BASE_URL, refuseOnSharedInstance } from './base-url.ts'
 
 test.describe.configure({ mode: 'serial' })
+
+/**
+ * The refusal the header describes, made mechanical.
+ *
+ * The sentence "could not run on the shared dev instance" has sat at the top of
+ * this file since it was written, and a sentence stops nobody. This spec needs
+ * the shipped flow ENABLED on the instance, and on a shared instance that runs
+ * the flow on every case anybody creates, including cases that are not tests.
+ *
+ * It throws rather than skips. A skipped spec reports green, and green is the
+ * wrong answer to "you pointed a destructive spec at the shared container".
+ */
+test.beforeAll(() => {
+	refuseOnSharedInstance(
+		'case-flow-live-journeys',
+		'It needs the case flow enabled on the instance. Enabling it there starts a '
+			+ 'run on every case anybody creates, including cases nobody is testing.',
+	)
+})
 
 const FLOW_NAME = 'Case behandeling'
 const CASE_TYPE = 'Omgevingsvergunning kleine bouwactiviteit'

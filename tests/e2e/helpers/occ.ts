@@ -46,10 +46,12 @@
  * Symfony's own "command is not defined", which names the real problem.
  */
 
+import { request } from '@playwright/test'
 import { execFile } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { promisify } from 'util'
+import { IS_SHARED_INSTANCE, SHARED_INSTANCE_FLAG } from '../base-url.ts'
 
 const execFileAsync = promisify(execFile)
 
@@ -231,19 +233,153 @@ function unavailableMessage(): string {
 }
 
 /**
- * Confirm occ is reachable, or throw with the whole diagnosis.
+ * Run an arbitrary occ command on the resolved invocation.
  *
- * Called from `global-setup.ts` so an unreachable occ fails ONE step before any
- * spec runs, instead of surfacing as a teardown failure 30 minutes in.
+ * Exported so the instance report can read a version or a config key without
+ * every caller repeating the resolution logic.
  *
- * @return A human-readable description of the invocation that answered.
+ * @param args Arguments after the occ prefix.
+ * @return The command's exit code and combined output.
+ * @throws OccUnavailableError When no invocation answers on this rig.
  */
-export async function assertOccReachable(): Promise<string> {
+export async function occRun(
+	args: string[],
+): Promise<{ code: number; output: string }> {
 	const invocation = await resolveOcc()
 	if (invocation === null) {
 		throw new OccUnavailableError(unavailableMessage())
 	}
-	return `${invocation.source} (${invocation.argv.join(' ')})`
+	return run(invocation, args)
+}
+
+/**
+ * Read one system config value through occ.
+ *
+ * @param key The config key, e.g. `instanceid`.
+ * @return The trimmed value, or `null` when the command did not answer.
+ */
+export async function occSystemGet(key: string): Promise<string | null> {
+	const result = await occRun(['config:system:get', key]).catch(() => null)
+	if (result === null || result.code !== 0) return null
+	const value = result.output.trim()
+	return value === '' ? null : value
+}
+
+/**
+ * Read the instance id of the Nextcloud answering on `baseURL`, over HTTP.
+ *
+ * Nextcloud names its PHP session after its own instance id, so the first
+ * `Set-Cookie` whose name looks like `oc<alnum>` and is not one of the fixed
+ * `oc_*` cookies IS the instance id. No login and no write is needed, which is
+ * what makes this usable as a pre-flight check.
+ *
+ * @param baseURL The instance under test.
+ * @return The instance id, or `null` when no session cookie came back.
+ */
+export async function readInstanceIdOverHttp(
+	baseURL: string,
+): Promise<string | null> {
+	const ctx = await request.newContext()
+	try {
+		const res = await ctx.get(`${baseURL}/index.php/login`, {
+			failOnStatusCode: false,
+		})
+		for (const header of res.headersArray()) {
+			if (header.name.toLowerCase() !== 'set-cookie') continue
+			const name = header.value.split('=')[0]?.trim() ?? ''
+			if (/^oc[a-z0-9]{6,}$/i.test(name) && name.startsWith('oc_') === false) {
+				return name
+			}
+		}
+		return null
+	} catch {
+		return null
+	} finally {
+		await ctx.dispose()
+	}
+}
+
+/**
+ * The message an operator reads when occ answered on the wrong Nextcloud.
+ *
+ * @param invocation How occ was reached.
+ * @param baseURL    The instance under test.
+ * @param http       The instance id the HTTP target reported, if any.
+ * @param cli        The instance id occ reported, if any.
+ * @return The full error text.
+ */
+function wrongInstanceMessage(
+	invocation: string,
+	baseURL: string,
+	http: string | null,
+	cli: string | null,
+): string {
+	const observed =
+		http !== null && cli !== null
+			? `${baseURL} reports instance ${http}. occ reports instance ${cli}.\n`
+			: `The instance ids could not both be read (http=${http ?? 'unknown'}, `
+				+ `occ=${cli ?? 'unknown'}).\n`
+
+	return (
+		'[dossiq e2e] occ is not talking to the instance under test.\n'
+		+ observed
+		+ `occ was reached via ${invocation}.\n`
+		+ 'Teardown purges archival cases through occ, so a wrong target means this '
+		+ 'run destroys records on one Nextcloud while testing another.\n\n'
+		+ 'Name the container that serves the instance you aimed at:\n\n'
+		+ '    DOSSIQ_E2E_CONTAINER=nextcloud\n\n'
+		+ 'or spell the whole prefix out:\n\n'
+		+ '    DOSSIQ_E2E_OCC="docker exec -u www-data nextcloud php occ"\n\n'
+		+ 'Find the container with `docker ps` and confirm it with '
+		+ '`docker exec -u www-data <name> php occ config:system:get instanceid`.'
+	)
+}
+
+/**
+ * Confirm occ is reachable AND lands on the instance under test, or throw with
+ * the whole diagnosis.
+ *
+ * Called from `global-setup.ts` so a wrong or unreachable occ fails ONE step
+ * before any spec runs, instead of surfacing as a teardown failure 30 minutes
+ * in.
+ *
+ * The binding check exists because "occ answered" and "occ answered on the right
+ * Nextcloud" are different questions, and on a dev box carrying five containers
+ * the second one is the one that matters. Nextcloud names its session cookie
+ * after its instance id, so both halves can be read without logging in and
+ * without writing anything.
+ *
+ * A mismatch is fatal on a shared instance and a warning elsewhere. On a
+ * disposable rig a wrong occ costs you a dirty rig you were going to throw
+ * away; on the shared container it costs somebody else their records.
+ *
+ * @param baseURL The instance under test.
+ * @return A human-readable description of the invocation that answered.
+ */
+export async function assertOccReachable(baseURL: string): Promise<string> {
+	const invocation = await resolveOcc()
+	if (invocation === null) {
+		throw new OccUnavailableError(unavailableMessage())
+	}
+	const described = `${invocation.source} (${invocation.argv.join(' ')})`
+
+	const http = await readInstanceIdOverHttp(baseURL)
+	const cli = await occSystemGet('instanceid')
+	const bound = http !== null && cli !== null && http === cli
+
+	if (bound === false) {
+		if (IS_SHARED_INSTANCE === true) {
+			throw new OccUnavailableError(
+				wrongInstanceMessage(described, baseURL, http, cli)
+					+ `\nThis is fatal because ${SHARED_INSTANCE_FLAG} is set: the target is `
+					+ 'shared with other people.',
+			)
+		}
+		console.warn(wrongInstanceMessage(described, baseURL, http, cli))
+		return described
+	}
+
+	return `${described}, bound to instance ${cli}`
 }
 
 /**
