@@ -301,10 +301,31 @@ class DecisionTableService {
 				throw new OCSBadRequestException('Rule ' . $index . ' outputEntries count (' . $got . ') must match outputs count (' . $outputCount . ')');
 			}
 
+			// A DMN input entry is a FEEL expression, so a scalar. The bare
+			// `(string)` cast that stood here was psalm's InvalidCast: the rule
+			// payload is user-supplied JSON, so an entry can arrive as an array
+			// or an object, and PHP would have written the literal "Array" into
+			// the table with a warning. An entry that is not a scalar is not an
+			// expression, so it becomes the empty cell it already meant.
+			//
+			// Written as a loop rather than array_map(), because psalm keeps
+			// the empty initialiser above as its own array<never, never>
+			// branch, types a callback parameter `never` for it, and then
+			// reports the cast against a value that cannot exist.
+			$inputCells = [];
+			foreach ($inputEntries as $entry) {
+				if (is_scalar($entry) === false) {
+					$inputCells[] = '';
+					continue;
+				}
+
+				$inputCells[] = (string)$entry;
+			}
+
 			$built = [
 				'id' => trim((string)($rule['id'] ?? ('r' . ($index + 1)))),
 				'annotation' => trim((string)($rule['annotation'] ?? '')),
-				'inputEntries' => array_map(static fn (mixed $entry): string => (string)$entry, $inputEntries),
+				'inputEntries' => $inputCells,
 				'outputEntries' => $outputEntries,
 			];
 
