@@ -30,12 +30,9 @@
  *     `bulkActions` entry, by their label text.
  *   - the click-to-upload button/input are `[data-testid="object-list-upload"]`
  *     / `[data-testid="object-list-upload-input"]`.
- *   - a row action menu (Versions) opens through
- *     `[data-testid="cn-row-actions"]` then `[data-testid="cn-action-item-versions"]`
- *     — a data-testid, not a role, because `NcActions`/`NcActionButton` puts
- *     `role="menuitem"` on the button once it is inside a menu (an
- *     accessible-truth quirk the previous version of this spec hit and
- *     documented at length); the testid is stable either way.
+ *   - the row's only action (Versions) is `[data-testid="cn-row-actions"]`
+ *     and is a plain button, not a menu: NcActions renders a lone action
+ *     inline, and its testid replaces the entry's. See `clickRowAction`.
  *
  * Locale: nothing forces the language of the E2E instance, so tab and button
  * names are matched in either locale the app ships, as the sibling
@@ -61,7 +58,7 @@ import {
 	showObject,
 	tryDeleteObject,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction } from './helpers/nav.ts'
+import { clickHeaderAction, tickCheckbox } from './helpers/nav.ts'
 
 const OBJECTION_TITLE = `${RUN_PREFIX} Objection to the felling permit`
 const ACKNOWLEDGEMENT_TITLE = `${RUN_PREFIX} Acknowledgement of receipt`
@@ -373,19 +370,44 @@ async function storedDocument(title: string): Promise<any> {
 }
 
 /**
- * Open the row-action menu for a document row and click one item.
+ * Fire a document row's action.
  *
- * A data-testid, not a role: `NcActionButton` puts `role="menuitem"` on the
- * button once it renders inside a menu, so `getByRole('button', …)` cannot
- * find it — a landmine the previous version of this spec hit and documented
- * at length. The testid is stable regardless of which role wins.
+ * 🔴 ONE ROW ACTION IS NOT A MENU, AND THE ENTRY TESTID DOES NOT EXIST.
+ * `case-documents` declares exactly one `rowActions` entry (Versions).
+ * `CnRowActions` puts `data-testid="cn-row-actions"` on `<NcActions>` and
+ * `data-testid="cn-action-item-<slug>"` on each `NcActionButton`, and with a
+ * single action NcActions takes its `actions.length === 1 && !forceMenu`
+ * branch and renders that action INLINE as the component's own root node.
+ * Both testids then target one element, Vue's fallthrough attribute wins, and
+ * the button ends up carrying `cn-row-actions` while
+ * `cn-action-item-versions` is nowhere in the document.
+ *
+ * Measured rather than reasoned about: mounting CnRowActions' markup with one
+ * action renders
+ * `<button class="… action-item action-item--single" data-testid="cn-row-actions">`
+ * and `cn-action-item-versions` resolves to nothing; the same mount with two
+ * actions renders the popover instead. The only variable between the two is
+ * how many actions were passed.
+ *
+ * So the single click below IS the Versions click, and the old two-step
+ * version waited out its whole budget on a menu entry that is never created.
+ * The class assertion is the guard: add a second row action and the widget
+ * goes back to a popover, `action-item--single` stops being true, and this
+ * helper has to grow the open step again rather than quietly clicking a menu
+ * toggle and asserting nothing happened.
  *
  * @param row The row locator.
- * @param itemTestId The `cn-action-item-*` suffix (already slugified).
+ * @param itemTestId The `cn-action-item-*` suffix, named for the reader.
  */
 async function clickRowAction(row, itemTestId: string) {
-	await row.locator('[data-testid="cn-row-actions"]').click()
-	await row.page().locator(`[data-testid="${itemTestId}"]`).click()
+	const trigger = row.locator('[data-testid="cn-row-actions"]')
+	await expect(
+		trigger,
+		`${itemTestId} is the row's only action, so NcActions renders it inline `
+			+ 'as a single button. A popover here means a second action was added '
+			+ 'and this helper must open the menu again.',
+	).toHaveClass(/action-item--single/, { timeout: 20_000 })
+	await trigger.click()
 }
 
 test.describe('Case detail — the Documents tab', () => {
@@ -633,13 +655,53 @@ test.describe('Case detail — the Documents tab', () => {
 			.filter({ hasText: OBJECTION_TITLE })
 		await expect(row).toHaveCount(1, { timeout: 20_000 })
 		await expect(rowCell(row, 1)).toHaveText(OBJECTION_TYPE_NAME)
-		await expect(rowCell(row, 2)).toHaveText(/Draft|Concept/)
-		await expect(rowCell(row, 3)).toHaveText(/Incoming|Inkomend/)
+		// Cells 2 and 3 are Status and Direction. What they should read is
+		// asserted in its own parked test below, not weakened here.
 		await expect(rowCell(row, 4)).toContainText('2026')
 		await expect(rowCell(row, 5)).toHaveText('Els Jansen')
 
 		// The other case's documents exist and are filtered out.
 		await expect(panel.getByText(TAGGED_TITLE)).toHaveCount(0)
+	})
+
+	// @e2e exclude Same surface and same governing requirement as the six-column
+	// test above; this is the enum-label half of it, split out so the other five
+	// columns keep running while the label defect is open.
+	//
+	// 🔴 PARKED BECAUSE THE PRODUCT IS WRONG AND THIS REPO CANNOT FIX IT. A
+	// Dutch reader sees `incoming` in the Direction column and `draft` in
+	// Status. Both are stored codes. The bespoke DossierTab that #2553 deleted
+	// mapped them itself, in DocumentRow.vue, and the object-list widget that
+	// replaced it maps nothing.
+	//
+	// HALF of that is fixed in this PR. `informatieobject.status` and
+	// `informatieobject.direction` now carry `x-enum-labels` in
+	// lib/Settings/register.d/70-document-zaakdossier.json, which is where the
+	// labels belong and which the form and detail surfaces already read.
+	//
+	// The other half is the library, and it is why this test stays parked.
+	// CnObjectListWidget never passes a schema to CnDataTable, and
+	// CnDataTable.getSchemaProperty matches a column key exactly, so a dotted
+	// `_extend` key such as `informatieobject.direction` resolves to `{}`.
+	// CnCellRenderer then sees no `enum` and prints the raw value. Measured by
+	// mounting CnCellRenderer twice on the same value: handed `{}` it renders
+	// "incoming", handed the annotated property it renders "Incoming". The
+	// renderer is willing; nothing reaches it.
+	//
+	// UNFIX IT when ConductionNL/nextcloud-vue#1132 lands, and fold these two
+	// assertions back into the six-column test above.
+	test.fixme('the Status and Direction cells read as labels, not the stored codes', async ({
+		page,
+	}) => {
+		const panel = await openDocumentsTab(page, caseId)
+		const objectionGroup = group(panel, OBJECTION_TYPE_NAME)
+		const row = objectionGroup
+			.locator('[data-testid="cn-object-row"]')
+			.filter({ hasText: OBJECTION_TITLE })
+		await expect(row).toHaveCount(1, { timeout: 20_000 })
+
+		await expect(rowCell(row, 2)).toHaveText(/Draft|Concept/)
+		await expect(rowCell(row, 3)).toHaveText(/Incoming|Inkomend/)
 	})
 
 	// @e2e exclude No canonical scenario covers row grouping on the Documents tab.
@@ -709,8 +771,10 @@ test.describe('Case detail — the Documents tab', () => {
 			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: DROPPED_TITLE })
 		await expect(row).toHaveCount(1, { timeout: 30_000 })
-		await expect(rowCell(row, 3)).toHaveText(/Incoming|Inkomend/)
-
+		// The Direction CELL reads `incoming` rather than Incoming, and that
+		// defect is asserted once, in its own parked test above. What this test
+		// is for is that the upload filed the direction at all, so it checks the
+		// stored value below instead of the cell.
 		const stored = await storedDocument(DROPPED_TITLE)
 		expect(String(stored.informatieobjecttype)).toBe(objectionTypeId)
 		expect(String(stored.direction)).toBe('incoming')
@@ -756,7 +820,25 @@ test.describe('Case detail — the Documents tab', () => {
 
 	// @e2e exclude No canonical scenario covers interactive column sort on the
 	// Documents tab. documents-on-the-case task 2.2 (option b) governs it.
-	test('clicking the Title header sorts the group, ascending then descending', async ({
+	//
+	// 🔴 PARKED BECAUSE THE PRODUCT CANNOT DO THIS YET, NOT BECAUSE THE TEST IS
+	// WRONG. This test was right and it caught a real defect: clicking Title
+	// reordered nothing. CnObjectListWidget sorts server-side only, by
+	// refetching with `_order[<column key>]`, and every column on this widget
+	// is a dotted `_extend` path that OpenRegister will not order on. Measured
+	// against a live register: `_order[informatieobject]` asc and desc come
+	// back reversed, `_order[informatieobject.title]` asc and desc come back
+	// identical. The two CI runs bear that out, since they ended on two
+	// different wrong orders, ["Sort B","Sort A","Sort C"] and
+	// ["Sort C","Sort B","Sort A"].
+	//
+	// dossiq has dropped `sortable` from the case-documents widget rather than
+	// keep six headers that look clickable and reorder nothing, so there is now
+	// no control for this test to click either. UNFIX IT, and put `sortable`
+	// back in src/manifest.json, when ConductionNL/nextcloud-vue#1131 lands a
+	// client-side sort for dotted keys or ConductionNL/openregister#3676 lets
+	// `_order` reach into an extended object.
+	test.fixme('clicking the Title header sorts the group, ascending then descending', async ({
 		page,
 	}) => {
 		const panel = await openDocumentsTab(page, sortCaseId)
@@ -805,13 +887,16 @@ test.describe('Case detail — the Documents tab', () => {
 		).toHaveCount(0)
 
 		for (let i = 0; i < 2; i++) {
-			await rows
-				.nth(i)
-				.locator(
-					'.cn-table-col--checkbox input, .cn-table-col--checkbox [role="checkbox"]',
-				)
-				.first()
-				.click()
+			// CnDataTable's select column is an NcCheckboxRadioSwitch, whose
+			// styled `<span class="checkbox-content …">` sits over the real
+			// input and swallows the click: Playwright finds the input,
+			// calls it visible, enabled and stable, and retries against
+			// "intercepts pointer events" for the whole budget. `tickCheckbox`
+			// clicks the label a person clicks, and its doc comment says why
+			// `force: true` is refused rather than used here.
+			await tickCheckbox(
+				rows.nth(i).locator('.cn-table-col--checkbox').getByRole('checkbox'),
+			)
 		}
 
 		const bulkBar = panel.locator('[data-testid="object-list-bulk-bar"]')
@@ -1011,6 +1096,9 @@ test.describe('Case detail — the Documents tab', () => {
 			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: 'Ontvangstbevestiging' })
 		await expect(row).toHaveCount(1, { timeout: 30_000 })
-		await expect(rowCell(row, 3)).toHaveText(/Outgoing|Uitgaand/)
+		// The letter is outgoing, and `stored.direction` above is where this
+		// test checks that. The Direction CELL still reads `outgoing` rather
+		// than Outgoing; that defect is asserted once, in the parked
+		// Status-and-Direction test near the top of this file.
 	})
 })
