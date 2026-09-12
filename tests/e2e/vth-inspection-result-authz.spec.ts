@@ -33,13 +33,22 @@
  *
  * A spec that asserted only 3 would have passed before the fix.
  *
- * WHAT "ACCEPTED" IS ASSERTED AS. INSPECTOR's submission is asserted NOT to be
- * a 403, rather than asserted to be a 201. The authorization boundary is this
- * file's subject and 403-or-not is exactly that boundary; the submission may
- * still be refused downstream on payload grounds (an unknown checklist id, a
- * required-photo rule), and pinning a 201 here would couple an authz spec to
- * `inspectionResult` validation and make it fail for reasons that are not
- * about who is calling. The status is printed in the message either way.
+ * WHAT "ACCEPTED" IS ASSERTED AS, AND WHY THAT CHANGED. This used to assert
+ * INSPECTOR's submission was NOT a 403, and not that it was a 201, to keep an
+ * authz spec off `inspectionResult` validation. That reasoning is sound about
+ * the REFUSALS and was wrong about the acceptance: `the-cases-assignee-submits-
+ * a-result` says the system "SHALL accept the submission and store an
+ * `inspectionResult`", and a 500 satisfies `not.toBe(403)` exactly as well as a
+ * 201 does. The test reported the same green whether the result was stored or
+ * the submission blew up on the way in, which is anti-coverage on a
+ * safety-relevant citation.
+ *
+ * So the acceptance test now asserts the scenario: 201, then the stored result
+ * read back through `GET /inspection-results` carrying this case and this
+ * `completedBy`. The coupling is real and is the price of the citation. The
+ * three REFUSAL tests below still assert a bare status and are untouched, so
+ * the boundary itself keeps its uncoupled guard. The status is printed in
+ * every message either way.
  *
  * The `@e2e` anchors live immediately above the `test(` declarations they
  * annotate, never up here. Gate-19 reads an anchor as a DIRECTIVE only where
@@ -58,6 +67,8 @@ import {
 	storageStatePath,
 } from './helpers/auth.ts'
 import {
+	createObject,
+	deleteObject,
 	ensureCaseType,
 	getRequestToken,
 	objectId,
@@ -104,6 +115,11 @@ interface Session {
 }
 
 let caseId = ''
+/** The checklist the accepted submission names. Seeded, because the schema wants a uuid. */
+let checklistId = ''
+/** The admin context, kept open past `beforeAll` so the teardown can remove what it seeded. */
+let adminCleanup: APIRequestContext | null = null
+let adminCleanupToken = ''
 let inspector: Session
 let outsider: Session
 
@@ -172,6 +188,56 @@ async function post(
 		data: body,
 	})
 	return res.status()
+}
+
+/**
+ * POST a body as one account and return the status AND the parsed body.
+ *
+ * `post()` above answers the refusal tests, which are about a status and
+ * nothing else. The acceptance scenario is about what was STORED, so it needs
+ * the record the endpoint answered with.
+ *
+ * @param session The account making the call.
+ * @param url     The endpoint.
+ * @param body    The JSON payload.
+ * @return The status and the decoded body, or null when the body was not JSON.
+ */
+async function postJson(
+	session: Session,
+	url: string,
+	body: Record<string, unknown>,
+): Promise<{ status: number; body: any }> {
+	const res = await session.api.post(url, {
+		headers: {
+			requesttoken: session.token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		},
+		data: body,
+	})
+	return { status: res.status(), body: await res.json().catch(() => null) }
+}
+
+/**
+ * GET the inspection results recorded against a case, as one account.
+ *
+ * @param session The account making the call.
+ * @param id      The case uuid.
+ * @return The status and the decoded list, or an empty list when not JSON.
+ */
+async function readResults(
+	session: Session,
+	id: string,
+): Promise<{ status: number; results: any[] }> {
+	const res = await session.api.get(
+		`/index.php/apps/dossiq/api/vth/cases/${id}/inspection-results`,
+		{ headers: { 'OCS-APIRequest': 'true' } },
+	)
+	const body = await res.json().catch(() => null)
+	return {
+		status: res.status(),
+		results: Array.isArray(body) ? body : (body?.results ?? []),
+	}
 }
 
 test.describe('VTH inspection result: only the stored handler may submit', () => {
@@ -243,6 +309,32 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 		caseId = objectId(seeded)
 		expect(caseId, 'the fixture case must have an id').not.toBe('')
 
+		// 🔴 A REAL CHECKLIST, BECAUSE THE SCHEMA WANTS A UUID. The acceptance
+		// test used to post `checklistId: 'e2e-checklist'`, and
+		// `inspectionResult.checklist` is declared `format: uuid` with a $ref
+		// to `inspectionChecklist`. OpenRegister refused every one of those
+		// submissions with "Property 'checklist' should match format 'uuid'",
+		// `submitResult()` mapped the Throwable to a 500, and the old
+		// `not.toBe(403)` assertion reported green over it for as long as this
+		// test has existed. Nothing was ever stored, on any run.
+		const checklist = await createObject(
+			adminApi,
+			adminToken,
+			'inspectionChecklist',
+			{
+				name: `${RUN_PREFIX} Toezichtchecklist`,
+				version: 1,
+				caseTypeRef: caseType.id,
+				active: true,
+				items: [],
+			},
+		)
+		checklistId = objectId(checklist)
+		expect(
+			checklistId,
+			'the fixture checklist must have an id, or the acceptance test cannot name one',
+		).not.toBe('')
+
 		inspector = await signIn(
 			browser,
 			String(baseURL),
@@ -256,27 +348,145 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 			OUTSIDER_PASSWORD,
 		)
 
-		await adminApi.dispose()
+		// NOT disposed here any more: the checklist seeded above is this
+		// block's to remove, and the teardown needs a context that can write.
+		adminCleanup = adminApi
+		adminCleanupToken = adminToken
 	})
 
 	test.afterAll(async () => {
+		// 🔴 THE RESULTS THIS FILE NOW CREATES ARE ITS OWN TO REMOVE. The
+		// acceptance test stores a real `inspectionResult`, and unlike every
+		// other fixture here its body carries no `RUN_PREFIX` string — only a
+		// case uuid and a uid — so the global-setup residue sweep, which
+		// matches on the prefix, cannot find it. Left alone these accumulate
+		// one row per run, for ever.
+		if (adminCleanup !== null && caseId !== '') {
+			const stored = await adminCleanup
+				.get(
+					`/index.php/apps/dossiq/api/vth/cases/${caseId}/inspection-results`,
+					{ headers: { 'OCS-APIRequest': 'true' } },
+				)
+				.then((res) => res.json())
+				.catch(() => null)
+			const rows = Array.isArray(stored) ? stored : (stored?.results ?? [])
+			for (const row of rows) {
+				const rowId = String(row?.id ?? row?.uuid ?? '')
+				if (rowId !== '') {
+					await deleteObject(
+						adminCleanup,
+						adminCleanupToken,
+						'inspectionResult',
+						rowId,
+					).catch(() => {})
+				}
+			}
+		}
+		if (adminCleanup !== null && checklistId !== '') {
+			await deleteObject(
+				adminCleanup,
+				adminCleanupToken,
+				'inspectionChecklist',
+				checklistId,
+			).catch(() => {})
+		}
+		await adminCleanup?.dispose()
 		await inspector?.api.dispose()
 		await outsider?.api.dispose()
 	})
 
 	// @e2e openspec/specs/inspection-checklists/spec.md#the-cases-assignee-submits-a-result
 	// @e2e openspec/specs/inspection-checklists/spec.md#a-submitted-result-is-readable-back
+	//
+	// 🔴 `not.toBe(403)` WAS NOT THE SCENARIO, AND HAS BEEN REPLACED. The file
+	// header argued for it, on the grounds that pinning a 201 would couple an
+	// authz spec to `inspectionResult` validation. The argument is reasonable
+	// and it is about the wrong thing: the scenario this test CITES says the
+	// system "SHALL accept the submission and store an `inspectionResult` whose
+	// `case` is <the case> and whose `completedBy` is <the assignee>". A 500
+	// satisfies `not.toBe(403)` exactly as well as a 201 does, so the test as
+	// written reported the same green whether the result was stored or the
+	// submission blew up on the way in. Either the assertion states the
+	// scenario or the citation comes down; this states the scenario.
+	//
+	// The coupling the header feared is real and is priced. A payload change
+	// that makes `inspectionResult` invalid will redden this test, and that is
+	// the correct outcome for a citation claiming the result is stored and
+	// readable back. The three refusal tests below still assert a bare status
+	// and are untouched, so the authz boundary keeps its uncoupled guard.
+	//
+	// ✅ AND IT CAUGHT SOMETHING ON ITS FIRST RUN. Asserting 201 turned the
+	// first run of this test red with
+	//
+	//   500 {"message":"Submission failed: Property 'checklist' should match
+	//        format 'uuid' but 'e2e-checklist' does not."}
+	//
+	// so no submission this test ever made had been stored, on any run, and
+	// `not.toBe(403)` had reported green over that the whole time. `beforeAll`
+	// seeds a real `inspectionChecklist` now and the submission names its uuid.
+	// Worth noting separately, and not fixed here: `submitResult()` maps an
+	// OpenRegister validation failure onto a 500 through its `Throwable` arm,
+	// so a bad payload is reported as a server fault.
+	//
+	// ⚠️ MUTATION CHECK NOT RUN. Every branch here is decided in PHP on the
+	// shared instance, and permission to mutate it is still pending. The two
+	// mutation points, and the assertion each must redden:
+	//
+	//   lib/Controller/InspectionChecklistController.php, submitResult():
+	//     return STATUS_OK instead of STATUS_CREATED
+	//     -> "the stored assignee's submission must be created, not merely
+	//        not-refused"
+	//   lib/Service/InspectionChecklistService.php, submitResult():
+	//     drop `completedBy` from `$payload`
+	//     -> "the stored result must record <uid> as the person who completed it"
+	//
+	// Neither is reachable from the browser: this is an API test with no bundle
+	// in the path, so `tests/e2e/helpers/mutate-bundle.ts` cannot help here the
+	// way it can on the client-side citations in this suite.
 	test('the stored assignee may submit', async () => {
-		const status = await post(inspector, submitUrl(caseId), {
-			checklistId: 'e2e-checklist',
+		const { status, body } = await postJson(inspector, submitUrl(caseId), {
+			checklistId,
 			answers: [],
 		})
 
+		// The authorization boundary first, named as such, so a refusal still
+		// reads as a refusal rather than as "expected 201".
 		expect(
 			status,
 			`"${INSPECTOR}" is the stored assignee of case ${caseId} and must not `
 				+ `be refused; the endpoint answered ${status}`,
 		).not.toBe(403)
+		// THEN the system SHALL ACCEPT the submission.
+		expect(
+			status,
+			"the stored assignee's submission must be created, not merely "
+				+ `not-refused; the endpoint answered ${status} `
+				+ `${JSON.stringify(body ?? {}).slice(0, 300)}`,
+		).toBe(201)
+
+		// AND store an `inspectionResult` whose `case` is this case and whose
+		// `completedBy` is this account. Read back through the endpoint the
+		// sibling scenario names, not out of the create response, because a
+		// create that echoes its input proves nothing about what was stored.
+		const readBack = await readResults(inspector, caseId)
+		expect(
+			readBack.status,
+			`the assignee must be able to read the results of case ${caseId} back; `
+				+ `the endpoint answered ${readBack.status}`,
+		).toBe(200)
+		const mine = readBack.results.filter(
+			(row: any) => String(row?.completedBy ?? '') === INSPECTOR,
+		)
+		expect(
+			mine.length,
+			`the stored result must record "${INSPECTOR}" as the person who `
+				+ `completed it; the case holds ${readBack.results.length} result(s) `
+				+ `completed by ${JSON.stringify(readBack.results.map((row: any) => row?.completedBy))}`,
+		).toBeGreaterThan(0)
+		expect(
+			mine.map((row: any) => String(row?.case?.id ?? row?.case ?? '')),
+			`every stored result read back for case ${caseId} must name that case`,
+		).toEqual(mine.map(() => caseId))
 	})
 
 	// @e2e openspec/specs/inspection-checklists/spec.md#another-authenticated-account-is-refused

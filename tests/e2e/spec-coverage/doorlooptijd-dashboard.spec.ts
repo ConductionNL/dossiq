@@ -83,14 +83,41 @@ async function caseCollection(
 
 test.describe('Doorlooptijd Dashboard spec coverage', () => {
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
+	//
+	// 🔴 THE SPEC WAS THE STALE HALF, AND HAS BEEN CORRECTED. This measured as
+	// verified on 2026-09-11 and as smoke on 2026-09-12. The reason was not a
+	// weaker test: the scenario named a "Processing Time Analytics" heading the
+	// page has not rendered for some time, so nothing here could ever have
+	// proven the clause, and a heading plus the absence of a 500 is what a page
+	// shell renders too. `src/manifest.json` is the authority on the page's
+	// title and reads `Processing time`; the scenario now says that, and says
+	// the body must render its widgets, which is the half that separates a
+	// dashboard from a shell.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`.
+	//
+	//   find    /"id":"Doorlooptijd","route":"\/doorlooptijd","type":"dashboard","title":"Processing time"/
+	//   replace '"id":"Doorlooptijd","route":"/doorlooptijd","type":"dashboard","title":"Verwerkingstijd-x"'
+	//   red on  "the page must name itself as the manifest titles it"
 	test('renders the processing time page heading on navigation', async ({
 		page,
 	}) => {
 		await navToRoute(page, '/doorlooptijd')
 		await expect(
 			page.getByRole('heading', { name: HEADING, level: 2 }),
+			'the page must name itself as the manifest titles it',
 		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+
+		// AND the body renders its widgets. Without this the scenario is
+		// satisfied by page chrome over an empty main, which is what "smoke"
+		// meant when this citation was re-measured. Counted rather than named:
+		// the widget set is manifest-driven and moves with the dashboard, and
+		// the claim is that the body is populated at all.
+		await expect(
+			page.locator('.cn-dashboard-grid .grid-stack-item-content').first(),
+			'the dashboard body must render its widgets, not page chrome alone',
+		).toBeVisible({ timeout: 20000 })
 	})
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#no-cases-exist
