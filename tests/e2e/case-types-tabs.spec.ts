@@ -129,7 +129,9 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 			'Docs',
 		]) {
 			await expect(
-				detail.locator('.case-type-detail__tab', { hasText: new RegExp(`^${label}$`) }),
+				detail.locator('.case-type-detail__tab', {
+					hasText: new RegExp(`^${label}$`),
+				}),
 				`the tab strip must offer ${label}`,
 			).toHaveCount(1, { timeout: 20_000 })
 		}
@@ -201,7 +203,9 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		page,
 	}) => {
 		const detail = await openFirstCaseType(page)
-		await detail.locator('.case-type-detail__tab', { hasText: /^Roles$/ }).click()
+		await detail
+			.locator('.case-type-detail__tab', { hasText: /^Roles$/ })
+			.click()
 
 		const panel = detail.locator('.case-type-detail__tab-content')
 		await expect(
