@@ -242,9 +242,9 @@ test.describe('Case Map page', () => {
 	 * today still carries the marker.
 	 *
 	 * So an assertion written here now could not go green on any build this
-	 * repo can produce, and one written to go green anyway — `.marker-cluster`
-	 * exists in the DOM — is the same unfailable locator this citation just
-	 * removed. When the bump lands, the assertion to write is the behaviour the
+	 * repo can produce, and one written to go green anyway, by finding
+	 * `.marker-cluster` in the DOM, is the same unfailable locator this
+	 * citation just removed. When the bump lands, the assertion to write is the behaviour the
 	 * scenario names rather than a class: at a low zoom the map shows FEWER
 	 * marker elements than there are located cases, and the cluster icons carry
 	 * counts that sum to the tally. The gap is NOT declared with an
