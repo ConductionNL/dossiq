@@ -1091,12 +1091,13 @@ export async function cleanupRunObjects(
 		new Set(trackedObjects(schema))
 	const ourIds = new Set(schemas.flatMap((schema) => trackedObjects(schema)))
 
+	const noticed: string[] = []
 	const survivors = [
-		...(await sweepPrefix(api, token, RUN_PREFIX, schemas, 0, ledger)),
+		...(await sweepPrefix(api, token, RUN_PREFIX, schemas, 0, ledger, noticed)),
 		...(await sweepTrashIds(api, token, ourIds)),
 	]
 
-	await reportUntracked(api, schemas, ourIds)
+	await reportUntracked(api, ourIds, noticed)
 
 	if (survivors.length > 0) {
 		throw new Error(
@@ -1115,26 +1116,19 @@ export async function cleanupRunObjects(
  * the save.
  *
  * @param api     Authenticated request context.
- * @param schemas Schema slugs to look through.
  * @param ourIds  Ids this run recorded creating.
+ * @param noticed Live rows `sweepPrefix` saw carrying the prefix and did not delete.
  */
 async function reportUntracked(
 	api: APIRequestContext,
-	schemas: string[],
 	ourIds: Set<string>,
+	noticed: string[],
 ): Promise<void> {
-	const found: string[] = []
-
-	for (const schema of schemas) {
-		for (const row of await listAllObjects(api, schema).catch(() => [])) {
-			const id = objectId(row)
-			if (id === '' || ourIds.has(id)) continue
-			if (JSON.stringify(row).includes(RUN_PREFIX)) found.push(`${schema}/${id}`)
-		}
-	}
+	const found = [...noticed]
 
 	// Trashed rows too, named in the run that caused them rather than left for
-	// the next run's residue report to find.
+	// the next run's residue report to find. One listing, not a second walk of
+	// every schema.
 	for (const label of await findTrashMatches(api, RUN_PREFIX)) {
 		if (ourIds.has(label.replace('deleted/', '')) === false) found.push(label)
 	}
@@ -1401,6 +1395,14 @@ async function sweepPrefix(
 	 * ledger, and that is the sweep `minAgeMs` bounds instead.
 	 */
 	ledger?: (schema: string) => Set<string>,
+	/**
+	 * Filled with `schema/id` for every row that carries `prefix` and is NOT in
+	 * the ledger, so the caller can name them without walking the instance a
+	 * second time. Teardown already runs at 88 to 90 seconds of its 120 second
+	 * budget (#2543), so a second listing pass would not be a report, it would be
+	 * a suite-wide `"afterAll" hook timeout`.
+	 */
+	noticed?: string[],
 ): Promise<string[]> {
 	const survivors: string[] = []
 
@@ -1448,7 +1450,17 @@ async function sweepPrefix(
 			const matchesCase =
 				caseIds.has(String(row.case ?? '')) === true
 				|| caseIds.has(String(row.parentCase ?? '')) === true
-			if (matchesPrefix === false && matchesCase === false) continue
+			if (matchesPrefix === false && matchesCase === false) {
+				// Carries the prefix, is nobody's recorded creation, and is not a child
+				// of one of our cases. Named by the caller, never deleted. The check
+				// sits AFTER `matchesCase` on purpose: a row the app wrote against our
+				// case can quote the case title, so testing it earlier reported a row
+				// as left in place in the same breath as deleting it.
+				if (noticed !== undefined && JSON.stringify(row).includes(prefix)) {
+					noticed.push(`${schema}/${id}`)
+				}
+				continue
+			}
 			matched.push(id)
 		}
 		if (matched.length === 0) continue
