@@ -614,11 +614,37 @@ test.describe('Dashboard tiles', () => {
 		//
 		// AND THE URL ASSERTION ALONE WAS NOT THE SCENARIO'S THEN. "navigate to
 		// the task detail view" is a view that rendered, not a path that
-		// matched: the row's identity is the engine's `uuid`, its numeric `id`
-		// sits beside it in the same response, and `/tasks/<numeric id>`
-		// satisfies `/\/tasks\/[^/]+$/` exactly as well while the page below it
-		// resolves no task at all. So the title the detail page prints is read
+		// matched: `asTaskRow` maps `id = row.uuid ?? row.id`, the engine emits
+		// BOTH on every row, and `/tasks/<numeric id>` satisfies
+		// `/\/tasks\/[^/]+$/` exactly as well while the page below it resolves
+		// no task at all. That is not hypothetical; `asTaskRow`'s own comment
+		// records three surfaces that shipped `/apps/dossiq/tasks/153` and went
+		// nowhere without erroring. So the title the detail page prints is read
 		// back, and it has to be the row that was clicked.
+		//
+		// ✅ MUTATION CHECK RUN 2026-09-12, against a private disposable
+		// instance. The break reproduces that defect verbatim: `page.route`
+		// deleted `uuid` from the seeded row in the `/api/flow-tasks` response,
+		// so the row routed by the engine's numeric primary key instead. The
+		// edit was counted, and the count asserted, because a rewrite that
+		// matched nothing would have left the real row routing correctly and
+		// made the green meaningless.
+		//
+		//   red on  "the task detail page must show the task whose row was clicked"
+		//           Expected: "E2EZAAK-… task due tomorrow"
+		//           Received: "Task"
+		//           62 × <h2 data-testid="task-detail-title">Task</h2>
+		//
+		// 🔴 AND THE ASSERTION THIS REPLACED STAYED GREEN UNDER THAT SAME
+		// BREAK. `toHaveURL(/\/tasks\/[^/]+$/)` passed on the numeric id, which
+		// is the whole reason the clause was repaired.
+		//
+		// ⚠️ `task-detail-missing` IS DELIBERATELY NOT ASSERTED. It was, and the
+		// mutation run showed it does not fire: an unresolvable id leaves
+		// `missing` false and the title falling back to the literal "Task", so
+		// the not-there state renders for a confirmed 404 and not for this. An
+		// assertion nobody has watched fail is decoration, and the title clause
+		// catches this break and that one both.
 		//
 		// @e2e openspec/specs/dashboard/spec.md#dash-005d-my-work-item-click-navigates-to-detail
 		test('clicking a My work row opens that task on the task detail page', async ({
@@ -719,7 +745,17 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// 🔴 THE SIGNALERING CITATION NAMED A SPEC FILE AND NO REQUIREMENT, which
+	// gate-19 reads as "no anchor: cites a whole spec" and credits at nothing.
+	// A spec with forty scenarios in it is not a claim. The scenario this body
+	// proves is `The Deadlines table keeps its own, wider filter`, clause for
+	// clause: follow the tile's View all, land carrying `deadline lte @today+3d`
+	// and `isFinalStatus false`, and not the Overdue chip's narrower filter.
+	// Its own `@e2e` line in the spec still points at
+	// `tests/e2e/case-list-lenses.spec.ts`, which is where this assertion used
+	// to live before the fixture that fills the tile's window moved it here;
+	// that pointer is stale and is not this file's to correct.
+	// @e2e openspec/specs/signalering-widgets/spec.md#the-deadlines-table-keeps-its-own-wider-filter
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
