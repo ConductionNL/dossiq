@@ -44,7 +44,9 @@
 			<li v-for="node in roots" :key="node.uuid" class="case-plan__node">
 				<div class="case-plan__row">
 					<span class="case-plan__name">{{ node.name }}</span>
-					<span class="case-plan__state" :data-state="node.state">{{ stateLabel(node.state) }}</span>
+					<span class="case-plan__state" :data-state="node.state">{{
+						stateLabel(node.state)
+					}}</span>
 
 					<NcButton
 						v-if="node.state === 'enabled' && node.discretionary"
@@ -65,13 +67,22 @@
 				</div>
 
 				<ul v-if="node.children.length > 0" class="case-plan__children">
-					<li v-for="child in node.children" :key="child.uuid" class="case-plan__node">
+					<li
+						v-for="child in node.children"
+						:key="child.uuid"
+						class="case-plan__node">
 						<div class="case-plan__row">
 							<span class="case-plan__name">{{ child.name }}</span>
-							<span class="case-plan__state" :data-state="child.state">{{ stateLabel(child.state) }}</span>
+							<span
+								class="case-plan__state"
+								:data-state="child.state"
+								>{{ stateLabel(child.state) }}</span
+							>
 
 							<NcButton
-								v-if="child.state === 'enabled' && child.discretionary"
+								v-if="
+									child.state === 'enabled' && child.discretionary
+								"
 								:disabled="busy"
 								:data-testid="`case-plan-enable-${child.key}`"
 								@click="enable(child)">
@@ -221,7 +232,9 @@ export default {
 					this.roots = groupPlanByStage(plan?.items)
 				} else if (this.source === SOURCE_LOCAL) {
 					const local = await fetchLocalCasePlan(this.caseId)
-					this.roots = groupPlanByStage(normaliseLocalPlanItems(local?.items))
+					this.roots = groupPlanByStage(
+						normaliseLocalPlanItems(local?.items),
+					)
 				} else {
 					this.roots = []
 				}
@@ -265,7 +278,9 @@ export default {
 		 */
 		async readCase() {
 			try {
-				return (await useObjectStore().fetchObject('case', this.caseId)) || {}
+				return (
+					(await useObjectStore().fetchObject('case', this.caseId)) || {}
+				)
 			} catch {
 				return {}
 			}
@@ -290,9 +305,11 @@ export default {
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		async enable(item) {
-			await this.act(() => (this.source === SOURCE_LOCAL
-				? enableLocalItem(this.caseId, item.key)
-				: enablePlanItem(item.uuid)))
+			await this.act(() =>
+				this.source === SOURCE_LOCAL
+					? enableLocalItem(this.caseId, item.key)
+					: enablePlanItem(item.uuid),
+			)
 		},
 
 		/**
@@ -347,14 +364,16 @@ export default {
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		stateLabel(state) {
-			return {
-				available: t('dossiq', 'Waiting'),
-				enabled: t('dossiq', 'Ready to start'),
-				active: t('dossiq', 'In progress'),
-				completed: t('dossiq', 'Done'),
-				terminated: t('dossiq', 'Stopped'),
-				disabled: t('dossiq', 'Skipped'),
-			}[state] ?? state
+			return (
+				{
+					available: t('dossiq', 'Waiting'),
+					enabled: t('dossiq', 'Ready to start'),
+					active: t('dossiq', 'In progress'),
+					completed: t('dossiq', 'Done'),
+					terminated: t('dossiq', 'Stopped'),
+					disabled: t('dossiq', 'Skipped'),
+				}[state] ?? state
+			)
 		},
 
 		/**
@@ -365,10 +384,12 @@ export default {
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		transitionLabel(target) {
-			return {
-				completed: t('dossiq', 'Complete'),
-				terminated: t('dossiq', 'Stop'),
-			}[target] ?? target
+			return (
+				{
+					completed: t('dossiq', 'Complete'),
+					terminated: t('dossiq', 'Stop'),
+				}[target] ?? target
+			)
 		},
 	},
 }

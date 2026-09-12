@@ -37,13 +37,21 @@ function stub(name, tag = 'div') {
 		name,
 		emits: ['click'],
 		render() {
-			return h(tag, { onClick: () => this.$emit('click') }, this.$slots.default?.())
+			return h(
+				tag,
+				{ onClick: () => this.$emit('click') },
+				this.$slots.default?.(),
+			)
 		},
 	})
 }
 
-vi.mock('@nextcloud/vue/components/NcButton', () => ({ default: stub('NcButton', 'button') }))
-vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({ default: stub('NcLoadingIcon') }))
+vi.mock('@nextcloud/vue/components/NcButton', () => ({
+	default: stub('NcButton', 'button'),
+}))
+vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
+	default: stub('NcLoadingIcon'),
+}))
 vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({
 	default: defineComponent({
 		name: 'NcEmptyContent',
@@ -57,7 +65,9 @@ vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({
 		},
 	}),
 }))
-vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({ default: stub('AlertCircleOutline') }))
+vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({
+	default: stub('AlertCircleOutline'),
+}))
 
 /** What `fetchCasePlan` answers. Replaced per test. */
 let planAnswer = vi.fn()
@@ -114,12 +124,31 @@ vi.mock('../../src/services/casePlanApi.js', async () => {
 	}
 })
 
-const { default: CasePlanPanel } = await import('../../src/components/case/CasePlanPanel.vue')
+const { default: CasePlanPanel } =
+	await import('../../src/components/case/CasePlanPanel.vue')
 
 const PLAN = {
 	items: [
-		{ id: 1, uuid: 'u-intake', key: 'intake', name: 'Intake', type: 'stage', parentItemId: null, position: 0, state: 'active' },
-		{ id: 2, uuid: 'u-controle', key: 'controle', name: 'Controle', type: 'humanTask', parentItemId: 1, position: 0, state: 'active' },
+		{
+			id: 1,
+			uuid: 'u-intake',
+			key: 'intake',
+			name: 'Intake',
+			type: 'stage',
+			parentItemId: null,
+			position: 0,
+			state: 'active',
+		},
+		{
+			id: 2,
+			uuid: 'u-controle',
+			key: 'controle',
+			name: 'Controle',
+			type: 'humanTask',
+			parentItemId: 1,
+			position: 0,
+			state: 'active',
+		},
 	],
 }
 
@@ -131,7 +160,9 @@ const PLAN = {
 async function mountPanel() {
 	const wrapper = mount(CasePlanPanel, {
 		props: { objectId: 'case-1' },
-		global: { mocks: { t: (_app, text) => text, $route: { params: { id: 'case-1' } } } },
+		global: {
+			mocks: { t: (_app, text) => text, $route: { params: { id: 'case-1' } } },
+		},
 	})
 	await flushPromises()
 	return wrapper
@@ -140,8 +171,22 @@ async function mountPanel() {
 /** The same plan as the retiring engine answers it: string ids, `parentId`. */
 const LOCAL_PLAN = {
 	items: [
-		{ id: 'intake', name: 'Intake', type: 'stage', parentId: null, state: 'active', discretionary: false },
-		{ id: 'controle', name: 'Controle', type: 'humanTask', parentId: 'intake', state: 'active', discretionary: false },
+		{
+			id: 'intake',
+			name: 'Intake',
+			type: 'stage',
+			parentId: null,
+			state: 'active',
+			discretionary: false,
+		},
+		{
+			id: 'controle',
+			name: 'Controle',
+			type: 'humanTask',
+			parentId: 'intake',
+			state: 'active',
+			discretionary: false,
+		},
 	],
 	enableableDiscretionary: [],
 	milestones: {},
@@ -177,7 +222,9 @@ describe('CasePlanPanel', () => {
 	})
 
 	it('retries the read when the caseworker asks it to', async () => {
-		planAnswer.mockRejectedValueOnce({ response: { status: 500 } }).mockResolvedValue(PLAN)
+		planAnswer
+			.mockRejectedValueOnce({ response: { status: 500 } })
+			.mockResolvedValue(PLAN)
 		const wrapper = await mountPanel()
 
 		await wrapper.find('[data-testid="case-plan-retry"]').trigger('click')
@@ -199,7 +246,9 @@ describe('CasePlanPanel', () => {
 		planAnswer.mockResolvedValue(PLAN)
 		const wrapper = await mountPanel()
 
-		await wrapper.find('[data-testid="case-plan-completed-controle"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-plan-completed-controle"]')
+			.trigger('click')
 		await flushPromises()
 
 		expect(transitions).toEqual([['u-controle', 'completed']])
@@ -234,7 +283,9 @@ describe('CasePlanPanel read preference', () => {
 		caseAnswer = { casePlanState: '{"planItemStates":{"intake":"active"}}' }
 
 		const wrapper = await mountPanel()
-		await wrapper.find('[data-testid="case-plan-completed-controle"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-plan-completed-controle"]')
+			.trigger('click')
 		await flushPromises()
 
 		expect(transitions).toEqual([['local-complete', 'case-1', 'controle']])

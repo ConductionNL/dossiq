@@ -68,7 +68,10 @@ export async function fetchCasePlan(objectUuid) {
  * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
  */
 export async function transitionPlanItem(itemUuid, to, reason = '') {
-	const response = await axios.post(casesUrl(`items/${itemUuid}/transition`), { to, reason })
+	const response = await axios.post(casesUrl(`items/${itemUuid}/transition`), {
+		to,
+		reason,
+	})
 	return response.data
 }
 
@@ -146,9 +149,10 @@ export function groupPlanByStage(items) {
 
 	for (const row of rows) {
 		const node = byId.get(row.id)
-		const parent = row.parentItemId === null || row.parentItemId === undefined
-			? undefined
-			: byId.get(row.parentItemId)
+		const parent =
+			row.parentItemId === null || row.parentItemId === undefined
+				? undefined
+				: byId.get(row.parentItemId)
 
 		if (parent === undefined) {
 			roots.push(node)

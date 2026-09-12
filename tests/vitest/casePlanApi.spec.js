@@ -31,10 +31,47 @@ const PLAN = {
 	objectUuid: 'case-1',
 	settings: {},
 	items: [
-		{ id: 7, uuid: 'u-besluit', key: 'besluit', name: 'Besluit genomen', type: 'milestone', parentItemId: null, position: 2, state: 'available' },
-		{ id: 1, uuid: 'u-intake', key: 'intake', name: 'Intake', type: 'stage', parentItemId: null, position: 0, state: 'active' },
-		{ id: 3, uuid: 'u-advies', key: 'extra-advies', name: 'Extra advies', type: 'humanTask', parentItemId: 1, position: 1, state: 'enabled', discretionary: true },
-		{ id: 2, uuid: 'u-controle', key: 'controle', name: 'Controle', type: 'humanTask', parentItemId: 1, position: 0, state: 'active' },
+		{
+			id: 7,
+			uuid: 'u-besluit',
+			key: 'besluit',
+			name: 'Besluit genomen',
+			type: 'milestone',
+			parentItemId: null,
+			position: 2,
+			state: 'available',
+		},
+		{
+			id: 1,
+			uuid: 'u-intake',
+			key: 'intake',
+			name: 'Intake',
+			type: 'stage',
+			parentItemId: null,
+			position: 0,
+			state: 'active',
+		},
+		{
+			id: 3,
+			uuid: 'u-advies',
+			key: 'extra-advies',
+			name: 'Extra advies',
+			type: 'humanTask',
+			parentItemId: 1,
+			position: 1,
+			state: 'enabled',
+			discretionary: true,
+		},
+		{
+			id: 2,
+			uuid: 'u-controle',
+			key: 'controle',
+			name: 'Controle',
+			type: 'humanTask',
+			parentItemId: 1,
+			position: 0,
+			state: 'active',
+		},
 	],
 	audit: [],
 }
@@ -63,7 +100,10 @@ describe('transitionPlanItem', () => {
 		expect(axios.post.mock.calls[0][0]).toBe(
 			'/index.php/apps/openregister/api/cases/items/u-controle/transition',
 		)
-		expect(axios.post.mock.calls[0][1]).toEqual({ to: 'completed', reason: 'done' })
+		expect(axios.post.mock.calls[0][1]).toEqual({
+			to: 'completed',
+			reason: 'done',
+		})
 	})
 })
 
@@ -85,7 +125,9 @@ describe('fetchEnableableItems', () => {
 		const { fetchEnableableItems } = await importApi()
 		axios.get.mockResolvedValue({ data: { results: [{ key: 'extra-advies' }] } })
 
-		expect(await fetchEnableableItems('case-1')).toEqual([{ key: 'extra-advies' }])
+		expect(await fetchEnableableItems('case-1')).toEqual([
+			{ key: 'extra-advies' },
+		])
 	})
 
 	it('answers an empty list when the response carries none', async () => {
@@ -102,7 +144,10 @@ describe('groupPlanByStage', () => {
 		const roots = groupPlanByStage(PLAN.items)
 
 		expect(roots.map((node) => node.key)).toEqual(['intake', 'besluit'])
-		expect(roots[0].children.map((node) => node.key)).toEqual(['controle', 'extra-advies'])
+		expect(roots[0].children.map((node) => node.key)).toEqual([
+			'controle',
+			'extra-advies',
+		])
 		expect(roots[1].children).toEqual([])
 	})
 
@@ -140,23 +185,38 @@ describe('offeredTransitions', () => {
 	it('offers nothing on a terminal item', async () => {
 		const { offeredTransitions } = await importApi()
 
-		expect(offeredTransitions({ state: 'completed', type: 'humanTask' })).toEqual([])
-		expect(offeredTransitions({ state: 'terminated', type: 'humanTask' })).toEqual([])
-		expect(offeredTransitions({ state: 'disabled', type: 'humanTask' })).toEqual([])
+		expect(
+			offeredTransitions({ state: 'completed', type: 'humanTask' }),
+		).toEqual([])
+		expect(
+			offeredTransitions({ state: 'terminated', type: 'humanTask' }),
+		).toEqual([])
+		expect(offeredTransitions({ state: 'disabled', type: 'humanTask' })).toEqual(
+			[],
+		)
 	})
 
 	it('keeps the milestone asymmetry: available goes to completed or terminated, nothing else moves', async () => {
 		const { offeredTransitions } = await importApi()
 
-		expect(offeredTransitions({ state: 'available', type: 'milestone' })).toEqual(['completed', 'terminated'])
-		expect(offeredTransitions({ state: 'enabled', type: 'milestone' })).toEqual([])
+		expect(
+			offeredTransitions({ state: 'available', type: 'milestone' }),
+		).toEqual(['completed', 'terminated'])
+		expect(offeredTransitions({ state: 'enabled', type: 'milestone' })).toEqual(
+			[],
+		)
 	})
 
 	it('offers complete and stop on an active task, stop alone before it starts', async () => {
 		const { offeredTransitions } = await importApi()
 
-		expect(offeredTransitions({ state: 'active', type: 'humanTask' })).toEqual(['completed', 'terminated'])
-		expect(offeredTransitions({ state: 'enabled', type: 'humanTask' })).toEqual(['terminated'])
+		expect(offeredTransitions({ state: 'active', type: 'humanTask' })).toEqual([
+			'completed',
+			'terminated',
+		])
+		expect(offeredTransitions({ state: 'enabled', type: 'humanTask' })).toEqual([
+			'terminated',
+		])
 	})
 })
 
@@ -164,21 +224,32 @@ describe('planErrorMessage', () => {
 	it('never words a failure as an empty plan', async () => {
 		const { planErrorMessage } = await importApi()
 
-		for (const error of [{}, { response: { status: 500 } }, { response: { status: 403 } }]) {
+		for (const error of [
+			{},
+			{ response: { status: 500 } },
+			{ response: { status: 403 } },
+		]) {
 			expect(planErrorMessage(error)).not.toMatch(/no plan|empty|nothing/i)
 		}
 	})
 
 	it('names the refusal when the caller may not see the plan', async () => {
 		const { planErrorMessage } = await importApi()
-		expect(planErrorMessage({ response: { status: 403 } })).toMatch(/not allowed/i)
+		expect(planErrorMessage({ response: { status: 403 } })).toMatch(
+			/not allowed/i,
+		)
 	})
 
 	it('relays what OpenRegister said, rather than a second local opinion', async () => {
 		const { planErrorMessage } = await importApi()
 		expect(
 			planErrorMessage({
-				response: { status: 409, data: { error: "'controle' is completed and cannot go to active." } },
+				response: {
+					status: 409,
+					data: {
+						error: "'controle' is completed and cannot go to active.",
+					},
+				},
 			}),
 		).toBe("'controle' is completed and cannot go to active.")
 	})

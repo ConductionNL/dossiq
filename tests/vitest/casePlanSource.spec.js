@@ -26,7 +26,11 @@ describe('decidePlanSource', () => {
 		const { decidePlanSource } = await importSource()
 
 		expect(
-			decidePlanSource({ hasOpenRegisterRows: true, hasLocalBlob: true, preferOpenRegister: true }),
+			decidePlanSource({
+				hasOpenRegisterRows: true,
+				hasLocalBlob: true,
+				preferOpenRegister: true,
+			}),
 		).toBe('openregister')
 	})
 
@@ -34,7 +38,11 @@ describe('decidePlanSource', () => {
 		const { decidePlanSource } = await importSource()
 
 		expect(
-			decidePlanSource({ hasOpenRegisterRows: false, hasLocalBlob: true, preferOpenRegister: true }),
+			decidePlanSource({
+				hasOpenRegisterRows: false,
+				hasLocalBlob: true,
+				preferOpenRegister: true,
+			}),
 		).toBe('local')
 	})
 
@@ -42,7 +50,11 @@ describe('decidePlanSource', () => {
 		const { decidePlanSource } = await importSource()
 
 		expect(
-			decidePlanSource({ hasOpenRegisterRows: false, hasLocalBlob: false, preferOpenRegister: true }),
+			decidePlanSource({
+				hasOpenRegisterRows: false,
+				hasLocalBlob: false,
+				preferOpenRegister: true,
+			}),
 		).toBe('none')
 	})
 
@@ -50,7 +62,11 @@ describe('decidePlanSource', () => {
 		const { decidePlanSource } = await importSource()
 
 		expect(
-			decidePlanSource({ hasOpenRegisterRows: true, hasLocalBlob: false, preferOpenRegister: false }),
+			decidePlanSource({
+				hasOpenRegisterRows: true,
+				hasLocalBlob: false,
+				preferOpenRegister: false,
+			}),
 		).toBe('openregister')
 	})
 
@@ -58,7 +74,11 @@ describe('decidePlanSource', () => {
 		const { decidePlanSource } = await importSource()
 
 		expect(
-			decidePlanSource({ hasOpenRegisterRows: true, hasLocalBlob: true, preferOpenRegister: false }),
+			decidePlanSource({
+				hasOpenRegisterRows: true,
+				hasLocalBlob: true,
+				preferOpenRegister: false,
+			}),
 		).toBe('local')
 	})
 
@@ -83,23 +103,65 @@ describe('hasLocalPlanBlob', () => {
 	it('is true for a blob that still records item state', async () => {
 		const { hasLocalPlanBlob } = await importSource()
 
-		expect(hasLocalPlanBlob({ casePlanState: '{"planItemStates":{"intake":"active"}}' })).toBe(true)
-		expect(hasLocalPlanBlob({ casePlanState: { planItemStates: { intake: 'active' } } })).toBe(true)
+		expect(
+			hasLocalPlanBlob({
+				casePlanState: '{"planItemStates":{"intake":"active"}}',
+			}),
+		).toBe(true)
+		expect(
+			hasLocalPlanBlob({
+				casePlanState: { planItemStates: { intake: 'active' } },
+			}),
+		).toBe(true)
 	})
 })
 
 describe('normaliseLocalPlanItems', () => {
-	it('puts the engine\'s items into the row shape the panel renders', async () => {
+	it("puts the engine's items into the row shape the panel renders", async () => {
 		const { normaliseLocalPlanItems } = await importSource()
 
 		expect(
 			normaliseLocalPlanItems([
-				{ id: 'intake', name: 'Intake', type: 'stage', parentId: null, state: 'active', discretionary: false },
-				{ id: 'controle', name: 'Controle', type: 'humanTask', parentId: 'intake', state: 'enabled', discretionary: true },
+				{
+					id: 'intake',
+					name: 'Intake',
+					type: 'stage',
+					parentId: null,
+					state: 'active',
+					discretionary: false,
+				},
+				{
+					id: 'controle',
+					name: 'Controle',
+					type: 'humanTask',
+					parentId: 'intake',
+					state: 'enabled',
+					discretionary: true,
+				},
 			]),
 		).toEqual([
-			{ id: 'intake', uuid: 'intake', key: 'intake', name: 'Intake', type: 'stage', state: 'active', discretionary: false, parentItemId: null, position: 0 },
-			{ id: 'controle', uuid: 'controle', key: 'controle', name: 'Controle', type: 'humanTask', state: 'enabled', discretionary: true, parentItemId: 'intake', position: 1 },
+			{
+				id: 'intake',
+				uuid: 'intake',
+				key: 'intake',
+				name: 'Intake',
+				type: 'stage',
+				state: 'active',
+				discretionary: false,
+				parentItemId: null,
+				position: 0,
+			},
+			{
+				id: 'controle',
+				uuid: 'controle',
+				key: 'controle',
+				name: 'Controle',
+				type: 'humanTask',
+				state: 'enabled',
+				discretionary: true,
+				parentItemId: 'intake',
+				position: 1,
+			},
 		])
 	})
 

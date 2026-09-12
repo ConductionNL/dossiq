@@ -107,7 +107,12 @@ export function hasLocalPlanBlob(caseObject) {
 
 	if (typeof blob === 'string') {
 		const trimmed = blob.trim()
-		return trimmed !== '' && trimmed !== '{}' && trimmed !== '[]' && trimmed !== 'null'
+		return (
+			trimmed !== ''
+			&& trimmed !== '{}'
+			&& trimmed !== '[]'
+			&& trimmed !== 'null'
+		)
 	}
 
 	if (typeof blob === 'object') {

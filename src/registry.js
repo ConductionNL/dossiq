@@ -339,7 +339,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
 		kind: 'widget',
 		component: CasePlanPanel,
-		_note: "CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.",
+		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
 	},
 
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---
