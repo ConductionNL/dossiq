@@ -414,8 +414,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'verantwoordelijkeOrganisatie' => '{{ assignee }}',
 				'archiefnominatie' => '{{ archiveNomination }}',
 				'archiefactiedatum' => '{{ archiveActionDate }}',
-				'archiefstatus' => '{{ archiveStatus | zgw_enum("archiveStatus", _valueMappings) }}',
-				'betalingsindicatie' => '{{ paymentIndication | zgw_enum("paymentIndication", _valueMappings) }}',
+				'archiefstatus' => '{{ archiveStatus | default("") | zgw_enum("archiveStatus", _valueMappings) }}',
+				'betalingsindicatie' => '{{ paymentIndication | default("") | zgw_enum("paymentIndication", _valueMappings) }}',
 				'laatsteBetaaldatum' => '{{ lastPaymentDate }}',
 				'hoofdzaak' => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
 			],
@@ -433,8 +433,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'assignee' => '{{ verantwoordelijkeOrganisatie }}',
 				'archiveNomination' => '{{ archiefnominatie }}',
 				'archiveActionDate' => '{{ archiefactiedatum }}',
-				'archiveStatus' => '{{ archiefstatus | zgw_enum_reverse("archiveStatus", _valueMappings) }}',
-				'paymentIndication' => '{{ betalingsindicatie | zgw_enum_reverse("paymentIndication", _valueMappings) }}',
+				'archiveStatus' => '{{ archiefstatus | default("") | zgw_enum_reverse("archiveStatus", _valueMappings) }}',
+				'paymentIndication' => '{{ betalingsindicatie | default("") | zgw_enum_reverse("paymentIndication", _valueMappings) }}',
 				'lastPaymentDate' => '{{ laatsteBetaaldatum }}',
 				'parentCase' => '{{ hoofdzaak | zgw_extract_uuid }}',
 			],
@@ -1199,7 +1199,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'titel' => '{{ title }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'auteur' => '{{ author }}',
-				'status' => '{{ status | zgw_enum("status", _valueMappings) }}',
+				'status' => '{{ status | default("") | zgw_enum("status", _valueMappings) }}',
 				'format' => '{{ format }}',
 				'taal' => '{{ language }}',
 				'fileName' => '{{ fileName }}',
@@ -1224,7 +1224,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'title' => '{{ titel }}',
 				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
 				'author' => '{{ auteur }}',
-				'status' => '{{ status | zgw_enum_reverse("status", _valueMappings) }}',
+				'status' => '{{ status | default("") | zgw_enum_reverse("status", _valueMappings) }}',
 				'format' => '{{ formaat }}',
 				'language' => '{{ taal }}',
 				'fileName' => '{{ bestandsnaam }}',
@@ -1300,12 +1300,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'informatieobject' => '{{ document }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType | zgw_enum("objectType", _valueMappings) }}',
+				'objectType' => '{{ objectType | default("") | zgw_enum("objectType", _valueMappings) }}',
 			],
 			'reverseMapping' => [
 				'document' => '{{ informatieobject }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType | zgw_enum_reverse("objectType", _valueMappings) }}',
+				'objectType' => '{{ objectType | default("") | zgw_enum_reverse("objectType", _valueMappings) }}',
 			],
 			// This table existed and nothing used it, because neither template
 			// called zgw_enum. It also mapped 'zaak' to 'zaak' and 'decision'
@@ -1539,14 +1539,14 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				// say `direction` and read `{{ richting }}`, so the response
 				// carried a field ZGW does not define, holding a value the
 				// register does not store. Both halves were inverted.
-				'richting' => '{{ direction | zgw_enum("direction", _valueMappings) }}',
+				'richting' => '{{ direction | default("") | zgw_enum("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseMapping' => [
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 				'informatieobjecttype' => '{{ informatieobjecttype | zgw_extract_uuid }}',
 				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting | zgw_enum_reverse("direction", _valueMappings) }}',
+				'direction' => '{{ richting | default("") | zgw_enum_reverse("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseCast' => [

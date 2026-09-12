@@ -510,4 +510,46 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 			. "lossy:\n  " . implode("\n  ", $oneSided)
 		);
 	}//end testATranslatedEnumIsTranslatedInBothDirections()
+	/**
+	 * Every enum template survives an absent value.
+	 *
+	 * `zgwEnum()` and `zgwEnumReverse()` declare `string $value`, so Twig
+	 * handing them an undefined variable is a TypeError, and OpenRegister
+	 * reports it as "an exception has been thrown during the rendering of a
+	 * template" against the whole mapping. Measured: adding the filters without
+	 * a guard made every EnkelvoudigInformatieObject create 400, because
+	 * `status` is optional and most bodies omit it.
+	 *
+	 * `| default("")` reproduces exactly what a bare `{{ status }}` used to
+	 * render for an absent value, so nothing else changes.
+	 *
+	 * @return void
+	 */
+	public function testEveryEnumTemplateGuardsAnAbsentValue(): void {
+		$unguarded = [];
+		$checked = 0;
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			foreach (['propertyMapping', 'reverseMapping'] as $side) {
+				foreach (($config[$side] ?? []) as $field => $template) {
+					if (is_string($template) === false || str_contains($template, 'zgw_enum') === false) {
+						continue;
+					}
+
+					$checked++;
+					if (str_contains($template, 'default("")') === false) {
+						$unguarded[] = sprintf('%s %s.%s: %s', $mappingKey, $side, $field, $template);
+					}
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $checked, 'No enum templates were examined at all.');
+		$this->assertSame(
+			[],
+			$unguarded,
+			"These enum templates hand an undefined value to a string parameter, which throws and\n"
+			. "fails the whole mapping:\n  " . implode("\n  ", $unguarded)
+		);
+	}//end testEveryEnumTemplateGuardsAnAbsentValue()
 }//end class
