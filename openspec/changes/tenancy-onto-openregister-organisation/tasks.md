@@ -350,6 +350,33 @@ reddened, and every scoping filter this step re-points now has one.
   row. `active_users` never had a counting path at all. The service keeps
   `consume()`, `decide()` and `setLimit()`.
 
+## Merged with dossiq#2462, 2026-09-12
+
+Another session implemented decision 2e in parallel, as "a terminated tenant
+is retained, not enrolled in a purge". Both landed on the same `STATUS_MAP`.
+Each carried something the other lacked, so the merge keeps both.
+
+- **Theirs: `SUPERSEDED_STATUS_REPAIRS`.** Fixing the map only helps tenants
+  migrated from now on. An instance that ran the June change already has
+  terminated tenants in `archived` and onboarding tenants stuck in
+  `provisioning`, and the idempotency guard skips exactly those rows on a
+  re-run, so the run reports "skipped" over permanent damage. The repair fires
+  only while the Organisation still carries the superseded value, so an
+  operator's later deliberate move is never overwritten, and a second run
+  finds nothing to do.
+- **Mine: the uuid key and the refusal.**
+- **Neither: what the two do together.** The repair now hangs off the
+  uuid-found path, where the Organisation is provably this tenant. A slug
+  collision is refused AND never repaired: there the uuid did not match, so
+  the row belongs to somebody else and only shares a name, and repairing it
+  would write a lifecycle status onto another organisation on the strength of
+  a name. That is worse than the mis-report the refusal prevents, because it
+  is a write.
+
+The orphan scan moved to `SatelliteOrphanScanner` in the same change: the
+union crossed phpmd's class-complexity ceiling, and scanning is a read-only
+audit where migrating is a write.
+
 ## What step 4 left for step 5, the destructive half
 
 Nothing below has been done, and none of it is reversible by a revert alone.
