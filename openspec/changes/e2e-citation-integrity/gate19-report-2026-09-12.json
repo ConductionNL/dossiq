@@ -3,9 +3,9 @@
   "app": "dossiq-audit2",
   "totals": {
     "scenarios": 3434,
-    "covered": 133,
-    "excluded": 1544,
-    "uncovered": 1757,
+    "covered": 131,
+    "excluded": 1547,
+    "uncovered": 1756,
     "covered_thinly": 3,
     "covered_thinly_max": 13
   },
@@ -584,11 +584,6 @@
       "ref": "bezwaar-beroep-workflow::beroep-dossier-export-produces-a-court-ready-package",
       "spec": "bezwaar-beroep-workflow",
       "scenario": "Beroep dossier export produces a court-ready package"
-    },
-    {
-      "ref": "bezwaar-beroep-workflow::bezwaar-index-shows-only-bezwaar-cases-with-correct-columns",
-      "spec": "bezwaar-beroep-workflow",
-      "scenario": "Bezwaar index shows only bezwaar cases with correct columns"
     },
     {
       "ref": "bezwaar-beroep-workflow::bezwaar-detail-page-shows-all-required-side-panels",
@@ -8796,8 +8791,8 @@
       "scenario": "Without decidiq there is nothing to migrate onto"
     }
   ],
-  "coverage_pct": 7.0,
-  "coverage_pct_strong": 6.9,
+  "coverage_pct": 6.9,
+  "coverage_pct_strong": 6.8,
   "covered_thinly": [
     {
       "ref": "add-work-queue::an-empty-queue-says-so",
