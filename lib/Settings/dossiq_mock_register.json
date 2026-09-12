@@ -24130,6 +24130,45 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-hoofdcatalogus",
+          "id": "9f1d6b2e-4c3a-4b71-9a5e-1c0d8f2a7b31"
+        },
+        "domein": "HOOFD",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Sanne de Wit",
+        "contactPersonManagementPhoneNumber": "0612345678",
+        "contactPersonManagementEmailAddress": "catalogusbeheer@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-vergunningen",
+          "id": "2a7c4e91-8d60-4f2b-bc13-6e94a05d3c78"
+        },
+        "domein": "VERG",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Joost Prins",
+        "contactPersonManagementPhoneNumber": "0687654321",
+        "contactPersonManagementEmailAddress": "vergunningen@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-handhaving",
+          "id": "c40b8f15-7e22-4d8a-9f36-b5127ae0d964"
+        },
+        "domein": "HAND",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Amina Yildiz",
+        "contactPersonManagementPhoneNumber": "0611223344",
+        "contactPersonManagementEmailAddress": "handhaving@example.invalid"
       }
     ]
   }

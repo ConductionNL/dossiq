@@ -121,7 +121,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -157,7 +157,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -339,7 +339,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -380,7 +380,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
 		// Resolve UUID from URL path — body "uuid" can override controller args.
 		$uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
@@ -456,7 +456,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
 		// Resolve UUID from URL path — body "uuid" can override controller args.
 		$uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
@@ -533,7 +533,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -597,7 +597,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakeigenschappenIndex(string $zaakUuid): JSONResponse {
 		return $this->index(resource: 'zaakeigenschappen');
 	}//end zaakeigenschappenIndex()
@@ -617,7 +617,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenCreate(string $zaakUuid): JSONResponse {
 		return $this->create(resource: 'zaakeigenschappen');
 	}//end zaakeigenschappenCreate()
@@ -638,7 +638,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakeigenschappenShow(string $zaakUuid, string $uuid): JSONResponse {
 		return $this->show(resource: 'zaakeigenschappen', uuid: $uuid);
 	}//end zaakeigenschappenShow()
@@ -659,7 +659,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenUpdate(string $zaakUuid, string $uuid): JSONResponse {
 		return $this->update(resource: 'zaakeigenschappen', uuid: $uuid);
 	}//end zaakeigenschappenUpdate()
@@ -680,7 +680,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenPatch(string $zaakUuid, string $uuid): JSONResponse {
 		return $this->patch(resource: 'zaakeigenschappen', uuid: $uuid);
 	}//end zaakeigenschappenPatch()
@@ -701,7 +701,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zaakeigenschappenDestroy(string $zaakUuid, string $uuid): JSONResponse {
 		return $this->destroy(resource: 'zaakeigenschappen', uuid: $uuid);
 	}//end zaakeigenschappenDestroy()
@@ -719,7 +719,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function zaakbesluitenIndex(string $zaakUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -789,7 +789,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 60, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function zoek(): JSONResponse {
 		$indexResponse = $this->index(resource: 'zaken');
 		// The zoek endpoint reuses the list handler but returns 201 Created.
@@ -814,7 +814,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -839,7 +839,7 @@ class ZrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {

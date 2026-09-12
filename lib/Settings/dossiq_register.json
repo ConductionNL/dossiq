@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.7.0",
+                "version": "1.9.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -27,6 +27,17 @@
                     "title"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
+                    "versionDate": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Versiedatum",
+                        "description": "Date this version of the case type took effect. ZGW sends it as versiedatum on every zaaktype write."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255,
@@ -170,11 +181,10 @@
                     "productsOrServices": {
                         "type": "array",
                         "title": "Products or Services",
-                        "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "description": "Products/services (fees) that apply to this case type. An entry is either a Pipelinq product uuid (ADR-003), where the charge on a concrete case is a Pipelinq financial transaction, or the product URL a ZGW client sent as productenOfDiensten. The items constraint was format uuid, which made the ZTC zaaktypen endpoint refuse every conformant ZGW body, since that field is a list of URLs.",
                         "x-external-register": "pipelinq",
                         "items": {
-                            "type": "string",
-                            "format": "uuid"
+                            "type": "string"
                         }
                     },
                     "selectionListProcessType": {
@@ -662,7 +672,7 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document Type",
@@ -672,6 +682,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -746,7 +761,7 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision Type",
@@ -756,6 +771,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
