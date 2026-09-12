@@ -25,27 +25,30 @@ test.describe('Store surface', () => {
 	// load; the neighbouring specs set the same explicit budget.
 	test.setTimeout(300_000)
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	// ✅ THE REFUSAL THAT STOOD HERE IS LIFTED, because the missing half is now
+	// asserted. It said this test proved only clause 2 of REQ-DSS-006's
+	// scenario, the footer placement, and that anchoring a two-clause scenario
+	// to a one-clause test would read as coverage of the icon as well. It also
+	// said what was needed: a run, to pin the selector the deployed nav renders
+	// the glyph with rather than guess it from the source. That run happened.
 	//
-	// 🔴 DELIBERATELY STILL ANCHORLESS, AND HERE IS WHY, so the next reader
-	// does not "fix" it by anchoring. The obvious target is REQ-DSS-006's only
-	// scenario, "The entry carries the Tier A glyph", and that scenario has two
-	// clauses:
+	// WHAT THE GLYPH IS, ON SCREEN. `CnAppNav` gives each entry a
+	// `data-testid="cn-nav-entry-<id>"`, and inside it renders
+	// `mdiIconComponent(item)` when the name resolves in the registry
+	// `registerIcons()` filled from `src/icons.js`. A `vue-material-design-icons`
+	// component renders `class="material-design-icon store-outline-icon"`, so
+	// the icon the manifest declares is readable off the DOM by that class.
 	//
-	//   1. the entry labelled `Store` MUST declare `icon: "StoreOutline"`
-	//   2. it MUST sit in the `footer` section with an order between
-	//      Documentation and Reports
+	// 🔴 AND THE NEGATIVE IS THE ONE THAT MATTERS, because a wrong icon name is
+	// not an error here. `isUnresolvedIcon()` catches any PascalCase name the
+	// registry does not hold and `CnAppNav` renders `HelpCircleOutline`
+	// instead, so a typo, a rename or an icon dropped from `src/icons.js` ships
+	// a generic question mark in the navigation and nothing anywhere reports
+	// it. Asserting the absence of `.help-circle-outline-icon` is what makes
+	// the declared name falsifiable rather than merely present.
 	//
-	// This test proves clause 2 and says nothing about clause 1. Anchoring here
-	// would credit the whole scenario, icon included, to a test that cannot see
-	// a wrong icon, which is worse than crediting nothing: an anchorless
-	// citation is visibly broken, while one resolving to a half-proven scenario
-	// reads as coverage.
-	//
-	// The repair is to assert the glyph too, then anchor. That needs a run to
-	// pin the selector the deployed nav renders the icon with, so it is left
-	// for someone holding an instance rather than guessed at from the source.
-	test('the store entry sits in the footer between Documentation and Reports', async ({
+	// @e2e openspec/specs/dossiq-store-surface/spec.md#the-entry-carries-the-tier-a-glyph
+	test('the store entry carries the StoreOutline glyph and sits between Documentation and Reports', async ({
 		page,
 	}) => {
 		await page.goto('/apps/dossiq/')
@@ -57,6 +60,22 @@ test.describe('Store surface', () => {
 			nav.getByText(/^\s*Store\s*$/i),
 			'the navigation must offer a Store entry',
 		).toHaveCount(1, { timeout: 30_000 })
+
+		// CLAUSE 1: the glyph the manifest declares, read off the entry itself.
+		const entry = nav.locator('[data-testid="cn-nav-entry-StoreMenu"]')
+		await expect(
+			entry,
+			'the Store entry must render under the id the manifest gives it',
+		).toHaveCount(1, { timeout: 30_000 })
+		await expect(
+			entry.locator('.store-outline-icon'),
+			'the Store entry must render the StoreOutline glyph the manifest declares',
+		).toHaveCount(1, { timeout: 30_000 })
+		await expect(
+			entry.locator('.help-circle-outline-icon'),
+			'an icon name the registry cannot resolve renders the fallback question '
+				+ 'mark rather than failing, so its absence is the assertion',
+		).toHaveCount(0)
 
 		// Order, not merely presence. The entry was placed at order 92
 		// deliberately, and an entry that exists in the wrong place is the
