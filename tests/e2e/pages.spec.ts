@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Locator } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
@@ -177,6 +177,29 @@ test.describe('Tasks page', () => {
 	let taskCaseTitle = ''
 	let taskTitle = ''
 
+	/** The signed-in uid, which is what the Assignee column prints. */
+	const ME = process.env.ADMIN_USER ?? 'admin'
+
+	/**
+	 * The zero-based position of one column, by its header.
+	 *
+	 * The six columns come from the tasks SOURCE rather than from this app's
+	 * manifest, so their order is the library's to change; reading the index
+	 * off the header keeps a cell assertion about the column it names.
+	 *
+	 * @param table The rendered table.
+	 * @param name  A pattern matching the header in either language.
+	 */
+	async function columnIndex(table: Locator, name: RegExp): Promise<number> {
+		const header = table.getByRole('columnheader', { name })
+		await expect(header, `the list must carry the ${name} column`).toBeVisible({
+			timeout: 20_000,
+		})
+		return await header.evaluate((th) =>
+			Array.from(th.parentElement!.children).indexOf(th),
+		)
+	}
+
 	/**
 	 * A due date far enough out that the inbox's `-dueAt` sort keeps this
 	 * file's own task on page one.
@@ -220,11 +243,18 @@ test.describe('Tasks page', () => {
 		// from the manifest config before route params are merged). Dating
 		// the fixture past everything else is what keeps it on page one
 		// without asserting a position.
+		//
+		// THE ASSIGNEE AND THE PRIORITY ARE PART OF THE FIXTURE, NOT DECORATION.
+		// REQ-TASK-004 asks each row to show six facts, and a task seeded
+		// without an assignee or a priority leaves two of those cells empty
+		// for a reason that is the fixture's rather than the list's.
 		taskTitle = `${RUN_PREFIX} Tasks page task`
 		await seedFlowTask(api, token, {
 			title: taskTitle,
 			objectUuid: taskCaseId,
 			state: 'available',
+			assignee: ME,
+			priority: 'high',
 			dueAt: FAR_FUTURE_DUE,
 		})
 	})
@@ -239,9 +269,16 @@ test.describe('Tasks page', () => {
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
-	test('renders list view with search and filters, and offers no Add', async ({
+	test('renders list view with search and filters, offers no Add, and shows the facts on a row', async ({
 		page,
 	}) => {
+		// The file's 30s default is the budget for the chrome assertions this
+		// test used to hold alone. Reading the row as well means a second
+		// render of the inbox in table view, which the default cannot cover:
+		// the first run of the repaired body timed out INSIDE
+		// `toHaveCount(1)`, which reads as "the seeded row is missing" while
+		// the row was simply still arriving.
+		test.setTimeout(120_000)
 		// "Tasks" is no longer a top-level sidebar leaf (dropped by the
 		// nav-dedup pass); the /tasks page route stays reachable, so navigate
 		// to it client-side rather than via a (non-existent) nav link.
@@ -269,6 +306,86 @@ test.describe('Tasks page', () => {
 		// the field is in the DOM but hidden; assert it is wired up rather
 		// than requiring the sidebar to be open.
 		await expect(page.getByPlaceholder('Type to search')).toBeAttached()
+
+		// 🔴 AND THE ROW ITSELF, WHICH IS THE HALF THIS TEST USED TO SKIP.
+		// The controls above are the page's chrome: a list that answered
+		// nothing at all satisfies every one of them, and the scenario's
+		// second clause — "each task row MUST show: title, parent case
+		// reference, status, assignee, due date, and priority" — survived
+		// untouched. So the seeded task is read out of the table, cell by
+		// cell, against the facts the requirement names.
+		//
+		// The list has to have ANSWERED before the view is switched: the
+		// switcher paints with the page shell, so the click lands whether or
+		// not rows exist, and CnDataTable renders its `<table>` only once it
+		// has them.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]').first(),
+		).toBeVisible({ timeout: 30_000 })
+
+		// 🔴 THROUGH THE Mine LENS, BECAUSE THE FAR-FUTURE DUE DATE IS NOT
+		// ENOUGH. The `All` lens the page opens on is every task on the
+		// instance — 69 of them here, paged at 25 — and the engine's order
+		// puts the UNDATED ones first, so a fixture dated 2099 sits on page
+		// three and the first run of this assertion read "the seeded row is
+		// missing" while the row was three pages away. `Mine` is
+		// `scope=assigned&isTerminal=false`, which is this user's open work
+		// and fits on one page (19 rows when measured). The columns are the
+		// source's and identical under every lens, so narrowing changes which
+		// rows are read, never what a row is made of.
+		await page.getByRole('tab', { name: /^(Mine|Van mij)$/ }).click()
+		await page.getByRole('button', { name: 'Table' }).click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 30_000 })
+
+		// Found BY ITS TITLE, never by position: the inbox is a shared list
+		// on a shared instance and another session's tasks sit in it.
+		const seededRow = table.locator('tbody tr').filter({ hasText: taskTitle })
+		await expect(seededRow).toHaveCount(1, { timeout: 30_000 })
+
+		/**
+		 * One cell of the seeded row, by its column header.
+		 *
+		 * @param name A pattern matching the header in either language.
+		 */
+		const cell = async (name: RegExp): Promise<Locator> =>
+			seededRow.locator(
+				`td:nth-child(${(await columnIndex(table, name)) + 1})`,
+			)
+
+		await expect(
+			await cell(/^(Task|Taak)$/),
+			'the row names the task',
+		).toContainText(taskTitle)
+		// 🔴 THE SUBJECT CELL IS THE SIBLING TEST'S CLAIM, AND IT IS DARK
+		// TODAY. REQ-TASK-004's sixth fact is the parent case reference, and
+		// `the Subject column shows the case title, not its uuid` below is
+		// the test that asserts it. Measured on this instance 2026-09-12: the
+		// inbox endpoint answers `subject: null` for EVERY row, freshly
+		// seeded ones included, so the column prints an em dash throughout
+		// and that sibling is red for a reason that lives in OpenRegister's
+		// `TaskInboxService::subjectContexts()`, not in this page. Asserting
+		// it a second time here would duplicate a known-red claim rather than
+		// add coverage, so this test reads the five facts that do resolve and
+		// leaves the sixth where it already lives.
+		await expect(
+			await cell(/^(State|Status)$/),
+			'the row shows the state the task was seeded in',
+		).toHaveText(/^\s*(Available|Beschikbaar)\s*$/)
+		await expect(
+			await cell(/^(Priority|Prioriteit)$/),
+			'the row shows the priority the task was seeded with',
+		).toHaveText(/^\s*(High|Hoog)\s*$/)
+		// `taskDueLabel` returns '' for a task with no `dueAt`, so a cell
+		// carrying a number is a due date that resolved rather than chrome.
+		await expect(
+			await cell(/^(Due|Deadline|Vervaldatum)$/),
+			'the row counts down to the due date it was seeded with',
+		).toHaveText(/\d/)
+		await expect(
+			await cell(/^(Assignee|Toegewezen aan)$/),
+			'the row names who holds the task',
+		).toContainText(ME)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
