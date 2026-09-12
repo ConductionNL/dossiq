@@ -63,27 +63,62 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		page,
 	}) => {
 		let emptied = 0
-		await page.route(
-			'**/apps/openregister/api/objects/*/caseType*',
-			async (route) => {
-				emptied++
-				await route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({
-						results: [],
-						total: 0,
-						page: 1,
-						pages: 1,
-					}),
-				})
-			},
-		)
+		// THE PATTERN IS THE WHOLE TEST, so it names the endpoint the app
+		// actually calls rather than the one the schema is called.
+		//
+		// It used to read `.../api/objects/*/caseType*`, which assumed the URL
+		// carries the schema SLUG. It does not: OpenRegister addresses objects
+		// by numeric register and schema id, and the trace of run 34703612328
+		// shows this page fetching
+		//
+		//   /apps/openregister/api/objects/18/128?_limit=100&_facets=extend
+		//
+		// A Playwright glob `*` does not cross `/`, so `*/caseType*` required a
+		// path segment beginning `caseType` and matched nothing at all. The
+		// register answered for real, 28 rows rendered, and the empty state
+		// correctly did not appear. Those ids are per-instance, so matching
+		// them literally would only move the breakage; every object list on
+		// this page is emptied instead, which is exactly the fresh install the
+		// comment above describes.
+		await page.route('**/apps/openregister/api/objects/**', async (route) => {
+			// Reads only. A write reaching this handler would be silently
+			// swallowed and the test would prove something about a request
+			// that never happened.
+			if (route.request().method() !== 'GET') {
+				await route.continue()
+				return
+			}
+			emptied++
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					results: [],
+					total: 0,
+					page: 1,
+					pages: 1,
+				}),
+			})
+		})
 
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
+
+		// THE PRECONDITION IS CHECKED BEFORE ANYTHING IS CONCLUDED FROM IT.
+		// This assertion already existed, at the END of the test, where it
+		// could not do its job: the missing empty state failed first and
+		// reported `getByText('No case types configured yet')` not found,
+		// which reads as a broken empty state in the product. The register had
+		// simply never been emptied. Checked here, an unmatched route says so
+		// in its own words instead of blaming the component it silently
+		// disabled the test for.
+		expect(
+			emptied,
+			'the case type fetch was never intercepted, so the real register '
+				+ 'answered and this run proves nothing about an empty one',
+		).toBeGreaterThan(0)
 
 		// THEN an empty state message, and guidance towards the first case
 		// type. Both are dossiq's own strings: `CnIndexPage`'s default is
@@ -104,12 +139,6 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		await expect(
 			page.getByRole('button', { name: /^Add (Item|Case Type)$/ }),
 		).toBeVisible({ timeout: 15000 })
-
-		expect(
-			emptied,
-			'the case type fetch was never intercepted, so the real register '
-				+ 'answered and this run proves nothing about an empty one',
-		).toBeGreaterThan(0)
 	})
 
 	/**
