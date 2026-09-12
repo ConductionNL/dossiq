@@ -414,8 +414,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'verantwoordelijkeOrganisatie' => '{{ assignee }}',
 				'archiefnominatie' => '{{ archiveNomination }}',
 				'archiefactiedatum' => '{{ archiveActionDate }}',
-				'archiefstatus' => '{{ archiveStatus }}',
-				'betalingsindicatie' => '{{ paymentIndication }}',
+				'archiefstatus' => '{{ archiveStatus | zgw_enum("archiveStatus", _valueMappings) }}',
+				'betalingsindicatie' => '{{ paymentIndication | zgw_enum("paymentIndication", _valueMappings) }}',
 				'laatsteBetaaldatum' => '{{ lastPaymentDate }}',
 				'hoofdzaak' => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
 			],
@@ -433,11 +433,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'assignee' => '{{ verantwoordelijkeOrganisatie }}',
 				'archiveNomination' => '{{ archiefnominatie }}',
 				'archiveActionDate' => '{{ archiefactiedatum }}',
-				'archiveStatus' => '{{ archiefstatus }}',
-				'paymentIndication' => '{{ betalingsindicatie }}',
+				'archiveStatus' => '{{ archiefstatus | zgw_enum_reverse("archiveStatus", _valueMappings) }}',
+				'paymentIndication' => '{{ betalingsindicatie | zgw_enum_reverse("paymentIndication", _valueMappings) }}',
 				'lastPaymentDate' => '{{ laatsteBetaaldatum }}',
 				'parentCase' => '{{ hoofdzaak | zgw_extract_uuid }}',
 			],
+			// Two of these three enums were HALF translated, which is worse than
+			// either language on its own: only the values that happened to stay
+			// Dutch were reachable, and ZGW's own words for the rest answered
+			// 400. `vertrouwelijkheidaanduiding` really is identical on both
+			// sides, so it maps to itself and says so.
 			'valueMapping' => [
 				'confidentiality' => [
 					'openbaar' => 'openbaar',
@@ -448,6 +453,18 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'confidentieel' => 'confidentieel',
 					'geheim' => 'geheim',
 					'zeer_geheim' => 'zeer_geheim',
+				],
+				'archiveStatus' => [
+					'nog_te_archiveren' => 'nog_te_archiveren',
+					'archived' => 'gearchiveerd',
+					'archived_retention_period_unknown' => 'gearchiveerd_procestermijn_onbekend',
+					'overgedragen' => 'overgedragen',
+				],
+				'paymentIndication' => [
+					'nvt' => 'nvt',
+					'not_yet' => 'nog_niet',
+					'gedeeltelijk' => 'gedeeltelijk',
+					'geheel' => 'geheel',
 				],
 			],
 			'nullableFields' => [
@@ -1182,7 +1199,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'titel' => '{{ title }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'auteur' => '{{ author }}',
-				'status' => '{{ status }}',
+				'status' => '{{ status | zgw_enum("status", _valueMappings) }}',
 				'format' => '{{ format }}',
 				'taal' => '{{ language }}',
 				'fileName' => '{{ fileName }}',
@@ -1207,7 +1224,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'title' => '{{ titel }}',
 				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
 				'author' => '{{ auteur }}',
-				'status' => '{{ status }}',
+				'status' => '{{ status | zgw_enum_reverse("status", _valueMappings) }}',
 				'format' => '{{ formaat }}',
 				'language' => '{{ taal }}',
 				'fileName' => '{{ bestandsnaam }}',
@@ -1228,11 +1245,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'geheim' => 'geheim',
 					'zeer_geheim' => 'zeer_geheim',
 				],
+				// The KEYS are what the register stores and the values are what
+				// ZGW sends. This table used to map Dutch to Dutch, while the
+				// document schema declares in_bewerking, for_determination, final
+				// and archived, so three of ZGW's four statuses could not be
+				// stored at all and answered 400 'should be one of'.
 				'status' => [
 					'in_bewerking' => 'in_bewerking',
-					'ter_vaststelling' => 'ter_vaststelling',
-					'definitief' => 'definitief',
-					'gearchiveerd' => 'gearchiveerd',
+					'for_determination' => 'ter_vaststelling',
+					'final' => 'definitief',
+					'archived' => 'gearchiveerd',
 				],
 			],
 			'reverseCast' => [
@@ -1278,17 +1300,22 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'informatieobject' => '{{ document }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType }}',
+				'objectType' => '{{ objectType | zgw_enum("objectType", _valueMappings) }}',
 			],
 			'reverseMapping' => [
 				'document' => '{{ informatieobject }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType }}',
+				'objectType' => '{{ objectType | zgw_enum_reverse("objectType", _valueMappings) }}',
 			],
+			// This table existed and nothing used it, because neither template
+			// called zgw_enum. It also mapped 'zaak' to 'zaak' and 'decision'
+			// to 'decision', while the register stores 'case' and 'decision'
+			// and ZGW spells them 'zaak' and 'besluit'. Neither of ZGW's two
+			// values could be stored.
 			'valueMapping' => [
 				'objectType' => [
-					'zaak' => 'zaak',
-					'decision' => 'decision',
+					'case' => 'zaak',
+					'decision' => 'besluit',
 				],
 			],
 			'queryParameterMapping' => [

@@ -328,4 +328,133 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 			. "returned empty:\n  " . implode("\n  ", $unknown)
 		);
 	}//end testEveryOutboundTemplateReadsAPropertyTheSchemaDeclares()
+	/**
+	 * Enum-constrained properties whose vocabulary is identical on both sides.
+	 *
+	 * ZGW's `vertrouwelijkheidaanduiding`, `archiefnominatie`,
+	 * `indicatieInternOfExtern` and `afleidingswijze` are stored under the
+	 * same words the standard uses, so there is nothing to translate. Every
+	 * other enum needs a `valueMapping` and a `zgw_enum_reverse` call.
+	 *
+	 * @var string[]
+	 */
+	private const SAME_VOCABULARY_ON_BOTH_SIDES = [
+		'zaak.confidentiality',
+		'zaak.archiveNomination',
+		'caseType.confidentiality',
+		'caseType.internalOrExternal',
+		'resultaattype.archivalAction',
+		'informatieobjecttype.confidentiality',
+		'enkelvoudiginformatieobject.confidentiality',
+	];
+
+	/**
+	 * Every enum a ZGW client writes is either translated or the same word.
+	 *
+	 * A HALF-TRANSLATED enum is the worst of the three states, and four of
+	 * these were in it. `document.status` declared
+	 * `in_bewerking, for_determination, final, archived`, so exactly one of
+	 * ZGW's four statuses could be stored and the other three answered 400
+	 * "should be one of". `zaak.archiveStatus`, `zaak.paymentIndication` and
+	 * `objectinformatieobject.objectType` were the same shape.
+	 *
+	 * Nothing reported it, because a rejected value is a 400 the caller reads
+	 * as their own mistake.
+	 *
+	 * @return void
+	 */
+	public function testEveryWrittenEnumIsTranslatedOrDeliberatelyIdentical(): void {
+		$slugForKey = array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY);
+		$schemas = $this->registerSchemas();
+		$untranslated = [];
+		$checked = 0;
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			$slug = ($slugForKey[(string)($config['sourceSchema'] ?? '')] ?? null);
+			if ($slug === null || isset($schemas[$slug]) === false) {
+				continue;
+			}
+
+			$properties = ($schemas[$slug]['properties'] ?? []);
+			foreach (($config['reverseMapping'] ?? []) as $property => $template) {
+				if (isset($properties[$property]['enum']) === false) {
+					continue;
+				}
+
+				$checked++;
+				$name = $mappingKey . '.' . $property;
+				if (in_array($name, self::SAME_VOCABULARY_ON_BOTH_SIDES, true) === true) {
+					continue;
+				}
+
+				$translated = (str_contains((string)$template, 'zgw_enum_reverse') === true
+					&& isset($config['valueMapping'][$property]) === true);
+				if ($translated === false) {
+					$untranslated[] = sprintf(
+						'%s enum [%s] passes through untranslated',
+						$name,
+						implode(', ', $properties[$property]['enum'])
+					);
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $checked, 'No enum-constrained properties were examined at all.');
+		$this->assertSame(
+			[],
+			$untranslated,
+			"These ZGW inbound mappings write an enum without translating it, so a value the\n"
+			. "standard defines answers 400 unless the register happens to spell it the same way:\n  "
+			. implode("\n  ", $untranslated)
+		);
+	}//end testEveryWrittenEnumIsTranslatedOrDeliberatelyIdentical()
+
+	/**
+	 * Each translation table maps register values to ZGW values, in that order.
+	 *
+	 * The `objectinformatieobject` table mapped `zaak` to `zaak` and `decision`
+	 * to `decision`, while the register stores `case` and `decision`. Keys that
+	 * are not register values make the table a no-op that looks populated.
+	 *
+	 * @return void
+	 */
+	public function testEveryTranslationTableIsKeyedByRegisterValues(): void {
+		$slugForKey = array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY);
+		$schemas = $this->registerSchemas();
+		$wrong = [];
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			$slug = ($slugForKey[(string)($config['sourceSchema'] ?? '')] ?? null);
+			if ($slug === null || isset($schemas[$slug]) === false) {
+				continue;
+			}
+
+			$properties = ($schemas[$slug]['properties'] ?? []);
+			foreach (($config['valueMapping'] ?? []) as $property => $table) {
+				$enum = ($properties[$property]['enum'] ?? null);
+				if ($enum === null) {
+					continue;
+				}
+
+				foreach (array_keys($table) as $registerValue) {
+					if (in_array($registerValue, $enum, true) === false) {
+						$wrong[] = sprintf(
+							'%s.%s translates %s, which %s does not allow',
+							$mappingKey,
+							$property,
+							var_export($registerValue, true),
+							$slug
+						);
+					}
+				}
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$wrong,
+			"These translation tables are keyed by something the register cannot store, so they\n"
+			. "never match:\n  " . implode("\n  ", $wrong)
+		);
+	}//end testEveryTranslationTableIsKeyedByRegisterValues()
 }//end class
