@@ -26,6 +26,25 @@ test.describe('Store surface', () => {
 	test.setTimeout(300_000)
 
 	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS, AND HERE IS WHY, so the next reader
+	// does not "fix" it by anchoring. The obvious target is REQ-DSS-006's only
+	// scenario, "The entry carries the Tier A glyph", and that scenario has two
+	// clauses:
+	//
+	//   1. the entry labelled `Store` MUST declare `icon: "StoreOutline"`
+	//   2. it MUST sit in the `footer` section with an order between
+	//      Documentation and Reports
+	//
+	// This test proves clause 2 and says nothing about clause 1. Anchoring here
+	// would credit the whole scenario, icon included, to a test that cannot see
+	// a wrong icon, which is worse than crediting nothing: an anchorless
+	// citation is visibly broken, while one resolving to a half-proven scenario
+	// reads as coverage.
+	//
+	// The repair is to assert the glyph too, then anchor. That needs a run to
+	// pin the selector the deployed nav renders the icon with, so it is left
+	// for someone holding an instance rather than guessed at from the source.
 	test('the store entry sits in the footer between Documentation and Reports', async ({
 		page,
 	}) => {
@@ -64,7 +83,20 @@ test.describe('Store surface', () => {
 		expect(store, 'Store must precede Reports').toBeLessThan(reports)
 	})
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	// @e2e dossiq-store-surface::an-unconfigured-instance-stays-offline
+	// @e2e dossiq-store-surface::the-page-still-renders
+	//
+	// The citation named the spec FILE and no requirement, so gate-19 credited
+	// it to nothing. It proves both of REQ-DSS-002's scenarios, clause for
+	// clause, so it now says which:
+	//
+	//   "the response outcome MUST be `not_configured`"  -> store-not-configured
+	//   "no outbound HTTP request MUST be made"          -> external toEqual([])
+	//   "MUST render dossiq's built-in templates rather  -> store-builtin
+	//    than an error"                                     and store-page
+	//
+	// Two anchors rather than one because they are two scenarios and this test
+	// carries both; splitting the test would leave each half proving less.
 	test('an unconfigured instance renders the built-in templates and calls no registry', async ({
 		page,
 	}, testInfo) => {
