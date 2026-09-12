@@ -403,7 +403,26 @@ test.describe('The requester on the case', () => {
 		expect(after.initiatorSourceId).toBe(PLAIN.bsn)
 	})
 
-	// @e2e openspec/specs/initiator-selection/spec.md
+	// 🔴 NO CITATION, AND THAT IS THE REPAIR. This carried an anchorless
+	// `openspec/specs/initiator-selection/spec.md` citation, read as verified
+	// on 2026-09-11 and as partial on 2026-09-12. The downgrade is right and
+	// the citation is worse than partial: `beforeAll` seeds this case through
+	// the API with `requester`, `initiatorType`, `initiatorSourceId` and
+	// `initiatorDisplayName` written in, and this test reads those same four
+	// fields back. It is a tautology. It proves OpenRegister stores what you
+	// send it, and no picker, form or save-path breakage can redden it,
+	// because it never opens a page and never exercises the write the
+	// requirement is about.
+	//
+	// The requirement IS proven, by the test that drives the picker:
+	// `tests/e2e/spec-coverage/brp-kvk-initiator.spec.ts`, "picked persona
+	// persists as projection and shows on case detail with source link",
+	// which cites `selection-persists-on-the-case` by anchor. So the claim
+	// comes down and nothing is lost.
+	//
+	// The test stays, uncited, as the round-trip guard for the company shape:
+	// it is the fixture every browser test below reads from, and a projection
+	// that did not survive the seed would surface here first.
 	test('a company requester persists as the uuid and the projection', async () => {
 		const saved = await showObject(api, 'case', companyCaseId)
 		expect(saved.requester, 'the uuid of the kvkCompany row').toBe(companyId)
@@ -552,14 +571,43 @@ test.describe('The requester on the case', () => {
 		).toBe(false)
 
 		// The sidebar offers the filter because the field is facetable.
+		//
+		// 🔴 SCOPED TO THE SIDEBAR, AND IT WAS NOT.
+		//
+		// ✅ MUTATION CHECK RUN 2026-09-12. The sidebar derives its filters
+		// from the SCHEMA's `facetable` properties (CnFacetSidebar ->
+		// `filtersFromSchema`), so the schema read was rewritten on its way
+		// into the browser and nothing on disk moved:
+		//
+		//   route   /\/apps\/openregister\/api\/schemas\//
+		//   break   properties.initiatorDisplayName.facetable = false
+		//   red on  "the sidebar names the requester filter"
+		//
+		// The first attempt stripped `initiatorDisplayName` from the `facets`
+		// block of the OBJECTS response instead. It matched, and the filter
+		// stayed on screen, so that was the wrong input and a green there
+		// would have meant nothing. Worth recording: a mutation that lands and
+		// changes nothing is the one that looks most like a passing test.
+		//
+		// This read
+		// `page.getByText(/^(Requester|Aanvrager)$/).first()` over the WHOLE
+		// page, and the cases table carries a column header reading exactly
+		// that, which the sibling test above asserts. So the clause was
+		// satisfied by the header alone and a list page offering no requester
+		// filter at all still passed. The locator is scoped to `.app-sidebar`
+		// now, which is the control the requirement is about.
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 		await page
 			.getByRole('button', { name: /Open sidebar|Filters|Zijbalk/ })
 			.first()
 			.click()
+		const sidebar = page.locator('.app-sidebar')
+		await expect(sidebar, 'the filters sidebar opens').toBeVisible({
+			timeout: 15_000,
+		})
 		await expect(
-			page.getByText(/^(Requester|Aanvrager)$/).first(),
+			sidebar.getByText(/^(Requester|Aanvrager)$/).first(),
 			'the sidebar names the requester filter',
 		).toBeVisible({ timeout: 15_000 })
 	})

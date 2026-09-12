@@ -376,7 +376,35 @@ test.describe('Doorlooptijd page', () => {
 })
 
 test.describe('Settings page', () => {
-	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
+	// 🔴 NO CITATION, AND THE SPEC IS THE STALE HALF. This carried
+	// `admin-settings#in-app-settings-page-renders-configuration-sections`,
+	// read as partial on 2026-09-11 and as smoke on 2026-09-12, and the
+	// downgrade is right: the test asserted one Save button and the absence of
+	// "Internal Server Error", and none of the three section headings the
+	// scenario lists.
+	//
+	// Two of the scenario's clauses cannot be made true against this product,
+	// and neither is the test's fault:
+	//
+	//   the in-app Settings page      retired by page-topology-cleanup (B1),
+	//                                 because reaching an administration
+	//                                 component through the in-app router
+	//                                 bypasses the settings framework's
+	//                                 server-side checks (ADR-004)
+	//   "Version Information" heading removed; the string exists nowhere in
+	//                                 src/
+	//
+	// So the citation comes down and the scenario carries a reason-bearing
+	// `@e2e exclude` naming both, rather than a test pretending to prove a
+	// requirement two of whose clauses are false. Writing the exclusion where
+	// a spec reader meets it is the point: the repair owed here is to the
+	// spec, not to this file.
+	//
+	// The two headings that DO exist are asserted now, which is what turns
+	// this from a smoke test back into a test. "Configuration" comes from
+	// `src/views/settings/Settings.vue` and "Case Type Management" from
+	// `src/views/settings/AdminRoot.vue`.
+	//
 	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
 	// `/index.php` prefix does not render the target view — the same URL with
@@ -407,6 +435,16 @@ test.describe('Settings page', () => {
 		await expect(
 			page.getByRole('button', { name: 'Save', exact: true }),
 		).toBeVisible({ timeout: 15000 })
+
+		// The section headings, named individually. A count would redden on
+		// ADDING a section and pass on a swap, and would never say which one
+		// went missing.
+		for (const heading of ['Configuration', 'Case Type Management']) {
+			await expect(
+				page.getByRole('heading', { name: heading, exact: true }).first(),
+				`the administration surface must render the ${heading} section`,
+			).toBeVisible({ timeout: 15000 })
+		}
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 

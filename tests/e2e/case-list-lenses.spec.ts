@@ -831,7 +831,24 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// 🔴 NO CITATION, AND THAT IS THE REPAIR. This test and the one below it
+	// carried an anchorless `openspec/specs/task-management/spec.md` citation,
+	// read as verified on 2026-09-11 and as partial on 2026-09-12, and the
+	// downgrade is right. Both call OpenRegister's flow-task endpoint directly
+	// and assert the ENGINE's own `dueAfter`, `dueBefore` and `overdue`
+	// semantics. A dossiq lens that sent the wrong predicates leaves every
+	// assertion in either of them green, so neither proves a task-management
+	// requirement, and a citation naming the whole spec file claimed one.
+	//
+	// There is no scenario to re-anchor onto either: `task-management` has no
+	// requirement about window boundaries, and its two overdue requirements
+	// (the due-date one above REQ-TASK-013, and REQ-TASK-013 itself) both
+	// carry a reason-bearing `@e2e exclude` for visual indicators covered by
+	// `taskHelpers.js` unit tests. So the claim comes down rather than moving.
+	//
+	// The tests stay, because what they prove is worth proving: the boundary
+	// the six chips above are wired to. Those chips keep their own citations
+	// and their own browser assertions.
 	test('the task due windows narrow the collection, edges included', async () => {
 		test.skip(
 			dueWindowSupported === false,
@@ -871,7 +888,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// No citation, for the reason written above its sibling.
 	test('overdue is the instant comparison, so a task due later today is not late', async () => {
 		// The other side of the same boundary, and deliberately NOT gated on
 		// the due-window predicates: `overdue` is the engine's own derived
