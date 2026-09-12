@@ -162,6 +162,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * @return void
 	 */
 	private function patchExistingMappings(array $defaults, IOutput $output): void {
+		$this->healEmptySourceSchemas(defaults: $defaults, output: $output);
+
 		// Patch: enkelvoudiginformatieobject indicatieGebruiksrecht Twig template.
 		// Old: '{{ usageRightsIndication }}' renders false as "" → ?bool → null.
 		// New: uses is same as() to distinguish false from null.
@@ -178,6 +180,63 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			}
 		}
 	}//end patchExistingMappings()
+
+	/**
+	 * Give a stored mapping the schema its default now resolves to.
+	 *
+	 * `run()` skips a resource key that already has a mapping, which is right
+	 * for an operator's edits and wrong for the one field no operator chose.
+	 * `sourceSchema` is read from `<x>_schema` in settings at the moment the
+	 * mapping is first written, so a mapping written before its schema existed
+	 * keeps an empty `sourceSchema` for the life of the instance. OpenRegister
+	 * then answers `Schema slug "" is not carried by register "dossiq"`, a 400
+	 * that names the register and not the mapping.
+	 *
+	 * That happened to `catalogus`: dossiq shipped no catalogue schema at all,
+	 * so every `/api/zgw/catalogi/v1/catalogussen` write 400ed, and the VNG
+	 * contract collections lost their whole setUp behind it.
+	 *
+	 * Only an EMPTY value is filled in. A mapping pointed at a different schema
+	 * on purpose is left exactly as it is.
+	 *
+	 * @param array $defaults The default mapping configurations
+	 * @param IOutput $output The repair output
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function healEmptySourceSchemas(array $defaults, IOutput $output): void {
+		$healed = 0;
+
+		foreach ($defaults as $resourceKey => $config) {
+			$resolved = (string)($config['sourceSchema'] ?? '');
+			if ($resolved === '') {
+				continue;
+			}
+
+			if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
+				continue;
+			}
+
+			$existing = $this->zgwMappingService->getMapping($resourceKey);
+			if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
+				continue;
+			}
+
+			$existing['sourceSchema'] = $resolved;
+			$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $existing);
+			$healed++;
+			$output->info("Filled in the empty sourceSchema on the {$resourceKey} ZGW mapping.");
+		}
+
+		if ($healed > 0) {
+			$this->logger->info(
+				'Dossiq: filled in empty ZGW mapping schemas',
+				['healed' => $healed]
+			);
+		}
+	}//end healEmptySourceSchemas()
 
 	/**
 	 * Build a Twig URL-replacement template string.

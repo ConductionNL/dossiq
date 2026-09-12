@@ -52,11 +52,23 @@ class ZgwService {
 	/**
 	 * Map of ZGW API + resource to the config key suffix used in Dossiq.
 	 *
+	 * EVERY VALUE HERE IS A MAPPING KEY, NOT A SCHEMA NAME. It is the suffix of
+	 * the `zgw_mapping_<key>` appconfig entry that `LoadDefaultZgwMappings`
+	 * writes, so a value this repair step never writes resolves to no mapping
+	 * at all and the endpoint answers 404 "No ZGW mapping configured".
+	 *
+	 * Two values used to be schema names instead: `zaken/zaken` said `case` and
+	 * `documenten/verzendingen` said `dispatch`, while the repair step writes
+	 * `zgw_mapping_zaak` and `zgw_mapping_verzending`. Nothing compared the two
+	 * lists, so the whole ZRC zaken surface — the largest folder in both VNG
+	 * contract collections — 404ed on every request and took its setUp cascade
+	 * with it. ZgwResourceMapConsistencyTest now holds the two sides together.
+	 *
 	 * @var array<string, array<string, string>>
 	 */
 	public const RESOURCE_MAP = [
 		'zaken' => [
-			'zaken' => 'case',
+			'zaken' => 'zaak',
 			'statussen' => 'status',
 			'resultaten' => 'result',
 			'rollen' => 'role',
@@ -88,7 +100,7 @@ class ZgwService {
 			'enkelvoudiginformatieobjecten' => 'enkelvoudiginformatieobject',
 			'objectinformatieobjecten' => 'objectinformatieobject',
 			'gebruiksrechten' => 'gebruiksrechten',
-			'verzendingen' => 'dispatch',
+			'verzendingen' => 'verzending',
 		],
 		'notificaties' => [
 			'kanaal' => 'kanaal',

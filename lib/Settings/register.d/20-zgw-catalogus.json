@@ -1,0 +1,63 @@
+{
+    "components": {
+        "registers": {
+            "dossiq": {
+                "schemas": [
+                    "catalog"
+                ]
+            }
+        },
+        "schemas": {
+            "catalog": {
+                "slug": "catalog",
+                "icon": "FolderMultipleOutline",
+                "version": "1.0.0",
+                "x-schema-org": "schema:Collection",
+                "x-zgw-equivalent": "Catalogus",
+                "title": "Catalogus",
+                "description": "The ZGW catalogue that owns a set of zaaktypen, besluittypen and informatieobjecttypen. Backs /api/zgw/catalogi/v1/catalogussen. The zgw_mapping_catalogus mapping reads exactly these properties, so a rename here silently empties the ZTC catalogussen endpoint.",
+                "type": "object",
+                "required": [
+                    "domein",
+                    "rsin",
+                    "contactPersonManagementName"
+                ],
+                "properties": {
+                    "domein": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5,
+                        "pattern": "^[A-Z]{1,5}$",
+                        "title": "Domein",
+                        "description": "Short domain code of the catalogue, one to five capitals. ZGW filters catalogussen on this together with rsin."
+                    },
+                    "rsin": {
+                        "type": "string",
+                        "pattern": "^[0-9]{9}$",
+                        "title": "RSIN",
+                        "description": "Rechtspersonen en Samenwerkingsverbanden Informatienummer (RSIN) of the organisation that owns the catalogue, nine digits."
+                    },
+                    "contactPersonManagementName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "title": "Contactpersoon beheer naam",
+                        "description": "Name of the person who administers this catalogue."
+                    },
+                    "contactPersonManagementPhoneNumber": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "title": "Contactpersoon beheer telefoonnummer",
+                        "description": "Phone number of the administrator."
+                    },
+                    "contactPersonManagementEmailAddress": {
+                        "type": "string",
+                        "maxLength": 254,
+                        "title": "Contactpersoon beheer e-mailadres",
+                        "description": "Email address of the administrator."
+                    }
+                }
+            }
+        }
+    }
+}
