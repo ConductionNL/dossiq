@@ -12,8 +12,6 @@
  */
 
 import { expect, test } from '@playwright/test'
-// 🔬 PROBE IMPORT, REMOVED IN THE NEXT COMMIT.
-import { mutateBundle } from './helpers/mutate-bundle.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
@@ -55,31 +53,6 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	test('an empty case type register says so and points at the first one', async ({
 		page,
 	}) => {
-		// 🔬 MUTATION PROBE, REMOVED IN THE NEXT COMMIT. The requirement is
-		// that an empty register says it is empty and says what to do next, so
-		// the break is the page going back to the generic line it inherited
-		// from CnIndexPage. Both strings are rewritten on their way into the
-		// browser, so nothing on disk moves and no other session's instance
-		// does either. `assertApplied()` below is what keeps this honest: a
-		// mutation that matched nothing leaves the real strings rendering and
-		// the green that follows would mean nothing at all.
-		const mutation = await mutateBundle(
-			page,
-			[
-				{
-					label: 'the empty state stops naming case types',
-					find: /"dossiq","No case types configured yet"/,
-					replace: '"dossiq","No items found"',
-				},
-				{
-					label: 'the empty state stops offering guidance',
-					find: /"dossiq","Create your first case type to start handling cases\."/,
-					replace: '"dossiq"," "',
-				},
-			],
-			/dossiq-settings\.js/,
-		)
-
 		let emptied = 0
 		await page.route('**/apps/openregister/api/objects/*/caseType*', async (route) => {
 			emptied++
@@ -90,22 +63,10 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 			})
 		})
 
-		// 🔬 PROBE: `navigationTimeout` is 45s and `dossiq-settings.js` is
-		// 5.2MB, which Playwright has to fetch, decode, rewrite and re-encode
-		// before the page can run. Left at the default this would redden as a
-		// navigation timeout, which says nothing about the copy under test.
-		// The test budget is 300s, so 180s here still fails as a test rather
-		// than hanging the shard.
-		await page.goto(ADMIN_SETTINGS_URL, { timeout: 180_000 })
+		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
-		// 🔬 PROBE: after the heading, not after the navigation. The heading is
-		// rendered BY the chunk being rewritten, so reaching it proves the
-		// chunk was fetched. Asserting straight after `goto` would read a
-		// not-yet-fetched chunk as a mutation that matched nothing, and the
-		// red would be about the probe rather than about the copy.
-		mutation.assertApplied()
 
 		// THEN an empty state message, and guidance towards the first case
 		// type. Both are dossiq's own strings: `CnIndexPage`'s default is
