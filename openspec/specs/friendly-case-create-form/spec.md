@@ -49,6 +49,20 @@ This sentence used to require the opposite: `caseProperty` rows written AFTER th
 - **THEN** the form SHALL gain a number field labelled "Plafond" holding 800000
 - **AND** a dropdown labelled "Interim report frequency" offering that definition's enum values
 
+#### Scenario: A definition name is shown as words
+
+- **GIVEN** a case type with a definition named `auditorsStatementThreshold` and
+  another whose name contains a space
+- **WHEN** a handler chooses that case type in the New case dialog
+- **THEN** the identifier-shaped one SHALL be labelled `Auditors statement threshold`
+- **AND** the one containing a space SHALL be shown exactly as it was typed
+
+> **Added 2026-09-12.** REQ-FCF-003's prose has always carried this SHALL, and
+> no scenario stated it, so the test proving it had nothing to cite and pointed
+> at REQ-FCF-006's heading instead. That anchor resolves to no scenario at all,
+> and REQ-FCF-006 is about two columns and a full-width widget, so anchoring
+> there would have credited a layout rule to a labelling test.
+
 #### Scenario: Answers are stored on the case, not as a dynamic key
 
 - **GIVEN** a handler has answered a case type question and pressed Create
