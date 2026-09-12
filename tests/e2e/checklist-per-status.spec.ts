@@ -312,7 +312,7 @@ async function openCase(page: Page, id: string): Promise<void> {
 	await expect(page.getByTestId('case-transitions')).toBeVisible({
 		timeout: 30_000,
 	})
-	await expect(page.getByTestId('case-current-status')).toBeVisible({
+	await expect(page.getByTestId('case-header-status')).toBeVisible({
 		timeout: 30_000,
 	})
 }

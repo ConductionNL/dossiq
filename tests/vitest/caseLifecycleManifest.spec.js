@@ -66,7 +66,6 @@ function action(id) {
 
 describe('CaseDetail: the transition strip and the stepper', () => {
 	for (const [id, slot, component] of [
-		['case-transitions', 'widget-case-transitions', 'CaseTransitionsWidget'],
 		['case-steps', 'widget-case-steps', 'CaseStepsWidget'],
 	]) {
 		it(`declares ${id} as a custom widget`, () => {
@@ -88,24 +87,38 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 		})
 	}
 
-	it('puts the transition strip straight under the identity row', () => {
-		// The identity row leads the page full width, as KPI cards, and the
-		// strip sits directly under it.
+	it('mounts the transition buttons in the page header, not in the grid', () => {
+		// The buttons sit in the header's action row, left of Edit, through
+		// the page's `actionsComponent`. They were a grid widget under the
+		// identity row: a status chip the Status card already showed, and the
+		// one button a handler reaches for mid call, two rows below the title.
+		// Nothing of that strip may survive in the grid, or the page shows the
+		// buttons twice.
+		expect(caseDetail().actionsComponent).toBe('CaseTransitionsWidget')
+		expect(widget('case-transitions')).toBeUndefined()
+		expect(cells('case-transitions')).toHaveLength(0)
+		expect(caseDetail().slots['widget-case-transitions']).toBeUndefined()
+		expect(registrySource).toContain('CaseTransitionsWidget: {')
+		expect(registrySource).toContain('component: CaseTransitionsWidget,')
+	})
+
+	it('leads with the identity row, and the panels sit straight under it', () => {
+		// The identity row leads the page full width, as KPI cards.
 		//
 		// It has been both ways. The row was once a full-width band, moved into
 		// the right rail as a card because a line of three to five short facts
 		// left more than half of twelve columns empty, and moved back out once
 		// each fact became a card that divides the row evenly. What survived
 		// both moves is the reading order: a handler sees WHICH case they are
-		// on before WHAT they may do to it.
+		// on before WHAT they may do to it. With the strip gone from the grid,
+		// the panels take the rows it held, with no gutter row between.
 		const header = cells('case-header')[0]
-		const strip = cells('case-transitions')[0]
+		const panels = cells('case-panels')[0]
 		expect(header.gridY).toBe(0)
 		expect(header.gridX).toBe(0)
 		expect(header.gridWidth).toBe(12)
-		// Directly under, with no gutter row between them.
-		expect(strip.gridY).toBe(header.gridY + header.gridHeight)
-		expect(strip.gridX).toBe(0)
+		expect(panels.gridY).toBe(header.gridY + header.gridHeight)
+		expect(panels.gridX).toBe(0)
 	})
 
 	it('gives the stepper the cell the milestone tile had', () => {
@@ -187,7 +200,6 @@ describe('CaseDetail: suspend, resume, extend and reopen', () => {
 describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
 		const named = [
-			widget('case-transitions').icon,
 			widget('case-steps').icon,
 			action('case-suspend').icon,
 			action('case-resume').icon,

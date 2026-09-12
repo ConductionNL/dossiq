@@ -400,7 +400,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${objectId(openCase)}`)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByTestId('case-current-status')).toHaveAttribute(
+		await expect(page.getByTestId('case-header-status')).toHaveAttribute(
 			'data-colour',
 			'orange',
 			{ timeout: 30_000 },
