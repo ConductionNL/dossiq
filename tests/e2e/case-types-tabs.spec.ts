@@ -12,6 +12,8 @@
  */
 
 import { expect, test } from '@playwright/test'
+// 🔬 PROBE IMPORT, REMOVED IN THE NEXT COMMIT.
+import { mutateBundle } from './helpers/mutate-bundle.ts'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 
@@ -53,6 +55,31 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	test('an empty case type register says so and points at the first one', async ({
 		page,
 	}) => {
+		// 🔬 MUTATION PROBE, REMOVED IN THE NEXT COMMIT. The requirement is
+		// that an empty register says it is empty and says what to do next, so
+		// the break is the page going back to the generic line it inherited
+		// from CnIndexPage. Both strings are rewritten on their way into the
+		// browser, so nothing on disk moves and no other session's instance
+		// does either. `assertApplied()` below is what keeps this honest: a
+		// mutation that matched nothing leaves the real strings rendering and
+		// the green that follows would mean nothing at all.
+		const mutation = await mutateBundle(
+			page,
+			[
+				{
+					label: 'the empty state stops naming case types',
+					find: /"dossiq","No case types configured yet"/,
+					replace: '"dossiq","No items found"',
+				},
+				{
+					label: 'the empty state stops offering guidance',
+					find: /"dossiq","Create your first case type to start handling cases\."/,
+					replace: '"dossiq"," "',
+				},
+			],
+			/dossiq-settings\.js/,
+		)
+
 		let emptied = 0
 		await page.route('**/apps/openregister/api/objects/*/caseType*', async (route) => {
 			emptied++
@@ -64,6 +91,8 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		})
 
 		await page.goto(ADMIN_SETTINGS_URL)
+		// 🔬 PROBE: after the navigation that loads the bundle, never before.
+		mutation.assertApplied()
 		await expect(
 			page.getByRole('heading', { name: 'Case Type Management' }),
 		).toBeVisible({ timeout: 15000 })
