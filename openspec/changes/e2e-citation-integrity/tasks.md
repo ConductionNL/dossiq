@@ -104,8 +104,8 @@ Without these, the same 149 come back. Each is a hydra-side or convention-side d
       5.2, 5.3 and 5.4, and 5.4 got worse rather than better (26 contradictions
       then, 31 now).
 
-      Two cautions the report states in full. 48 of the 55 newly verified
-      citations are new citations rather than repaired ones, so the headline
-      overstates how much of the old debt was paid. And half of the gate-credit
+      Two cautions the report states in full. 64 citations are verified now
+      and were not verified before, and 48 of those 64 did not exist before,
+      so the headline overstates how much of the old debt was paid. And half of the gate-credit
       gain is the gate: on the 2026-09-11 tree the current gate already credits
       184 of 330 without a line of dossiq changing.

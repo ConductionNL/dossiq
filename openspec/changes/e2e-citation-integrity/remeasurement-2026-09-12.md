@@ -46,8 +46,8 @@ Rows are the 2026-09-11 verdict, columns the verdict today.
 | not in that population | 48 | 7 | 4 | 0 | 59 |
 | **total** | **236** | **52** | **20** | **8** | **316** |
 
-Read the bottom row before the diagonal. **48 of the 55 newly verified citations are
-new citations, not repaired ones.** The repair mostly wrote new tests and cited them,
+Read the bottom row before the diagonal. 64 citations are verified now and were not
+verified before. **48 of those 64 did not exist before.** The repair mostly wrote new tests and cited them,
 rather than strengthening tests that were already cited. Of the 143 citations the
 first audit called non-verified and that still stand today, 16 moved up to verified
 and 13 moved down.
