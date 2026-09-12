@@ -454,6 +454,17 @@ test.describe('Case identity', () => {
 			).toHaveCount(0)
 		}
 
+		// The scenario says the list holds the two tagged cases ONLY, and
+		// naming three untagged cases that must be absent is not the same
+		// claim: a filter that let a fourth case through would satisfy every
+		// assertion above. The tag is RUN_PREFIX-scoped, so exactly two cases
+		// on the instance carry it and the count is a fact rather than a
+		// guess about what else the register holds.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]'),
+			'the filtered list holds the two tagged cases and nothing else',
+		).toHaveCount(2, { timeout: 20_000 })
+
 		// And the filter is reachable without hand-writing a URL: `tags` is
 		// `facetable`, so the index sidebar builds a Tags control from the
 		// schema.
