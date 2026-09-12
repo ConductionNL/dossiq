@@ -121,10 +121,18 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
+		// An empty uid means OpenRegister had no session user to name. Handing
+		// that on as null lets the engine resolve the caller from IUserSession
+		// itself, which is the same identity the write path would use.
+		$caller = null;
+		if ($userId !== '') {
+			$caller = $userId;
+		}
+
 		try {
 			$available = $this->transitionEngine->getAvailableTransitions(
 				caseId: $caseId,
-				userId: ($userId === '' ? null : $userId),
+				userId: $caller,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
