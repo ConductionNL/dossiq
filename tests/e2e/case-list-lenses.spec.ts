@@ -307,6 +307,53 @@ async function narrowToThisRun(page: Page): Promise<void> {
  * @param page    The page.
  * @param present The key of a row the active lens must show.
  */
+/**
+ * Record every task-inbox request the page makes, from now on.
+ *
+ * The Tasks index is a NAMED source, so its predicates never reach the URL
+ * the way the Cases index's do: they go straight onto the engine's own
+ * endpoint. Reading them off the wire is therefore the only way to say what
+ * a chip asked for, as opposed to what came back.
+ *
+ * @param page The page, hooked before the navigation that triggers the load.
+ *
+ * @return The captured query strings, newest last.
+ */
+function inboxQueries(page: Page): URLSearchParams[] {
+	const seen: URLSearchParams[] = []
+	page.on('request', (request) => {
+		const url = request.url()
+		if (url.includes('/api/flow-tasks') === true) {
+			seen.push(new URL(url).searchParams)
+		}
+	})
+	return seen
+}
+
+/**
+ * The first captured inbox request carrying `key`, once one arrives.
+ *
+ * Polled rather than read once: a chip click re-fetches asynchronously, and
+ * the page has already made its own unfiltered load before the click.
+ *
+ * @param seen The array `inboxQueries` returned.
+ * @param key  The predicate the lens under test must send.
+ *
+ * @return That request's query string.
+ */
+async function firstQueryWith(
+	seen: URLSearchParams[],
+	key: string,
+): Promise<URLSearchParams> {
+	await expect
+		.poll(() => seen.some((query) => query.get(key) !== null), {
+			message: `no task-inbox request carried \`${key}\``,
+			timeout: 30_000,
+		})
+		.toBe(true)
+	return seen.find((query) => query.get(key) !== null) as URLSearchParams
+}
+
 async function listSettled(page: Page, present: string): Promise<void> {
 	await expect(row(page, present).first()).toBeVisible({ timeout: 30_000 })
 }
@@ -315,6 +362,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test.setTimeout(300_000)
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
+		// 🔴 THE DESCRIBE'S `test.setTimeout` DOES NOT REACH THIS HOOK.
+		// It sets the budget for TESTS; a hook keeps the 30s default until
+		// `test.setTimeout` is called inside it. This hook seeds a state
+		// machine, six cases and six engine tasks and then probes the due
+		// window, which is past 30s on a loaded instance: measured
+		// 2026-09-12, every test in this file failed as `"beforeAll" hook
+		// timeout of 30000ms exceeded` and the file read as a broken lens
+		// suite rather than as a hook that ran out of time.
+		test.setTimeout(300_000)
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
 
@@ -832,20 +888,70 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/task-management/spec.md
-	test('the task due windows narrow the collection, edges included', async () => {
-		test.skip(
-			dueWindowSupported === false,
-			'dueAfter/dueBefore are answered by openregister from 2.1.4 '
-				+ '(openregister#3581); an older instance drops the parameters '
-				+ 'silently, so there is no window to observe. Probed against the '
-				+ 'live endpoint in beforeAll.',
-		)
+	//
+	// 🔴 THE LENS HALF IS NOT DECORATION, IT IS WHY THIS CITATION IS HERE.
+	// The body used to call the engine's endpoint and assert its window
+	// semantics, and nothing else. That is openregister's behaviour: a
+	// dossiq lens that sent the wrong predicates, or none, left every
+	// assertion green, so a citation to THIS app's task-management spec
+	// credited an upstream contract. The request the Due this week chip
+	// actually makes is captured first, and the engine's answer is asserted
+	// after, so the two halves are one claim: the lens asks for the window,
+	// and the window means what the chip's own row assertions above read.
+	test('the Due this week lens sends the window, and the engine honours both edges', async ({
+		page,
+	}) => {
+		// 🔴 THE SKIP MOVED OFF THE TEST AND ONTO THE HALF IT BELONGS TO.
+		// `dueAfter`/`dueBefore` are answered by openregister from 2.1.4
+		// (openregister#3581) and an older instance DROPS them silently, so
+		// the engine's edges cannot be observed everywhere. What the lens
+		// ASKS FOR can, on every instance, and that is the half this app
+		// owns: skipping the whole test on an old engine used to take
+		// dossiq's own claim down with openregister's. Probed by behaviour in
+		// `beforeAll`, never off a version string.
+		const asked = inboxQueries(page)
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await chip(page, CHIPS.dueThisWeek).click()
+		// On an engine that drops the predicates the lens answers everything
+		// non-terminal, so the seeded row is there either way; this is a
+		// "the list has answered" signal and nothing more.
+		await listSettled(page, 'task-this-week')
 
-		// The browser scenarios above prove the chips are wired to these
-		// windows; this proves the windows themselves, against the engine's
-		// own endpoint and with pagination out of the way — every task this
-		// file seeds hangs off one case, so `objectUuid` narrows the read to
-		// exactly them.
+		const windowed = await firstQueryWith(asked, 'dueAfter')
+		expect(
+			windowed.get('dueBefore'),
+			'the lens sends both edges, not just the near one',
+		).not.toBeNull()
+		// `scope` is set explicitly on every lens because the endpoint
+		// defaults to `assigned`; a Due this week that left it off would
+		// quietly mean "my work due this week".
+		expect(windowed.get('scope'), 'over every task, not just mine').toBe('all')
+		expect(windowed.get('isTerminal'), 'and not the finished ones').toBe('false')
+		const after = new Date(String(windowed.get('dueAfter'))).getTime()
+		const before = new Date(String(windowed.get('dueBefore'))).getTime()
+		expect(Number.isFinite(after) && Number.isFinite(before)).toBe(true)
+		const days = (before - after) / 86_400_000
+		expect(
+			days,
+			`the window the chip asks for is a week, not ${days} days`,
+		).toBeGreaterThan(6)
+		expect(days).toBeLessThan(8)
+
+		// AND THE ENGINE'S OWN EDGES, where this instance answers them, with
+		// pagination out of the way — every task this file seeds hangs off
+		// one case, so `objectUuid` narrows the read to exactly them.
+		if (dueWindowSupported === false) {
+			test.info().annotations.push({
+				type: 'half-skipped',
+				description:
+					'This openregister drops dueAfter/dueBefore (pre-2.1.4, '
+					+ 'openregister#3581), so the edges below cannot be observed. The '
+					+ 'lens assertions above ran.',
+			})
+			return
+		}
+
 		const inWindow = (
 			await listFlowTasks(api, {
 				scope: 'all',
@@ -872,7 +978,37 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/task-management/spec.md
-	test('overdue is the instant comparison, so a task due later today is not late', async () => {
+	//
+	// 🔴 SAME REPAIR AS THE WINDOW TEST ABOVE. This asserted the engine's
+	// overdue projection over the API and never touched the Tasks index, so
+	// a broken Overdue chip survived it untouched. The chip's own request is
+	// read first: it has to ask for the DERIVED projection, and it must not
+	// fall back to a date comparison, which is the regression the seeded
+	// "due later today" task exists to catch.
+	test('the Overdue lens asks for the projection, and a task due later today is not late', async ({
+		page,
+	}) => {
+		const asked = inboxQueries(page)
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await chip(page, CHIPS.overdue).click()
+		await listSettled(page, 'task-overdue')
+
+		const asksLate = await firstQueryWith(asked, 'overdue')
+		expect(asksLate.get('overdue'), 'the lens asks the engine, not a date').toBe(
+			'true',
+		)
+		expect(asksLate.get('scope'), 'over every task, not just mine').toBe('all')
+		// 🔴 AND NO DATE WINDOW. `overdue` is `dueAt < now` on instants,
+		// derived by the engine; a lens that expressed it as `dueBefore=@today`
+		// would answer a DIFFERENT question — everything due before midnight,
+		// including the task due at 17:00 today — and would still look like a
+		// plausible Overdue list.
+		expect(
+			asksLate.get('dueBefore'),
+			'the Overdue lens must not express lateness as a date window',
+		).toBeNull()
+
 		// The other side of the same boundary, and deliberately NOT gated on
 		// the due-window predicates: `overdue` is the engine's own derived
 		// projection and every version answers it, so this half of the
