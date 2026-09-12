@@ -94,6 +94,21 @@ const INSTANCE_MUTATING = [
 	'**/demo-caseload.spec.ts',
 ]
 
+/**
+ * Sharding, as the shared quality workflow runs it when `e2e-shards` is above 1.
+ *
+ * Each shard is its own runner with its own Nextcloud and its own Postgres, and
+ * the workflow runs `npx playwright test --shard=<index>/<total>` on it. It also
+ * exports the two numbers below, because two things in this file have to change
+ * shape when the suite is split, and Playwright does not tell a config which
+ * shard it is.
+ *
+ * Unset, or 1, means one job running the whole suite. Everything below then
+ * behaves exactly as it did before sharding existed.
+ */
+const SHARD_TOTAL = Number(process.env.E2E_SHARD_TOTAL ?? 1)
+const SHARDED = SHARD_TOTAL > 1
+
 export default defineConfig({
 	testDir: __dirname,
 	// See the header: also repeated on the project below, because a
@@ -146,31 +161,61 @@ export default defineConfig({
 	// a clean run is a weak argument, so the measurement wins over the caution.
 	// Raise it further only the same way: behind a run, not behind arithmetic.
 	//
-	//        5           measured by run 34585313834, see below
+	//        5            405             392         0            0
 	//
-	// FIVE, BECAUSE THE GAP IS NOW SMALL AND IT IS NO LONGER THE FAILURES.
-	// Run 34585313834 on `development`: 394 tests, 4 workers, ONE failure, and
-	// it still truncated with 26 never reached and 1 interrupted at the 38
-	// minute stop. The note below used to say the gap was the failures being
-	// retried, and that was true when 25 tests were red; with one red test the
-	// remaining gap is throughput, and the suite is roughly 10 percent short of
-	// fitting.
+	// The five row is run 34601685356 on `development` (cd5e61bf), measured
+	// BEFORE sharding (#2497) merged: one instance, five workers, every test
+	// reached a verdict, 13 skipped by reason, finished in 29.6 of 38 minutes.
+	// That run is real and is not overturned below — a fast runner absorbs a
+	// fifth worker fine, which is exactly what "results per minute differs by
+	// single digits on a fast runner" predicts. It is one run on one runner
+	// speed, not a rate, so it cannot settle whether five is faster in
+	// general; the table below answers that with 100 jobs instead of one.
 	//
-	// The suite also grew, deliberately: the skip-discipline work gave about a
-	// dozen previously skipped tests real bodies, and decidiq is installed now,
-	// so three decision journeys execute instead of standing down. More tests
-	// reaching a verdict is the point; the budget has to follow.
+	// 🔴 FOUR, AND FIVE WAS MEASURED AND MADE IT WORSE. #2485 raised this to
+	// five on the reasoning that the gap had become throughput. The runs it
+	// produced say the fifth worker buys no throughput and costs timeouts.
+	// Measured over every E2E job on 2026-09-10 and 11 that ran the whole
+	// suite (87 at four workers, 13 at five), read off the job logs:
+	//
+	//     THE RUNNER DECIDES FIRST. Identical code took 96.8 test-minutes on
+	//     run 34581297676 and 123.0 on 34585313834, 35 minutes apart, with
+	//     every spec slower by the same factor. GitHub's runners come in
+	//     speeds about 1.3x apart, and the time the runner spends building
+	//     decidiq (second `webpack ... compiled in` line of the job) sorts
+	//     them: under 72s fast, 72 to 88s medium, over 90s slow. Of the 45
+	//     four-worker jobs that line exists for, 29 landed on a slow runner:
+	//     21 were stopped by the 38 minute globalTimeout and 5 more ended in
+	//     its last half minute. The 16 fast or medium ones ended by 33.2.
+	//     So workers are compared within a runner speed, never across one.
+	//
+	//     EVERY TEST GETS SLOWER, NOT JUST THE PAGE LOADS. Matching each test
+	//     to itself on runners of the same speed, a fifth worker made its
+	//     median duration 1.22 to 1.42 times longer, in every duration band
+	//     from sub-second API tests to 30-second journeys (366 tests on fast
+	//     runners, 338 on slow). A four-vCPU runner holding four Chromes, eight
+	//     PHP workers and Postgres is already saturated; a fifth Chrome only
+	//     divides the same CPU finer.
+	//
+	//                                   4 workers   5 workers
+	//     results per minute, fast       15.9        14.7
+	//     results per minute, slow        9.5         9.4
+	//     flaky tests per slow run        1.2         4.8
+	//     test timeouts per job           0.36        1.08
+	//     page.goto timeouts per job      0           1.38
+	//     hook timeouts per job           0.32        1.69
+	//
+	// So five did not close the gap and could not have: it turned time into
+	// failures. Sharding (#2497) closes the gap, by giving each shard its own
+	// runner; the count below is per shard, and the same arithmetic applies
+	// to every one of them.
 	//
 	// ⚠️ WATCH FOR `SQLSTATE[53200] out of shared memory /
-	// max_locks_per_transaction`. That is the failure this count was held back
-	// from, seen once under four and never since. If it reappears, put this
-	// back to 4 and take the time out of the suite instead, rather than
-	// re-measuring hopefully.
+	// max_locks_per_transaction`. That is the failure three was held back to
+	// before four was measured, seen once under four and never since.
 	//
-	// ⚠️ FIVE WORKERS MAY STILL NOT MAKE THE SUITE FIT, and nothing here should
-	// be read as claiming it does. The next lever is the wall clock inside the
-	// heavy specs, not more workers: `globalTimeout` cannot rise much without
-	// eating the margin that guarantees a verdict at all.
+	// Raise this again only the way it was lowered: compare results per minute
+	// within one runner speed, not the wall clock of one run.
 	//
 	// One locally, deliberately. A developer runs this against the SHARED dev
 	// instance, where four workers seeding and tearing down at once is both
@@ -178,7 +223,7 @@ export default defineConfig({
 	//
 	// `E2E_WORKERS` overrides both, so the count can be re-measured without a
 	// code change.
-	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 5 : 1)),
+	workers: Number(process.env.E2E_WORKERS ?? (process.env.CI ? 4 : 1)),
 	retries: process.env.CI ? 1 : 0,
 	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
 	//
@@ -191,10 +236,24 @@ export default defineConfig({
 	// an artifact, because there was no artifact.
 	//
 	// With a globalTimeout Playwright stops itself and exits with a count, and
-	// the uploads run. Measured overhead before `Run Playwright tests` starts
-	// is 2.0-2.4 min and the uploads take seconds, so 38m keeps ~7 min of
-	// margin under the cap.
-	globalTimeout: 38 * 60_000,
+	// the uploads run.
+	//
+	// The margin is thinner than this comment used to say. It claimed 2.0-2.4
+	// minutes of setup before `Run Playwright tests` starts, and so about 7
+	// minutes to spare. Read off the step timestamps of three jobs on
+	// 2026-09-11 (103222399186, 103224405685, 103237298031), setup now takes
+	// 5.8 to 5.9 minutes, most of it installing and building decidiq and
+	// openregister. Job 103224405685 ran 44m03s against the 45 minute cap. So
+	// 38 minutes still produces a tally, with about one minute to spare.
+	//
+	// SHARDED, EACH SHARD GETS 25 MINUTES. `globalTimeout` is per process, so
+	// it is per shard, and leaving 38 in place would let a shard that should
+	// take 15 minutes hang for 38 before it said anything. 25 is about 1.6
+	// times the slowest shard expected at three shards, and 5.9 minutes of
+	// setup plus 25 plus the uploads still ends about 13 minutes under the
+	// job cap. The guarantee is the same one as above: a shard that overruns
+	// stops on its own clock and leaves its tally and its report.
+	globalTimeout: (SHARDED ? 25 : 38) * 60_000,
 	reporter: [
 		[
 			'html',
@@ -208,6 +267,10 @@ export default defineConfig({
 			{ outputFile: path.resolve(__dirname, 'test-results', 'results.xml') },
 		],
 		['list'],
+		// Last, so its lines follow the list reporter's tally. It fails the run
+		// by name when any test did not run or was interrupted, and names the
+		// step every timeout happened in. See the file for why both are needed.
+		[path.resolve(__dirname, 'helpers', 'verdict-reporter.ts')],
 	],
 	outputDir: path.resolve(__dirname, 'test-results'),
 
@@ -225,7 +288,28 @@ export default defineConfig({
 		// after 65 of 122 tests. A bounded action fails in 15s with the same
 		// diagnostic and leaves the remaining budget for the real assertions.
 		actionTimeout: 15_000,
-		navigationTimeout: 30_000,
+		// 45s, KEPT ACROSS THE WORKER REVERSION BELOW RATHER THAN LOWERED BACK
+		// TO 30s WITH IT. #2517 raised this from 30s after two of six sharded
+		// runs failed on `page.goto: Timeout 30000ms exceeded`, measured while
+		// this file still ran five workers per shard — the same contention the
+		// worker count above is now reverted for. Reverting workers to four
+		// removes most of the pressure that made 45s necessary, but nothing
+		// below is a fresh measurement AT four workers post-sharding: the
+		// four-worker page-load numbers this file cites (p99 25.6s, no goto
+		// timeout in 87 jobs) predate sharding, and #2513's own verification
+		// run still hit an unrelated 30s `page.goto` timeout that passed clean
+		// on re-run. So 45s stays as the measured margin until a run on THIS
+		// config says 30s holds; lowering it on arithmetic alone would repeat
+		// the mistake this comment exists to avoid. `helpers/nav.ts`'s
+		// `PAGE_LOAD_MS` equals this on purpose and moves with it.
+		//
+		// It must stay BELOW the 60s test budget, for the same reason
+		// `actionTimeout` above is bounded: a navigation allowed the whole
+		// budget hangs until the test dies and reports a bare timeout naming
+		// the test, not the load. 45s leaves 15s for the assertions. Lower it
+		// again only behind a run that shows loads finishing well inside it,
+		// not behind arithmetic.
+		navigationTimeout: 45_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
 		storageState: path.resolve(__dirname, '.auth', 'user.json'),
@@ -249,6 +333,8 @@ export default defineConfig({
 			// change state the whole INSTANCE shares.
 			testIgnore: [...IGNORED, ...INSTANCE_MUTATING],
 			use: { ...devices['Desktop Chrome'] },
+			// Sharded only. See the note on the next project.
+			...(SHARDED ? { teardown: 'chromium-instance-state' } : {}),
 		},
 		{
 			// 🔴 THE SPECS THAT MUTATE THE INSTANCE, RUN LAST AND ALONE-ISH.
@@ -273,10 +359,41 @@ export default defineConfig({
 			// right trade only because a run with failures is red regardless:
 			// the verdict is not being hidden, the detail is. Read the tally,
 			// not the colour, until the parallel project is green.
+			//
+			// 🔴 WHY THIS BECOMES A TEARDOWN WHEN THE SUITE IS SHARDED.
+			//
+			// Playwright never shards a project that another project depends
+			// on. It runs a dependency in full on every shard, because it treats
+			// it as setup. Here that project is `chromium`, 361 of the 394
+			// tests, so `--shard` on the unsharded shape split nothing. Measured
+			// with `--list --shard=<i>/4`: every one of the four shards listed
+			// all 361 `chromium` tests plus a quarter of these 33. Four runners,
+			// each doing the whole job.
+			//
+			// Dropping the dependency is not an option either. Without it
+			// Playwright starts this project as soon as a worker is idle, while
+			// `chromium` tests are still running, which is exactly the race the
+			// ordering exists to prevent. Measured with a two-project probe: the
+			// second project started on the idle worker while the first was
+			// still running.
+			//
+			// A teardown keeps the ordering and lets `chromium` shard. Playwright
+			// runs `chromium`'s share of the tests on each shard first and this
+			// project after it, on that shard's own instance. Measured with the
+			// same probe: the teardown project waited for the first project on
+			// every shard, and it ran even when a test in the first project
+			// failed, so the "did not run" price described above goes away when
+			// sharded.
+			//
+			// What it costs: these 33 tests run once on EVERY shard, because a
+			// teardown is never sharded either. That is the slow direction, not
+			// the lossy one. Each shard has its own database, so the mutations
+			// cannot reach another shard's assertions. A red test here goes red
+			// on every shard, which is loud rather than hidden.
 			name: 'chromium-instance-state',
 			testIgnore: IGNORED,
 			testMatch: INSTANCE_MUTATING,
-			dependencies: ['chromium'],
+			...(SHARDED ? {} : { dependencies: ['chromium'] }),
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],

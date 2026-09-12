@@ -267,6 +267,10 @@ class ConfigKeys {
 		'email_from_name',
 		// Empty means "the from-address's own domain", never "no restriction".
 		'email_recipient_allowlist',
+		// Per-user mail matching (email-case-matching). Off unless an admin
+		// says yes; an empty pattern means CaseEmailMatchService::DEFAULT_PATTERN.
+		'email_case_matching_enabled',
+		'email_case_matching_pattern',
 		// Consultation management (consultation-management spec).
 		'consultation_schema',
 		'advice_response_schema',

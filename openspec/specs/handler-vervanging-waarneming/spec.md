@@ -111,6 +111,8 @@ Every mutation a substitute performs on a case or task that is in their werkvoor
 
 #### Scenario: Timeline shows the substituted capacity
 
+@e2e exclude no call-site produces a capacity stamp yet — `SubstitutionAuditService::stampIfSubstituted()` has zero callers in `lib/`, which is the retrofit this spec's own status paragraph records as deferred, so a substitute completing a task writes no `actedOnBehalfOf` entry and no "namens" timeline line exists to read. The query side of the stamp is covered by `tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts` against the `#all-actions-under-a-substitution-are-queryable` scenario. Restore a citation here when the stamp is wired into the case and task mutation paths.
+
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** Marieke completes a task on one of Jan's substituted cases
 - **THEN** the case timeline entry MUST read that Marieke performed the action "namens Jan (waarneming)"

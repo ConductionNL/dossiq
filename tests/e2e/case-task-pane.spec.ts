@@ -56,7 +56,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
  * The transition descriptions `caseTask`'s lifecycle declares, which is what
@@ -211,7 +211,7 @@ async function seedTask(
  * @param id   The case id to open.
  */
 async function openTasksTab(page: Page, id: string) {
-	await page.goto(`/apps/${REGISTER}/cases/${id}`)
+	await page.goto(`/apps/${REGISTER}/cases/${id}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
@@ -498,7 +498,7 @@ test.describe('Case detail — the task pane', () => {
 	test('TaskDetailView names its case and following the link opens the case', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
+		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
 		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a
@@ -538,7 +538,7 @@ test.describe('Case detail — the task pane', () => {
 	test('TaskDetailView carries the case identity, and does not repeat it as a raw row', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
+		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
 		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a
@@ -608,7 +608,7 @@ test.describe('Case detail — the task pane', () => {
 	test('TaskDetailView carries the task own notes and appointments', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`)
+		await page.goto(`/apps/${REGISTER}/tasks/${linkTaskId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		// NOT `.cn-detail-page`. remove-casetask 2.1 retyped this page to
 		// `type: "custom"` over TaskDetailView, because CnDetailPage binds a

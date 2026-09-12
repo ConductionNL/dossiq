@@ -3,9 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-09-11
 - **Sunset:** 2027-03-31
+- **Gate 23 rules:** 4
 - **Deciders:** Ruben van der Linde, dossiq architecture
 - **Scope:** dossiq, tenancy and the OpenRegister organisation boundary
-- **References:** hydra ADR-022 (apps consume OpenRegister abstractions), exception clause. Hydra gate 23, `or-abstraction-anti-patterns`, rules 2, 4 and 7. Change `tenancy-onto-openregister-organisation`. Issue dossiq#2460. Issue dossiq#2470.
+- **References:** hydra ADR-022 (apps consume OpenRegister abstractions), exception clause. Hydra gate 23, `or-abstraction-anti-patterns`. Change `tenancy-onto-openregister-organisation`. Issue dossiq#2460. Issue dossiq#2470.
 
 ## Context
 
@@ -36,17 +37,21 @@ So the services behind those schemas keep their `Tenant` names, on purpose, and
 the approved migration cannot clear rule 4 however much of it is built.
 
 Gate 23 grew an exception path for rules 2 to 6 on 2026-09-11 for exactly this
-reason (ConductionNL/.github). This ADR is the app-local half of it.
+reason (ConductionNL/.github). This ADR is the app-local half of it. The same day
+the gate made that path per rule: an exception ADR now names the rules it
+covers, and a path it lists stays counted under every other rule.
 
 ## Decision
 
-Per the ADR-022 exception clause, the gate suppresses the following paths.
-Every suppression is printed on every gate run, with this ADR named beside it.
+Per the ADR-022 exception clause, the gate suppresses the following paths
+under gate 23 rule 4, the `Tenant*.php` name rule, and under no other rule. The
+`Gate 23 rules: 4` line in the header is what tells the gate so. Every
+suppression is printed on every gate run, with this ADR named beside it.
 
 ### Already consuming OpenRegister, flagged on name only
 
 - `lib/Service/TenantService.php`
-- `lib/Service/TenantAuditTrailService.php`
+- `lib/Service/TenantAuditTrailService.php` (gate 23 rules: 4)
 
 These are not a deferral. They are the target state. They appear here because
 the rule matches their **name**, not their behaviour, and renaming a correct
@@ -94,15 +99,24 @@ Still counted, by class name so that this paragraph suppresses nothing:
 - `TenantMiddleware` and `TenantContextMiddleware`, which gate 23 rule 7 also
   names. They are re-pointed by the move, not kept as they stand.
 
-### One suppression we did not want
+### Rule 7 on `TenantAuditTrailService` stays red
 
-Gate 23 suppresses by path, across all of its rules at once. So covering
-`lib/Service/TenantAuditTrailService.php` for rule 4 also silences rule 7's
-`search_path` hit on that same file. That hit is real: the hardening checklist
-in that class cites the inert isolation middleware as isolation evidence, at
-lines 276 and 302. Those two strings are deleted by dossiq#2470. This ADR does
-not license keeping them, and the reviewer of dossiq#2470 should check they are
-gone rather than trusting a quiet gate.
+The first version of this ADR could not keep this promise. Gate 23 then
+suppressed by path across all of its rules at once, so covering the file for
+rule 4 also hid rule 7's `search_path` hit on it. The gate now suppresses per
+rule, and this ADR covers rule 4 only. The file carries its own
+`(gate 23 rules: 4)` list as well, so widening the header line later cannot
+reach it.
+
+So gate 23 reports that hit again, and it should. The hardening checklist in
+that class cites the inert isolation middleware as isolation evidence, at
+lines 276 and 302. That is the finding behind dossiq#2470. Dossiq stays red on
+rule 7 until #2470 deletes those two strings and the isolation code they
+point at. This ADR does not license keeping them.
+
+Rule 2 is not covered here either. The gate clears `TenantAuditTrailService`
+under rule 2 because it writes through OpenRegister's `AuditTrailMapper`. If it
+ever stops doing that, rule 2 should fire, and this ADR will not stop it.
 
 ## Sunset
 

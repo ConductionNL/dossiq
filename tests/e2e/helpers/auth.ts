@@ -49,10 +49,9 @@ export function storageStatePath(uid: string): string {
  *
  * The failure is a function of WHERE a spec sorts in the run, so a spec that
  * provisions can pass for months and then break because an unrelated spec was
- * added ahead of it. `dashboard-tiles.spec.ts` and `integrations-page.spec.ts`
- * still provision through the session and are carrying the same latent flake;
- * they should move to this. Left alone here on purpose, so a security fix does
- * not quietly change what two unrelated specs authenticate as.
+ * added ahead of it. `dashboard-tiles.spec.ts` provisions through this too.
+ * `integrations-page.spec.ts` provisions no account at all: its non-admin
+ * comes from `ci-seed.sh`, for this same reason.
  *
  * Basic auth removes the clock rather than racing it. Password confirmation is
  * a property of a SESSION, and a request that carries no session cookie has no
@@ -79,6 +78,18 @@ export async function provisioningContext(
 
 	return playwright.request.newContext({
 		baseURL,
+		// 🔴 AN EXPLICIT EMPTY JAR, OR THE ADMIN'S SESSION RIDES ALONG.
+		// Inside a test, Playwright fills every option a `request.newContext`
+		// call leaves out from the project's `use` block
+		// (`runBeforeCreateRequestContext` in @playwright/test 1.63), and that
+		// block names the admin's captured `storageState`. So without this line
+		// the context sent the stale session cookie AND the basic credentials,
+		// and Nextcloud answered from the session. Measured on proof run
+		// 34603140073: with the password here replaced by one the instance
+		// refuses, whoami still answered `admin` and provisioning still
+		// succeeded, so the whoami check could not tell the two apart and the
+		// "no session" this helper promises was not true.
+		storageState: { cookies: [], origins: [] },
 		extraHTTPHeaders: {
 			Authorization: `Basic ${basic}`,
 			'OCS-APIRequest': 'true',

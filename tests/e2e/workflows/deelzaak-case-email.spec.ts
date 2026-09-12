@@ -96,15 +96,14 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		}
 	})
 
-	// FIXME(#719): same gap as cases-crud — the case detail page does not
-	// display the assigned zaaknummer anywhere in its rendered text.
+	// UNPARKED for the same reason as its cases-crud twin, which carries the
+	// long version: the zaaknummer now renders in the `case-core` info panel.
+	// Scoped to that panel because unscoped it was satisfied by the copy
+	// CaseHeaderRow prints under the title, and stayed green on CI run
+	// 34592678724 with the number removed from the panel.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,
 	}) => {
-		test.fixme(
-			true,
-			'FIXME(#719): same gap as cases-crud — the case detail page does not display the assigned zaaknummer anywhere in its rendered text.',
-		)
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, {
@@ -114,14 +113,15 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 			description: 'Parent of a sub-case.',
 		})
 		const parentId = objectId(parent)
-		// dossiq assigns the zaaknummer itself and ignores the supplied identifier,
-		// so assert the ASSIGNED value the create returned, not the seed input.
+		// The number the create RETURNED: the `case` schema keeps a supplied
+		// number and calculates one otherwise, so the response is the authority.
 		const assignedIdentifier = String(
 			(parent as Record<string, unknown>).identifier ?? identifier,
 		)
 
 		await page.goto(`/index.php/apps/dossiq/cases/${parentId}`, {
 			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
 		})
 		await dismissSupportDialog(page)
 
@@ -129,10 +129,17 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), {
 			timeout: 10_000,
 		})
+		const infoPanel = page
+			.locator('.cn-tabs-widget')
+			.locator('.cn-tabs__content > [role="tabpanel"]:not([hidden])')
 		await expect(
-			page.getByText(assignedIdentifier, { exact: false }).first(),
-		).toBeVisible({ timeout: 15_000 })
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible()
+			infoPanel,
+			'the case info panel carries the title',
+		).toContainText(title, { timeout: 30_000 })
+		await expect(
+			infoPanel,
+			'the case info panel carries the zaaknummer',
+		).toContainText(assignedIdentifier, { timeout: 15_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 

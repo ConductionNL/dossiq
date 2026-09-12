@@ -48,6 +48,7 @@ import {
 	clickHeaderAction,
 	dismissSupportDialog,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 } from './helpers/nav.ts'
 
 /** The fields the Link object form asks a handler to fill. */
@@ -120,7 +121,7 @@ async function seedObject(
  * @param id   The case id to open.
  */
 async function openObjectsTab(page: Page, id: string) {
-	await page.goto(`/apps/${REGISTER}/cases/${id}`)
+	await page.goto(`/apps/${REGISTER}/cases/${id}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
@@ -154,7 +155,10 @@ async function openIndex(
 ): Promise<void> {
 	const qs = new URLSearchParams(query).toString()
 	for (const base of [`/apps/${REGISTER}`, `/index.php/apps/${REGISTER}`]) {
-		await page.goto(qs === '' ? `${base}${route}` : `${base}${route}?${qs}`)
+		await page.goto(
+			qs === '' ? `${base}${route}` : `${base}${route}?${qs}`,
+			PAGE_LOAD,
+		)
 		await dismissSupportDialog(page)
 		if (new URL(page.url()).pathname.endsWith(route)) {
 			await expect(
@@ -345,7 +349,7 @@ test.describe('Case objects', () => {
 	test('the Link object form asks for the object fields and never for the case', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -375,7 +379,7 @@ test.describe('Case objects', () => {
 	test('an object linked from the case carries that case and shows up in the tab', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -437,7 +441,7 @@ test.describe('Case objects', () => {
 	}) => {
 		const refusedId = `${RUN_PREFIX}-refused-object`
 
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,

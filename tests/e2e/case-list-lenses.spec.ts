@@ -55,6 +55,7 @@ import {
 import {
 	dateTokenPattern,
 	dismissSupportDialog,
+	PAGE_LOAD,
 	tickCheckbox,
 } from './helpers/nav.ts'
 
@@ -170,7 +171,7 @@ async function seed(key: string, fields: Record<string, unknown>): Promise<strin
  * @param url  Where to go.
  */
 async function visit(page: Page, url: string): Promise<void> {
-	await page.goto(url)
+	await page.goto(url, PAGE_LOAD)
 	await dismissSupportDialog(page)
 }
 

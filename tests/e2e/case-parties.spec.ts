@@ -45,6 +45,7 @@ import {
 	clickHeaderAction,
 	dismissSupportDialog,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 } from './helpers/nav.ts'
 
 /** The fields the Add party form asks a handler to fill. */
@@ -153,7 +154,7 @@ async function seedRole(
  * @param id   The case id to open.
  */
 async function openPartiesTab(page: Page, id: string) {
-	await page.goto(`/apps/${REGISTER}/cases/${id}`)
+	await page.goto(`/apps/${REGISTER}/cases/${id}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
@@ -195,6 +196,7 @@ async function openIndex(
 		// here at load average 50 while the page itself rendered. The SPA
 		// mounts after DOM ready and the list assertion below proves the mount.
 		await page.goto(`${base}${route}?${qs}`, {
+			...PAGE_LOAD,
 			waitUntil: 'domcontentloaded',
 		})
 		await dismissSupportDialog(page)
@@ -392,7 +394,7 @@ test.describe('Case detail — the Parties tab', () => {
 	test('the Parties tab sits in the strip and the retired Contacts tab does not', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
@@ -457,7 +459,7 @@ test.describe('Case detail — the Parties tab', () => {
 	test('the Add party form asks for the party fields and never for the case', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -487,7 +489,7 @@ test.describe('Case detail — the Parties tab', () => {
 	test('a party added from the case carries that case and shows up in the tab', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -569,6 +571,7 @@ test.describe('Case detail — the Parties tab', () => {
 			// Team appeared somewhere in the Data panel, which a label with a
 			// broken editor, or an editor that saves nothing, both satisfy.
 			await page.goto(`/apps/${REGISTER}/cases/${teamCaseId}`, {
+				...PAGE_LOAD,
 				waitUntil: 'domcontentloaded',
 			})
 			await dismissSupportDialog(page)

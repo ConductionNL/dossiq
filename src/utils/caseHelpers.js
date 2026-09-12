@@ -6,6 +6,26 @@
 import { formatDuration, parseDuration } from './durationHelpers.js'
 
 /**
+ * The confidentiality a new case gets when its case type sets none.
+ *
+ * Confidentiality is a safety property, so the fallback errs closed. The
+ * specs say a case inherits its level from its case type and name no value
+ * for a type without one. `zaakvertrouwelijk` keeps the case to the people
+ * working on it. Anything lower opens it to the whole organisation or the
+ * public, which nobody decided. Anything higher needs a clearance that the
+ * people handling the case may not have. Omitting the field is no answer
+ * either: the ZGW filters read a missing level as `openbaar`.
+ *
+ * The value is one of the case schema's ZGW `vertrouwelijkheidaanduiding`
+ * levels, which OpenRegister enforces. The English `'public'` this replaced
+ * was refused, so no sub-case could be created for such a case type.
+ *
+ * @type {string}
+ * @spec openspec/specs/case-management/spec.md
+ */
+export const DEFAULT_CASE_CONFIDENTIALITY = 'zaakvertrouwelijk'
+
+/**
  * Parse a case field that the schema stores as a JSON-encoded array
  * (statusHistory, activity). Tolerates raw arrays (legacy writers),
  * JSON strings, and null/invalid values.
