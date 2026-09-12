@@ -25,8 +25,54 @@ test.describe('Store surface', () => {
 	// load; the neighbouring specs set the same explicit budget.
 	test.setTimeout(300_000)
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
-	test('the store entry sits in the footer between Documentation and Reports', async ({
+	// ✅ THE REFUSAL THAT STOOD HERE IS LIFTED, because the missing half is now
+	// asserted. It said this test proved only clause 2 of REQ-DSS-006's
+	// scenario, the footer placement, and that anchoring a two-clause scenario
+	// to a one-clause test would read as coverage of the icon as well. It also
+	// said what was needed: a run, to pin the selector the deployed nav renders
+	// the glyph with rather than guess it from the source. That run happened.
+	//
+	// WHAT THE GLYPH IS, ON SCREEN. `CnAppNav` gives each entry a
+	// `data-testid="cn-nav-entry-<id>"`, and inside it renders
+	// `mdiIconComponent(item)` when the name resolves in the registry
+	// `registerIcons()` filled from `src/icons.js`. A `vue-material-design-icons`
+	// component renders `class="material-design-icon store-outline-icon"`, so
+	// the icon the manifest declares is readable off the DOM by that class.
+	//
+	// 🔴 WHY A WRONG NAME IS NOT AN ERROR, which is what makes this worth
+	// asserting at all: `isUnresolvedIcon()` catches any PascalCase name the
+	// registry does not hold and `CnAppNav` renders `HelpCircleOutline`
+	// instead, so a typo, a rename or an icon dropped from `src/icons.js` ships
+	// a generic question mark in the navigation and nothing anywhere reports
+	// it.
+	//
+	// ⚠️ AND A SECOND ASSERTION HERE WOULD HAVE BEEN DECORATION. This carried
+	// `expect('.help-circle-outline-icon').toHaveCount(0)` beside the positive,
+	// described as the load-bearing half. It is not, and the mutation below
+	// showed it: CnAppNav's icon slot is `v-if mdiIconComponent` /
+	// `v-else-if isUnresolvedIcon` / `v-else CnMenuItemIcon`, three mutually
+	// exclusive branches, so "the StoreOutline glyph is absent" and "the
+	// fallback is present" are ONE event rather than two. The positive throws
+	// first and the negative never ran. What it was actually good for — naming
+	// the fallback in the failure — is kept by reading the rendered class list
+	// in a single assertion, so the diagnostic lands in the message instead of
+	// in a check that cannot fire.
+	//
+	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`
+	// against a private disposable instance. The manifest's declared name was
+	// rewritten on the way to the browser, leaving the `src/icons.js` registry
+	// intact, which is the defect this clause guards:
+	//
+	//   find    /"label":"Store","icon":"StoreOutline"/
+	//   replace '"label":"Store","icon":"StoreOutlineXX"'
+	//   red on  Expected substring: "store-outline-icon"
+	//           Received string:    "material-design-icon help-circle-outline-icon"
+	//
+	// The footer-placement clause below stayed green throughout, which is why
+	// it could never have stood in for this one.
+	//
+	// @e2e openspec/specs/dossiq-store-surface/spec.md#the-entry-carries-the-tier-a-glyph
+	test('the store entry carries the StoreOutline glyph and sits between Documentation and Reports', async ({
 		page,
 	}) => {
 		await page.goto('/apps/dossiq/')
@@ -38,6 +84,38 @@ test.describe('Store surface', () => {
 			nav.getByText(/^\s*Store\s*$/i),
 			'the navigation must offer a Store entry',
 		).toHaveCount(1, { timeout: 30_000 })
+
+		// CLAUSE 1: the glyph the manifest declares, read off the entry itself.
+		const entry = nav.locator('[data-testid="cn-nav-entry-StoreMenu"]')
+		await expect(
+			entry,
+			'the Store entry must render under the id the manifest gives it',
+		).toHaveCount(1, { timeout: 30_000 })
+		await expect(
+			entry.locator('.material-design-icon').first(),
+			'the Store entry must render an icon at all',
+		).toBeAttached({ timeout: 30_000 })
+		// ONE assertion, reading the glyph the entry actually rendered. A
+		// second `toHaveCount(0)` on `.help-circle-outline-icon` was here and
+		// is gone: the branches are exclusive, so it could never fail on its
+		// own, and written after this line it never even ran. Reading the class
+		// list instead keeps the single claim and puts the fallback in the
+		// failure message, which is the part that was worth having.
+		await expect
+			.poll(
+				async () =>
+					(await entry.locator('.material-design-icon').evaluateAll(
+						(nodes) => nodes.map((node) => node.className),
+					)).join(' '),
+				{
+					timeout: 30_000,
+					message:
+						'the Store entry must render the StoreOutline glyph the manifest '
+						+ 'declares; `help-circle-outline-icon` here means the name did '
+						+ 'not resolve in the registry and CnAppNav fell back',
+				},
+			)
+			.toContain('store-outline-icon')
 
 		// Order, not merely presence. The entry was placed at order 92
 		// deliberately, and an entry that exists in the wrong place is the
@@ -64,7 +142,20 @@ test.describe('Store surface', () => {
 		expect(store, 'Store must precede Reports').toBeLessThan(reports)
 	})
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	// @e2e dossiq-store-surface::an-unconfigured-instance-stays-offline
+	// @e2e dossiq-store-surface::the-page-still-renders
+	//
+	// The citation named the spec FILE and no requirement, so gate-19 credited
+	// it to nothing. It proves both of REQ-DSS-002's scenarios, clause for
+	// clause, so it now says which:
+	//
+	//   "the response outcome MUST be `not_configured`"  -> store-not-configured
+	//   "no outbound HTTP request MUST be made"          -> external toEqual([])
+	//   "MUST render dossiq's built-in templates rather  -> store-builtin
+	//    than an error"                                     and store-page
+	//
+	// Two anchors rather than one because they are two scenarios and this test
+	// carries both; splitting the test would leave each half proving less.
 	test('an unconfigured instance renders the built-in templates and calls no registry', async ({
 		page,
 	}, testInfo) => {
@@ -111,7 +202,11 @@ test.describe('Store surface', () => {
 		).toEqual([])
 	})
 
-	// @e2e openspec/specs/dossiq-store-surface/spec.md
+	// @e2e exclude No requirement in dossiq-store-surface covers deep-link
+	// routing. REQ-DSS-002's two scenarios (the offline answer and the
+	// built-in templates) are proven by the test above, and REQ-DSS-006's
+	// placement by the first one. This is a routing regression guard and
+	// claims no requirement.
 	test('the store page is reachable by direct link', async ({ page }) => {
 		// Relabelling or moving the menu entry must not move the ROUTE.
 		//
