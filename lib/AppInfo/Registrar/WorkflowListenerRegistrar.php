@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
@@ -73,7 +74,30 @@ class WorkflowListenerRegistrar {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
 		$this->registerHumanStepListeners(context: $context);
+		$this->registerCasePlanListeners(context: $context);
 	}//end register()
+
+	/**
+	 * Register the CMMN case-plan projection listener.
+	 *
+	 * A caseType with `handlingModel: cmmn` gets its published `caseModel`
+	 * projected onto OpenRegister's case layer the moment a case of that type
+	 * is created. The listener observes; every decision, including whether the
+	 * caseType is CMMN-managed at all, lives in
+	 * {@see \OCA\Dossiq\Service\CasePlanProjectionService}.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function registerCasePlanListeners(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CasePlanProjectionListener::class
+		);
+	}//end registerCasePlanListeners()
 
 	/**
 	 * Register termijnbewaking (AWB deadline engine) listeners.
