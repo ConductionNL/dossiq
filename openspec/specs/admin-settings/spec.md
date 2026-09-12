@@ -74,6 +74,9 @@ can configure the app from within the SPA. This is a browser-verifiable UI surfa
 distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 
 #### Scenario: In-app settings page renders configuration sections
+
+@e2e exclude The in-app /settings route this scenario describes was retired by page-topology-cleanup (B1): it mounted the same AdminRoot.vue as /settings/admin/dossiq, and reaching an administration component through the in-app router bypasses the settings framework's server-side checks (ADR-004). There is no surface left to drive. Administration is REQ-ADMIN-001, covered by tests/e2e/spec-coverage/admin-settings.spec.ts and tests/e2e/pages.spec.ts.
+
 - **GIVEN** an authenticated admin user on the Dossiq app
 - **WHEN** they navigate to the in-app Settings page
 - **THEN** the page MUST render a "Version Information" section heading

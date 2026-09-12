@@ -586,7 +586,26 @@ test.describe('Doorlooptijd page', () => {
 })
 
 test.describe('Settings page', () => {
-	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
+	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
+	//
+	// 🔴 REPOINTED, BECAUSE THE SCENARIO IT USED TO CITE IS ABOUT A PAGE THAT
+	// NO LONGER EXISTS. The citation read
+	// `#in-app-settings-page-renders-configuration-sections`, which is spec'd
+	// against the IN-APP `/settings` route. page-topology-cleanup (B1)
+	// retired that route: it mounted the same AdminRoot.vue as
+	// /settings/admin/dossiq, and reaching an administration component
+	// through the in-app router bypasses the settings framework's
+	// server-side checks (ADR-004). So the test drove the administration
+	// surface while claiming the retired one, which is a claim no assertion
+	// here could ever make true. That scenario now carries an `@e2e exclude`
+	// naming the retirement; this test cites the scenario it does drive.
+	//
+	// WHAT IT ADDS OVER spec-coverage/admin-settings.spec.ts. That file
+	// asserts the Case Type Management heading for the same scenario. The
+	// scenario's third clause also names the ZGW API mapping section, which
+	// nothing asserted anywhere, and the Configuration section's own Save is
+	// what this test was already about. Both are read here.
+	//
 	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
 	// `/index.php` prefix does not render the target view — the same URL with
@@ -618,6 +637,20 @@ test.describe('Settings page', () => {
 			page.getByRole('button', { name: 'Save', exact: true }),
 		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+
+		// THE TWO SECTIONS THE SCENARIO NAMES. "The page MUST render the
+		// AdminRoot.vue component with case type management and ZGW API
+		// mapping sections" — a Save button on its own is satisfied by any
+		// settings page the framework happens to mount, and says nothing
+		// about whether this app's sections resolved.
+		await expect(
+			page.getByRole('heading', { name: 'Case Type Management' }),
+			'the admin page renders the case type management section',
+		).toBeVisible({ timeout: 20_000 })
+		await expect(
+			page.getByRole('heading', { name: 'ZGW API Mapping' }),
+			'and the ZGW API mapping section beside it',
+		).toBeVisible({ timeout: 20_000 })
 	})
 
 	// FIXME(#719) RESOLVED BY RETIREMENT. The in-app settings page rendered
