@@ -44,6 +44,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -79,7 +80,12 @@ class DashboardControllerContractTest extends TestCase {
 		parent::setUp();
 
 		$this->request = $this->createMock(IRequest::class);
-		$this->controller = new DashboardController(request: $this->request, initialState: $this->createMock(IInitialState::class), appConfig: $this->createMock(IAppConfig::class));
+		$this->controller = new DashboardController(
+			request: $this->request,
+			initialState: $this->createMock(IInitialState::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 	}//end setUp()
 
 	/**
@@ -135,7 +141,12 @@ class DashboardControllerContractTest extends TestCase {
 					$provided[$key] = $data;
 				}
 			);
-		$controller = new DashboardController(request: $this->request, initialState: $initialState, appConfig: $this->createMock(IAppConfig::class));
+		$controller = new DashboardController(
+			request: $this->request,
+			initialState: $initialState,
+			appConfig: $this->createMock(IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 
 		$controller->page();
 
