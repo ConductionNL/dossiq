@@ -3933,6 +3933,8 @@ OC.L10N.register(
         "Could not save. Try again.": "Opslaan is mislukt. Probeer het opnieuw.",
         "That mail account is not yours.": "Dat mailaccount is niet van u.",
         "Choose a mail account first.": "Kies eerst een mailaccount.",
+        "Create your first case type to start handling cases.": "Maak het eerste zaaktype aan om zaken te behandelen.",
+        "No case types configured yet": "Nog geen zaaktypen ingesteld",
         "Case plan": "Zaakplan",
         "Try again": "Probeer het opnieuw",
         "Stop": "Stoppen",
