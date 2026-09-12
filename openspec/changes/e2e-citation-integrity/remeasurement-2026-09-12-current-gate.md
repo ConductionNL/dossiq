@@ -29,6 +29,18 @@ PYTHONPATH=/tmp/gate-current/hydra-gates/scripts/lib \
   /tmp/gate-current/hydra-gates/scripts/lib/check_e2e_coverage.py . out.csv
 ```
 
+## Quote distinct scenarios, not citations
+
+Every number below is a CITATION count, and a citation count reads high. On
+`development` at the time of writing, **307 citations resolve onto 168 distinct
+scenarios credited**. Two citations repaired on one scenario move coverage
+once, not twice, so a citation total overstates what a repair bought.
+
+This is task 5.5 of this change, and it applies to this document as much as to
+any dashboard. Where a number is meant to mean coverage, use the distinct
+scenario count; where it is meant to mean how much citation work is left, the
+citation count is the right one. Say which you are quoting.
+
 ## Where the population stands
 
 308 citations. 206 credited by gate-19, 102 not.
