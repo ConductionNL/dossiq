@@ -301,31 +301,10 @@ class DecisionTableService {
 				throw new OCSBadRequestException('Rule ' . $index . ' outputEntries count (' . $got . ') must match outputs count (' . $outputCount . ')');
 			}
 
-			// A DMN input entry is a FEEL expression, so a scalar. The bare
-			// `(string)` cast that stood here was psalm's InvalidCast: the rule
-			// payload is user-supplied JSON, so an entry can arrive as an array
-			// or an object, and PHP would have written the literal "Array" into
-			// the table with a warning. An entry that is not a scalar is not an
-			// expression, so it becomes the empty cell it already meant.
-			//
-			// Written as a loop rather than array_map(), because psalm keeps
-			// the empty initialiser above as its own array<never, never>
-			// branch, types a callback parameter `never` for it, and then
-			// reports the cast against a value that cannot exist.
-			$inputCells = [];
-			foreach ($inputEntries as $entry) {
-				if (is_scalar($entry) === false) {
-					$inputCells[] = '';
-					continue;
-				}
-
-				$inputCells[] = (string)$entry;
-			}
-
 			$built = [
 				'id' => trim((string)($rule['id'] ?? ('r' . ($index + 1)))),
 				'annotation' => trim((string)($rule['annotation'] ?? '')),
-				'inputEntries' => $inputCells,
+				'inputEntries' => $this->toCells(entries: $inputEntries),
 				'outputEntries' => $outputEntries,
 			];
 
@@ -341,6 +320,41 @@ class DecisionTableService {
 
 		return $rules;
 	}//end validateRules()
+
+	/**
+	 * Render one rule's entries as the string cells the table stores.
+	 *
+	 * A DMN entry is a FEEL expression, so a scalar. The bare `(string)` cast
+	 * that used to sit inline was psalm's InvalidCast: the rule payload is
+	 * user-supplied JSON, so an entry can arrive as an array or an object, and
+	 * PHP would have written the literal "Array" into the table with a warning.
+	 * An entry that is not a scalar is not an expression, so it becomes the
+	 * empty cell it already meant.
+	 *
+	 * Its own method rather than an array_map() inside validateRules(), for two
+	 * reasons. Psalm keeps that method's empty initialiser as its own
+	 * array<never, never> branch, types a callback parameter `never` for it and
+	 * reports the cast against a value that cannot exist. And the loop written
+	 * inline pushed validateRules() to a cyclomatic complexity of 11 against a
+	 * threshold of 10, and an NPath of 386 against 200.
+	 *
+	 * @param array<int, mixed> $entries One rule's raw entries.
+	 *
+	 * @return array<int, string> The entries as table cells.
+	 */
+	private function toCells(array $entries): array {
+		$cells = [];
+		foreach ($entries as $entry) {
+			if (is_scalar($entry) === false) {
+				$cells[] = '';
+				continue;
+			}
+
+			$cells[] = (string)$entry;
+		}
+
+		return $cells;
+	}//end toCells()
 
 	/**
 	 * Resolve the ObjectService and register/schema identifiers.
