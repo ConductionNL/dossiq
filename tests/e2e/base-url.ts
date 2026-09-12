@@ -55,6 +55,12 @@
  *     DOSSIQ_E2E_CONTAINER=nextcloud \
  *     npx playwright test
  *
+ * `E2E_ALLOW_SHARED_INSTANCE` is accepted too and means exactly the same thing.
+ * It is the fleet-wide spelling every other app takes (hydra#665), for a
+ * session that deliberately drives several suites at one instance. The
+ * app-specific spelling stops at dossiq, so it is the safer one to leave in a
+ * shell profile and it wins if the two disagree.
+ *
  * The flag holds the ORIGIN you are permitting, not `1`. A bare `1` left in a
  * shell profile goes on permitting every shared instance the suite ever meets;
  * an origin permits the one you typed and nothing else. Point the suite at a
@@ -81,6 +87,44 @@
 
 /** The variable that permits a shared instance. Holds an origin, not a boolean. */
 export const SHARED_INSTANCE_FLAG = 'DOSSIQ_E2E_ALLOW_SHARED_INSTANCE'
+
+/**
+ * The fleet-wide spelling of the same variable.
+ *
+ * Every other app in the fleet takes this one too (hydra#665), for a session
+ * that deliberately drives several suites at one instance. It holds the same
+ * thing: the origin you permit, not a boolean.
+ *
+ * The app-specific spelling above stops at dossiq and is the safer one to
+ * leave in a shell profile, so it is checked first and wins a disagreement.
+ */
+export const FLEET_INSTANCE_FLAG = 'E2E_ALLOW_SHARED_INSTANCE'
+
+/** Both spellings, app-specific first. */
+export const SHARED_INSTANCE_FLAGS = [
+	SHARED_INSTANCE_FLAG,
+	FLEET_INSTANCE_FLAG,
+] as const
+
+/**
+ * The flag that permits this origin, if either of them does.
+ *
+ * @param target The base URL being aimed at.
+ * @param env    The environment to read.
+ * @return The variable name and its value, or null when neither matches.
+ */
+export function permittingFlag(
+	target: string,
+	env: NodeJS.ProcessEnv = process.env,
+): { name: string; value: string } | null {
+	const wanted = normaliseOrigin(target)
+	for (const name of SHARED_INSTANCE_FLAGS) {
+		const value = (env[name] ?? '').trim()
+		if (value === '') continue
+		if (normaliseOrigin(value) === wanted) return { name, value }
+	}
+	return null
+}
 
 const CI_DEFAULT_BASE_URL = 'http://localhost:8080'
 
@@ -150,16 +194,21 @@ export function isCI(): boolean {
  * saying so.
  *
  * @param target The base URL they asked for.
- * @param flagValue Whatever the flag currently holds.
  * @return The full error text.
  */
-function refusalMessage(target: string, flagValue: string | undefined): string {
+function refusalMessage(target: string): string {
 	const origin = normaliseOrigin(target)
-	const mismatch =
-		flagValue !== undefined && flagValue.trim() !== ''
-			? `${SHARED_INSTANCE_FLAG} is set to "${flagValue.trim()}", which normalises to `
-				+ `${normaliseOrigin(flagValue)} and does not match ${origin}.\n`
-			: ''
+	// Both spellings, because "I set the variable and it still refused" is the
+	// question this paragraph exists to answer, and it is asked about whichever
+	// one the operator actually set.
+	const mismatch = SHARED_INSTANCE_FLAGS.map((name) => {
+		const value = (process.env[name] ?? '').trim()
+		if (value === '') return ''
+		return (
+			`${name} is set to "${value}", which normalises to `
+			+ `${normaliseOrigin(value)} and does not match ${origin}.\n`
+		)
+	}).join('')
 
 	return (
 		`[dossiq e2e] ${target} is the SHARED development container, and this run `
@@ -200,13 +249,8 @@ export function resolveBaseURL(): string {
 	if (explicit) {
 		const target = explicit.replace(/\/+$/, '')
 		if (isCI() === false && isSharedOrigin(target) === true) {
-			const flag = process.env[SHARED_INSTANCE_FLAG]
-			const permitted =
-				flag !== undefined
-				&& flag.trim() !== ''
-				&& normaliseOrigin(flag) === normaliseOrigin(target)
-			if (permitted === false) {
-				throw new Error(refusalMessage(target, flag))
+			if (permittingFlag(target) === null) {
+				throw new Error(refusalMessage(target))
 			}
 		}
 		return target
