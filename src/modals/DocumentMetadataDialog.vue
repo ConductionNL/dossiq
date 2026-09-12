@@ -74,7 +74,7 @@
 					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!canSubmit || uploading"
 					@click="submit">
 					{{ t('dossiq', 'Upload') }}
@@ -85,6 +85,10 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { emit } from '@nextcloud/event-bus'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcModal,
@@ -93,7 +97,11 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
-import { DEFAULT_DIRECTION, DOCUMENT_DIRECTIONS } from '../utils/dossierHelpers.js'
+import {
+	classificationOptions as buildClassificationOptions,
+	DEFAULT_DIRECTION,
+	DOCUMENT_DIRECTIONS,
+} from '../utils/dossierHelpers.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -101,7 +109,17 @@ import { DEFAULT_DIRECTION, DOCUMENT_DIRECTIONS } from '../utils/dossierHelpers.
  * an optional description, shared across all dropped/selected files, and
  * surfaces a per-file upload progress bar.
  *
+ * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
+ * swap): opened as a manifest `open-modal` `dropZone`/upload action, which
+ * hands it the dropped/picked `File[]` as `props.files` and resolves no
+ * other tokens — so, like BeschikkingComposerDialog, this dialog owns
+ * fetching the type catalog and performing the upload itself, rather than
+ * relying on a parent tab component to do it and pass the results down as
+ * props. `caseId` is read the same defensive way: the prop when it does not
+ * still hold the unresolved `@objectId` token, the route otherwise.
+ *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
  */
 export default {
 	name: 'DocumentMetadataDialog',
@@ -125,24 +143,10 @@ export default {
 			default: () => [],
 		},
 
-		types: {
-			type: Array,
-			default: () => [],
-		},
-
-		progress: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		errors: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		uploading: {
-			type: Boolean,
-			default: false,
+		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
+		caseId: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -155,6 +159,10 @@ export default {
 			keywords: [],
 			title: '',
 			description: '',
+			types: [],
+			uploading: false,
+			progress: {},
+			errors: {},
 		}
 	},
 
@@ -175,28 +183,32 @@ export default {
 		},
 
 		/**
-		 * Confidentiality dropdown options (ordered lowest to highest).
+		 * Confidentiality dropdown options (ordered lowest to highest), shared
+		 * with the bulk confidentiality-change dialog.
 		 *
 		 * @return {Array} The classification options.
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		classificationOptions() {
-			return [
-				{ id: 'openbaar', label: this.t('dossiq', 'Public') },
-				{
-					id: 'beperkt_openbaar',
-					label: this.t('dossiq', 'Limited public'),
-				},
-				{ id: 'intern', label: this.t('dossiq', 'Internal') },
-				{
-					id: 'zaakvertrouwelijk',
-					label: this.t('dossiq', 'Case-confidential'),
-				},
-				{ id: 'vertrouwelijk', label: this.t('dossiq', 'Confidential') },
-				{ id: 'confidentieel', label: this.t('dossiq', 'Restricted') },
-				{ id: 'geheim', label: this.t('dossiq', 'Secret') },
-				{ id: 'zeer_geheim', label: this.t('dossiq', 'Top secret') },
-			]
+			return buildClassificationOptions(this.t.bind(this))
+		},
+
+		/**
+		 * The case this dialog files documents on.
+		 *
+		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
+		 * still holding an `@` token is not a case id — the route is (mirrors
+		 * BeschikkingComposerDialog.resolvedCaseId).
+		 *
+		 * @return {string} The case id, or empty string.
+		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+		 */
+		resolvedCaseId() {
+			const fromProp = this.caseId || ''
+			if (fromProp !== '' && !fromProp.startsWith('@')) {
+				return fromProp
+			}
+			return (this.$route && this.$route.params && this.$route.params.id) || ''
 		},
 
 		/**
@@ -278,19 +290,61 @@ export default {
 				this.title = files[0].name
 			}
 		},
+
+		/**
+		 * Load the type catalog the moment the dialog opens — mirrors
+		 * BeschikkingComposerDialog's `open` watcher, since this dialog is now
+		 * self-sufficient rather than fed props by a parent tab.
+		 *
+		 * @param {boolean} isOpen Whether the dialog is showing.
+		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+		 */
+		open: {
+			immediate: true,
+			handler(isOpen) {
+				if (isOpen) {
+					this.fetchTypes()
+				}
+			},
+		},
 	},
 
 	methods: {
 		/**
-		 * Emit the collected shared metadata for upload.
+		 * Fetch the informatieobjecttype catalog for the type picker.
 		 *
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
 		 */
-		submit() {
-			if (!this.canSubmit) {
+		async fetchTypes() {
+			try {
+				const url = generateUrl(
+					'/apps/openregister/api/objects/dossiq/informatieobjecttype?_limit=200',
+				)
+				const { data } = await axios.get(url)
+				this.types = data.results || data.objects || data || []
+			} catch {
+				this.types = []
+			}
+		},
+
+		/**
+		 * Upload every pending file with the shared metadata, per-file
+		 * progress, then close and signal the page to refetch.
+		 *
+		 * Self-sufficient (see the class doc comment): this used to be an
+		 * emitted `submit` event a parent `DossierTab` turned into the POSTs
+		 * below; there is no such parent once this dialog is opened as a
+		 * manifest `open-modal` action, so it makes the request itself.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-a-click-to-upload-button-rides-the-declared-dropzone-action
+		 */
+		async submit() {
+			if (!this.canSubmit || this.resolvedCaseId === '') {
 				return
 			}
-			this.$emit('submit', {
+			const metadata = {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
 				// The schema default, spelled out rather than left to the
@@ -300,7 +354,50 @@ export default {
 				keywords: this.normalisedKeywords,
 				title: this.title,
 				description: this.description,
-			})
+			}
+			this.uploading = true
+			this.progress = {}
+			this.errors = {}
+			let anySuccess = false
+			for (let index = 0; index < this.files.length; index++) {
+				const file = this.files[index]
+				const form = new FormData()
+				form.append('files', file)
+				form.append('metadata', JSON.stringify(metadata))
+				try {
+					this.progress = { ...this.progress, [index]: 0 }
+					const url = generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+					)
+					await axios.post(url, form, {
+						headers: { 'Content-Type': 'multipart/form-data' },
+						onUploadProgress: (event) => {
+							if (event.total) {
+								this.progress = {
+									...this.progress,
+									[index]: Math.round((event.loaded / event.total) * 100),
+								}
+							}
+						},
+					})
+					this.progress = { ...this.progress, [index]: 100 }
+					anySuccess = true
+				} catch {
+					this.errors = { ...this.errors, [index]: true }
+				}
+			}
+			this.uploading = false
+			if (anySuccess) {
+				showSuccess(this.t('dossiq', 'Documents uploaded'))
+				// The widget fetched its rows before this upload landed; without
+				// this signal the new document is on the server and invisible on
+				// screen until something else happens to refetch.
+				emit('cn:page:refresh')
+				this.$emit('submit', metadata)
+				this.$emit('close')
+			} else {
+				showError(this.t('dossiq', 'Upload failed'))
+			}
 		},
 	},
 }

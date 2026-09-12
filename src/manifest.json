@@ -1388,11 +1388,39 @@
 									"label": "Documents",
 									"widget": {
 										"id": "case-documents",
-										"type": "dossier-tab",
+										"type": "object-list",
 										"title": "Documents",
 										"icon": "FileDocumentMultipleOutline",
-										"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files SECTION sits under it in the same tab, for loose attachments and Nextcloud shares.",
+										"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, `informatieobject` extended in so every column resolves as a real value rather than one repeated uuid (@conduction/nextcloud-vue #1115). `informatieobjecttype` resolves through `fkResolve` (a SECOND hop past what `extend` reaches); grouping resolves the group heading the same way through `groupLabelResolve` (#1117), since a group heading needs the identical lookup a column does. `sortable: true` makes every column an interactive sort, matching the dropdown DossierTab used to offer. `facet` reproduces the keyword filter (task 2.3) client-side over the loaded page. `selectable` + `bulkActions` reproduce BulkActionsBar's three gestures, each opening `BulkDocumentActionDialog` in its own `mode` with `props.selectedIds` merged in by the widget. `dropZone` reproduces the drag-and-drop upload, and the click-to-upload button rides the same action; both open `DocumentMetadataDialog`, self-sufficient since there is no more DossierTab to own the request. The Versions row action opens `VersionHistoryPanel`, self-sufficient the same way, with `props.row` merged in by the widget (#1117) since an open-modal row action otherwise carries no per-click information at all. Closed by growing the library first per Ruben's 2026-09-11 decision on documents-on-the-case task 2.2 (option b), not by swapping straight onto a widget that could not do any of this yet. The type is `object-list`, a nextcloud-vue BUILT-IN resolved by the library directly -- not an app registry key, unlike the retired `dossier-tab` widget TYPE this replaces. Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files SECTION sits under it in the same tab, for loose attachments and Nextcloud shares.",
 										"content": {
+											"register": "dossiq",
+											"schema": "zaakinformatieobject",
+											"filter": { "case": "@objectId" },
+											"extend": ["informatieobject"],
+											"limit": 200,
+											"sort": { "field": "informatieobject.creatiedatum", "dir": "desc" },
+											"sortable": true,
+											"groupBy": "informatieobject.informatieobjecttype",
+											"groupLabelResolve": { "register": "dossiq", "schema": "informatieobjecttype", "labelField": "description" },
+											"selectable": true,
+											"facet": { "field": "informatieobject.keywords", "label": "Filter by keyword" },
+											"columns": [
+												{ "key": "informatieobject.title", "label": "Title" },
+												{ "key": "informatieobject.informatieobjecttype", "label": "Type", "widget": "fkResolve", "widgetProps": { "register": "dossiq", "schema": "informatieobjecttype", "labelField": "description" } },
+												{ "key": "informatieobject.status", "label": "Status" },
+												{ "key": "informatieobject.direction", "label": "Direction" },
+												{ "key": "informatieobject.creatiedatum", "label": "Date" },
+												{ "key": "informatieobject.auteur", "label": "Author" }
+											],
+											"rowActions": [
+												{ "label": "Versions", "icon": "History", "type": "open-modal", "target": "VersionHistoryPanel", "props": { "open": true } }
+											],
+											"dropZone": { "type": "open-modal", "target": "DocumentMetadataDialog", "props": { "caseId": "@objectId", "open": true } },
+											"bulkActions": [
+												{ "label": "Mark final", "type": "open-modal", "target": "BulkDocumentActionDialog", "props": { "mode": "mark-final", "open": true } },
+												{ "label": "Change confidentiality", "type": "open-modal", "target": "BulkDocumentActionDialog", "props": { "mode": "confidentiality", "open": true } },
+												{ "label": "Download ZIP", "type": "open-modal", "target": "BulkDocumentActionDialog", "props": { "mode": "zip", "caseId": "@objectId", "open": true } }
+											],
 											"emptyText": "No documents yet"
 										}
 									}

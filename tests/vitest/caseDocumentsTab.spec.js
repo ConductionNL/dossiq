@@ -73,12 +73,20 @@ describe('CaseDetail Documents tab', () => {
 		expect(placed).not.toContain('case-documents')
 	})
 
-	it('names a widget type the component registry answers to', () => {
+	it('names a widget type the library resolves as a built-in, or the app registers', () => {
+		// `object-list` is a nextcloud-vue BUILT-IN, resolved by the library
+		// directly and never listed in this app's own registry.js — unlike the
+		// retired `dossier-tab` widget TYPE this tab used to declare. The
+		// custom-vs-registered distinction this spec guards still holds: a
+		// `type: "custom"` widget renders nothing inside a tab, and any type
+		// this app names that is NOT the known library built-in must still be
+		// one this app's registry answers to.
 		const registry = fs.readFileSync(REGISTRY_PATH, 'utf8')
 		expect(documents.type).not.toBe('custom')
+		const isLibraryBuiltIn = documents.type === 'object-list'
 		expect(
-			registry.includes(`'${documents.type}': {`),
-			`src/registry.js must register the widget type "${documents.type}"`,
+			isLibraryBuiltIn || registry.includes(`'${documents.type}': {`),
+			`"${documents.type}" must be a known nextcloud-vue built-in, or src/registry.js must register it`,
 		).toBe(true)
 	})
 

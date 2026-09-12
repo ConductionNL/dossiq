@@ -1,71 +1,83 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<div class="dossier-version-panel">
-		<h4 class="dossier-version-panel__title">
-			{{ t('dossiq', 'Version history') }}
-		</h4>
+	<NcModal v-if="open" size="normal" @close="$emit('close')">
+		<div class="dossier-version-panel">
+			<h4 class="dossier-version-panel__title">
+				{{ t('dossiq', 'Version history') }}
+			</h4>
 
-		<NcEmptyContent
-			v-if="!loading && versions.length === 0"
-			:name="t('dossiq', 'No previous versions')">
-			<template #icon>
-				<History :size="20" />
-			</template>
-		</NcEmptyContent>
+			<NcEmptyContent
+				v-if="!loading && versions.length === 0"
+				:name="t('dossiq', 'No previous versions')">
+				<template #icon>
+					<History :size="20" />
+				</template>
+			</NcEmptyContent>
 
-		<NcLoadingIcon v-if="loading" :size="24" />
+			<NcLoadingIcon v-if="loading" :size="24" />
 
-		<ul v-if="versions.length > 0" class="dossier-version-panel__list">
-			<li
-				v-for="version in versions"
-				:key="version.id"
-				class="dossier-version-panel__item">
-				<div class="dossier-version-panel__info">
-					<span class="dossier-version-panel__number"
-						>{{ t('dossiq', 'Version') }} {{ version.number }}</span
-					>
-					<span class="dossier-version-panel__meta">
-						{{ formatDate(version.timestamp) }} ·
-						{{ version.author || t('dossiq', 'Unknown') }}
-					</span>
-				</div>
-				<div class="dossier-version-panel__actions">
-					<NcButton
-						type="tertiary"
-						@click="$emit('download-version', version)">
-						{{ t('dossiq', 'Download') }}
-					</NcButton>
-					<NcButton
-						type="tertiary"
-						:disabled="restoreDisabled"
-						:title="
-							restoreDisabled
-								? t('dossiq', 'Final documents cannot be modified')
-								: ''
-						"
-						@click="$emit('restore-version', version)">
-						{{ t('dossiq', 'Restore') }}
-					</NcButton>
-				</div>
-			</li>
-		</ul>
-	</div>
+			<ul v-if="versions.length > 0" class="dossier-version-panel__list">
+				<li
+					v-for="version in versions"
+					:key="version.id"
+					class="dossier-version-panel__item">
+					<div class="dossier-version-panel__info">
+						<span class="dossier-version-panel__number"
+							>{{ t('dossiq', 'Version') }} {{ version.number }}</span
+						>
+						<span class="dossier-version-panel__meta">
+							{{ formatDate(version.timestamp) }} ·
+							{{ version.author || t('dossiq', 'Unknown') }}
+						</span>
+					</div>
+					<div class="dossier-version-panel__actions">
+						<NcButton type="tertiary" @click="downloadVersion(version)">
+							{{ t('dossiq', 'Download') }}
+						</NcButton>
+						<NcButton
+							type="tertiary"
+							:disabled="restoreDisabled"
+							:title="
+								restoreDisabled
+									? t('dossiq', 'Final documents cannot be modified')
+									: ''
+							"
+							@click="restoreVersion(version)">
+							{{ t('dossiq', 'Restore') }}
+						</NcButton>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</NcModal>
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { emit } from '@nextcloud/event-bus'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
 /**
- * Side panel exposing the Nextcloud Files versions of a dossier document via
- * the WebDAV versions API. Each version is downloadable; the restore action is
+ * Version-history modal for one dossier document, over the Nextcloud Files
+ * versions WebDAV API. Each version is downloadable; the restore action is
  * disabled when the informatieobject status is definitief (mirroring the
  * server-side immutability rule).
  *
+ * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
+ * swap): opened as a manifest `open-modal` row action, which
+ * CnObjectListWidget hands `props.row` — the RAW `zaakinformatieobject` row,
+ * `informatieobject` inlined by `content.extend` — rather than the plain
+ * `document` object a parent DossierTab used to pass down directly, and no
+ * `userId` prop either, since there is no parent to read `getCurrentUser()`
+ * for it any more.
+ *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
  */
 export default {
 	name: 'VersionHistoryPanel',
@@ -73,22 +85,24 @@ export default {
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
+		NcModal,
 		History,
 	},
 
 	props: {
-		document: {
-			type: Object,
-			required: true,
+		open: {
+			type: Boolean,
+			default: false,
 		},
 
-		userId: {
-			type: String,
-			default: '',
+		/** The clicked zaakinformatieobject row, with informatieobject extended in. */
+		row: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 
-	emits: ['download-version', 'restore-version'],
+	emits: ['close'],
 	data() {
 		return {
 			versions: [],
@@ -97,6 +111,27 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The informatieobject the version history belongs to.
+		 *
+		 * @return {object} The referenced informatieobject, or an empty object.
+		 * @spec openspec/changes/object-list-widget-grouping-select-facet/specs/cn-workspace-context-widgets/spec.md#requirement-cnobjectlistwidget-supports-multi-select-and-bulk-actions
+		 */
+		document() {
+			const informatieobject = this.row && this.row.informatieobject
+			return (informatieobject && typeof informatieobject === 'object') ? informatieobject : {}
+		},
+
+		/**
+		 * The signed-in user id, for the versions DAV path.
+		 *
+		 * @return {string} The user id, or empty string.
+		 */
+		userId() {
+			const user = getCurrentUser()
+			return user ? user.uid : ''
+		},
+
 		/**
 		 * Whether the restore action is disabled (definitief documents).
 		 *
@@ -109,15 +144,18 @@ export default {
 	},
 
 	watch: {
-		document: {
+		open: {
 			immediate: true,
 			/**
-			 * Refetch versions when the active document changes.
+			 * Fetch versions the moment the modal opens.
 			 *
+			 * @param {boolean} isOpen Whether the modal is showing.
 			 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 			 */
-			handler() {
-				this.fetchVersions()
+			handler(isOpen) {
+				if (isOpen) {
+					this.fetchVersions()
+				}
 			},
 		},
 	},
@@ -145,7 +183,7 @@ export default {
 					headers: { Depth: '1' },
 				})
 				this.versions = this.parseVersions(data)
-			} catch (error) {
+			} catch {
 				this.versions = []
 			} finally {
 				this.loading = false
@@ -209,6 +247,56 @@ export default {
 				return dateStr
 			}
 			return d.toLocaleString('nl-NL')
+		},
+
+		/**
+		 * Download one previous version.
+		 *
+		 * `version.id` is the DAV href PROPFIND returned, which is already the
+		 * download URL for that version. It is opened rather than fetched
+		 * because the browser must own the save dialog.
+		 *
+		 * @param {object} version The version to download.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		downloadVersion(version) {
+			if (!version || !version.id) {
+				return
+			}
+			window.open(version.id, '_blank')
+		},
+
+		/**
+		 * Restore the open document to one of its previous versions.
+		 *
+		 * Nextcloud restores a version by MOVEing its DAV node onto the
+		 * `restore/target` endpoint. The page's object-list is refetched
+		 * afterwards because the size and the modification date both change.
+		 *
+		 * @param {object} version The version to restore.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async restoreVersion(version) {
+			if (!version || !version.id || !this.userId) {
+				return
+			}
+			try {
+				await axios.request({
+					method: 'MOVE',
+					url: version.id,
+					headers: {
+						Destination: generateUrl(
+							`/remote.php/dav/versions/${this.userId}/restore/target`,
+						),
+					},
+				})
+				showSuccess(this.t('dossiq', 'Version restored'))
+				emit('cn:page:refresh')
+				await this.fetchVersions()
+			} catch {
+				showError(this.t('dossiq', 'Could not restore this version'))
+			}
 		},
 	},
 }
