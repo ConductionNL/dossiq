@@ -98,6 +98,29 @@ class Application extends App implements IBootstrap {
 			\OCA\Dossiq\Repair\ValueMigrationPort::class,
 			\OCA\Dossiq\Repair\DbValueMigrationPort::class
 		);
+
+		// The case lifecycle provider OpenRegister asks for a case's available
+		// actions. The schema's `x-openregister-lifecycle.provider` names this
+		// FQCN, and OR's LifecycleActionProviderRegistry resolves it through
+		// the server container, which does reach this app's container — so
+		// autowiring alone would probably work. It is stated anyway, for the
+		// same reason the ObjectServiceInterface alias above is: when the
+		// resolution fails, OR's registry is fail-closed and the whole
+		// available-actions call answers 502, which reads to a user as a case
+		// with a dead timeline rather than as a missing binding. The guards
+		// this app already ships to OpenRegister (BezwaarDeadlineGuard,
+		// HoorzittingAfzienGuard) are named the same way from the register and
+		// left to autowiring; they have no constructor dependencies, so there
+		// is nothing to state.
+		$context->registerService(
+			\OCA\Dossiq\Lifecycle\CaseActionProvider::class,
+			static fn (\Psr\Container\ContainerInterface $container): \OCA\Dossiq\Lifecycle\CaseActionProvider
+				=> new \OCA\Dossiq\Lifecycle\CaseActionProvider(
+					transitionEngine: $container->get(\OCA\Dossiq\Service\StatusTransitionService::class),
+					resultWriter: $container->get(\OCA\Dossiq\Service\Transitions\CaseResultWriter::class),
+					logger: $container->get(\Psr\Log\LoggerInterface::class),
+				)
+		);
 		(new ServiceRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);
 	}//end register()

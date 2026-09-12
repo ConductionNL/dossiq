@@ -175,6 +175,12 @@ class StatusTransitionService {
 			$result['transitions'][] = [
 				'id' => (string)($transition['id'] ?? ''),
 				'label' => (string)($transition['label'] ?? ''),
+				// Additive, and empty for every template shipped today: the
+				// documented StatusTransition shape carries no `description`.
+				// It is published so a template that does write one reaches
+				// CaseActionProvider, which has no other sight of the
+				// transition definition.
+				'description' => (string)($transition['description'] ?? ''),
 				'toStatus' => (string)($transition['toStatus'] ?? ''),
 				'guardsPassed' => count($failed) === 0,
 				'failedGuards' => $failed,
