@@ -1255,14 +1255,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		expect(String(after.deadline ?? '')).toBe(String(before.deadline ?? ''))
 	})
 
-	// @e2e openspec/specs/case-bulk-status-transition/spec.md
-	//
-	// 🔴 NO ANCHOR BECAUSE THERE IS NO SCENARIO TO NAME. The requirement
-	// "Bulk actions on the case index" states the five handlers in prose, and
-	// every scenario under it is about what one action DOES once opened, not
-	// about the strip offering them. Naming one of those would credit a
-	// transition, suspend or extend claim to a test that only counts buttons.
-	// The honest close is a scenario for the affordance, not an anchor.
+	// @e2e openspec/specs/case-bulk-status-transition/spec.md#the-index-offers-the-five-bulk-actions
 	test('the Cases list offers all five bulk actions on a selection', async ({
 		page,
 	}) => {
