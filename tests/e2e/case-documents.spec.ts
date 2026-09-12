@@ -4,29 +4,43 @@
  *
  * The Documents tab: the case file, on the case page.
  *
- * The schemas `informatieobject`, `zaakinformatieobject` and
- * `informatieobjecttype` shipped, and so did `DossierTab` with its drop zone,
- * metadata dialog and version panel — linked from no page. The spec said
- * shipped and the surface was dead, which is exactly the state no test can
- * tell apart from a working one it never opens.
+ * documents-on-the-case task 2.2 (Ruben, 2026-09-11, option b): the tab is
+ * now `type: "object-list"` (a CnObjectListWidget), grown in nextcloud-vue
+ * #1115/#1117 specifically so this swap would not drop grouping, multi-select
+ * with bulk actions, interactive sort, the keyword facet, or upload. Every
+ * one of those five is asserted here, on the real rendered DOM, because that
+ * is the only thing Ruben's decision was actually protecting.
  *
- * WHAT THIS SPEC ADDRESSES, AND WHY THAT WAY. The tab's content is read
- * through the OPEN PANEL inside the strip, `[role="tabpanel"]:not([hidden])`,
- * and never through `[aria-label="case-documents"]`: CnDetailPage labels only
- * TOP-LEVEL widgets, so a widget that lives as a tab child has no such label,
- * and the sidebar has tabpanels of its own that a page-wide locator would
- * also match.
- *
- * Column HEADINGS and row VALUES are asserted, never the widget type. The
- * widget is the interim rendering (documents-on-the-case task 2.2): it becomes
- * an `object-list` over `zaakinformatieobject` once nextcloud-vue renders a
- * `$ref` column by a label field, and this spec has to survive that swap or it
- * is testing the scaffolding instead of the feature.
+ * DOM CONVENTIONS THIS SPEC DEPENDS ON (CnDataTable / CnObjectListWidget,
+ * @conduction/nextcloud-vue):
+ *   - a row is `[data-testid="cn-object-row"]`; its cells are `<td>` in
+ *     column order, offset by ONE because `selectable: true` adds a leading
+ *     checkbox `<td>` — see `rowCell()` below.
+ *   - a column header is a real `<th>` (role `columnheader`), found by its
+ *     visible label text.
+ *   - a group (from `content.groupBy`) is `[data-testid="object-list-group"]`
+ *     and contains its OWN CnDataTable, so headers/rows must be scoped to one
+ *     group's locator rather than the whole panel — grouping is always on
+ *     for this widget instance.
+ *   - the facet is `[data-testid="object-list-facet"]`, one
+ *     `[data-testid="object-list-facet-chip"]` button per keyword.
+ *   - the bulk bar is `[data-testid="object-list-bulk-bar"]`, appearing once
+ *     a row's checkbox is checked; its buttons are
+ *     `[data-testid="object-list-bulk-action"]`, one per declared
+ *     `bulkActions` entry, by their label text.
+ *   - the click-to-upload button/input are `[data-testid="object-list-upload"]`
+ *     / `[data-testid="object-list-upload-input"]`.
+ *   - a row action menu (Versions) opens through
+ *     `[data-testid="cn-row-actions"]` then `[data-testid="cn-action-item-versions"]`
+ *     — a data-testid, not a role, because `NcActions`/`NcActionButton` puts
+ *     `role="menuitem"` on the button once it is inside a menu (an
+ *     accessible-truth quirk the previous version of this spec hit and
+ *     documented at length); the testid is stable either way.
  *
  * Locale: nothing forces the language of the E2E instance, so tab and button
- * names are matched in either locale the app ships, as the sibling case-detail
- * specs do. Rows are matched on their run-prefixed title, which is data this
- * spec wrote and no translation touches.
+ * names are matched in either locale the app ships, as the sibling
+ * case-detail specs do. Rows are matched on their run-prefixed title, which
+ * is data this spec wrote and no translation touches.
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -47,9 +61,6 @@ import {
 } from './helpers/fixtures.ts'
 import { clickHeaderAction } from './helpers/nav.ts'
 
-/** The six columns the case file is read by, in order. */
-const COLUMNS = ['Title', 'Type', 'Status', 'Direction', 'Date', 'Author']
-
 const OBJECTION_TITLE = `${RUN_PREFIX} Objection to the felling permit`
 const ACKNOWLEDGEMENT_TITLE = `${RUN_PREFIX} Acknowledgement of receipt`
 const DROPPED_TITLE = `${RUN_PREFIX} Dropped inspection report`
@@ -69,14 +80,18 @@ const PDF_BYTES = Buffer.from(
 let api: APIRequestContext
 let token: string
 let caseTypeId = ''
-/** The case the tab is read on: two documents of different types. */
+/** The case the tab is read on: two documents of different types (also the grouping fixture). */
 let caseId = ''
 /** A case with no documents at all. */
 let emptyCaseId = ''
-/** A case the drop zone writes into, kept apart so the new row is unambiguous. */
+/** A case the drop zone / upload button writes into, kept apart so the new row is unambiguous. */
 let dropCaseId = ''
-/** A case the keyword filter is exercised on. */
+/** A case the keyword facet is exercised on. */
 let filterCaseId = ''
+/** A case with several same-type documents, for the interactive-sort assertion. */
+let sortCaseId = ''
+/** A case with several documents, for the multi-select + bulk-action assertion. */
+let bulkCaseId = ''
 /** A case the Generate document action files a letter onto. */
 let generateCaseId = ''
 /** A case carrying one FINAL document, for the version panel's restore guard. */
@@ -110,8 +125,6 @@ async function seedDocument(
 		case: onCase,
 		informatieobject: id,
 		registrationDate: '2026-05-04T10:02:00+00:00',
-		// The join carries no free text of its own, so the sweep would never
-		// find it: the description gives teardown something to match on.
 		natureRelationshipDisplay: 'Hoort at omgekeerd',
 	})
 	return id
@@ -121,8 +134,7 @@ async function seedDocument(
  * Open a case and switch to its Documents tab, returning the OPEN panel.
  *
  * The tab panels are LAZY: the widget does not mount, and therefore does not
- * fetch, until its tab is opened. Without the click every assertion below
- * would time out on an unmounted panel and read as a broken dossier.
+ * fetch, until its tab is opened.
  *
  * @param page The Playwright page.
  * @param id The case id to open.
@@ -131,17 +143,30 @@ async function seedDocument(
 async function openDocumentsTab(page, id: string) {
 	await page.goto(`/apps/${REGISTER}/cases/${id}`)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
-
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
-	// instead of fourteen, a tab carries two collections, so an assertion made
-	// against the panel root can be satisfied by the wrong half of it. The
-	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
-	// moves one table rather than every spec that opens a panel.
-	//
-	// It is a testid and not a widget id because CnDetailPage sets `aria-label`
-	// to the manifest widget id only on the top-level widgets it lays out, so a
-	// widget rendered inside a tab carries no such label.
 	return await openCasePanel(page, 'documents')
+}
+
+/**
+ * One group's container, by its heading text (the resolved type name).
+ *
+ * @param panel The open Documents panel.
+ * @param typeName The type's run-prefixed name.
+ * @return The group locator.
+ */
+function group(panel, typeName: string) {
+	return panel.locator('[data-testid="object-list-group"]').filter({ hasText: typeName })
+}
+
+/**
+ * The nth data cell of a row, accounting for the leading checkbox `<td>`
+ * `selectable: true` adds. Column 0 is Title.
+ *
+ * @param row The row locator.
+ * @param column The 0-based data-column index (0 = Title … 5 = Author).
+ * @return The cell locator.
+ */
+function rowCell(row, column: number) {
+	return row.locator('td').nth(column + 1)
 }
 
 /**
@@ -158,25 +183,14 @@ function directionPicker(dialog) {
 }
 
 /**
- * The Keywords tags input in the upload dialog, by label or by test id.
+ * Upload one file through the tab's click-to-upload button, the metadata
+ * dialog and Upload.
  *
- * @param dialog The open metadata dialog.
- * @return The combobox locator.
- */
-function keywordPicker(dialog) {
-	return dialog
-		.getByRole('combobox', { name: /Keywords|Trefwoorden/ })
-		.or(dialog.locator('[data-testid="document-keywords"] [role="combobox"]'))
-		.first()
-}
-
-/**
- * Upload one file through the tab's own drop-zone path: the file picker, the
- * metadata dialog and Upload.
- *
- * The drop zone and the upload button share `openMetadataDialog()`, so driving
- * the hidden file input exercises the same handler a real drop does — and
- * unlike a synthetic DataTransfer it works in every browser the project runs.
+ * `content.dropZone` and the click-to-upload button dispatch the identical
+ * action (nextcloud-vue's CnObjectListWidget rides one onto the other), so
+ * driving the upload button's hidden file input exercises the same handler a
+ * real drop does — and unlike a synthetic DataTransfer it works in every
+ * browser the project runs.
  *
  * @param page The Playwright page.
  * @param panel The open Documents panel.
@@ -190,10 +204,9 @@ async function uploadThroughDialog(
 		title: string
 		typeName: string
 		direction?: RegExp
-		keywords?: string[]
 	},
 ) {
-	await panel.locator('input[type="file"]').setInputFiles({
+	await panel.locator('[data-testid="object-list-upload-input"]').setInputFiles({
 		name: options.fileName,
 		mimeType: 'application/pdf',
 		buffer: PDF_BYTES,
@@ -202,27 +215,15 @@ async function uploadThroughDialog(
 	const dialog = page.locator('.dossier-metadata-dialog')
 	await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-	// The type picker: the catalogue rows this spec seeded, by their
-	// run-prefixed description, so no other install data can be picked.
 	await dialog.getByRole('combobox').first().click()
 	await page.getByRole('option').filter({ hasText: options.typeName }).click()
 
 	if (options.direction) {
-		// By its LABEL, with the data-testid as the fallback: NcSelect wires
-		// `inputLabel` into the combobox's accessible name, which is the
-		// binding the nc-input-labels gate exists to require, while a
-		// `data-testid` only reaches the DOM if the wrapper forwards attrs.
 		await directionPicker(dialog).click()
 		await page.getByRole('option').filter({ hasText: options.direction }).click()
 	}
 
 	await dialog.getByRole('textbox', { name: /Title|Titel/ }).fill(options.title)
-
-	for (const keyword of options.keywords ?? []) {
-		const tags = keywordPicker(dialog)
-		await tags.fill(keyword)
-		await tags.press('Enter')
-	}
 
 	await dialog.getByRole('button', { name: /^(Upload|Uploaden)$/ }).click()
 	await expect(dialog).toBeHidden({ timeout: 30_000 })
@@ -244,6 +245,22 @@ async function storedDocument(title: string): Promise<any> {
 	return found
 }
 
+/**
+ * Open the row-action menu for a document row and click one item.
+ *
+ * A data-testid, not a role: `NcActionButton` puts `role="menuitem"` on the
+ * button once it renders inside a menu, so `getByRole('button', …)` cannot
+ * find it — a landmine the previous version of this spec hit and documented
+ * at length. The testid is stable regardless of which role wins.
+ *
+ * @param row The row locator.
+ * @param itemTestId The `cn-action-item-*` suffix (already slugified).
+ */
+async function clickRowAction(row, itemTestId: string) {
+	await row.locator('[data-testid="cn-row-actions"]').click()
+	await row.page().locator(`[data-testid="${itemTestId}"]`).click()
+}
+
 test.describe('Case detail — the Documents tab', () => {
 	test.setTimeout(240_000)
 
@@ -256,48 +273,30 @@ test.describe('Case detail — the Documents tab', () => {
 		await context.close()
 		token = await getRequestToken(api)
 
-		// REUSE a seeded case type. The `case` schema is archival, so a case
-		// cannot be deleted by a user; creating a case type here and deleting
-		// it in teardown would leave every case pointing at a type that is
-		// gone, which reddens unrelated specs.
 		const caseTypes = await adoptableCaseTypes(api)
 		expect(
 			caseTypes.length,
-			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
+			'the instance must ship at least one PUBLISHED case type',
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(caseTypes[0])
 
 		const seeded = await Promise.all([
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents`,
-				caseType: caseTypeId,
-			}),
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents empty`,
-				caseType: caseTypeId,
-			}),
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents drop`,
-				caseType: caseTypeId,
-			}),
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents filter`,
-				caseType: caseTypeId,
-			}),
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents generate`,
-				caseType: caseTypeId,
-			}),
-			seedCase(api, token, {
-				title: `${RUN_PREFIX} Documents versions`,
-				caseType: caseTypeId,
-			}),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents empty`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents drop`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents filter`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents sort`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents bulk`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents generate`, caseType: caseTypeId }),
+			seedCase(api, token, { title: `${RUN_PREFIX} Documents versions`, caseType: caseTypeId }),
 		])
 		;[
 			caseId,
 			emptyCaseId,
 			dropCaseId,
 			filterCaseId,
+			sortCaseId,
+			bulkCaseId,
 			generateCaseId,
 			versionCaseId,
 		] = seeded.map(objectId)
@@ -316,9 +315,9 @@ test.describe('Case detail — the Documents tab', () => {
 		])
 		;[objectionTypeId, acknowledgementTypeId] = types.map(objectId)
 
+		// caseId: one of EACH type, so the widget renders two groups.
 		await seedDocument(caseId, {
 			title: OBJECTION_TITLE,
-			fileName: 'objection.pdf',
 			informatieobjecttype: objectionTypeId,
 			direction: 'incoming',
 			keywords: ['bezwaar'],
@@ -326,7 +325,6 @@ test.describe('Case detail — the Documents tab', () => {
 		})
 		await seedDocument(caseId, {
 			title: ACKNOWLEDGEMENT_TITLE,
-			fileName: 'acknowledgement.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			status: 'final',
@@ -336,7 +334,6 @@ test.describe('Case detail — the Documents tab', () => {
 		// The filter case: one tagged document and one with no keywords at all.
 		await seedDocument(filterCaseId, {
 			title: TAGGED_TITLE,
-			fileName: 'drawing.pdf',
 			informatieobjecttype: objectionTypeId,
 			direction: 'incoming',
 			keywords: ['bezwaar'],
@@ -344,15 +341,42 @@ test.describe('Case detail — the Documents tab', () => {
 		})
 		await seedDocument(filterCaseId, {
 			title: `${RUN_PREFIX} Untagged letter`,
-			fileName: 'letter.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			auteur: 'Piet de Boer',
 		})
 
+		// The sort case: three documents of the SAME type (one group, one
+		// table), so a header-click reorder is directly observable in row order.
+		await seedDocument(sortCaseId, {
+			title: `${RUN_PREFIX} Sort B`,
+			informatieobjecttype: objectionTypeId,
+			creatiedatum: '2026-05-02',
+		})
+		await seedDocument(sortCaseId, {
+			title: `${RUN_PREFIX} Sort A`,
+			informatieobjecttype: objectionTypeId,
+			creatiedatum: '2026-05-01',
+		})
+		await seedDocument(sortCaseId, {
+			title: `${RUN_PREFIX} Sort C`,
+			informatieobjecttype: objectionTypeId,
+			creatiedatum: '2026-05-03',
+		})
+
+		// The bulk case: two documents, both draft, so "Mark final" has
+		// something to do to both.
+		await seedDocument(bulkCaseId, {
+			title: `${RUN_PREFIX} Bulk one`,
+			informatieobjecttype: objectionTypeId,
+		})
+		await seedDocument(bulkCaseId, {
+			title: `${RUN_PREFIX} Bulk two`,
+			informatieobjecttype: objectionTypeId,
+		})
+
 		versionedDocumentId = await seedDocument(versionCaseId, {
 			title: `${RUN_PREFIX} Final report`,
-			fileName: 'report.pdf',
 			informatieobjecttype: acknowledgementTypeId,
 			direction: 'outgoing',
 			status: 'final',
@@ -362,10 +386,6 @@ test.describe('Case detail — the Documents tab', () => {
 
 	test.afterAll(async () => {
 		if (!api) return
-		// The dossier rows only, children first. The cases are archival and
-		// cannot be removed by a user; they carry the family prefix, so
-		// global-setup's residue sweep takes them before the next run rather
-		// than this teardown failing on a 403 it was never going to win.
 		await cleanupRunObjects(api, token, [
 			'zaakinformatieobject',
 			'informatieobject',
@@ -377,158 +397,68 @@ test.describe('Case detail — the Documents tab', () => {
 	// @e2e exclude No canonical scenario covers the Documents tab and its six columns.
 	// REQ-ZAK-011 "Documents visible on the case" governs it and lives in the open
 	// change documents-on-the-case; canonical REQ-ZAK-004a describes the older
-	// grouped dossier view, which is a different surface. Citable once that change
-	// archives; blocked until then by ConductionNL/.github#730.
-	test('the tab lists this case documents with all six columns', async ({
-		page,
-	}) => {
+	// grouped dossier view, which is a different surface.
+	test('the tab lists this case documents with all six columns', async ({ page }) => {
 		const panel = await openDocumentsTab(page, caseId)
+		const objectionGroup = group(panel, OBJECTION_TYPE_NAME)
+		await expect(objectionGroup).toBeVisible({ timeout: 20_000 })
 
-		// The headings first: five of the six values live on the REFERENCED
-		// informatieobject, and the swap to an object-list is exactly where one
-		// of them can go missing without anything else noticing.
-		const headings = panel.locator(
-			'[data-testid="dossier-columns"] .dossier-tab__column',
-		)
-		await expect(headings).toHaveCount(COLUMNS.length, { timeout: 20_000 })
-		for (const [index, column] of COLUMNS.entries()) {
-			await expect(headings.nth(index)).toHaveText(new RegExp(column, 'i'), {
-				timeout: 10_000,
-			})
+		for (const column of ['Title', 'Type', 'Status', 'Direction', 'Date', 'Author']) {
+			await expect(
+				objectionGroup.getByRole('columnheader', { name: new RegExp(column, 'i') }),
+			).toBeVisible()
 		}
 
-		const objection = panel
-			.locator('.dossier-document-row')
+		const row = objectionGroup
+			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: OBJECTION_TITLE })
-		await expect(objection).toHaveCount(1, { timeout: 20_000 })
-		await expect(
-			objection.locator('[data-testid="dossier-cell-type"]'),
-		).toHaveText(OBJECTION_TYPE_NAME)
-		await expect(
-			objection.locator('[data-testid="dossier-cell-status"]'),
-		).toHaveText(/Draft|Concept/)
-		await expect(
-			objection.locator('[data-testid="dossier-cell-direction"]'),
-		).toHaveText(/Incoming|Inkomend/)
-		await expect(
-			objection.locator('[data-testid="dossier-cell-date"]'),
-		).toContainText('2026')
-		await expect(
-			objection.locator('[data-testid="dossier-cell-author"]'),
-		).toHaveText('Els Jansen')
+		await expect(row).toHaveCount(1, { timeout: 20_000 })
+		await expect(rowCell(row, 1)).toHaveText(OBJECTION_TYPE_NAME)
+		await expect(rowCell(row, 2)).toHaveText(/Draft|Concept/)
+		await expect(rowCell(row, 3)).toHaveText(/Incoming|Inkomend/)
+		await expect(rowCell(row, 4)).toContainText('2026')
+		await expect(rowCell(row, 5)).toHaveText('Els Jansen')
 
-		const acknowledgement = panel
-			.locator('.dossier-document-row')
-			.filter({ hasText: ACKNOWLEDGEMENT_TITLE })
-		await expect(acknowledgement).toHaveCount(1)
-		await expect(
-			acknowledgement.locator('[data-testid="dossier-cell-type"]'),
-		).toHaveText(ACKNOWLEDGEMENT_TYPE_NAME)
-		await expect(
-			acknowledgement.locator('[data-testid="dossier-cell-direction"]'),
-		).toHaveText(/Outgoing|Uitgaand/)
-
-		// The other case's documents exist and are filtered out. Without the
-		// case filter this tab would list every document on the instance,
-		// which on a demo-seeded install still looks plausible.
+		// The other case's documents exist and are filtered out.
 		await expect(panel.getByText(TAGGED_TITLE)).toHaveCount(0)
 	})
 
-	// @e2e exclude No canonical scenario covers the pairing of the Documents tab to
-	// the panel the dossier renders in. REQ-ZAK-011 "Documents visible on the case"
-	// in the open change documents-on-the-case is the governing one; the manifest
-	// half is pinned by tests/vitest/caseDocumentsTab.spec.js.
-	test('the Documents tab owns the panel the dossier renders in', async ({
-		page,
-	}) => {
-		// The scenario asks for the tab to be reachable by its id
-		// `case-documents`. That id is a MANIFEST fact and never reaches the
-		// DOM — CnTabs gives panels uid-based ids — so the manifest half is
-		// pinned by tests/vitest/caseDocumentsTab.spec.js, which fails if the
-		// widget, its type or its position before Files ever moves. What a
-		// browser can prove, and what this asserts, is the pairing: the panel
-		// holding the dossier is the one the Documents tab controls, so
-		// nothing else on the page can be mistaken for it.
-		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
-			timeout: 30_000,
-		})
+	// @e2e exclude No canonical scenario covers row grouping on the Documents tab.
+	// documents-on-the-case task 2.2 (option b) and
+	// openspec/changes/object-list-widget-grouping-select-facet govern it.
+	test('documents group by type, one heading per type in use', async ({ page }) => {
+		const panel = await openDocumentsTab(page, caseId)
 
-		const strip = page.locator('.cn-tabs-widget')
-		await expect(strip).toBeVisible({ timeout: 30_000 })
+		const objectionGroup = group(panel, OBJECTION_TYPE_NAME)
+		const acknowledgementGroup = group(panel, ACKNOWLEDGEMENT_TYPE_NAME)
+		await expect(objectionGroup).toBeVisible({ timeout: 20_000 })
+		await expect(acknowledgementGroup).toBeVisible({ timeout: 20_000 })
 
-		const tab = strip.getByRole('tab', { name: 'Documents', exact: true })
-		await tab.click()
-
-		const panelId = await tab.getAttribute('aria-controls')
-		expect(panelId, 'the tab must control a panel').toBeTruthy()
-
-		const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-		await expect(panel).toHaveAttribute('id', String(panelId), {
-			timeout: 20_000,
-		})
-		await expect(panel.locator('.dossier-tab')).toBeVisible({
-			timeout: 20_000,
-		})
-
-		// Files is no longer a tab of its own: it is the SECOND SECTION of this
-		// same panel, which is how the strip came down from fourteen tabs to
-		// six without losing the files leaf's share and comment surface (design
-		// D5). Assert both sections are here, so a fold that quietly dropped one
-		// of them fails rather than reading as a successful consolidation.
 		await expect(
-			strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }),
+			objectionGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: OBJECTION_TITLE }),
+		).toHaveCount(1)
+		await expect(
+			acknowledgementGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
+		).toHaveCount(1)
+		// A document is not ALSO in the other group.
+		await expect(
+			objectionGroup.locator('[data-testid="cn-object-row"]').filter({ hasText: ACKNOWLEDGEMENT_TITLE }),
 		).toHaveCount(0)
-		await expect(
-			panel.locator('[data-testid="case-section-case-documents"]'),
-		).toBeVisible({ timeout: 20_000 })
-		await expect(
-			panel.locator('[data-testid="case-section-case-files"]'),
-		).toBeVisible({ timeout: 20_000 })
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-004b-empty-dossier-shows-upload-cta-with-drag-and-drop-zone
-	test('a case without documents says so and still offers upload', async ({
-		page,
-	}) => {
-		// A tab whose query fails renders an empty state too, so the REQUEST is
-		// asserted beside the text. Without it this test passes on a 404 and
-		// the tab looks correct while showing nothing it should.
-		const statuses: number[] = []
-		page.on('response', (r) => {
-			if (r.url().includes('/dossier')) statuses.push(r.status())
-		})
-
+	test('a case without documents says so and still offers upload', async ({ page }) => {
 		const panel = await openDocumentsTab(page, emptyCaseId)
 
-		await expect(panel).toContainText(/No documents yet|Nog geen documenten/, {
-			timeout: 20_000,
-		})
-		await expect(
-			panel.getByRole('button', { name: /Upload document/ }).first(),
-		).toBeVisible()
-		await expect(
-			panel.locator('[data-testid="dossier-columns"]'),
-			'no columns without rows to head',
-		).toHaveCount(0)
-
-		await expect
-			.poll(() => statuses.length, { timeout: 20_000 })
-			.toBeGreaterThan(0)
-		expect(
-			statuses.every((s) => s < 400),
-			`dossier queries: ${statuses.join(',')}`,
-		).toBe(true)
+		await expect(panel).toContainText(/No documents yet|Nog geen documenten/, { timeout: 20_000 })
+		await expect(panel.locator('[data-testid="object-list-upload"]')).toBeVisible()
+		await expect(panel.locator('[data-testid="object-list-group"]')).toHaveCount(0)
 	})
 
-	// @e2e exclude No canonical scenario covers filing a dropped file on the case
-	// with its type and direction. REQ-ZAK-011 "Drop a file onto the tab" and
-	// REQ-ZAK-013 "Direction chosen on upload" govern it and live in the open change
-	// documents-on-the-case; canonical REQ-ZAK-005a asserts the dialog opening for a
-	// two-file drop, not the saved type, direction and case link this proves.
-	test('a dropped file is filed on the case with its type and direction', async ({
-		page,
-	}) => {
+	// @e2e exclude No canonical scenario covers filing an uploaded file on the case
+	// with its type and direction. REQ-ZAK-011 and REQ-ZAK-013 govern it and live in
+	// the open change documents-on-the-case.
+	test('an uploaded file is filed on the case with its type and direction', async ({ page }) => {
 		const panel = await openDocumentsTab(page, dropCaseId)
 
 		await uploadThroughDialog(page, panel, {
@@ -538,180 +468,115 @@ test.describe('Case detail — the Documents tab', () => {
 			direction: /Incoming|Inkomend/,
 		})
 
-		const row = panel
-			.locator('.dossier-document-row')
+		const row = group(panel, OBJECTION_TYPE_NAME)
+			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: DROPPED_TITLE })
 		await expect(row).toHaveCount(1, { timeout: 30_000 })
-		await expect(row.locator('[data-testid="dossier-cell-type"]')).toHaveText(
-			OBJECTION_TYPE_NAME,
-		)
-		await expect(
-			row.locator('[data-testid="dossier-cell-direction"]'),
-		).toHaveText(/Incoming|Inkomend/)
+		await expect(rowCell(row, 3)).toHaveText(/Incoming|Inkomend/)
 
-		// The SAVED objects, not the rendered row: the join is what makes the
-		// document belong to THIS case, and a row can be on screen for a
-		// document linked to another one.
 		const stored = await storedDocument(DROPPED_TITLE)
 		expect(String(stored.informatieobjecttype)).toBe(objectionTypeId)
 		expect(String(stored.direction)).toBe('incoming')
 
-		const joins = await listObjects(api, 'zaakinformatieobject', {
-			_limit: '200',
-		})
-		const join = joins.find(
-			(row) => String(row.informatieobject) === objectId(stored),
-		)
+		const joins = await listObjects(api, 'zaakinformatieobject', { _limit: '200' })
+		const join = joins.find((r) => String(r.informatieobject) === objectId(stored))
 		expect(join, 'the upload must write the case link').toBeTruthy()
 		expect(String(join.case)).toBe(dropCaseId)
 	})
 
-	// @e2e exclude Keywords are not in the canonical spec. REQ-ZAK-012 "Tag a
-	// document on upload" governs this and lives in the open change
-	// documents-on-the-case.
-	test('keywords typed on upload are saved and shown as chips', async ({
-		page,
-	}) => {
-		const panel = await openDocumentsTab(page, dropCaseId)
-
-		const title = `${RUN_PREFIX} Keyworded drawing`
-		await uploadThroughDialog(page, panel, {
-			fileName: 'drawing.pdf',
-			title,
-			typeName: OBJECTION_TYPE_NAME,
-			keywords: ['bezwaar', 'bouwtekening'],
-		})
-
-		const stored = await storedDocument(title)
-		expect((stored.keywords ?? []).map(String).sort()).toEqual([
-			'bezwaar',
-			'bouwtekening',
-		])
-
-		const row = panel.locator('.dossier-document-row').filter({ hasText: title })
-		await expect(row).toHaveCount(1, { timeout: 30_000 })
-		await expect(row.locator('[data-testid="dossier-keyword"]')).toHaveText([
-			'bezwaar',
-			'bouwtekening',
-		])
-	})
-
-	// @e2e exclude The keyword filter is not in the canonical spec. REQ-ZAK-012
+	// @e2e exclude The keyword facet is not in the canonical spec. REQ-ZAK-012
 	// "Filter the list on a keyword" governs it and lives in the open change
 	// documents-on-the-case; canonical REQ-ZAK-004c is status and date filtering.
-	test('the keyword filter narrows the list, and clearing it restores both', async ({
-		page,
-	}) => {
+	test('the keyword facet narrows the list, and clearing it restores both', async ({ page }) => {
 		const panel = await openDocumentsTab(page, filterCaseId)
 
-		const rows = panel.locator('.dossier-document-row')
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, { timeout: 20_000 })
+
+		const chip = panel.locator('[data-testid="object-list-facet-chip"]').filter({ hasText: 'bezwaar' })
+		await expect(chip).toBeVisible({ timeout: 20_000 })
+		await chip.click()
+
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(1, { timeout: 20_000 })
+		await expect(panel.getByText(TAGGED_TITLE)).toBeVisible()
+
+		await chip.click()
+		await expect(panel.locator('[data-testid="cn-object-row"]')).toHaveCount(2, { timeout: 20_000 })
+	})
+
+	// @e2e exclude No canonical scenario covers interactive column sort on the
+	// Documents tab. documents-on-the-case task 2.2 (option b) governs it.
+	test('clicking the Title header sorts the group, ascending then descending', async ({ page }) => {
+		const panel = await openDocumentsTab(page, sortCaseId)
+		const sortGroup = group(panel, OBJECTION_TYPE_NAME)
+		await expect(sortGroup.locator('[data-testid="cn-object-row"]')).toHaveCount(3, { timeout: 20_000 })
+
+		const titleHeader = sortGroup.getByRole('columnheader', { name: /^Title$/i })
+		await titleHeader.click()
+		await expect
+			.poll(async () => (await sortGroup.locator('[data-testid="cn-object-row"]').allTextContents())
+				.map((t) => t.match(/Sort [ABC]/)?.[0]))
+			.toEqual(['Sort A', 'Sort B', 'Sort C'])
+
+		await titleHeader.click()
+		await expect
+			.poll(async () => (await sortGroup.locator('[data-testid="cn-object-row"]').allTextContents())
+				.map((t) => t.match(/Sort [ABC]/)?.[0]))
+			.toEqual(['Sort C', 'Sort B', 'Sort A'])
+	})
+
+	// @e2e exclude No canonical scenario covers multi-select bulk actions on the
+	// Documents tab. documents-on-the-case task 2.2 (option b) governs it.
+	test('selecting rows and marking them final applies to every selected document', async ({ page }) => {
+		const panel = await openDocumentsTab(page, bulkCaseId)
+		const bulkGroup = group(panel, OBJECTION_TYPE_NAME)
+		const rows = bulkGroup.locator('[data-testid="cn-object-row"]')
 		await expect(rows).toHaveCount(2, { timeout: 20_000 })
 
-		const filter = panel
-			.getByRole('combobox', { name: /Filter by keyword|Filter op trefwoord/ })
-			.or(
-				panel.locator(
-					'[data-testid="dossier-keyword-filter"] [role="combobox"]',
-				),
-			)
-			.first()
-		await filter.click()
-		// The dropdown is appended to the body, so the options are found on the
-		// page rather than inside the panel.
-		await page
-			.getByRole('option')
-			.filter({ hasText: /^bezwaar$/ })
-			.click()
+		await expect(panel.locator('[data-testid="object-list-bulk-bar"]')).toHaveCount(0)
 
-		await expect(rows).toHaveCount(1, { timeout: 20_000 })
-		await expect(rows.first()).toContainText(TAGGED_TITLE)
+		for (let i = 0; i < 2; i++) {
+			await rows.nth(i).locator('.cn-table-col--checkbox input, .cn-table-col--checkbox [role="checkbox"]').first().click()
+		}
 
-		// Clearing has to bring the other one back, or the filter is a one-way
-		// door and the untagged document is unreachable. NcSelect names its
-		// deselect button after the option ("Deselect bezwaar"), and the
-		// keyword is the same word in either locale.
-		await panel
-			.getByRole('button', { name: /bezwaar/i })
-			.first()
-			.click()
-		await expect(rows).toHaveCount(2, { timeout: 20_000 })
+		const bulkBar = panel.locator('[data-testid="object-list-bulk-bar"]')
+		await expect(bulkBar).toBeVisible({ timeout: 10_000 })
+		await bulkBar.getByText(/2/).first().waitFor()
+
+		await bulkBar.locator('[data-testid="object-list-bulk-action"]').filter({ hasText: /Mark final/i }).click()
+
+		const dialog = page.locator('[data-testid="bulk-document-dialog"]')
+		await expect(dialog).toBeVisible({ timeout: 10_000 })
+		await dialog.locator('[data-testid="bulk-document-confirm"]').click()
+		await expect(dialog.locator('[data-testid="bulk-document-results"]')).toBeVisible({ timeout: 20_000 })
+
+		await expect(async () => {
+			const stored = await listObjects(api, 'informatieobject', { _limit: '200' })
+			const bulkOne = stored.find((r) => String(r.title) === `${RUN_PREFIX} Bulk one`)
+			const bulkTwo = stored.find((r) => String(r.title) === `${RUN_PREFIX} Bulk two`)
+			expect(bulkOne?.status, 'Bulk one must be final').toBe('final')
+			expect(bulkTwo?.status, 'Bulk two must be final').toBe('final')
+		}).toPass({ timeout: 20_000 })
 	})
 
 	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-006b-restore-is-disabled-for-definitief-documents
-	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
-		page,
-	}) => {
-		// A second write to the SAME file is what makes a version: Nextcloud
-		// keeps the previous content, so the panel has one entry to list. The
-		// path is the storage convention ZgwDocumentService owns — the
-		// informatieobject's OpenRegister object folder, `Open
-		// Registers/<register>/<uuid>/<fileName>` — and the upload endpoint is
-		// what put version one there.
-		//
-		// This spec CANNOT see the defect that convention exists to fix. It
-		// signs in as `admin`, which is the account the documents used to be
-		// filed under, so writer and reader were the same person and the tab
-		// looked correct. The coverage for the OWNER is
-		// `tests/Unit/Service/ZgwDocumentStorageOwnerTest.php`, and the
-		// coverage for the version buttons actually DOING something is
-		// `tests/vitest/dossierTab.spec.js` — the assertion below is about the
-		// restore GUARD, and a button that does nothing satisfies it just as
-		// well as one that is correctly disabled.
+	test('Versions on a row opens the panel, and restore is refused on a final document', async ({ page }) => {
 		const panel = await openDocumentsTab(page, versionCaseId)
-
-		const row = panel
-			.locator('.dossier-document-row')
+		const finalGroup = group(panel, ACKNOWLEDGEMENT_TYPE_NAME)
+		const row = finalGroup
+			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: `${RUN_PREFIX} Final report` })
 		await expect(row).toHaveCount(1, { timeout: 20_000 })
 
-		// The row's Actions menu is its last control (the selection checkbox
-		// is an input, not a button), and the menu itself is appended to the
-		// body, so the entry is found on the page.
-		await row.getByRole('button').last().click()
+		await clickRowAction(row, 'cn-action-item-versions')
 
-		// 🔴 THE ENTRY IS A `menuitem`, NOT A `button`. `NcActions` decides its
-		// own semantics from what it holds: every child here is an
-		// `NcActionButton`, so `actionsMenuSemanticType` resolves to `menu`, the
-		// component provides `isInSemanticMenu`, and `NcActionButton` puts
-		// `role="menuitem"` ON the `<button>` (its `<li>` takes
-		// `role="presentation"`). An explicit role REPLACES the implicit one, so
-		// `getByRole('button', …)` cannot match a menu entry at all — it waited
-		// the full budget and reported `locator.click: Timeout` on an entry that
-		// was on screen the whole time, which reads as a menu that never opened.
-		//
-		// The toggle on the line above keeps `role="button"` because it sits in
-		// the row rather than in the menu, which is why only the SECOND click
-		// failed and the first looked fine.
-		//
-		// Asserting the menu role is the accessible truth rather than a
-		// workaround: if an `NcActionInput` is ever added here the menu becomes a
-		// `dialog`, the entries go back to plain buttons, and this line should
-		// fail and be read again.
-		await page
-			.getByRole('menuitem', { name: /Version history|Versiegeschiedenis/ })
-			.click()
-
-		const versionPanel = panel.locator('.dossier-version-panel')
+		const versionPanel = page.locator('.dossier-version-panel')
 		await expect(versionPanel).toBeVisible({ timeout: 20_000 })
 
-		// EVERY listed version offers a download — a version you cannot fetch
-		// is a row of text. Asserted as an invariant rather than a count,
-		// because how many previous versions exist depends on Nextcloud's own
-		// file-versions retention, which this suite does not control and must
-		// not pretend to: the scenario's "both versions" half is only as strong
-		// as the instance's versioning, while "each one is downloadable" holds
-		// on any instance and fails the moment the action is dropped.
 		const entries = versionPanel.locator('.dossier-version-panel__item')
-		const downloads = versionPanel.locator(
-			'.dossier-version-panel__item button:has-text("Download")',
-		)
+		const downloads = versionPanel.locator('.dossier-version-panel__item button:has-text("Download")')
 		expect(await downloads.count()).toBe(await entries.count())
 
-		// The half that is fully deterministic: the document is `final`, the
-		// server refuses to change it, so the UI must not offer to.
-		const restore = versionPanel.getByRole('button', {
-			name: /Restore|Herstellen/,
-		})
+		const restore = versionPanel.getByRole('button', { name: /Restore|Herstellen/ })
 		for (let index = 0; index < (await restore.count()); index++) {
 			await expect(restore.nth(index)).toBeDisabled()
 		}
@@ -721,31 +586,18 @@ test.describe('Case detail — the Documents tab', () => {
 
 	// @e2e exclude No canonical scenario covers the Generate document picker listing
 	// the library. REQ-005 "The picker lists the library" governs it and lives in the
-	// open change documents-on-the-case; canonical template-library REQ-001 to
-	// REQ-004 are the REST and discovery contracts, not this picker.
-	test('the Generate document picker lists the library by name', async ({
-		page,
-	}) => {
+	// open change documents-on-the-case.
+	test('the Generate document picker lists the library by name', async ({ page }) => {
 		await page.goto(`/apps/${REGISTER}/cases/${generateCaseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
-			timeout: 30_000,
-		})
+		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
 		await clickHeaderAction(page, 'cn-action-generate-document')
 
-		const dialog = page
-			.getByRole('dialog')
-			.filter({ hasText: /Generate|Genereren/ })
+		const dialog = page.getByRole('dialog').filter({ hasText: /Generate|Genereren/ })
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await dialog
-			.locator('[data-testid="generate-document-template"]')
-			.getByRole('combobox')
-			.click()
+		await dialog.locator('[data-testid="generate-document-template"]').getByRole('combobox').click()
 
-		// The two document templates the library ships, by name. The picker
-		// lists whatever TemplateController#index returns, so other entries may
-		// be there too; what REQ-005 requires is that these two are.
 		await expect(
 			page.getByRole('option').filter({ hasText: 'Ontvangstbevestiging' }),
 		).toHaveCount(1, { timeout: 20_000 })
@@ -755,32 +607,19 @@ test.describe('Case detail — the Documents tab', () => {
 	})
 
 	// @e2e exclude No canonical scenario covers generating a letter onto the
-	// Documents tab. REQ-BES-012 "Generate a letter onto the Documents tab" governs
-	// it and lives in the open change documents-on-the-case; canonical REQ-BES-001 is
-	// the conceptbeschikking composer, a different flow.
-	test('Generate document files a draft outgoing letter on the case', async ({
-		page,
-	}) => {
+	// Documents tab. REQ-BES-012 governs it and lives in the open change
+	// documents-on-the-case; canonical REQ-BES-001 is a different flow.
+	test('Generate document files a draft outgoing letter on the case', async ({ page }) => {
 		await page.goto(`/apps/${REGISTER}/cases/${generateCaseId}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({
-			timeout: 30_000,
-		})
+		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
 		await clickHeaderAction(page, 'cn-action-generate-document')
 
-		const dialog = page
-			.getByRole('dialog')
-			.filter({ hasText: /Generate|Genereren/ })
+		const dialog = page.getByRole('dialog').filter({ hasText: /Generate|Genereren/ })
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await dialog
-			.locator('[data-testid="generate-document-template"]')
-			.getByRole('combobox')
-			.click()
-		await page
-			.getByRole('option')
-			.filter({ hasText: 'Ontvangstbevestiging' })
-			.click()
+		await dialog.locator('[data-testid="generate-document-template"]').getByRole('combobox').click()
+		await page.getByRole('option').filter({ hasText: 'Ontvangstbevestiging' }).click()
 
 		await dialog.locator('[data-testid="generate-document-confirm"]').click()
 		await expect(dialog).toContainText(
@@ -788,43 +627,25 @@ test.describe('Case detail — the Documents tab', () => {
 			{ timeout: 30_000 },
 		)
 
-		// The STORED object: the row on screen proves the tab renders, the
-		// stored fields prove the handler filed what the spec says it files.
 		let stored: any
 		await expect(async () => {
-			const rows = await listObjects(api, 'informatieobject', {
-				_limit: '200',
-			})
+			const rows = await listObjects(api, 'informatieobject', { _limit: '200' })
 			stored = rows.find((row) => String(row.title) === 'Ontvangstbevestiging')
 			expect(stored, 'the letter should have been filed').toBeTruthy()
 		}).toPass({ timeout: 30_000 })
 
 		expect(String(stored.status)).toBe('draft')
 		expect(String(stored.direction)).toBe('outgoing')
-		expect(
-			String(stored.auteur ?? ''),
-			'the signed-in user is the author',
-		).not.toBe('')
+		expect(String(stored.auteur ?? ''), 'the signed-in user is the author').not.toBe('')
 
-		const joins = await listObjects(api, 'zaakinformatieobject', {
-			_limit: '200',
-		})
-		const join = joins.find(
-			(row) => String(row.informatieobject) === objectId(stored),
-		)
+		const joins = await listObjects(api, 'zaakinformatieobject', { _limit: '200' })
+		const join = joins.find((row) => String(row.informatieobject) === objectId(stored))
 		expect(join, 'the letter must be linked to the case').toBeTruthy()
 		expect(String(join.case)).toBe(generateCaseId)
 
 		const panel = await openDocumentsTab(page, generateCaseId)
-		const row = panel
-			.locator('.dossier-document-row')
-			.filter({ hasText: 'Ontvangstbevestiging' })
+		const row = panel.locator('[data-testid="cn-object-row"]').filter({ hasText: 'Ontvangstbevestiging' })
 		await expect(row).toHaveCount(1, { timeout: 30_000 })
-		await expect(row.locator('[data-testid="dossier-cell-status"]')).toHaveText(
-			/Draft|Concept/,
-		)
-		await expect(
-			row.locator('[data-testid="dossier-cell-direction"]'),
-		).toHaveText(/Outgoing|Uitgaand/)
+		await expect(rowCell(row, 3)).toHaveText(/Outgoing|Uitgaand/)
 	})
 })
