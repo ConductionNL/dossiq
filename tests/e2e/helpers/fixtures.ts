@@ -740,6 +740,16 @@ export async function cleanupRunObjects(
 	const { survivors, untracked, ids } = await sweepLedger(api, token, schemas)
 	survivors.push(...(await sweepTrashIds(api, token, ids)))
 
+	// Trashed rows carrying this run's prefix that no ledger id explains. Named
+	// in the run that caused them, rather than left for the next run's residue
+	// report to find.
+	const known = new Set(ids)
+	untracked.push(
+		...(await findTrashMatches(api, RUN_PREFIX)).filter(
+			(label) => known.has(label.replace('deleted/', '')) === false,
+		),
+	)
+
 	if (untracked.length > 0) {
 		console.warn(
 			`[dossiq e2e] ${untracked.length} object(s) carry ${RUN_PREFIX} but this run `
