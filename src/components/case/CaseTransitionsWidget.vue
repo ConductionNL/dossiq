@@ -2,9 +2,16 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  The transition strip in the case page's header row.
+  The transition buttons in the case page's header, left of Edit.
 
-  WHY THIS IS A WIDGET AND NOT `lifecycleActions`. CnLifecycleActions is
+  Mounted through the page's `actionsComponent` (manifest `pages[].actionsComponent`),
+  which CnPageRenderer maps onto CnDetailPage's `actions` slot. It used to be a
+  grid widget under the KPI row: a status chip plus the buttons, two rows below
+  the title, repeating the status the Status card beside it already shows. The
+  buttons are the one thing on the page a handler reaches for mid call, so they
+  sit with the page's other actions now, and the chip is gone.
+
+  WHY THIS IS A COMPONENT AND NOT `lifecycleActions`. CnLifecycleActions is
   server-driven: with no declared transitions it asks OpenRegister's
   /available-actions and renders exactly what comes back. For `case` that is
   nothing, because a case's status is a $ref to a per-caseType `statusType`
@@ -24,27 +31,23 @@
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<template v-else>
-			<div class="case-transitions__state">
-				<span
-					class="case-transitions__status"
-					:style="statusStyle"
-					:data-colour="statusColour"
-					data-testid="case-current-status">
-					{{ statusName }}
-				</span>
-				<span
-					v-if="suspended"
-					class="case-transitions__suspended"
-					data-testid="case-suspended-marker">
-					{{ t('dossiq', 'Suspended') }}
-				</span>
-				<span
-					v-else-if="closed"
-					class="case-transitions__closed"
-					data-testid="case-closed-marker">
-					{{ t('dossiq', 'This case is closed') }}
-				</span>
-			</div>
+			<!-- No status chip. This strip sits in the page header now, and the
+			     Status card in the KPI row directly beneath names the status in
+			     its colour, so a chip beside the buttons said the same thing
+			     twice. The two markers stay: neither is a status, and nothing
+			     else on the page says a case is suspended or closed. -->
+			<span
+				v-if="suspended"
+				class="case-transitions__suspended"
+				data-testid="case-suspended-marker">
+				{{ t('dossiq', 'Suspended') }}
+			</span>
+			<span
+				v-else-if="closed"
+				class="case-transitions__closed"
+				data-testid="case-closed-marker">
+				{{ t('dossiq', 'This case is closed') }}
+			</span>
 
 			<div class="case-transitions__buttons">
 				<div
@@ -111,7 +114,6 @@ import {
 	transitionBlockReason,
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
-import { statusColourStyle } from '../../utils/statusColour.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -129,8 +131,6 @@ export default {
 		return {
 			loading: true,
 			transitions: [],
-			statusName: '',
-			statusColour: '',
 			statusTypes: [],
 			resultTypes: [],
 			lifecycleState: null,
@@ -143,20 +143,6 @@ export default {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		caseId() {
 			return String(this.$route?.params?.id ?? '')
-		},
-
-		/**
-		 * The colours the current status is drawn in.
-		 *
-		 * The colour arrives with the status name on the same
-		 * /available-transitions answer, so the badge never renders the name
-		 * in one paint and the colour in a second.
-		 *
-		 * @return {object} A style object.
-		 * @spec openspec/specs/case-types/spec.md
-		 */
-		statusStyle() {
-			return statusColourStyle(this.statusColour)
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
@@ -259,8 +245,6 @@ export default {
 				this.transitions = Array.isArray(data?.transitions)
 					? data.transitions
 					: []
-				this.statusName = String(data?.current?.statusName ?? '')
-				this.statusColour = String(data?.current?.statusColour ?? '')
 			} catch {
 				// A case whose engine cannot answer shows no buttons rather than
 				// a broken strip: the rest of the page is still readable.
@@ -393,26 +377,13 @@ export default {
 	font-size: 0.85em;
 }
 
+/* A row, because it sits in the header's button row beside Edit and the
+   Actions menu; the markers and the buttons line up on one baseline. */
 .case-transitions {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	justify-content: center;
-	height: 100%;
-	padding: 8px 12px;
-}
-
-.case-transitions__state {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	flex-wrap: wrap;
-}
-
-.case-transitions__status {
-	border-radius: var(--border-radius-pill);
-	padding: 2px 10px;
-	font-weight: bold;
 }
 
 .case-transitions__suspended,

@@ -1212,10 +1212,12 @@
 			"route": "/cases/:id",
 			"type": "detail",
 			"title": "Case",
+			"actionsComponent": "CaseTransitionsWidget",
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
 				"subtitleField": "identifier",
+				"_transitionsNote": "The transition buttons (Start behandeling, Afronden, Resume) render in the page header, left of Edit, through CnDetailPage's `actions` slot. They used to be the `case-transitions` grid widget, a strip under the KPI row that repeated the status the Status card already shows and put the one button a handler reaches for two rows below the title. The component still reads dossiq's own transition engine; its docblock says why it is not `lifecycleActions`.",
 				"_breadcrumbsNote": "REMOVED, deliberately. The case page carried a trail whose LAST crumb was the case title, rendered one line below the page header that already printed that title: 'Cases > Dakkapel Kerkstraat 12' directly under 'Dakkapel Kerkstraat 12'. It read as a repeat rather than as a location, and it cost the top of the page a row. The way back to the list is the app menu, which is where the other detail pages in this app put it. This key stays as a note and not as config so the next reader finds out the trail was removed on purpose rather than re-adding it.",
 				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
 				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. The case's own state leads the page: a full-width transition strip (case-transitions) over the KPI row, whose third cell is now the stepper (case-steps) rather than the milestone percentage. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either -- the transitions widget puts Resume in front of the handler when /lifecycle says the case is actually suspended. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
@@ -1312,13 +1314,6 @@
 							"rowRoute": "FlowDetail",
 							"emptyText": "No flow is running for this case"
 						}
-					},
-					{
-						"id": "case-transitions",
-						"type": "custom",
-						"title": "Case status",
-						"icon": "SwapHorizontal",
-						"_note": "The transitions this user may take from the case's current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button (page slot widget-case-transitions -> CaseTransitionsWidget). It replaces the page's `lifecycleActions: {field: status}` block, which rendered NOTHING: CnLifecycleActions asks OpenRegister's /available-actions, and `case.status` is a $ref to a per-caseType statusType row, for which OR answers an empty action list. Its graph mode derives moves from sibling ORDER alone and so cannot express the workflow template's named, role-filtered, guarded transitions, cannot say which guard refused, and cannot ask for the result a closing case needs -- all three of which this page requires. When the platform can serve them (case-status-onto-engine-lifecycle), this widget is deleted and lifecycleActions declared again."
 					},
 					{
 						"id": "case-header",
@@ -1750,30 +1745,21 @@
 						"showTitle": false
 					},
 					{
-						"id": "10",
-						"widgetId": "case-transitions",
-						"gridX": 0,
-						"gridY": 2,
-						"gridWidth": 8,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
 						"id": "3",
 						"widgetId": "case-steps",
 						"gridX": 8,
 						"gridY": 2,
 						"gridWidth": 4,
 						"gridHeight": 5,
-						"showTitle": true
+						"showTitle": false
 					},
 					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 2,
 						"gridWidth": 8,
-						"gridHeight": 18,
+						"gridHeight": 20,
 						"showTitle": false
 					},
 					{
@@ -1783,7 +1769,7 @@
 						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 3,
-						"showTitle": true
+						"showTitle": false
 					},
 					{
 						"id": "6",
@@ -2065,7 +2051,6 @@
 			},
 			"slots": {
 				"widget-case-header": "CaseHeaderRow",
-				"widget-case-transitions": "CaseTransitionsWidget",
 				"widget-case-steps": "CaseStepsWidget",
 				"widget-initiator": "InitiatorSection",
 				"widget-cmmn-case-plan": "CasePlanPanel"

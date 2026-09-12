@@ -25,6 +25,20 @@
   @spec openspec/specs/semantic-case-intake/spec.md
 -->
 <template>
+	<!-- The same card chrome every other widget on the page has: icon, bold
+	     title, a rule, and the Actions menu. A custom widget is a consumer slot,
+	     so CnDetailPage cannot wrap it itself; with `showTitle` it drew a bare
+	     grid heading instead, and the initiator sat under a loose "Initiator"
+	     line beside cards that had headers. -->
+	<CnWidgetWrapper
+		:title="t('dossiq', 'Initiator')"
+		widgetId="initiator"
+		titleIconPosition="left"
+		:showRefresh="false"
+		class="initiator-card">
+		<template #title-icon>
+			<AccountOutline :size="20" />
+		</template>
 	<div class="initiator-widget">
 		<div
 			v-if="hasInitiator || hasHandoff"
@@ -126,9 +140,11 @@
 			{{ t('dossiq', 'This case has no initiator yet') }}
 		</p>
 	</div>
+	</CnWidgetWrapper>
 </template>
 
 <script>
+import { CnWidgetWrapper } from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton } from '@nextcloud/vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
@@ -148,6 +164,7 @@ export default {
 	name: 'InitiatorSection',
 	components: {
 		AccountOutline,
+		CnWidgetWrapper,
 		Domain,
 		CardAccountMailOutline,
 		NcButton,
@@ -560,17 +577,21 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.initiator-card {
+	height: 100%;
+}
+
 .initiator-widget {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 
 	/* Same treatment as `case-steps__empty` and the Flow runs empty state, so
-	   the three empty cells on this page read as one thing rather than three. */
+	   the three empty cells on this page read as one thing rather than three.
+	   No padding of its own: the wrapper's content region carries it. */
 	&__empty {
 		color: var(--color-text-maxcontrast);
 		margin: 0;
-		padding: calc(var(--default-grid-baseline) * 2);
 	}
 }
 
@@ -578,7 +599,6 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: var(--default-grid-baseline);
-	padding: calc(var(--default-grid-baseline) * 2);
 
 	&__row {
 		display: flex;
