@@ -49,8 +49,14 @@
 			<div class="case-header__field">
 				<dt>{{ t('dossiq', 'Status') }}</dt>
 				<dd>
+					<!-- `data-colour` carries the status type's configured colour
+					     name. The transition strip used to expose it on its own
+					     chip; now that the strip is header buttons only, this
+					     card is the one place on the page that names the status,
+					     and the case-type authoring e2e reads the colour here. -->
 					<CnStatusBadge
 						data-testid="case-header-status"
+						:data-colour="statusColour"
 						:label="statusLabel"
 						:variant="statusVariant"
 						size="small" />
@@ -84,6 +90,7 @@ import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { deadlineCountdown } from '../../utils/deadlineCountdown.js'
 import { resolveText } from '../../utils/i18nResolver.js'
+import { normaliseStatusColour } from '../../utils/statusColour.js'
 
 /**
  * The thresholds the retired Time left tile counted with, kept here so the
@@ -214,6 +221,17 @@ export default {
 		 *
 		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
 		 */
+		/**
+		 * The status type's colour name, normalised to the palette the schema
+		 * enumerates, for the badge's `data-colour`.
+		 *
+		 * @return {string} A palette name, `grey` when none is configured.
+		 * @spec openspec/changes/case-header/specs/case-dashboard-view/spec.md
+		 */
+		statusColour() {
+			return normaliseStatusColour(this.statusRow?.colour)
+		},
+
 		statusVariant() {
 			if (!this.statusRow) {
 				return 'default'

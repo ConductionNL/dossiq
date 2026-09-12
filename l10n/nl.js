@@ -3940,6 +3940,8 @@ OC.L10N.register(
         "Download ZIP": "ZIP downloaden",
         "Mark final": "Markeer als definitief",
         "New confidentiality": "Nieuwe vertrouwelijkheid",
+        "Create your first case type to start handling cases.": "Maak het eerste zaaktype aan om zaken te behandelen.",
+        "No case types configured yet": "Nog geen zaaktypen ingesteld",
         "Case plan": "Zaakplan",
         "Try again": "Probeer het opnieuw",
         "Stop": "Stoppen",

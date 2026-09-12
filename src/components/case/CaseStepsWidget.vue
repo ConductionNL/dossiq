@@ -17,37 +17,53 @@
   @spec openspec/specs/case-dashboard-view/spec.md
 -->
 <template>
-	<div class="case-steps" data-testid="case-steps">
-		<NcLoadingIcon v-if="loading" :size="24" />
+	<!-- The same card chrome every other widget on the page has: icon, bold
+	     title, a rule, and the Actions menu. A custom widget is a consumer slot,
+	     so CnDetailPage cannot wrap it itself; with `showTitle` it drew a bare
+	     grid heading instead, and the timeline sat under a loose "Timeline"
+	     line beside cards that had headers. -->
+	<CnWidgetWrapper
+		:title="t('dossiq', 'Timeline')"
+		widgetId="case-steps"
+		titleIconPosition="left"
+		:showRefresh="false"
+		class="case-steps-card">
+		<template #title-icon>
+			<Timeline :size="20" />
+		</template>
+		<div class="case-steps" data-testid="case-steps">
+			<NcLoadingIcon v-if="loading" :size="24" />
 
-		<!-- Vertical. A status name is a phrase, not a word — "Melding wordt
+			<!-- Vertical. A status name is a phrase, not a word — "Melding wordt
 		     afgehandeld door beheerdienst" — and laid out left to right those
 		     phrases wrap into stacked columns of text with a track line running
 		     between them, which reads as a table rather than a sequence. Down
 		     the page each stage gets a full line and the track reads as one
 		     spine. The grid rows are content-sized, so the taller tile simply
 		     takes the height it needs. -->
-		<CnTimelineStages
-			v-else-if="stages.length > 0"
-			:stages="stages"
-			:currentStage="currentStage"
-			:ariaLabel="t('dossiq', 'Case progress')"
-			orientation="vertical"
-			size="small" />
+			<CnTimelineStages
+				v-else-if="stages.length > 0"
+				:stages="stages"
+				:currentStage="currentStage"
+				:ariaLabel="t('dossiq', 'Case progress')"
+				orientation="vertical"
+				size="small" />
 
-		<p v-else class="case-steps__empty">
-			{{ t('dossiq', 'This case type has no statuses yet') }}
-		</p>
-	</div>
+			<p v-else class="case-steps__empty">
+				{{ t('dossiq', 'This case type has no statuses yet') }}
+			</p>
+		</div>
+	</CnWidgetWrapper>
 </template>
 
 <script>
-import { CnTimelineStages } from '@conduction/nextcloud-vue'
+import { CnTimelineStages, CnWidgetWrapper } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import Timeline from 'vue-material-design-icons/Timeline.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { toStages } from '../../utils/caseLifecycleHelpers.js'
@@ -57,7 +73,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseStepsWidget',
 
-	components: { CnTimelineStages, NcLoadingIcon },
+	components: { CnTimelineStages, CnWidgetWrapper, NcLoadingIcon, Timeline },
 
 	data() {
 		return {
@@ -144,11 +160,16 @@ export default {
 </script>
 
 <style scoped>
+.case-steps-card {
+	height: 100%;
+}
+
+/* The wrapper's content region carries the padding now; the 8px 12px that
+   was here sat inside it and doubled up. */
 .case-steps {
 	display: flex;
 	align-items: center;
 	height: 100%;
-	padding: 8px 12px;
 	overflow-x: auto;
 }
 

@@ -3940,6 +3940,8 @@ OC.L10N.register(
         "Download ZIP": "Download ZIP",
         "Mark final": "Mark final",
         "New confidentiality": "New confidentiality",
+        "Create your first case type to start handling cases.": "Create your first case type to start handling cases.",
+        "No case types configured yet": "No case types configured yet",
         "Case plan": "Case plan",
         "Ready to start": "Ready to start",
         "Stop": "Stop",
