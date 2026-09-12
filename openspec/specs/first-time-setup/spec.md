@@ -7,7 +7,23 @@ Give dossiq a first-time setup flow that (a) is rendered by the abstract `CnSetu
 
 ### Requirement: REQ-SETUP-PRO-001 — dossiq Declares Its Setup Steps In The Manifest
 
-dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `register-check` (`config-fields`, **required**), `seed` (`run-action`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
+dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome` (`info`, optional), `demo-data` (`choice`, optional), `load-demo-data` (`run-action`, optional), `register-check` (`run-action`, **required**), `dwangsom-secret` (`config-fields`, optional) and `done` (`summary`, optional), and SHALL set `completionConfigKey` to `setup_completed_version`.
+
+> **Corrected 2026-09-12.** This enumerated `welcome`, `register-check` as
+> `config-fields`, `seed` and `done`, and the shipped wizard matched none of
+> those three particulars: `register-check` is a `run-action`, the `seed` step
+> was retired for the reason recorded on the scenario below, and `demo-data`,
+> `load-demo-data` and `dwangsom-secret` were never listed. Measured against
+> `src/manifest.json` rather than inferred.
+>
+> The `seed` ACTION is not retired and REQ-SETUP-PRO-002 still describes it
+> accurately: `SetupController::runAction()` still answers `seed` and still
+> calls `SeedDataService::seedBezwaarBeroepData()`. Only the wizard step went,
+> so an operator who un-parks the data can still run it.
+>
+> No scenario is added here for the demo-data steps. Writing one would create a
+> requirement nothing tests, which is the shape this spec has just been
+> corrected out of.
 
 #### Scenario: Required register-check gates the app
 
@@ -18,7 +34,7 @@ dossiq SHALL declare a `setup` block in `src/manifest.json` with steps `welcome`
 
 #### Scenario: Optional seed does not gate
 
-@e2e exclude The `seed` step was RETIRED, so this scenario's second clause is false against the product and no test can make it true. Its payload is parked: the bezwaar/beroep case types live under `_caseTypes_disabled` in `lib/Settings/bezwaar_seed_data.json`, so the seeder returned success with every counter at zero, which made the affordance one-shot and silently useless. Reporting that honestly instead left a step whose every click was a 422, so the step went and the action stayed for an operator who un-parks the data. `tests/e2e/case-type-edit-and-setup.spec.ts` "the wizard offers no step the seed action cannot fulfil" asserts the retirement and the 422, deliberately uncited, until this requirement and REQ-SETUP-PRO-002 are rewritten to describe the wizard that ships.
+@e2e exclude The `seed` step was RETIRED, so this scenario's second clause is false against the product and no test can make it true. Its payload is parked: the bezwaar/beroep case types live under `_caseTypes_disabled` in `lib/Settings/bezwaar_seed_data.json`, so the seeder returned success with every counter at zero, which made the affordance one-shot and silently useless. Reporting that honestly instead left a step whose every click was a 422, so the step went and the action stayed for an operator who un-parks the data. `tests/e2e/case-type-edit-and-setup.spec.ts` "the wizard offers no step the seed action cannot fulfil" asserts the retirement and the 422, deliberately uncited. The requirement above was corrected on 2026-09-12 to enumerate the steps that ship, and REQ-SETUP-PRO-002 was checked and needed no change: the `seed` action still exists and still calls `seedBezwaarBeroepData()`. This scenario stays excluded because its second clause names a step the product does not offer, and the honest close is to delete the scenario when the parked bezwaar data is either un-parked or dropped, rather than to write a demo-data scenario nothing tests.
 
 - **GIVEN** the register is initialised but no bezwaar/beroep data is seeded
 - **WHEN** an admin opens the app
