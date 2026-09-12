@@ -457,4 +457,57 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 			. "never match:\n  " . implode("\n  ", $wrong)
 		);
 	}//end testEveryTranslationTableIsKeyedByRegisterValues()
+	/**
+	 * A translated enum is translated in BOTH directions.
+	 *
+	 * `valueMapping` is consulted by `zgw_enum` on the way out and
+	 * `zgw_enum_reverse` on the way in. A table wired into only one direction
+	 * accepts ZGW's word and then hands it back raw, or the reverse, and the
+	 * round trip stops being a round trip.
+	 *
+	 * THIS ONE IS A FORWARD GUARD, not a regression proof: it passes against
+	 * the tree before these fixes, because three of the four tables there were
+	 * wired into NEITHER direction, which is symmetric and so invisible to it.
+	 * testEveryWrittenEnumIsTranslatedOrDeliberatelyIdentical is what catches
+	 * that state. This catches the half-done version of the fix.
+	 *
+	 * @return void
+	 */
+	public function testATranslatedEnumIsTranslatedInBothDirections(): void {
+		$oneSided = [];
+
+		foreach ($this->mappingsKeyedBySettingsKey() as $mappingKey => $config) {
+			foreach (array_keys(($config['valueMapping'] ?? [])) as $property) {
+				$inbound = (string)(($config['reverseMapping'] ?? [])[$property] ?? '');
+				$outboundCalls = false;
+				foreach (($config['propertyMapping'] ?? []) as $template) {
+					if (is_string($template) === true
+						&& str_contains($template, 'zgw_enum("' . $property . '"') === true
+					) {
+						$outboundCalls = true;
+						break;
+					}
+				}
+
+				$inboundCalls = str_contains($inbound, 'zgw_enum_reverse("' . $property . '"');
+				if ($inboundCalls === $outboundCalls) {
+					continue;
+				}
+
+				$oneSided[] = sprintf(
+					'%s.%s has a translation table used on the %s side only',
+					$mappingKey,
+					$property,
+					($inboundCalls === true ? 'inbound' : 'outbound')
+				);
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$oneSided,
+			"These translation tables are wired into one direction only, so the round trip is\n"
+			. "lossy:\n  " . implode("\n  ", $oneSided)
+		);
+	}//end testATranslatedEnumIsTranslatedInBothDirections()
 }//end class
