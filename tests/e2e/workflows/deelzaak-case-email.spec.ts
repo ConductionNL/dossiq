@@ -98,8 +98,8 @@ test.describe('Dossiq — deelzaak (sub-case) + case-email', () => {
 
 	// UNPARKED for the same reason as its cases-crud twin, which carries the
 	// long version: the zaaknummer now renders in the `case-core` info panel.
-	// Scoped to that panel because unscoped it was satisfied by the copy
-	// CaseHeaderRow prints under the title, and stayed green on CI run
+	// Scoped to that panel because unscoped it was satisfied by the copy the
+	// identity row prints at the top of the page, and stayed green on CI run
 	// 34592678724 with the number removed from the panel.
 	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
 		page,

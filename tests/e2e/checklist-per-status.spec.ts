@@ -301,7 +301,12 @@ async function cancelEngineTasks(): Promise<void> {
 }
 
 /**
- * Open a case page and wait for the transition strip to have answered.
+ * Open a case page and wait for the timeline to have answered.
+ *
+ * The transition strip is gone: Ruben ruled on 2026-09-12 that clicking a
+ * status in the timeline sets that status, so the moves are stages of the
+ * configured `stages` widget and the status badge is the library's own pill
+ * inside a configured `stat` tile.
  *
  * @param page The Playwright page.
  * @param id   The case to open.
@@ -309,11 +314,38 @@ async function cancelEngineTasks(): Promise<void> {
 async function openCase(page: Page, id: string): Promise<void> {
 	await page.goto(`/apps/${REGISTER}/cases/${id}`)
 	await dismissSupportDialog(page)
-	await expect(page.getByTestId('case-transitions')).toBeVisible({
+	await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 		timeout: 30_000,
 	})
-	await expect(page.getByTestId('case-header-status')).toBeVisible({
+	await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
 		timeout: 30_000,
+	})
+}
+
+/**
+ * One stage of the timeline, by the status it leads to.
+ *
+ * A timeline is keyed on the STATUS a move reaches, not on the move's id: the
+ * two case types here declare one transition per status pair, so the mapping
+ * is exact.
+ *
+ * @param page     The Playwright page.
+ * @param statusId The statusType uuid the move leads to.
+ */
+function stageReason(page: Page, statusId: string) {
+	return page.getByTestId(`cn-stages-widget-reason-${statusId}`)
+}
+
+/**
+ * The clickable element of one stage. CnTimelineStages puts the role and the
+ * handler on the list item; the testid is on the label inside it.
+ *
+ * @param page     The Playwright page.
+ * @param statusId The statusType uuid the move leads to.
+ */
+function stageControl(page: Page, statusId: string) {
+	return page.locator('.cn-timeline-stages__stage').filter({
+		has: page.getByTestId(`cn-stages-widget-stage-${statusId}`),
 	})
 }
 
@@ -591,12 +623,19 @@ test.describe('A status brings its checklist with it', () => {
 		expect(JSON.stringify(held.failedGuards)).toContain('statusChecklist')
 
 		await openCase(page, cases.held)
-		const button = page.getByTestId(`case-transition-${T.guardStart}`)
-		await expect(button).toBeVisible({ timeout: 20_000 })
-		await expect(button).toBeDisabled()
 
 		// The reason names the item, in whichever language the instance runs.
-		const reason = page.getByTestId(`case-transition-reason-${T.guardStart}`)
+		// CaseActionProvider publishes a refused move's `failureMessage` as the
+		// action's description, and the timeline prints it under the stage.
+		//
+		// ⚠️ The stage is not DISABLED, which the strip's button was:
+		// CnStagesWidget 2.49 does not read the published `blocked` flag, so a
+		// refused move is answered after the click rather than before it. The
+		// guard still holds, because the POST is re-validated, and the API half
+		// of that is the `the guard refuses the move posted straight to the
+		// API` test below.
+		const reason = stageReason(page, guarded.progress)
+		await expect(reason).toBeVisible({ timeout: 20_000 })
 		await expect(reason).toContainText(ITEM.onTime, { timeout: 20_000 })
 	})
 
@@ -619,9 +658,17 @@ test.describe('A status brings its checklist with it', () => {
 		).toBe(true)
 
 		await openCase(page, cases.freed)
-		await expect(
-			page.getByTestId(`case-transition-${T.guardStart}`),
-		).toBeEnabled({ timeout: 20_000 })
+		// The stage is offered and says nothing under it: a passing guard has
+		// no refusal to print, and the move carries no description of its own.
+		await expect(stageControl(page, guarded.progress)).toBeVisible({
+			timeout: 20_000,
+		})
+		await expect(stageControl(page, guarded.progress)).not.toHaveAttribute(
+			'aria-disabled',
+			'true',
+			{ timeout: 20_000 },
+		)
+		await expect(stageReason(page, guarded.progress)).toHaveCount(0)
 
 		const moved = await executeTransition(api, token, cases.freed, T.guardStart)
 		expect(moved.status, JSON.stringify(moved.body)).toBe(200)
@@ -641,12 +688,12 @@ test.describe('A status brings its checklist with it', () => {
 		).toBe(true)
 
 		await openCase(page, cases.optional)
-		await expect(
-			page.getByTestId(`case-transition-${T.arrivalStart}`),
-		).toBeEnabled({ timeout: 20_000 })
-		await expect(
-			page.getByTestId(`case-transition-reason-${T.arrivalStart}`),
-		).toHaveCount(0)
+		await expect(stageControl(page, arrival.progress)).not.toHaveAttribute(
+			'aria-disabled',
+			'true',
+			{ timeout: 20_000 },
+		)
+		await expect(stageReason(page, arrival.progress)).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#the-guard-fails-server-side-too

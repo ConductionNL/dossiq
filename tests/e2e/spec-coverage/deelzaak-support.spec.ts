@@ -778,8 +778,8 @@ test.describe('Sub-case breadcrumb + roll-up (deelzaak-support REQ — navigatio
 	// worth keeping: it looked for the roll-up and the breadcrumb on the CASE
 	// DETAIL, and neither is there. The roll-up is `DeelzaakList`'s header, on
 	// `/cases/:id/deelzaken`; the breadcrumb is `DeelzaakDetail`'s, on
-	// `/cases/:parentId/deelzaken/:id`. `CaseHeaderRow` deliberately removed
-	// its own breadcrumb ("the trail said Cases > X one line below X"). So both
+	// `/cases/:parentId/deelzaken/:id`. The case page deliberately carries no
+	// breadcrumb ("the trail said Cases > X one line below X"). So both
 	// counts were structurally zero, both `if (count > 0)` guards took their
 	// empty branch every run, and the test passed by not looking.
 	//

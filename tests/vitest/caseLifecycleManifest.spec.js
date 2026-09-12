@@ -65,15 +65,15 @@ function action(id) {
 }
 
 describe('CaseDetail: the timeline widget IS the transition surface', () => {
-	it('declares case-timeline as the library stages widget, configured', () => {
+	it('declares case-stages as the library stages widget, configured', () => {
 		// `stages` is a LIBRARY key, so it resolves through the dashboard widget
 		// catalog and needs no registry entry and no page slot. A typo here does
 		// not error: an unknown type falls back to the `widget-<id>` slot, the
 		// page declares none, and the cell renders empty in silence.
-		const entry = widget('case-timeline')
+		const entry = widget('case-stages')
 		expect(entry).toBeTruthy()
 		expect(entry.type).toBe('stages')
-		expect(caseDetail().slots['widget-case-timeline']).toBeUndefined()
+		expect(caseDetail().slots['widget-case-stages']).toBeUndefined()
 	})
 
 	it('reads the case type blueprint, not the type own status rows', () => {
@@ -81,7 +81,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// statusType rows of its own, so `statusType where caseType = X` said
 		// "no statuses yet" about a type that plainly has four. /blueprint
 		// merges the chain server-side.
-		const source = widget('case-timeline').content.stagesEndpoint
+		const source = widget('case-stages').content.stagesEndpoint
 		expect(source.url).toBe(
 			'/apps/dossiq/api/case-types/@object.caseType/blueprint',
 		)
@@ -97,14 +97,14 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// what happens. `lifecycle` asks OpenRegister what is reachable and
 		// lets it re-validate the write, which is dossiq's own guarded engine
 		// answering through CaseActionProvider.
-		const content = widget('case-timeline').content
+		const content = widget('case-stages').content
 		expect(content.transition).toEqual({ kind: 'lifecycle' })
 		expect(content.currentField).toBe('status')
 		expect(content.unreachableReason).toBeTruthy()
 	})
 
 	it('places the timeline in one cell, where the stepper stood', () => {
-		const placed = cells('case-timeline')
+		const placed = cells('case-stages')
 		expect(placed).toHaveLength(1)
 		expect(placed[0].gridX).toBe(8)
 		expect(placed[0].gridWidth).toBe(4)
@@ -221,7 +221,7 @@ describe('CaseDetail: suspend, resume, extend and reopen', () => {
 describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
 		const named = [
-			widget('case-timeline').icon,
+			widget('case-stages').icon,
 			action('case-suspend').icon,
 			action('case-resume').icon,
 			action('case-extend').icon,

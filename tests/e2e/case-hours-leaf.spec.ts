@@ -481,7 +481,7 @@ if (!HUMANIQ_DECLARED) {
 			// decision rather than a render that has not happened yet. Both of
 			// these are dossiq's own and neither depends on humaniq.
 			await expect(
-				page.getByTestId('case-header'),
+				page.getByTestId('cn-stat-widget-badge'),
 				'the identity row must render, or the page is simply not finished loading',
 			).toBeVisible({ timeout: 30_000 })
 			await expect(
@@ -559,7 +559,7 @@ if (!HUMANIQ_DECLARED) {
 			})
 
 			await openCase(page, caseId)
-			await expect(page.getByTestId('case-header')).toBeVisible({
+			await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
 				timeout: 30_000,
 			})
 

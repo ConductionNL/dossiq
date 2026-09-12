@@ -400,9 +400,18 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${objectId(openCase)}`)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByTestId('case-header-status')).toHaveAttribute(
-			'data-colour',
-			'orange',
+		// 🔴 THE COLOUR SURVIVES, THE TOKEN DOES NOT, and this assertion says
+		// which. CaseHeaderRow carried the authored palette NAME on a
+		// `data-colour` attribute, read only by this test; the visible variant
+		// came from `isFinal`. The identity row is a configured `stat` tile
+		// now, and its badge takes ONE axis: `objectField.resolve.variantField`
+		// is `colour`, so the authored hue is what paints the pill, mapped
+		// through `variantMap` onto the six variants CnStatusBadge accepts.
+		// Orange maps to `warning`. What is gone is the exact
+		// `var(--nl-color-orange)` token and the six `-light` tints, which fold
+		// onto their full hue. That loss is in the PR that made this change.
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveClass(
+			/cn-status-badge--warning/,
 			{ timeout: 30_000 },
 		)
 	})
