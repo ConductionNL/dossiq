@@ -247,7 +247,7 @@ test.describe('Case identity', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-case-posted-to-the-api-gets-a-number-too
 	test('a case posted to the API is numbered in the year of its start date', async () => {
 		const filed = await createObject(api, token, 'case', {
 			title: `${RUN_PREFIX} api filed case`,
@@ -266,7 +266,7 @@ test.describe('Case identity', () => {
 		).toBe('2026')
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#an-existing-number-stays
 	test('an existing number survives an edit to the case', async () => {
 		await updateObject(api, token, 'case', legacyCaseId, {
 			title: `${RUN_PREFIX} legacy numbered case, retitled`,
@@ -276,7 +276,7 @@ test.describe('Case identity', () => {
 		expect(stored.identifier).toBe(LEGACY_IDENTIFIER)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-case-filed-from-the-form-gets-the-next-number
 	test('the New case form asks for no number, and the case gets the next one', async ({
 		page,
 	}) => {
@@ -342,7 +342,7 @@ test.describe('Case identity', () => {
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#you-add-a-tag-on-the-case
 	test('a tag added in the sidebar is on the case after a reload', async ({
 		page,
 	}) => {
@@ -428,7 +428,7 @@ test.describe('Case identity', () => {
 		).toContainText(TYPED_TAG, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#you-filter-the-list-on-a-tag
 	test('the Cases index filters on a tag, and offers the filter', async ({
 		page,
 	}) => {
@@ -454,6 +454,17 @@ test.describe('Case identity', () => {
 			).toHaveCount(0)
 		}
 
+		// The scenario says the list holds the two tagged cases ONLY, and
+		// naming three untagged cases that must be absent is not the same
+		// claim: a filter that let a fourth case through would satisfy every
+		// assertion above. The tag is RUN_PREFIX-scoped, so exactly two cases
+		// on the instance carry it and the count is a fact rather than a
+		// guess about what else the register holds.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]'),
+			'the filtered list holds the two tagged cases and nothing else',
+		).toHaveCount(2, { timeout: 20_000 })
+
 		// And the filter is reachable without hand-writing a URL: `tags` is
 		// `facetable`, so the index sidebar builds a Tags control from the
 		// schema.
@@ -478,7 +489,7 @@ test.describe('Case identity', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#the-blocks-read-the-type-and-the-case
 	test('the case shows its lead time, legal basis and archive nomination', async ({
 		page,
 	}) => {
@@ -522,12 +533,33 @@ test.describe('Case identity', () => {
 			metadata.getByText(/^(Archiving|Archivering)$/),
 			'the panel groups the archival facts under their own heading',
 		).toBeVisible({ timeout: 15_000 })
-		await expect(metadata).toContainText(
-			/keep permanently|retain[ _]permanently|blijvend[ _]bewaren/i,
-		)
+
+		// 🔴 THE LAST CLAUSE ACCEPTED THE THING IT FORBIDS. The scenario ends
+		// "SHALL name the nomination as the phrase it stands for, not the
+		// stored code", and this alternation carried `blijvend[ _]bewaren`,
+		// which is the stored code: `ARCHIVE_NOMINATION` is exactly what the
+		// fixture writes onto the case. A panel printing the raw register
+		// value satisfied the assertion, so the one clause that distinguishes
+		// a resolved nomination from an unresolved one could not fail.
+		//
+		// Both halves are asserted on the appraisal ROW rather than on the
+		// whole panel, because another row may legitimately carry the source
+		// value and a panel-wide negative would blame this clause for it.
+		const appraisal = metadata
+			.locator('.cn-detail-grid__item')
+			.filter({ hasText: /Appraisal|Waardering/ })
+		await expect(appraisal).toHaveCount(1)
+		await expect(
+			appraisal,
+			'the nomination reads as the phrase it stands for',
+		).toContainText(/keep permanently|retain[ _]permanently/i)
+		await expect(
+			appraisal,
+			'and not as the code the case stores',
+		).not.toContainText(ARCHIVE_NOMINATION)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#an-archival-fact-the-case-does-not-carry-stays-visible
 	test('an archival fact the case does not carry is shown empty, not hidden', async ({
 		page,
 	}) => {
