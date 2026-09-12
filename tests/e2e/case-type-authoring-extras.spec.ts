@@ -381,9 +381,14 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
-	// The badge half of the same requirement: the case page draws the status
-	// in its own colour, which is where a handler actually reads it.
+	// @e2e case-types::a-coloured-status-shows-on-the-case
+	//
+	// The badge half of REQ-CT-19: "the status badge on the case AND the
+	// Workflow board column SHALL render in that colour". Only the board half
+	// had a scenario, so this test had nothing to cite and credited nothing.
+	// The scenario was written rather than the citation bent onto the board
+	// one, which this test does not drive: the SHALL was already there with
+	// nothing checkable attached to half of it.
 	test('the case page draws the current status in its status’s colour', async ({
 		page,
 	}) => {
@@ -429,7 +434,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	})
 
 	// @e2e openspec/specs/case-types/spec.md
-	// Scenario: A child overrides one deadline
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS. `case-types::a-child-overrides-one-deadline`
+	// ends "WHEN you file a case of Bezwaar (verkort), THEN the CASE's deadline
+	// SHALL be 6 weeks after its start date". This test reads the BLUEPRINT and
+	// asserts the case TYPE resolves `P6W` over its parent's `P12W`. That is
+	// the input to the rule, not the rule's outcome: a case whose deadline was
+	// computed from the parent anyway, or not computed at all, satisfies every
+	// assertion here.
+	//
+	// The comment below argues the case deadline follows from the type's
+	// stored value, and it does, through OpenRegister at save time. But the
+	// scenario is about the step this test does not take. File a case and read
+	// its deadline, then anchor.
 	test('a child’s own deadline beats its parent’s', async () => {
 		// Through the API rather than through the page: the deadline a case
 		// gets is computed by OpenRegister at save time from the case TYPE's
@@ -637,8 +654,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-AVG-01: the personal data block ────────────────────────────────
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md
-	// Scenario: The block reads back what you saved
+	// @e2e avg-verwerkingenlogging::the-block-reads-back-what-you-saved
+	//
+	// The scenario's THEN names three values, `naw`, `bsn` and `public_task`,
+	// and the fixture seeds all three: `personalDataCategories: ['naw','bsn']`
+	// and `legalBasis: 'public_task'`. Only two were asserted, so the first
+	// category could have been dropped by the widget and this stayed green.
+	// `naw` is asserted below, which is what makes the anchor honest.
+	//
+	// ⚠️ `naw` is a three-character substring check, in the same loose
+	// `toContainText` form as its siblings, so it is the weakest of the three:
+	// any word on the page containing those letters satisfies it. The stronger
+	// form reads the categories out of the block itself rather than the whole
+	// detail page, and wants an instance to pin the selector.
 	test('the personal data block reads back the categories and the basis', async ({
 		page,
 	}) => {
@@ -650,6 +678,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		// like success in a screenshot.
 		const detail = page.locator('.cn-detail-page')
 		await expect(detail).toContainText('public_task', { timeout: 30_000 })
+		await expect(detail).toContainText('naw')
 		await expect(detail).toContainText('bsn')
 		await expect(detail).toContainText('behandelen-bezwaarschrift')
 	})
