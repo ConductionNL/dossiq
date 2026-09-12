@@ -29,6 +29,7 @@ import {
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	trackCreatedObject,
 	updateObject,
 } from './helpers/fixtures.ts'
 
@@ -314,6 +315,10 @@ test.describe('New case dialog', () => {
 			const cases = await listObjects(api, 'case', { _limit: '200' })
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
+			// The dialog created this case, so `createObject` never saw it and
+			// teardown has no id for it. Record it here, where the id is already
+			// in hand, or it survives the run as an untracked leftover.
+			trackCreatedObject('case', objectId(created))
 
 			// ONE STORE, NAMED. This block used to read `case.properties` OR
 			// the `caseProperty` rows, whichever was non-empty, and that is
@@ -459,6 +464,8 @@ test.describe('New case dialog', () => {
 			const cases = await listObjects(api, 'case', { _limit: '200' })
 			const created = cases.find((c) => String(c.title ?? '') === title)
 			expect(created, 'the case should have been created').toBeTruthy()
+			// Created by the dialog, so teardown learns its id here or not at all.
+			trackCreatedObject('case', objectId(created))
 			expect(String(created.status)).toBe(startStatusId)
 		}).toPass({ timeout: 30000 })
 	})
