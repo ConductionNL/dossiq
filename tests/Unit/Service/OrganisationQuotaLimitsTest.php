@@ -238,4 +238,37 @@ class OrganisationQuotaLimitsTest extends TestCase {
 		$this->assertFalse($limits->write(tenantId: 'tenant-a', quotaType: 'cases_per_month', limit: 100));
 		$this->assertSame([], $this->updated);
 	}
+	/**
+	 * Without OpenRegister a limit write fails and says so.
+	 *
+	 * `write()` returning true on an instance with nowhere to write would have
+	 * `initialize()` seed a tier, report success, and leave every mapped quota
+	 * unlimited. `decide()` reads a null limit as unlimited, so the failure
+	 * would surface as a tenant with no ceiling rather than as an error.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterAWriteFailsRatherThanReportingSuccess(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getInstalledApps')->willReturn(['dossiq']);
+
+		$organisation = $this->organisation();
+		$resolver = $this->createMock(TenantOrganisationResolver::class);
+		$resolver->method('findOrganisation')->willReturn($organisation);
+
+		$limits = new OrganisationQuotaLimits(
+			appManager: $appManager,
+			container: $this->createMock(ContainerInterface::class),
+			organisations: $resolver,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$this->assertFalse($limits->write(tenantId: 'tenant-a', quotaType: 'api_calls_per_hour', limit: 10));
+		$this->assertSame([], $this->updated);
+		$this->assertNull(
+			$organisation->getRequestQuota(),
+			'nothing may be left half-written on the entity when the store is unreachable'
+		);
+	}
+
 }//end class

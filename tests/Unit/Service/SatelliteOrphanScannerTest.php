@@ -292,4 +292,74 @@ class SatelliteOrphanScannerTest extends TestCase {
 		);
 		$this->assertArrayNotHasKey('tenantOnboardingTask', $report['bySchema']);
 	}
+	/**
+	 * Without OpenRegister the scan reports nothing, rather than everything.
+	 *
+	 * 🔴 Which way this fails is the whole question. There is no mapper to
+	 * resolve a `tenantRef` against, so every row would resolve to nothing and
+	 * a scan that kept going would report EVERY satellite row as an orphan.
+	 * An operator acting on that report would be acting on a list produced by
+	 * an absent dependency.
+	 *
+	 * So the scan declines instead: zero scanned, zero orphans, and the caller
+	 * can tell "nothing to report" from "could not look" by the scanned count
+	 * being zero too.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterTheScanReportsNothingRatherThanEverything(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(
+			$this->objectServiceWithRows([], ['tenantUser' => [['id' => 'u1', 'tenantRef' => 'gone']]])
+		);
+
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getInstalledApps')->willReturn(['dossiq']);
+
+		$report = (new SatelliteOrphanScanner(
+			$settings,
+			$this->createMock(ContainerInterface::class),
+			$appManager,
+			$this->createMock(LoggerInterface::class),
+		))->reportOrphans();
+
+		$this->assertSame(0, $report['orphans'], 'an absent dependency must not manufacture orphans');
+		$this->assertSame(0, $report['scanned']);
+		$this->assertSame([], $report['rows']);
+		$this->assertSame([], $report['bySchema']);
+	}
+
+	/**
+	 * A satellite schema that cannot be read is skipped, not fatal.
+	 *
+	 * A register missing one of the five is an ordinary state, and the other
+	 * four still have something to say. Aborting would report zero orphans
+	 * across the board, which reads exactly like a clean instance.
+	 *
+	 * @return void
+	 */
+	public function testASatelliteSchemaThatCannotBeReadDoesNotStopTheScan(): void {
+		$objectService = new class {
+			// phpcs:ignore
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				if ($schema === 'tenantQuota') {
+					throw new RuntimeException('no such schema');
+				}
+
+				if ($schema === 'tenantUser') {
+					return [['id' => 'u1', 'tenantRef' => 'gone']];
+				}
+
+				return [];
+			}
+		};
+
+		$report = $this->makeScanner($objectService, $this->mapperWith([]))->reportOrphans();
+
+		$this->assertSame(1, $report['orphans'], 'the readable schemas must still be reported');
+		$this->assertSame(0, $report['bySchema']['tenantQuota']['scanned']);
+		$this->assertSame(1, $report['bySchema']['tenantUser']['scanned']);
+		$this->assertSame([['schema' => 'tenantUser', 'row' => 'u1', 'tenantRef' => 'gone']], $report['rows']);
+	}
+
 }//end class

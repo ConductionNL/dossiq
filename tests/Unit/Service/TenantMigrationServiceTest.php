@@ -755,4 +755,136 @@ class TenantMigrationServiceTest extends TestCase {
 			'The repair must not restart a retention window that already began.'
 		);
 	}
+	/**
+	 * A row whose status the legacy model never set becomes an active tenant.
+	 *
+	 * `resolveStatus()` falls through to `active` when the row carries neither
+	 * a mapped `status` nor `isActive: false`. That default decides whether a
+	 * tenant can transact after the migration, so it is a behaviour rather
+	 * than a tidy-up, and it is asserted here rather than left to be inferred
+	 * from the two branches above it.
+	 *
+	 * @return void
+	 */
+	public function testARowWithNoStatusAtAllBecomesAnActiveOrganisation(): void {
+		$mapper = $this->mapperWith([]);
+		$this->makeService(
+			$this->objectServiceWithRows([['id' => 't-bare', 'slug' => 'bare']]),
+			$mapper,
+		)->migrate();
+
+		$this->assertCount(1, $mapper->inserted);
+		$this->assertSame('active', $mapper->inserted[0]->getStatus());
+		$this->assertTrue($mapper->inserted[0]->getActive());
+	}
+
+	/**
+	 * An unreadable termination date still dates the retention.
+	 *
+	 * A retained organisation with no `retainedAt` has no computable end of
+	 * retention, so a date this migration cannot parse must fall back to now
+	 * rather than to null. The alternative fails silently: the status is
+	 * right, the row looks migrated, and the retention period has no start.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableTerminationDateStillDatesTheRetention(): void {
+		$mapper = $this->mapperWith([]);
+		$this->makeService(
+			$this->objectServiceWithRows(
+				[['id' => 't-bad', 'slug' => 'bad-date', 'status' => 'terminated', 'terminatedAt' => 'not a date']]
+			),
+			$mapper,
+		)->migrate();
+
+		$this->assertCount(1, $mapper->inserted);
+		$org = $mapper->inserted[0];
+		$this->assertSame('retained', $org->getStatus());
+		$this->assertNotNull($org->getRetainedAt(), 'a retained organisation must carry a retention start');
+		$this->assertNull($org->getDeprovisionedAt());
+	}
+
+	/**
+	 * One row that throws is counted as failed and the rest still migrate.
+	 *
+	 * A migration that aborted on the first bad row would leave an install
+	 * half-migrated, with the satellites of the tenants it did not reach still
+	 * pointing at a tenant store that is about to be retired.
+	 *
+	 * @return void
+	 */
+	public function testOneFailingRowIsCountedAndTheOthersStillMigrate(): void {
+		$mapper = new class extends \stdClass {
+			/** @var array<int, Organisation> */
+			public array $inserted = [];
+
+			/** @var array<int, Organisation> */
+			public array $updated = [];
+
+			// phpcs:ignore
+			public function findByUuid(string $uuid): Organisation {
+				throw new RuntimeException('not found');
+			}
+
+			// phpcs:ignore
+			public function findBySlug(string $slug): Organisation {
+				throw new RuntimeException('not found');
+			}
+
+			// phpcs:ignore
+			public function insert(Organisation $org): Organisation {
+				if ($org->getSlug() === 'explodes') {
+					throw new RuntimeException('the store refused this row');
+				}
+
+				$this->inserted[] = $org;
+				return $org;
+			}
+		};
+
+		$summary = $this->makeService(
+			$this->objectServiceWithRows(
+				[
+					['id' => 't-ok-1', 'slug' => 'fine-one', 'status' => 'active'],
+					['id' => 't-bad', 'slug' => 'explodes', 'status' => 'active'],
+					['id' => 't-ok-2', 'slug' => 'fine-two', 'status' => 'active'],
+				]
+			),
+			$mapper,
+		)->migrate();
+
+		$this->assertSame(3, $summary['total']);
+		$this->assertSame(2, $summary['migrated']);
+		$this->assertSame(1, $summary['failed']);
+		$this->assertCount(2, $mapper->inserted);
+		$this->assertCount(2, $summary['mappings'], 'a failed row must not be reported as mapped');
+	}
+
+	/**
+	 * A register with no legacy tenant schema migrates nothing and says so.
+	 *
+	 * The common case on a fresh install, and the one where an exception would
+	 * be read as a broken migration rather than as an empty one.
+	 *
+	 * @return void
+	 */
+	public function testAnAbsentLegacyTenantSchemaIsAnEmptyRunAndNotAFailure(): void {
+		$objectService = new class {
+			// phpcs:ignore
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				throw new RuntimeException('no such schema');
+			}
+		};
+
+		$mapper = $this->mapperWith([]);
+		$summary = $this->makeService($objectService, $mapper)->migrate();
+
+		$this->assertSame(0, $summary['total']);
+		$this->assertSame(0, $summary['migrated']);
+		$this->assertSame(0, $summary['failed']);
+		$this->assertSame(0, $summary['refused']);
+		$this->assertSame(0, $summary['repaired']);
+		$this->assertCount(0, $mapper->inserted);
+	}
+
 }//end class
