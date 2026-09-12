@@ -63,14 +63,22 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 		page,
 	}) => {
 		let emptied = 0
-		await page.route('**/apps/openregister/api/objects/*/caseType*', async (route) => {
-			emptied++
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({ results: [], total: 0, page: 1, pages: 1 }),
-			})
-		})
+		await page.route(
+			'**/apps/openregister/api/objects/*/caseType*',
+			async (route) => {
+				emptied++
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						results: [],
+						total: 0,
+						page: 1,
+						pages: 1,
+					}),
+				})
+			},
+		)
 
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(

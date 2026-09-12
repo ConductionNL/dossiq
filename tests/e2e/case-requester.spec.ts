@@ -621,8 +621,10 @@ test.describe('The requester on the case', () => {
 		const company = page
 			.locator('[data-testid="cn-object-row"]')
 			.filter({ hasText: `${RUN_PREFIX} Bedrijfsaanvrager` })
-		await expect(person, 'both cases are listed before the requester filter')
-			.toHaveCount(1, { timeout: 30_000 })
+		await expect(
+			person,
+			'both cases are listed before the requester filter',
+		).toHaveCount(1, { timeout: 30_000 })
 		await expect(company).toHaveCount(1, { timeout: 30_000 })
 
 		// WHEN the requester is added to the filter. `CnIndexPage` reads the

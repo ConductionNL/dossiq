@@ -3933,6 +3933,8 @@ OC.L10N.register(
         "Could not save. Try again.": "Could not save. Try again.",
         "That mail account is not yours.": "That mail account is not yours.",
         "Choose a mail account first.": "Choose a mail account first.",
+        "Create your first case type to start handling cases.": "Create your first case type to start handling cases.",
+        "No case types configured yet": "No case types configured yet",
         "Case plan": "Case plan",
         "Ready to start": "Ready to start",
         "Stop": "Stop",
