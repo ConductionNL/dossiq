@@ -684,11 +684,36 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeVisible()
 		})
 
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		// 🔴 NO CITATION, AND THE MEASUREMENT IS WHY. This carried
+		// `role-routing-via-or-rbac#assign-a-case-to-a-team`, whose second
+		// THEN is "the Team facet SHALL list Team Permits with a count of
+		// one". That is a claim about what a reader is SHOWN, and nothing on
+		// this page shows it.
 		//
-		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
-		// citation is unverified. Break, then the assertion that must redden:
+		// Measured on the shared instance 2026-09-12, signed in as admin on
+		// the Cases page with the sidebar open: the Team filter opens and its
+		// dropdown holds exactly one entry, "No results". Case type behaves
+		// identically, so it is the binding and not the data. CnIndexPage
+		// passes `:facet-data="resolvedSidebar.facets || {}"`, which is the
+		// MANIFEST's sidebar config; the live facets the store just parsed
+		// never reach `getFilterOptions`. (The `isSelfFetchMode` branch that
+		// DOES read `list.facets` feeds `folderSidebarFacetValues`, the folder
+		// pane, not the filter list.) nextcloud-vue#1110 fixes it upstream and
+		// is not in 2.48.2, the newest published version and the one this app
+		// pins.
+		//
+		// So the citation comes down rather than claiming a rendered list
+		// nobody can see. The scenario keeps its spec-side `@e2e
+		// tests/e2e/case-parties.spec.ts`, and its first THEN, the Team
+		// column, is proven by the two tests above.
+		//
+		// The test stays, and proves what IS true: OpenRegister computes the
+		// facet, counts one for this team over two marked cases, and that
+		// count matches what filtering on the team actually returns. Re-cite
+		// it when the sidebar is fed its live facets.
+		//
+		// STILL NOT RUN (the permission is pending): the server-side mutation
+		// for the facet itself. Break, then the assertion that must redden:
 		//   lib/Settings/dossiq_register.json `case.assignedGroup.facetable: false`,
 		//   imported with `version` pinned on both the break and the restore
 		//     -> "the Team facet must list the team with a count of one"
@@ -752,6 +777,31 @@ test.describe('Case detail — the Parties tab', () => {
 				)
 				.toBe(1)
 
+			// 🔴 AND THE COUNT HAS TO MEAN SOMETHING. A bucket saying 1 is a
+			// number in a payload until the filter it stands for is applied:
+			// the scenario's claim is that picking Team Permits gets you the
+			// one case that has it. So the facet is USED as a filter, over the
+			// same two marked cases, and the list that comes back has to be
+			// exactly the one the bucket counted.
+			await openIndex(page, '/cases', {
+				competentAuthority: TEAM_MARKER,
+				assignedGroup: teamId,
+			})
+			const withTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties team`,
+			})
+			const withoutTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties empty`,
+			})
+			await expect(
+				withTeam,
+				'filtering on the team returns the case that carries it',
+			).toHaveCount(1, { timeout: 30_000 })
+			await expect(
+				withoutTeam,
+				'and not the other marked case, so the count of one is a count',
+			).toHaveCount(0)
+
 			// 🔴 AND THE SIDEBAR SHOWS NONE OF IT. The rendered Team filter is
 			// asserted NOWHERE here because it lists nothing to assert:
 			// `CnIndexPage` passes `:facet-data="resolvedSidebar.facets || {}"`,
@@ -759,16 +809,20 @@ test.describe('Case detail — the Parties tab', () => {
 			// the store just parsed, so `getFilterOptions` falls through to
 			// `filter.options` and every filter in the sidebar renders "No
 			// results" — Team, Case type, Status and the rest alike. Measured
-			// on this instance with the bucket above present in the response.
-			// Two more presentation defects sit behind it: `organisatieRol`
-			// declares no name field, so OpenRegister labels the bucket with a
-			// shortened uuid rather than Team Permits, and the Team cell on the
-			// case page renders that uuid too.
+			// on this instance with the bucket above present in the response,
+			// and re-checked 2026-09-12: nextcloud-vue#1110 fixes it upstream
+			// but the newest published version is 2.48.2, which this app pins
+			// and which still binds `resolvedSidebar.facets`. Two more
+			// presentation defects sit behind it: `organisatieRol` declares no
+			// name field, so OpenRegister labels the bucket with a shortened
+			// uuid rather than Team Permits, and the Team cell on the case
+			// page renders that uuid too.
 			//
-			// So the scenario's "lists Team Permits" half is NOT proven by this
-			// test, and cannot be until the sidebar is fed the live facets. All
-			// three are reported with this change. What is asserted is the
-			// facet itself, which is the fact the sidebar would render.
+			// So the scenario's "lists Team Permits" half is still NOT proven
+			// on screen, and cannot be until dossiq takes a nextcloud-vue that
+			// feeds the sidebar its live facets. What is proven is that the
+			// facet exists, counts one, and that the one it counts is the one
+			// case the filter returns.
 		})
 
 		// 🔴 REMOVED 2026-09-11: `a task with a team shows it on its row and

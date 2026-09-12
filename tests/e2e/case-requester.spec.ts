@@ -291,7 +291,17 @@ test.describe('The requester on the case', () => {
 		await option.first().click()
 	}
 
-	// @e2e openspec/specs/initiator-selection/spec.md
+	// @e2e openspec/specs/initiator-selection/spec.md#the-form-no-longer-disables-the-field
+	//
+	// 🔴 NOT `#agent-picks-an-initiator-type`, THOUGH IT IS THE CLOSER NAME.
+	// That scenario's second clause is "the picker SHALL offer the types
+	// Person, Company and Contact", and this file's header says why nothing
+	// here asserts it: @conduction/nextcloud-vue validates the `form-field`
+	// registry entry without MOUNTING it, so `InitiatorPicker` is a
+	// declaration on this runtime and the field is painted by the generic
+	// object picker. Anchoring there would credit a picker nobody can see.
+	// `The form no longer disables the field` is what this test does prove,
+	// clause for clause: not disabled, and no no-provider tooltip.
 	test('the New case form asks for a requester, and the field is enabled', async ({
 		page,
 	}) => {
@@ -339,6 +349,12 @@ test.describe('The requester on the case', () => {
 	})
 
 	// @e2e openspec/specs/initiator-selection/spec.md
+	//
+	// 🔴 NO ANCHOR, FOR THE REASON ABOVE. `#the-edit-form-carries-the-picker`
+	// reads "the Requester field SHALL be enabled AND RENDERED BY THE
+	// INITIATOR PICKER". The first half is asserted here and the second
+	// cannot be on this runtime. Re-anchor when the form-field registry
+	// mounts its entry and the picker is what paints the field.
 	test('the edit form carries the requester field, enabled', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
@@ -368,6 +384,14 @@ test.describe('The requester on the case', () => {
 	})
 
 	// @e2e openspec/specs/initiator-selection/spec.md
+	//
+	// 🔴 NO ANCHOR. `#selection-persists-on-the-case` opens "WHEN a handler
+	// FILES A CASE AND PICKS a seeded persona", and this test picks nothing:
+	// it seeds the canonical reference the way a save leaves it and proves
+	// the projection is back-filled on first render. That is a real claim and
+	// a different one. The picking half is proven by
+	// spec-coverage/brp-kvk-initiator.spec.ts, which cites that scenario by
+	// anchor, so nothing is uncovered by leaving this one unnamed.
 	test('a case saved with only the reference gains its projection', async ({
 		page,
 	}) => {
@@ -431,7 +455,7 @@ test.describe('The requester on the case', () => {
 		expect(saved.initiatorDisplayName).toBe(COMPANY.name)
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#initiator-visible-on-the-case
 	test('the case page names the person, the number and the address', async ({
 		page,
 	}) => {
@@ -464,7 +488,7 @@ test.describe('The requester on the case', () => {
 		).toHaveAttribute('href', new RegExp(`/contacts/${plainPersonId}$`))
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#a-company-card-links-to-the-kvk-record
 	test('a company card links to the KvK record', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`, PAGE_LOAD)
 
@@ -486,7 +510,7 @@ test.describe('The requester on the case', () => {
 		).toHaveAttribute('href', new RegExp(`/organisations/${companyId}$`))
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#no-initiator-no-clutter
 	test('a case without a requester shows no card', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
 		// The tab strip, not a KPI card. This is only a load signal, and
@@ -522,7 +546,7 @@ test.describe('The requester on the case', () => {
 		)
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#the-requester-is-a-column
 	test('the requester is a column on the case list', async ({ page }) => {
 		await page.goto(CASES_URL, PAGE_LOAD)
 		const table = page.getByRole('table')
@@ -570,6 +594,60 @@ test.describe('The requester on the case', () => {
 			'and not the case with a different requester',
 		).toBe(false)
 
+		// 🔴 WHY THIS CITATION STILL NAMES THE FILE AND NOT A SCENARIO.
+		// `initiator-display` has the scenario "The list filters on the
+		// requester's name", and its WHEN is "the handler TYPES the first
+		// requester's surname into the Requester filter". That gesture cannot
+		// be performed on this platform: CnIndexSidebar renders every filter
+		// as an `NcSelect` whose options come from `getFilterOptions`, which
+		// falls through to the manifest's `filter.options` because
+		// CnIndexPage binds `:facet-data="resolvedSidebar.facets"` rather than
+		// the live facets. nextcloud-vue#1110 fixes that upstream and is not
+		// in 2.48.2, the newest published version and the one this app pins,
+		// so there is no option to pick and nothing to type into. Naming that
+		// anchor would claim a gesture no assertion here makes, which reads as
+		// coverage and survives review; naming the file reads as what it is.
+		// Re-anchor when the sidebar is fed its live facets.
+		//
+		// 🔴 AND THE SAME NARROWING ON THE PAGE. The two assertions above are
+		// a direct API query: they say the STORE can narrow on the field, and
+		// a Cases index that dropped the predicate on its way to the wire
+		// left both of them green. The index reads its filters from the query
+		// string, so the same narrowing is asked for the way a reader's
+		// filter asks for it, and the rows that come back are read.
+		//
+		// Read as "every row belongs to this requester", never as "my row is
+		// row N": the list paginates at 20 over a shared instance, so a
+		// position assertion would be about how much seed data the box holds.
+		await page.goto(
+			`${CASES_URL}?initiatorDisplayName=${encodeURIComponent(PLAIN.name)}`,
+			PAGE_LOAD,
+		)
+		const listed = page.getByRole('table').getByRole('row')
+		await expect(
+			listed.filter({ hasText: `${RUN_PREFIX} Gewone aanvrager` }),
+			'the narrowed page holds the case with that requester',
+		).toHaveCount(1, { timeout: 30_000 })
+		await expect(
+			listed.filter({ hasText: `${RUN_PREFIX} Bedrijfsaanvrager` }),
+			'and not the case whose requester is the company',
+		).toHaveCount(0)
+		// Every row, not only the two this run seeded: a filter that answered
+		// the whole register would still satisfy the two lines above.
+		const requesterColumn = await page
+			.getByRole('table')
+			.getByRole('columnheader', { name: /Requester|Aanvrager/ })
+			.evaluate((th) => Array.from(th.parentElement!.children).indexOf(th))
+		const cells = page.locator(
+			`table tbody tr td:nth-child(${requesterColumn + 1})`,
+		)
+		const shown = await cells.allInnerTexts()
+		expect(shown.length, 'the narrowed page is not empty').toBeGreaterThan(0)
+		expect(
+			shown.every((text) => text.trim() === PLAIN.name),
+			`every row on the narrowed page names the requester: ${shown.join(' | ')}`,
+		).toBe(true)
+
 		// The sidebar offers the filter because the field is facetable.
 		//
 		// 🔴 SCOPED TO THE SIDEBAR, AND IT WAS NOT.
@@ -612,7 +690,15 @@ test.describe('The requester on the case', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#the-bsn-is-masked
+	// @e2e openspec/specs/initiator-display/spec.md#a-reveal-shows-the-number-and-is-a-logged-read
+	//
+	// TWO ANCHORS FOR ONE TEST, BECAUSE IT PROVES BOTH SCENARIOS END TO END.
+	// Masked: the Protected marker and five dots plus the last four digits.
+	// Revealed: the full number after pressing Reveal, and exactly one read
+	// carrying `_reason=bsn-reveal`. Splitting the test would make each half
+	// prove less, because the count of reads is only meaningful against a
+	// page that started with none.
 	test('a protected BSN is masked, and a reveal is one logged read', async ({
 		page,
 	}) => {
@@ -647,7 +733,7 @@ test.describe('The requester on the case', () => {
 		)
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md
+	// @e2e openspec/specs/initiator-display/spec.md#an-unprotected-person-is-not-masked
 	test('an unprotected person is not masked', async ({ page }) => {
 		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
 		const card = page.locator('[data-testid="initiator-section"]')
