@@ -498,6 +498,11 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * row always records the absentee, and this test must redden on the
 	 * `createdBy` assertion; drop `'status' => 'active'` from the same `$row`
 	 * and it must redden on the status assertion instead.
+	 *
+	 * What WAS run, and what it is worth: inverting the expectation to
+	 * `ADMIN_USER` reddened on `expected "admin", received "e2euser"`. That
+	 * proves the assertion reads the stored row and tells the two identities
+	 * apart. It does not prove the guard, because the guard was never broken.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
 	test('a handler registering their own substitution stores the pair, an active status and themselves as creator', async () => {
@@ -571,6 +576,11 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * `if ($absentee !== $actorId && ...isCoordinator(...) === false)` guard and
 	 * the 403 assertion must redden. For the creator half it is the
 	 * `$createdBy !== ''` branch in `SubstitutionService::create()`, as above.
+	 *
+	 * What WAS run: inverting the creator expectation to `PLAIN_USER` reddened
+	 * on `expected "e2euser", received "admin"`. The assertion reads the row
+	 * and discriminates. The guard itself is still unbroken and so still
+	 * unproven.
 	 */
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
 	test('a coordinator registers for an absent handler and the row names the coordinator as creator, where an ordinary user is refused', async () => {
