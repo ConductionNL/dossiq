@@ -57,7 +57,9 @@ const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
  * @return {boolean} True for a plain object.
  */
 function isPlainObject(value) {
-	return typeof value === 'object' && value !== null && Array.isArray(value) === false
+	return (
+		typeof value === 'object' && value !== null && Array.isArray(value) === false
+	)
 }
 
 /**
@@ -70,7 +72,8 @@ function isPlainObject(value) {
  */
 function deepMerge(base, fragment) {
 	if (Array.isArray(base) && Array.isArray(fragment)) return [...base, ...fragment]
-	if (isPlainObject(base) === false || isPlainObject(fragment) === false) return fragment
+	if (isPlainObject(base) === false || isPlainObject(fragment) === false)
+		return fragment
 
 	const merged = { ...base }
 	for (const [key, value] of Object.entries(fragment)) {
@@ -92,7 +95,10 @@ function loadSchemas() {
 		.sort()
 
 	for (const fragment of fragments) {
-		configuration = deepMerge(configuration, loadJson(path.join(FRAGMENT_DIR, fragment)))
+		configuration = deepMerge(
+			configuration,
+			loadJson(path.join(FRAGMENT_DIR, fragment)),
+		)
 	}
 
 	return configuration.components.schemas
@@ -126,7 +132,10 @@ function nameSource(schema) {
 	if (typeof configured === 'string' && configured.trim() !== '') return configured
 
 	const properties = Object.keys(schema.properties || {})
-	return FALLBACK_NAME_PROPERTIES.find((candidate) => properties.includes(candidate)) ?? null
+	return (
+		FALLBACK_NAME_PROPERTIES.find((candidate) => properties.includes(candidate))
+		?? null
+	)
 }
 
 describe('a schema a case points at can name its own rows', () => {
@@ -141,7 +150,10 @@ describe('a schema a case points at can name its own rows', () => {
 	})
 
 	it.each(targets)('%s resolves a display name', (slug) => {
-		expect(schemas[slug], `case points at "${slug}", which no fragment declares`).toBeDefined()
+		expect(
+			schemas[slug],
+			`case points at "${slug}", which no fragment declares`,
+		).toBeDefined()
 		expect(
 			nameSource(schemas[slug]),
 			`"${slug}" declares no configuration.objectNameField and no property named one of `
