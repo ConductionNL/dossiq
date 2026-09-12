@@ -90,7 +90,13 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 			})
 		})
 
-		await page.goto(ADMIN_SETTINGS_URL)
+		// 🔬 PROBE: `navigationTimeout` is 45s and `dossiq-settings.js` is
+		// 5.2MB, which Playwright has to fetch, decode, rewrite and re-encode
+		// before the page can run. Left at the default this would redden as a
+		// navigation timeout, which says nothing about the copy under test.
+		// The test budget is 300s, so 180s here still fails as a test rather
+		// than hanging the shard.
+		await page.goto(ADMIN_SETTINGS_URL, { timeout: 180_000 })
 		// 🔬 PROBE: after the navigation that loads the bundle, never before.
 		mutation.assertApplied()
 		await expect(
