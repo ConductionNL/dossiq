@@ -38,12 +38,14 @@ import {
 	cleanupRunObjects,
 	createObject,
 	getRequestToken,
+	listAllObjects,
 	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	tryDeleteObject,
 } from './helpers/fixtures.ts'
 import { clickHeaderAction } from './helpers/nav.ts'
 
@@ -62,6 +64,21 @@ const ACKNOWLEDGEMENT_TYPE_NAME = `${RUN_PREFIX} Acknowledgement`
 const PDF_BYTES = Buffer.from(
 	'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'
 		+ '2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\n'
+		+ 'trailer<</Root 1 0 R>>\n%%EOF\n',
+	'utf8',
+)
+
+/**
+ * A DIFFERENT body, written over the first one to make a version.
+ *
+ * Longer as well as different, so a write that silently did nothing cannot
+ * pass for one that did: the stored `size` moves with it, and the fixture
+ * asserts on that rather than on the write returning 200.
+ */
+const PDF_BYTES_V2 = Buffer.from(
+	'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'
+		+ '2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\n'
+		+ '3 0 obj<</Length 0>>stream\nendstream endobj\n'
 		+ 'trailer<</Root 1 0 R>>\n%%EOF\n',
 	'utf8',
 )
@@ -114,6 +131,151 @@ async function seedDocument(
 		// find it: the description gives teardown something to match on.
 		natureRelationshipDisplay: 'Hoort at omgekeerd',
 	})
+	return id
+}
+
+/**
+ * Seed one FINAL document that genuinely HAS a version history.
+ *
+ * `seedDocument()` above cannot be used for the version panel, and the reason
+ * is not a missing option: it POSTs an `informatieobject` row and NOTHING
+ * ELSE. No file is written, so no `fileId` is stamped, so
+ * `VersionHistoryPanel.fetchVersions()` returns before it asks the server
+ * anything (`if (!this.document.fileId || !this.userId) return`). The panel
+ * then renders "No previous versions", which is also what a panel whose
+ * PROPFIND failed looks like, and what a panel that lost its Restore buttons
+ * looks like. That emptiness is why the restore assertion could not fail.
+ *
+ * THE STORAGE PATH, READ OFF A RUNNING INSTANCE RATHER THAN OFF THE COMMENT
+ * THAT USED TO BE HERE. `ZgwDocumentService::getDocumentFolder()` asks
+ * OpenRegister's `FileService::getObjectFolder()` for a folder keyed by the
+ * informatieobject UUID inside the register's own folder, and the file lands
+ * at:
+ *
+ *   <acting user>/files/Open Registers/<register TITLE>/<uuid>/<fileName>
+ *
+ * Two details the old comment had wrong, both measured on 2026-09-12 against
+ * NC 34.0.3 with openregister at `development`:
+ *
+ * - the middle segment is the register's TITLE ("Dossiq Case Management
+ *   Register"), not its slug ("dossiq"), so no fixture should build that path
+ *   by hand — and this one does not;
+ * - the folder was created in the ACTING USER's home (`admin`), even though
+ *   an `openregister` account exists on the instance. `ZgwDocumentService`'s
+ *   own docblock claims the openregister account owns it. Whichever is
+ *   intended, it is why this spec can read the versions at all: the panel
+ *   PROPFINDs `/dav/versions/<current user>/versions/<fileId>`, which answers
+ *   for a file in that user's storage.
+ *
+ * So the writes go through APIs that own the path instead of naming it:
+ *
+ *  1. `POST /apps/dossiq/api/cases/{case}/dossier`, the product's own upload.
+ *     It creates the informatieobject, writes the bytes, stamps `fileId` and
+ *     makes the case join, which is four things this fixture does not have to
+ *     reproduce. It forces `status: draft`, hence step 3.
+ *  2. `PUT /apps/openregister/api/objects/dossiq/informatieobject/{id}/files/
+ *     {fileId}`, a SECOND write to the same file. This is the one that makes a
+ *     version: Nextcloud's version list holds PREVIOUS contents, not the
+ *     current one, so one upload alone can leave the panel empty.
+ *  3. `PATCH /apps/dossiq/api/informatieobjecten/{id}/status`, the product's
+ *     own `draft -> final` transition, so the document is final the way a
+ *     final document is made (it sets `lockedOn` too) rather than by writing
+ *     the word into a row. It runs LAST: a final document is meant to refuse
+ *     further writes, so finalising before step 2 would be asking the fixture
+ *     to defeat the rule the test is about.
+ *
+ * @param onCase  The case the document hangs on.
+ * @param options The document's title, file name, type and author.
+ * @return The created informatieobject id.
+ */
+async function seedVersionedDocument(
+	onCase: string,
+	options: {
+		title: string
+		fileName: string
+		typeId: string
+		auteur: string
+	},
+): Promise<string> {
+	const uploaded = await api.post(
+		`/index.php/apps/${REGISTER}/api/cases/${onCase}/dossier`,
+		{
+			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			multipart: {
+				files: {
+					name: options.fileName,
+					mimeType: 'application/pdf',
+					buffer: PDF_BYTES,
+				},
+				metadata: JSON.stringify({
+					title: options.title,
+					informatieobjecttype: options.typeId,
+					direction: 'outgoing',
+					auteur: options.auteur,
+				}),
+			},
+		},
+	)
+	// 201 ONLY IF SOMETHING WAS CREATED, and the per-file result read as well
+	// as the status: the endpoint answers 201 for a PARTIAL success, so a run
+	// where the one file failed would otherwise seed nothing and report fine.
+	expect(
+		uploaded.status(),
+		`upload -> ${uploaded.status()} ${await uploaded.text()}`,
+	).toBe(201)
+	const [result] = (await uploaded.json()).results ?? []
+	expect(result?.success, `the upload reported ${JSON.stringify(result)}`).toBe(
+		true,
+	)
+	const id = String(result.informatieobject.id)
+
+	const stored = await showObject(api, 'informatieobject', id)
+	const fileId = Number(stored.fileId ?? 0)
+	expect(
+		fileId,
+		`the upload must stamp a fileId, and the stored document carries ${JSON.stringify(stored.fileId)}`,
+	).toBeGreaterThan(0)
+
+	const rewritten = await api.put(
+		`/index.php/apps/openregister/api/objects/${REGISTER}/informatieobject/${id}/files/${fileId}`,
+		{
+			headers: {
+				requesttoken: token,
+				'OCS-APIRequest': 'true',
+				'Content-Type': 'application/json',
+			},
+			data: { content: PDF_BYTES_V2.toString('base64') },
+		},
+	)
+	expect(
+		rewritten.ok(),
+		`second write -> ${rewritten.status()} ${await rewritten.text()}`,
+	).toBeTruthy()
+	// THE SIZE, NOT THE STATUS. A 200 that changed no bytes is a write that did
+	// nothing, and a file whose content never changed has no previous content
+	// to list — which lands back on the empty panel this helper exists to
+	// prevent, wearing a green fixture.
+	expect(
+		Number((await rewritten.json()).size ?? 0),
+		'the second write must change the stored bytes, or there is no previous version to list',
+	).toBe(PDF_BYTES_V2.length)
+
+	const finalised = await api.patch(
+		`/index.php/apps/${REGISTER}/api/informatieobjecten/${id}/status`,
+		{
+			headers: {
+				requesttoken: token,
+				'OCS-APIRequest': 'true',
+				'Content-Type': 'application/json',
+			},
+			data: { status: 'final' },
+		},
+	)
+	expect(
+		finalised.ok(),
+		`draft -> final -> ${finalised.status()} ${await finalised.text()}`,
+	).toBeTruthy()
+
 	return id
 }
 
@@ -350,19 +512,71 @@ test.describe('Case detail — the Documents tab', () => {
 			auteur: 'Piet de Boer',
 		})
 
-		versionedDocumentId = await seedDocument(versionCaseId, {
+		// NOT `seedDocument`: the version panel needs a document with a FILE
+		// behind it, written twice. See the helper for why, and for the storage
+		// path it was measured against.
+		versionedDocumentId = await seedVersionedDocument(versionCaseId, {
 			title: `${RUN_PREFIX} Final report`,
 			fileName: 'report.pdf',
-			informatieobjecttype: acknowledgementTypeId,
-			direction: 'outgoing',
-			status: 'final',
+			typeId: acknowledgementTypeId,
 			auteur: 'Piet de Boer',
 		})
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
-		// The dossier rows only, children first. The cases are archival and
+
+		// 🔴 THE JOINS FIRST, BY THEIR CASE, BECAUSE THE PREFIX SWEEP CANNOT SEE
+		// THEM. `sweepPrefix` matches a row by finding `RUN_PREFIX` anywhere in
+		// its JSON, and a `zaakinformatieobject` is two uuids, a date and
+		// `natureRelationshipDisplay` — which the schema declares as an ENUM of
+		// exactly "Hoort at omgekeerd" and "Legt vast, omgekeerd", so no prefix
+		// can ever be put there. `seedDocument`'s comment says that field
+		// "gives teardown something to match on"; it never did, and every join
+		// this spec has ever created is still on the instance. Nothing failed,
+		// because an unmatched row is not a survivor: it is a row the sweep was
+		// never asked about.
+		//
+		// The sweep's other arm, `matchesCase`, is the one that fits, and it
+		// arms only when `case` is in the schema list — which it must not be
+		// here, since a case is archival and the sweep would then report every
+		// one of them as a survivor and fail this hook. So the joins are
+		// collected by their `case` field and removed directly.
+		//
+		// Listed unfiltered and filtered in the READING: the objects endpoint
+		// reads a bare `case=` param as a field filter, and a filter spelling
+		// this endpoint does not recognise returns the WHOLE collection rather
+		// than an error, which would have this hook delete other runs' joins.
+		const ourCases = new Set(
+			[
+				caseId,
+				emptyCaseId,
+				dropCaseId,
+				filterCaseId,
+				generateCaseId,
+				versionCaseId,
+			].filter((id) => id !== ''),
+		)
+		//
+		// The documents the joins point at go with them, and that is a second
+		// leak rather than tidiness: the letter the Generate document test
+		// files is titled after its TEMPLATE ("Ontvangstbevestiging"), because
+		// the generator names it, not this spec — so it carries no run prefix
+		// either and the prefix sweep cannot see it. Its join names it, which
+		// is the only handle on it there is, so it is collected here while the
+		// join is still readable.
+		const ourDocuments = new Set<string>()
+		for (const row of await listAllObjects(api, 'zaakinformatieobject')) {
+			if (ourCases.has(String(row.case ?? '')) === false) continue
+			const document = String(row.informatieobject ?? '')
+			if (document !== '') ourDocuments.add(document)
+			await tryDeleteObject(api, token, 'zaakinformatieobject', objectId(row))
+		}
+		for (const document of ourDocuments) {
+			await tryDeleteObject(api, token, 'informatieobject', document)
+		}
+
+		// The dossier rows, children first. The cases are archival and
 		// cannot be removed by a user; they carry the family prefix, so
 		// global-setup's residue sweep takes them before the next run rather
 		// than this teardown failing on a 403 it was never going to win.
@@ -637,16 +851,96 @@ test.describe('Case detail — the Documents tab', () => {
 		await expect(rows).toHaveCount(2, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-req-zak-006b-restore-is-disabled-for-definitief-documents
+	// The anchor carries no `scenario-` prefix, which is the form gate-19
+	// slugs and the form the sibling citation in
+	// `spec-coverage/document-zaakdossier.spec.ts` already uses for this same
+	// scenario. The prefixed spelling resolves when a human clicks it on
+	// GitHub and credits nothing in the gate.
+	//
+	// MUTATION CHECKED 2026-09-12 against a live instance (NC 34.0.3,
+	// openregister at `development`), because an assertion nobody has watched
+	// fail is what this repair exists to remove — and because a PRECONDITION
+	// failure is not evidence about the guard, which is exactly how this test
+	// came to CI: the assertion was strengthened, the fixture was not, and both
+	// attempts died on "the version panel must list at least one version".
+	//
+	// `VersionHistoryPanel.restoreDisabled` was made to `return false`, the
+	// bundle rebuilt, and this test reddened on the restore assertion and
+	// nowhere else:
+	//
+	//   Error: version 1 of a final document must refuse restore
+	//   expect(locator).toBeDisabled() failed
+	//   Expected: disabled / Received: enabled
+	//
+	// The version-count precondition PASSED in that run, which is the half
+	// that matters: the panel listed its two versions and the guard is what
+	// failed. Restored, rebuilt, green again.
+	//
+	// 🔑 AND THEN IT WENT RED IN CI ANYWAY, ON A FIXTURE THAT WAS CORRECT.
+	// Worth the space, because "green on my instance" was the whole of the
+	// evidence and it was not enough. The panel built its PROPFIND with
+	// `generateUrl`, which prefixes `/index.php` wherever the front controller
+	// is inactive, so the request went to `/index.php/remote.php/dav/…` and
+	// routed nowhere. Nextcloud sets that flag from `SetEnv
+	// front_controller_active true` in its own `.htaccess`: an Apache instance
+	// has it, the `php -S` instance the E2E job runs does not. Every developer
+	// box passed and CI could not.
+	//
+	// So the mutation check was RE-RUN with that one `.htaccess` line flipped,
+	// which reproduced the CI failure exactly on an instance that had just
+	// passed. Broken guard reddens on the restore assertion, restored guard is
+	// green, and the whole file is green in BOTH configurations. If this test
+	// ever goes red on the version count again, check `modRewriteWorking` on
+	// the instance before looking at the fixture.
+	//
+	// ABSENT IS NOT DISABLED, and both halves are pinned, because a control
+	// that vanishes tells the user nothing while a refused one says the
+	// document is final. Two more mutations, both measured 2026-09-12:
+	//
+	//   hide it on a final document (`v-if="!restoreDisabled"`)
+	//     -> "every listed version must offer a Restore control, so the
+	//        refusal is visible rather than absent", expected 2, received 0
+	//   remove it outright (`v-if="false"`)
+	//     -> `dossierTab.spec.js` reddens with
+	//        expected [ 'Download' ] to deeply equal [ 'Download', 'Restore' ]
+	//
+	// The two suites cover the two states and agree with the scenario. vitest
+	// mounts a DRAFT: both controls present, Restore issues the MOVE. This one
+	// mounts a FINAL: both present, Restore refused. Neither passes on absent.
+	//
+	// TO REPRODUCE IN SECONDS, use `helpers/mutate-bundle.ts` (#2543) rather
+	// than the edit-and-rebuild the checks above were originally done with. It
+	// rewrites the served bundle, so nothing on disk moves and no instance is
+	// locked. Install it BEFORE `openDocumentsTab`, which is the navigation
+	// that loads the chunk, and read the count back afterwards:
+	//
+	//   const broken = await mutateBundle(page, [{
+	//     label: 'restoreDisabled() never refuses',
+	//     find: /restoreDisabled\(\)\{return"final"===this\.document\.status\}/,
+	//     replace: 'restoreDisabled(){return false}',
+	//   }])
+	//   const panel = await openDocumentsTab(page, versionCaseId)
+	//   broken.assertApplied()
+	//
+	// Verified 2026-09-12: reddens on the same restore assertion as the
+	// rebuild did, same message.
+	//
+	// 🔑 NOTE THE YODA COMPARISON. The source reads
+	// `this.document.status === 'final'` and the minifier emits
+	// `return"final"===this.document.status`. A pattern written from the
+	// source matches nothing, and a mutation that matches nothing leaves the
+	// real code running. `assertApplied()` is what turns that into a named
+	// failure instead of a green, so never drop it.
+	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('Versions on a row opens the panel, and restore is refused on a final document', async ({
 		page,
 	}) => {
-		// A second write to the SAME file is what makes a version: Nextcloud
-		// keeps the previous content, so the panel has one entry to list. The
-		// path is the storage convention ZgwDocumentService owns — the
-		// informatieobject's OpenRegister object folder, `Open
-		// Registers/<register>/<uuid>/<fileName>` — and the upload endpoint is
-		// what put version one there.
+		// THE VERSIONS ARE REAL NOW. `seedVersionedDocument()` uploads the
+		// document through the product's own endpoint and then writes the file
+		// a second time, because Nextcloud's version list holds PREVIOUS
+		// contents and not the current one. The helper carries the storage path
+		// and how it was measured; what matters here is that the panel below
+		// has something to list, which the old fixture never gave it.
 		//
 		// This spec CANNOT see the defect that convention exists to fix. It
 		// signs in as `admin`, which is the account the documents used to be
@@ -694,27 +988,72 @@ test.describe('Case detail — the Documents tab', () => {
 		const versionPanel = panel.locator('.dossier-version-panel')
 		await expect(versionPanel).toBeVisible({ timeout: 20_000 })
 
-		// EVERY listed version offers a download — a version you cannot fetch
-		// is a row of text. Asserted as an invariant rather than a count,
-		// because how many previous versions exist depends on Nextcloud's own
-		// file-versions retention, which this suite does not control and must
-		// not pretend to: the scenario's "both versions" half is only as strong
-		// as the instance's versioning, while "each one is downloadable" holds
-		// on any instance and fails the moment the action is dropped.
 		const entries = versionPanel.locator('.dossier-version-panel__item')
-		const downloads = versionPanel.locator(
-			'.dossier-version-panel__item button:has-text("Download")',
-		)
-		expect(await downloads.count()).toBe(await entries.count())
+
+		// THE LIST HAS TO BE THERE BEFORE IT CAN BE COUNTED. The panel root
+		// mounts with a spinner and fills in when its PROPFIND lands, so
+		// `toBeVisible()` above is satisfied by the EMPTY moment. A plain
+		// `.count()` read there returns 0 and never looks again, which is how
+		// the first run of this repair failed at `Expected: 2, Received: 0`
+		// with two versions on screen: the count of Download buttons was taken
+		// during the fetch and the count of items after it.
+		//
+		// So the first assertion on this panel is a RETRYING one, and it is
+		// also the precondition the rest depends on: the loop below used to run
+		// over `restore.count()` alone, so a panel rendering zero Restore
+		// buttons ran the body zero times and reported green — the requirement
+		// "the Herstellen button MUST be visibly disabled on all versions" was
+		// satisfied by there being no button to disable, which is also what a
+		// panel that failed to render looks like.
+		await expect(
+			entries,
+			'the version panel must list at least one version, or there is nothing to refuse restoring',
+		).not.toHaveCount(0, { timeout: 20_000 })
+		const versionCount = await entries.count()
+
+		// EVERY listed version offers a download — a version you cannot fetch
+		// is a row of text. Asserted as an invariant rather than a fixed
+		// number, because how many previous versions exist depends on
+		// Nextcloud's own file-versions retention, which this suite does not
+		// control and must not pretend to: the scenario's "both versions" half
+		// is only as strong as the instance's versioning, while "each one is
+		// downloadable" holds on any instance and fails the moment the action
+		// is dropped.
+		await expect(
+			versionPanel.locator(
+				'.dossier-version-panel__item button:has-text("Download")',
+			),
+			'every listed version must offer a Download control',
+		).toHaveCount(versionCount)
 
 		// The half that is fully deterministic: the document is `final`, the
 		// server refuses to change it, so the UI must not offer to.
 		const restore = versionPanel.getByRole('button', {
 			name: /Restore|Herstellen/,
 		})
-		for (let index = 0; index < (await restore.count()); index++) {
-			await expect(restore.nth(index)).toBeDisabled()
+
+		// The same invariant as the download count: every version offers a
+		// Restore control, and every one of them is refused. Hiding the control
+		// instead of disabling it reddens here, and so does a panel that lists
+		// versions but paints no actions.
+		await expect(
+			restore,
+			'every listed version must offer a Restore control, so the refusal is visible rather than absent',
+		).toHaveCount(versionCount)
+		for (let index = 0; index < versionCount; index++) {
+			await expect(
+				restore.nth(index),
+				`version ${index + 1} of a final document must refuse restore`,
+			).toBeDisabled()
 		}
+
+		// STILL UNASSERTED, NAMED RATHER THAN QUIETLY SKIPPED: the scenario's
+		// third clause, that hovering the disabled control explains why.
+		// `VersionHistoryPanel` binds that sentence as `:title` on `NcButton`,
+		// and whether NcButton forwards it onto the `<button>` this locator
+		// resolves to has not been verified against a running instance. An
+		// assertion nobody has watched fail is the defect this change is
+		// repairing, so it is not added on a guess.
 		const stored = await showObject(api, 'informatieobject', versionedDocumentId)
 		expect(String(stored.status)).toBe('final')
 	})
