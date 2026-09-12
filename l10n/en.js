@@ -3950,7 +3950,9 @@ OC.L10N.register(
         "The case plan is unavailable": "The case plan is unavailable",
         "This case type has no adaptive plan": "This case type has no adaptive plan",
         "Try again": "Try again",
-        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case."
+        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case.",
+        "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
+        "Bulk action changed nothing": "Bulk action changed nothing"
     },
     "nplurals=2; plural=(n != 1);"
 )
