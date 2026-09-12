@@ -588,23 +588,32 @@ test.describe('Doorlooptijd page', () => {
 test.describe('Settings page', () => {
 	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	//
-	// 🔴 REPOINTED, BECAUSE THE SCENARIO IT USED TO CITE IS ABOUT A PAGE THAT
-	// NO LONGER EXISTS. The citation read
-	// `#in-app-settings-page-renders-configuration-sections`, which is spec'd
-	// against the IN-APP `/settings` route. page-topology-cleanup (B1)
-	// retired that route: it mounted the same AdminRoot.vue as
-	// /settings/admin/dossiq, and reaching an administration component
-	// through the in-app router bypasses the settings framework's
-	// server-side checks (ADR-004). So the test drove the administration
-	// surface while claiming the retired one, which is a claim no assertion
-	// here could ever make true. That scenario now carries an `@e2e exclude`
-	// naming the retirement; this test cites the scenario it does drive.
+	// 🔴 REPOINTED, BECAUSE THE SCENARIO IT USED TO CITE DESCRIBES A PAGE
+	// THAT NO LONGER EXISTS. The citation read
+	// `admin-settings#in-app-settings-page-renders-configuration-sections`,
+	// read as partial on 2026-09-11 and as smoke on 2026-09-12. Two of that
+	// scenario's clauses cannot be made true against this product, and
+	// neither is the test's fault:
 	//
-	// WHAT IT ADDS OVER spec-coverage/admin-settings.spec.ts. That file
-	// asserts the Case Type Management heading for the same scenario. The
-	// scenario's third clause also names the ZGW API mapping section, which
-	// nothing asserted anywhere, and the Configuration section's own Save is
-	// what this test was already about. Both are read here.
+	//   the in-app Settings page      retired by page-topology-cleanup (B1),
+	//                                 because reaching an administration
+	//                                 component through the in-app router
+	//                                 bypasses the settings framework's
+	//                                 server-side checks (ADR-004)
+	//   "Version Information" heading removed; the string exists nowhere in
+	//                                 src/
+	//
+	// That scenario therefore carries a reason-bearing `@e2e exclude` naming
+	// both, written where a spec reader meets it. What this test drives is
+	// the administration surface, so it cites the scenario that describes the
+	// administration surface rather than carrying no citation at all.
+	//
+	// WHAT IT PROVES THAT NOTHING ELSE DOES. REQ-ADMIN-001's accessible
+	// scenario ends "AND the page MUST render the AdminRoot.vue component
+	// with case type management and ZGW API mapping sections".
+	// spec-coverage/admin-settings.spec.ts asserts the Case Type Management
+	// half. The ZGW API mapping half was asserted nowhere, and is asserted
+	// here beside the Configuration section and its Save control.
 	//
 	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
@@ -636,21 +645,23 @@ test.describe('Settings page', () => {
 		await expect(
 			page.getByRole('button', { name: 'Save', exact: true }),
 		).toBeVisible({ timeout: 15000 })
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
-		// THE TWO SECTIONS THE SCENARIO NAMES. "The page MUST render the
-		// AdminRoot.vue component with case type management and ZGW API
-		// mapping sections" — a Save button on its own is satisfied by any
-		// settings page the framework happens to mount, and says nothing
-		// about whether this app's sections resolved.
-		await expect(
-			page.getByRole('heading', { name: 'Case Type Management' }),
-			'the admin page renders the case type management section',
-		).toBeVisible({ timeout: 20_000 })
-		await expect(
-			page.getByRole('heading', { name: 'ZGW API Mapping' }),
-			'and the ZGW API mapping section beside it',
-		).toBeVisible({ timeout: 20_000 })
+		// The section headings, named individually. A count would redden on
+		// ADDING a section and pass on a swap, and would never say which one
+		// went missing. `ZGW API Mapping` is the one the cited scenario names
+		// beside case type management, and a Save button on its own is
+		// satisfied by any settings page the framework happens to mount.
+		for (const heading of [
+			'Configuration',
+			'Case Type Management',
+			'ZGW API Mapping',
+		]) {
+			await expect(
+				page.getByRole('heading', { name: heading, exact: true }).first(),
+				`the administration surface must render the ${heading} section`,
+			).toBeVisible({ timeout: 15000 })
+		}
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
 	// FIXME(#719) RESOLVED BY RETIREMENT. The in-app settings page rendered

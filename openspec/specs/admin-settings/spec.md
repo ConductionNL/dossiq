@@ -75,7 +75,7 @@ distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 
 #### Scenario: In-app settings page renders configuration sections
 
-@e2e exclude The in-app /settings route this scenario describes was retired by page-topology-cleanup (B1): it mounted the same AdminRoot.vue as /settings/admin/dossiq, and reaching an administration component through the in-app router bypasses the settings framework's server-side checks (ADR-004). There is no surface left to drive. Administration is REQ-ADMIN-001, covered by tests/e2e/spec-coverage/admin-settings.spec.ts and tests/e2e/pages.spec.ts.
+@e2e exclude Two of this scenario's clauses are false against the product and cannot be made true by a test. The in-app `/settings` page it names was retired by page-topology-cleanup (B1), because reaching an administration component through the in-app router bypasses the settings framework's server-side checks (ADR-004); administration lives at `/settings/admin/dossiq`. And the "Version Information" section was removed, so the string exists nowhere in `src/`. The surviving headings, Configuration, Case Type Management and ZGW API Mapping, plus the Save control, are asserted against the real surface by `tests/e2e/pages.spec.ts` "renders the configuration section and its save control", which cites REQ-ADMIN-001's accessible scenario instead, until this scenario is rewritten to describe the page that exists.
 
 - **GIVEN** an authenticated admin user on the Dossiq app
 - **WHEN** they navigate to the in-app Settings page

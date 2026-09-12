@@ -887,17 +887,27 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// 🔴 NO CITATION, AND THAT IS HALF THE REPAIR. This test and the one
+	// below it carried an anchorless `openspec/specs/task-management/spec.md`
+	// citation, read as verified on 2026-09-11 and as partial on 2026-09-12,
+	// and the downgrade is right. Both called OpenRegister's flow-task
+	// endpoint directly and asserted the ENGINE's own `dueAfter`, `dueBefore`
+	// and `overdue` semantics, so a citation naming this app's spec file
+	// credited an upstream contract.
 	//
-	// 🔴 THE LENS HALF IS NOT DECORATION, IT IS WHY THIS CITATION IS HERE.
-	// The body used to call the engine's endpoint and assert its window
-	// semantics, and nothing else. That is openregister's behaviour: a
-	// dossiq lens that sent the wrong predicates, or none, left every
-	// assertion green, so a citation to THIS app's task-management spec
-	// credited an upstream contract. The request the Due this week chip
-	// actually makes is captured first, and the engine's answer is asserted
-	// after, so the two halves are one claim: the lens asks for the window,
-	// and the window means what the chip's own row assertions above read.
+	// There is no scenario to re-anchor onto either: `task-management` has no
+	// requirement about window boundaries, and its two overdue requirements
+	// both carry a reason-bearing `@e2e exclude` for visual indicators
+	// covered by `taskHelpers.js` unit tests. So the claim comes down rather
+	// than moving.
+	//
+	// THE OTHER HALF: THE TEST NOW PROVES DOSSIQ'S SIDE TOO. What was wrong
+	// was not only the citation. A lens that sent the wrong predicates, or
+	// none, left every assertion here green, so the file's own six chips
+	// rested on row assertions alone. The request the Due this week chip
+	// actually makes is captured before the engine's answer is read, which
+	// makes the two halves one claim: the lens asks for the window, and the
+	// window means what the chips' row assertions above read.
 	test('the Due this week lens sends the window, and the engine honours both edges', async ({
 		page,
 	}) => {
@@ -977,14 +987,9 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
-	//
-	// 🔴 SAME REPAIR AS THE WINDOW TEST ABOVE. This asserted the engine's
-	// overdue projection over the API and never touched the Tasks index, so
-	// a broken Overdue chip survived it untouched. The chip's own request is
-	// read first: it has to ask for the DERIVED projection, and it must not
-	// fall back to a date comparison, which is the regression the seeded
-	// "due later today" task exists to catch.
+	// No citation, for the reason written above its sibling. Same repair to
+	// the body: the Overdue chip's own request is read before the engine's
+	// answer, because a broken chip used to survive this test untouched.
 	test('the Overdue lens asks for the projection, and a task due later today is not late', async ({
 		page,
 	}) => {
