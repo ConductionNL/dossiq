@@ -42,8 +42,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantAuthenticationService;
+use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -173,17 +175,50 @@ class TenantScopedLookupsTest extends TestCase {
 	/**
 	 * The quota service over a fake OpenRegister.
 	 *
-	 * @param array<int, mixed> $rows What `findAll()` returns.
+	 * @param array<int, mixed> $rows         What `findAll()` returns.
+	 * @param Organisation|null $organisation The Organisation the tenant resolves to.
 	 *
 	 * @return TenantQuotaService The service.
 	 */
-	private function quotaAnswering(array $rows): TenantQuotaService {
+	private function quotaAnswering(array $rows, ?Organisation $organisation = null): TenantQuotaService {
 		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
+
+		// The limits collaborator is modelled rather than stubbed with a fixed
+		// answer: a mock returning the same limit for every quota type would
+		// let a service that overlaid the UNMAPPED types pass too.
+		$limits = $this->createMock(OrganisationQuotaLimits::class);
+		$limits->method('owns')->willReturnCallback(
+			static fn (string $quotaType): bool => array_key_exists($quotaType, OrganisationQuotaLimits::COLUMNS)
+		);
+		$limits->method('read')->willReturnCallback(
+			static function (string $tenantId, string $quotaType) use ($organisation): ?int {
+				if ($organisation === null) {
+					return null;
+				}
+
+				if ($quotaType === 'storage_gb') {
+					$bytes = $organisation->getStorageQuota();
+					if ($bytes === null) {
+						return null;
+					}
+
+					return intdiv((int)$bytes, 1073741824);
+				}
+
+				$requests = $organisation->getRequestQuota();
+				if ($requests === null) {
+					return null;
+				}
+
+				return (int)$requests;
+			}
+		);
 
 		return new TenantQuotaService(
 			appManager: $appManager,
 			container: $container,
 			logger: $this->createMock(LoggerInterface::class),
+			organisationLimits: $limits,
 		);
 	}
 
@@ -485,5 +520,156 @@ class TenantScopedLookupsTest extends TestCase {
 		$this->assertSame(['tenant-a'], $this->authAnswering(rows: $rows)->listTenantsForUser(userId: 'alice'));
 		$this->assertTrue($this->authAnswering(rows: $rows)->isMemberOf(tenantId: 'tenant-a', userId: 'alice'));
 		$this->assertFalse($this->authAnswering(rows: $rows)->isMemberOf(tenantId: 'tenant-b', userId: 'alice'));
+	}
+
+	/**
+	 * The request limit is the Organisation's, and the row's copy is ignored.
+	 *
+	 * Decision 2b. `api_calls_per_hour` maps to `Organisation.requestQuota`,
+	 * and for a mapped type the Organisation is the ONLY place a limit lives.
+	 * The row here still carries a stale `limit` of 1000000, as an install
+	 * predating the move would, and it must not win: an operator who lowered
+	 * the limit on the Organisation would otherwise see nothing change, and no
+	 * response would say which number was being enforced.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestLimitComesFromTheOrganisationAndNotFromTheRow(): void {
+		$organisation = new Organisation();
+		$organisation->setUuid('tenant-a');
+		$organisation->setRequestQuota(10);
+
+		$row = $this->entity(
+			object: [
+				'tenantRef' => 'tenant-a',
+				'quotaType' => 'api_calls_per_hour',
+				'limit' => 1000000,
+				'currentUsage' => 0,
+			],
+			uuid: 'quota-1',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row], organisation: $organisation)
+			->getQuota(tenantId: 'tenant-a', quotaType: 'api_calls_per_hour');
+
+		$this->assertNotNull($quota);
+		$this->assertSame(10, $quota['limit']);
+		$this->assertNotSame(1000000, $quota['limit'], 'the row own limit must not win for a mapped type');
+	}
+
+	/**
+	 * The storage limit is converted, not compared across units.
+	 *
+	 * `storage_gb` counts gigabytes and `storageQuota` stores bytes. Read
+	 * straight through, a 10 GB limit would read as 10737418240 and a tenant
+	 * would have roughly a billion times the headroom it was given.
+	 *
+	 * @return void
+	 */
+	public function testTheStorageLimitIsReadBackInGigabytesNotBytes(): void {
+		$organisation = new Organisation();
+		$organisation->setUuid('tenant-a');
+		$organisation->setStorageQuota((10 * 1073741824));
+
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'storage_gb', 'currentUsage' => 0],
+			uuid: 'quota-2',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row], organisation: $organisation)
+			->getQuota(tenantId: 'tenant-a', quotaType: 'storage_gb');
+
+		$this->assertNotNull($quota);
+		$this->assertSame(10, $quota['limit']);
+	}
+
+	/**
+	 * The two types with no column keep their own limit on the row.
+	 *
+	 * `cases_per_month` and `active_users` have no Organisation column, so
+	 * decision 2b leaves them exactly as they are. An overlay that reached
+	 * them would blank a limit nothing else carries, and `decide()` reads a
+	 * null limit as unlimited, so the quota would fail OPEN.
+	 *
+	 * @return void
+	 */
+	public function testAnUnmappedQuotaTypeKeepsTheLimitOnItsOwnRow(): void {
+		$organisation = new Organisation();
+		$organisation->setUuid('tenant-a');
+		$organisation->setRequestQuota(10);
+
+		$row = $this->entity(
+			object: [
+				'tenantRef' => 'tenant-a',
+				'quotaType' => 'cases_per_month',
+				'limit' => 100,
+				'currentUsage' => 0,
+			],
+			uuid: 'quota-3',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row], organisation: $organisation)
+			->getQuota(tenantId: 'tenant-a', quotaType: 'cases_per_month');
+
+		$this->assertNotNull($quota);
+		$this->assertSame(100, $quota['limit']);
+	}
+
+	/**
+	 * A mapped quota whose Organisation carries no limit is unlimited.
+	 *
+	 * Named rather than left implicit, because it is a fail-open and a reader
+	 * is entitled to know it was chosen. Refusing traffic because an
+	 * Organisation lookup came back empty would take a tenant offline over an
+	 * unavailable service, and OpenRegister's own TenantQuotaMiddleware is
+	 * what actually enforces requestQuota.
+	 *
+	 * @return void
+	 */
+	public function testAMappedQuotaWithNoOrganisationLimitIsUnlimited(): void {
+		$row = $this->entity(
+			object: [
+				'tenantRef' => 'tenant-a',
+				'quotaType' => 'api_calls_per_hour',
+				'limit' => 5,
+				'currentUsage' => 99,
+			],
+			uuid: 'quota-4',
+		);
+
+		$quota = $this->quotaAnswering(rows: [$row], organisation: null)
+			->getQuota(tenantId: 'tenant-a', quotaType: 'api_calls_per_hour');
+
+		$this->assertNotNull($quota);
+		$this->assertNull($quota['limit']);
+	}
+
+	/**
+	 * Counting a mapped quota does not write a limit back onto the row.
+	 *
+	 * `getQuota()` puts the resolved limit into the array it returns, and
+	 * `consume()` hands that same array back to be saved with the new usage.
+	 * Saved as-is it would persist a second copy of the limit onto the row,
+	 * which is the drift decision 2b removes, and the row's copy is the one
+	 * OpenRegister's own enforcement cannot see.
+	 *
+	 * @return void
+	 */
+	public function testCountingAMappedQuotaDoesNotWriteTheLimitBackOntoTheRow(): void {
+		$organisation = new Organisation();
+		$organisation->setUuid('tenant-a');
+		$organisation->setRequestQuota(100);
+
+		$row = $this->entity(
+			object: ['tenantRef' => 'tenant-a', 'quotaType' => 'api_calls_per_hour', 'currentUsage' => 1],
+			uuid: 'quota-5',
+		);
+
+		$this->quotaAnswering(rows: [$row], organisation: $organisation)
+			->consume(tenantId: 'tenant-a', quotaType: 'api_calls_per_hour');
+
+		$this->assertCount(1, $this->saves);
+		$this->assertArrayNotHasKey('limit', $this->saves[0]['object']);
+		$this->assertSame(2, $this->saves[0]['object']['currentUsage']);
 	}
 }

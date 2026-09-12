@@ -81,12 +81,14 @@ class TenantQuotaService {
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OrganisationQuotaLimits $organisationLimits The two limits the Organisation owns.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly OrganisationQuotaLimits $organisationLimits,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
@@ -115,17 +117,33 @@ class TenantQuotaService {
 
 		$rows = [];
 		foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
+			$object = [
+				'tenantRef' => $tenantId,
+				'quotaType' => $quotaType,
+				'currentUsage' => 0,
+				'softLimitWarningPercent' => 80,
+				'enforcement' => $cfg['enforcement'],
+				'resetAt' => $this->nextResetAt(quotaType: $quotaType),
+			];
+
+			// The mapped two carry no `limit` on the row. The tier default goes
+			// onto the Organisation instead, so there is exactly one copy of it.
+			$isMapped = $this->organisationLimits->owns(quotaType: $quotaType);
+			if ($isMapped === true) {
+				$this->organisationLimits->write(
+					tenantId: $tenantId,
+					quotaType: $quotaType,
+					limit: $cfg['limit']
+				);
+			}
+
+			if ($isMapped === false) {
+				$object['limit'] = $cfg['limit'];
+			}
+
 			try {
 				$row = $objectService->saveObject(
-					object: [
-						'tenantRef' => $tenantId,
-						'quotaType' => $quotaType,
-						'limit' => $cfg['limit'],
-						'currentUsage' => 0,
-						'softLimitWarningPercent' => 80,
-						'enforcement' => $cfg['enforcement'],
-						'resetAt' => $this->nextResetAt(quotaType: $quotaType),
-					],
+					object: $object,
 					register: TenantSaasService::REGISTER,
 					schema: 'tenantQuota',
 					uuid: null,
@@ -181,7 +199,12 @@ class TenantQuotaService {
 				]
 			);
 			if (is_array($rows) === true && count($rows) > 0) {
-				return $this->quotaRowAsArray(row: $rows[0]);
+				$quota = $this->quotaRowAsArray(row: $rows[0]);
+				if ($quota === null) {
+					return null;
+				}
+
+				return $this->withOrganisationLimit(quota: $quota, tenantId: $tenantId, quotaType: $quotaType);
 			}
 
 			return null;
@@ -189,6 +212,33 @@ class TenantQuotaService {
 			return null;
 		}//end try
 	}//end getQuota()
+
+	/**
+	 * Overlay the limit the Organisation carries, for the two types that map.
+	 *
+	 * For `storage_gb` and `api_calls_per_hour` the Organisation is the ONLY
+	 * place a limit lives, so whatever the row says about `limit` is replaced
+	 * rather than merged. A stale `limit` left on a row by an install
+	 * predating the move would otherwise win over the one an operator set, and
+	 * no response would say which number was being enforced.
+	 *
+	 * @param array<string,mixed> $quota     The quota row.
+	 * @param string              $tenantId  Tenant uuid, which is the Organisation uuid.
+	 * @param string              $quotaType The quota dimension.
+	 *
+	 * @return array<string,mixed> The row with its limit resolved.
+	 *
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-tier-based-quota-initialisation-req-005-a-req-005-e
+	 */
+	private function withOrganisationLimit(array $quota, string $tenantId, string $quotaType): array {
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === false) {
+			return $quota;
+		}
+
+		$quota['limit'] = $this->organisationLimits->read(tenantId: $tenantId, quotaType: $quotaType);
+
+		return $quota;
+	}//end withOrganisationLimit()
 
 	/**
 	 * Read one tenantQuota row as an array, whatever shape it arrives in.
@@ -304,6 +354,17 @@ class TenantQuotaService {
 			return null;
 		}
 
+		// The mapped two are written to the Organisation and NOT back to the
+		// row. Writing both would create the second copy this decision exists
+		// to avoid, and the two would then drift silently, with the row's copy
+		// invisible to OpenRegister's own enforcement.
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === true) {
+			$this->organisationLimits->write(tenantId: $tenantId, quotaType: $quotaType, limit: $limit);
+			$quota['limit'] = $limit;
+
+			return $quota;
+		}
+
 		$quota['limit'] = $limit;
 		$this->persistQuota(quota: $quota);
 		return $quota;
@@ -360,6 +421,17 @@ class TenantQuotaService {
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return;
+		}
+
+		// The row must not carry a limit for the two types the Organisation
+		// owns. `getQuota()` puts the resolved limit into the array it returns,
+		// and `consume()` hands that same array back here to write the new
+		// usage. Saving it as-is would persist a second copy of the limit onto
+		// the row, which is exactly the drift this decision removes, and the
+		// row's copy would be the one nothing else can see.
+		$quotaType = (string)($quota['quotaType'] ?? '');
+		if ($this->organisationLimits->owns(quotaType: $quotaType) === true) {
+			unset($quota['limit']);
 		}
 
 		try {

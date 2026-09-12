@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob;
+use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
@@ -133,7 +134,12 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 
 		$job = new ResetMonthlyQuotasJob(
 			time: $this->createMock(ITimeFactory::class),
-			quotaService: new TenantQuotaService(appManager: $appManager, container: $container, logger: $logger),
+			quotaService: new TenantQuotaService(
+				appManager: $appManager,
+				container: $container,
+				logger: $logger,
+				organisationLimits: $this->createMock(OrganisationQuotaLimits::class),
+			),
 			appManager: $appManager,
 			container: $container,
 			logger: $logger,
