@@ -933,6 +933,19 @@ leave cases in a hidden status out unless you ask for closed cases.
 - **WHEN** you open the Workflow board for that type
 - **THEN** the In behandeling column header SHALL render in the orange token
 
+#### Scenario: A coloured status shows on the case
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status In behandeling of a type has the colour orange
+- **WHEN** you open a case currently in that status
+- **THEN** the case's status badge SHALL render in the orange token
+
+> **Added 2026-09-12.** REQ-CT-19 has always said "the status badge on the case
+> AND the Workflow board column", and only the board half had a scenario. The
+> case half had a test and nothing for it to cite, so it was anchorless and
+> credited nothing. The badge is where a handler actually reads the status, so
+> the half without a scenario was the half that matters most.
+
 #### Scenario: A hidden status keeps its cases out of the list
 @e2e tests/e2e/case-type-authoring-extras.spec.ts
 
