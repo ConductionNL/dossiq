@@ -204,8 +204,15 @@ title the page carries, so the requirement was the stale half, not the tests.
 #### Scenario: Doorlooptijd page renders heading
 - **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the doorlooptijd page
-- **THEN** the main content MUST render the page heading "Processing time"
+- **THEN** the main content MUST render a "Processing time" page heading, as `src/manifest.json` declares the page's title
 - **AND** the page MUST NOT show an Internal Server Error
+- **AND** the dashboard body MUST render its widgets, not page chrome alone
+
+> **Corrected 2026-09-12.** This said "Processing Time Analytics", a heading the
+> page has not rendered for some time, so the citation on it measured as smoke:
+> the test could only prove the page loaded. The manifest's `title` is the
+> authority and reads `Processing time`. The widget clause is new, for the same
+> reason: a heading and the absence of a 500 is what a shell renders too.
 
 #### Scenario: Dashboard is composed of focused sub-components
 

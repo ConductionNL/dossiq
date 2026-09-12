@@ -44,6 +44,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
+import { PAGE_LOAD } from '../helpers/nav.ts'
 
 let api: APIRequestContext
 let token: string
@@ -167,7 +168,7 @@ test.describe('Queue', () => {
 		// This test used to stop at that heading, which is why a queue that had
 		// lost its base filter passed it.
 		const answers = recordListAnswers(page)
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 		const queue = await answerMatching(
 			answers,
 			() => true,
@@ -238,7 +239,7 @@ test.describe('Queue', () => {
 		})
 
 		const rowsMatching = async (path: string): Promise<number> => {
-			await page.goto(`${path}?title=${encodeURIComponent(title)}`)
+			await page.goto(`${path}?title=${encodeURIComponent(title)}`, PAGE_LOAD)
 			await expect(page.locator('[data-testid="cn-page"]')).toBeVisible({
 				timeout: 60_000,
 			})
@@ -272,7 +273,7 @@ test.describe('Queue', () => {
 		// its empty state rather than a blank region: "mounted and empty" and
 		// "never mounted" look identical without a marker to probe.
 		const answers = recordListAnswers(page)
-		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__')
+		await page.goto('/index.php/apps/dossiq/queue?caseType=__none__', PAGE_LOAD)
 		const answer = await answerMatching(
 			answers,
 			(recorded) => recorded.url.includes('caseType=__none__'),
@@ -307,8 +308,15 @@ test.describe('Queue', () => {
 	test('the case-type sidebar narrows the queue to that case type', async ({
 		page,
 	}) => {
+		// 🔴 COUNT ONLY ONCE THE LIST HAS ANSWERED. A baseline read the moment the
+		// page shell appeared, while the first fetch was still in flight, could
+		// capture a half-filled or empty table. Narrowing then produced MORE rows
+		// than the baseline and the assertion below failed reporting that a filter
+		// had widened the set: a race in the test, reported as a defect in the
+		// product. Waiting on the list's own answer removes the race rather than
+		// documenting it.
 		const answers = recordListAnswers(page)
-		await page.goto('/index.php/apps/dossiq/queue')
+		await page.goto('/index.php/apps/dossiq/queue', PAGE_LOAD)
 		const unfiltered = await answerMatching(
 			answers,
 			() => true,

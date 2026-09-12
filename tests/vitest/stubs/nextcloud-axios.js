@@ -21,6 +21,9 @@ const axios = {
 	// The engine's checklist toggle is a PATCH with the flag in the query
 	// string (`task#checkItem`), which has no POST equivalent.
 	patch: vi.fn(),
+	// Settings forms that save the caller's own preferences PUT them whole
+	// (`caseEmailMatch#saveSettings`).
+	put: vi.fn(),
 	// `request` carries the WebDAV verbs: the version panel PROPFINDs the
 	// versions endpoint and a restore MOVEs onto it, and neither has an axios
 	// convenience method.

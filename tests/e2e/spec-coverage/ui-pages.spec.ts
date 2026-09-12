@@ -30,13 +30,21 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { navTo, navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
+import {
+	journeyBudget,
+	navTo,
+	navToRoute,
+	trackDossiqErrors,
+} from '../helpers/nav.ts'
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
 	test('dashboard renders its heading and the manifest widget grid', async ({
 		page,
 	}) => {
+		// navTo loads the app to read its sidebar, then the target: two page
+		// loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		await navTo(page, 'Dashboard')
 		await expect(page.locator('.app-content').first()).toBeVisible({
 			timeout: 15000,
@@ -77,6 +85,9 @@ test.describe('Dashboard page render', () => {
 	// dossiq console errors. REQ-DASH-UI-01 covers the grid, and the
 	// sibling test above cites it; the console-error leg has no home.
 	test('dashboard mounts without dossiq console errors', async ({ page }) => {
+		// navTo loads the app to read its sidebar, then the target: two page
+		// loads. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2))
 		const errors = trackDossiqErrors(page)
 		await navTo(page, 'Dashboard')
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard

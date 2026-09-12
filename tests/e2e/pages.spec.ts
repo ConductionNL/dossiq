@@ -20,20 +20,27 @@ import {
 } from './helpers/nav.ts'
 
 test.describe('Dashboard', () => {
-	// FIXME(#427): under the CI env (bare `php -S`, no mod_rewrite) CnDashboardPage
-	// renders its widget grid but not its header — no <h2>Dashboard</h2>, no action
-	// buttons — and every widget shows "Widget not available". Renders fine in a
-	// normal dev container. Re-enable once the dashboard header wires up under that env.
+	// UNPARKED. The old FIXME(#427) said CnDashboardPage renders its widget grid
+	// but not its header under the bare `php -S` CI environment. That is no
+	// longer true and has not been for some time: `case-create-form.spec.ts`
+	// opens the New case dialog by clicking the dashboard's own header action on
+	// every CI run, and passes. So the header renders, and the only thing this
+	// test was still right about was two of its three buttons.
+	//
+	// WHAT THIS ASSERTS AND WHAT IT DROPPED. `New case` is a declared header
+	// action on the Dashboard page in src/manifest.json, so it is the button a
+	// reader can hold the page to. `New Task` and `Refresh dashboard` were
+	// never built — they appear nowhere in src/ and nowhere in the manifest —
+	// so asserting them made the test unfixable by anything short of building
+	// two features nobody asked for. They are gone rather than skipped: an
+	// assertion on a control that was never specified is not pending work.
 	test('shows heading and action buttons', async ({ page }) => {
-		test.fixme(
-			true,
-			'PARTLY REAL, needs triage rather than a spec: "New Case" exists in src/manifest.json, but "New Task" and "Refresh dashboard" appear 0 times in src/. So this is not one missing feature - it asserts a mix of shipped and never-built controls, and should be split before it is either fixed or dropped.',
-		)
 		// Land on a route that resolves, then navigate to the dashboard via the
 		// sidebar (client-side). A direct GET of the bare app root leaves
 		// vue-router's history-mode location empty so the '/' route never
 		// resolves and the dashboard renders an empty router-view.
-		await page.goto('/index.php/apps/dossiq/cases')
+		await page.goto('/index.php/apps/dossiq/cases', { timeout: 60_000 })
+		await dismissSupportDialog(page)
 		await page
 			.locator('[id^="app-navigation"]')
 			.first()
@@ -41,15 +48,21 @@ test.describe('Dashboard', () => {
 			.click()
 		await expect(
 			page.getByRole('heading', { name: 'Dashboard', level: 2 }),
-		).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('button', { name: 'New Case' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'New Task' })).toBeVisible()
+		).toBeVisible({ timeout: 30_000 })
+		// The page's own description, from the manifest. Asserted alongside the
+		// heading so a bare `<h2>Dashboard</h2>` rendered by some other chrome
+		// could not satisfy this on its own.
 		await expect(
-			page.getByRole('button', { name: 'Refresh dashboard' }),
-		).toBeVisible()
+			page.getByText('Cases, deadlines and your workload at a glance'),
+		).toBeVisible({ timeout: 30_000 })
+		// The single declared header action. `exact` matters: the widget grid
+		// below carries case rows whose text also contains "case".
+		await expect(
+			page.getByRole('button', { name: 'New case', exact: true }),
+		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#kpi-tiles-render-on-a-fresh-load
+	// @e2e openspec/specs/dashboard/spec.md#fresh-session-lands-on-the-dashboard
 	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
 		page,
 	}) => {
@@ -91,34 +104,47 @@ test.describe('Cases page', () => {
 		).toBeVisible()
 	})
 
-	// FIXME(#427): under the CI env the Cases create dialog opens the generic
-	// CnFormDialog ("Create Item") with an empty form body instead of dossiq's
-	// CaseCreateDialog — the `case` schema's fields never resolve there. Renders
-	// fine in a normal dev container. Re-enable once the schema config wires up.
+	// UNPARKED, AND REPOINTED AT THE DIALOG THAT ACTUALLY SHIPS.
+	//
+	// The old body asserted `.case-create-dialog`, a heading "New Case", a
+	// "Create case" button and a "Set location" button. `CaseCreateDialog`
+	// does not exist: the string appears nowhere under src/, and neither does
+	// "Set location". So the FIXME's diagnosis ("the generic CnFormDialog
+	// opens instead of dossiq's own") described the *design*, not a defect —
+	// the plain CnFormDialog IS what this app ships, and
+	// `friendly-case-create-form` is the spec that says so.
+	//
+	// WHAT THIS ADDS OVER case-create-form.spec.ts. That spec opens the dialog
+	// from the DASHBOARD's header action. This one opens it from the Cases
+	// index's own Add control, which is the other entry point and the one this
+	// test was always about. If the index's create path ever stops resolving
+	// the `case` schema — the actual failure #427 described — this reddens and
+	// the dashboard spec does not.
 	test('new case modal has correct fields', async ({ page }) => {
-		test.fixme(
-			true,
-			'PARTLY REAL: "New Case" exists in src/manifest.json but "Set location" appears 0 times in src/. Either the field was renamed and this selector is stale, or it was never built - worth checking which before treating this as pending work.',
-		)
-		await page.goto('/index.php/apps/dossiq/cases')
+		await page.goto('/index.php/apps/dossiq/cases', { timeout: 60_000 })
+		await dismissSupportDialog(page)
 		// CnIndexPage labels the create button "Add <SchemaTitle>" when the
 		// schema title resolves, "Add Item" otherwise — match either.
-		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
-		// dossiq's custom CaseCreateDialog (.case-create-dialog) — scope to it
-		// so e.g. the case-type combobox doesn't collide with the sidebar filter.
-		const modal = page.locator('.case-create-dialog')
-		await expect(modal.getByRole('heading', { name: 'New Case' })).toBeVisible({
-			timeout: 15000,
+		await page
+			.getByRole('button', { name: /^Add (Item|Case|Task)$/ })
+			.click({ timeout: 30_000 })
+		// The dialog ROOT, not the phase div carrying the testid: NcDialog puts
+		// its buttons in a footer slot beside that div, so a locator scoped to
+		// the testid finds the fields but never Create or Cancel.
+		const modal = page.getByRole('dialog').filter({
+			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
 		})
-		await expect(modal.getByRole('combobox')).toBeVisible()
-		await expect(modal.getByPlaceholder('Enter case title')).toBeVisible()
-		await expect(modal.getByPlaceholder('Optional description')).toBeVisible()
-		await expect(
-			modal.getByRole('button', { name: 'Set location' }),
-		).toBeVisible()
-		await expect(
-			modal.getByRole('button', { name: 'Create case' }),
-		).toBeVisible()
+		await expect(modal).toBeVisible({ timeout: 30_000 })
+		// The `case` schema's fields resolved. `data-cn-field` is the form's
+		// own per-field hook, so this fails on the "empty form body" #427
+		// described rather than passing on an open-but-blank dialog.
+		for (const key of ['title', 'caseType', 'description']) {
+			await expect(
+				modal.locator(`[data-cn-field="${key}"]`),
+				`the case schema's ${key} field must resolve in the index create dialog`,
+			).toBeVisible({ timeout: 30_000 })
+		}
+		await expect(modal.getByRole('button', { name: 'Create' })).toBeVisible()
 		await expect(modal.getByRole('button', { name: 'Cancel' })).toBeVisible()
 	})
 
@@ -350,7 +376,35 @@ test.describe('Doorlooptijd page', () => {
 })
 
 test.describe('Settings page', () => {
-	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
+	// 🔴 NO CITATION, AND THE SPEC IS THE STALE HALF. This carried
+	// `admin-settings#in-app-settings-page-renders-configuration-sections`,
+	// read as partial on 2026-09-11 and as smoke on 2026-09-12, and the
+	// downgrade is right: the test asserted one Save button and the absence of
+	// "Internal Server Error", and none of the three section headings the
+	// scenario lists.
+	//
+	// Two of the scenario's clauses cannot be made true against this product,
+	// and neither is the test's fault:
+	//
+	//   the in-app Settings page      retired by page-topology-cleanup (B1),
+	//                                 because reaching an administration
+	//                                 component through the in-app router
+	//                                 bypasses the settings framework's
+	//                                 server-side checks (ADR-004)
+	//   "Version Information" heading removed; the string exists nowhere in
+	//                                 src/
+	//
+	// So the citation comes down and the scenario carries a reason-bearing
+	// `@e2e exclude` naming both, rather than a test pretending to prove a
+	// requirement two of whose clauses are false. Writing the exclusion where
+	// a spec reader meets it is the point: the repair owed here is to the
+	// spec, not to this file.
+	//
+	// The two headings that DO exist are asserted now, which is what turns
+	// this from a smoke test back into a test. "Configuration" comes from
+	// `src/views/settings/Settings.vue` and "Case Type Management" from
+	// `src/views/settings/AdminRoot.vue`.
+	//
 	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
 	// `/index.php` prefix does not render the target view — the same URL with
@@ -381,6 +435,16 @@ test.describe('Settings page', () => {
 		await expect(
 			page.getByRole('button', { name: 'Save', exact: true }),
 		).toBeVisible({ timeout: 15000 })
+
+		// The section headings, named individually. A count would redden on
+		// ADDING a section and pass on a swap, and would never say which one
+		// went missing.
+		for (const heading of ['Configuration', 'Case Type Management']) {
+			await expect(
+				page.getByRole('heading', { name: heading, exact: true }).first(),
+				`the administration surface must render the ${heading} section`,
+			).toBeVisible({ timeout: 15000 })
+		}
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
@@ -418,18 +482,32 @@ test.describe('Settings page', () => {
 		await expect(form.getByText('Task schema', { exact: true })).toHaveCount(0)
 	})
 
-	// FIXME(#719): same gap — no "Case Type Management" heading renders on the
-	// in-app settings page (it does on /settings/admin/dossiq).
+	// UNPARKED, WITH THE DIAGNOSIS CORRECTED.
+	//
+	// The old reason said "Case Type Management IS present in AdminRoot.vue …
+	// most likely a navigation or selector problem". The component half was
+	// right and the navigation half was the whole story: `AdminRoot.vue` is
+	// mounted by Nextcloud's settings framework at `/settings/admin/dossiq`,
+	// and `/apps/dossiq/settings` is not a route this app declares at all —
+	// src/manifest.json has `/settings/case-types`, `/settings/integrations`
+	// and friends, but no bare `/settings`. So the old body navigated to a
+	// fall-through and then blamed the heading for not being there.
+	//
+	// The in-app surface for administering case types is the `CaseTypes` index
+	// at `/settings/case-types`, reached from the app's own Settings group.
+	// That is what this test now drives — the NC admin page's copy of the
+	// section is already covered by spec-coverage/admin-settings.spec.ts, and
+	// re-asserting it here would only duplicate it.
 	test('has case type management section', async ({ page }) => {
-		test.fixme(
-			true,
-			'NOT missing at all: "Case Type Management" IS present in src/views/settings/AdminRoot.vue. The old blanket comment blamed a stale deploy for this test too, which cannot be right - the section is in the head commit. Most likely a navigation or selector problem, and it should be debugged rather than skipped.',
-		)
-		await page.goto('/index.php/apps/dossiq/settings')
+		await navToRoute(page, '/settings/case-types')
 		await dismissSupportDialog(page)
-		await loadAllAdminSections(page)
 		await expect(
-			page.getByRole('heading', { name: 'Case Type Management' }),
-		).toBeVisible({ timeout: 15000 })
+			page.getByRole('heading', { name: /^Case types$/i }),
+		).toBeVisible({ timeout: 30_000 })
+		// The management affordance, not just the title: a page that lists case
+		// types but offers no way to add one is not a management section.
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case ?type)$/i }).first(),
+		).toBeVisible({ timeout: 30_000 })
 	})
 })

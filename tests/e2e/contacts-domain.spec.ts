@@ -19,12 +19,16 @@
  * addressed by href and rows by data this spec wrote. The one place an English
  * label is unavoidable — the header action buttons — matches both locales.
  *
- * Two scenarios of the delta specs are deliberately absent and are `@e2e
- * exclude`d in the spec itself: the Requester COLUMN link (blocked on
- * nextcloud-vue choosing a route from a sibling field) and the KCC panel
- * (Tier B). A third, the Organisations folder, is asserted here as ABSENT —
- * see `contacts-domain.spec` in tests/vitest for the measurement of why it
- * cannot ship.
+ * One scenario of the delta specs is deliberately absent and is `@e2e
+ * exclude`d in the spec itself: the KCC panel (Tier B). Another, the
+ * Organisations folder, is asserted here as ABSENT — see `contacts-domain.spec`
+ * in tests/vitest for the measurement of why it cannot ship.
+ *
+ * The Requester COLUMN link was the third, and stopped being blocked in
+ * nextcloud-vue 2.47.0: a column can now choose its route from a sibling
+ * field. It is asserted here, and asserted on TWO rows in one render, because
+ * a person and an organisation going to the same page is exactly what a fixed
+ * route would look like.
  *
  * EXTENDED by `contacts-you-can-find`, which is the change that made this
  * file run at all: its first ever execution, 2026-09-08, failed in
@@ -56,8 +60,30 @@ const PERSON_NAME = `${RUN_PREFIX} Jansen`
 const EMPTY_NAME = `${RUN_PREFIX} Zonder`
 /** The organisation the Organisations index is asserted on. */
 const COMPANY_NAME = `${RUN_PREFIX} Dakkapellen BV`
-/** Fictitious, and unique to this run so the index row is unambiguous. */
-const COMPANY_KVK = '90004760'
+/**
+ * The organisation's KvK number. Not a number the shipped register holds.
+ *
+ * This read `90004760` until 2026-09-11 under a comment calling it "unique to
+ * this run", and it was not: `lib/Settings/register.d/25-brp-kvk.json` seeds a
+ * kvkCompany with exactly that number. Nothing asserted the trap, but it is the
+ * same one that sent the person's initiator card to a seeded persona (see
+ * `PERSON_BSN`): the card looks its row up by this number with `_limit: 1`.
+ */
+const COMPANY_KVK = '90004800'
+/**
+ * The person's BSN, named once: the seed and every assertion share it.
+ *
+ * It must NOT be a BSN the shipped register already holds. This was
+ * `999990627` until 2026-09-11, which is the seeded persona "Stephan Janssen"
+ * in `lib/Settings/register.d/25-brp-kvk.json`. The initiator card finds its
+ * row BY THIS NUMBER with `_limit: 1`, so it resolved Stephan Janssen and
+ * linked the card to him instead of to this spec's person. That stayed hidden
+ * for as long as the case's projection was back-filled from `requester`, which
+ * takes the row's id directly and never searches by number; it surfaced the
+ * moment the seed supplied `initiatorSourceId` up front. Valid under the
+ * 11-proef, and absent from every seed file and every other e2e spec.
+ */
+const PERSON_BSN = '999990019'
 
 let api: APIRequestContext
 let token: string
@@ -170,16 +196,52 @@ test.describe('Contacts', () => {
 		).toBeGreaterThan(0)
 		caseTypeId = objectId(published[0])
 
-		personId = await seedPerson(PERSON_NAME, '999990627')
+		personId = await seedPerson(PERSON_NAME, PERSON_BSN)
 		emptyPersonId = await seedPerson(EMPTY_NAME, '999993653')
 		companyId = await seedCompany(COMPANY_NAME, COMPANY_KVK)
 
+		// Each case carries the WHOLE initiator projection: `initiatorType`,
+		// `initiatorDisplayName` AND `initiatorSourceId`. All three, or none of
+		// them, and two CI runs paid for learning why.
+		//
+		// They are not derived by OpenRegister. `InitiatorSection` BACK-FILLS
+		// them in the browser: opening a case whose `requester` is set but whose
+		// projection is missing fetches the row, shapes it through
+		// `personResult` / `companyResult` and saves it back to the case. So an
+		// API-seeded case has no projection until somebody opens its detail page.
+		//
+		// Writing only `initiatorType` and `initiatorDisplayName` is the worst of
+		// the three options. `fillProjectionFromRequester()` skips any case that
+		// already has an `initiatorDisplayName`, so it never supplies the missing
+		// `initiatorSourceId`; `resolveSource()` then returns before its lookup
+		// and the initiator card renders no link. That broke "the case links
+		// back".
+		// Writing none of them leaves the COMPANY case with an empty Requester
+		// cell, because no test opens that case and nothing back-fills it — the
+		// person case only worked by the accident of an earlier test visiting it.
+		//
+		// `sourceId` is the identifying number the card looks the row up by: the
+		// BSN for a person, the KvK number for a company.
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Dormer window`,
 			caseType: caseTypeId,
 			requester: personId,
+			initiatorType: 'person',
+			initiatorDisplayName: PERSON_NAME,
+			initiatorSourceId: PERSON_BSN,
 		})
 		seededCaseId = objectId(seeded)
+
+		// A second case, requested by the COMPANY. The Requester column has to
+		// resolve two different pages, so one row cannot prove it.
+		await seedCase(api, token, {
+			title: `${RUN_PREFIX} Roof terrace`,
+			caseType: caseTypeId,
+			requester: companyId,
+			initiatorType: 'company',
+			initiatorDisplayName: COMPANY_NAME,
+			initiatorSourceId: COMPANY_KVK,
+		})
 
 		await createObject(api, token, 'contactmoment', {
 			contact: personId,
@@ -238,7 +300,7 @@ test.describe('Contacts', () => {
 
 		const row = page.getByRole('row', { name: new RegExp(PERSON_NAME, 'i') })
 		await expect(row).toBeVisible({ timeout: 30_000 })
-		await expect(row).toContainText('999990627')
+		await expect(row).toContainText(PERSON_BSN)
 	})
 
 	test('offers no folder sidebar, and reaches organisations another way', async ({
@@ -318,7 +380,7 @@ test.describe('Contacts', () => {
 		await expect(page.getByText(PERSON_NAME).first()).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByText('999990627').first()).toBeVisible()
+		await expect(page.getByText(PERSON_BSN).first()).toBeVisible()
 
 		const caseRow = page.getByRole('row', {
 			name: new RegExp(`${RUN_PREFIX} Dormer window`, 'i'),
@@ -336,6 +398,62 @@ test.describe('Contacts', () => {
 			'href',
 			new RegExp(`/apps/dossiq/contacts/${personId}$`),
 		)
+	})
+
+	test('the Requester column sends a person and an organisation to different pages', async ({
+		page,
+	}) => {
+		// contacts-domain 3.6. The claim under test is that ONE column resolves
+		// TWO routes, so one row cannot prove it: a fixed `widgetProps.route`
+		// would send both requesters to the same page and still pass a
+		// single-row check.
+		//
+		// Each row is reached by its own EXACT `?title=` deep link rather than
+		// both together under a shared filter. The column definition is static
+		// in the manifest, so two navigations exercise the same config and a
+		// fixed route still fails the second one — and an exact filter returns
+		// exactly the seeded row, where a shared filter would return this run's
+		// rows plus every other case of the same type and could push either row
+		// onto a second page.
+		const requesterLink = async (title: string, name: string) => {
+			await page.goto(
+				`/apps/${REGISTER}/cases?title=${encodeURIComponent(title)}`,
+			)
+			await dismissSupportDialog(page)
+			await expect(page.locator('.cn-index-page')).toBeVisible({
+				timeout: 30_000,
+			})
+			const row = page.getByRole('row', { name: new RegExp(title, 'i') })
+			await expect(row).toBeVisible({ timeout: 30_000 })
+			const link = row.getByRole('link', { name })
+			await expect(link).toBeVisible({ timeout: 30_000 })
+			return link
+		}
+
+		const personLink = await requesterLink(
+			`${RUN_PREFIX} Dormer window`,
+			PERSON_NAME,
+		)
+		await expect(personLink).toHaveAttribute(
+			'href',
+			new RegExp(`/contacts/${personId}$`),
+		)
+
+		const companyLink = await requesterLink(
+			`${RUN_PREFIX} Roof terrace`,
+			COMPANY_NAME,
+		)
+		await expect(companyLink).toHaveAttribute(
+			'href',
+			new RegExp(`/organisations/${companyId}$`),
+		)
+
+		// And it is a real in-app route, not an href that reads right and 404s.
+		await companyLink.click()
+		await expect(page).toHaveURL(new RegExp(`/organisations/${companyId}$`))
+		await expect(page.getByText(COMPANY_KVK).first()).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	test("shows a person's contact moments", async ({ page }) => {

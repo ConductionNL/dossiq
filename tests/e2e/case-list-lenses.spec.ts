@@ -55,6 +55,7 @@ import {
 import {
 	dateTokenPattern,
 	dismissSupportDialog,
+	PAGE_LOAD,
 	tickCheckbox,
 } from './helpers/nav.ts'
 
@@ -170,7 +171,7 @@ async function seed(key: string, fields: Record<string, unknown>): Promise<strin
  * @param url  Where to go.
  */
 async function visit(page: Page, url: string): Promise<void> {
-	await page.goto(url)
+	await page.goto(url, PAGE_LOAD)
 	await dismissSupportDialog(page)
 }
 
@@ -830,7 +831,24 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// 🔴 NO CITATION, AND THAT IS THE REPAIR. This test and the one below it
+	// carried an anchorless `openspec/specs/task-management/spec.md` citation,
+	// read as verified on 2026-09-11 and as partial on 2026-09-12, and the
+	// downgrade is right. Both call OpenRegister's flow-task endpoint directly
+	// and assert the ENGINE's own `dueAfter`, `dueBefore` and `overdue`
+	// semantics. A dossiq lens that sent the wrong predicates leaves every
+	// assertion in either of them green, so neither proves a task-management
+	// requirement, and a citation naming the whole spec file claimed one.
+	//
+	// There is no scenario to re-anchor onto either: `task-management` has no
+	// requirement about window boundaries, and its two overdue requirements
+	// (the due-date one above REQ-TASK-013, and REQ-TASK-013 itself) both
+	// carry a reason-bearing `@e2e exclude` for visual indicators covered by
+	// `taskHelpers.js` unit tests. So the claim comes down rather than moving.
+	//
+	// The tests stay, because what they prove is worth proving: the boundary
+	// the six chips above are wired to. Those chips keep their own citations
+	// and their own browser assertions.
 	test('the task due windows narrow the collection, edges included', async () => {
 		test.skip(
 			dueWindowSupported === false,
@@ -870,7 +888,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// No citation, for the reason written above its sibling.
 	test('overdue is the instant comparison, so a task due later today is not late', async () => {
 		// The other side of the same boundary, and deliberately NOT gated on
 		// the due-window predicates: `overdue` is the engine's own derived
@@ -1093,7 +1111,14 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// No citation, on purpose. This test used to cite
+	// openspec/specs/case-management/spec.md with no anchor, which names a
+	// file and credits no scenario. The requirement it is about, REQ-CM-32 Deadline
+	// before, has one scenario, and that scenario is excluded on the spec because
+	// the sidebar control it drives does not exist (see the comment below).
+	// A query against the object API cannot prove a control, so the test
+	// stays as a guard on the query path the Overdue tiles use, uncited
+	// (e2e-citation-integrity, audit group 3).
 	test('the deadline query narrows the list, which is what the sidebar filter would drive', async () => {
 		// The Deadline before SIDEBAR filter is blocked: nextcloud-vue 2.41's
 		// index sidebar derives its filters from schema `facetable`

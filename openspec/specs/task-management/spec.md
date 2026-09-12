@@ -841,14 +841,41 @@ warning tying the engine's audit to the task; RUN_NOT_FOUND and NOT_SUSPENDED
 are recorded quietly, because a task naming a vanished or already-advanced
 run is completable and its completer did nothing wrong.
 
+The engine announces terminality for `completed`, `terminated` and `disabled`
+alike. Only a completion is an answer, so the system SHALL resume nothing on
+the other two: they are the question being withdrawn, and a run carried past a
+withdrawn ask would proceed as though somebody had answered it.
+
 #### Scenario: Completing a flow task resumes its run
 
 - **GIVEN** a suspended run awaiting a task
 - **WHEN** the task transitions to completed
 - **THEN** the run is signalled through `signalAs` with the completer as actor and the task's node addressed
 
-`@e2e case-flow-live-journeys.spec.ts` drives the live task-completion resume;
-the seam call shape is pinned by TaskCompletionResumeListenerTest.
+`@e2e task-completion-resumes-the-run.spec.ts` pins that a completed ask makes
+its run due ahead of the heartbeat and advances it to the end. It does NOT
+attribute the wake to this listener: OpenRegister's `UserTaskTerminalListener`
+signals the same run on the same event, so no assertion on a run can separate
+them. `@e2e case-flow-live-journeys.spec.ts` drives the same resume inside the
+shipped journey. The seam call shape is pinned by
+TaskCompletionResumeListenerTest.
+
+#### Scenario: A withdrawn ask advances nothing
+
+- **GIVEN** a suspended run awaiting a task
+- **WHEN** the task is cancelled rather than completed, so it reaches a terminal state that is not a completion
+- **THEN** the listener delivers no answer, the step does not advance, and the run fails rather than reaching its end
+
+⚠️ The run is still WOKEN, and that is correct: OpenRegister's own
+`UserTaskTerminalListener` signals on every terminal state so the run can
+re-enter the step and fail it promptly. A test that asserts a cancelled task
+leaves the run parked is measuring that listener, not this guard, and can
+never pass.
+
+`@e2e task-completion-resumes-the-run.spec.ts` cancels the task of a second
+run and asserts the ask never advances and the run fails. The listener's own
+refusal has no signature of its own in the run, because two listeners share
+the event, so it is unit-pinned in TaskCompletionResumeListenerTest.
 
 #### Scenario: A refusal from the seam withholds the resume
 
