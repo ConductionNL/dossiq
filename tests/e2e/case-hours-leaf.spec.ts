@@ -97,6 +97,8 @@ const HOOK = {
 	view: 'hq-hours-view',
 	dialog: 'hq-hours-booking-dialog',
 	date: 'hq-hours-booking-date',
+	start: 'hq-hours-booking-start',
+	end: 'hq-hours-booking-end',
 	hours: 'hq-hours-booking-hours',
 	description: 'hq-hours-booking-description',
 	submit: 'hq-hours-booking-submit',
@@ -104,6 +106,17 @@ const HOOK = {
 
 /** The hours booked by this run's booking test. */
 const BOOKED_HOURS = 2.5
+
+/**
+ * The `HH:MM` that is `hours` after 09:00, for the dialog's end field.
+ *
+ * @param hours The span to book.
+ * @return The end time.
+ */
+function bookedEnd(hours: number): string {
+	const minutes = 9 * 60 + Math.round(hours * 60)
+	return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+}
 
 /**
  * The `<app>:<schema>` literal the leaf must derive for a dossiq case.
@@ -763,7 +776,15 @@ if (!HUMANIQ_DECLARED) {
 				dialog.getByTestId(HOOK.date),
 				new Date().toISOString().slice(0, 10),
 			)
-			await fillField(dialog.getByTestId(HOOK.hours), String(BOOKED_HOURS))
+			// A start and an end, not a count: the dialog derives the hours from
+			// the span, the way the server does for a stopped timer, and shows
+			// the figure it will book. Asserting that figure is what ties the
+			// span typed here to the total that rises below.
+			await fillField(dialog.getByTestId(HOOK.start), '09:00')
+			await fillField(dialog.getByTestId(HOOK.end), bookedEnd(BOOKED_HOURS))
+			await expect(dialog.getByTestId(HOOK.hours)).toContainText(
+				String(BOOKED_HOURS),
+			)
 			await fillField(
 				dialog.getByTestId(HOOK.description),
 				'E2E booking from the dossiq case page',
