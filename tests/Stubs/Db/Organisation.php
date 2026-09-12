@@ -50,6 +50,22 @@ class Organisation {
 	private ?int $storageQuota = null;
 
 	/**
+	 * When the organisation entered `retained` — access ended, data kept.
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $retainedAt = null;
+
+	/**
+	 * When deprovisioning began. `TenantPurgeJob` measures its retention
+	 * window from this, and purges nothing while it is null — which is why a
+	 * test can tell "retained by rule" apart from "not deleted by accident".
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $deprovisionedAt = null;
+
+	/**
 	 * 🔴 THE STUB HAS TO MIRROR THE REAL CLASS, FIELD FOR FIELD.
 	 *
 	 * The real Organisation extends Entity, whose `__call` synthesises a
@@ -273,6 +289,38 @@ class Organisation {
 	 */
 	public function setQualityStatus(?string $qualityStatus): void {
 		$this->qualityStatus = $qualityStatus;
+	}
+
+	/**
+	 * @return \DateTime|null When retention began.
+	 */
+	public function getRetainedAt(): ?\DateTime {
+		return $this->retainedAt;
+	}
+
+	/**
+	 * @param \DateTime|null $retainedAt When retention began.
+	 *
+	 * @return void
+	 */
+	public function setRetainedAt(?\DateTime $retainedAt): void {
+		$this->retainedAt = $retainedAt;
+	}
+
+	/**
+	 * @return \DateTime|null When deprovisioning began.
+	 */
+	public function getDeprovisionedAt(): ?\DateTime {
+		return $this->deprovisionedAt;
+	}
+
+	/**
+	 * @param \DateTime|null $deprovisionedAt When deprovisioning began.
+	 *
+	 * @return void
+	 */
+	public function setDeprovisionedAt(?\DateTime $deprovisionedAt): void {
+		$this->deprovisionedAt = $deprovisionedAt;
 	}
 
 	// phpcs:enable
