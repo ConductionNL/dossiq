@@ -70,6 +70,17 @@ prerequisite 400s reports its own bugs as ENOTFOUND on an unset variable.
 - **Observation**: The setUp versions of the same tests (e.g., "Add Gebruiksrechten to EnkelvoudigInformatieObject") correctly quote the variable. Only the main test section templates are missing quotes.
 - **Attempted fix**: Server-side regex to re-quote truncated values. It works for curl but NOT for Newman because the truncation happens at the JavaScript level before the HTTP request is sent.
 
+## Invalid base64 in a request body
+
+### EIO `inhoud` is not decodable base64
+
+- **Test**: "Maak een (ENKELVOUDIG) INFORMATIEOBJECT aan." (DRC enkelvoudiginformatieobjecten)
+- **Body**: `"inhoud": "abcde"`, with `"bestandsomvang": 6`
+- **ZGW spec**: `inhoud` is `format: byte`, so base64
+- **Why no implementation can accept it**: five base64 characters cannot decode. PHP's `base64_decode($v, strict: true)` returns false, and Python's `base64.b64decode('abcde')` raises `Invalid base64-encoded string: number of data characters (5) cannot be 1 more than a multiple of 4` with or without `validate=True`. So the VNG reference stack rejects it too.
+- **Our behaviour**: `ZgwDocumentService::storeBase64()` refuses with 400 `Invalid base64 content`. That is correct and stays.
+- **Cascade**: the create fails, so every later DRC request reading `{{informatieobject_url}}` is never sent.
+
 ## Date Format Inconsistencies
 
 ### Gebruiksrechten `startdatum`
