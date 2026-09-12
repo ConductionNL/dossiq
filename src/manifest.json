@@ -1219,7 +1219,7 @@
 				"_transitionsNote": "THE TRANSITION BUTTONS ARE GONE, AND MOVING THE CASE IS NOW A CLICK ON A STAGE. Ruben ruled on 2026-09-12: drop the transition strip and make clicking a status in the timeline widget set that status. So `actionsComponent` no longer names CaseTransitionsWidget, that component is deleted, and the `case-timeline` widget carries the gesture. It is the same guarded move it always was, asked for in the same place it is shown: the widget reads OpenRegister /available-actions, dossiq answers that through CaseActionProvider off its own transition engine, and a stage no action reaches renders disabled with the guard's own reason beside it. The strip has been in three places now, and this is the reasoning that survived all three: the status belongs with the status, and the move belongs with the status too. Two things the strip carried have no home on this page any more, and they are named in the page `_note` rather than dropped in silence.",
 				"_breadcrumbsNote": "REMOVED, deliberately. The case page carried a trail whose LAST crumb was the case title, rendered one line below the page header that already printed that title: 'Cases > Dakkapel Kerkstraat 12' directly under 'Dakkapel Kerkstraat 12'. It read as a repeat rather than as a location, and it cost the top of the page a row. The way back to the list is the app menu, which is where the other detail pages in this app put it. This key stays as a note and not as config so the next reader finds out the trail was removed on purpose rather than re-adding it.",
 				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. The line the row asks for is identifier, case type and assignee together, which needs a templated `subtitle` on CnDetailPage; 2.41.0 has `subtitleField` only, so the number alone is the interim and case-header task 1.2 tracks the rest.",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. THE TOP ROW IS FOUR CONFIGURED LIBRARY TILES AND NOTHING SPANS IT. It was one custom component, `case-header`, twelve columns wide and two rows tall, and Ruben's 2026-09-12 ruling is that the widgets on top of the page should be actual KPI widgets configured to show what they show, not a custom widget spanning an entire row. So the band is `case-tile-type`, `case-tile-status`, `case-tile-assignee` and `case-tile-deadline`, three columns each: three `stat` tiles and one `countdown` tile, all resolved by the library from `content`, none of them a registry component. The case number is not among them because `subtitleField` already prints it under the title, and a tile beside it would say it twice. Under them the case's own progress is `case-timeline`, the library `stages` widget, which is where the case is moved now. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either, and that is the one thing this page lost when the transition strip went. The strip carried a Suspended marker and a second Resume button, both driven by GET /api/case/{id}/lifecycle. THE GESTURE STILL HAS A HOME: `case-resume` is a header action on this page and CaseLifecycleActionDialog reads /lifecycle before it posts, so a Resume on a case that is not suspended is refused with a sentence rather than silently accepted. THE MARKER DOES NOT. A `stat` tile's `overrides` test the LOADED RECORD, and no property of the case says it is suspended, so there is nothing for a configured tile to bind. Giving it one means materialising a suspension flag on the case, which is its own change: a flag written only on the next suspend would under-report every case suspended before it, and a wrong answer nobody can see is worse than a missing tile. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. THE TOP ROW IS FOUR CONFIGURED LIBRARY TILES AND NOTHING SPANS IT. It was one custom component, `case-header`, twelve columns wide and two rows tall, and Ruben's 2026-09-12 ruling is that the widgets on top of the page should be actual KPI widgets configured to show what they show, not a custom widget spanning an entire row. So the band is `case-tile-number`, `case-tile-type`, `case-tile-status`, `case-tile-assignee` and `case-tile-deadline`: four `stat` tiles and one `countdown` tile, all resolved by the library from `content`, none of them a registry component. The widths are 2, 3, 3, 2 and 2, because a case type title and a status name are phrases and a case number, a user id and a countdown are not. Under them the case's own progress is `case-timeline`, the library `stages` widget, which is where the case is moved now. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either, and that is the one thing this page lost when the transition strip went. The strip carried a Suspended marker and a second Resume button, both driven by GET /api/case/{id}/lifecycle. THE GESTURE STILL HAS A HOME: `case-resume` is a header action on this page and CaseLifecycleActionDialog reads /lifecycle before it posts, so a Resume on a case that is not suspended is refused with a sentence rather than silently accepted. THE MARKER DOES NOT. A `stat` tile's `overrides` test the LOADED RECORD, and no property of the case says it is suspended, so there is nothing for a configured tile to bind. Giving it one means materialising a suspension flag on the case, which is its own change: a flag written only on the next suspend would under-report every case suspended before it, and a wrong answer nobody can see is worse than a missing tile. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-timeline, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
@@ -1312,6 +1312,19 @@
 							"pollSeconds": 15,
 							"rowRoute": "FlowDetail",
 							"emptyText": "No flow is running for this case"
+						}
+					},
+					{
+						"id": "case-tile-number",
+						"type": "stat",
+						"title": "Case number",
+						"icon": "TagOutline",
+						"_note": "Placement row A01, first tile, and the one that answers REQ-CDV-14 in practice. The requirement asks for the case number to read under the title through `config.subtitleField`, and the manifest sets it, but nothing on a detail page consumes it: in @conduction/nextcloud-vue 2.49 `subtitleField` is read by CnObjectRow, CnIndexPage and CnObjectList and by no detail-page code at all. So the key stays declared for the day it lands, and the number is a tile in the meantime, which is the same place CaseHeaderRow printed it. `objectField` in its plain string form: `identifier` is generated by OpenRegister and stored on the case, so there is nothing to look up.",
+						"content": {
+							"label": "Case number",
+							"icon": "TagOutline",
+							"emptyText": "Not issued",
+							"objectField": "identifier"
 						}
 					},
 					{
@@ -1856,17 +1869,17 @@
 				"layout": [
 					{
 						"id": "1",
-						"widgetId": "case-tile-type",
+						"widgetId": "case-tile-number",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 3,
+						"gridWidth": 2,
 						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "13",
-						"widgetId": "case-tile-status",
-						"gridX": 3,
+						"widgetId": "case-tile-type",
+						"gridX": 2,
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
@@ -1874,8 +1887,8 @@
 					},
 					{
 						"id": "14",
-						"widgetId": "case-tile-assignee",
-						"gridX": 6,
+						"widgetId": "case-tile-status",
+						"gridX": 5,
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
@@ -1883,10 +1896,19 @@
 					},
 					{
 						"id": "15",
-						"widgetId": "case-tile-deadline",
-						"gridX": 9,
+						"widgetId": "case-tile-assignee",
+						"gridX": 8,
 						"gridY": 0,
-						"gridWidth": 3,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "16",
+						"widgetId": "case-tile-deadline",
+						"gridX": 10,
+						"gridY": 0,
+						"gridWidth": 2,
 						"gridHeight": 2,
 						"showTitle": false
 					},

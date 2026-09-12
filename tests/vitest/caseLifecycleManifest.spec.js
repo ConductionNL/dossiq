@@ -64,67 +64,88 @@ function action(id) {
 	return caseDetail().config.headerActions.find((entry) => entry.id === id)
 }
 
-describe('CaseDetail: the transition strip and the stepper', () => {
-	for (const [id, slot, component] of [
-		['case-steps', 'widget-case-steps', 'CaseStepsWidget'],
-	]) {
-		it(`declares ${id} as a custom widget`, () => {
-			expect(widget(id)).toBeTruthy()
-			expect(widget(id).type).toBe('custom')
-		})
+describe('CaseDetail: the timeline widget IS the transition surface', () => {
+	it('declares case-timeline as the library stages widget, configured', () => {
+		// `stages` is a LIBRARY key, so it resolves through the dashboard widget
+		// catalog and needs no registry entry and no page slot. A typo here does
+		// not error: an unknown type falls back to the `widget-<id>` slot, the
+		// page declares none, and the cell renders empty in silence.
+		const entry = widget('case-timeline')
+		expect(entry).toBeTruthy()
+		expect(entry.type).toBe('stages')
+		expect(caseDetail().slots['widget-case-timeline']).toBeUndefined()
+	})
 
-		it(`places ${id} in exactly one layout cell`, () => {
-			expect(cells(id)).toHaveLength(1)
-		})
+	it('reads the case type blueprint, not the type own status rows', () => {
+		// A case type that derives its lifecycle from a parent carries no
+		// statusType rows of its own, so `statusType where caseType = X` said
+		// "no statuses yet" about a type that plainly has four. /blueprint
+		// merges the chain server-side.
+		const source = widget('case-timeline').content.stagesEndpoint
+		expect(source.url).toBe(
+			'/apps/dossiq/api/case-types/@object.caseType/blueprint',
+		)
+		expect(source.path).toBe('statusTypes')
+		expect(source.orderField).toBe('order')
+		expect(source.finalField).toBe('isFinal')
+		expect(source.labelField).toBe('name')
+	})
 
-		it(`binds ${id} to ${component} through the page slot`, () => {
-			expect(caseDetail().slots[slot]).toBe(component)
-		})
+	it('moves the case through the lifecycle, never by writing the field', () => {
+		// `{ kind: 'field' }` writes `currentField` straight onto the record
+		// with nothing validating the move: whatever the timeline offers is
+		// what happens. `lifecycle` asks OpenRegister what is reachable and
+		// lets it re-validate the write, which is dossiq's own guarded engine
+		// answering through CaseActionProvider.
+		const content = widget('case-timeline').content
+		expect(content.transition).toEqual({ kind: 'lifecycle' })
+		expect(content.currentField).toBe('status')
+		expect(content.unreachableReason).toBeTruthy()
+	})
 
-		it(`registers ${component} as a widget`, () => {
-			expect(registrySource).toContain(`${component}: {`)
-			expect(registrySource).toContain(`component: ${component},`)
-		})
-	}
+	it('places the timeline in one cell, where the stepper stood', () => {
+		const placed = cells('case-timeline')
+		expect(placed).toHaveLength(1)
+		expect(placed[0].gridX).toBe(8)
+		expect(placed[0].gridWidth).toBe(4)
+		// WITH its title. A bare column of labelled dots in the right rail says
+		// nothing about what the column is, so a reader has to infer that it is
+		// the case progressing rather than, say, a checklist.
+		expect(placed[0].showTitle).toBe(true)
+	})
 
-	it('mounts the transition buttons in the page header, not in the grid', () => {
-		// The buttons sit in the header's action row, left of Edit, through
-		// the page's `actionsComponent`. They were a grid widget under the
-		// identity row: a status chip the Status card already showed, and the
-		// one button a handler reaches for mid call, two rows below the title.
-		// Nothing of that strip may survive in the grid, or the page shows the
-		// buttons twice.
-		expect(caseDetail().actionsComponent).toBe('CaseTransitionsWidget')
+	it('has retired the transition strip and its component', () => {
+		// Ruben, 2026-09-12, on the transition buttons: "let drop it, and make
+		// clicking a status in the timeline widget set that status." So the
+		// page names no actions component, no widget, no cell and no slot, and
+		// the registry holds no entry. Any one of those left behind renders a
+		// second way to move the case beside the timeline.
+		expect(caseDetail().actionsComponent).toBeUndefined()
 		expect(widget('case-transitions')).toBeUndefined()
 		expect(cells('case-transitions')).toHaveLength(0)
 		expect(caseDetail().slots['widget-case-transitions']).toBeUndefined()
-		expect(registrySource).toContain('CaseTransitionsWidget: {')
-		expect(registrySource).toContain('component: CaseTransitionsWidget,')
+		expect(registrySource).not.toContain('CaseTransitionsWidget.vue')
+		expect(registrySource).not.toContain('CaseTransitionsWidget: {')
 	})
 
-	it('leads with the identity row, and the panels sit straight under it', () => {
-		// The identity row leads the page full width, as KPI cards.
-		//
-		// It has been both ways. The row was once a full-width band, moved into
-		// the right rail as a card because a line of three to five short facts
-		// left more than half of twelve columns empty, and moved back out once
-		// each fact became a card that divides the row evenly. What survived
-		// both moves is the reading order: a handler sees WHICH case they are
-		// on before WHAT they may do to it. With the strip gone from the grid,
-		// the panels take the rows it held, with no gutter row between.
-		const header = cells('case-header')[0]
+	it('has retired the custom stepper and its component', () => {
+		expect(widget('case-steps')).toBeUndefined()
+		expect(cells('case-steps')).toHaveLength(0)
+		expect(caseDetail().slots['widget-case-steps']).toBeUndefined()
+		expect(registrySource).not.toContain('CaseStepsWidget.vue')
+		expect(registrySource).not.toContain('CaseStepsWidget: {')
+	})
+
+	it('leads with the identity tiles, and the panels sit straight under them', () => {
+		// What survived every move of this row is the reading order: a handler
+		// sees WHICH case they are on before WHAT they may do to it. The tiles
+		// are the top row and the panels take the rows under it, with no gutter
+		// row between.
+		const tiles = caseDetail().config.layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
-		expect(header.gridY).toBe(0)
-		expect(header.gridX).toBe(0)
-		expect(header.gridWidth).toBe(12)
-		expect(panels.gridY).toBe(header.gridY + header.gridHeight)
+		expect(tiles.length).toBeGreaterThan(1)
+		expect(panels.gridY).toBe(Math.max(...tiles.map((c) => c.gridHeight)))
 		expect(panels.gridX).toBe(0)
-	})
-
-	it('gives the stepper the cell the milestone tile had', () => {
-		const steps = cells('case-steps')[0]
-		expect(steps.gridX).toBe(8)
-		expect(steps.gridWidth).toBe(4)
 	})
 
 	it('has retired the milestone progress tile from this page', () => {
@@ -200,7 +221,7 @@ describe('CaseDetail: suspend, resume, extend and reopen', () => {
 describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
 		const named = [
-			widget('case-steps').icon,
+			widget('case-timeline').icon,
 			action('case-suspend').icon,
 			action('case-resume').icon,
 			action('case-extend').icon,
