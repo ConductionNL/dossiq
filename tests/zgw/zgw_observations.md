@@ -81,6 +81,16 @@ prerequisite 400s reports its own bugs as ENOTFOUND on an unset variable.
 - **Our behaviour is correct and stays.** Relaxing either rule to make the assertions green would turn a standard into a suggestion.
 - **The fix belongs upstream**: `pm.environment.set` in "Create concept Zaaktype", or an `pm.environment.unset` before the global write.
 
+## Open in dossiq, not in the collection
+
+### A full PUT of a zaak is refused on a readOnly property
+
+- **Test**: "Werk een ZAAK in zijn geheel bij." (ZRC zaken)
+- **Response**: 400 `Cannot modify readOnly property: deadline`
+- **Why**: ZGW PUT is a full replace, so a client sends back what GET returned, `uiterlijkeEinddatumAfdoening` included. The zaak inbound mapping writes it into `case.deadline`, which the register declares `readOnly` and computes from `startDate` plus the case type's `processingDeadline`. OpenRegister accepts a readOnly property on create and refuses it on update.
+- **`case.identifier` is the same shape** and has not bitten yet: ZGW lets a client supply `identificatie` on create, so the mapping cannot simply stop writing it.
+- **The fix needs a decision, not a patch**: the inbound mapping is built once and used for both create and update, so excluding readOnly properties has to happen on the update path only. Cost today is one assertion in the OAS collection.
+
 ## Invalid base64 in a request body
 
 ### EIO `inhoud` is not decodable base64
