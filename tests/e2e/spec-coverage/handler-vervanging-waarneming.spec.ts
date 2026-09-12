@@ -912,8 +912,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * "NOT a deploy gap, SubstitutionAdminView is registered in
 	 * src/registry.js" — so the branch existed to tolerate exactly the failure
 	 * it said could not happen. The heading is required now, and a console that
-	 * does not appear fails here naming it. Measured 2026-09-12 against a
-	 * disposable instance: it appears.
+	 * does not appear fails here naming it.
 	 */
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({
 		page,
