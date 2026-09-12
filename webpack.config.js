@@ -14,8 +14,8 @@ const isDev = buildMode === 'development'
 webpackConfig.devtool = isDev ? 'cheap-source-map' : 'nosources-source-map'
 
 webpackConfig.stats = {
-	colors: true,
-	modules: false,
+      colors: true,
+        modules: false,
 }
 
 const appId = 'dossiq'
