@@ -80,10 +80,12 @@ The system SHALL execute status transitions atomically: the case status changes,
 You see, on the case page, only the transitions you may take from the case's
 current status. The system SHALL compute the available transitions from the
 case type's workflow template, the current status, the signed-in user's role
-and guard satisfaction, and SHALL render them as buttons in the header row of
-`CaseDetail`. The transitions SHALL come from dossiq's own transition endpoint,
-not from OpenRegister's `available-actions`, until the case graph is projected
-onto the engine lifecycle.
+and guard satisfaction, and SHALL offer them on `CaseDetail` as the reachable
+stages of the timeline widget, so the move is asked for where the status is
+shown. The transitions SHALL reach the page through OpenRegister's
+`available-actions`, which dossiq answers with `CaseActionProvider` off the
+same engine the write path validates against, so no second derivation can
+offer a move the write refuses.
 
 **Feature tier**: V1
 
@@ -94,15 +96,16 @@ onto the engine lifecycle.
 - **AND** the workflow defines transitions "Goedkeuren" (requires role Afdelingshoofd) and "Terugsturen" (any role)
 - **AND** the user has role "Behandelaar"
 - **WHEN** the user opens the case page
-- **THEN** only the "Terugsturen" button SHALL be displayed in the header row
+- **THEN** only the stage "Terugsturen" leads to SHALL be offered on the timeline
+- **AND** the stage "Goedkeuren" leads to SHALL be refused with a reason
 
 #### Scenario: No transitions available
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** a case in a final status "Afgehandeld"
 - **WHEN** the user opens the case page
-- **THEN** no transition buttons SHALL be displayed
-- **AND** the case status area SHALL say the case is closed
+- **THEN** no stage on the timeline SHALL be choosable
+- **AND** the timeline SHALL mark "Afgehandeld" as the stage the case is on
 
 ### Requirement: A status brings its checklist tasks with it (REQ-STE-01)
 
@@ -164,7 +167,7 @@ transition out of a status the engine SHALL evaluate a `statusChecklist`
 guard: each item of the current status with `required` true SHALL have a
 task on the case at status completed. A required item with no task SHALL
 count as not done. The failed guard SHALL name the item, and the case page
-SHALL show that reason on the transition button.
+SHALL show that reason beside the stage the refused move leads to.
 
 **Feature tier**: MVP
 
@@ -173,15 +176,16 @@ SHALL show that reason on the transition button.
 
 - **GIVEN** a case in Intake whose required item Check the objection is on time has an open task
 - **WHEN** you open the case page
-- **THEN** the transition to In behandeling SHALL be disabled
-- **AND** its reason SHALL read Checklist item not done: Check the objection is on time
+- **THEN** the stage In behandeling SHALL carry the guard's reason
+- **AND** that reason SHALL read Checklist item not done: Check the objection is on time
+- **AND** the move SHALL be refused when it is attempted
 
 #### Scenario: Completing the task frees the case
 @e2e tests/e2e/checklist-per-status.spec.ts
 
 - **GIVEN** the same case
 - **WHEN** you complete that task
-- **THEN** the transition to In behandeling SHALL be enabled
+- **THEN** the stage In behandeling SHALL be offered with no reason beside it
 - **AND** the move SHALL succeed
 
 #### Scenario: An optional item does not hold the case
@@ -189,10 +193,10 @@ SHALL show that reason on the transition button.
 
 - **GIVEN** a case in Intake whose only open task is the optional item Confirm receipt to the objector
 - **WHEN** you open the case page
-- **THEN** the transition to In behandeling SHALL be enabled
+- **THEN** the stage In behandeling SHALL be offered with no reason beside it
 
 #### Scenario: The guard fails server-side too
-@e2e exclude A direct API call past the disabled button is asserted by StatusChecklistGuardTest and StatusTransitionServiceRouteSeamTest.
+@e2e exclude A direct API call past the page is asserted by StatusChecklistGuardTest and StatusTransitionServiceRouteSeamTest.
 
 - **GIVEN** a case in Intake with a required item's task still open
 - **WHEN** the transition is posted to the API
@@ -265,27 +269,34 @@ Each status move in a case flow SHALL be its own step rather than a side effect 
 
 ### Requirement: A transition executes from the case page (REQ-STE-11)
 
-You move the case to its next status from the case page. Pressing a transition
-button SHALL open a confirmation with an optional comment, and confirming SHALL
-post the transition to `StatusTransitionService`. The page SHALL then show the
-new status without a reload, and the guard failures the service reports SHALL
-be shown in the dialog instead of moving the case.
+You move the case to its next status from the case page by clicking the stage
+you are moving it to. A move that declares inputs SHALL ask for exactly those
+first and SHALL send nothing when the question is cancelled; a move that
+declares none SHALL be taken on the click. The transition SHALL reach
+`StatusTransitionService` through OpenRegister, which re-validates it. The page
+SHALL then show the new status without a reload, and the guard failures the
+service reports SHALL be shown where the click happened instead of moving the
+case.
+
+The optional comment is NOT carried here any more. It belonged to the
+transition strip's own confirmation dialog, and the strip is gone: a move now
+asks only for the inputs it declares.
 
 #### Scenario: A handler advances a case
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** a seeded case whose current status allows one transition to "In behandeling"
-- **WHEN** the handler presses that transition and confirms
+- **WHEN** the handler clicks that stage on the timeline
 - **THEN** the case's status SHALL be the target status
 - **AND** the transition history SHALL hold one new row with the handler as actor
-- **AND** the header row SHALL list the transitions of the new status
+- **AND** the timeline SHALL mark the new status and offer the moves out of it
 
 #### Scenario: A failed guard keeps the case where it is
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** a transition whose guard requires a document the case lacks
-- **WHEN** the handler confirms that transition
-- **THEN** the dialog SHALL show the guard's message
+- **WHEN** the handler clicks the stage it leads to
+- **THEN** the timeline SHALL show the guard's message
 - **AND** the case's status SHALL be unchanged
 
 ### Requirement: Closing a case asks for the result (REQ-STE-12)
@@ -299,7 +310,7 @@ executes, and SHALL write the result on the case in the same request.
 
 - **GIVEN** a case one transition away from a final status
 - **AND** the case type has result types "Verleend" and "Geweigerd"
-- **WHEN** the handler takes that transition and picks "Verleend"
+- **WHEN** the handler clicks the final stage and gives "Verleend" as the result
 - **THEN** the case SHALL be in the final status
 - **AND** the case's `result` SHALL reference a result of type "Verleend"
 
@@ -307,7 +318,7 @@ executes, and SHALL write the result on the case in the same request.
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** the same case
-- **WHEN** the handler tries to confirm the final transition without a result
+- **WHEN** the handler tries to confirm the final move without a result
 - **THEN** the confirm button SHALL be disabled
 - **AND** the case SHALL stay in its current status
 
@@ -325,8 +336,9 @@ the deadline moves and the audit row is written.
 
 - **GIVEN** an open case of a case type with `suspensionAllowed` true
 - **WHEN** the handler chooses Suspend, gives a reason and confirms
-- **THEN** the case SHALL show a suspended marker and the Resume action
-- **AND** choosing Resume SHALL clear the marker and recompute the deadline
+- **THEN** the case SHALL read as suspended on its own lifecycle endpoint
+- **AND** the Actions menu SHALL offer Resume
+- **AND** choosing Resume SHALL clear the suspension and recompute the deadline
 
 #### Scenario: Extend the term
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts

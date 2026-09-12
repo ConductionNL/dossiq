@@ -488,17 +488,21 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 
 ### Requirement: The case names itself in the header (REQ-CDV-14)
 
-You see which case you are on without reading the data widget. `CaseDetail`
-SHALL set `config.subtitleField` to `identifier`, so the case number reads
-under the title. The page SHALL render a header row widget `case-header`
-on the first layout row that shows a `CnStatusBadge` with the name of the
-case's status type and the deadline countdown (days left, or days overdue
-in the danger variant), replacing the Time left tile. A case without a
-status record SHALL show the badge as Unknown rather than nothing; a case
-without a deadline SHALL show no countdown. The subtitle line built from
-identifier, case type and assignee together is a nextcloud-vue need
-(`CnDetailPage` has `subtitleField` only); until it lands the identifier
-alone is the subtitle.
+You see which case you are on without reading the data widget. The page SHALL
+carry the case number, the case type, the status and the deadline on its first
+layout row, and SHALL carry each of them on a CONFIGURED library widget rather
+than on a component this app writes: no tile on that row may span it. The
+status SHALL read as a status pill carrying the name of the case's status type
+and drawn in the colour the case type's author gave that status. The deadline
+SHALL read as a countdown in days left, or days overdue, banding at 14 days and
+at 5. A case without a status record SHALL show the pill as Unknown rather than
+nothing; a case without a deadline SHALL show no remaining time and no band.
+
+`CaseDetail` SHALL also set `config.subtitleField` to `identifier`. The key is
+inert on a detail page in @conduction/nextcloud-vue 2.49, which reads it only
+in `CnObjectRow`, `CnIndexPage` and `CnObjectList`, so the number reads on the
+page because the first tile prints it. The declaration stays so the day the
+library honours it is a deletion rather than a new idea.
 
 #### Scenario: The number reads under the title
 @e2e tests/e2e/case-header.spec.ts
@@ -561,26 +565,34 @@ manifest, reads it as an oversight, and adds the trail back.
 
 ### Requirement: The case shows its step (REQ-CDV-13)
 
-You see which step the case is in and how many steps remain. `CaseDetail`
-SHALL render a stepper over the case type's status types in their `order`,
+You see which step the case is in and how many steps remain, and you move the
+case by clicking where you are moving it to. `CaseDetail` SHALL place a
+CONFIGURED timeline widget over the case type's status types in their `order`,
 with the current status marked as active and the statuses before it as done.
-The stepper SHALL take the place of the milestone progress tile.
+The list SHALL come from the case type's BLUEPRINT, so a type that derives its
+lifecycle from a parent shows the statuses it inherited rather than none. The
+stages SHALL be read from a declaration rather than from a component this app
+writes, and the timeline SHALL take the place of the milestone progress tile.
+Clicking a stage SHALL take the move that leads there, under the same guards
+the engine applies to any other move.
 
 #### Scenario: The current step is marked
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
-- **GIVEN** a case type with statuses Ontvangen, In behandeling, Afgehandeld in that order
+- **GIVEN** a case type with statuses Ontvangen, In behandeling, Aangehouden, Afgehandeld in that order
 - **AND** a case in status In behandeling
 - **WHEN** the handler opens the case page
-- **THEN** the stepper SHALL show three stages
-- **AND** Ontvangen SHALL be done, In behandeling active, Afgehandeld pending
+- **THEN** the timeline SHALL show one stage per status, in that order
+- **AND** Ontvangen SHALL be done, In behandeling active, the rest pending
+- **AND** the stage the case is on SHALL be the one a screen reader is told about
 
 #### Scenario: The stepper follows a transition
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** the same case
-- **WHEN** the handler moves it to Afgehandeld
-- **THEN** the stepper SHALL mark Afgehandeld as active without a reload
+- **WHEN** the handler clicks the Afgehandeld stage and gives the result it asks for
+- **THEN** the timeline SHALL mark Afgehandeld as active without a reload
+- **AND** In behandeling SHALL read as done
 
 #### Scenario: The progress tile is gone
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
