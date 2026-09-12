@@ -11,13 +11,29 @@
  */
 
 import { expect, test } from '@playwright/test'
+import {
+	ensureCaseType,
+	getRequestToken,
+	RUN_PREFIX,
+	seedCase,
+} from '../helpers/fixtures.ts'
 import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
 // Routes named after the component that renders them, so this spec states
 // WHICH screen it covers in executable code rather than in a comment.
 import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
 
 test.describe('Workflow Board page', () => {
-	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
+	// @e2e exclude The citation this carried was taken down rather than
+	// strengthened. DASH-V1-006a names three columns in status order with a
+	// per-column case count, and the assertion below is
+	// `.board-column, .workflow-board__empty`, an `or` that a board rendering
+	// zero columns satisfies. The scenario is proven in full by
+	// `tests/e2e/workflows/case-lifecycle.spec.ts`, which seeds four status
+	// types out of creation order and asserts the column NAMES and the counts
+	// `['2', '1', '0']`. Rebuilding that here would duplicate it without
+	// adding a claim, and leaving the citation in place would credit the
+	// scenario twice, once for a check that cannot fail. This stays what it
+	// is: the board's shell, on the route, without a 500.
 	test('workflow board renders its heading and a status/empty surface', async ({
 		page,
 	}) => {
@@ -52,7 +68,13 @@ test.describe('Workflow Board page', () => {
 	// Doorlooptijd analytics view (caseType). store.js now falls back to the
 	// canonical schema slug ('caseType' / 'statusType') when the config id is
 	// empty, so the types are always registered and this contract holds.
-	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
+	// @e2e exclude A console-error check cannot prove one column per non-final
+	// status type, their order or their case counts. The same DASH-V1-006a
+	// citation was carried here and on the shell test above, so the scenario
+	// was credited twice over by two load checks while
+	// `tests/e2e/workflows/case-lifecycle.spec.ts` did the actual proving. The
+	// regression this guards is real and is described above it, so the test
+	// stays; the citation does not.
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
@@ -66,14 +88,124 @@ test.describe('Workflow Board page', () => {
 	})
 })
 
+/** GeoJSON geometry, JSON-encoded, the way the `case` schema stores it. */
+const POINT = (lng: number, lat: number): string =>
+	JSON.stringify({ type: 'Point', coordinates: [lng, lat] })
+
+/** A small closed ring around `[lng, lat]`, as a GeoJSON Polygon. */
+const POLYGON = (lng: number, lat: number): string =>
+	JSON.stringify({
+		type: 'Polygon',
+		coordinates: [
+			[
+				[lng, lat],
+				[lng + 0.001, lat],
+				[lng + 0.001, lat + 0.001],
+				[lng, lat + 0.001],
+				[lng, lat],
+			],
+		],
+	})
+
+/**
+ * Read the map sidebar's own tally: "Showing {filtered} of {total} located
+ * cases".
+ *
+ * Deliberately the VIEW's numbers and not a second count computed from the
+ * API. The claim under test is what the map plots, and a helper that recounted
+ * the register would be asserting one reading of the data against another
+ * reading of the same data — green whenever the two agreed, including when
+ * both were wrong.
+ *
+ * @param page The Playwright page, already on /map.
+ * @return The two numbers the summary prints.
+ */
+async function locatedTally(page): Promise<{ filtered: number; total: number }> {
+	const text = await page
+		.locator('.cases-on-map__summary')
+		.first()
+		.innerText({ timeout: 30_000 })
+	const m = text.match(/(\d+)\D+(\d+)/)
+	if (m === null) {
+		throw new Error(`the map summary did not print two numbers: ${text}`)
+	}
+	return { filtered: Number(m[1]), total: Number(m[2]) }
+}
+
+/**
+ * The tally once the view has finished loading and stopped changing.
+ *
+ * The summary renders before the fetch resolves, printing "Showing 0 of 0", so
+ * a single read taken on first paint is a reading of the loading state rather
+ * than of the data. Waiting for the spinner to go and then requiring two
+ * readings a second apart to agree is what makes the number the view's answer
+ * rather than its opening guess.
+ *
+ * @param page The Playwright page, already on /map.
+ * @return The settled summary numbers.
+ */
+async function settledTally(page): Promise<{ filtered: number; total: number }> {
+	await expect(page.locator('.cases-on-map__loading')).toHaveCount(0, {
+		timeout: 60_000,
+	})
+	let last = await locatedTally(page)
+	for (let attempt = 0; attempt < 6; attempt++) {
+		await page.waitForTimeout(1000)
+		const next = await locatedTally(page)
+		if (next.total === last.total && next.filtered === last.filtered) {
+			return next
+		}
+		last = next
+	}
+	throw new Error(
+		`the map's located-case tally never settled (last read ${last.filtered}/${last.total})`,
+	)
+}
+
 test.describe('Case Map page', () => {
+	/**
+	 * WHAT THIS USED TO ASSERT, and why none of it could fail.
+	 *
+	 * The old body navigated to /map, asserted the "Cases on map" heading, and
+	 * then asserted `.leaflet-container, [class*="map"]` — a disjunction whose
+	 * right half matches the view's own `.cases-on-map__map` wrapper, so the
+	 * assertion was satisfied before Leaflet had done anything at all. It then
+	 * checked for the absence of "Internal Server Error" and for no
+	 * dossiq-origin console errors. A build that plotted NOTHING passed every
+	 * line of it, which is precisely the claim OVERVIEW-01a makes.
+	 *
+	 * WHAT IT ASSERTS NOW. The scenario's subject is which cases reach the map:
+	 * "a full-width map MUST be displayed showing all case locations". So this
+	 * seeds four cases — three carrying geometry (two Points and a Polygon) and
+	 * one carrying none — and requires the map's own located-case tally to rise
+	 * by exactly three. Exactly, not at least: a build that plotted every case
+	 * whether or not it has a location would move the number by four, and a
+	 * build that parsed no geometry would not move it at all. The tally is read
+	 * before and after from the same surface, so it needs no agreement with a
+	 * second count of the register.
+	 *
+	 * TWO CLAUSES OF THE SCENARIO ARE NOT ASSERTED HERE, and saying which is
+	 * part of the citation:
+	 *
+	 *  - "markers or polygons depending on geometry type" is not what shipped,
+	 *    on purpose. `extractCoords` in src/services/mapFormatters.js takes the
+	 *    arithmetic-mean centroid of a Polygon's outer ring and pins it, and
+	 *    says so, citing case-location REQ-LOC-03b. That is a product decision
+	 *    to amend or keep, not something to settle by writing a test around it;
+	 *    the Polygon fixture above is here so the count proves a polygon does
+	 *    at least reach the map.
+	 *  - clustering and auto-fit are `CnMapWidget` props (`:clustering="true"`,
+	 *    `:autoFit="features.length > 0"`), owned by the library and asserted
+	 *    in its own suite. What this file can prove is that dossiq passes
+	 *    features to it, which is what the tally reads.
+	 */
 	// @e2e openspec/specs/case-map-overview/spec.md#scenario-overview-01a-display-all-cases-on-map
-	test('case map renders its heading and an interactive map surface', async ({
+	test('the map plots every case that carries geometry, and only those', async ({
 		page,
 	}) => {
+		test.slow()
 		const errors = trackDossiqErrors(page)
-		// Case Map has no top-level sidebar leaf after the nav-dedup pass; its
-		// /map page route stays reachable, so navigate to it client-side.
+
 		await navToRoute(page, CasesOnMapView)
 		// The rendered heading is "Cases on map" — measured on a CI runner
 		// (2026-08-04). "Case map" is the manifest page TITLE, not the heading
@@ -81,11 +213,57 @@ test.describe('Case Map page', () => {
 		await expect(
 			page.getByRole('heading', { name: 'Cases on map' }),
 		).toBeVisible({ timeout: 15000 })
-		// Leaflet renders a tile/zoom container — assert the map pane exists
-		// rather than any specific marker (data-independent).
+		const before = await settledTally(page)
+		expect(
+			before.filtered,
+			'with no filter set the map shows every located case it loaded',
+		).toBe(before.total)
+
+		const token = await getRequestToken(page.request)
+		const caseType = await ensureCaseType(page.request, token)
+		const located: Array<[string, string]> = [
+			['point a', POINT(4.8952, 52.3702)],
+			['point b', POINT(4.4777, 51.9244)],
+			['polygon', POLYGON(5.1214, 52.0907)],
+		]
+		for (const [label, geometry] of located) {
+			await seedCase(page.request, token, {
+				title: `${RUN_PREFIX} map ${label}`,
+				caseType: caseType.id,
+				geometry,
+			})
+		}
+		// The control: a case of the same type, seeded the same way, carrying
+		// no geometry. It is the half that makes "only those" falsifiable.
+		await seedCase(page.request, token, {
+			title: `${RUN_PREFIX} map unlocated`,
+			caseType: caseType.id,
+		})
+
+		await navToRoute(page, CasesOnMapView)
 		await expect(
-			page.locator('.leaflet-container, [class*="map"]').first(),
-		).toBeVisible({ timeout: 10000 })
+			page.getByRole('heading', { name: 'Cases on map' }),
+		).toBeVisible({ timeout: 15000 })
+		await expect
+			.poll(async () => (await locatedTally(page)).total, {
+				timeout: 60_000,
+				message:
+					'the map must plot the three located cases and leave the fourth, '
+					+ 'which carries no geometry, off',
+			})
+			.toBe(before.total + 3)
+
+		// Leaflet's own container, without the `[class*="map"]` fallback that
+		// used to make this assertion unfailable, and the marker pane it fills
+		// once features arrive.
+		await expect(page.locator('.leaflet-container').first()).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(
+			page.locator('.leaflet-marker-icon, .marker-cluster').first(),
+			'a located case reaches the map as something drawn on it',
+		).toBeVisible({ timeout: 15_000 })
+
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
 	})
