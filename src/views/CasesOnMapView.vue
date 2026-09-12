@@ -241,10 +241,7 @@ export default {
 				// The options are `{ id, label }` objects, so the filter value
 				// is the option's id. Setting the option itself would stringify
 				// to `[object Object]` and match no case at all.
-				params.set(
-					'caseType',
-					this.filterCaseType.id ?? this.filterCaseType,
-				)
+				params.set('caseType', this.filterCaseType.id ?? this.filterCaseType)
 			}
 			if (this.filterStatus) {
 				params.set('status', this.filterStatus)

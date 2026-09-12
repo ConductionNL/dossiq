@@ -28,7 +28,9 @@ export function generateUrl(url, params) {
 	let path = url
 	if (params && typeof params === 'object') {
 		for (const [key, value] of Object.entries(params)) {
-			path = path.split('{' + key + '}').join(encodeURIComponent(String(value)))
+			path = path
+				.split('{' + key + '}')
+				.join(encodeURIComponent(String(value)))
 		}
 	}
 	return '/index.php' + path

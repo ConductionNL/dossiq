@@ -10,13 +10,16 @@
  * instead of 500, and a catch clause cannot be exercised by a unit test
  * without a class to throw.
  *
- * DELIBERATE DIVERGENCE. The real constructor's fourth argument is an
- * `Opis\JsonSchema\Errors\ValidationError` and its `getErrors()` returns one.
- * Opis is not in dossiq's dependency tree at all, so mirroring that signature
- * here would mean stubbing Opis as well to describe a value dossiq never
- * reads: it passes `getMessage()` through, which is OpenRegister's own
- * wording. Message, code and previous are mirrored verbatim; the errors
- * argument is not reproduced. Add it here the day dossiq reads it.
+ * THE SIGNATURE IS MIRRORED WHOLE, INCLUDING THE ARGUMENT DOSSIQ NEVER READS.
+ * It shipped without the fourth argument and without `getErrors()` on the
+ * reasoning that dossiq only passes `getMessage()` through, and
+ * StubApiDriftTest rejected it: a stub that declares a narrower API than the
+ * class it doubles is exactly the witness that goes green here and fatal
+ * against a real OpenRegister. `Opis\JsonSchema\Errors\ValidationError` is
+ * not in dossiq's dependency tree, but it does not have to be. The drift check
+ * parses source rather than reflecting, PHP resolves a parameter type only
+ * when a value is passed against it, and `null` satisfies a nullable type
+ * without resolving anything.
  *
  * It must extend Exception as the real one does -- the real class is NOT a
  * RuntimeException, which is why it fell past the `catch (RuntimeException)`
@@ -32,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\OpenRegister\Exception;
 
 use Exception;
+use Opis\JsonSchema\Errors\ValidationError;
 use Throwable;
 
 if (class_exists('\\OCA\\OpenRegister\\Exception\\ValidationException', false) === false) {
@@ -41,18 +45,37 @@ if (class_exists('\\OCA\\OpenRegister\\Exception\\ValidationException', false) =
     class ValidationException extends Exception {
 
         /**
+         * The structured validation errors, when the thrower had any.
+         *
+         * @var ValidationError|null
+         */
+        private readonly ?ValidationError $errors;
+
+        /**
          * Constructor.
          *
-         * @param string         $message  What failed, already naming the property.
-         * @param int            $code     The error code.
-         * @param Throwable|null $previous The exception that caused this one.
+         * @param string               $message  What failed, already naming the property.
+         * @param int                  $code     The error code.
+         * @param Throwable|null       $previous The exception that caused this one.
+         * @param ValidationError|null $errors   The validator's own error tree.
          */
         public function __construct(
             string $message,
             int $code = 0,
             ?Throwable $previous = null,
+            ?ValidationError $errors = null,
         ) {
+            $this->errors = $errors;
             parent::__construct(message: $message, code: $code, previous: $previous);
+        }
+
+        /**
+         * The validation errors.
+         *
+         * @return ValidationError|null The error tree, or null when none was supplied.
+         */
+        public function getErrors(): ?ValidationError {
+            return $this->errors;
         }
     }
 }

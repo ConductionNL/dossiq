@@ -48,6 +48,16 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen declared types, and
+ * the rule asks for twelve. This was already failing before the 4xx arm below
+ * was written, so it is not the exceptions: it is five injected collaborators,
+ * the framework's Controller / IRequest / JSONResponse / Http, the OCS
+ * forbidden exception, and the two error types the catch arms name. Reducing
+ * it means splitting admin checklist CRUD from per-case result submission into
+ * two controllers, which is a routing change and a different PR. Same
+ * suppression and same reasoning as ZrcController, DrcController,
+ * StufController and SubsidieController carry.
+ *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
 class InspectionChecklistController extends Controller {

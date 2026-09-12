@@ -149,10 +149,10 @@ export async function fetchCaseTypeOptions({
 	register = 'dossiq',
 	limit = 200,
 } = {}) {
-	const url = generateUrl(
-		'/apps/openregister/api/objects/{register}/{schema}',
-		{ register, schema: 'caseType' },
-	)
+	const url = generateUrl('/apps/openregister/api/objects/{register}/{schema}', {
+		register,
+		schema: 'caseType',
+	})
 	try {
 		const response = await axios.get(url, { params: { _limit: limit } })
 		const data = response.data || {}

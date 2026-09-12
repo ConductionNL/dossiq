@@ -37,8 +37,7 @@ vi.mock('../../src/services/casesOnMapApi.js', async (importOriginal) => ({
 
 const { default: CasesOnMapView } =
 	await import('../../src/views/CasesOnMapView.vue')
-const { fetchCaseTypeOptions } =
-	await import('../../src/services/casesOnMapApi.js')
+const { fetchCaseTypeOptions } = await import('../../src/services/casesOnMapApi.js')
 
 const CASE_TYPE_ROWS = [
 	{ '@self': { id: 'ct-handhaving' }, title: 'Handhaving' },
