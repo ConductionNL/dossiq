@@ -545,12 +545,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'extensionPossible' => '{{ extensionAllowed }}',
 				'verlengingstermijn' => '{{ extensionPeriod }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
-				// NOT json_encode'd, unlike referentieproces and gerelateerdeZaaktypen
-				// beside it. Those two are backed by string properties holding JSON
-				// text; productsOrServices is declared as an array, so encoding it
-				// made OpenRegister refuse the write with "should be type 'array or
-				// null' but is 'string'" and the whole ZTC setUp fell over behind it.
-				'productenOfDiensten' => '{{ productsOrServices }}',
+				// Encoded here and decoded by the `cast` below, because Twig renders
+				// a bare array as the literal string "Array". Unlike referentieproces
+				// and gerelateerdeZaaktypen beside it, this one is backed by an ARRAY
+				// property, so the JSON text is a transport step and never the stored
+				// value. See the reverseCast for the inbound half.
+				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
 				'selectielijstDossiqype' => '{{ selectionListProcessType }}',
 				'referentieproces' => '{{ referenceProcess | json_encode }}',
 				'responsible' => '{{ responsible }}',
@@ -580,7 +580,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'publicationRequired' => '{{ publicatieIndicatie }}',
 				'selectionListProcessType' => '{{ selectielijstDossiqype }}',
 				'responsible' => '{{ verantwoordelijke }}',
-				'productsOrServices' => '{{ productenOfDiensten }}',
+				'productsOrServices' => '{{ productenOfDiensten | json_encode }}',
 				'referenceProcess' => '{{ referentieproces | json_encode }}',
 				'relatedCaseTypes' => '{{ gerelateerdeZaaktypen | json_encode }}',
 				'versionDate' => '{{ versiedatum }}',
@@ -590,12 +590,18 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'suspensionAllowed' => 'bool',
 				'extensionAllowed' => 'bool',
 				'publicationRequired' => 'bool',
+				// The template above json_encodes it, because Twig cannot emit an
+				// array; this turns it back into one before the write. Without it
+				// OpenRegister refuses with "should be type 'array or null' but is
+				// 'string'" and the whole ZTC setUp falls over behind that one 400.
+				'productsOrServices' => 'jsonToArray',
 			],
 			'cast' => [
 				'concept' => 'bool',
 				'opschortingEnAanhoudingMogelijk' => 'bool',
 				'extensionPossible' => 'bool',
 				'publicatieIndicatie' => 'bool',
+				'productenOfDiensten' => 'jsonToArray',
 				'gerelateerdeZaaktypen' => 'jsonToArray',
 				'informatieobjecttypen' => 'jsonToArray',
 				'referentieproces' => 'jsonToArray',

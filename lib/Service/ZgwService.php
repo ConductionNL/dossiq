@@ -1336,13 +1336,25 @@ class ZgwService {
 
 				$englishData = array_merge($existingData, $patchData);
 
-				// Determine which English fields are stored as JSON strings
-				// (their reverse-mapping template uses json_encode).
+				// Determine which English fields are STORED as JSON strings.
+				//
+				// An encoding template is not enough to tell: Twig cannot emit an
+				// array, so a field backed by an ARRAY property is json_encode'd for
+				// transport and cast straight back by `reverseCast`. Reading the
+				// template alone put caseType.productsOrServices in this list and
+				// PATCH then wrote a string into an array property.
+				$reverseCast = ($mappingConfig['reverseCast'] ?? []);
 				$jsonStringFields = [];
 				foreach ($reverseMap as $engKey => $twigTpl) {
-					if (strpos($twigTpl, 'json_encode') !== false) {
-						$jsonStringFields[] = $engKey;
+					if (strpos($twigTpl, 'json_encode') === false) {
+						continue;
 					}
+
+					if (($reverseCast[$engKey] ?? '') === 'jsonToArray') {
+						continue;
+					}
+
+					$jsonStringFields[] = $engKey;
 				}
 
 				// Restore fields that were originally arrays, but skip fields

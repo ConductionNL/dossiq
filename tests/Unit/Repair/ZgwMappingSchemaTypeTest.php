@@ -35,12 +35,15 @@ use Psr\Log\LoggerInterface;
  * The ZGW mappings and the register schemas agree on which properties hold
  * JSON text.
  *
- * `referenceProcess`, `relatedCaseTypes` and `sourceDateArchiveProcedure` are
- * declared `"type": "string"` and hold JSON text, so their mappings encode.
- * `productsOrServices` is declared an array and its mapping encoded anyway,
- * which made `POST /api/zgw/catalogi/v1/zaaktypen` answer 400 "should be type
- * 'array or null' but is 'string'". The ZTC setUp creates a zaaktype first, so
- * that single 400 emptied the rest of both VNG contract collections.
+ * Twig cannot emit an array, so every list crosses the mapping as JSON text.
+ * What differs is where it lands. `referenceProcess`, `relatedCaseTypes` and
+ * `sourceDateArchiveProcedure` are declared `"type": "string"` and STORE that
+ * text. `productsOrServices` is declared an array, so its text is a transport
+ * step and a `reverseCast` of `jsonToArray` has to turn it back before the
+ * write. That cast was missing, so `POST /api/zgw/catalogi/v1/zaaktypen`
+ * answered 400 "should be type 'array or null' but is 'string'". The ZTC setUp
+ * creates a zaaktype first, so that single 400 emptied the rest of both VNG
+ * contract collections.
  *
  * @covers \OCA\Dossiq\Repair\LoadDefaultZgwMappings
  */
@@ -142,15 +145,25 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 
 				$checked++;
 				$declared = ($properties[$property]['type'] ?? null);
-				if ($declared !== 'string') {
-					$mismatched[] = sprintf(
-						'%s mapping encodes %s.%s, which the register declares as %s',
-						$mappingKey,
-						$slug,
-						$property,
-						var_export($declared, true)
-					);
+				if ($declared === 'string') {
+					continue;
 				}
+
+				// An array property is allowed to be encoded for transport, as
+				// long as something casts it back before the write.
+				if ($declared === 'array'
+					&& (($config['reverseCast'] ?? [])[$property] ?? '') === 'jsonToArray'
+				) {
+					continue;
+				}
+
+				$mismatched[] = sprintf(
+					'%s mapping encodes %s.%s, which the register declares as %s, and no reverseCast turns it back',
+					$mappingKey,
+					$slug,
+					$property,
+					var_export($declared, true)
+				);
 			}
 		}
 
@@ -176,27 +189,29 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testProductsOrServicesStaysAnArrayOnBothSides(): void {
+	public function testProductsOrServicesIsCastBackToAnArrayOnBothSides(): void {
 		$schemas = $this->registerSchemas();
 		$property = $schemas['caseType']['properties']['productsOrServices'] ?? [];
 
 		$this->assertSame('array', $property['type'] ?? null);
+		$this->assertSame(
+			['type' => 'string'],
+			$property['items'] ?? null,
+			"An entry is a Pipelinq product uuid or the product URL a ZGW client sent. "
+			. "A 'format' here refuses one of the two."
+		);
 
 		$mappings = $this->mappingsKeyedBySettingsKey();
-		$this->assertStringNotContainsString(
-			'json_encode',
-			(string)($mappings['caseType']['reverseMapping']['productsOrServices'] ?? ''),
-			'productsOrServices is an array property and must not be encoded on the way in.'
+
+		$this->assertSame(
+			'jsonToArray',
+			($mappings['caseType']['reverseCast']['productsOrServices'] ?? null),
+			'The inbound template encodes, so something has to decode before the write.'
 		);
-		$this->assertStringNotContainsString(
-			'json_encode',
-			(string)($mappings['caseType']['propertyMapping']['productenOfDiensten'] ?? ''),
-			'productsOrServices is an array property and must not be encoded on the way out.'
+		$this->assertSame(
+			'jsonToArray',
+			($mappings['caseType']['cast']['productenOfDiensten'] ?? null),
+			'The outbound template encodes, so ZGW would otherwise receive a string.'
 		);
-		$this->assertArrayNotHasKey(
-			'productenOfDiensten',
-			$mappings['caseType']['cast'] ?? [],
-			'Nothing encodes productenOfDiensten any more, so there is nothing to decode.'
-		);
-	}//end testProductsOrServicesStaysAnArrayOnBothSides()
+	}//end testProductsOrServicesIsCastBackToAnArrayOnBothSides()
 }//end class
