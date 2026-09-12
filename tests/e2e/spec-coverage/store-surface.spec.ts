@@ -104,9 +104,13 @@ test.describe('Store surface', () => {
 		await expect
 			.poll(
 				async () =>
-					(await entry.locator('.material-design-icon').evaluateAll(
-						(nodes) => nodes.map((node) => node.className),
-					)).join(' '),
+					(
+						await entry
+							.locator('.material-design-icon')
+							.evaluateAll((nodes) =>
+								nodes.map((node) => node.className),
+							)
+					).join(' '),
 				{
 					timeout: 30_000,
 					message:
