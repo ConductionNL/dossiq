@@ -426,9 +426,10 @@ test.describe('Case detail — the Communication tab', () => {
 			`the session must answer whoami, got ${whoami.status()}`,
 		).toBeTruthy()
 		const me = String((await whoami.json())?.ocs?.data?.id ?? '')
-		expect(me, 'whoami must name a user, or the assertion below is empty').not.toBe(
-			'',
-		)
+		expect(
+			me,
+			'whoami must name a user, or the assertion below is empty',
+		).not.toBe('')
 		expect(
 			String(stored.kccEmployeeId),
 			'`@me` must resolve to the account that logged the contact',

@@ -28,10 +28,7 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const webpackConfig = fs.readFileSync(
-	path.join(ROOT, 'webpack.config.js'),
-	'utf8',
-)
+const webpackConfig = fs.readFileSync(path.join(ROOT, 'webpack.config.js'), 'utf8')
 const mainSource = fs.readFileSync(path.join(ROOT, 'src', 'main.js'), 'utf8')
 
 /**
@@ -47,9 +44,7 @@ describe('the production build does not ship readable source', () => {
 	it('resolves a devtool that publishes no original source', () => {
 		// Read as source rather than by requiring the config: it pulls in
 		// @nextcloud/webpack-vue-config and does not evaluate standalone.
-		const assignment = webpackConfig.match(
-			/webpackConfig\.devtool\s*=\s*(.+)/,
-		)
+		const assignment = webpackConfig.match(/webpackConfig\.devtool\s*=\s*(.+)/)
 
 		// 🔴 GUARD ON THE GUARD. If the assignment is ever rewritten into an
 		// if/else or moved into the base config, this regex stops matching, and
