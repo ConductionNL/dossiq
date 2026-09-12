@@ -624,16 +624,19 @@ test.describe('A status brings its checklist with it', () => {
 
 		await openCase(page, cases.held)
 
+		// The stage is DISABLED and it says why, which is what the strip's
+		// disabled button did and what @conduction/nextcloud-vue 2.50 restored:
+		// CaseActionProvider publishes a refused move with `blocked: true` and
+		// the guard's own `failureMessage` as its description, and
+		// `stageAccess()` reads that flag rather than only asking whether any
+		// action reaches the stage.
+		await expect(stageControl(page, guarded.progress)).toHaveAttribute(
+			'aria-disabled',
+			'true',
+			{ timeout: 20_000 },
+		)
+
 		// The reason names the item, in whichever language the instance runs.
-		// CaseActionProvider publishes a refused move's `failureMessage` as the
-		// action's description, and the timeline prints it under the stage.
-		//
-		// ⚠️ The stage is not DISABLED, which the strip's button was:
-		// CnStagesWidget 2.49 does not read the published `blocked` flag, so a
-		// refused move is answered after the click rather than before it. The
-		// guard still holds, because the POST is re-validated, and the API half
-		// of that is the `the guard refuses the move posted straight to the
-		// API` test below.
 		const reason = stageReason(page, guarded.progress)
 		await expect(reason).toBeVisible({ timeout: 20_000 })
 		await expect(reason).toContainText(ITEM.onTime, { timeout: 20_000 })

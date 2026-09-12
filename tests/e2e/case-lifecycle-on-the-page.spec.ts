@@ -21,7 +21,9 @@
  * real property of the new surface, not a test problem, and it is written up
  * in the PR that made this change. The fixture below gives every guarded or
  * role-filtered move its own target status, so the claim each scenario makes
- * is still the claim this file measures.
+ * is still the claim this file measures. It also makes the blocked case
+ * visible at all: a refused move that shared a target with an open one would
+ * be hidden behind the open one whatever the widget does with `blocked`.
  *
  * WHY THE FIXTURE BUILDS ITS OWN STATE MACHINE rather than calling
  * `seedStateMachine`: that helper's workflow carries no role guard, its case
@@ -417,25 +419,30 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(reason).toBeVisible({ timeout: 15_000 })
 		await expect(reason).toContainText(REQUIRED_DOC)
 
-		// ⚠️ THE STAGE IS NOT DISABLED, AND THAT IS THE LIBRARY, NOT THE APP.
-		// CaseActionProvider publishes the refused move with `blocked: true`,
-		// and @conduction/nextcloud-vue 2.49's CnStagesWidget does not read
-		// that flag: `stageAccess()` disables a stage only when NO action
-		// reaches it. So the refusal arrives AFTER the click as an error rather
-		// than before it as a disabled control, which is a step back from the
-		// strip's disabled button. It still fails closed, because the POST is
-		// re-validated by the same engine that published the verdict. Asserting
-		// the behaviour that ships rather than the one that should: a test
-		// written against the intent would fail on every run and say nothing
-		// about the app.
+		// THE STAGE IS DISABLED, BEFORE THE CLICK. CaseActionProvider publishes
+		// the refused move with `blocked: true`, and @conduction/nextcloud-vue
+		// 2.50's `stageAccess()` reads that flag, so the refusal is drawn
+		// rather than met. 2.49 did not, and this assertion is the difference:
+		// a refused move used to render enabled and answer with an error after
+		// the post was attempted.
+		await expect(stageControl(page, statusHeld)).toHaveAttribute(
+			'aria-disabled',
+			'true',
+		)
+
+		// And a click on it SAYS something rather than doing nothing. A
+		// disabled control that answers silence reads as broken, which is why
+		// CnTimelineStages emits `stageBlocked` for a disabled stage instead of
+		// swallowing the click.
 		await stageControl(page, statusHeld).click()
-		await expect(page.getByTestId('cn-stages-widget-error')).toBeVisible({
-			timeout: 20_000,
-		})
+		const blocked = page.getByTestId('cn-stages-widget-blocked')
+		await expect(blocked).toBeVisible({ timeout: 20_000 })
+		await expect(blocked).toContainText(REQUIRED_DOC)
 
 		// And the case has not moved, which is what the refusal is FOR. A
-		// visible error over a case that moved anyway would pass every
-		// assertion above.
+		// disabled stage that posted anyway would pass every assertion above.
+		// `onStageClick` refuses a blocked move as well, so no path through the
+		// widget reaches the POST, and OpenRegister re-validates it regardless.
 		const unmoved = await showObject(request, 'case', cases.guard)
 		expect(unmoved.status).toBe(statusReceived)
 	})

@@ -97,7 +97,7 @@ offer a move the write refuses.
 - **AND** the user has role "Behandelaar"
 - **WHEN** the user opens the case page
 - **THEN** only the stage "Terugsturen" leads to SHALL be offered on the timeline
-- **AND** the stage "Goedkeuren" leads to SHALL be refused with a reason
+- **AND** the stage "Goedkeuren" leads to SHALL be refused with a reason, because a role-hidden transition is not published at all
 
 #### Scenario: No transitions available
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
@@ -166,8 +166,9 @@ A required item keeps the case where it is until its task is done. On every
 transition out of a status the engine SHALL evaluate a `statusChecklist`
 guard: each item of the current status with `required` true SHALL have a
 task on the case at status completed. A required item with no task SHALL
-count as not done. The failed guard SHALL name the item, and the case page
-SHALL show that reason beside the stage the refused move leads to.
+count as not done. The failed guard SHALL name the item; the case page SHALL
+refuse the stage the move leads to rather than offering it, and SHALL show that
+reason beside the stage.
 
 **Feature tier**: MVP
 
@@ -176,9 +177,8 @@ SHALL show that reason beside the stage the refused move leads to.
 
 - **GIVEN** a case in Intake whose required item Check the objection is on time has an open task
 - **WHEN** you open the case page
-- **THEN** the stage In behandeling SHALL carry the guard's reason
-- **AND** that reason SHALL read Checklist item not done: Check the objection is on time
-- **AND** the move SHALL be refused when it is attempted
+- **THEN** the stage In behandeling SHALL be refused, and say so before it is clicked
+- **AND** its reason SHALL read Checklist item not done: Check the objection is on time
 
 #### Scenario: Completing the task frees the case
 @e2e tests/e2e/checklist-per-status.spec.ts
@@ -295,8 +295,9 @@ asks only for the inputs it declares.
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** a transition whose guard requires a document the case lacks
-- **WHEN** the handler clicks the stage it leads to
-- **THEN** the timeline SHALL show the guard's message
+- **WHEN** the handler opens the case page
+- **THEN** the stage it leads to SHALL be refused, carrying the guard's message
+- **AND** clicking it SHALL answer with that message rather than doing nothing
 - **AND** the case's status SHALL be unchanged
 
 ### Requirement: Closing a case asks for the result (REQ-STE-12)
