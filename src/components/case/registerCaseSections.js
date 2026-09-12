@@ -9,8 +9,8 @@ import CaseSectionsWidget from './CaseSectionsWidget.vue'
  * one panel.
  *
  * WHY THE SHARED CATALOG AND NOT `registry.js`. A renderer resolves from
- * either map, so `dossier-tab` and `case-task-pane` sit in `registry.js` and
- * work. This one cannot. `CnDetailWidgetHost.isContainer` reads
+ * either map, so `case-task-pane` sits in `registry.js` and works. This one
+ * cannot. `CnDetailWidgetHost.isContainer` reads
  * `getWidgetTypeEntry()`, which is the SHARED catalog and only the shared
  * catalog, and only a container is handed `schemaObject`,
  * `integrationContext` and `cnRegistry`. Put this entry in `registry.js` and

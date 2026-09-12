@@ -74,6 +74,15 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
+// The Documents tab's upload dialog and bulk-action dialog
+// (documents-on-the-case task 2.2: the tab itself is now a `type:
+// "object-list"` CnObjectListWidget, resolved by the library, not a
+// registry widget entry — only the two modals it dispatches to are ours).
+// @spec openspec/specs/document-zaakdossier/spec.md
+// @spec openspec/specs/document-zaakdossier/spec.md
+import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -90,9 +99,6 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
-// The ZGW DRC case file, rendered as the CaseDetail Documents tab.
-// @spec openspec/specs/document-zaakdossier/spec.md
-import DossierTab from './views/cases/components/DossierTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -313,9 +319,9 @@ const registry = {
 	// --- The Related cases tab, with the follow-ups still to come
 	//     (case-actions-menu, row A26). ---
 	//
-	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the reason
-	// `case-task-pane` and `dossier-tab` are: this is a child of the
-	// `case-panels` tabs widget, and a tab child has no layout grid item and
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the same
+	// reason `case-task-pane` is: this is a child of the `case-panels` tabs
+	// widget, and a tab child has no layout grid item and
 	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
 	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
 	// key answers.
@@ -381,19 +387,26 @@ const registry = {
 	},
 
 	// --- The case file as a tab on the case page (documents-on-the-case). ---
+	// The tab itself is `type: "object-list"` now (documents-on-the-case
+	// task 2.2), a library built-in resolved by nextcloud-vue and not listed
+	// here -- only the two dialogs its `dropZone`/upload and `bulkActions`
+	// dispatch to are dossiq's own.
 	// @spec openspec/specs/document-zaakdossier/spec.md
-	'dossier-tab': {
-		// @custom-widget-ratchet exclude the interim rendering of a list whose
-		// six columns live on a REFERENCED informatieobject: CnObjectListWidget
-		// renders a $ref column as the raw reference, so an object-list over
-		// zaakinformatieobject would show six uuids where the case file belongs
-		// (documents-on-the-case task 2.2, placement rows A35/A36). This entry
-		// is deleted the moment the library renders a $ref column by a label
-		// field, and the e2e asserts column headers rather than widget type so
-		// the swap does not rewrite a test.
-		kind: 'widget',
-		component: DossierTab,
-		_note: 'CaseDetail Documents tab: the zaakinformatieobject rows of this case with title, type, status, direction, date and author, a drop zone that writes an informatieobject plus its join through the metadata dialog, and the version panel per row. Registered as a widget TYPE and not as a `type: "custom"` widget on purpose: a custom widget resolves through the page\'s `widget-<id>` slot, which CnDetailPage renders only for layout grid items, so inside a tab panel it renders nothing and reports nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against this registry (REQ-MVR-005), and binds `objectId` from the route so the tab knows its case on the first frame.',
+	// @spec openspec/specs/document-zaakdossier/spec.md
+	DocumentMetadataDialog: {
+		kind: 'modal',
+		component: DocumentMetadataDialog,
+		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+	},
+	BulkDocumentActionDialog: {
+		kind: 'modal',
+		component: BulkDocumentActionDialog,
+		_note: 'Mark final / Change confidentiality / Download ZIP on a Documents-tab selection, one dialog in three `mode`s (mirrors BulkTransitionDialog). Opened by the object-list `bulkActions` entries as `type: open-modal`; CnObjectListWidget merges `props.selectedIds` onto the declared props the same way a drop merges `props.files`.',
+	},
+	VersionHistoryPanel: {
+		kind: 'modal',
+		component: VersionHistoryPanel,
+		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the object-list `rowActions` Versions entry as `type: open-modal`; CnObjectListWidget merges `props.row` (the clicked zaakinformatieobject row, `informatieobject` inlined by `content.extend`) onto the declared props (nextcloud-vue#1117) -- an open-modal row action otherwise carries no per-click information at all. Self-sufficient: reads the informatieobject off `row.informatieobject` and the signed-in user via `getCurrentUser()`, since there is no parent DossierTab any more to pass either down.',
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---

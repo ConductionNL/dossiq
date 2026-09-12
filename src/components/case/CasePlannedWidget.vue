@@ -18,7 +18,7 @@
   dispatches its children through CnDetailWidgetHost, which picks a renderer
   from `cnRegistry[widget.type]` and, failing that, renders NOTHING and logs
   nothing. So the manifest names the registry key as the TYPE, exactly as
-  `dossier-tab` and `case-task-pane` beside it do.
+  `case-task-pane` beside it does.
 
   Deleted the day OpenRegister's `related` widget can include scheduled flows
   by subject (tasks 3.3).
