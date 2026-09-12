@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <polygon points="256,26 455.19,141 455.19,371 256,486 56.81,371 56.81,141" fill="#4376FC"/>
-  <g transform="translate(136, 136) scale(10)" fill="#ffffff">
-    <path d="M5,3H19A2,2,0,0,1,21,5V19A2,2,0,0,1,19,21H5A2,2,0,0,1,3,19V5A2,2,0,0,1,5,3M5,5V9H19V5H5M5,11V19H9V11H5M11,11V19H19V11H11"/>
-    <circle cx="7" cy="14" r="1.5"/>
-    <circle cx="7" cy="18" r="1.5"/>
-    <rect x="13" y="13" width="4.5" height="1.5" rx="0.5"/>
-    <rect x="13" y="17" width="3" height="1.5" rx="0.5"/>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-86.6 -100 173.2 200" role="img" aria-label="Conduction avatar">
+  <title>Conduction avatar, drawn as three pointy-top polygons</title>
+  <!-- viewBox is the bounding box of the outer hex (R=100), no
+       internal padding. Three polygons in the same drawing
+       vocabulary as the watermark hexes:
+         1. Outer hex      cobalt, the frame
+         2. Inner hex      white, the empty interior (so the
+                           logo reads correctly on any ground)
+         3. C-shape        cobalt, sits inside the inner hex -->
+  <polygon fill="#21468B" points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"/>
+  <polygon fill="#FFFFFF" points="0,-74.5 64.5,-37.3 64.5,37.3 0,74.5 -64.5,37.3 -64.5,-37.3"/>
+  <polygon fill="#21468B" points="-0.2,-25.2 20.1,-13.5 43.7,-27.1 -0.2,-52.4 -45.6,-26.2 -45.6,26.2 -0.2,52.4 43.7,27.1 20.1,13.5 -0.2,25.2 -22,12.6 -22,-12.6"/>
 </svg>
