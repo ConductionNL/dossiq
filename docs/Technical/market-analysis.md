@@ -1,12 +1,12 @@
 # Market analysis
 
-This page positions dossiq against the systems a municipality or an SMB would otherwise buy. It was first written before any competitor had been installed, and it read like it: every landscape table was a set of claims from feature pages. Since September 2026 the numbers on this page are measured. Twenty-two systems sit in the parity ledger beside dossiq, sixteen of them installed and driven, and every score below is a `yes` count on the 180 domain-neutral rows, as of ledger v6 (2026-09-13). The method, the counting rule, the statutory split and the full ranking are on [competitor parity, September 2026](../research/competitor-parity-2026-09.md); the links behind every cell are on [competitor sources](../research/competitor-sources.md).
+This page positions dossiq against the systems a municipality or an SMB would otherwise buy. It was first written before any competitor had been installed, and it read like it: every landscape table was a set of claims from feature pages. Since September 2026 the numbers on this page are measured. Twenty-eight columns stand in the parity ledger, twenty-four of them installed and driven, and every score below is a `yes` count on the 180 domain-neutral rows, as of ledger v7 plus batch 11 (2026-09-13). The method, the counting rule, the statutory split and the full ranking are on [competitor parity, September 2026](../research/competitor-parity-2026-09.md); the links behind every cell are on [competitor sources](../research/competitor-sources.md).
 
 ## Summary
 
 Case management is coordination: tracking work, assigning it, meeting deadlines, managing documents and recording decisions. Nextcloud already provides tasks, files, chat, calendar and activity, and dossiq orchestrates those rather than rebuilding them. That is still the positioning, and the driving confirmed the part of it that can be measured: Deck, a kanban board on the same host, passes seven of the 23 document rows through one fact, that an attachment is a file in Files, and dossiq gets six of those on the same host for the same price.
 
-What the driving refuted is the claim that nothing else occupies the space. OpenCase, a Danish municipal case system on Nextcloud, scores 58 of 180. Two forks of a German service desk, OTOBO and Znuny, and the project module of a Belgian ERP, Odoo, score 78, 73 and 78 against dossiq's 71. dossiq is sixth of twenty driven columns on the comparable half, behind xxllnc Zaken at 125 and GZAC at 82 in its own family. Where dossiq leads is where the law is: 6 of 7 decision rows, 8 of 10 deadline rows, and 13 statutory `yes` answers that no non-Dutch system scores at all.
+What the driving refuted is the claim that nothing else occupies the space. OpenCase, a Danish municipal case system on Nextcloud, scores 58 of 180. Two forks of a German service desk, OTOBO and Znuny, and the project module of a Belgian ERP, Odoo, score 78, 73 and 78 against dossiq's 71. Frappe Helpdesk passes us by a single row, 72. dossiq is seventh of twenty-four driven columns on the comparable half, behind xxllnc Zaken at 125 and GZAC at 82 in its own family. Where dossiq leads is where the law is: 6 of 7 decision rows, 8 of 10 deadline rows, and 13 statutory `yes` answers that no non-Dutch system scores at all.
 
 ## What changed since July
 
@@ -17,13 +17,14 @@ The claims this page made before the driving, and what the corpus found. Rows ci
 | "No case management solution exists in Nextcloud." | OpenCase 1.1.0 (Lamotech) is a municipal case system on Nextcloud, driven in round 2: 62 yes of 206, 58 of 180. Deck scores 37 of 180 (`_round4/compare/eighteen-system-tally.md`). | The Nextcloud ecosystem table below, with both columns. |
 | "Nextcloud Deck: Kanban board for tasks, not case management." | Measured at 37 of 180, level with Kanboard, and the only non-Dutch column to pass seven document rows (`nextcloud-deck/round4/open-core.md`). A card is not a case, which is eleven honest `no` answers. | The same table. |
 | "Jira Service Management: developer-friendly ITSM, not case management." | Rated from its documentation at 83 of 180, above every driven non-Dutch column, graded `documented, not driven` and printed as an upper bound (`_round4/compare/findings-batch8.md`). | The issue and ticket family table. |
+| Redmine as the open-source comparison a buyer will name. | A buyer comparing dossiq to "Redmine" is quite likely being shown Easy Redmine 16.0, rated from documents at 86 of 180. Its core is Redmine under GPL-2.0; everything Easy wrote sits beside it under a commercial licence the cloud buyer may not even read (`_round4/compare/open-core-batch10.md`). | The issue and ticket family table, and the eleventh open-core shape. |
 | "Valtimo/GZAC: proprietary core (Ritense)." | The monorepo is public under EUPL-1.2 and was driven: 86 of 206, 82 of 180. Open core only partly: two closed-published npm packages in the release build (`valtimo/round2/`). | The Dutch government table. |
 | "OpenZaak: API-only, no end-user UI." | OpenZaak itself was not driven. Its municipal frontend, Dimpact ZAC, was read: 69 yes, 61 partial, 76 no on 206, and it owns no data, so 26 of its 76 misses cite an external component (`zac/round3/`). | The Dutch government table, ZAC as a column with its caveat. |
 | "No CRM-to-case flow: no competitor has native request-to-case conversion with a built-in CRM." | Row 1.3, create a case from a contact record: xxllnc Zaken `yes`, dossiq `partial`, owner dossiq (`_gaps/gap-register.md`). Odoo ties the top of the non-Dutch corpus from a platform whose CRM sits in the same tree. | Withdrawn. The row is a dossiq gap. |
 | "Federated cross-org cases: no case system has this. Only Dossiq can share case data across organizations." | Never measured as a matrix row. | Withdrawn as a superlative; kept below as a design claim, marked unmeasured. |
 | "Calendar-native deadlines" as an advantage. | The deadline engine is the largest measured defect: 30.4% of the terms dossiq stores land on a Saturday, Sunday or Dutch holiday, and nothing rolls them to the next working day as the Algemene termijnenwet requires (`_round4/compare/deadline-engines.md`). OpenProject has the best engine in the corpus. | The risks table, first row. |
 | "Talk rooms per case: no BPM engine has this." | Not measured. What round 2 did measure: no competitor composes another product into the case page, which dossiq does with mail, appointments, decisions and hours as leaf tabs (`_round2/compare/M3-integrations.md`). | Replaced by the measured sentence. |
-| "Heavyweight deployment: BPM engines require Java/Spring stacks." | The three non-Dutch systems above dossiq are Perl (OTOBO, Znuny) and Python (Odoo). Deployment weight decided nothing in the ranking. | Dropped from the gap table. |
+| "Heavyweight deployment: BPM engines require Java/Spring stacks." | The four non-Dutch systems above dossiq are Perl (OTOBO, Znuny), Python (Odoo) and Python on a low-code framework (Frappe Helpdesk). Deployment weight decided nothing in the ranking. | Dropped from the gap table. |
 | "~40-50% infrastructure free." | An unmeasured percentage. The measured version is Deck's seven document rows through Files, six of which dossiq gets on the same host (`_round4/compare/fourteen-system-tally.md`). | The measured sentence. |
 | Risk: "Feature gap vs enterprise BPM: high." | Camunda and Flowable were never driven. The measured risk is elsewhere: two help-desk forks and an ERP's project module outscore dossiq on the comparable half, and dossiq is the only `no` in the ledger on watchers (13.18). | The risks table. |
 | Enterprise SaaS prices per user per month. | Unverified marketing figures. ServiceNow is `docs only` in the ledger and was never rated; Monday.com, Power Automate and Kissflow are not in the ledger at all. | Removed. |
@@ -44,7 +45,7 @@ Scores are `yes` of the 180 domain-neutral rows, with the combined 206-row figur
 
 ### Dutch government (zaakgericht werken)
 
-Round 2 drove four Dutch systems against the 206-row matrix (`_round2/compare/M1-functionality.md`); round 3 read Dimpact ZAC against the same rows. The 180-row figures are from `_round4/compare/eighteen-system-tally.md`.
+Round 2 drove four Dutch systems against the 206-row matrix (`_round2/compare/M1-functionality.md`); round 3 read Dimpact ZAC against the same rows. The 180-row figures are from `_round4/compare/twenty-four-system-tally.md`.
 
 | system | class | 180 | 206 (yes / partial / no) | open core | what was found |
 |---|---|---|---|---|---|
@@ -61,13 +62,15 @@ Where dossiq is ahead of all three, measured in the round 2 files (`data.strengt
 
 ### Issue and ticket systems, the third family
 
-Set by Ruben on 2026-09-12: issue trackers, help desks and boards are a third competitor family, closer to dossiq in daily use than a BPM engine. Sixteen were installed and driven and two rated from documents (`_round4/compare/README.md`). The open-core column names the shape from the ten the round found; the result page explains each.
+Set by Ruben on 2026-09-12: issue trackers, help desks and boards are a third competitor family, closer to dossiq in daily use than a BPM engine. Twenty were installed and driven and four rated from documents (`_round4/compare/README.md`). The open-core column names the shape from the twelve the round found; the result page explains each.
 
 | system | family | licence | class | 180 | open core |
 |---|---|---|---|---|---|
 | OTOBO 11.0.17 | ticket | GPL-3.0 | driven | **78** | no: 45 free packages, none priced; four core capabilities ship switched off |
 | Odoo 19.0 Community | project management | LGPL-3.0 | driven | **78** | yes, by absence with a label: 21 `to_buy` records and 45 upgrade badges for a private Enterprise tree |
 | Znuny 7.3.6 | ticket | AGPL-3.0 and GPL | driven | **73** | no: 37 vendor packages, none priced |
+| Frappe Helpdesk 1.30.1 | ticket | AGPL-3.0 | driven | **72** | no: AGPL across both repositories, zero hits for a key or a paywall; a thin app on a thick framework |
+| Request Tracker 5.0.10 | ticket | GPL-2.0 | driven | 65 | no: nothing withheld, the extensions on CPAN under the same licence, the vendor selling hours and hosting |
 | iTop 3.2.3 | ITSM and CMDB | AGPL-3.0 | driven | 58 | yes, as a catalogue: 33 closed extensions on the store, none in the tree |
 | GLPI 11.0.8 | ITSM help desk | GPL-3.0 | driven | 56 | no |
 | osTicket 1.18.4 | ticket | GPL-2.0 | driven | 55 | no; eight free capabilities in a separate, stale repository |
@@ -78,15 +81,19 @@ Set by Ruben on 2026-09-12: issue trackers, help desks and boards are a third co
 | Kanboard 1.2.54 | kanban | MIT | driven | 37 | no: 163 third-party plugins, none priced in the directory |
 | GitLab CE 19.3.2 | forge issues | MIT | driven | 36 | yes, by subtraction: the paid code removed at build time, 1,616 empty seams |
 | Vikunja 2.6.0 | task | AGPL-3.0 | driven | 35 | yes, a gate that hides: three paid features in the AGPL tree answering 404 by design |
+| Taiga 6.10.2 | agile project management | MPL-2.0 | driven | 32 | no, and not a shape: zero hits, the vendor sells hosting of this code. Telemetry is on by default and sends the instance's own URL nightly |
 | Forgejo 16.0.4 | forge issues | GPL-3.0 | driven | 23 | no; a closed derivative is unavailable by design |
+| Gitea 1.27.3 | forge issues | MIT | driven | 23 | no gate anywhere, and the twelfth shape: the steward sells Gitea Enterprise and Gitea Cloud, with no trace of either in the tree |
 | Plane Community 1.4.2 | issue | AGPL-3.0 | driven | 22 | yes: the paid features are absent, only the seams remain |
 | FreeScout 1.8.240 | ticket | AGPL-3.0 | driven | 22 | yes: 72 of 75 modules priced, the paywall through the free half |
+| Easy Redmine 16.0 | issue and project | GPL-2.0 core, ESCLv2.0 layer | documented | 86, upper bound | yes, the eleventh shape: a source-available proprietary layer on a GPL core, sold as open source; 22 cells name the Platform plan and 9 an add-on |
 | Jira Service Management Cloud | ITSM | proprietary | documented | 83, upper bound | yes, by plan: a plan table, 16 cells Premium, 8 Enterprise |
 | YouTrack 2026.2 | issue | proprietary | documented | 78, upper bound | no: nothing withheld above ten users and three agents |
+| Jira Software Data Center 11.3 | issue | proprietary | documented | 64, upper bound | no above the user tier; the service half is a second licence, and sales to new customers ended on 2026-03-30 |
 
-Running as of ledger v6: batch 9 drives Request Tracker and Frappe Helpdesk; batch 10 rates Jira Software Data Center and Easy8 from documents. Not yet driven: Gitea, Huly, Taiga, Tuleap.
+Gitea and Forgejo are one product for every question in the matrix: 23 yes and 48 partial each, and 0 of 206 rows differing. Batch 12 is running, Huly and Tuleap, and closes the undriven set.
 
-Three things the family says as a whole. A product built around a team's own work has no party, no document record, no decision and no term engine, which is 53 rows between four sections; the help desks do better than the boards because a help desk is built around somebody outside the organisation. Every non-Dutch column scores 0 of 7 on decisions. And copyleft proves nothing about what you can deploy: thirteen of the sixteen driven systems are GPL, LGPL or AGPL, and among them is every open-core shape found in a tree.
+Three things the family says as a whole. A product built around a team's own work has no party, no document record, no decision and no term engine, which is 53 rows between four sections; the help desks do better than the boards because a help desk is built around somebody outside the organisation. Every non-Dutch column scores 0 of 7 on decisions, driven and documented alike. And copyleft proves nothing about what you can deploy: most of these trees are GPL, LGPL or AGPL, and among them sits every open-core shape a grep has found.
 
 ### BPM engines and case management platforms
 
@@ -331,11 +338,11 @@ Every line here names a row or a file. The full per-area table is on the [result
 
 | gap | evidence |
 |---|---|
-| Decisions | 0 of 7 in every non-Dutch column, sixteen driven and two documented. The nearest object is OpenProject's `MeetingOutcome` with a `decision` kind and no approver, quorum, number, effective date or publication. |
-| Dutch statutory rows | 26 rows, eighteen non-Dutch systems, 468 cells, zero `yes`. Both closed marketplaces searched by name: 0 apps for ZGW. |
-| Documents | The weakest area of the whole non-Dutch corpus. Znuny and GitLab share two `yes` answers over 46 document rows; Kanboard and Vikunja the same. |
-| Easter | Nothing in eighteen systems computes it. dossiq does, in `lib/Service/WorkingDayCalculator.php`. |
-| The edition you can deploy | Pending row 11.27. Ten open-core shapes across sixteen driven systems; dossiq passes because there is no paid half. |
+| Decisions | 0 of 7 in every non-Dutch column, twenty driven and four documented. The nearest object is OpenProject's `MeetingOutcome` with a `decision` kind and no approver, quorum, number, effective date or publication. |
+| Dutch statutory rows | 26 rows, twenty-four non-Dutch systems, 624 cells, zero `yes`. Every catalogue searched by name: 0 apps for ZGW, and none of the seven names on Easy8's 1,434 pages. |
+| Documents | The weakest area of the whole non-Dutch corpus. Znuny and GitLab share two `yes` answers over 46 document rows; Kanboard and Vikunja the same; Frappe Helpdesk, Request Tracker, Gitea and Taiga score one each of 23. |
+| Easter | Nothing in twenty-four non-Dutch columns computes it. Frappe Helpdesk and Request Tracker agreed to the minute on a Dutch year and both landed a 2027 term on Tweede Paasdag. dossiq computes it, in `lib/Service/WorkingDayCalculator.php`. |
+| The edition you can deploy | Pending row 11.27. Twelve open-core shapes across the corpus; dossiq passes because there is no paid half. |
 | Overdue lists | OpenCase and GZAC cannot list overdue cases at all. |
 
 ### Where dossiq is behind, measured
@@ -350,10 +357,11 @@ Every line here names a row or a file. The full per-area table is on the [result
 | 13.17 | Substituted work reaches My work | `fetchSubstitutedWork()` has no call site. |
 | 13.23 | A right on a parent case applies to its sub-cases | Vikunja, measured three levels down; `CaseAccessGuard.php` never reads `parentCase`. |
 | 6.20 | Outbound webhooks are signed | Vikunja; dossiq verifies inbound signatures and signs nothing outbound. |
-| 3.22 | A stage holds a capacity and refuses work past it | Vikunja with a 412; no Dutch system in the corpus. |
+| 3.22 | A stage holds a capacity and refuses work past it | Vikunja with a 412; no Dutch system in the corpus. Taiga stores a WIP limit and enforces it only in a CSS class. |
+| 8.22 | Every write path to a date field agrees, and one date is shown | Taiga, whose `due_date` is a date and not a timestamp. Nine dossiq controllers can set a case date and the only normaliser is private to one caller. |
 | sections 4, 9, 3, 11 | Documents 7 of 23, search 4 of 12, tasks 6 of 19, configuration 9 of 24 | xxllnc, GZAC, OTOBO, Odoo. |
 
-The gap register puts these and the rest into 163 gaps with one owner each, 38 on dossiq and 70 on openregister; the [result page](../research/competitor-parity-2026-09.md#the-gap-register-counted-by-owner) has the counts by owner, and the [umbrella](https://github.com/ConductionNL/dossiq/pull/2643) the 33 dossiq changes.
+The gap register puts these and the rest into 158 gaps with one owner each, 32 on dossiq and 68 on openregister; the [result page](../research/competitor-parity-2026-09.md#the-gap-register-counted-by-owner) has the counts by owner, and the umbrella the dossiq changes, [33 at first](https://github.com/ConductionNL/dossiq/pull/2643) and [five more](https://github.com/ConductionNL/dossiq/pull/2684) for the gaps the rebuilt register still listed.
 
 ### Nextcloud-native advantages, measured and unmeasured
 
@@ -362,7 +370,7 @@ The gap register puts these and the rest into 163 gaps with one owner each, 38 o
 | Leaf tabs from other apps inside the case page (mail, appointments, decisions, hours) | Measured in round 2: no competitor composes another product into the case page. |
 | Document capabilities through Files (versions, expiring shares, lock, trash, preview, file manager) | Measured through Deck: six rows dossiq gets on the same host; row 4.23 says which already follow. |
 | Case creation in four clicks | Measured: fifteen in xxllnc Zaken, twelve in GZAC. |
-| The calendar as an OpenRegister schema, with Easter computed | Measured against eighteen systems. |
+| The calendar as an OpenRegister schema, with Easter computed | Measured against twenty-four non-Dutch columns. |
 | Federated cross-organisation cases | Design claim, not a matrix row. Unmeasured. |
 | Talk room per case, air-gapped deployment, data reuse across apps on OpenRegister | Design claims. Unmeasured. |
 
@@ -384,7 +392,7 @@ The gap register puts these and the rest into 163 gaps with one owner each, 38 o
 |---|---|---|
 | Small municipalities | Simple, affordable, NL-compliant | Spreadsheets and shared drives, or xxllnc Zaken at 125 of 180 |
 | Government teams | ZGW-ready, sovereign, NL Design | Open Zaak with ZAC, which owns no data of its own |
-| SMB operations | Lightweight, on the workspace they have | Odoo at 78, OTOBO or Znuny at 78 and 73 |
+| SMB operations | Lightweight, on the workspace they have | Odoo at 78, OTOBO or Znuny at 78 and 73, Frappe Helpdesk at 72 |
 | NGOs and nonprofits | Free, self-hosted, collaboration first | Kanboard or Vikunja at 37 and 35 |
 
 ### Risks, measured
@@ -392,11 +400,11 @@ The gap register puts these and the rest into 163 gaps with one owner each, 38 o
 | risk | evidence | mitigation |
 |---|---|---|
 | Statutory terms land on non-working days | 30.4% of stored terms, `_round4/compare/deadline-engines.md`; the Atw roll is absent | First of the five to build: the administered working calendar with the roll and recompute, `terms-on-the-engine-calendar` and openregister `working-calendar-admin` |
-| Non-Dutch products outscore dossiq on the comparable half | OTOBO 78, Odoo 78, Znuny 73 against 71; JSM 83 as a documented ceiling | The gap register: 163 gaps, 110 of them size S, 98 covered by a spec or change already |
+| Non-Dutch products outscore dossiq on the comparable half | OTOBO 78, Odoo 78, Znuny 73 and Frappe Helpdesk 72 against 71; Easy Redmine 86 and JSM 83 as documented ceilings | The gap register: 158 gaps, 103 of them size S, 141 carried by a spec or an open change |
 | Rows dossiq alone fails | 13.18 watchers, 6.15 internal versus public | Second and third of the five to build |
 | Refusals that look like absence | 47 catch-and-return-null sites | `refusals-carry-a-status`, fourth of the five |
 | Schemas registered ahead of the feature | 27 schemas with no surface anywhere on the tree | `no-schema-without-a-surface`, a structural test |
-| OpenRegister dependency | 70 of 163 gaps are owned by openregister | The [openregister umbrella](https://github.com/ConductionNL/openregister/pull/3688) carries them; dossiq keeps a half on each |
+| OpenRegister dependency | 68 of 158 gaps are owned by openregister | The [openregister umbrella](https://github.com/ConductionNL/openregister/pull/3688) carries them; dossiq keeps a half on each |
 | Documents are the largest area gap against the Dutch rivals | 7 of 23 against xxllnc's 18 and OpenCase's 13 | `documents-on-the-case` and the Files rows Deck already passes on the same host |
 
 ## 5. Recommended feature set

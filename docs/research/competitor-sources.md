@@ -1,6 +1,6 @@
 # Competitor sources
 
-One entry per system in the parity ledger, so a reader of [competitor parity, September 2026](competitor-parity-2026-09.md) can open the code, the documentation, the API reference and the issue tracker behind a cell, and the corpus directory that holds the column. Generated from the ledger's sources register (`data.family.sources` in `procest/_ledger/parity-ledger.html`, `ConductionNL/market-intelligence`, `development`, ledger v6). Every link was fetched on 2026-09-13; a link marked *to verify* did not answer a plain fetch that day, and the note says what it answered instead.
+One entry per system in the parity ledger, so a reader of [competitor parity, September 2026](competitor-parity-2026-09.md) can open the code, the documentation, the API reference and the issue tracker behind a cell, and the corpus directory that holds the column. Generated from the ledger's sources register (`data.family.sources` in `procest/_ledger/parity-ledger.html`, `ConductionNL/market-intelligence`, `development`, ledger v7). Every link was fetched on 2026-09-13; a link marked *to verify* did not answer a plain fetch that day, and the note says what it answered instead. Two entries, Gitea and Taiga, come from their own corpus READMEs rather than the register, because batch 11 is merged in the corpus and not folded into the ledger yet; each says so in its note.
 
 Corpus paths are relative to the `market-intelligence` repository. A column's ratings live in the system's `round<N>/` directory; the cross-system files live in `procest/_round<N>/compare/`.
 
@@ -316,6 +316,66 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 | corpus | procest/vikunja/round4/ and procest/_round4/compare/ (PR 115) |
 | note | `kolaente.dev/vikunja/vikunja` asks for a sign-in; GitHub is the public copy. Driven in batch 7 beside Kanboard on port 8092. Every registered user gets an Inbox that takes the next project id, so probe the project you made, not project 2. A task `POST` and the user settings `POST` are full replaces. The image runs as uid 1000 and a fresh volume is root's; the log names the fix. |
 
+### Request Tracker
+
+| | |
+|---|---|
+| version read | 5.0.10, from `netsandbox/request-tracker:5.0`, which builds the vendor's signed tarball, on port 8097; no vendor image exists. Source read at the 5.0.10 tree the container reports |
+| family | ticket |
+| licence | GPL-2.0 |
+| open core | no: nothing withheld. `COPYING` is the GPL version 2 and every file carries Best Practical's tagged block; six entitlement greps over `lib share/html etc` hit ten files, every one the GPL header, a dashboard subscription or the vendor's address. No option hides a feature for money, and assets, articles and approvals sit behind rights like every other screen. Nothing phones home: a headless run through five pages made requests to `localhost` only. The vendor publishes its own extensions on CPAN under the same licence |
+| code | [bestpractical/rt](https://github.com/bestpractical/rt) |
+| documentation | [documentation, resolves to 6.0.3](https://docs.bestpractical.com/rt/latest/) |
+| API | [REST2](https://docs.bestpractical.com/rt/latest/RT/REST2.html) |
+| issue tracker | [GitHub issues](https://github.com/bestpractical/rt/issues) |
+| corpus | procest/request-tracker/round4/ (M1-column.md, lifecycles-and-scrips.md, journeys.md, open-core.md, install.md) and procest/_round4/compare/ (PR 120) |
+| note | Driven in batch 9 beside Frappe Helpdesk, sequentially, each torn down before the next. `issues.bestpractical.com` redirects to a login page, so GitHub is the tracker read. The column rests on `lib/RT/SLA.pm`, `lib/RT/Lifecycle.pm`, `lib/RT/Ticket.pm` and `etc/RT_Config.pm.in`. Two traps a buyer will meet: every queue ships `SLADisabled` 1, so the SLA scrips set nothing until it is cleared, and a configuration saved through the editor reached one of five web workers until a restart. |
+
+### Frappe Helpdesk
+
+| | |
+|---|---|
+| version read | 1.30.1 on Frappe 15.120.1, built from the vendor's own `docker/` recipe with the versions pinned, one bench build of twenty minutes, on ports 8095 and 8096; no published Helpdesk image exists |
+| family | ticket |
+| licence | AGPL-3.0 |
+| open core | no: nothing withheld. Helpdesk and the framework under it are AGPL-3 (`helpdesk/LICENSE`, `hooks.py`, `frappe/LICENSE`), and `licen[cs]e.?key|entitlement|paywall|premium` returns 0 files over `helpdesk desk/src` and 0 over the framework. What the tree knows about Frappe Cloud is six lines: `on_frappecloud()` matches the site's domain against four of the vendor's and draws one sidebar link. The SLA engine, telephony and the knowledge base are AGPL in the same repositories. What decides the score is a second door rather than a licence: the framework's desk at `/app` renders every DocType with workflow, field-level permissions, sharing, reminders, printing and a map view, and Helpdesk's own UI draws none of it |
+| code | [frappe/helpdesk on GitHub](https://github.com/frappe/helpdesk); [frappe/frappe, the framework the column counts a third of its cells against](https://github.com/frappe/frappe) |
+| documentation | [Helpdesk documentation](https://docs.frappe.io/helpdesk); [Frappe Framework documentation](https://docs.frappe.io/framework) |
+| API | [the framework REST API, which is what Helpdesk exposes](https://docs.frappe.io/framework/user/en/api/rest) |
+| issue tracker | [GitHub issues](https://github.com/frappe/helpdesk/issues) |
+| corpus | procest/frappe-helpdesk/round4/ (M1-column.md, journeys.md, open-core.md, install.md, the SLA probes) and procest/_round4/compare/ (PR 120) |
+| note | Driven in batch 9 beside Request Tracker; the first build died with the host's Docker daemon and was rebuilt. The column rests on `hd_service_level_agreement.py`, `hd_service_holiday_list.py`, `hd_ticket.py` and the framework's `workflow`, `webhook` and `user_permission` doctypes. Three traps a buyer will meet: a fresh site has no `time_zone` and the framework counts in `Asia/Kolkata` until one is set, the browser fetches the vendor's telemetry client from `pulse.m.frappe.cloud` on every page with telemetry off, and search answers 500 until the scheduled index job has run. |
+
+### Gitea
+
+| | |
+|---|---|
+| version read | 1.27.3, one container on SQLite at `localhost:8091`; source census against a shallow clone at tag `v1.27.3`, commit `146cc3ee`, the release the container ran |
+| family | forge issues |
+| licence | MIT, on 3,010 of 3,013 Go files |
+| open core | no, nothing gated, and it is still a shape. Every open-core grep returns zero across `.go`, `.tmpl`, `.ini`, `.ts` and `.vue`: the single `enterprise` hit is a comment at `modules/setting/ui.go:172`, and the eighteen `subscription` hits are the repository watch API. Gitea Ltd sells Gitea Enterprise and Gitea Cloud, and the open tree holds no trace of either, which is the twelfth shape: the steward of the open core sells a closed product built on it |
+| code | [go-gitea/gitea](https://github.com/go-gitea/gitea) |
+| documentation | [documentation](https://docs.gitea.com/) |
+| API | [API reference](https://docs.gitea.com/api/) |
+| issue tracker | [GitHub issues](https://github.com/go-gitea/gitea/issues) |
+| corpus | procest/gitea/round4/ (M1-column.md, gitea-vs-forgejo.md, open-core.md, code-census.md, screenshots/) and procest/_round4/compare/ (PR 124) |
+| note | Driven in batch 11 and not in the ledger's sources register yet; this entry is from `procest/gitea/round4/README.md`. It answers all 206 rows exactly as Forgejo does, so the interesting file is the divergence table rather than the column. Three API endpoints write `issue.due_date` and store three instants for one date. |
+
+### Taiga
+
+| | |
+|---|---|
+| version read | 6.10.2, the official nine-container `taiga-docker` stack at `localhost:8093`; source census against a clone of `taiga-back` at commit `eb0803da`, byte-identical to the running build on the spot-checked files |
+| family | agile project management |
+| licence | MPL-2.0, on all 931 Python files |
+| open core | no, and not a shape: every open-core grep returns zero, and Kaleidos sells hosting of this same code. What a buyer meets instead is telemetry, on by default: a persistent instance UUID, the version, the instance's own URL and 46 measured properties to `https://telemetry.taiga.io/` every night, `ENABLE_TELEMETRY = True` read back from the running instance |
+| code | [taigaio/taiga-back](https://github.com/taigaio/taiga-back) |
+| documentation | [documentation](https://docs.taiga.io/) |
+| API | [REST API](https://docs.taiga.io/api.html) |
+| issue tracker | [GitHub issues](https://github.com/taigaio/taiga-back/issues); [tree.taiga.io](https://tree.taiga.io/project/taiga/issues) |
+| corpus | procest/taiga/round4/ (M1-column.md, agile-objects.md, open-core.md, screenshots/) and procest/_round4/compare/ (PR 124) |
+| note | Driven in batch 11 and not in the ledger's sources register yet; this entry is from `procest/taiga/round4/README.md`. The licence is MPL-2.0, not the AGPL-3.0 the candidate table claimed from a vendor page. `AUTH_PASSWORD_VALIDATORS` read back from the running instance is empty, and `123456` was accepted on the superuser's own account. |
+
 ## Documented, not driven
 
 ### Jira Service Management
@@ -350,39 +410,39 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 | corpus | procest/youtrack/round4/ (M1-column.md, open-core.md, sources.md with 171 URLs in seven groups) and procest/_round4/compare/ (PR 113) |
 | note | Documented in batch 8, graded `documented, not driven`; a driven column replaces this one if a licence and a clock are ever spent. The first closed product to score `yes` on pending 11.27, and the first system in the corpus with no holiday calendar at all. |
 
-## Trial: self-hostable under a paid or time-limited licence
-
 ### Jira Software Data Center
 
 | | |
 |---|---|
-| version read | not driven |
+| version read | 11.3, read 2026-09-13 from the Data Center documentation and the REST reference 11.0.1. Not driven: closed source, no licence, no instance, and since 2026-03-30 not for sale to a new customer |
 | family | issue |
 | licence | proprietary |
-| open core | not applicable |
+| open core | no, above the user tier: shape one, closed, with a boundary in time the shapes do not measure. "Upgrading from 500 users to 1,000 users will result in a total of 1,000 users, not 1,500 users" is the whole licence, and every capability is in every tier. The boundary went into the product line, where the portal, the customer, the SLA engine and the queue are Jira Service Management Data Center under a second licence, 18 of the 206 cells, and into the calendar: "Mar 30, 2026 End of license sales to new customers" and "Mar 28, 2029 End of life of Data Center products", on which day the apps go read-only. Read in `procest/jira-data-center/round4/open-core.md` |
 | code | closed source |
-| documentation | [Data Center 11.3 documentation](https://confluence.atlassian.com/jirasoftwareserver); [product page](https://www.atlassian.com/enterprise/data-center/jira) |
-| API | [Data Center REST API](https://developer.atlassian.com/server/jira/platform/rest/) |
-| issue tracker | [JRASERVER](https://jira.atlassian.com/projects/JRASERVER/issues) |
+| documentation | [Configuring working days, the board setting that no due date reads](https://confluence.atlassian.com/jirasoftwareserver/configuring-working-days-938845342.html); [Using the issue collector, the form embedded on somebody else's website](https://confluence.atlassian.com/adminjiraserver/using-the-issue-collector-938847338.html); [Archiving an issue, hidden and preserved](https://confluence.atlassian.com/adminjiraserver/archiving-an-issue-968669980.html); 154 URLs in this group, every one listed in `procest/jira-data-center/round4/sources.md` |
+| API | [Issue, with `POST /api/2/issue` and its documented 201 and 400](https://developer.atlassian.com/server/jira/platform/rest/v11000/api-group-issue); [Configuration, whose `TimeTrackingConfigurationBean` is the only calendar-shaped setting on the reference](https://developer.atlassian.com/server/jira/platform/rest/v11000/api-group-configuration); [Webhooks, with the secret token](https://developer.atlassian.com/server/jira/platform/rest/v11000/api-group-webhooks); 13 URLs in this group |
+| issue tracker | [JRASERVER-12400, comment history, closed Won't Do with 759 votes](https://jira.atlassian.com/browse/JRASERVER-12400); [JRASERVER-22506, working days in JQL, Gathering Interest, 560 votes, open since 2010](https://jira.atlassian.com/browse/JRASERVER-22506); [JRASERVER-3592, merge, Future Consideration, 533 votes](https://jira.atlassian.com/browse/JRASERVER-3592); 20 URLs in this group |
 | named on a comparison page | Linear, the modern alternative to Jira; Easy8, Atlassian Data Center alternatives; ALVAO, Jira Service Management alternatives; dev.to, OpenProject vs Jira |
-| corpus | none |
-| note | The `/software/jira/data-center` path answers 404; the enterprise path is the live one. To be rated from documents the way batch 8 rated Jira Service Management, under the same grade. |
+| corpus | procest/jira-data-center/round4/ (M1-column.md, open-core.md, sources.md with 199 URLs in seven groups) and procest/_round4/compare/ (PR 119) |
+| note | Documented in batch 10, graded `documented, not driven`. A driven column cannot replace this one, because the edition stopped being sold on 2026-03-30. Every quote in both ratings files was checked against the fetched page by `_round4/tools/quote-check.py` and every URL by `link-check.py`. |
 
-### Easy8, formerly Easy Redmine
+### Easy Redmine (Easy8)
 
 | | |
 |---|---|
-| version read | not driven |
+| version read | 16.0, read 2026-09-13 from easy8.com. Not driven: the paid half is a source tree only a paying on-premises customer receives, and there is no public tracker to check a `no` against |
 | family | issue and project |
-| licence | proprietary on a GPL Redmine core, to verify |
-| open core | not applicable |
-| code | closed source |
-| documentation | [tutorials; `easyredmine.com/documentation` redirects here](https://www.easy8.com/resources/tutorials) |
-| API | no API reference found (to verify) |
-| issue tracker | no public tracker found |
+| licence | GPL-2.0 core, ESCLv2.0 layer |
+| open core | yes, the eleventh shape: a source-available proprietary layer on a GPL core, sold as open source. The core is Redmine, GPL-2.0 and complete. Everything Easy wrote is a separate tree under the Easy8 Commercial License, defined as all software "not created nor derived from the GNU/GPL2 licensed software (including Redmine)". The buyer on a server "is entitled to download the source code of the Elements"; the buyer in the cloud "has no right to obtain the source code to the Elements, nor to view it"; neither may pass it on, and a modification "shall, however, always be subject to a notification to the Licensor". GitHub holds the plugin platform (`rys`, GPL-2.0) and none of the feature plugins. Inside that tree a plan table decides what runs: the HelpDesk and its SLA on Platform, formulas and SSO on Business, the CRM, Assets, Knowledge Base and branding as priced add-ons; 22 matrix cells name Platform and 9 an add-on. Read in `procest/easy-redmine/round4/open-core.md` |
+| code | source available to the paying on-premises buyer only, and not to be passed on; [easysoftware/rys on GitHub, the plugin platform, GPL-2.0 and no feature plugin](https://github.com/easysoftware/rys) |
+| documentation | [Working time calendar, with holidays imported from a country ICS feed](https://www.easy8.com/documentation-of-easy8/article/working-time-calendar); [HelpDesk, whose every SLA row is the Platform plan](https://www.easy8.com/documentation-of-easy8/article/helpdesk); [Archiving and unarchiving projects, a project and never a ticket](https://www.easy8.com/documentation-of-easy8/article/archiving-and-unarchiving-projects); 134 URLs in this group, every one listed in `procest/easy-redmine/round4/sources.md` |
+| API | [Easy Project API 3.9.0, on the `api.` host because SwaggerHub answers 404 to anything but a browser](https://api.swaggerhub.com/apis/easysoftware/EasyProject/3.9.0); [GraphQL](https://github.com/easysoftware/developer-portal-integrators/blob/master/docs/APIs/GraphQL.md); [the Redmine REST-like API](https://github.com/easysoftware/developer-portal-integrators/blob/master/docs/Redmine%20API/Redmine-REST-like-API.md) |
+| issue tracker | no public tracker; the group is empty by finding, not by omission, and it is the second reason to read the column as a ceiling |
 | named on a comparison page | Easy8, Atlassian Data Center alternatives |
-| corpus | none |
-| note | `easyredmine.com` redirects to `easy8.com`. To be rated from documents the way batch 8 did, under the same grade. |
+| corpus | procest/easy-redmine/round4/ (M1-column.md, open-core.md, sources.md with 158 URLs in seven groups) and procest/_round4/compare/ (PR 119) |
+| note | Documented in batch 10, graded `documented, not driven`; a driven column would need a paid licence, because the paid half is not public. `easyredmine.com` redirects to `easy8.com`. `quote-check.py` found twelve loose fragments in 291 and sent eleven cells back to the page they cite. |
+
+## Trial: self-hostable under a paid or time-limited licence
 
 ### ManageEngine ServiceDesk Plus
 
@@ -402,21 +462,6 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 
 ## Not yet driven
 
-### Request Tracker
-
-| | |
-|---|---|
-| version read | not yet driven |
-| family | ticket |
-| licence | GPL-2.0 per the GitHub licence field |
-| open core | to verify |
-| code | [bestpractical/rt](https://github.com/bestpractical/rt) |
-| documentation | [documentation, resolves to 6.0.3](https://docs.bestpractical.com/rt/latest/) |
-| API | [REST2](https://docs.bestpractical.com/rt/latest/RT/REST2.html) |
-| issue tracker | [GitHub issues](https://github.com/bestpractical/rt/issues) |
-| corpus | none yet |
-| note | `issues.bestpractical.com` redirects to a login page. Batch 9 is driving it now, beside Frappe Helpdesk. |
-
 ### Tuleap
 
 | | |
@@ -432,37 +477,6 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 | named on a comparison page | Easy8, Atlassian Data Center alternatives |
 | corpus | none yet |
 | note | Getting a readable source tree is the first task; an account on tuleap.net may be enough. |
-
-### Gitea
-
-| | |
-|---|---|
-| version read | not yet driven |
-| family | forge issues |
-| licence | MIT per the GitHub licence field |
-| open core | a commercial edition is sold, to verify |
-| code | [go-gitea/gitea](https://github.com/go-gitea/gitea) |
-| documentation | [documentation](https://docs.gitea.com/) |
-| API | [API reference](https://docs.gitea.com/api/) |
-| issue tracker | [GitHub issues](https://github.com/go-gitea/gitea/issues) |
-| corpus | none yet |
-| note | Forgejo forked from it; most of the column is a diff against Forgejo. |
-
-### Taiga
-
-| | |
-|---|---|
-| version read | not yet driven |
-| family | agile |
-| licence | MPL-2.0 per the GitHub licence field; the AGPL-3.0 in the candidate table above was a vendor-page claim |
-| open core | to verify |
-| code | [taigaio/taiga-back](https://github.com/taigaio/taiga-back) |
-| documentation | [documentation](https://docs.taiga.io/) |
-| API | [REST API](https://docs.taiga.io/api.html) |
-| issue tracker | [GitHub issues](https://github.com/taigaio/taiga-back/issues); [tree.taiga.io](https://tree.taiga.io/project/taiga/issues) |
-| named on a comparison page | dev.to, OpenProject vs Jira |
-| corpus | none yet |
-| note | `kaleidos-ventures/taiga-back` redirects to `taigaio/taiga-back`. The frontend repository was not checked. |
 
 ### Huly
 
@@ -652,6 +666,6 @@ Four vendor or community comparison pages were read to find candidates the round
 | the ledger, source of record | `procest/_ledger/parity-ledger.html`, with `procest/_ledger/README.md` on how to work with it |
 | the 206-row matrix, four Dutch columns | `procest/_round2/compare/M1-functionality.md` |
 | round 3, GLPI and Zammad, and the 21 proposals | `procest/_round3/compare/` |
-| round 4, batches 1 to 8, the tallies and the engines | `procest/_round4/compare/`, index in its `README.md` |
+| round 4, batches 1 to 11, the tallies and the engines | `procest/_round4/compare/`, index in its `README.md` |
 | the counting and ranking scripts | `procest/_round4/tools/corpus-tally.py`, `count-column.py`, `render-column.py`, `render-extra.py` |
 | the gap register | `procest/_gaps/README.md`, `gap-register.md`, `gap-register.json`, `ownership-rules.md` |
