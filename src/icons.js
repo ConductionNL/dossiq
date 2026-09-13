@@ -14,6 +14,8 @@
 
 import Account from 'vue-material-design-icons/Account.vue'
 import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
+import AccountArrowRightOutline from 'vue-material-design-icons/AccountArrowRightOutline.vue'
+import AccountCheckOutline from 'vue-material-design-icons/AccountCheckOutline.vue'
 import AccountClock from 'vue-material-design-icons/AccountClock.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
@@ -198,6 +200,8 @@ import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline
 export default {
 	Account,
 	AccountArrowRight,
+	AccountArrowRightOutline,
+	AccountCheckOutline,
 	AccountClock,
 	AccountGroup,
 	AccountGroupOutline,
