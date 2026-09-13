@@ -83,7 +83,8 @@ const WORK_TABS = [
 const TILE = { number: 0, type: 1, deadline: 2 } as const
 
 /** The Status field of the Data tab, the open tab on load. */
-const DATA_TAB_STATUS = '.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
+const DATA_TAB_STATUS =
+	'.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
 
 /**
  * One identity tile, by its place in the row.

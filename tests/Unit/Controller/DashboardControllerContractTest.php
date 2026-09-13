@@ -82,8 +82,8 @@ class DashboardControllerContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->controller = new DashboardController(
 			request: $this->request,
-			initialState: $this->createMock(IInitialState::class),
-			appConfig: $this->createMock(IAppConfig::class),
+			initialState: $this->createMock(originalClassName: IInitialState::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
 			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
 		);
 	}//end setUp()
@@ -144,7 +144,7 @@ class DashboardControllerContractTest extends TestCase {
 		$controller = new DashboardController(
 			request: $this->request,
 			initialState: $initialState,
-			appConfig: $this->createMock(IAppConfig::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
 			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
 		);
 

@@ -175,7 +175,10 @@ describe('CaseDetail: terms and archive', () => {
 					&& above.gridX < cell.gridX + cell.gridWidth
 					&& cell.gridX < above.gridX + above.gridWidth,
 			)
-			expect(rests, `${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`).toBe(true)
+			expect(
+				rests,
+				`${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`,
+			).toBe(true)
 		}
 	})
 

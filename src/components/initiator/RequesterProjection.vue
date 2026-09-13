@@ -13,10 +13,7 @@ SPDX-License-Identifier: EUPL-1.2
 </template>
 
 <script>
-import {
-	companyResult,
-	personResult,
-} from '../../services/initiatorSearch.js'
+import { companyResult, personResult } from '../../services/initiatorSearch.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
@@ -38,6 +35,12 @@ export default {
 	name: 'RequesterProjection',
 
 	computed: {
+		/**
+		 * The object store the case and the register rows are read from.
+		 *
+		 * @return {object} The store.
+		 * @spec openspec/specs/initiator-display/spec.md
+		 */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -63,6 +66,7 @@ export default {
 		 * requester and no projection yet.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-display/spec.md
 		 */
 		async run() {
 			const caseId = this.$route?.params?.id
@@ -71,10 +75,11 @@ export default {
 			}
 			let caseObject
 			try {
-				caseObject = (await this.objectStore.fetchObject('case', caseId)) || {}
-			} catch (err) {
-				// eslint-disable-next-line no-console
-				console.error('[RequesterProjection] case load failed', err)
+				caseObject =
+					(await this.objectStore.fetchObject('case', caseId)) || {}
+			} catch {
+				// Nothing to project from a case that did not load; the page's
+				// own widgets report that failure where a reader looks.
 				return
 			}
 			const requester = caseObject.requester
@@ -107,10 +112,10 @@ export default {
 						// CREATE a second case.
 						id: caseObject.id || caseObject['@self']?.id,
 					})
-				} catch (err) {
-					// Written again on the next load.
-					// eslint-disable-next-line no-console
-					console.error('[RequesterProjection] projection back-fill failed', err)
+				} catch {
+					// Written again on the next load: a refused write leaves
+					// the case exactly as it was, and there is no reader here
+					// to tell.
 				}
 				return
 			}
@@ -122,6 +127,7 @@ export default {
 		 * @param {string} schema The schema slug.
 		 * @param {string} uuid The row's uuid.
 		 * @return {Promise<object|null>} The row.
+		 * @spec openspec/specs/initiator-display/spec.md
 		 */
 		async fetchRow(schema, uuid) {
 			try {
