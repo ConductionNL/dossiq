@@ -54,6 +54,8 @@ class PersonLinkUpdatedEvent extends Event {
 	 * The link.
 	 *
 	 * @return object The link.
+	 *
+	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
 	 */
 	public function getLink(): object {
 		return $this->link;

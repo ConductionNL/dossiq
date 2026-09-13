@@ -1543,7 +1543,7 @@
 								{
 									"id": "request-file",
 									"label": "Request a file from a party",
-									"icon": "AccountArrowRightOutline",
+									"icon": "Email",
 									"type": "open-modal",
 									"target": "FileRequestDialog"
 								}

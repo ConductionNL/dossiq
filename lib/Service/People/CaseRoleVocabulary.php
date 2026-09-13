@@ -15,7 +15,6 @@ namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -41,13 +40,18 @@ class CaseRoleVocabulary {
 	private const PAGE_SIZE = 200;
 
 	/**
+	 * OpenRegister's schema mapper, resolved the way every other OpenRegister
+	 * class in this app is: through SettingsService, which answers null rather
+	 * than throwing when the app is not installed (ADR-083).
+	 */
+	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+
+	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
-	 * @param ContainerInterface $container Resolves OpenRegister's schema mapper.
 	 * @param LoggerInterface $logger Says why a sync did nothing.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -186,11 +190,12 @@ class CaseRoleVocabulary {
 	 * @throws RuntimeException When OpenRegister is not available.
 	 */
 	private function schemaMapper(): object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-		} catch (Throwable $e) {
-			throw new RuntimeException('OpenRegister is not available: ' . $e->getMessage(), 0, $e);
+		$mapper = $this->settingsService->getOpenRegisterClass(class: self::SCHEMA_MAPPER);
+		if ($mapper === null) {
+			throw new RuntimeException('OpenRegister is not available');
 		}
+
+		return $mapper;
 	}//end schemaMapper()
 
 	/**

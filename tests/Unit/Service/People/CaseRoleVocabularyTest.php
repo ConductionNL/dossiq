@@ -13,7 +13,6 @@ use OCA\Dossiq\Service\People\CaseRoleVocabulary;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -166,12 +165,10 @@ class CaseRoleVocabularyTest extends TestCase {
 			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
 		);
 
-		$container = $this->createMock(originalClassName: ContainerInterface::class);
-		$container->method('get')->willReturn($mapper);
+		$settings->method('getOpenRegisterClass')->willReturn($mapper);
 
 		$this->vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
-			container: $container,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end setUp()
@@ -240,9 +237,9 @@ class CaseRoleVocabularyTest extends TestCase {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$settings->method('getConfigValue')->willReturn('');
+		$settings->method('getOpenRegisterClass')->willReturn(null);
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
-			container: $this->createMock(originalClassName: ContainerInterface::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
