@@ -204,6 +204,8 @@ class DashboardController extends Controller {
 	 *
 	 * @return void
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function loadFilesSurfaces(): void {
@@ -218,7 +220,7 @@ class DashboardController extends Controller {
 			Util::addScript('files', 'init');
 		}
 
-		foreach (self::FILES_SURFACE_EVENTS as $eventClass) {
+		foreach ($this->filesSurfaceEvents() as $eventClass) {
 			if (class_exists($eventClass) === false) {
 				continue;
 			}
@@ -229,6 +231,24 @@ class DashboardController extends Controller {
 			}
 		}
 	}//end loadFilesSurfaces()
+
+	/**
+	 * The event classes to look up, as a run-time list.
+	 *
+	 * Read through a method rather than straight off the constant so the
+	 * lookup is a real one: phpstan folds the constant's literal strings,
+	 * finds neither class in this app's tree and calls `class_exists()` on
+	 * them impossible, while on an instance with the Files and Viewer apps
+	 * both exist. The declared type is what the analyser sees; the constant
+	 * stays the single place the names are written.
+	 *
+	 * @return list<string> Class names, present or not on this instance.
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	private function filesSurfaceEvents(): array {
+		return self::FILES_SURFACE_EVENTS;
+	}//end filesSurfaceEvents()
 
 	/**
 	 * Whether the case-plan panel prefers OpenRegister's rows over the blob.
