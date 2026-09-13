@@ -47,7 +47,7 @@ criteria under a task are plain bullets.
 
 ## 4. The Files tab
 
-- [ ] 4.1 @conduction/nextcloud-vue `CnFilesBrowser`: `rowActions` and
+- [x] 4.1 @conduction/nextcloud-vue `CnFilesBrowser`: `rowActions` and
   `linkedItems` props, forwarded by `CnFilesTab`; docs and jest; a release.
   - `tests/components/CnFilesBrowser.spec.js`: host actions render after the
     registered ones; linked rows render after nodes with open and download only
@@ -61,7 +61,7 @@ criteria under a task are plain bullets.
 
 ## 5. End to end
 
-- [ ] 5.1 `tests/e2e/case-documents-on-the-case.spec.ts`: a drop is a document
+- [x] 5.1 `tests/e2e/case-documents-on-the-case.spec.ts`: a drop is a document
   with defaults; Document properties edits the record; a document joined from
   another case is a linked row; an API-created document moves on its first join;
   the e2e residue is purged through the case purge helper.

@@ -1,21 +1,14 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: The Files tab is the case's document surface
+### Requirement: The Files tab edits a document's record and lists documents held elsewhere (REQ-CDV-21)
 
-The Files tab SHALL render the case folder as a files browser on the Files app's primitives, and
-nothing else: no section heading and no second list. Every file in it is a document of the case
-(`document-projection`). Each row SHALL offer a Document properties action that opens the
-metadata dialog on the file's `informatieobject`; a document joined to this case from another
-case's folder SHALL render as a linked row after the folder's own files, naming the case that
-holds the file, with open and download only.
-
-#### Scenario: Files is the case folder and nothing else
-@e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
-
-- **GIVEN** a case page
-- **WHEN** the handler opens the Files tab
-- **THEN** the case folder SHALL render as a files browser, with crumbs from the user's files root down to the case folder
-- **AND** no section heading and no second list SHALL render in the tab
+Every file in the case folder is a document of the case (`document-projection`),
+and the Files tab is where its record is kept in step. Each file row SHALL offer
+a Document properties action that opens the metadata dialog on the file's
+`informatieobject`; a document joined to this case whose file lives in another
+case's folder SHALL render as a linked row after the folder's own files, naming
+the case that holds the file, with open and download only. The tab SHALL still
+hold the case folder and nothing else: no section heading and no second list.
 
 #### Scenario: A row edits its document's properties
 @e2e tests/e2e/case-documents-on-the-case.spec.ts

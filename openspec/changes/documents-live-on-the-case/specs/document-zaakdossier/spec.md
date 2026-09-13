@@ -74,7 +74,7 @@ be present before the record can leave `concept`. The dialog MUST still be the s
 both, and `ZaakdossierService.uploadDocument()` MUST still require both when called with a
 metadata payload.
 
-#### Scenario: REQ-ZAK-005a Drag-drop stores the file first and offers the dialog on the row
+#### Scenario: REQ-ZAK-005a Drag-drop triggers metadata dialog before upload
 @e2e tests/e2e/case-documents-on-the-case.spec.ts
 
 - **GIVEN** a case's Files tab
