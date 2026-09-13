@@ -97,14 +97,14 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		$event = $this->deleteEventFor(payload: $this->closedAndDisposable());
 		$this->listener()->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped(), 'a running term holds the case');
+		$this->assertTrue(condition: $event->isPropagationStopped(), message: 'a running term holds the case');
 		$this->assertSame(
-			[CaseHeldException::RULE_OPEN_TERM],
-			$event->getErrors()['blockedBy'],
+			expected: [CaseHeldException::RULE_OPEN_TERM],
+			actual: $event->getErrors()['blockedBy'],
 		);
 		$this->assertStringContainsString(
-			'A statutory term on this case is still running.',
-			$event->getErrors()['message'],
+			needle: 'A statutory term on this case is still running.',
+			haystack: $event->getErrors()['message'],
 		);
 	}//end testAnOpenTermBlocksTheDelete()
 
@@ -122,7 +122,7 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		$event = $this->deleteEventFor(payload: $this->closedAndDisposable());
 		$this->listener()->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped(), 'a finished term holds nothing');
+		$this->assertFalse(condition: $event->isPropagationStopped(), message: 'a finished term holds nothing');
 	}//end testACompletedTermDoesNotBlockTheDelete()
 
 	/**
@@ -136,16 +136,16 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		$event = $this->deleteEventFor(payload: $this->closedAndDisposable());
 		$this->listener()->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[CaseHeldException::RULE_HAS_SUBCASES],
-			$event->getErrors()['blockedBy'],
+			expected: [CaseHeldException::RULE_HAS_SUBCASES],
+			actual: $event->getErrors()['blockedBy'],
 		);
-		$this->assertStringContainsString('This case still has sub-cases.', $event->getErrors()['message']);
+		$this->assertStringContainsString(needle: 'This case still has sub-cases.', haystack: $event->getErrors()['message']);
 		$this->assertSame(
-			self::CASE_UUID,
-			$this->queried[self::CASE_SCHEMA]['parentCase'],
-			'sub-cases are the cases whose parentCase is this one',
+			expected: self::CASE_UUID,
+			actual: $this->queried[self::CASE_SCHEMA]['parentCase'],
+			message: 'sub-cases are the cases whose parentCase is this one',
 		);
 	}//end testASubCaseBlocksTheDelete()
 
@@ -161,12 +161,12 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$this->listener()->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[CaseHeldException::RULE_LEGAL_HOLD],
-			$event->getErrors()['blockedBy'],
+			expected: [CaseHeldException::RULE_LEGAL_HOLD],
+			actual: $event->getErrors()['blockedBy'],
 		);
-		$this->assertStringContainsString('A legal hold is on this case.', $event->getErrors()['message']);
+		$this->assertStringContainsString(needle: 'A legal hold is on this case.', haystack: $event->getErrors()['message']);
 	}//end testAnActiveLegalHoldBlocksTheDelete()
 
 	/**
@@ -181,7 +181,7 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$this->listener()->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAReleasedLegalHoldDoesNotBlockTheDelete()
 
 	/**
@@ -195,14 +195,14 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$this->listener()->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[CaseHeldException::RULE_IN_RETENTION],
-			$event->getErrors()['blockedBy'],
+			expected: [CaseHeldException::RULE_IN_RETENTION],
+			actual: $event->getErrors()['blockedBy'],
 		);
 		$this->assertStringContainsString(
-			'The retention period of this case has not ended.',
-			$event->getErrors()['message'],
+			needle: 'The retention period of this case has not ended.',
+			haystack: $event->getErrors()['message'],
 		);
 	}//end testARunningRetentionPeriodBlocksTheDelete()
 
@@ -221,7 +221,7 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$this->listener()->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnOpenCaseIsNotHeldByRetention()
 
 	/**
@@ -236,16 +236,16 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		$event = $this->deleteEventFor(payload: $this->closedAndDisposable());
 		$this->listener()->handle($event);
 
-		$this->assertTrue($event->isPropagationStopped());
+		$this->assertTrue(condition: $event->isPropagationStopped());
 		$this->assertSame(
-			[CaseHeldException::RULE_OPEN_TERM, CaseHeldException::RULE_HAS_SUBCASES],
-			$event->getErrors()['blockedBy'],
-			'one refusal carries every rule that holds, not the first one hit',
+			expected: [CaseHeldException::RULE_OPEN_TERM, CaseHeldException::RULE_HAS_SUBCASES],
+			actual: $event->getErrors()['blockedBy'],
+			message: 'one refusal carries every rule that holds, not the first one hit',
 		);
 
 		$message = $event->getErrors()['message'];
-		$this->assertStringContainsString('A statutory term on this case is still running.', $message);
-		$this->assertStringContainsString('This case still has sub-cases.', $message);
+		$this->assertStringContainsString(needle: 'A statutory term on this case is still running.', haystack: $message);
+		$this->assertStringContainsString(needle: 'This case still has sub-cases.', haystack: $message);
 	}//end testTwoRulesAreNamedTogether()
 
 	/**
@@ -257,8 +257,8 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		$event = $this->deleteEventFor(payload: $this->closedAndDisposable());
 		$this->listener()->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped(), 'nothing holds this case');
-		$this->assertSame([], $event->getErrors());
+		$this->assertFalse(condition: $event->isPropagationStopped(), message: 'nothing holds this case');
+		$this->assertSame(expected: [], actual: $event->getErrors());
 	}//end testAFreeCaseIsDeleted()
 
 	/**
@@ -275,8 +275,8 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$this->listener()->handle($event);
 
-		$this->assertFalse($event->isPropagationStopped(), 'only a case is guarded');
-		$this->assertSame([], $this->queried, 'a foreign schema costs no queries');
+		$this->assertFalse(condition: $event->isPropagationStopped(), message: 'only a case is guarded');
+		$this->assertSame(expected: [], actual: $this->queried, message: 'a foreign schema costs no queries');
 	}//end testAnotherSchemaIsNotGuarded()
 
 	/**
@@ -292,10 +292,10 @@ class CaseDeleteGuardListenerTest extends TestCase {
 
 		$held = CaseHeldException::fromHookErrors(errors: $event->getErrors());
 
-		$this->assertNotNull($held, 'the guard body is recognisable to the controller');
-		$this->assertSame(409, CaseHeldException::STATUS);
-		$this->assertSame([CaseHeldException::RULE_OPEN_TERM], $held->getRules());
-		$this->assertSame(CaseHeldException::ERROR_CODE, $event->getErrors()['error']);
+		$this->assertNotNull(actual: $held, message: 'the guard body is recognisable to the controller');
+		$this->assertSame(expected: 409, actual: CaseHeldException::STATUS);
+		$this->assertSame(expected: [CaseHeldException::RULE_OPEN_TERM], actual: $held->getRules());
+		$this->assertSame(expected: CaseHeldException::ERROR_CODE, actual: $event->getErrors()['error']);
 	}//end testTheRefusalBodyRebuildsAsAConflict()
 
 	/**
@@ -305,15 +305,15 @@ class CaseDeleteGuardListenerTest extends TestCase {
 	 */
 	public function testAForeignRefusalIsNotRebuilt(): void {
 		$this->assertNull(
-			CaseHeldException::fromHookErrors(
+			actual: CaseHeldException::fromHookErrors(
 				errors: ['message' => 'nope', 'code' => 'beschikking.immutable']
 			)
 		);
 		$this->assertNull(
-			CaseHeldException::fromHookErrors(
+			actual: CaseHeldException::fromHookErrors(
 				errors: ['error' => CaseHeldException::ERROR_CODE, 'blockedBy' => ['invented']]
 			),
-			'a body naming no rule this guard knows is not this guard speaking',
+			message: 'a body naming no rule this guard knows is not this guard speaking',
 		);
 	}//end testAForeignRefusalIsNotRebuilt()
 
@@ -355,7 +355,7 @@ class CaseDeleteGuardListenerTest extends TestCase {
 	 * @return CaseDeleteGuardListener
 	 */
 	private function listener(): CaseDeleteGuardListener {
-		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService = $this->createMock(originalClassName: SettingsService::class);
 		$settingsService->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
@@ -368,16 +368,16 @@ class CaseDeleteGuardListenerTest extends TestCase {
 		);
 		$settingsService->method('getObjectService')->willReturn($this->objectService());
 
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnCallback(
 			static fn (string $text, $parameters = []): string
 				=> vsprintf($text, (array)$parameters)
 		);
 
 		return new CaseDeleteGuardListener(
-			$settingsService,
-			$l10n,
-			$this->createMock(LoggerInterface::class),
+			settingsService: $settingsService,
+			l10n: $l10n,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end listener()
 

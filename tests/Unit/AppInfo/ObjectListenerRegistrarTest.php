@@ -45,9 +45,9 @@ class ObjectListenerRegistrarTest extends TestCase {
 		$registered = $this->registrations();
 
 		$this->assertContains(
-			CaseDeleteGuardListener::class,
-			($registered['OCA\OpenRegister\Event\ObjectDeletingEvent'] ?? []),
-			'the guard must be registered, or every delete succeeds and nothing says why',
+			needle: CaseDeleteGuardListener::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectDeletingEvent'] ?? []),
+			message: 'the guard must be registered, or every delete succeeds and nothing says why',
 		);
 	}//end testTheCaseDeleteGuardIsRegistered()
 
@@ -64,8 +64,8 @@ class ObjectListenerRegistrarTest extends TestCase {
 		$registered = $this->registrations();
 
 		$this->assertNotContains(
-			CaseDeleteGuardListener::class,
-			($registered['OCA\OpenRegister\Event\ObjectDeletedEvent'] ?? []),
+			needle: CaseDeleteGuardListener::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectDeletedEvent'] ?? []),
 		);
 	}//end testTheGuardIsNotOnThePostPersistEvent()
 
@@ -75,7 +75,10 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGuardIsBoundToTheCaseSchema(): void {
-		$this->assertSame('case_schema', CaseDeleteGuardListener::GUARDED_SCHEMA_CONFIG_KEY);
+		$this->assertSame(
+			expected: 'case_schema',
+			actual: CaseDeleteGuardListener::GUARDED_SCHEMA_CONFIG_KEY,
+		);
 	}//end testTheGuardIsBoundToTheCaseSchema()
 
 	/**

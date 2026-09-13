@@ -11,7 +11,7 @@ Tier: V1. Kind: code. Row 2.17.
   - `@spec openspec/changes/case-delete-guard/specs/case-management/spec.md`
 - [x] 1.3 `lib/AppInfo/Registrar/ObjectListenerRegistrar.php`: bind to
   schema `case` at the registration site.
-- [ ] 2.1 Remove `src/modals/DeelzaakDeleteWarningModal.vue` and its caller;
+- [x] 2.1 Remove `src/modals/DeelzaakDeleteWarningModal.vue` and its caller;
   the delete action shows the platform's refusal message.
-- [ ] 3.1 `tests/e2e/case-delete-guard.spec.ts`; `openspec validate
+- [x] 3.1 `tests/e2e/case-delete-guard.spec.ts`; `openspec validate
   case-delete-guard --strict`.

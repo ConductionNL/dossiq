@@ -507,36 +507,40 @@ test.describe('Sub-case count badge (deelzaak-support REQ — case list)', () =>
 	})
 })
 
-test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion protection)', () => {
-	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
+/**
+ * The orphan warning copy, which NOTHING may show any more.
+ *
+ * The modal that carried it is gone (case-delete-guard removed
+ * deelzaak-support's sub-case deletion protection), so every assertion on this
+ * pattern is now a `toHaveCount(0)`: it is the witness that the old branch did
+ * not come back, on either shape of case.
+ */
+const ORPHAN_WARNING =
+	/unlink the sub-case|unlinked from their parent|losgekoppeld van hun hoofdzaak/i
+
+test.describe('Parent deletion is refused while sub-cases hang off it', () => {
+	// 🔴 THE ORPHAN WARNING IS GONE, AND SO ARE ITS TWO CITATIONS.
 	//
-	// 🔴 `delete-case-without-sub-cases-proceeds-normally` WAS CITED HERE TOO
-	// AND HAS BEEN TAKEN DOWN. This test seeds a parent WITH a sub-case and
-	// only ever exercises the orphan branch, so nothing in it says what a
-	// childless case's delete dialog looks like: breaking the plain
-	// confirmation left every assertion in here green. The scenario keeps two
-	// citations that do prove it, the sibling test directly below and
-	// `deleting a case with no sub-cases takes the plain confirmation` further
-	// down this file, so nothing is lost by removing the claim that was false.
+	// `delete-parent-case-with-sub-cases-shows-warning` asked the client to
+	// warn, unlink every child and then delete the parent. REQ-CM-35
+	// (case-delete-guard) refuses that delete at the store instead, so the
+	// requirement is REMOVED by that change and the modal with it. These two
+	// tests now assert the behaviour that replaced it: ONE confirmation for
+	// either shape of case, and a refusal that names what holds the case.
 	//
 	// UNPARKED, AND POINTED AT THE PAGE THE CONTROL IS ON.
 	//
-	// This skipped on every run, and its reason was right that nothing was
-	// missing and wrong about where to look. The delete control is declared in
-	// `src/views/cases/DeelzaakList.vue`, which the manifest mounts as the
-	// `type: "custom"` page at `/cases/:id/deelzaken`. The old body reached
-	// CaseDetail's Related tab instead, where the `case-sub-cases` object-list
-	// widget renders the sub-case LIST and no delete action at all. So the
-	// control could never attach, on any build, and the five-second wait was
-	// measuring the wrong page.
+	// The delete control is declared in `src/views/cases/DeelzaakList.vue`,
+	// which the manifest mounts as the `type: "custom"` page at
+	// `/cases/:id/deelzaken`. An earlier body reached CaseDetail's Related tab
+	// instead, where the `case-sub-cases` object-list widget renders the
+	// sub-case LIST and no delete action at all, so the control could never
+	// attach on any build.
 	//
-	// BOTH BRANCHES, NOT WHICHEVER THE INSTANCE HAPPENED TO HOLD. The old body
-	// took whatever the first case in the register gave it and annotated the
-	// other outcome as a note, so a run where no case had sub-cases asserted
-	// the orphan warning never appeared. Each branch now seeds the shape it
-	// needs: `requiresOrphanWarning(count)` in src/utils/deelzaakHelpers.js is
-	// the fork, and the two scenarios are its two sides.
-	test('the sub-cases page warns about orphans for a parent with sub-cases', async ({
+	// BOTH SHAPES, NOT WHICHEVER THE INSTANCE HAPPENED TO HOLD. Each test
+	// seeds the shape it needs, so a run where no case had sub-cases cannot
+	// pass by asserting nothing.
+	test('a parent with sub-cases is refused, and told which rule holds it', async ({
 		page,
 	}) => {
 		const { parentId } = await seedParentWithSubCase()
@@ -558,39 +562,30 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 		).toBeVisible({ timeout: 30_000 })
 		await deleteBtn.click()
 
-		// The orphan dialog, by its own title and its own sentence. Asserting
-		// the sentence alone would also match the plain confirm dialog if the
-		// copy ever converged; asserting both pins the branch.
+		// ONE confirmation, for either shape of case. The fork on a locally
+		// read sub-case count is what this change took away.
 		await expect(
-			page.getByText('Delete case with sub-cases').first(),
-			'a parent with sub-cases takes the orphan-warning branch, not the plain confirm',
+			page.getByText('Are you sure you want to delete this case?').first(),
+			'there is one delete confirmation now, not one per shape of case',
 		).toBeVisible({ timeout: 15_000 })
-		await expect(
-			page.getByText(/unlink the sub-cases from their parent/i).first(),
-		).toBeVisible()
-		// Cancel — this test proves the warning, not the deletion.
+		await expect(page.getByText(ORPHAN_WARNING)).toHaveCount(0)
+
 		await page
-			.getByRole('button', { name: /^(Cancel|Annuleren)$/ })
+			.getByRole('button', { name: /^(Delete|Verwijderen)$/ })
 			.first()
 			.click()
+
+		// The refusal, in the words the guard sent back. Asserting merely that
+		// the case survived would also pass on a delete that failed for any
+		// other reason and said nothing.
+		await expect(
+			page.getByText(/still has sub-cases|heeft nog deelzaken/i).first(),
+			'a refused delete must name the rule that holds the case',
+		).toBeVisible({ timeout: 30_000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
-	//
-	// ✅ MUTATION CHECK RUN 2026-09-12, with `tests/e2e/helpers/mutate-bundle.ts`:
-	// the served bundle was rewritten on its way to the browser, so the broken
-	// fork really ran while nothing on disk moved.
-	//
-	//   find    /onDeleteParent\(\)\{!function\(\w+\)\{const \w+=Number\(\w+\);return Number\.isFinite\(\w+\)&&\w+>0\}/
-	//   replace 'onDeleteParent(){!function(){return true}'
-	//   red on  "a childless case takes the standard deletion confirmation"
-	//
-	// `requiresOrphanWarning()` forced true sends a childless case down the
-	// orphan branch, which is the state this scenario forbids. That is also
-	// why the citation was taken off the orphan-branch test above: this break
-	// leaves every assertion in that one green.
-	test('a parent with no sub-cases takes the plain delete confirmation', async ({
+	test('a parent with no sub-cases takes the same confirmation', async ({
 		page,
 	}) => {
 		const { parentId } = await seedParentWithSubCase({ withChild: false })
@@ -609,14 +604,12 @@ test.describe('Sub-case orphan deletion (deelzaak-support REQ — deletion prote
 		await expect(deleteBtn).toBeVisible({ timeout: 30_000 })
 		await deleteBtn.click()
 
-		// The OTHER side of requiresOrphanWarning(): the plain CnConfirmDialog.
 		await expect(
 			page.getByText('Are you sure you want to delete this case?').first(),
 			'a childless case takes the standard deletion confirmation',
 		).toBeVisible({ timeout: 15_000 })
-		// And NOT the orphan copy.
 		await expect(
-			page.getByText(/unlink the sub-cases from their parent/i),
+			page.getByText(ORPHAN_WARNING),
 			'a case with nothing hanging off it must not be told its sub-cases will be unlinked',
 		).toHaveCount(0)
 		await page
@@ -1082,10 +1075,6 @@ function createControl(page) {
 	})
 }
 
-/** The orphan warning copy, which only the with-children path may show. */
-const ORPHAN_WARNING =
-	/unlink the sub-case|unlinked from their parent|losgekoppeld van hun hoofdzaak/i
-
 test.describe('Deelzaak creation eligibility and deletion protection', () => {
 	test.setTimeout(180_000)
 
@@ -1335,14 +1324,13 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e deelzaak-support::delete-parent-case-with-sub-cases-shows-warning
-	test('deleting a parent with sub-cases warns about the orphans and nulls parentCase on every child', async ({
+	test('deleting a parent with sub-cases is refused, and both children keep their parent', async ({
 		page,
 	}) => {
 		await openSubCasesPage(page, twoChildParentId)
 
-		// Both children are on the page, so the "2 sub-cases" the warning names
-		// is a number this run produced rather than one read off the demo set.
+		// Both children are on the page, so the rule the refusal names is
+		// about a shape this run produced rather than one read off the demo set.
 		await expect(page.locator('table.viewTable tbody tr')).toHaveCount(2)
 
 		await page
@@ -1352,32 +1340,33 @@ test.describe('Deelzaak creation eligibility and deletion protection', () => {
 			.first()
 			.click()
 
-		// UNCONDITIONAL. This assertion used to sit inside
-		// `if ((await warning.count()) > 0)` with an annotation in the else
-		// branch, so a parent deleted with no warning at all was
-		// indistinguishable from one correctly warned.
 		await expect(
-			page.getByText(ORPHAN_WARNING).first(),
-			'a parent with sub-cases must warn that deletion unlinks them',
+			page.getByText(/Are you sure you want to delete this case/i).first(),
 		).toBeVisible({ timeout: 15_000 })
+		await expect(page.getByText(ORPHAN_WARNING)).toHaveCount(0)
 
 		await page
-			.getByRole('dialog')
-			.filter({ hasText: ORPHAN_WARNING })
 			.getByRole('button', { name: /^(Delete|Verwijderen)$/ })
+			.first()
 			.click()
 
-		// The scenario's real subject: the children survive as standalone cases.
+		await expect(
+			page.getByText(/still has sub-cases|heeft nog deelzaken/i).first(),
+			'REQ-CM-35: the refusal names the rule that holds the case',
+		).toBeVisible({ timeout: 30_000 })
+
+		// The scenario's real subject: nothing moved. The children still point
+		// at a parent that is still there, because the delete never happened.
 		// Asserted on the stored rows, because a dialog can say anything.
-		await expect(async () => {
-			for (const childId of [childOneId, childTwoId]) {
-				const child = await showObject(api, 'case', childId)
-				expect(
-					child.parentCase ?? null,
-					`case ${childId} must be unlinked, not left pointing at a deleted parent`,
-				).toBeFalsy()
-			}
-		}).toPass({ timeout: 45_000 })
+		for (const childId of [childOneId, childTwoId]) {
+			const child = await showObject(api, 'case', childId)
+			expect(
+				String(child.parentCase),
+				`case ${childId} must still point at the parent the delete did not remove`,
+			).toBe(twoChildParentId)
+		}
+		const parent = await showObject(api, 'case', twoChildParentId)
+		expect(parent, 'the held parent is still there').toBeTruthy()
 	})
 
 	// @e2e deelzaak-support::delete-case-without-sub-cases-proceeds-normally
