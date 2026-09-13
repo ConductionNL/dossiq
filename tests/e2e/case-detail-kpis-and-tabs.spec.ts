@@ -61,11 +61,15 @@ import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
  * CnDetailPage puts no widget id on the grid cell it renders. The order is
  * pinned by `tests/vitest/manifestCaseHeader.spec.js`.
  */
-const TILE = { number: 0, type: 1, status: 2, assignee: 3, deadline: 4 } as const
+// Three tiles, not five: the status reads on the stages widget beside the
+// panels and in the Data tab, the assignee in the Data tab (Ruben's layout of
+// 2026-09-12). The hours card fills the fourth cell of the row.
+const TILE = { number: 0, type: 1, deadline: 2 } as const
 
 const TAB_LABELS = [
 	'Data',
-	'Documents',
+	'Files',
+	'Notes',
 	'People',
 	'Work',
 	'Related',
@@ -80,8 +84,6 @@ const TAB_LABELS = [
  * the difference between six tabs and four missing features.
  */
 const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
-	['Documents', 'case-section-case-documents', 'registry'],
-	['Documents', 'case-section-case-files', 'integration'],
 	['People', 'case-section-case-roles', 'registry'],
 	['People', 'case-section-case-communication', 'registry'],
 	['Work', 'case-section-case-tasks', 'registry'],
@@ -104,10 +106,11 @@ const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
  */
 const RETIRED_TAB_LABELS = [
 	/^(Contacts|Contacten|Connected contacts)$/,
-	/^(Notes|Notities)$/,
 	/^Mail$/,
 	/^(Decisions|Besluiten|Besluitvorming)$/,
-	/^(Files|Bestanden)$/,
+	// The Documents group went on 2026-09-13: its Files half IS the Files tab
+	// now, and the ZGW document list left the page with it.
+	/^(Documents|Documenten)$/,
 ]
 
 /**
@@ -203,12 +206,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		})
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 
-		// The identity row is five CONFIGURED library tiles now, so the cells
+		// The identity row is three CONFIGURED library tiles now, so the cells
 		// are addressed by their place in the manifest layout. `case-header`
 		// and its per-fact testids went with CaseHeaderRow.
 		const cell = (index: number) =>
 			page.locator('.cn-detail-page__grid-item').nth(index)
-		await expect(cell(TILE.status)).toBeVisible({ timeout: 30_000 })
+		await expect(cell(TILE.number)).toBeVisible({ timeout: 30_000 })
 
 		// Time left is COMPUTED from the deadline, not printed from it. It is
 		// the library `countdown` widget, the only one on the page.
@@ -240,14 +243,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
-		// The row also carries the case number and a status badge, so the page
-		// says which case you are on without opening the Data tab.
+		// The row also carries the case number, so the page says which case
+		// you are on without opening the Data tab. The status is not a tile:
+		// it reads on the stages widget beside the panels.
 		await expect(cell(TILE.number).locator('.cn-kpi-card__value')).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
-			timeout: 15_000,
-		})
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveCount(0)
 
 		// EACH FACT ONCE. The identity row and the old standalone tiles said the
 		// same two things, and the fold that retired the tiles is what this
@@ -399,7 +401,6 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(cell.locator('.cn-kpi-card__value')).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible()
 
 		// And read-only content carries no Actions menu of its own.
 		await expect(
@@ -672,64 +673,40 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	test('Files is a section of Documents, not a tab of its own', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#files-is-the-case-folder-and-nothing-else
+	test('Files is a tab holding the case folder as a files browser, and nothing else', async ({
 		page,
 	}) => {
-		// Files did not leave the page, it left the STRIP. Dropping it would
-		// have taken the files leaf's share and comment surface with it, which
-		// design D5 was right to protect and which the dossier list does not
-		// have. The order inside the tab says which one is the case file: the
-		// registered documents first, loose attachments under them.
+		// One title on the page, and the word is files (Ruben, 2026-09-13).
+		// The tab used to be Documents, holding the ZGW document list above the
+		// case folder as two sections under two headings, three "Documents"
+		// on one screen. It is the folder now, through the files leaf, whose
+		// browser draws its own crumbs, so no section heading sits above it.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
-
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 		await expect(
-			strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }),
+			strip.getByRole('tab', { name: /^(Documents|Documenten)$/ }),
 		).toHaveCount(0)
-
-		await strip.getByRole('tab', { name: 'Documents', exact: true }).click()
+		await strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }).click()
 		const panel = strip.locator(
 			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 		)
-
-		const documents = panel.locator(
-			'[data-testid="case-section-case-documents"]',
-		)
-		const files = panel.locator('[data-testid="case-section-case-files"]')
-		await expect(documents).toBeVisible({ timeout: 30_000 })
-		// ATTACHED, not visible, and NOT compared by bounding box. The files
-		// leaf is served by OpenRegister's global registry bundle, which CI
-		// never has, and `case-sections` now hides an empty section's heading
-		// and drops its divider, so on CI this section is correctly present and
-		// zero-height. A box comparison would fail there for the very reason
-		// the component is right, and it would be measuring CSS rather than the
-		// claim, which is ORDER: the registered documents first, loose
-		// attachments under them.
-		await expect(files).toBeAttached({ timeout: 30_000 })
-
-		const order = await panel.evaluate((el) => {
-			const nodes = Array.from(
-				el.querySelectorAll('[data-testid^="case-section-"]'),
-			).map((n) => n.getAttribute('data-testid'))
-			return {
-				documents: nodes.indexOf('case-section-case-documents'),
-				files: nodes.indexOf('case-section-case-files'),
-			}
+		await expect(panel.getByTestId('cn-files-browser')).toBeVisible({
+			timeout: 30_000,
 		})
-		expect(
-			order.documents,
-			'the documents section is absent',
-		).toBeGreaterThanOrEqual(0)
-		expect(order.files, 'the files section is absent').toBeGreaterThanOrEqual(0)
-		expect(
-			order.documents,
-			'the dossier must read before the loose attachments',
-		).toBeLessThan(order.files)
+		await expect(panel.locator('[data-testid^="case-section-"]')).toHaveCount(0)
+		await expect(panel.locator('.case-sections__heading')).toHaveCount(0)
+		await expect(panel.getByText(/^(Documents|Documenten)/)).toHaveCount(0)
+		// The trail runs from the user's files root down to this case's folder.
+		await expect(
+			panel.getByTestId('cn-files-browser-crumb'),
+			'the crumbs must read the whole path to the case folder',
+		).not.toHaveCount(1)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({

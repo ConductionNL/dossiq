@@ -67,7 +67,8 @@ class BespokeServiceRegistrar {
 				return new DashboardController(
 					request: $c->get('OCP\\IRequest'),
 					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
-					appConfig: $c->get('OCP\\IAppConfig')
+					appConfig: $c->get('OCP\\IAppConfig'),
+					eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher')
 				);
 			}
 		);

@@ -16,7 +16,6 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-const { STATUS_COLOURS } = require('../../src/utils/statusColour.js')
 const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -71,7 +70,7 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 	})
 })
 
-describe('CaseDetail — the identity row is four configured tiles', () => {
+describe('CaseDetail — the identity row is three configured tiles and the hours card', () => {
 	// Ruben, 2026-09-12: "The widgets on top of the page should be actual KPI
 	// widgets configured to show what they show... it should not be a custom
 	// widget spanning an entire row."
@@ -80,13 +79,18 @@ describe('CaseDetail — the identity row is four configured tiles', () => {
 	// `content`. A `type` the library does not know falls back to the page's
 	// `widget-<id>` slot, and a page with no such slot renders an empty cell
 	// and logs nothing, which is the failure this file exists to catch.
+	//
+	// Three tiles, not five. Ruben laid the row out by hand in Buildiq edit
+	// mode on 2026-09-12 and dropped the status and the assignee: both read
+	// in the Data tab, the open tab on load, and the status also reads on the
+	// stages widget, which is where a case is moved. The hours card (the
+	// humaniq leaf) fills the fourth cell of the row.
 	const TILES = [
-		['case-tile-number', 'stat', 0, 2],
-		['case-tile-type', 'stat', 2, 3],
-		['case-tile-status', 'stat', 5, 3],
-		['case-tile-assignee', 'stat', 8, 2],
-		['case-tile-deadline', 'countdown', 10, 2],
+		['case-tile-number', 'stat', 0, 3],
+		['case-tile-type', 'stat', 3, 3],
+		['case-tile-deadline', 'countdown', 6, 3],
 	]
+	const HOURS = ['case-kpis-hours', 'integration', 9, 3]
 
 	it('has retired the custom band and its slot', () => {
 		expect(widget('case-header')).toBeUndefined()
@@ -123,9 +127,26 @@ describe('CaseDetail — the identity row is four configured tiles', () => {
 		})
 	}
 
+	it('places the hours card in the fourth cell of the row', () => {
+		const [id, type, gridX, gridWidth] = HOURS
+		expect(widget(id).type).toBe(type)
+		const placed = cells(id)
+		expect(placed).toHaveLength(1)
+		expect(placed[0].gridY).toBe(0)
+		expect(placed[0].gridX).toBe(gridX)
+		expect(placed[0].gridWidth).toBe(gridWidth)
+	})
+
+	it('declares neither a status tile nor an assignee tile', () => {
+		for (const id of ['case-tile-status', 'case-tile-assignee']) {
+			expect(widget(id), `${id} is declared`).toBeUndefined()
+			expect(cells(id), `${id} is placed`).toHaveLength(0)
+		}
+	})
+
 	it('fills the top row exactly, leaving no gap and no overhang', () => {
 		const top = caseDetail().config.layout.filter((c) => c.gridY === 0)
-		expect(top).toHaveLength(TILES.length)
+		expect(top).toHaveLength(TILES.length + 1)
 		expect(top.reduce((sum, c) => sum + c.gridWidth, 0)).toBe(12)
 		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
 	})
@@ -141,38 +162,6 @@ describe('CaseDetail — the identity row is four configured tiles', () => {
 			schema: 'caseType',
 			labelField: 'title',
 		})
-		expect(content.emptyText).toBeTruthy()
-	})
-
-	it('draws the status as a badge coloured by its own status type', () => {
-		const content = widget('case-tile-status').content
-		expect(content.display).toBe('badge')
-		expect(content.objectField.field).toBe('status')
-		expect(content.objectField.resolve).toMatchObject({
-			register: 'dossiq',
-			schema: 'statusType',
-			labelField: 'name',
-			variantField: 'colour',
-		})
-		// REQ-CT-19 asks for the case type's authored colour to reach this
-		// badge. CnStatusBadge takes one of six variants, so every one of the
-		// twelve palette names the schema enumerates must map to one, or an
-		// authored purple silently falls back to the default grey pill.
-		const map = content.objectField.resolve.variantMap
-		expect(Object.keys(map).sort()).toEqual([...STATUS_COLOURS].sort())
-		const variants = [
-			'default',
-			'primary',
-			'success',
-			'warning',
-			'error',
-			'info',
-		]
-		for (const [colour, variant] of Object.entries(map)) {
-			expect(variants, `${colour} maps to a real badge variant`).toContain(
-				variant,
-			)
-		}
 		expect(content.emptyText).toBeTruthy()
 	})
 
@@ -270,7 +259,8 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// same log would be the duplication that change exists to retire.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-core',
-			'case-documents-panel',
+			'case-files',
+			'case-notes-panel',
 			'case-people-panel',
 			'case-work-panel',
 			'case-related-panel',
@@ -341,11 +331,15 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	it('grew case-panels to take the Data tab it absorbed', () => {
 		const panels = cells('case-panels')[0]
 		expect(cells('case-core')).toHaveLength(0)
-		expect(panels.gridHeight).toBeGreaterThanOrEqual(14)
+		// Nine rows by nine columns: Ruben's hand layout of 2026-09-12.
+		expect(panels.gridWidth).toBe(9)
+		expect(panels.gridHeight).toBeGreaterThanOrEqual(9)
 		// The left column runs to the bottom of the right one, so the page has
 		// no reserved void under the strip (ADR-062: the cell is the budget).
 		const bottom = (cell) => cell.gridY + cell.gridHeight
-		const right = caseDetail().config.layout.filter((c) => c.gridX >= 8)
+		const right = caseDetail().config.layout.filter(
+			(c) => c.gridX >= 9 && c.gridY >= 2,
+		)
 		expect(bottom(panels)).toBe(Math.max(...right.map(bottom)))
 	})
 })

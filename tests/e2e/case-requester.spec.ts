@@ -51,7 +51,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
-import { PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
+import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
  * The personas this spec files cases for.
@@ -95,8 +95,6 @@ let protectedPersonId = ''
 let plainPersonId = ''
 let companyId = ''
 
-let protectedCaseId = ''
-let plainCaseId = ''
 let companyCaseId = ''
 let bareRequesterCaseId = ''
 let noRequesterCaseId = ''
@@ -219,7 +217,7 @@ test.describe('The requester on the case', () => {
 		// A case per shape. The projection is written the way the picker
 		// writes it, except on `bareRequester`, which carries the canonical
 		// reference alone the way a form save leaves it today.
-		protectedCaseId = objectId(
+		objectId(
 			await seedCase(api, token, {
 				title: `${RUN_PREFIX} Beschermde aanvrager`,
 				caseType: caseTypeId,
@@ -229,7 +227,7 @@ test.describe('The requester on the case', () => {
 				initiatorDisplayName: PROTECTED.name,
 			}),
 		)
-		plainCaseId = objectId(
+		objectId(
 			await seedCase(api, token, {
 				title: `${RUN_PREFIX} Gewone aanvrager`,
 				caseType: caseTypeId,
@@ -420,11 +418,12 @@ test.describe('The requester on the case', () => {
 		expect(before.requester).toBe(plainPersonId)
 		expect(before.initiatorDisplayName ?? '').toBe('')
 
+		// Nothing on the page prints the projected name any more: the initiator
+		// card went on 2026-09-12, and the back-fill it carried now runs
+		// headless from the page's actions slot (RequesterProjection). So the
+		// claim is read where it lands, on the record.
 		await page.goto(`${DASHBOARD_URL}cases/${bareRequesterCaseId}`, PAGE_LOAD)
-		await expect(page.locator('[data-testid="initiator-name"]')).toHaveText(
-			PLAIN.name,
-			{ timeout: 30_000 },
-		)
+		await dismissSupportDialog(page)
 
 		await expect
 			.poll(
@@ -472,96 +471,11 @@ test.describe('The requester on the case', () => {
 		expect(saved.initiatorDisplayName).toBe(COMPANY.name)
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md#initiator-visible-on-the-case
-	test('the case page names the person, the number and the address', async ({
-		page,
-	}) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
-
-		const card = page.locator('[data-testid="initiator-section"]')
-		await expect(card).toBeVisible({ timeout: 30_000 })
-		await expect(card.locator('[data-testid="initiator-name"]')).toHaveText(
-			PLAIN.name,
-		)
-		await expect(card.locator('[data-testid="initiator-type"]')).toHaveText(
-			/Person|Persoon/,
-		)
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveText(PLAIN.bsn)
-		// The address comes off the source row, not off the case: a card that
-		// renders the projection alone cannot show it.
-		await expect(
-			card.locator('[data-testid="initiator-address"]'),
-			'the address is resolved from the brpPerson row',
-		).toContainText('Mandelaplein', { timeout: 20_000 })
-		// The number links to the person's page in this app, not to
-		// OpenRegister's object viewer. That moved with `contacts-domain`
-		// (#1947): the register row showed every field of the register set,
-		// none of the person's cases, and a way out of the app the reader did
-		// not ask for.
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveAttribute('href', new RegExp(`/contacts/${plainPersonId}$`))
-	})
-
-	// @e2e openspec/specs/initiator-display/spec.md#a-company-card-links-to-the-kvk-record
-	test('a company card links to the KvK record', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${companyCaseId}`, PAGE_LOAD)
-
-		const card = page.locator('[data-testid="initiator-section"]')
-		await expect(card).toBeVisible({ timeout: 30_000 })
-		await expect(card.locator('[data-testid="initiator-name"]')).toHaveText(
-			COMPANY.name,
-		)
-		await expect(card.locator('[data-testid="initiator-type"]')).toHaveText(
-			/Company|Bedrijf/,
-		)
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveText(COMPANY.kvk)
-		// An organisation has a page of its own for the same reason a person
-		// does; the route segment is what differs.
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveAttribute('href', new RegExp(`/organisations/${companyId}$`))
-	})
-
-	// @e2e openspec/specs/initiator-display/spec.md#no-initiator-no-clutter
-	test('a case without a requester shows no card', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${noRequesterCaseId}`, PAGE_LOAD)
-		// The tab strip, not a KPI card. This is only a load signal, and
-		// `.cn-kpi-card` is a poor one: the case page carries no stats-block and
-		// no stat tile at all. `case-kpis-hours` is an integration widget that
-		// places humaniq's leaf, so where humaniq is absent it renders nothing,
-		// heading included, and the identity row prints its facts as plain
-		// fields. The strip is `case-panels`, on every case page unconditionally.
-		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
-			timeout: 30_000,
-		})
-
-		// The page has loaded, so an absent card is a decision rather than a
-		// render that has not happened yet.
-		await expect(page.locator('[data-testid="initiator-section"]')).toHaveCount(
-			0,
-		)
-
-		// ...and the widget cell says so rather than sitting blank. The card is
-		// drawn by the widget host whether or not InitiatorSection renders, so
-		// "no initiator, no clutter" used to produce the opposite: a titled
-		// 240px box holding the word Initiator and nothing else, which ADR-062
-		// calls a reserved void.
-		//
-		// A SEPARATE testid on purpose. `initiator-section` means this case has
-		// an initiator, which is what the assertion above depends on; reusing it
-		// for the empty line would make that assertion pass on a case that has
-		// one.
-		const empty = page.getByTestId('initiator-empty')
-		await expect(empty).toBeVisible({ timeout: 15_000 })
-		await expect(empty).toHaveText(
-			/This case has no initiator yet|Deze zaak heeft nog geen indiener/,
-		)
-	})
+	// The initiator card left the page on 2026-09-12 (Ruben): the requester
+	// reads in the Data tab's Requester field. The five tests that read the
+	// card (the person card, the company card's KvK link, the no-card case,
+	// the masked BSN and its logged reveal, the unmasked person) went with
+	// it; `initiator-display/spec.md` carries the exclusions.
 
 	// @e2e openspec/specs/initiator-display/spec.md#the-requester-is-a-column
 	test('the requester is a column on the case list', async ({ page }) => {
@@ -757,66 +671,4 @@ test.describe('The requester on the case', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/initiator-display/spec.md#the-bsn-is-masked
-	// @e2e openspec/specs/initiator-display/spec.md#a-reveal-shows-the-number-and-is-a-logged-read
-	//
-	// TWO ANCHORS FOR ONE TEST, BECAUSE IT PROVES BOTH SCENARIOS END TO END.
-	// Masked: the Protected marker and five dots plus the last four digits.
-	// Revealed: the full number after pressing Reveal, and exactly one read
-	// carrying `_reason=bsn-reveal`. Splitting the test would make each half
-	// prove less, because the count of reads is only meaningful against a
-	// page that started with none.
-	test('a protected BSN is masked, and a reveal is one logged read', async ({
-		page,
-	}) => {
-		const reads: string[] = []
-		page.on('request', (request) => {
-			const url = request.url()
-			if (url.includes('brpPerson') && url.includes('_reason=bsn-reveal')) {
-				reads.push(url)
-			}
-		})
-
-		await page.goto(`${DASHBOARD_URL}cases/${protectedCaseId}`, PAGE_LOAD)
-		const card = page.locator('[data-testid="initiator-section"]')
-		await expect(card).toBeVisible({ timeout: 30_000 })
-
-		await expect(
-			card.locator('[data-testid="initiator-protected"]'),
-			'a protected person is marked as such',
-		).toBeVisible({ timeout: 20_000 })
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveText(`•••••${PROTECTED.bsn.slice(-4)}`)
-		expect(reads, 'nothing is revealed before you ask').toEqual([])
-
-		await card.locator('[data-testid="initiator-reveal"]').click()
-
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveText(PROTECTED.bsn, { timeout: 20_000 })
-		expect(reads.length, `reads carrying the reason: ${reads.join(' | ')}`).toBe(
-			1,
-		)
-	})
-
-	// @e2e openspec/specs/initiator-display/spec.md#an-unprotected-person-is-not-masked
-	test('an unprotected person is not masked', async ({ page }) => {
-		await page.goto(`${DASHBOARD_URL}cases/${plainCaseId}`, PAGE_LOAD)
-		const card = page.locator('[data-testid="initiator-section"]')
-		await expect(card).toBeVisible({ timeout: 30_000 })
-
-		// The address proves the source row resolved, so an absent marker is
-		// an answer rather than a pending request.
-		await expect(card.locator('[data-testid="initiator-address"]')).toBeVisible({
-			timeout: 20_000,
-		})
-		await expect(
-			card.locator('[data-testid="initiator-source-link"]'),
-		).toHaveText(PLAIN.bsn)
-		await expect(
-			card.locator('[data-testid="initiator-protected"]'),
-		).toHaveCount(0)
-		await expect(card.locator('[data-testid="initiator-reveal"]')).toHaveCount(0)
-	})
 })

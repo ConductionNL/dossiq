@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +58,7 @@ final class DashboardControllerCasePlanFlagTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$this->createMock(IInitialState::class),
 			$appConfig,
+			$this->createMock(originalClassName: IEventDispatcher::class),
 		);
 	}//end controller()
 
@@ -102,6 +104,7 @@ final class DashboardControllerCasePlanFlagTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$this->createMock(IInitialState::class),
 			$appConfig,
+			$this->createMock(originalClassName: IEventDispatcher::class),
 		);
 
 		$method = new ReflectionMethod(DashboardController::class, 'prefersOpenRegisterCasePlan');

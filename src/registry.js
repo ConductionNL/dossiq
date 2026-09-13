@@ -45,7 +45,7 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
-import InitiatorSection from './components/initiator/InitiatorSection.vue'
+import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -353,12 +353,6 @@ const registry = {
 		appliesTo: ['case.requester', 'contactmoment.contact'],
 		_note: 'Cross-source initiator picker (Person=brpPerson / Company=kvkCompany register sets via the object store, Contact=core contactsmenu with graceful empty state). Bound to case.requester through fieldOverrides on the Dashboard new-case action and the CaseDetail case-core overrides. Also used inline by InitiatorPickerModal in the StartCaseWidget create flow. NOTE: a form-field entry is validated by CnAppRoot but not yet MOUNTED into CnFormDialog by @conduction/nextcloud-vue 2.41.0 — the manifest binding is the declaration, and until the library mounts it the resolved ns#Requester provider renders the field as its own object picker.',
 	},
-	// @spec openspec/specs/initiator-display/spec.md
-	InitiatorSection: {
-		kind: 'widget',
-		component: InitiatorSection,
-		_note: 'CaseDetail overview widget: initiator name + type + source id deep-linking to the seeded brpPerson/kvkCompany record in OpenRegister. Renders nothing when the case has no initiator.',
-	},
 
 	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
 	// TaskCaseCard. Both were resolved through TaskDetail's `slots` map while
@@ -556,10 +550,39 @@ const registry = {
 	// to dossiq's own notification endpoint — see CaseNotesTab.vue for the
 	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
 	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	// --- The requester's projection, kept in step without a card. ---
+	//
+	// The initiator card left the page on 2026-09-12 (Ruben), but the card
+	// was also where a case saved with only the `requester` reference got its
+	// projection (type, source id, display name) written back, and the case
+	// list's Requester column and filter read that projection. This is the
+	// back-fill alone, mounted headless through the page's `actionsComponent`
+	// slot, which is the one place a detail page mounts a component of ours
+	// on load without giving it a grid cell.
+	// @spec openspec/specs/initiator-display/spec.md
+	RequesterProjection: {
+		kind: 'widget',
+		component: RequesterProjection,
+		_note: 'CaseDetail actions slot, headless: fills initiatorType, initiatorSourceId and initiatorDisplayName from the canonical requester uuid when the case carries the reference and no projection. Renders nothing.',
+	},
 	CaseNotesTab: {
 		kind: 'page',
 		component: CaseNotesTab,
 		_note: "Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab('notes')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.",
+	},
+	// --- The notes as a tab on the case page. ---
+	//
+	// The same component the sidebar's Notes tab mounts, keyed by a widget
+	// TYPE for the same reason `case-task-pane` is: a child of the
+	// `case-panels` tabs widget renders through CnDetailWidgetHost, which
+	// picks a renderer from `cnRegistry[widget.type]` and binds `objectId`,
+	// `register` and `schema` from the page, which is exactly the prop set
+	// CaseNotesTab takes from the sidebar. A `type: "custom"` widget would
+	// resolve through a page slot that only grid items get.
+	'case-notes-pane': {
+		kind: 'widget',
+		component: CaseNotesTab,
+		_note: 'CaseDetail Notes tab: the mention-aware CnNotesTab through CaseNotesTab, the same surface the sidebar offers, so a handler reading the case file does not have to open the sidebar to leave a note on it.',
 	},
 	// --- Sharing/transfer sidebar tab (federated-case-collaboration). ---
 	// Wires the previously-orphaned ShareTab/CreateShareDialog/

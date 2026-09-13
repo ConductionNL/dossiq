@@ -97,6 +97,8 @@ const HOOK = {
 	view: 'hq-hours-view',
 	dialog: 'hq-hours-booking-dialog',
 	date: 'hq-hours-booking-date',
+	start: 'hq-hours-booking-start',
+	end: 'hq-hours-booking-end',
 	hours: 'hq-hours-booking-hours',
 	description: 'hq-hours-booking-description',
 	submit: 'hq-hours-booking-submit',
@@ -104,6 +106,17 @@ const HOOK = {
 
 /** The hours booked by this run's booking test. */
 const BOOKED_HOURS = 2.5
+
+/**
+ * The `HH:MM` that is `hours` after 09:00, for the dialog's end field.
+ *
+ * @param hours The span to book.
+ * @return The end time.
+ */
+function bookedEnd(hours: number): string {
+	const minutes = 9 * 60 + Math.round(hours * 60)
+	return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+}
 
 /**
  * The `<app>:<schema>` literal the leaf must derive for a dossiq case.
@@ -481,7 +494,7 @@ if (!HUMANIQ_DECLARED) {
 			// decision rather than a render that has not happened yet. Both of
 			// these are dossiq's own and neither depends on humaniq.
 			await expect(
-				page.getByTestId('cn-stat-widget-badge'),
+				page.locator('.cn-kpi-card').first(),
 				'the identity row must render, or the page is simply not finished loading',
 			).toBeVisible({ timeout: 30_000 })
 			await expect(
@@ -518,30 +531,7 @@ if (!HUMANIQ_DECLARED) {
 			}
 		})
 
-		// 🔴 CITATION WITHDRAWN 2026-09-12, BECAUSE THE SCENARIO IS NOT THE
-		// CLAIM THIS TEST MAKES. It cited
-		// `#no-cross-app-register-query-survives`, whose WHEN is literally
-		// "`src/manifest.json` is searched for `"register": "humaniq"`" and
-		// whose THEN is "no match at all, in a widget or anywhere else". That
-		// is a source-level claim over the whole manifest. This test watches
-		// the network on ONE case page, so it cannot see a declaration on a
-		// widget that is not on this page, or on a page nobody opened, and a
-		// reader taking the citation at face value would believe the whole
-		// manifest had been searched.
-		//
-		// The test stays, because the runtime consequence is the regression
-		// the change exists to prevent and nothing else asserts it: a
-		// manifest query against another app's register 404s and renders `0`,
-		// which is indistinguishable from a case with no hours booked.
-		//
-		// WHAT WOULD CLOSE THE SCENARIO: a unit test reading `src/manifest.json`
-		// off disk and asserting no `"register": "humaniq"` anywhere. It is not
-		// browser-shaped, so no e2e belongs on it. Measured 2026-09-12: nothing
-		// in `tests/Unit` mentions the hours widget or that register, so this
-		// scenario is uncovered rather than covered elsewhere. The same is true
-		// of its two siblings `#the-layout-entry-still-resolves` and
-		// `#no-requiredapp-anywhere-on-an-integration-widget`, which are also
-		// pure manifest assertions and carry no citation at all.
+		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
 		test('the page asks humaniq for nothing', async ({ page }) => {
 			// This is the regression the change exists to prevent, and it is
 			// assertable exactly where humaniq is absent: a manifest query
@@ -559,7 +549,7 @@ if (!HUMANIQ_DECLARED) {
 			})
 
 			await openCase(page, caseId)
-			await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
+			await expect(page.locator('.cn-kpi-card').first()).toBeVisible({
 				timeout: 30_000,
 			})
 
@@ -786,7 +776,15 @@ if (!HUMANIQ_DECLARED) {
 				dialog.getByTestId(HOOK.date),
 				new Date().toISOString().slice(0, 10),
 			)
-			await fillField(dialog.getByTestId(HOOK.hours), String(BOOKED_HOURS))
+			// A start and an end, not a count: the dialog derives the hours from
+			// the span, the way the server does for a stopped timer, and shows
+			// the figure it will book. Asserting that figure is what ties the
+			// span typed here to the total that rises below.
+			await fillField(dialog.getByTestId(HOOK.start), '09:00')
+			await fillField(dialog.getByTestId(HOOK.end), bookedEnd(BOOKED_HOURS))
+			await expect(dialog.getByTestId(HOOK.hours)).toContainText(
+				String(BOOKED_HOURS),
+			)
 			await fillField(
 				dialog.getByTestId(HOOK.description),
 				'E2E booking from the dossiq case page',

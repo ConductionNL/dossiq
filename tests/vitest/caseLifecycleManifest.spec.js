@@ -106,8 +106,9 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 	it('places the timeline in one cell, where the stepper stood', () => {
 		const placed = cells('case-stages')
 		expect(placed).toHaveLength(1)
-		expect(placed[0].gridX).toBe(8)
-		expect(placed[0].gridWidth).toBe(4)
+		// The right rail is three columns wide in Ruben's layout (2026-09-12).
+		expect(placed[0].gridX).toBe(9)
+		expect(placed[0].gridWidth).toBe(3)
 		// WITH its title. A bare column of labelled dots in the right rail says
 		// nothing about what the column is, so a reader has to infer that it is
 		// the case progressing rather than, say, a checklist.
@@ -120,7 +121,9 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// page names no actions component, no widget, no cell and no slot, and
 		// the registry holds no entry. Any one of those left behind renders a
 		// second way to move the case beside the timeline.
-		expect(caseDetail().actionsComponent).toBeUndefined()
+		// The actions slot may hold the headless requester projection, never
+		// the transition strip.
+		expect(caseDetail().actionsComponent ?? '').not.toBe('CaseTransitionsWidget')
 		expect(widget('case-transitions')).toBeUndefined()
 		expect(cells('case-transitions')).toHaveLength(0)
 		expect(caseDetail().slots['widget-case-transitions']).toBeUndefined()

@@ -54,7 +54,8 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  */
 const WORK_TABS = [
 	'Data',
-	'Documents',
+	'Files',
+	'Notes',
 	'People',
 	'Work',
 	'Related',
@@ -69,15 +70,20 @@ const WORK_TABS = [
  *
  * So the tiles are addressed by POSITION, which the manifest fixes. CnDetailPage
  * renders `.cn-detail-page__grid-item` in `config.layout` order, and the first
- * five entries are the identity row: number, type, status, assignee, deadline.
+ * three entries are the identity row: number, type, deadline, with the hours
+ * card in the fourth cell. The status and the assignee are not tiles (Ruben's
+ * layout of 2026-09-12): the status reads on the stages widget beside the
+ * panels and in the Data tab, the assignee in the Data tab.
  * `tests/vitest/manifestCaseHeader.spec.js` pins that order and those widths, so
  * a reordering fails there with a readable message before it reaches a browser.
  *
- * The two tiles that HAVE a stable hook are addressed by it instead: the status
- * pill is the library's `cn-stat-widget-badge` and the deadline is the only
- * `.cn-countdown-widget` on the page.
+ * The one tile that HAS a stable hook is addressed by it instead: the deadline
+ * is the only `.cn-countdown-widget` on the page.
  */
-const TILE = { number: 0, type: 1, status: 2, assignee: 3, deadline: 4 } as const
+const TILE = { number: 0, type: 1, deadline: 2 } as const
+
+/** The Status field of the Data tab, the open tab on load. */
+const DATA_TAB_STATUS = '.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
 
 /**
  * One identity tile, by its place in the row.
@@ -219,7 +225,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	// BELOW the title. Both halves, because either alone is satisfied by a
 	// layout the requirement exists to rule out. The page title is asserted
 	// outright, which closes the THEN that was never covered by anything.
-	test('the case number, type, status and assignee read under the title', async ({
+	test('the case number and the case type read under the title', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
@@ -257,7 +263,6 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// pass "renders something" and fail the feature.
 		const typeTile = tileValue(page, TILE.type)
 		await expect(typeTile).toHaveText(caseTypeTitle, { timeout: 20_000 })
-		await expect(tileValue(page, TILE.assignee)).toHaveText('admin')
 
 		// The row sits ABOVE the tab strip: an identity a reader has to scroll
 		// to is the state this row replaced.
@@ -283,24 +288,23 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
-	test('the status badge and the overdue countdown sit in the row', async ({
+	test('the status reads in the Data tab and the overdue countdown sits in the row', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(tile(page, TILE.status)).toBeVisible({ timeout: 30_000 })
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
 
-		// The case carries a status UUID. A badge showing the uuid would pass
-		// "renders something" and fail the feature. The pill is the library's
-		// own CnStatusBadge inside the configured `stat` tile, so it carries
-		// the library testid rather than one this app can name.
-		const badge = page.getByTestId('cn-stat-widget-badge')
-		await expect(badge).toHaveText(new RegExp(`^\\s*${statusName}\\s*$`), {
-			timeout: 20_000,
-		})
-		await expect(badge).not.toContainText(
+		// The case carries a status UUID. A field showing the uuid would pass
+		// "renders something" and fail the feature. The status is not a tile:
+		// it reads in the Data tab, the open tab on load, and on the stages
+		// widget beside the panels.
+		const status = page.locator(DATA_TAB_STATUS)
+		await expect(status).toHaveText(statusName, { timeout: 30_000 })
+		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveCount(0)
 
 		// A start date in early 2024 puts the computed deadline behind us
 		// whatever term the case type carries, so the countdown reads overdue.
@@ -322,17 +326,14 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		await expect(tile(page, TILE.status)).toBeVisible({ timeout: 30_000 })
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
 
-		// Unknown, not nothing: an absent badge and an unset status look
-		// identical, and only one of the two is a data problem. `emptyText` on
-		// the configured tile is what puts that word there.
-		// `\s*` on both sides: CnStatusBadge contributes a leading space, and
-		// `toHaveText` compares the element's WHOLE text, so a bare anchor
-		// fails on a correct badge. Same trap decidiq hit on its status chips.
-		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveText(
-			/^\s*(Unknown|Onbekend)\s*$/,
-			{ timeout: 20_000 },
+		// The Data tab's status field names nothing it does not know: no uuid,
+		// and no name the record does not carry.
+		const status = page.locator(DATA_TAB_STATUS)
+		await expect(status).toBeVisible({ timeout: 20_000 })
+		await expect(status).not.toContainText(
+			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
 
 		// The countdown tile is still PLACED, and it says nothing. A dash and

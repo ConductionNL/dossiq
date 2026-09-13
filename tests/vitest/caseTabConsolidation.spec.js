@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds SIX tabs, and keeps holding six.
+ * The case page holds SEVEN tabs, and keeps holding seven.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -68,12 +68,14 @@ const tabs = () => widget('case-panels').content.tabs
  * Six is not a round number picked for tidiness. It is the count row A33
  * asked for, and the same ceiling the app menu is held to.
  */
-const TAB_CEILING = 6
+// Seven since 2026-09-12: the Notes tab joined the strip beside Files.
+const TAB_CEILING = 7
 
-/** The six labels, in the order a handler reads them. */
+/** The seven labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-core', 'Data'],
-	['case-documents-panel', 'Documents'],
+	['case-files', 'Files'],
+	['case-notes-panel', 'Notes'],
 	['case-people-panel', 'People'],
 	['case-work-panel', 'Work'],
 	['case-related-panel', 'Related'],
@@ -88,9 +90,9 @@ const EXPECTED_TABS = [
  * count, so the count alone is not enough: each of these must still render
  * somewhere on the page.
  */
+// The Documents group is gone (2026-09-13): its Files half is the Files tab
+// itself now, and its dossier list left the page. See the Files tab test.
 const FOLDED = [
-	['case-documents-panel', 'case-documents'],
-	['case-documents-panel', 'case-files'],
 	['case-people-panel', 'case-roles'],
 	['case-people-panel', 'case-communication'],
 	['case-work-panel', 'case-tasks'],
@@ -121,7 +123,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the six tabs, in order', () => {
+	it('names the seven tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -210,8 +212,22 @@ describe('the container type this change depends on', () => {
 	})
 
 	it('is the type every group widget declares', () => {
+		// Three tabs are single surfaces rather than groups of sections: the
+		// Data tab (the schema-driven data widget), the Files tab (the case
+		// folder through the `files` leaf) and the Notes tab (one notes pane,
+		// the same surface the sidebar offers). Every other tab is a group
+		// and declares `case-sections`.
 		for (const { widgetId } of tabs()) {
 			if (widgetId === 'case-core') continue
+			if (widgetId === 'case-files') {
+				expect(widget(widgetId).type).toBe('integration')
+				expect(widget(widgetId).integrationId).toBe('files')
+				continue
+			}
+			if (widgetId === 'case-notes-panel') {
+				expect(widget(widgetId).type).toBe('case-notes-pane')
+				continue
+			}
 			expect(widget(widgetId).type).toBe('case-sections')
 		}
 	})
