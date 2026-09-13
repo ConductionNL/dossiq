@@ -48,16 +48,16 @@ class DocumentRecordStore {
 	public function findCase(string $caseId): ?array {
 		try {
 			[$objectService, $register] = $this->requireRegister();
-			$row = $this->rowOf(value: $objectService->find($caseId, $register, $this->schema(key: 'case_schema')));
+			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $this->schema(key: 'case_schema'), id: $caseId);
 		} catch (Throwable) {
 			return null;
 		}
 
-		if ($row === []) {
+		if ($row === null || $row === []) {
 			return null;
 		}
 
-		return $row;
+		return $this->rowOf(value: $row);
 	}//end findCase()
 
 	/**
@@ -76,16 +76,16 @@ class DocumentRecordStore {
 
 		if ($recordId !== '') {
 			try {
-				$row = $this->rowOf(value: $objectService->find($recordId, $register, $infoSchema));
+				$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $recordId);
 			} catch (Throwable) {
 				return null;
 			}
 
-			if ($row === []) {
+			if ($row === null || $row === []) {
 				return null;
 			}
 
-			return $row;
+			return $this->rowOf(value: $row);
 		}
 
 		$rows = $this->searchObjectsAsArrays(
@@ -237,9 +237,9 @@ class DocumentRecordStore {
 
 		if ($typeId !== '') {
 			try {
-				$row = $this->rowOf(value: $objectService->find($typeId, $register, $typeSchema));
-				if ($row !== []) {
-					return $row;
+				$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $typeSchema, id: $typeId);
+				if ($row !== null && $row !== []) {
+					return $this->rowOf(value: $row);
 				}
 			} catch (Throwable) {
 				// Fall through to the register's first type.
