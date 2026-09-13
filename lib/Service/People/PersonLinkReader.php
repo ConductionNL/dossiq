@@ -36,6 +36,15 @@ class PersonLinkReader {
 	}//end __construct()
 
 	/**
+	 * OpenRegister's contact service, the read side of people on objects.
+	 *
+	 * The published object contract has no people method, so this goes through
+	 * the generic class resolver, the same exception ADR-084 already makes for
+	 * the file service.
+	 */
+	private const PEOPLE_SERVICE = 'OCA\\OpenRegister\\Service\\ContactService';
+
+	/**
 	 * The people linked to a case, [] when OpenRegister cannot answer.
 	 *
 	 * @param string $caseId The case uuid.
@@ -45,7 +54,7 @@ class PersonLinkReader {
 	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function peopleOn(string $caseId): array {
-		$people = $this->settingsService->getPeopleService();
+		$people = $this->settingsService->getOpenRegisterClass(class: self::PEOPLE_SERVICE);
 		if ($people === null) {
 			return [];
 		}
