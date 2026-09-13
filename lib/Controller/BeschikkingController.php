@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -200,6 +201,8 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->akkoord($id, $approvedBy);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'approved', e: $e);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'approved', e: $e);
 		} catch (\Throwable $e) {
@@ -319,6 +322,37 @@ class BeschikkingController extends Controller {
 
 		return $user->getUID();
 	}//end requireUser()
+
+	/**
+	 * Translate a refusal into the response ADR-050 describes.
+	 *
+	 * `mapRuntime()` below answers a static sentence in `error` and no rule
+	 * slug at all, so "insufficient mandaat" covered both a mandate that does
+	 * not reach and a register that could not be read. A refusal carries its
+	 * own status, rule and sentence, so none of that is guessed here.
+	 *
+	 * @param string           $op The operation name, for the log line.
+	 * @param RefusedException $e  The refusal.
+	 *
+	 * @return JSONResponse The translated refusal.
+	 *
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 */
+	private function refused(string $op, RefusedException $e): JSONResponse {
+		$this->logger->info(
+			'BeschikkingController: ' . $op . ' refused',
+			['rule' => $e->getRule(), 'status' => $e->getStatus()],
+		);
+
+		return new JSONResponse(
+			[
+				'message' => $e->getSentence(),
+				'error' => $e->getRule(),
+				'code' => $e->getMessage(),
+			],
+			$e->getStatus(),
+		);
+	}//end refused()
 
 	/**
 	 * Map a domain RuntimeException to a JSONResponse with an appropriate status.

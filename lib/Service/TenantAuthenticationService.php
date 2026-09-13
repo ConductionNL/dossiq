@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -91,7 +92,10 @@ class TenantAuthenticationService {
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
 	 *
+	 * @throws RefusedException When the matrix could not be read, so the answer is neither yes nor no.
+	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
@@ -111,6 +115,11 @@ class TenantAuthenticationService {
 			}
 
 			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+		} catch (RefusedException $e) {
+			// A refusal already says what happened and with which status.
+			// Folding it into the fail-closed branch below is what made an
+			// unreadable matrix indistinguishable from a role that may not act.
+			throw $e;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: mandate matrix validation failed (fail-closed)',
@@ -165,9 +174,12 @@ class TenantAuthenticationService {
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
-	 * @return array<string, array<string, bool>>|null Active matrix or null.
+	 * @return array<string, array<string, bool>>|null Active matrix, or null when the tenant has none.
+	 *
+	 * @throws RefusedException When the matrix store could not be read at all.
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function loadActiveMatrix(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -192,8 +204,16 @@ class TenantAuthenticationService {
 				]
 			);
 		} catch (Throwable $e) {
-			return null;
-		}
+			$this->logger->warning(
+				'Dossiq: mandate matrix could not be read',
+				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
+			);
+			throw RefusedException::indeterminate(
+				rule: 'tenant-mandate-matrix-unreadable',
+				sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
+				previous: $e,
+			);
+		}//end try
 
 		if (is_array($rows) === false || count($rows) === 0) {
 			return null;

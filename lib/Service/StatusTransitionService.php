@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -464,7 +465,11 @@ class StatusTransitionService {
 	): array {
 		$fromStatus = (string)($transition['fromStatus'] ?? '');
 		if ($fromStatus !== '' && $fromStatus !== $currentId) {
-			throw new RuntimeException('transition_from_status_mismatch');
+			throw new RefusedException(
+				rule: 'transition-from-status-mismatch',
+				sentence: 'This move does not start from the status the case is in.',
+				status: RefusedException::STATUS_REFUSED,
+			);
 		}
 
 		// OR-RBAC role-routing gate (ADR-022). At publish time
@@ -478,7 +483,11 @@ class StatusTransitionService {
 		// model here using OR's single trusted membership check (IGroupManager),
 		// not a bespoke role-resolution scheme. An empty/absent list = open.
 		if ($this->authorizer->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
-			throw new RuntimeException('transition_unauthorized');
+			throw new RefusedException(
+				rule: 'transition-unauthorized',
+				sentence: 'You are not in a group this move is open to.',
+				status: RefusedException::STATUS_FORBIDDEN,
+			);
 		}
 
 		// Defence in depth — re-evaluate guards on the server side.
@@ -521,12 +530,20 @@ class StatusTransitionService {
 
 		$versionAtSave = (int)(($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
 		if ($versionAtSave !== $readVersion) {
-			throw new RuntimeException('transition_conflict');
+			throw new RefusedException(
+				rule: 'transition-conflict',
+				sentence: 'Another change reached this case first. Reload it and try again.',
+				status: RefusedException::STATUS_REFUSED,
+			);
 		}
 
 		$statusAtSave = (string)($caseAtSave['status'] ?? '');
 		if ($statusAtSave !== $currentId) {
-			throw new RuntimeException('transition_conflict');
+			throw new RefusedException(
+				rule: 'transition-conflict',
+				sentence: 'Another change reached this case first. Reload it and try again.',
+				status: RefusedException::STATUS_REFUSED,
+			);
 		}
 
 		return $caseAtSave;

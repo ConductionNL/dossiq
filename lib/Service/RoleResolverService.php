@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
@@ -145,8 +146,10 @@ class RoleResolverService {
 	 * @return array<int, string> Ordered participant refs (post-delegation)
 	 *
 	 * @throws RoutingStrategyMissingException When the rule's strategy is unknown
+	 * @throws RefusedException When the case's roles could not be read at all
 	 *
 	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function resolve(array $rule, array $case): array {
 		$strategyName = (string)($rule['strategy'] ?? '');
@@ -274,7 +277,9 @@ class RoleResolverService {
 	 *
 	 * @param string $caseId The case id
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<int, array<string, mixed>> The role rows, empty when the case has none.
+	 *
+	 * @throws RefusedException When the role register could not be read at all.
 	 */
 	private function loadCaseRoles(string $caseId): array {
 		if ($caseId === '') {
@@ -312,7 +317,14 @@ class RoleResolverService {
 			$this->logger->warning(
 				'Dossiq: failed to load roles for case ' . $caseId . ': ' . $e->getMessage(),
 			);
-			return [];
+			// An empty role list is how a routing rule resolves to nobody, so
+			// swallowing the read here made "the register threw" and "this case
+			// has no handler in that role" the same answer.
+			throw RefusedException::indeterminate(
+				rule: 'case-roles-unreadable',
+				sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
+				previous: $e,
+			);
 		}//end try
 
 		$rows = [];

@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\MandaatEscalatieService;
 use OCA\Dossiq\Service\MandaatGebruikService;
@@ -144,7 +145,12 @@ class MandaatMatrixController extends Controller {
 		$caseProps = array_merge($caseProps, $this->resolveApplicantIdentity(caseId: $caseId));
 
 		$userId = $this->currentUserId();
-		$r = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
+		try {
+			$r = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'probe', e: $e);
+		}
+
 		return new JSONResponse($r);
 	}//end probe()
 
@@ -431,6 +437,8 @@ class MandaatMatrixController extends Controller {
 		$decisionType = (string)$this->request->getParam('decisionType', '');
 		try {
 			$rows = $this->check->getApplicableForUser($userId, $caseType, $decisionType);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'applicable', e: $e);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'MandaatMatrixController.applicable failed',
@@ -441,6 +449,32 @@ class MandaatMatrixController extends Controller {
 
 		return new JSONResponse($rows);
 	}//end applicable()
+
+	/**
+	 * Translate a refusal into the response ADR-050 describes.
+	 *
+	 * @param string           $op The endpoint, for the log line.
+	 * @param RefusedException $e  The refusal.
+	 *
+	 * @return JSONResponse The translated refusal.
+	 *
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 */
+	private function refused(string $op, RefusedException $e): JSONResponse {
+		$this->logger->warning(
+			'MandaatMatrixController: ' . $op . ' could not be answered',
+			['rule' => $e->getRule(), 'status' => $e->getStatus()],
+		);
+
+		return new JSONResponse(
+			[
+				'message' => $e->getSentence(),
+				'error' => $e->getRule(),
+				'code' => $e->getMessage(),
+			],
+			$e->getStatus(),
+		);
+	}//end refused()
 
 	/**
 	 * Resolve the current user id, or empty string when unauthenticated.
