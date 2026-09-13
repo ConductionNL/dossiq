@@ -532,18 +532,36 @@ class CaseRoleProjectionTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEmptyUuidAndAnEmptyRowFindNothing(): void {
-		// A link whose role is '' asks for no role type at all, and a case that
-		// answers an empty row is not a case.
+		// A case that answers an empty row is not a case.
 		$this->objects->rows['case-1'] = ['@schema' => 'case'];
 
 		$this->assertSame(
 			expected: '',
 			actual: $this->projection->project(
-				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => '']
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1']
 			),
 		);
 		$this->assertSame(expected: [], actual: $this->objects->saves);
 	}//end testAnEmptyUuidAndAnEmptyRowFindNothing()
+
+	/**
+	 * A link with no role at all names no role type, so the case is read and
+	 * nothing is written: OpenRegister allows a link without a role, and this
+	 * is what it means on a case.
+	 *
+	 * @return void
+	 */
+	public function testALinkWithNoRoleWritesNothing(): void {
+		$this->seed();
+
+		$this->assertSame(
+			expected: '',
+			actual: $this->projection->project(
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => '', 'displayName' => 'Jan']
+			),
+		);
+		$this->assertSame(expected: [], actual: $this->objects->saves);
+	}//end testALinkWithNoRoleWritesNothing()
 
 	/**
 	 * A configured register with an unconfigured schema stops the projection
