@@ -3,6 +3,10 @@
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  */
 
 declare(strict_types=1);
@@ -46,18 +50,7 @@ class DocumentRecordStore {
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
 	public function findCase(string $caseId): ?array {
-		try {
-			[$objectService, $register] = $this->requireRegister();
-			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $this->schema(key: 'case_schema'), id: $caseId);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if ($row === null || $row === []) {
-			return null;
-		}
-
-		return $this->rowOf(value: $row);
+		return $this->findRow(schemaKey: 'case_schema', id: $caseId);
 	}//end findCase()
 
 	/**
@@ -75,17 +68,7 @@ class DocumentRecordStore {
 		$infoSchema = $this->schema(key: 'dossier_informatieobject_schema');
 
 		if ($recordId !== '') {
-			try {
-				$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $infoSchema, id: $recordId);
-			} catch (Throwable) {
-				return null;
-			}
-
-			if ($row === null || $row === []) {
-				return null;
-			}
-
-			return $this->rowOf(value: $row);
+			return $this->findRow(schemaKey: 'dossier_informatieobject_schema', id: $recordId);
 		}
 
 		$rows = $this->searchObjectsAsArrays(
@@ -236,15 +219,9 @@ class DocumentRecordStore {
 		[$objectService, $register] = $this->requireRegister();
 		$typeSchema = $this->schema(key: 'dossier_informatieobjecttype_schema');
 
-		if ($typeId !== '') {
-			try {
-				$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $typeSchema, id: $typeId);
-				if ($row !== null && $row !== []) {
-					return $this->rowOf(value: $row);
-				}
-			} catch (Throwable) {
-				// Fall through to the register's first type.
-			}
+		$byId = $this->findRow(schemaKey: 'dossier_informatieobjecttype_schema', id: $typeId);
+		if ($byId !== null) {
+			return $byId;
 		}
 
 		$rows = $this->searchObjectsAsArrays(
@@ -298,6 +275,33 @@ class DocumentRecordStore {
 
 		return (int)call_user_func([$file, 'getFileId']);
 	}//end storeFileOnObject()
+
+	/**
+	 * One object of a configured schema by uuid, or null when there is none or OpenRegister cannot answer.
+	 *
+	 * @param string $schemaKey The configuration key of the schema.
+	 * @param string $id The uuid, '' finds nothing.
+	 *
+	 * @return array<string, mixed>|null The row with `id`.
+	 */
+	private function findRow(string $schemaKey, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		try {
+			[$objectService, $register] = $this->requireRegister();
+			$row = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $this->schema(key: $schemaKey), id: $id);
+		} catch (Throwable) {
+			return null;
+		}
+
+		if ($row === null || $row === []) {
+			return null;
+		}
+
+		return $this->rowOf(value: $row);
+	}//end findRow()
 
 	/**
 	 * A row's uuid, from `id`, `uuid` or `@self.id`.
