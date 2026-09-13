@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCP\AppFramework\Controller;
@@ -34,6 +35,7 @@ class FileRequestController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param FileRequestService $fileRequests Sends the request.
+	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
 	public function __construct(
@@ -41,6 +43,7 @@ class FileRequestController extends Controller {
 		IRequest $request,
 		private readonly PersonLinkReader $people,
 		private readonly FileRequestService $fileRequests,
+		private readonly CaseAccessGuard $access,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -59,8 +62,15 @@ class FileRequestController extends Controller {
 	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function parties(string $caseId): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// Who is on a case is as sensitive as the case: scope it to this
+		// handler's own access rather than to being signed in at all.
+		if ($this->access->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$parties = [];
@@ -94,8 +104,16 @@ class FileRequestController extends Controller {
 	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function create(string $caseId, string $personId = '', string $note = '', int $days = 0): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// Asking a party for a file shares this case's folder with them, so it
+		// takes the same access as changing the case, and a handler who cannot
+		// see the case is told it does not exist rather than that it does.
+		if ($this->access->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		if (trim($personId) === '') {

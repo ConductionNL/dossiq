@@ -26,6 +26,11 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @link https://conduction.nl
+ *
+ * @spec exclude A declaration-only mirror of another app's event contract, not
+ * behaviour of this one: the requirement it serves is OpenRegister's
+ * people-on-objects, and the dossiq side it lets the analysers see is specified
+ * in openspec/changes/people-on-the-case.
  */
 
 declare(strict_types=1);

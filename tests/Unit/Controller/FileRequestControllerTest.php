@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\FileRequestController;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCP\AppFramework\Http;
@@ -42,6 +43,13 @@ class FileRequestControllerTest extends TestCase {
 	private FileRequestService&MockObject $fileRequests;
 
 	/**
+	 * Whether the handler may see the case.
+	 *
+	 * @var CaseAccessGuard&MockObject
+	 */
+	private CaseAccessGuard&MockObject $access;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var FileRequestController
@@ -68,11 +76,16 @@ class FileRequestControllerTest extends TestCase {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
+		$this->access = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$this->access->method('hasCaseReadAccess')->willReturn(true);
+		$this->access->method('hasCaseMutationAccess')->willReturn(true);
+
 		$this->controller = new FileRequestController(
 			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
+			access: $this->access,
 			userSession: $session,
 		);
 	}//end setUp()
@@ -161,4 +174,41 @@ class FileRequestControllerTest extends TestCase {
 			actual: $this->controller->create(caseId: 'case-1', personId: 'user:jan')->getStatus(),
 		);
 	}//end testAnUnexpectedFailureIsAServerError()
+
+	/**
+	 * A handler who cannot see the case learns nothing about it: not who is on
+	 * it, and not whether it exists.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 */
+	public function testACaseTheHandlerCannotSeeAnswersNotFound(): void {
+		$access = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$access->method('hasCaseReadAccess')->willReturn(false);
+		$access->method('hasCaseMutationAccess')->willReturn(false);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('outsider');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+		$controller = new FileRequestController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			people: $this->people,
+			fileRequests: $this->fileRequests,
+			access: $access,
+			userSession: $session,
+		);
+		$this->people->expects($this->never())->method('peopleOn');
+		$this->fileRequests->expects($this->never())->method('request');
+
+		$this->assertSame(
+			expected: Http::STATUS_NOT_FOUND,
+			actual: $controller->parties(caseId: 'case-1')->getStatus(),
+		);
+		$this->assertSame(
+			expected: Http::STATUS_NOT_FOUND,
+			actual: $controller->create(caseId: 'case-1', personId: 'user:jan')->getStatus(),
+		);
+	}//end testACaseTheHandlerCannotSeeAnswersNotFound()
 }//end class
