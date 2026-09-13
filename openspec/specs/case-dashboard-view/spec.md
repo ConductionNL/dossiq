@@ -694,15 +694,18 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 
 You reach every panel of the case from one row of seven tabs. The `case-panels`
 widget on `CaseDetail` SHALL list exactly seven tabs, in the order Data
-(`case-core`), Documents (`case-documents-panel`), Notes (`case-notes-panel`), People
+(`case-core`), Files (`case-files`), Notes (`case-notes-panel`), People
 (`case-people-panel`), Work (`case-work-panel`), Related
 (`case-related-panel`) and Objects and locations (`case-objects-panel`). The
 strip SHALL sit above the fold at 1024 pixels wide, and all seven SHALL be
 visible there without a scroll or a gesture.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
-render stacked under their own headings. Documents SHALL hold the dossier list
-and the case folder; People SHALL hold the parties and the contact moments;
+render stacked under their own headings. Files SHALL hold the case folder and
+nothing else, as a files browser on the Files app's primitives, with its own
+crumbs and no section heading over it (one title on the page, and the word is
+files; the ZGW document list left the page on 2026-09-13, its API and register
+stay); People SHALL hold the parties and the contact moments;
 Work SHALL hold the tasks and the appointments; Related SHALL hold the related
 cases and the sub-cases; Objects and locations SHALL hold the case objects and
 the case locations.
@@ -731,7 +734,7 @@ collection holding nothing could be absent rather than empty; with seven tabs
 each holding two collections, an empty section is a line of text inside a tab
 the handler opened deliberately.
 
-> The ceiling moved from six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Documents, the same mention-aware surface the sidebar offers, so a handler reading the case file leaves a note without opening the sidebar. The laptop measurement below predates it.
+> The ceiling moved from six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files, the same mention-aware surface the sidebar offers, so a handler reading the case file leaves a note without opening the sidebar. The laptop measurement below predates it.
 
 #### Scenario: The strip holds seven tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
@@ -740,7 +743,7 @@ the handler opened deliberately.
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL contain exactly seven tabs
-- **AND** they SHALL read Data, Documents, Notes, People, Work, Related, Objects and locations, in that order
+- **AND** they SHALL read Data, Files, Notes, People, Work, Related, Objects and locations, in that order
 - **AND** the strip SHALL carry no tab named Files, Mail or Decisions
 
 #### Scenario: The seven tabs fit a laptop screen
@@ -774,14 +777,13 @@ the handler opened deliberately.
 - **AND** it SHALL reserve no vertical space and draw no divider
 - **AND** every section on the tab that did resolve SHALL keep its own heading
 
-#### Scenario: Files keeps its share and comment surface
-@e2e tests/e2e/case-documents.spec.ts
+#### Scenario: Files is the case folder and nothing else
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
 - **GIVEN** a case page
-- **WHEN** the handler opens the Documents tab
-- **THEN** the dossier list SHALL render first
-- **AND** the case folder SHALL render under it, as a section rather than a tab
+- **WHEN** the handler opens the Files tab
+- **THEN** the case folder SHALL render as a files browser, with crumbs from the user's files root down to the case folder
+- **AND** no section heading and no second list SHALL render in the tab
 
 #### Scenario: A panel that leaves the strip is still on the page
 @e2e exclude The three removed panels are sidebar tabs, and each already has its own e2e coverage on the sidebar; what needs guarding is that a LATER change cannot drop one body tab without the sidebar tab existing, which is a manifest shape rather than a rendered page. Asserted in tests/vitest/caseTabConsolidation.spec.js, which pairs each removed widget id with the sidebar tab id that carries it and fails when either half is missing.

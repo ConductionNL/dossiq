@@ -90,7 +90,6 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // The ZGW DRC case file, rendered as the CaseDetail Documents tab.
 // @spec openspec/specs/document-zaakdossier/spec.md
-import DossierTab from './views/cases/components/DossierTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -365,36 +364,6 @@ const registry = {
 		_note: "Picks a template from TemplateController#index and files the rendered letter on the case through MergeTemplateHandler with no targetField. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
 	},
 
-	// --- The case file as a tab on the case page (documents-on-the-case). ---
-	// @spec openspec/specs/document-zaakdossier/spec.md
-	'dossier-tab': {
-		// @custom-widget-ratchet exclude the interim rendering of a list whose
-		// six columns live on a REFERENCED informatieobject: CnObjectListWidget
-		// renders a $ref column as the raw reference, so an object-list over
-		// zaakinformatieobject would show six uuids where the case file belongs
-		// (documents-on-the-case task 2.2, placement rows A35/A36). This entry
-		// is deleted the moment the library renders a $ref column by a label
-		// field, and the e2e asserts column headers rather than widget type so
-		// the swap does not rewrite a test.
-		kind: 'widget',
-		component: DossierTab,
-		_note: 'CaseDetail Documents tab: the zaakinformatieobject rows of this case with title, type, status, direction, date and author, a drop zone that writes an informatieobject plus its join through the metadata dialog, and the version panel per row. Registered as a widget TYPE and not as a `type: "custom"` widget on purpose: a custom widget resolves through the page\'s `widget-<id>` slot, which CnDetailPage renders only for layout grid items, so inside a tab panel it renders nothing and reports nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against this registry (REQ-MVR-005), and binds `objectId` from the route so the tab knows its case on the first frame.',
-	},
-
-	// --- The notes as a tab on the case page. ---
-	//
-	// The same component the sidebar's Notes tab mounts, keyed by a widget
-	// TYPE for the same reason `dossier-tab` and `case-task-pane` are: a child
-	// of the `case-panels` tabs widget renders through CnDetailWidgetHost,
-	// which picks a renderer from `cnRegistry[widget.type]` and binds
-	// `objectId`, `register` and `schema` from the page, which is exactly the
-	// prop set CaseNotesTab takes from the sidebar. A `type: "custom"` widget
-	// would resolve through a page slot that only grid items get.
-	'case-notes-pane': {
-		kind: 'widget',
-		component: CaseNotesTab,
-		_note: 'CaseDetail Notes tab: the mention-aware CnNotesTab through CaseNotesTab, the same surface the sidebar offers, so a handler reading the case file does not have to open the sidebar to leave a note on it.',
-	},
 	// --- The inline task pane on the case page (task-on-the-case A06). ---
 	//
 	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, because

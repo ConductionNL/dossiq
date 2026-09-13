@@ -1358,8 +1358,8 @@
 									"label": "Data"
 								},
 								{
-									"widgetId": "case-documents-panel",
-									"label": "Documents"
+									"widgetId": "case-files",
+									"label": "Files"
 								},
 								{
 									"widgetId": "case-notes-panel",
@@ -1392,38 +1392,12 @@
 						"_note": "The Notes tab of the case panels, beside Documents: the same mention-aware notes surface the sidebar offers, registered as a widget TYPE (`case-notes-pane` in registry.js) because a tab child renders by type. The sidebar tab stays: one reads the notes while working in the tabs, the other while the sidebar is open on any tab. The strip's ceiling moved from six to seven for it (Ruben, 2026-09-12)."
 					},
 					{
-						"id": "case-documents-panel",
-						"type": "case-sections",
-						"title": "Documents",
-						"icon": "FileDocumentMultipleOutline",
-						"_note": "The Documents tab. The registered documents of the case, and the case folder under them. Files is a SECTION here rather than a tab of its own, and it was not simply dropped: the files leaf carries the share and comment surface that the dossier list does not (design D5), and after DQ1 the two read different folders, so folding them is not the same claim as saying they hold the same files. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
-						"content": {
-							"sections": [
-								{
-									"label": "Documents",
-									"widget": {
-										"id": "case-documents",
-										"type": "dossier-tab",
-										"title": "Documents",
-										"icon": "FileDocumentMultipleOutline",
-										"_note": "The case file, on the case page. `zaakinformatieobject` rows for this case, rendered through DossierTab: title, type, status, direction, date and author, the drop zone that writes an informatieobject plus its join, and the version panel per row. Five of the six columns live on the REFERENCED informatieobject and CnObjectListWidget renders a `$ref` column as the raw reference, so the interim is a custom widget type rather than an `object-list` over `zaakinformatieobject` (change documents-on-the-case, task 2.2). The type is `dossier-tab` and NOT `custom`: a `type: \"custom\"` widget resolves through the page's `widget-<id>` slot, which CnDetailPage renders only for LAYOUT grid items, so inside a tab panel it renders nothing and says nothing. CnTabsWidget dispatches its children through CnDetailWidgetHost, which resolves a renderer by widget TYPE against the consumer registry (REQ-MVR-005). Deliberately absent from `layout`: the tabs widget renders it, and a layout entry would render it twice. The Files SECTION sits under it in the same tab, for loose attachments and Nextcloud shares.",
-										"content": {
-											"emptyText": "No documents yet"
-										}
-									}
-								},
-								{
-									"label": "Files",
-									"widget": {
-										"id": "case-files",
-										"type": "integration",
-										"integrationId": "files",
-										"title": "Files & attachments",
-										"icon": "FolderOutline"
-									}
-								}
-							]
-						}
+						"id": "case-files",
+						"type": "integration",
+						"integrationId": "files",
+						"title": "Files",
+						"icon": "FolderOutline",
+						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): breadcrumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired."
 					},
 					{
 						"id": "case-people-panel",

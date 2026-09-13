@@ -54,7 +54,7 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  */
 const WORK_TABS = [
 	'Data',
-	'Documents',
+	'Files',
 	'Notes',
 	'People',
 	'Work',

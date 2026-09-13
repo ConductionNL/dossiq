@@ -146,10 +146,13 @@ describe('the hours surface is a leaf placement', () => {
 				+ 'naming a widget that is gone resolves to nothing and leaves a '
 				+ 'hole in the grid rather than an error',
 		).toBe(1)
+		// Column 9, three wide, two high, on row 0: the hours card heads the
+		// right column beside the KPI tiles since the layout was laid out by
+		// hand in Buildiq edit mode (2026-09-12).
 		expect(
-			[cell[0].gridX, cell[0].gridWidth, cell[0].gridHeight],
-			'the hours widget must keep its cell: right column, four wide, two high',
-		).toEqual([8, 4, 2])
+			[cell[0].gridX, cell[0].gridY, cell[0].gridWidth, cell[0].gridHeight],
+			'the hours widget must keep its cell: head of the right column, three wide, two high',
+		).toEqual([9, 0, 3, 2])
 
 		// 🔴 gridY IS DELIBERATELY NOT PINNED, AND THE SCENARIO'S NUMBER IS
 		// STALE. The scenario says gridY 8. The manifest says 10, and 8 is not

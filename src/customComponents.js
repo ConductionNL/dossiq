@@ -30,7 +30,6 @@ import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 // --- ZGW DRC case dossier sidebar tab. ---
 // @spec openspec/changes/document-zaakdossier/tasks.md#T10
-import DossierTab from './views/cases/components/DossierTab.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
@@ -302,9 +301,6 @@ export default {
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,
-
-	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
-	DossierTab,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }

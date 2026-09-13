@@ -158,6 +158,8 @@ and download operation. Guards MUST be checked at the service layer, not only in
 
 ### Requirement: REQ-ZAK-004 The zaakdossier view MUST render documents grouped by informatieobjecttype
 
+> Retired from the case page on 2026-09-13 (Ruben): the Files tab holds the case folder as a files browser on the Files app's primitives, and the dossier list, its metadata upload dialog and their e2e suite (`case-documents.spec.ts`) left the page with it. The informatieobject API, the register and `ZaakdossierController` stay. The scenarios under REQ-ZAK-004, 005 and 006 describe a surface that no longer renders; they are kept as the record of it and nothing on the page answers to them.
+
 `DossierTab.vue` MUST render the complete dossier for a zaak, grouping documents in collapsible
 sections per `informatieobjecttype` via `DossierGroup.vue`. `DocumentRow.vue` MUST display
 for each document: thumbnail (Nextcloud preview API at `/index.php/core/preview?fileId={id}&x=64&y=64`),
