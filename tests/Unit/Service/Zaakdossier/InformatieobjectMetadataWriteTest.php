@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger

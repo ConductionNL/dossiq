@@ -340,7 +340,6 @@ export default {
 				this.title = files[0].name
 			}
 		},
-
 	},
 
 	/**

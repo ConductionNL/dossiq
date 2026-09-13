@@ -274,7 +274,7 @@ describe('DocumentMetadataDialog', () => {
 		function mountOnFile() {
 			return mount(DocumentMetadataDialog, {
 				props: {
-						caseId: 'case-1',
+					caseId: 'case-1',
 					fileId: 12,
 					fileName: 'aanvraag.pdf',
 				},
