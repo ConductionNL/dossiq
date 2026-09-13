@@ -51,7 +51,7 @@ criteria under a task are plain bullets.
   `linkedItems` props, forwarded by `CnFilesTab`; docs and jest; a release.
   - `tests/components/CnFilesBrowser.spec.js`: host actions render after the
     registered ones; linked rows render after nodes with open and download only
-- [ ] 4.2 dossiq manifest `case-files` widget and `src/registry.js`: the
+- [x] 4.2 dossiq manifest `case-files` widget and `src/registry.js`: the
   Document properties action opening `DocumentMetadataDialog` on the row's
   file id; the linked documents of the case fetched from its joins.
   - `tests/vitest/caseFilesTab.spec.js`: the action and the linked list are

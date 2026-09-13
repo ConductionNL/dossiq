@@ -28,9 +28,14 @@ import { defineComponent, h } from 'vue'
 
 const mockGet = vi.fn()
 const mockPost = vi.fn()
+const mockPatch = vi.fn()
 
 vi.mock('@nextcloud/axios', () => ({
-	default: { get: (...a) => mockGet(...a), post: (...a) => mockPost(...a) },
+	default: {
+		get: (...a) => mockGet(...a),
+		post: (...a) => mockPost(...a),
+		patch: (...a) => mockPatch(...a),
+	},
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
@@ -121,6 +126,8 @@ function postedMetadata() {
 beforeEach(() => {
 	mockGet.mockReset()
 	mockPost.mockReset()
+	mockPatch.mockReset()
+	mockPatch.mockResolvedValue({ data: {} })
 	mockGet.mockResolvedValue({
 		data: { results: [{ id: 'iot-1', description: 'Advies' }] },
 	})
@@ -255,5 +262,111 @@ describe('DocumentMetadataDialog', () => {
 		await wrapper.vm.submit()
 
 		expect(mockPost.mock.calls[0][0]).toContain('route-case')
+	})
+
+	// documents-live-on-the-case: the same dialog, opened on a file's record
+	// from the Files tab's Document properties action.
+	describe('opened on an existing file', () => {
+		/**
+		 * Mount the dialog on file 12 of case-1.
+		 *
+		 * @return {object} The mounted wrapper.
+		 */
+		function mountOnFile() {
+			return mount(DocumentMetadataDialog, {
+				props: {
+					open: true,
+					caseId: 'case-1',
+					fileId: 12,
+					fileName: 'aanvraag.pdf',
+				},
+			})
+		}
+
+		it('loads the record the file has and saves it with a PATCH, not an upload', async () => {
+			mockGet.mockImplementation(async (url) => {
+				if (url.includes('/dossier')) {
+					return {
+						data: {
+							informatieobjecten: [
+								{ id: 'inf-9', fileId: 99, title: 'other' },
+								{
+									id: 'inf-1',
+									fileId: 12,
+									title: 'Aanvraag',
+									informatieobjecttype: 'iot-1',
+									vertrouwelijkheidaanduiding: 'openbaar',
+									direction: 'incoming',
+									keywords: ['bouw'],
+									description: 'Het formulier',
+								},
+							],
+						},
+					}
+				}
+				return {
+					data: { results: [{ id: 'iot-1', description: 'Advies' }] },
+				}
+			})
+			const wrapper = mountOnFile()
+			await flushPromises()
+
+			expect(
+				wrapper.get('[data-testid="document-properties-file"]').text(),
+			).toBe('aanvraag.pdf')
+			expect(wrapper.vm.title).toBe('Aanvraag')
+			expect(wrapper.vm.selectedType).toBe('iot-1')
+			expect(wrapper.vm.selectedClassification).toBe('openbaar')
+			expect(wrapper.vm.keywords).toEqual(['bouw'])
+			expect(
+				wrapper.find('[data-testid="document-properties-missing"]').exists(),
+			).toBe(false)
+
+			await wrapper.setData({ title: 'Aanvraagformulier, herzien' })
+			await wrapper.vm.submit()
+
+			expect(mockPost).not.toHaveBeenCalled()
+			expect(mockPatch).toHaveBeenCalledTimes(1)
+			const [url, body] = mockPatch.mock.calls[0]
+			expect(url).toBe('/apps/dossiq/api/informatieobjecten/inf-1')
+			expect(body).toMatchObject({
+				title: 'Aanvraagformulier, herzien',
+				informatieobjecttype: 'iot-1',
+				vertrouwelijkheidaanduiding: 'openbaar',
+				keywords: ['bouw'],
+				description: 'Het formulier',
+			})
+			expect(wrapper.emitted('close')).toBeTruthy()
+		})
+
+		it('says so when the file has no record yet, and does not pretend to save', async () => {
+			mockGet.mockImplementation(async (url) => {
+				if (url.includes('/dossier')) {
+					return { data: { informatieobjecten: [] } }
+				}
+				return {
+					data: { results: [{ id: 'iot-1', description: 'Advies' }] },
+				}
+			})
+			const wrapper = mountOnFile()
+			await flushPromises()
+
+			expect(
+				wrapper.get('[data-testid="document-properties-missing"]').exists(),
+			).toBe(true)
+			expect(wrapper.vm.title).toBe(
+				'aanvraag',
+				'the title starts from the file name',
+			)
+
+			await wrapper.setData({
+				selectedType: 'iot-1',
+				selectedClassification: 'openbaar',
+			})
+			await wrapper.vm.submit()
+			expect(mockPatch).not.toHaveBeenCalled()
+			expect(mockPost).not.toHaveBeenCalled()
+			expect(wrapper.emitted('close')).toBeFalsy()
+		})
 	})
 })
