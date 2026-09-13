@@ -43,7 +43,29 @@ on:
       - main
       - development
   pull_request:
-    branches: [main, master, development]
+    # `beta` IS IN THIS LIST, and `master` is out. Both halves matter.
+    #
+    # `master` does not exist in this repository, so it filtered nothing. What
+    # it did was hide the absence of `beta`: the list looked like four branches
+    # and covered three.
+    #
+    # WHAT THE MISSING `beta` COST. The fleet promotes development -> beta ->
+    # main, and `beta` requires `quality / Quality Report`. That check was
+    # satisfied anyway, but not by a run of this pull request: the promotion
+    # PR's head IS `development`, so GitHub attached the checks from the PUSH
+    # run on `development`, which shares the head SHA. Verified on #2581, whose
+    # quality checks all came from push run 34717111752 (event `push`,
+    # head_branch `development`). The promotion was gated by a run that
+    # examined the same commit under a different event, not by a run of the
+    # promotion.
+    #
+    # That was tolerable while E2E ran on every push to `development`. It stops
+    # being tolerable with ConductionNL/.github#768, which runs the Playwright
+    # suite on the promotion path only: the `development -> beta` pull request
+    # is now one of the two places the browser verdict is produced, and a
+    # promotion that triggers no run of its own produces none. The other 20
+    # core apps already list `beta` here.
+    branches: [main, beta, development]
   workflow_dispatch:
 
 # Deduplicating a `push` run against the `pull_request` run for the SAME head
