@@ -3966,7 +3966,18 @@ OC.L10N.register(
         "Document properties could not be saved": "Documenteigenschappen konden niet worden opgeslagen",
         "This file has no document record yet; saving creates one.": "Dit bestand heeft nog geen documentregistratie; opslaan maakt er een aan.",
         "Default document type": "Standaard documenttype",
-        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid van het informatieobjecttype waaronder een bestand dat in een zaak van dit type wordt geplaatst wordt geregistreerd, tot een behandelaar in Documenteigenschappen een ander kiest. Optioneel: leeg betekent het eerste documenttype van het register op titel. Zie document-projection REQ-DPR-001."
+        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid van het informatieobjecttype waaronder een bestand dat in een zaak van dit type wordt geplaatst wordt geregistreerd, tot een behandelaar in Documenteigenschappen een ander kiest. Optioneel: leeg betekent het eerste documenttype van het register op titel. Zie document-projection REQ-DPR-001.",
+        "Request a file from a party": "Vraag een bestand aan een partij",
+        "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.": "De partij krijgt een link waarmee alleen geüpload kan worden naar de zaakmap. Wat zij sturen komt als document in de zaak.",
+        "Nobody is linked to this case yet. Add a party on the People tab first.": "Er is nog niemand aan deze zaak gekoppeld. Voeg eerst een partij toe op het tabblad Mensen.",
+        "No email address, so this party cannot be asked": "Geen e-mailadres, dus deze partij kan niets gevraagd worden",
+        "What do you need from them?": "Wat heb je van hen nodig?",
+        "For example: a copy of the lease": "Bijvoorbeeld: een kopie van het huurcontract",
+        "Days the request stands": "Aantal dagen dat het verzoek geldig is",
+        "Send the request": "Verstuur het verzoek",
+        "The request is on its way to {recipient}": "Het verzoek is onderweg naar {recipient}",
+        "The parties of this case could not be read": "De partijen van deze zaak konden niet gelezen worden",
+        "The request could not be sent": "Het verzoek kon niet verstuurd worden"
     },
     "nplurals=2; plural=(n != 1);"
 )

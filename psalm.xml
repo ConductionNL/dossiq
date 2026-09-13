@@ -24,6 +24,13 @@
              lookup as dead code. -->
         <file name="tests/Stubs/Integriq/Event/DeliveryRequestedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/DeliveryConcludedEvent.php" />
+        <!-- OpenRegister's people-on-objects event contract. Same
+             declaration-only discipline as the Integriq stubs above:
+             PersonLinkListener is registered against these classes and
+             analysed without the openregister runtime present. -->
+        <file name="tests/Stubs/OpenRegister/Event/PersonLinkedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>

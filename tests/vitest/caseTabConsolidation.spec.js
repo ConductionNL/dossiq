@@ -115,7 +115,7 @@ const EXPECTED_TABS = [
 const FOLDED = [
 	['case-data-panel', 'case-core'],
 	['case-data-panel', 'case-location-map'],
-	['case-people-panel', 'case-roles'],
+	['case-people-panel', 'case-parties'],
 	['case-communication-panel', 'case-communication'],
 	['case-work-panel', 'case-tasks'],
 	['case-work-panel', 'case-calendar'],

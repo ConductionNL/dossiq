@@ -3965,7 +3965,18 @@
         "Document properties could not be saved": "Document properties could not be saved",
         "This file has no document record yet; saving creates one.": "This file has no document record yet; saving creates one.",
         "Default document type": "Default document type",
-        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001."
+        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.",
+        "Days the request stands": "Days the request stands",
+        "For example: a copy of the lease": "For example: a copy of the lease",
+        "No email address, so this party cannot be asked": "No email address, so this party cannot be asked",
+        "Nobody is linked to this case yet. Add a party on the People tab first.": "Nobody is linked to this case yet. Add a party on the People tab first.",
+        "Request a file from a party": "Request a file from a party",
+        "Send the request": "Send the request",
+        "The parties of this case could not be read": "The parties of this case could not be read",
+        "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.": "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.",
+        "The request could not be sent": "The request could not be sent",
+        "The request is on its way to {recipient}": "The request is on its way to {recipient}",
+        "What do you need from them?": "What do you need from them?"
     },
     "plurals": ""
 }
