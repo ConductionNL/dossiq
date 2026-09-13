@@ -3958,7 +3958,9 @@ OC.L10N.register(
         "Case volume, status and performance across the team": "Zaakvolume, status en prestaties van het team",
         "Open My work in the menu": "Open Mijn werk in het menu",
         "Your open tasks, deadlines and open cases": "Je open taken, deadlines en open zaken",
-        "Your work lives here: today's tasks, deadlines and open cases in one place.": "Je werk staat hier: taken, deadlines en open zaken van vandaag op één plek."
+        "Your work lives here: today's tasks, deadlines and open cases in one place.": "Je werk staat hier: taken, deadlines en open zaken van vandaag op één plek.",
+        "Locations on this case": "Locaties bij deze zaak",
+        "The locations could not be loaded.": "De locaties konden niet worden geladen."
     },
     "nplurals=2; plural=(n != 1);"
 )

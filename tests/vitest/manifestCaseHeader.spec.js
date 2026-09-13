@@ -253,20 +253,27 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	}
 
 	it('is the work a handler does, in order, and nothing else', () => {
-		// Task 4.1 asked for the work tabs to LEAD the strip, because there
-		// were nine more behind them. There are none behind them now: the strip
-		// is six tabs and this is all of them, so what was a prefix assertion is
-		// an exact one. Timeline is deliberately absent: the timeline is the
-		// sidebar History tab (change case-timeline), and a body panel over the
-		// same log would be the duplication that change exists to retire.
+		// Task 4.1 asked for the work tabs to LEAD the strip, because there were
+		// nine more behind them. There are none behind them now: this is the
+		// whole strip, so what was a prefix assertion is an exact one. Timeline
+		// is deliberately absent: the timeline is the sidebar History tab
+		// (change case-timeline), and a body panel over the same log would be
+		// the duplication that change exists to retire.
+		//
+		// Communication, Email and Besluiten joined on 2026-09-13. The sidebar
+		// lost the three tabs that carried the last two, so the page gained no
+		// surface; `case-core` became a section of `case-data-panel`, which also
+		// holds the locations map.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
-			'case-core',
+			'case-data-panel',
 			'case-files',
 			'case-notes-panel',
 			'case-people-panel',
+			'case-communication-panel',
+			'case-email-panel',
 			'case-work-panel',
+			'case-decisions-panel',
 			'case-related-panel',
-			'case-objects-panel',
 		])
 	})
 
@@ -279,9 +286,8 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// would leave a shorter strip and a passing count.
 		const stillOnThePage = {
 			'case-sub-cases': 'Related',
-			'case-locaties': 'Objects and locations',
 			'case-calendar': 'Work',
-			'case-objects': 'Objects and locations',
+			'case-objects': 'Related',
 		}
 		for (const [id, tab] of Object.entries(stillOnThePage)) {
 			const where = panels.caseTabOf(id)
@@ -289,14 +295,23 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 			expect(where.tab, `${id} is on the wrong tab`).toBe(tab)
 		}
 
-		// `case-decidesk-decisions` is the fourth, and it is the exception: it
-		// was REMOVED rather than folded, because it duplicated the
-		// Besluitvorming sidebar tab. Assert the sidebar half is still there,
-		// or the surface is simply gone.
+		// `case-locaties` is the exception that was RETIRED rather than moved.
+		// `case-location` already carries latitude and longitude, so the list
+		// was a table of coordinates nobody could picture. The map on the Data
+		// tab is what makes that a replacement instead of a deletion, so the
+		// map is what gets asserted.
+		expect(panels.caseWidget('case-locaties')).toBeUndefined()
+		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Data')
+
+		// `case-decidesk-decisions` is the fourth. It left the body when it
+		// duplicated the Besluitvorming sidebar tab; on 2026-09-13 that
+		// duplication was resolved the other way round, so the sidebar tab is
+		// gone and the decisions leaf is the Besluiten TAB.
 		expect(panels.caseWidget('case-decidesk-decisions')).toBeUndefined()
-		expect(caseDetail().config.sidebar.tabs.map((tab) => tab.id)).toContain(
+		expect(caseDetail().config.sidebar.tabs.map((tab) => tab.id)).not.toContain(
 			'besluitvorming',
 		)
+		expect(panels.caseTabOf('case-decisions-panel')?.tab).toBe('Decisions')
 	})
 
 	it('names a declared widget in every tab', () => {

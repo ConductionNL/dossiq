@@ -50,16 +50,20 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  * one list now: there is nothing left after the work tabs to close the strip
  * with. Sub-cases, Locations, Appointments and Decisions are not gone from the
  * page. Decisions moved to the sidebar tab that already carried it; the other
- * three became sections of Related, Objects and locations, and Work.
+ * three became sections of Related and Work. Objects and locations is itself
+ * retired since: its objects are a section of Related, and its locations are
+ * the map on the Data tab.
  */
 const WORK_TABS = [
 	'Data',
 	'Files',
 	'Notes',
 	'People',
+	'Communication',
+	'Email',
 	'Work',
+	'Decisions',
 	'Related',
-	'Objects and locations',
 ]
 
 /**
@@ -377,7 +381,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-nine-tabs-and-no-more
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
@@ -397,7 +401,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		expect(labels).toEqual(WORK_TABS)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-six-tabs-fit-a-laptop-screen
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-nine-tabs-fit-a-laptop-screen
 	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {

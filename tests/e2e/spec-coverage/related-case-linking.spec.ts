@@ -143,7 +143,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 		// 2026-09-03, so asserting visibility alone would pass against the
 		// spinner and prove nothing about the listing.
 		// The related-cases SECTION, not the panel. The Related tab carries the
-		// sub-cases list under this one since the strip came down to six tabs,
+		// sub-cases list under this one since the strip was folded,
 		// and `not.toContainText(/Loading/i)` over the whole panel would be
 		// satisfied by whichever half resolved first.
 		const panel = page.locator(
