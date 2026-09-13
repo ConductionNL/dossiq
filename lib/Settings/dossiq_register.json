@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.0 restricts `dossiqIntegration` reads to admins; see that schema's own description for what was open and why the block names all four actions.",
-        "version": "0.19.0"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.1 gives `informatieobject.status` and `informatieobject.direction` the `x-enum-labels` they never had, so a Status or Direction cell reads Draft and Incoming, translated per session, rather than the stored codes `draft` and `incoming`. The number moves for a fragment-only change on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a change confined to `register.d/` and this number left alone reaches a fresh CI install and no existing instance at all.",
+        "version": "0.19.1"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.7.0",
+                "version": "1.9.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -27,6 +27,17 @@
                     "title"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
+                    "versionDate": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Versiedatum",
+                        "description": "Date this version of the case type took effect. ZGW sends it as versiedatum on every zaaktype write."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255,
@@ -170,11 +181,10 @@
                     "productsOrServices": {
                         "type": "array",
                         "title": "Products or Services",
-                        "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "description": "Products/services (fees) that apply to this case type. An entry is either a Pipelinq product uuid (ADR-003), where the charge on a concrete case is a Pipelinq financial transaction, or the product URL a ZGW client sent as productenOfDiensten. The items constraint was format uuid, which made the ZTC zaaktypen endpoint refuse every conformant ZGW body, since that field is a list of URLs.",
                         "x-external-register": "pipelinq",
                         "items": {
-                            "type": "string",
-                            "format": "uuid"
+                            "type": "string"
                         }
                     },
                     "selectionListProcessType": {
@@ -662,7 +672,7 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document Type",
@@ -672,6 +682,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -746,7 +761,7 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision Type",
@@ -756,6 +771,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -956,6 +976,14 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": {
+                            "from": "caseType",
+                            "field": "initialStatus"
+                        },
+                        "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+                    },
                     "objectNameField": "title",
                     "objectDescriptionField": "description",
                     "tmloDefaults": {
@@ -1636,7 +1664,7 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. The case type sets the first one, through the x-openregister-prefill block on caseType. Moves between statuses belong to dossiq's StatusTransitionService. Every case type carries its own workflow template, so the routes are data rather than schema. OpenRegister reads them through the provider this schema's x-openregister-lifecycle block names. So available-actions answers a case's real transitions. The write path validates against that same reader. x-relation-filter scopes the picker to the case type's own statuses.",
                         "title": "Status",
                         "facetable": true,
                         "order": 4

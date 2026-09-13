@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds SIX tabs, and keeps holding six.
+ * The case page holds NINE tabs, and keeps holding nine.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -63,21 +63,36 @@ function widget(id) {
 const tabs = () => widget('case-panels').content.tabs
 
 /**
- * The ceiling the placement work set, and the number this change delivers.
+ * The ceiling the placement work set, and the number the strip holds today.
  *
- * Six is not a round number picked for tidiness. It is the count row A33
- * asked for, and the same ceiling the app menu is held to.
+ * Six was not a round number picked for tidiness: it was the count row A33
+ * asked for, and the same ceiling the app menu is held to. It has moved twice,
+ * both times on purpose, and this is the record of both:
+ *
+ *   6 -> 7  2026-09-12  the Notes tab joined the strip beside Files
+ *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
+ *                       left the SIDEBAR
+ *
+ * The second move is not the growth this ceiling guards against. Nothing was
+ * added to the page: the sidebar lost exactly the three tabs the strip gained
+ * (notes, email, besluitvorming), so counted together the page holds what it
+ * held. What the ceiling is for is UNWATCHED growth, the strip going from ten
+ * to fourteen with nothing counting it, and an exact assertion somebody has to
+ * edit on purpose is the thing that stops that.
  */
-const TAB_CEILING = 6
+const TAB_CEILING = 9
 
-/** The six labels, in the order a handler reads them. */
+/** The nine labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
-	['case-core', 'Data'],
-	['case-documents-panel', 'Documents'],
+	['case-data-panel', 'Data'],
+	['case-files', 'Files'],
+	['case-notes-panel', 'Notes'],
 	['case-people-panel', 'People'],
+	['case-communication-panel', 'Communication'],
+	['case-email-panel', 'Email'],
 	['case-work-panel', 'Work'],
+	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
-	['case-objects-panel', 'Objects and locations'],
 ]
 
 /**
@@ -88,32 +103,46 @@ const EXPECTED_TABS = [
  * count, so the count alone is not enough: each of these must still render
  * somewhere on the page.
  */
+// The Documents group is gone (2026-09-13): its Files half is the Files tab
+// itself now, and its dossier list left the page. See the Files tab test.
+//
+// The Objects and locations group went the same day. Its Locations half is the
+// map on the Data tab, because `case-location` already carries latitude and
+// longitude and the list was a table of coordinates nobody could picture; its
+// Objects half moved to Related, an object linked to a case being a relation
+// like any other. `case-locaties` is absent from this list ON PURPOSE, and the
+// caseObjects spec asserts the map exists so that absence is not a deletion.
 const FOLDED = [
-	['case-documents-panel', 'case-documents'],
-	['case-documents-panel', 'case-files'],
+	['case-data-panel', 'case-core'],
+	['case-data-panel', 'case-location-map'],
 	['case-people-panel', 'case-roles'],
-	['case-people-panel', 'case-communication'],
+	['case-communication-panel', 'case-communication'],
 	['case-work-panel', 'case-tasks'],
 	['case-work-panel', 'case-calendar'],
 	['case-related-panel', 'case-related'],
 	['case-related-panel', 'case-sub-cases'],
-	['case-objects-panel', 'case-objects'],
-	['case-objects-panel', 'case-locaties'],
+	['case-related-panel', 'case-objects'],
 ]
 
 /**
- * The three body tabs that were REMOVED rather than folded, each with the
- * sidebar tab that already carried the same thing.
+ * The three surfaces that were a body tab AND a sidebar tab, and the strip tab
+ * that is the single home for each now.
  *
- * Removing a duplicate is the cheapest four tabs in the change and the
- * easiest to undo by accident, because re-adding one looks like adding a
- * feature. Each of these asserts the sidebar half is still there: dropping
- * the body tab is only correct while the sidebar tab exists.
+ * This list used to run the other way: the body tab was deleted and the
+ * sidebar tab asserted to survive, because one log in two places is
+ * duplication rather than coverage (REQ-CDV-17). The rule held; on 2026-09-13
+ * the choice of WHICH copy to keep was reversed. The strip is where a handler
+ * works and the sidebar is a shelf beside it, and Notes had drifted into being
+ * both at once.
+ *
+ * The assertion guards the same mistake in the same way: each surface reads in
+ * exactly ONE chrome. A change that puts a sidebar tab back without removing
+ * the strip tab reddens, which is what a half-finished revert looks like.
  */
-const DEDUPLICATED = [
-	['case-notes', 'notes'],
-	['case-email', 'email'],
-	['case-decidesk-decisions', 'besluitvorming'],
+const SINGLE_HOME = [
+	['case-notes-panel', 'notes'],
+	['case-email-panel', 'email'],
+	['case-decisions-panel', 'besluitvorming'],
 ]
 
 describe('the case page tab strip', () => {
@@ -121,7 +150,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the six tabs, in order', () => {
+	it('names the nine tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -181,20 +210,34 @@ describe('the folds', () => {
 	})
 })
 
-describe('the tabs that were removed rather than folded', () => {
-	it.each(DEDUPLICATED)(
-		'%s is gone from the body, and the %s sidebar tab still carries it',
+describe('the surfaces that read in exactly one chrome', () => {
+	it.each(SINGLE_HOME)(
+		'%s is a strip tab, and the %s sidebar tab is gone',
 		(widgetId, sidebarTabId) => {
 			const ids = caseDetail().widgets.map((entry) => entry.id)
-			expect(ids).not.toContain(widgetId)
+			expect(
+				ids,
+				`${widgetId} is not on the page, so dropping the ${sidebarTabId} sidebar tab deleted the surface instead of moving it`,
+			).toContain(widgetId)
 
 			const sidebar = caseDetail().sidebar.tabs.map((tab) => tab.id)
 			expect(
 				sidebar,
-				`${widgetId} was dropped but ${sidebarTabId} does not exist, so the surface is simply gone`,
-			).toContain(sidebarTabId)
+				`${sidebarTabId} is still in the sidebar while ${widgetId} is in the strip, which is the duplication REQ-CDV-17 bars`,
+			).not.toContain(sidebarTabId)
 		},
 	)
+
+	it('leaves the sidebar the three tabs that have no strip counterpart', () => {
+		// History, Sharing and Tags duplicate nothing, so they stay. Asserted
+		// exactly: a later change that empties the sidebar, or refills it, has to
+		// say so here rather than drift.
+		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
+			'audit',
+			'sharing',
+			'tags',
+		])
+	})
 })
 
 describe('the container type this change depends on', () => {
@@ -210,8 +253,40 @@ describe('the container type this change depends on', () => {
 	})
 
 	it('is the type every group widget declares', () => {
+		// Four tabs are a single surface rather than a group of sections: Files
+		// (the case folder through the `files` leaf) and the three panes that
+		// came out of the sidebar. Every other tab is a group and declares
+		// `case-sections`.
+		//
+		// The three panes are keyed by TYPE in registry.js, not by component
+		// name. That distinction is the whole bug behind an empty Notes tab:
+		// CnDetailWidgetHost resolves a tab child from `cnRegistry[widget.type]`
+		// and renders nothing, silently, when the key is missing, and these
+		// components were registered only as sidebar `component:` entries.
+		const PANES = {
+			'case-notes-panel': 'case-notes-pane',
+			'case-email-panel': 'case-email-pane',
+			'case-decisions-panel': 'case-decisions-pane',
+		}
+		const registry = read(path.join(ROOT, 'src/registry.js'))
+
 		for (const { widgetId } of tabs()) {
-			if (widgetId === 'case-core') continue
+			if (widgetId === 'case-files') {
+				expect(widget(widgetId).type).toBe('integration')
+				expect(widget(widgetId).integrationId).toBe('files')
+				continue
+			}
+			if (PANES[widgetId]) {
+				const type = PANES[widgetId]
+				expect(widget(widgetId).type).toBe(type)
+				// And the type actually resolves. Without this the assertion
+				// above passes on a manifest naming a renderer nobody wrote.
+				expect(
+					registry,
+					`${type} is named by the manifest but registered nowhere, so the ${widgetId} tab renders nothing`,
+				).toContain(`'${type}': {`)
+				continue
+			}
 			expect(widget(widgetId).type).toBe('case-sections')
 		}
 	})

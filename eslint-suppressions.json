@@ -231,11 +231,6 @@
       "count": 1
     }
   },
-  "src/modals/DocumentMetadataDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
   "src/modals/InitiatorPickerModal.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 2
@@ -392,14 +387,6 @@
       "count": 3
     }
   },
-  "src/views/cases/components/BulkActionsBar.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
-    "vue/custom-event-name-casing": {
-      "count": 4
-    }
-  },
   "src/views/cases/components/CaseEmailTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1
@@ -411,24 +398,6 @@
   "src/views/cases/components/CaseSharingTab.vue": {
     "@typescript-eslint/no-unused-vars": {
       "count": 7
-    }
-  },
-  "src/views/cases/components/DocumentRow.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/cases/components/DossierGroup.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/cases/components/DossierTab.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "vue/custom-event-name-casing": {
-      "count": 1
     }
   },
   "src/views/cases/components/EmailThread.vue": {
@@ -449,12 +418,6 @@
   },
   "src/views/cases/components/VersionHistoryPanel.vue": {
     "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "vue/custom-event-name-casing": {
       "count": 2
     }
   },

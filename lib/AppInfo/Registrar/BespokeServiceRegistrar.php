@@ -66,7 +66,9 @@ class BespokeServiceRegistrar {
 			static function (ContainerInterface $c): DashboardController {
 				return new DashboardController(
 					request: $c->get('OCP\\IRequest'),
-					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState')
+					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
+					appConfig: $c->get('OCP\\IAppConfig'),
+					eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher')
 				);
 			}
 		);

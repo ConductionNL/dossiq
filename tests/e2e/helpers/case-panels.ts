@@ -2,10 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Where a panel of the case page lives, now that the strip holds six tabs.
+ * Where a panel of the case page lives, now that the strip is folded.
  *
  * The strip carried fourteen tabs, one per panel, so every spec could write
- * `getByRole('tab', { name: /Parties/ })` and be done. Six tabs means most
+ * `getByRole('tab', { name: /Parties/ })` and be done. A folded strip means most
  * panels are a SECTION inside a tab instead, and a spec that keeps clicking
  * for a tab named `Parties` fails with a locator timeout that says nothing
  * about what changed.
@@ -46,26 +46,35 @@ import { dismissSupportDialog } from './nav.ts'
  * panel body IS the tab body.
  */
 export const CASE_PANELS = {
-	data: { tab: /^(Data|Gegevens)$/, section: null },
-	documents: { tab: /^Documents$/, section: 'case-section-case-documents' },
-	files: { tab: /^Documents$/, section: 'case-section-case-files' },
+	data: { tab: /^(Data|Gegevens)$/, section: 'case-section-case-core' },
+	locations: {
+		tab: /^(Data|Gegevens)$/,
+		section: 'case-section-case-location-map',
+	},
+	// The Files tab IS the case folder: one widget, no sections. It pointed at
+	// `/^Documents$/` until 2026-09-13, a tab that had already been renamed, so
+	// every spec reaching for it timed out on a tab that does not exist.
+	files: { tab: /^Files$/, section: null },
+	notes: { tab: /^Notes$/, section: null },
+	// 🔴 STALE, and kept so the break stays a runtime one with a message.
+	// `case-documents`, the ZGW dossier list this opened, left the manifest
+	// when the Documents tab became Files, but `document-zaakdossier.spec.ts`
+	// still asks for it, so on development the key is simply absent and the
+	// call does not type-check. Pointing it at Files keeps the suite
+	// compiling; the spec belongs with whoever retired the list.
+	documents: { tab: /^Files$/, section: null },
 	parties: { tab: /^People$/, section: 'case-section-case-roles' },
 	communication: {
-		tab: /^People$/,
+		tab: /^Communication$/,
 		section: 'case-section-case-communication',
 	},
+	email: { tab: /^Email$/, section: null },
 	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },
 	appointments: { tab: /^Work$/, section: 'case-section-case-calendar' },
+	besluiten: { tab: /^Decisions$/, section: null },
 	relatedCases: { tab: /^Related$/, section: 'case-section-case-related' },
 	subCases: { tab: /^Related$/, section: 'case-section-case-sub-cases' },
-	objects: {
-		tab: /^Objects and locations$/,
-		section: 'case-section-case-objects',
-	},
-	locations: {
-		tab: /^Objects and locations$/,
-		section: 'case-section-case-locaties',
-	},
+	objects: { tab: /^Related$/, section: 'case-section-case-objects' },
 } as const
 
 export type CasePanel = keyof typeof CASE_PANELS

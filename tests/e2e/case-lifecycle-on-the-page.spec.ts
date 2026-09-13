@@ -4,11 +4,44 @@
  *
  * The case's own state, driven from the case page.
  *
- * Everything here is a seam no unit test reaches: the manifest declares two
- * custom widgets and four open-modal actions, the widgets talk to dossiq's
- * transition engine, and the engine writes through OpenRegister. A vitest can
- * check that the three declarations agree; only a browser can show that a
- * handler pressing a button moves the case.
+ * Everything here is a seam no unit test reaches: the manifest declares a
+ * configured `stages` widget and four open-modal actions, the widget talks to
+ * OpenRegister's lifecycle, dossiq answers that through CaseActionProvider off
+ * its own transition engine, and the engine writes back through OpenRegister.
+ * A vitest can check that the declarations agree; only a browser can show that
+ * a handler clicking a stage moves the case.
+ *
+ * 🔴 THE SURFACE CHANGED AND SO DID THIS FIXTURE. There is no transition strip
+ * any more: Ruben ruled on 2026-09-12 that clicking a status in the timeline
+ * sets that status. A timeline is keyed on the STATUS a move leads to, not on
+ * the move, and `actionsByTarget` keeps the FIRST action per target. dossiq's
+ * workflow templates name transitions, and two of them may lead to the same
+ * status, so a fixture that pointed a guarded move and an open move at one
+ * status would show the open one and say nothing about the guard. That is a
+ * real property of the new surface, not a test problem, and it is written up
+ * in the PR that made this change. The fixture below gives every guarded or
+ * role-filtered move its own target status, so the claim each scenario makes
+ * is still the claim this file measures. It also makes the blocked case
+ * visible at all: a refused move that shared a target with an open one would
+ * be hidden behind the open one whatever the widget does with `blocked`.
+ *
+ * 🔴 FOUR TESTS HERE CANNOT PASS YET, AND THE REASON IS NOT IN THIS APP.
+ * OpenRegister's provider lifecycle mode is READ-ONLY: `deriveActions()` asks
+ * the provider, so `available-actions` answers a case's real guarded moves and
+ * the timeline renders them correctly, but `applyTransition()` has no provider
+ * branch and `LifecycleActionProviderInterface` declares no `execute()`. So a
+ * POST of an action the provider published is refused with
+ * `Transition "<action>" is not declared on this schema.` and the case does not
+ * move. Measured on CI run 34708664089 shard 1; the failure screenshot shows
+ * that sentence in the timeline with the case still on its original status.
+ * Filed as ConductionNL/openregister#3679.
+ *
+ * These tests are LEFT FAILING on purpose. Every workaround available here is
+ * worse than the red: a static `transitions` map defeats the reason provider
+ * mode exists, `{ kind: 'field' }` writes the status with nothing validating
+ * it, and skipping the tests would turn a broken gesture into a green run.
+ * They describe what the page is meant to do and they will pass the day the
+ * write path lands.
  *
  * WHY THE FIXTURE BUILDS ITS OWN STATE MACHINE rather than calling
  * `seedStateMachine`: that helper's workflow carries no role guard, its case
@@ -64,6 +97,7 @@ const REQUIRED_DOC = `${RUN_PREFIX}-besluitnota`
 
 let statusReceived = ''
 let statusProgress = ''
+let statusHeld = ''
 let statusDone = ''
 let caseTypeId = ''
 let resultGranted = ''
@@ -101,7 +135,11 @@ test.describe('Case lifecycle on the case page', () => {
 			)
 		statusReceived = await mk('Ontvangen', 1, false)
 		statusProgress = await mk('In behandeling', 2, false)
-		statusDone = await mk('Afgehandeld', 3, true)
+		// The target the two FILTERED moves lead to, and nothing else does. A
+		// stage is disabled exactly when no action reaches it, so a guarded or
+		// role-hidden move only shows as a refusal when it owns its target.
+		statusHeld = await mk('Aangehouden', 3, false)
+		statusDone = await mk('Afgehandeld', 4, true)
 
 		// The initial status can only be named once the statuses exist, and
 		// reopen refuses without it (`initial_status_not_configured`).
@@ -149,7 +187,7 @@ test.describe('Case lifecycle on the case page', () => {
 					id: T.approve,
 					label: `${RUN_PREFIX} Goedkeuren`,
 					fromStatus: statusProgress,
-					toStatus: statusDone,
+					toStatus: statusHeld,
 					guards: [
 						{
 							type: 'roleGuard',
@@ -165,12 +203,15 @@ test.describe('Case lifecycle on the case page', () => {
 					guards: [],
 				},
 				{
-					// A FAILING but visible guard: the button renders, the POST is
-					// refused, and the reason belongs in the dialog.
+					// A FAILING but visible guard: the stage renders, disabled,
+					// with the guard's own sentence beside it. It is published
+					// with `blocked: true` by CaseActionProvider, so the widget
+					// never has to decide; a stage nothing reaches is disabled
+					// by construction.
 					id: T.needsDoc,
 					label: `${RUN_PREFIX} Besluit nemen`,
 					fromStatus: statusReceived,
-					toStatus: statusProgress,
+					toStatus: statusHeld,
 					guards: [
 						{ type: 'requiredDocument', documentType: REQUIRED_DOC },
 					],
@@ -218,86 +259,116 @@ test.describe('Case lifecycle on the case page', () => {
 	 */
 	const openCase = async (page: any, key: string) => {
 		await page.goto(`/apps/${REGISTER}/cases/${cases[key]}`, PAGE_LOAD)
-		await expect(page.getByTestId('case-transitions')).toBeVisible({
+		await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByTestId('case-current-status')).toBeVisible({
+		// The status pill in the identity row. It is the library's own badge
+		// inside a configured `stat` tile, so it carries the library testid.
+		await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
 			timeout: 30_000,
 		})
 	}
 
 	/**
-	 * Pick one result type out of the open NcSelect.
+	 * One stage of the timeline, by the status it leads to.
 	 *
-	 * NOT `getByRole('option', { name })`. NcSelect renders every option through
-	 * nc-vue's NcEllipsisedOption, which cuts the label at `length - 10` so the
-	 * tail survives an ellipsis, and puts the halves in two spans. The cut
-	 * ignores word boundaries: a 30-character `<prefix> Verleend` becomes
-	 * `<prefix minus its last char>` plus `3 Verleend`. Those spans are flex
-	 * items, so their computed display is `block`, and the accessible-name
-	 * algorithm joins block children with a space, so the name Playwright
-	 * computes is `E2EZAAK-... 807 3 Verleend`, which no regex over the real
-	 * label can match. `hasText` reads the option's text whole and is immune
-	 * to the split; it is the idiom case-create-form.spec.ts and
-	 * case-requester.spec.ts already use against the same component.
+	 * The timeline is keyed on the STATUS, which is what makes clicking it the
+	 * gesture: a transition id would be a name for a move, and a person reads
+	 * the place they are moving the case to.
 	 *
-	 * @param page  The Playwright page.
-	 * @param label The result type's name, without the run prefix.
+	 * @param page The Playwright page.
+	 * @param statusId The statusType uuid.
 	 */
-	const pickResult = async (page: any, label: string) => {
-		const option = page
-			.getByRole('option')
-			.filter({ hasText: `${RUN_PREFIX} ${label}` })
-		await expect(option).toHaveCount(1, { timeout: 15_000 })
-		await option.click()
-	}
+	const stage = (page: any, statusId: string) =>
+		page.getByTestId(`cn-stages-widget-stage-${statusId}`)
+
+	/**
+	 * What the timeline says under one stage: the move's own note, or the
+	 * guard's refusal.
+	 *
+	 * @param page The Playwright page.
+	 * @param statusId The statusType uuid.
+	 */
+	const stageReason = (page: any, statusId: string) =>
+		page.getByTestId(`cn-stages-widget-reason-${statusId}`)
+
+	/**
+	 * The clickable element of one stage, which is the list item, not the
+	 * label. CnTimelineStages puts the role and the click handler on the
+	 * `<li>`; the testid above is on the label inside it.
+	 *
+	 * @param page The Playwright page.
+	 * @param statusId The statusType uuid.
+	 */
+	const stageControl = (page: any, statusId: string) =>
+		page.locator('.cn-timeline-stages__stage').filter({
+			has: page.getByTestId(`cn-stages-widget-stage-${statusId}`),
+		})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#display-available-transitions-on-case-detail
-	test('the header row lists only the transitions this user may take', async ({
+	test('the timeline offers only the moves this user may make', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
 		await openCase(page, 'roles')
 
-		// Any role may send the case back; only an Afdelingshoofd may approve.
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible(
-			{
-				timeout: 20_000,
-			},
+		// EVERY stage renders, because the timeline is the process and not the
+		// list of next steps. What changes is which of them can be chosen.
+		await expect(stage(page, statusReceived)).toBeVisible({ timeout: 20_000 })
+		await expect(stage(page, statusHeld)).toBeVisible()
+
+		// Any role may send the case back, so that stage is live.
+		await expect(stageControl(page, statusReceived)).not.toHaveAttribute(
+			'aria-disabled',
+			'true',
 		)
-		await expect(page.getByTestId(`case-transition-${T.approve}`)).toHaveCount(0)
-		// A transition out of a DIFFERENT status is not on offer either.
-		await expect(page.getByTestId(`case-transition-${T.start}`)).toHaveCount(0)
+		// Only an Afdelingshoofd may approve, and Playwright signs in as admin,
+		// who is in no group named after that role. The engine DROPS a
+		// role-hidden transition rather than publishing it blocked, so nothing
+		// reaches this stage and it is disabled with the configured reason.
+		await expect(stageControl(page, statusHeld)).toHaveAttribute(
+			'aria-disabled',
+			'true',
+		)
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#no-transitions-available
-	test('a closed case offers no transitions and says it is closed', async ({
-		page,
-	}) => {
+	test('a closed case offers no move at all', async ({ page }) => {
 		await openCase(page, 'closed')
-		await expect(page.getByTestId('case-closed-marker')).toBeVisible({
-			timeout: 20_000,
-		})
-		await expect(page.getByTestId(`case-transition-${T.close}`)).toHaveCount(0)
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toHaveCount(
-			0,
-		)
+
+		// The timeline still draws the whole process, with the final stage
+		// current. Nothing on it can be chosen, because the engine offers no
+		// transition out of a terminal status and a stage no action reaches is
+		// disabled by construction.
+		await expect(stage(page, statusDone)).toBeVisible({ timeout: 20_000 })
+		for (const target of [statusReceived, statusProgress, statusHeld]) {
+			await expect(stageControl(page, target)).toHaveAttribute(
+				'aria-disabled',
+				'true',
+			)
+		}
+
+		// 🔴 THE CLOSED MARKER IS GONE, and this assertion is what says so on
+		// purpose rather than by omission. The strip printed "This case is
+		// closed" beside its buttons; the timeline says it by putting the case
+		// on a final stage with nowhere to go. Nothing else on the page prints
+		// that sentence, so asserting its absence keeps a second one from
+		// quietly reappearing.
+		await expect(page.getByTestId('case-closed-marker')).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#a-handler-advances-a-case
-	test('a handler advances the case and the strip re-reads it', async ({
+	test('a handler advances the case by clicking the next stage', async ({
 		page,
 		request,
 	}) => {
 		await openCase(page, 'advance')
-		await page.getByTestId(`case-transition-${T.start}`).click()
 
-		const dialog = page.getByTestId('case-transition-dialog')
-		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-transition-comment').fill('E2E move')
-		await page.getByTestId('case-transition-confirm').click()
-		await expect(dialog).toHaveCount(0, { timeout: 20_000 })
+		// One click and the move is taken. A transition that declares no
+		// `inputs` asks nothing first: the strip used to open a dialog for a
+		// comment on every move, and the comment field went with it.
+		await stageControl(page, statusProgress).click()
 
 		// The record moved.
 		const token = await getRequestToken(request)
@@ -321,13 +392,20 @@ test.describe('Case lifecycle on the case page', () => {
 			?? []
 		expect(JSON.stringify(rows)).toContain(statusProgress)
 
-		// And the strip now lists the NEW status's transitions without a reload.
-		await expect(page.getByTestId(`case-transition-${T.send_back}`)).toBeVisible(
-			{
-				timeout: 20_000,
-			},
+		// And the timeline shows the NEW stage as current without a reload: the
+		// widget moves its own marker and fires cn:page:refresh, then re-reads
+		// which stages the case can reach from where it now is.
+		await expect(stageControl(page, statusProgress)).toHaveAttribute(
+			'aria-current',
+			'step',
+			{ timeout: 20_000 },
 		)
-		await expect(page.getByTestId(`case-transition-${T.start}`)).toHaveCount(0)
+		// Send back is offered from the new status, and was not from the old.
+		await expect(stageControl(page, statusReceived)).not.toHaveAttribute(
+			'aria-disabled',
+			'true',
+			{ timeout: 20_000 },
+		)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#required-document-guard-evaluation
@@ -347,18 +425,42 @@ test.describe('Case lifecycle on the case page', () => {
 		// nothing while looking like coverage.
 		await openCase(page, 'guard')
 
-		const button = page.getByTestId(`case-transition-${T.needsDoc}`)
-		await expect(button).toBeVisible({ timeout: 15_000 })
-		await expect(button).toBeDisabled()
+		// The guarded move leads to Aangehouden and nothing else does, so the
+		// stage carries that move's verdict rather than a neighbour's.
+		await expect(stage(page, statusHeld)).toBeVisible({ timeout: 15_000 })
 
-		// The reason stays beside the gesture, which is the point of moving it.
-		const reason = page.getByTestId(`case-transition-reason-${T.needsDoc}`)
+		// The reason stays beside the gesture, which is the point of putting
+		// the gesture on the stage. CaseActionProvider publishes the guard's
+		// own `failureMessage` as the action's `description`, and the widget
+		// prints an action's description under its stage.
+		const reason = stageReason(page, statusHeld)
 		await expect(reason).toBeVisible({ timeout: 15_000 })
 		await expect(reason).toContainText(REQUIRED_DOC)
 
+		// THE STAGE IS DISABLED, BEFORE THE CLICK. CaseActionProvider publishes
+		// the refused move with `blocked: true`, and @conduction/nextcloud-vue
+		// 2.50's `stageAccess()` reads that flag, so the refusal is drawn
+		// rather than met. 2.49 did not, and this assertion is the difference:
+		// a refused move used to render enabled and answer with an error after
+		// the post was attempted.
+		await expect(stageControl(page, statusHeld)).toHaveAttribute(
+			'aria-disabled',
+			'true',
+		)
+
+		// And a click on it SAYS something rather than doing nothing. A
+		// disabled control that answers silence reads as broken, which is why
+		// CnTimelineStages emits `stageBlocked` for a disabled stage instead of
+		// swallowing the click.
+		await stageControl(page, statusHeld).click()
+		const blocked = page.getByTestId('cn-stages-widget-blocked')
+		await expect(blocked).toBeVisible({ timeout: 20_000 })
+		await expect(blocked).toContainText(REQUIRED_DOC)
+
 		// And the case has not moved, which is what the refusal is FOR. A
-		// disabled button that still transitioned would pass every assertion
-		// above.
+		// disabled stage that posted anyway would pass every assertion above.
+		// `onStageClick` refuses a blocked move as well, so no path through the
+		// widget reaches the POST, and OpenRegister re-validates it regardless.
 		const unmoved = await showObject(request, 'case', cases.guard)
 		expect(unmoved.status).toBe(statusReceived)
 	})
@@ -369,15 +471,27 @@ test.describe('Case lifecycle on the case page', () => {
 		request,
 	}) => {
 		await openCase(page, 'close')
-		await page.getByTestId(`case-transition-${T.close}`).click()
+		await stageControl(page, statusDone).click()
 
-		const dialog = page.getByTestId('case-transition-dialog')
+		// A closing move declares `resultTypeId` as a required input, which
+		// CaseActionProvider publishes, so the library's shared transition
+		// dialog asks for it before it posts.
+		//
+		// ⚠️ IT ASKS AS A TEXT BOX, NOT AS A PICKER. CnTransitionInputDialog
+		// derives each input's widget from the RECORD'S schema, and
+		// `resultTypeId` is not a property of `case`: it is an argument to the
+		// move. So an undeclared field falls back to a plain text input and a
+		// handler is asked to type a uuid, where the strip offered the case
+		// type's result types in a select. That is the sharpest thing this
+		// change gives up, and it is written into the PR body rather than left
+		// for the next reader to find.
+		const dialog = page.getByTestId('cn-transition-input-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		const select = page.getByTestId('case-transition-result')
-		await expect(select).toBeVisible({ timeout: 15_000 })
-		await select.click()
-		await pickResult(page, 'Verleend')
-		await page.getByTestId('case-transition-confirm').click()
+		await dialog
+			.getByTestId('cn-transition-input-resultTypeId')
+			.getByRole('textbox')
+			.fill(resultGranted)
+		await page.getByTestId('cn-transition-input-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		const closed = await showObject(request, 'case', cases.close)
@@ -394,24 +508,42 @@ test.describe('Case lifecycle on the case page', () => {
 		request,
 	}) => {
 		await openCase(page, 'noresult')
-		await page.getByTestId(`case-transition-${T.close}`).click()
+		await stageControl(page, statusDone).click()
 
-		await expect(page.getByTestId('case-transition-dialog')).toBeVisible({
+		await expect(page.getByTestId('cn-transition-input-dialog')).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(page.getByTestId('case-transition-result')).toBeVisible({
-			timeout: 15_000,
-		})
-		await expect(page.getByTestId('case-transition-confirm')).toBeDisabled()
+		await expect(
+			page.getByTestId('cn-transition-input-resultTypeId'),
+		).toBeVisible({ timeout: 15_000 })
+		// The input is declared `required: true`, so the dialog's own confirm
+		// stays disabled. The question is asked before the post rather than the
+		// refusal being met after it.
+		await expect(page.getByTestId('cn-transition-input-confirm')).toBeDisabled()
 
 		const still = await showObject(request, 'case', cases.noresult)
 		expect(still.status).toBe(statusProgress)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#suspend-then-resume
-	test('suspend puts the marker and Resume in front of the handler', async ({
+	test('a case can be suspended and resumed from the Actions menu', async ({
 		page,
+		request,
 	}) => {
+		// 🔴 THE SUSPENDED MARKER IS GONE FROM THE PAGE, and this test says so
+		// rather than quietly asserting less. The transition strip carried it,
+		// and the strip went with Ruben's 2026-09-12 ruling. It cannot be a
+		// configured tile: a `stat` tile's `overrides` test the LOADED RECORD,
+		// and suspension is derived from the case's `activity` journal by
+		// GET /api/case/{id}/lifecycle, so no property of the case says it.
+		//
+		// The GESTURE still has a home, which is what this scenario is about:
+		// `case-resume` is a header action, and CaseLifecycleActionDialog reads
+		// /lifecycle before it posts, so Resume on a case that is not suspended
+		// is refused with a sentence. What is lost is the marker and the second
+		// Resume button that sat in front of the handler; the state is asserted
+		// against the endpoint here, because that is now the only place it is
+		// visible at all.
 		await openCase(page, 'suspend')
 
 		await clickHeaderAction(page, 'cn-action-case-suspend')
@@ -423,22 +555,46 @@ test.describe('Case lifecycle on the case page', () => {
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
-		await expect(page.getByTestId('case-suspended-marker')).toBeVisible({
-			timeout: 25_000,
-		})
-		const resume = page.getByTestId('case-lifecycle-resume')
-		await expect(resume).toBeVisible()
+		/**
+		 * What the case's own lifecycle endpoint says about it.
+		 *
+		 * @return The `suspended` flag, or null when the read failed.
+		 */
+		const suspended = async () => {
+			const res = await request.get(
+				`/index.php/apps/${REGISTER}/api/case/${cases.suspend}/lifecycle`,
+				{ headers: { 'OCS-APIRequest': 'true' } },
+			)
+			if (res.status() !== 200) {
+				return null
+			}
+			return (await res.json()).suspended
+		}
 
-		await resume.click()
+		await expect
+			.poll(suspended, {
+				timeout: 25_000,
+				message: 'the case reads as suspended after the gesture',
+			})
+			.toBe(true)
+
+		// And no marker anywhere on the page. Asserting the absence keeps a
+		// second one from reappearing without the reasoning above being read.
+		await expect(page.getByTestId('case-suspended-marker')).toHaveCount(0)
+
+		await clickHeaderAction(page, 'cn-action-case-resume')
 		const resumeDialog = page.getByTestId('case-lifecycle-dialog')
 		await expect(resumeDialog).toBeVisible({ timeout: 15_000 })
 		await resumeDialog.getByTestId('case-lifecycle-reason').fill('Hervat e2e')
 		await page.getByTestId('case-lifecycle-confirm').click()
 		await expect(resumeDialog).toHaveCount(0, { timeout: 25_000 })
 
-		await expect(page.getByTestId('case-suspended-marker')).toHaveCount(0, {
-			timeout: 25_000,
-		})
+		await expect
+			.poll(suspended, {
+				timeout: 25_000,
+				message: 'the case reads as running again',
+			})
+			.toBe(false)
 	})
 
 	// @e2e openspec/specs/status-transition-engine/spec.md#extend-the-term
@@ -531,14 +687,15 @@ test.describe('Case lifecycle on the case page', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-current-step-is-marked
-	test('the stepper marks the step the case is in', async ({ page }) => {
+	test('the timeline marks the step the case is in', async ({ page }) => {
 		await openCase(page, 'stepper')
-		const steps = page.getByTestId('case-steps')
-		await expect(steps).toBeVisible({ timeout: 25_000 })
+		const widget = page.getByTestId('cn-stages-widget')
+		await expect(widget).toBeVisible({ timeout: 25_000 })
 
-		const stages = steps.locator('.cn-timeline-stages__stage')
-		await expect(stages).toHaveCount(3, { timeout: 25_000 })
-		// Ontvangen done, In behandeling active, Afgehandeld still to come.
+		const stages = widget.locator('.cn-timeline-stages__stage')
+		// Four, in the case type's `order`: the stage list is the PROCESS, not
+		// the moves on offer, which is why a role-hidden target still renders.
+		await expect(stages).toHaveCount(4, { timeout: 25_000 })
 		await expect(stages.nth(0)).toHaveClass(
 			/cn-timeline-stages__stage--completed/,
 		)
@@ -546,15 +703,18 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(stages.nth(2)).toHaveClass(
 			/cn-timeline-stages__stage--upcoming/,
 		)
+		await expect(stages.nth(3)).toHaveClass(
+			/cn-timeline-stages__stage--upcoming/,
+		)
 		// The active stage is the one a screen reader is told about.
-		await expect(steps.locator('[aria-current="step"]')).toHaveCount(1)
+		await expect(widget.locator('[aria-current="step"]')).toHaveCount(1)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-stepper-follows-a-transition
-	test('the stepper follows a transition without a reload', async ({ page }) => {
+	test('the timeline follows its own move without a reload', async ({ page }) => {
 		await openCase(page, 'stepper')
 		const stages = page
-			.getByTestId('case-steps')
+			.getByTestId('cn-stages-widget')
 			.locator('.cn-timeline-stages__stage')
 		await expect(stages.nth(1)).toHaveClass(
 			/cn-timeline-stages__stage--current/,
@@ -563,16 +723,20 @@ test.describe('Case lifecycle on the case page', () => {
 			},
 		)
 
-		await page.getByTestId(`case-transition-${T.close}`).click()
-		const dialog = page.getByTestId('case-transition-dialog')
+		await stageControl(page, statusDone).click()
+		const dialog = page.getByTestId('cn-transition-input-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await page.getByTestId('case-transition-result').click()
-		await pickResult(page, 'Verleend')
-		await page.getByTestId('case-transition-confirm').click()
+		await dialog
+			.getByTestId('cn-transition-input-resultTypeId')
+			.getByRole('textbox')
+			.fill(resultGranted)
+		await page.getByTestId('cn-transition-input-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
-		// No page.goto: the strip bumps cn:page:refresh and the stepper re-reads.
-		await expect(stages.nth(2)).toHaveClass(
+		// No page.goto. The widget shows the new stage at once, fires
+		// cn:page:refresh so the page re-reads the case, and re-reads which
+		// stages the case can reach from where it now is.
+		await expect(stages.nth(3)).toHaveClass(
 			/cn-timeline-stages__stage--current/,
 			{
 				timeout: 25_000,

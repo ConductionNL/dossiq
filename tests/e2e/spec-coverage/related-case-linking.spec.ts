@@ -106,8 +106,15 @@ test.describe('Related cases section (related-case-linking)', () => {
 	// list that was still loading and the whole file then runs nothing while
 	// reporting green.
 	test.describe.configure({ timeout: 120_000 })
-	// @e2e openspec/specs/related-case-linking/spec.md#section-lists-relations-with-navigation
-	test('the Related cases panel lists a relation', async ({ page }) => {
+	// @e2e exclude The scenario this used to cite, "Section lists relations
+	// with navigation", is not met by the running app: a relation stored on
+	// `relatedCases` never reaches the generic `case-related` widget, which
+	// lists what OpenRegister resolves through /uses and /used. Measured
+	// 2026-09-11 by seeding two cases, relating them through the dossiq API
+	// and reading the tab: it listed the case TYPE and no related case. The
+	// scenario carries the same reason on the spec side. What is left here is
+	// a mount-and-resolve guard for the section, and it claims nothing more.
+	test('the Related cases panel mounts and resolves', async ({ page }) => {
 		const opened = await openFirstCaseOrSkip(page)
 		if (!opened) return
 
@@ -136,7 +143,7 @@ test.describe('Related cases section (related-case-linking)', () => {
 		// 2026-09-03, so asserting visibility alone would pass against the
 		// spinner and prove nothing about the listing.
 		// The related-cases SECTION, not the panel. The Related tab carries the
-		// sub-cases list under this one since the strip came down to six tabs,
+		// sub-cases list under this one since the strip was folded,
 		// and `not.toContainText(/Loading/i)` over the whole panel would be
 		// satisfied by whichever half resolved first.
 		const panel = page.locator(

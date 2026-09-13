@@ -28,9 +28,35 @@ migration needs a repair step mapping one onto the other, and secrets cannot be 
 NOT blocked on wave-3: integriq's StufZkn bridge is seam-based (`StufZknProviderInterface`), not the
 legacy runner.
 
-- [ ] Retire the four zero-caller outbound verbs on `StufAdapterService` (`creeerZaak`,
-      `actualiseerZaak`, `geefZaakDetails`, `genereerZaakIdentificatie`) — dead capability, no
-      caller anywhere in lib/ or src/ (gate-57 shape).
+### Ruling 2026-09-12: re-point through integriq, do not retire
+
+These four verbs were listed for retirement as dead capability. Measured against integriq before
+acting, and the premise does not hold in the direction that matters. Under `openconnector/lib/`,
+`creeerZaak`, `actualiseerZaak`, `geefZaakDetails` and `vrijBericht` appear in **zero** files, and
+`genereerZaakIdentificatie` only in a spec scenario. The outbound ZKN translator emits a bare
+`zakLk01` kennisgeving and writes no `<stuf:functie>` element at all, so it cannot distinguish
+`creeerZaak` from `actualiseerZaak`, which this app's own spec requires as an explicit SHALL. Its
+`Lv01` code is StUF-BG person and address lookups, unrelated to `geefZaakDetails`. Retiring here and
+citing integriq would have moved four requirements onto an app that implements roughly one of them.
+
+The ruling is that **the specs stay in dossiq, and dossiq configures integriq as the leaf providing
+the capability instead of carrying its own transport.** dossiq keeps stating what it needs of a
+StUF-ZKN zaaksysteem; it stops owning the SOAP client, the circuit breaker, the vault and the retry
+job. The gap that exposes is integriq's to close, and it is named below rather than left for
+whoever deletes the code to discover.
+
+- [ ] Re-point `creeerZaak` and `actualiseerZaak` through the ADR-041 delivery seam, the same
+      `DeliveryRequestedEvent` path phase 1 already uses for publication. These are the two integriq
+      can carry today, as a `zakLk01` kennisgeving.
+- [ ] **integriq-side prerequisite:** teach the outbound ZKN translator to write `<stuf:functie>`,
+      so a create and an update are distinguishable on the wire. Until this lands, re-pointing the
+      two verbs above silently collapses them into one message.
+- [ ] **integriq-side prerequisite:** a synchronous Lv01 `geefZaakDetails` round-trip and a Du01
+      `genereerZaakIdentificatie` round-trip. Both are request and response rather than
+      fire-and-forget, so they do not fit `DeliveryRequestedEvent` as it stands and need their own
+      seam.
+- [ ] Re-point `geefZaakDetails` and `genereerZaakIdentificatie` once that seam exists. Do NOT
+      delete dossiq's implementations before then: they are the only implementations the fleet has.
 - [ ] Re-point `StufController::outbound()` (`vrijBericht`) at integriq's `stuf_message` intake via
       the delivery seam or `StufZknSyncService`, keeping the admin surface read-only views.
 - [ ] Repair step: migrate `stufEndpoint` objects to integriq `source` objects
@@ -39,9 +65,10 @@ legacy runner.
 - [ ] Delete the outbound half of `lib/Service/Stuf/` (`StufOutboundTransport`, `StufHttpClient`,
       `CircuitBreakerService`, `StufVaultService`, `NeedsInputDispatcher`, `StufRetryJob`) once
       nothing references it; the inbound responder half stays until its own extraction is ruled on.
-- [ ] Update `openspec/specs/stuf-zkn-outbound/spec.md`: outbound orchestration, circuit breaker,
-      retry and credential requirements move to integriq's `stuf-zkn-bridge` spec (reference, do
-      not duplicate).
+- [ ] Keep `openspec/specs/stuf-zkn-outbound/spec.md` in dossiq, and record in it which party now
+      performs each requirement. The orchestration, circuit breaker, retry and credential clauses
+      describe behaviour dossiq still depends on, so they change owner rather than cease to exist,
+      and integriq's `stuf-zkn-bridge` spec should reference them rather than restate them.
 
 ## Phase 3: Notificaties + webhooks re-point — staged
 

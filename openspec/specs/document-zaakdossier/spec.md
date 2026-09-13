@@ -158,6 +158,8 @@ and download operation. Guards MUST be checked at the service layer, not only in
 
 ### Requirement: REQ-ZAK-004 The zaakdossier view MUST render documents grouped by informatieobjecttype
 
+> Retired from the case page on 2026-09-13 (Ruben): the Files tab holds the case folder as a files browser on the Files app's primitives, and the dossier list, its metadata upload dialog and their e2e suite (`case-documents.spec.ts`) left the page with it. The informatieobject API, the register and `ZaakdossierController` stay. The scenarios under REQ-ZAK-004, 005 and 006 describe a surface that no longer renders; they are kept as the record of it and nothing on the page answers to them.
+
 `DossierTab.vue` MUST render the complete dossier for a zaak, grouping documents in collapsible
 sections per `informatieobjecttype` via `DossierGroup.vue`. `DocumentRow.vue` MUST display
 for each document: thumbnail (Nextcloud preview API at `/index.php/core/preview?fileId={id}&x=64&y=64`),
@@ -190,6 +192,8 @@ count badge (e.g., "Dossier (8)").
 - **THEN** only definitief documents MUST be shown, sorted oldest-first
 - **AND** the filter+sort state MUST be reflected in the URL
 
+@e2e exclude The last clause is unimplemented, and naming it precisely matters because the earlier reason blamed the wrong thing. The controls EXIST: `DossierTab.vue` ships a "Sort by" NcSelect bound to `sortKey` and `sortDirection`, plus a keyword filter. What does not exist is URL state: the component has no `$route`, no `query` read and no `router.replace` anywhere in it, so a sorted or filtered dossier cannot be linked to or reloaded. Restore the citation once the component syncs its sort and filter into the route. Until then a citation here would have to sit on a `test.fixme` body, which credits nothing and reads as cover.
+
 ---
 
 ### Requirement: REQ-ZAK-005 Upload MUST present a metadata dialog and require informatieobjecttype and vertrouwelijkheidaanduiding
@@ -216,6 +220,8 @@ Multi-file upload MUST share the same metadata with per-file upload progress ind
 - **AND** on completion, each informatieobject MUST be created in the register
 - **AND** a failure on one file MUST NOT block successful upload of the other two
 
+@e2e exclude The middle clause cannot be observed from this suite. `uploadProgress` is bound and the indicator is real, so this is not an absent feature; the scenario asks for the value to be READ while the upload is in flight, and nothing here can sample a progress value between the request starting and its promise resolving. The first and third clauses are observable and belong on a test that uploads three files including one refusal; that test does not exist yet. Restore the citation when it does, or split the scenario so the observable clauses can be cited on their own.
+
 #### Scenario: REQ-ZAK-005c File validation blocks executable uploads
 
 - **GIVEN** a user drops `malware.exe` onto the dossier
@@ -240,6 +246,8 @@ Restore action MUST be disabled when informatieobject status = `definitief`.
 - **THEN** all 3 versions MUST be listed with version number, timestamp, and uploader
 - **AND** each version MUST have a "Downloaden" link
 - **AND** versions 1 and 2 MUST have an active "Herstellen" button
+
+@e2e exclude The blocker has MOVED and shrunk, which is why this is not simply "#764". A document with more than one Nextcloud file version was the missing piece, and it is missing no longer: `case-documents.spec.ts#seedVersionedDocument` writes the file twice and its docblock carries the storage path. What is left is one leg on the DRAFT side. `case-documents.spec.ts` opens the version panel for a `final` document and proves REQ-ZAK-006b's refusal; the same panel on a `draft` document, asserting the Herstellen button is ACTIVE and that pressing it issues the MOVE, is the honest home for this scenario. Restore the citation there once that leg exists and its enabled-restore assertion has been mutation checked, rather than on a body that never runs.
 
 #### Scenario: REQ-ZAK-006b Restore is disabled for definitief documents
 

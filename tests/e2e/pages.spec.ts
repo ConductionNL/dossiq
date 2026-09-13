@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Locator } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
@@ -53,7 +53,7 @@ test.describe('Dashboard', () => {
 		// heading so a bare `<h2>Dashboard</h2>` rendered by some other chrome
 		// could not satisfy this on its own.
 		await expect(
-			page.getByText('Cases, deadlines and your workload at a glance'),
+			page.getByText('Case volume, status and performance across the team'),
 		).toBeVisible({ timeout: 30_000 })
 		// The single declared header action. `exact` matters: the widget grid
 		// below carries case rows whose text also contains "case".
@@ -62,7 +62,7 @@ test.describe('Dashboard', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#fresh-session-lands-on-the-dashboard
+	// @e2e openspec/specs/dashboard/spec.md#a-fresh-load-of-the-dashboard-shows-every-kpi-tile
 	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
 		page,
 	}) => {
@@ -70,7 +70,11 @@ test.describe('Dashboard', () => {
 		// used to be registered only by the lazy detail-page chunk, so the
 		// dashboard was fine after visiting a case and broken as the first
 		// page of a session. Client-side navigation cannot tell the two apart.
-		await page.goto('/index.php/apps/dossiq/')
+		//
+		// dashboard-my-work-split moved the app's landing page to My Work;
+		// the Dashboard (KPI tiles, charts, Stalled Cases) now lives at its
+		// own route.
+		await page.goto('/index.php/apps/dossiq/dashboard')
 		await dismissSupportDialog(page)
 		const tiles = page.locator('.cn-stat-widget')
 		await expect(tiles.first()).toBeVisible({ timeout: 30_000 })
@@ -177,6 +181,29 @@ test.describe('Tasks page', () => {
 	let taskCaseTitle = ''
 	let taskTitle = ''
 
+	/** The signed-in uid, which is what the Assignee column prints. */
+	const ME = process.env.ADMIN_USER ?? 'admin'
+
+	/**
+	 * The zero-based position of one column, by its header.
+	 *
+	 * The six columns come from the tasks SOURCE rather than from this app's
+	 * manifest, so their order is the library's to change; reading the index
+	 * off the header keeps a cell assertion about the column it names.
+	 *
+	 * @param table The rendered table.
+	 * @param name  A pattern matching the header in either language.
+	 */
+	async function columnIndex(table: Locator, name: RegExp): Promise<number> {
+		const header = table.getByRole('columnheader', { name })
+		await expect(header, `the list must carry the ${name} column`).toBeVisible({
+			timeout: 20_000,
+		})
+		return await header.evaluate((th) =>
+			Array.from(th.parentElement!.children).indexOf(th),
+		)
+	}
+
 	/**
 	 * A due date far enough out that the inbox's `-dueAt` sort keeps this
 	 * file's own task on page one.
@@ -220,11 +247,18 @@ test.describe('Tasks page', () => {
 		// from the manifest config before route params are merged). Dating
 		// the fixture past everything else is what keeps it on page one
 		// without asserting a position.
+		//
+		// THE ASSIGNEE AND THE PRIORITY ARE PART OF THE FIXTURE, NOT DECORATION.
+		// REQ-TASK-004 asks each row to show six facts, and a task seeded
+		// without an assignee or a priority leaves two of those cells empty
+		// for a reason that is the fixture's rather than the list's.
 		taskTitle = `${RUN_PREFIX} Tasks page task`
 		await seedFlowTask(api, token, {
 			title: taskTitle,
 			objectUuid: taskCaseId,
 			state: 'available',
+			assignee: ME,
+			priority: 'high',
 			dueAt: FAR_FUTURE_DUE,
 		})
 	})
@@ -239,9 +273,16 @@ test.describe('Tasks page', () => {
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
-	test('renders list view with search and filters, and offers no Add', async ({
+	test('renders list view with search and filters, offers no Add, and shows the facts on a row', async ({
 		page,
 	}) => {
+		// The file's 30s default is the budget for the chrome assertions this
+		// test used to hold alone. Reading the row as well means a second
+		// render of the inbox in table view, which the default cannot cover:
+		// the first run of the repaired body timed out INSIDE
+		// `toHaveCount(1)`, which reads as "the seeded row is missing" while
+		// the row was simply still arriving.
+		test.setTimeout(120_000)
 		// "Tasks" is no longer a top-level sidebar leaf (dropped by the
 		// nav-dedup pass); the /tasks page route stays reachable, so navigate
 		// to it client-side rather than via a (non-existent) nav link.
@@ -269,6 +310,86 @@ test.describe('Tasks page', () => {
 		// the field is in the DOM but hidden; assert it is wired up rather
 		// than requiring the sidebar to be open.
 		await expect(page.getByPlaceholder('Type to search')).toBeAttached()
+
+		// 🔴 AND THE ROW ITSELF, WHICH IS THE HALF THIS TEST USED TO SKIP.
+		// The controls above are the page's chrome: a list that answered
+		// nothing at all satisfies every one of them, and the scenario's
+		// second clause — "each task row MUST show: title, parent case
+		// reference, status, assignee, due date, and priority" — survived
+		// untouched. So the seeded task is read out of the table, cell by
+		// cell, against the facts the requirement names.
+		//
+		// The list has to have ANSWERED before the view is switched: the
+		// switcher paints with the page shell, so the click lands whether or
+		// not rows exist, and CnDataTable renders its `<table>` only once it
+		// has them.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]').first(),
+		).toBeVisible({ timeout: 30_000 })
+
+		// 🔴 THROUGH THE Mine LENS, BECAUSE THE FAR-FUTURE DUE DATE IS NOT
+		// ENOUGH. The `All` lens the page opens on is every task on the
+		// instance — 69 of them here, paged at 25 — and the engine's order
+		// puts the UNDATED ones first, so a fixture dated 2099 sits on page
+		// three and the first run of this assertion read "the seeded row is
+		// missing" while the row was three pages away. `Mine` is
+		// `scope=assigned&isTerminal=false`, which is this user's open work
+		// and fits on one page (19 rows when measured). The columns are the
+		// source's and identical under every lens, so narrowing changes which
+		// rows are read, never what a row is made of.
+		await page.getByRole('tab', { name: /^(Mine|Van mij)$/ }).click()
+		await page.getByRole('button', { name: 'Table' }).click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 30_000 })
+
+		// Found BY ITS TITLE, never by position: the inbox is a shared list
+		// on a shared instance and another session's tasks sit in it.
+		const seededRow = table.locator('tbody tr').filter({ hasText: taskTitle })
+		await expect(seededRow).toHaveCount(1, { timeout: 30_000 })
+
+		/**
+		 * One cell of the seeded row, by its column header.
+		 *
+		 * @param name A pattern matching the header in either language.
+		 */
+		const cell = async (name: RegExp): Promise<Locator> =>
+			seededRow.locator(
+				`td:nth-child(${(await columnIndex(table, name)) + 1})`,
+			)
+
+		await expect(
+			await cell(/^(Task|Taak)$/),
+			'the row names the task',
+		).toContainText(taskTitle)
+		// 🔴 THE SUBJECT CELL IS THE SIBLING TEST'S CLAIM, AND IT IS DARK
+		// TODAY. REQ-TASK-004's sixth fact is the parent case reference, and
+		// `the Subject column shows the case title, not its uuid` below is
+		// the test that asserts it. Measured on this instance 2026-09-12: the
+		// inbox endpoint answers `subject: null` for EVERY row, freshly
+		// seeded ones included, so the column prints an em dash throughout
+		// and that sibling is red for a reason that lives in OpenRegister's
+		// `TaskInboxService::subjectContexts()`, not in this page. Asserting
+		// it a second time here would duplicate a known-red claim rather than
+		// add coverage, so this test reads the five facts that do resolve and
+		// leaves the sixth where it already lives.
+		await expect(
+			await cell(/^(State|Status)$/),
+			'the row shows the state the task was seeded in',
+		).toHaveText(/^\s*(Available|Beschikbaar)\s*$/)
+		await expect(
+			await cell(/^(Priority|Prioriteit)$/),
+			'the row shows the priority the task was seeded with',
+		).toHaveText(/^\s*(High|Hoog)\s*$/)
+		// `taskDueLabel` returns '' for a task with no `dueAt`, so a cell
+		// carrying a number is a due date that resolved rather than chrome.
+		await expect(
+			await cell(/^(Due|Deadline|Vervaldatum)$/),
+			'the row counts down to the due date it was seeded with',
+		).toHaveText(/\d/)
+		await expect(
+			await cell(/^(Assignee|Toegewezen aan)$/),
+			'the row names who holds the task',
+		).toContainText(ME)
 	})
 
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
@@ -335,8 +456,61 @@ test.describe('Tasks page', () => {
 })
 
 test.describe('My Work page', () => {
+	/**
+	 * ONE CASE ASSIGNED TO THE SIGNED-IN USER, SO THE TABLE CAN EXIST.
+	 *
+	 * `CnDataTable` renders its `<table>` only once it has rows, so on an
+	 * instance where this user holds nothing the table view is a headline and
+	 * no headers, and "the table view shows these five columns" would read as
+	 * a missing column rather than as an empty list. The row is never located
+	 * or counted: it is there so the list has something to draw.
+	 */
+	let api: APIRequestContext
+	let token = ''
+
+	/** The signed-in uid, which is what My Work filters on. */
+	const ME = process.env.ADMIN_USER ?? 'admin'
+
+	test.beforeAll(async ({ browser, playwright, baseURL }) => {
+		const context = await browser.newContext()
+		api = await playwright.request.newContext({
+			baseURL,
+			storageState: await context.storageState(),
+		})
+		await context.close()
+		token = await getRequestToken(api)
+
+		const caseType = await ensureCaseType(api, token)
+		await seedCase(api, token, {
+			title: `${RUN_PREFIX} My Work case`,
+			caseType: caseType.id,
+			assignee: ME,
+		})
+	})
+
+	test.afterAll(async () => {
+		if (api === undefined) return
+		await cleanupRunObjects(api, token)
+		await api.dispose()
+	})
+
 	// @e2e openspec/specs/my-work/spec.md#scenario-card-and-table-view
+	//
+	// 🔴 WHAT THE SCENARIO ASKS, AND WHAT THIS USED TO ASSERT. "The list MUST
+	// default to card view and offer a card/table toggle, AND the table view
+	// MUST show the columns: identifier, title, case type, status, deadline."
+	// The body asserted the two sort buttons and that a Cards button was
+	// visible. It never switched to Table, never read a column and never said
+	// which view the page opens in, so a My Work that opened as a table with
+	// three columns passed every line of it.
+	//
+	// The requirement above the scenario carries an `@e2e exclude` for being
+	// data dependent, and that reason is about the list's CONTENTS: which
+	// cases a named user holds. This scenario is about the view shell and its
+	// columns, which one seeded row makes assertable without asserting
+	// anything about who holds what.
 	test('renders as a card index scoped to the current user', async ({ page }) => {
+		test.setTimeout(120_000)
 		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
 		// nav link and used to burn the whole test budget inside navTo.
 		await navTo(page, /^(Assigned to me|Aan mij toegewezen)$/)
@@ -348,9 +522,49 @@ test.describe('My Work page', () => {
 			timeout: 15000,
 		})
 		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
+
+		// THE DEFAULT IS CARDS, AND THE TOGGLE PROVES IT RATHER THAN THE
+		// ABSENCE OF A TABLE. Both view buttons carry `aria-pressed`, so the
+		// pressed one IS the current view; "no table on screen" would also be
+		// satisfied by a list that had not answered yet.
+		const cards = page.getByRole('button', { name: /Cards/ }).first()
+		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
+		await expect(cards, 'the card/table toggle offers cards').toBeVisible()
+		await expect(tableToggle, 'and a table').toBeVisible()
 		await expect(
-			page.getByRole('button', { name: /Cards/ }).first(),
-		).toBeVisible()
+			cards,
+			'My Work opens in card view, which is what the scenario calls the default',
+		).toHaveAttribute('aria-pressed', 'true')
+		await expect(tableToggle).toHaveAttribute('aria-pressed', 'false')
+
+		// AND THE FIVE COLUMNS THE SCENARIO NAMES. Switching views is the
+		// other half of the toggle claim, and the headers are the half that
+		// says what a reader gets when they switch.
+		// `.mywork-card` is this page's own card, not the library's generic
+		// row: MyWorkCards fills CnIndexPage's `#card` slot with
+		// MyWorkCaseCard, so `cn-object-row` never appears in card view here.
+		await expect(
+			page.locator('.mywork-card').first(),
+			'the list has answered, so an absent column is a decision',
+		).toBeVisible({ timeout: 30_000 })
+		await tableToggle.click()
+		const table = page.locator('table').first()
+		await expect(table).toBeVisible({ timeout: 30_000 })
+		// The SORTED column carries its direction glyph inside the header, so
+		// its accessible name reads "Deadline\u25b2" and an end-anchored
+		// pattern misses exactly the column the page is sorted on.
+		for (const column of [
+			/^(Identifier|Kenmerk|Identificatie)[\u25b2\u25bc]?$/,
+			/^(Title|Titel)[\u25b2\u25bc]?$/,
+			/^(Case type|Zaaktype)[\u25b2\u25bc]?$/,
+			/^(Status)[\u25b2\u25bc]?$/,
+			/^(Deadline|Uiterlijke datum)[\u25b2\u25bc]?$/,
+		]) {
+			await expect(
+				table.getByRole('columnheader', { name: column }),
+				`the table view must carry the ${column} column`,
+			).toBeVisible({ timeout: 20_000 })
+		}
 	})
 })
 
@@ -376,15 +590,14 @@ test.describe('Doorlooptijd page', () => {
 })
 
 test.describe('Settings page', () => {
-	// 🔴 NO CITATION, AND THE SPEC IS THE STALE HALF. This carried
-	// `admin-settings#in-app-settings-page-renders-configuration-sections`,
-	// read as partial on 2026-09-11 and as smoke on 2026-09-12, and the
-	// downgrade is right: the test asserted one Save button and the absence of
-	// "Internal Server Error", and none of the three section headings the
-	// scenario lists.
+	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	//
-	// Two of the scenario's clauses cannot be made true against this product,
-	// and neither is the test's fault:
+	// 🔴 REPOINTED, BECAUSE THE SCENARIO IT USED TO CITE DESCRIBES A PAGE
+	// THAT NO LONGER EXISTS. The citation read
+	// `admin-settings#in-app-settings-page-renders-configuration-sections`,
+	// read as partial on 2026-09-11 and as smoke on 2026-09-12. Two of that
+	// scenario's clauses cannot be made true against this product, and
+	// neither is the test's fault:
 	//
 	//   the in-app Settings page      retired by page-topology-cleanup (B1),
 	//                                 because reaching an administration
@@ -394,16 +607,17 @@ test.describe('Settings page', () => {
 	//   "Version Information" heading removed; the string exists nowhere in
 	//                                 src/
 	//
-	// So the citation comes down and the scenario carries a reason-bearing
-	// `@e2e exclude` naming both, rather than a test pretending to prove a
-	// requirement two of whose clauses are false. Writing the exclusion where
-	// a spec reader meets it is the point: the repair owed here is to the
-	// spec, not to this file.
+	// That scenario therefore carries a reason-bearing `@e2e exclude` naming
+	// both, written where a spec reader meets it. What this test drives is
+	// the administration surface, so it cites the scenario that describes the
+	// administration surface rather than carrying no citation at all.
 	//
-	// The two headings that DO exist are asserted now, which is what turns
-	// this from a smoke test back into a test. "Configuration" comes from
-	// `src/views/settings/Settings.vue` and "Case Type Management" from
-	// `src/views/settings/AdminRoot.vue`.
+	// WHAT IT PROVES THAT NOTHING ELSE DOES. REQ-ADMIN-001's accessible
+	// scenario ends "AND the page MUST render the AdminRoot.vue component
+	// with case type management and ZGW API mapping sections".
+	// spec-coverage/admin-settings.spec.ts asserts the Case Type Management
+	// half. The ZGW API mapping half was asserted nowhere, and is asserted
+	// here beside the Configuration section and its Save control.
 	//
 	// NOTE ON THE URL: these used the un-prefixed `/apps/dossiq/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
@@ -414,6 +628,12 @@ test.describe('Settings page', () => {
 	test('renders the configuration section and its save control', async ({
 		page,
 	}) => {
+		// The administration page mounts every section this app declares, a
+		// dozen of them, each fetching its own configuration. On a cold
+		// instance the first load runs past the file's 30s default and the
+		// failure reads as `page.goto: Test timeout`, which says nothing
+		// about administration at all.
+		test.setTimeout(120_000)
 		// page-topology-cleanup (B1) retired the IN-APP /settings page: it
 		// mounted the same AdminRoot.vue as /settings/admin/dossiq, and
 		// reaching an administration component through the in-app router
@@ -438,10 +658,34 @@ test.describe('Settings page', () => {
 
 		// The section headings, named individually. A count would redden on
 		// ADDING a section and pass on a swap, and would never say which one
-		// went missing.
-		for (const heading of ['Configuration', 'Case Type Management']) {
+		// went missing. `ZGW API Mapping` is the one the cited scenario names
+		// beside case type management, and a Save button on its own is
+		// satisfied by any settings page the framework happens to mount.
+		//
+		// NOT `{ name, exact: true }`. A settings section that sets `doc-url`
+		// renders the documentation link INSIDE its own <h2>, so the heading's
+		// accessible name is the section name followed by that link's label.
+		// Measured on run 34703612328, where the page rendered
+		//
+		//   - heading "Configuration External documentation" [level=2]:
+		//     - text: Configuration
+		//     - link "External documentation"
+		//
+		// The section, its description and its Save control were all present;
+		// only the matcher was wrong. `Case Type Management` and `ZGW API
+		// Mapping` set no doc-url, which is why those two passed and this one
+		// did not. Anchored at the start and followed by whitespace or the end
+		// of the name, so a different section cannot satisfy it by prefix.
+		for (const heading of [
+			'Configuration',
+			'Case Type Management',
+			'ZGW API Mapping',
+		]) {
+			const sectionHeading = new RegExp(
+				`^${heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`,
+			)
 			await expect(
-				page.getByRole('heading', { name: heading, exact: true }).first(),
+				page.getByRole('heading', { name: sectionHeading }).first(),
 				`the administration surface must render the ${heading} section`,
 			).toBeVisible({ timeout: 15000 })
 		}

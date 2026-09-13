@@ -488,17 +488,29 @@ The case dashboard MUST support deleting a case with appropriate warnings.
 
 ### Requirement: The case names itself in the header (REQ-CDV-14)
 
-You see which case you are on without reading the data widget. `CaseDetail`
-SHALL set `config.subtitleField` to `identifier`, so the case number reads
-under the title. The page SHALL render a header row widget `case-header`
-on the first layout row that shows a `CnStatusBadge` with the name of the
-case's status type and the deadline countdown (days left, or days overdue
-in the danger variant), replacing the Time left tile. A case without a
-status record SHALL show the badge as Unknown rather than nothing; a case
-without a deadline SHALL show no countdown. The subtitle line built from
-identifier, case type and assignee together is a nextcloud-vue need
-(`CnDetailPage` has `subtitleField` only); until it lands the identifier
-alone is the subtitle.
+You see which case you are on without reading the data widget. The page SHALL
+carry the case number, the case type and the deadline on its first layout row,
+with the hours card beside them at the head of the right column, and SHALL
+carry each of them on a CONFIGURED library widget rather than on a component
+this app writes: no tile on that row may span it. The number and the type are
+`stat` tiles in object-field mode, reading the fact straight off the loaded
+record and resolving the case type through the store to its name, never its
+uuid. The deadline SHALL read as a countdown in days left, or days overdue,
+banding at 14 days and at 5; a case without a deadline SHALL show no remaining
+time and no band. The status and the assignee are not tiles: the status reads
+on the stages widget beside the panels, which is also where a case is moved,
+and both read in the Data tab, the open tab on load. A row of five tiles
+carried two the page did not need, which is the layout laid out by hand in
+Buildiq edit mode on 2026-09-12 and copied into the manifest. Loose cells
+rather than one row widget, because one widget drawing the facts inside a
+two-row cell clipped them and read as a single strip, and because a cell is
+what Buildiq edit mode can move.
+
+`CaseDetail` SHALL also set `config.subtitleField` to `identifier`. The key is
+inert on a detail page in @conduction/nextcloud-vue 2.49, which reads it only
+in `CnObjectRow`, `CnIndexPage` and `CnObjectList`, so the number reads on the
+page because the first tile prints it. The declaration stays so the day the
+library honours it is a deletion rather than a new idea.
 
 #### Scenario: The number reads under the title
 @e2e tests/e2e/case-header.spec.ts
@@ -513,8 +525,8 @@ alone is the subtitle.
 
 - **GIVEN** a case in status In behandeling with a deadline 26 days ago
 - **WHEN** the handler opens the case page
-- **THEN** the header row SHALL show a status badge reading In behandeling
-- **AND** the header row SHALL show 26 days overdue in the danger variant
+- **THEN** the Status field in the Data tab SHALL read In behandeling, and never the uuid
+- **AND** the Deadline tile SHALL show 26 days overdue in the danger variant
 - **AND** no tile labelled Time left SHALL render in the KPI row
 
 #### Scenario: A case without a status or a deadline still has a header
@@ -522,8 +534,8 @@ alone is the subtitle.
 
 - **GIVEN** a case with no status record and no deadline
 - **WHEN** the handler opens the case page
-- **THEN** the status badge SHALL read Unknown
-- **AND** the header row SHALL show no countdown
+- **THEN** the Status field in the Data tab SHALL render, with no uuid and no fabricated name
+- **AND** the Deadline tile SHALL show no count of days
 
 #### Scenario: The full subtitle line waits on nextcloud-vue
 @e2e exclude The templated subtitle (identifier, case type, assignee) needs a `subtitle` template on `CnDetailPage`, which 2.40.0 does not have; the manifest unit test asserts the interim `subtitleField` and the tasks.md marker tracks the block.
@@ -561,26 +573,34 @@ manifest, reads it as an oversight, and adds the trail back.
 
 ### Requirement: The case shows its step (REQ-CDV-13)
 
-You see which step the case is in and how many steps remain. `CaseDetail`
-SHALL render a stepper over the case type's status types in their `order`,
+You see which step the case is in and how many steps remain, and you move the
+case by clicking where you are moving it to. `CaseDetail` SHALL place a
+CONFIGURED timeline widget over the case type's status types in their `order`,
 with the current status marked as active and the statuses before it as done.
-The stepper SHALL take the place of the milestone progress tile.
+The list SHALL come from the case type's BLUEPRINT, so a type that derives its
+lifecycle from a parent shows the statuses it inherited rather than none. The
+stages SHALL be read from a declaration rather than from a component this app
+writes, and the timeline SHALL take the place of the milestone progress tile.
+Clicking a stage SHALL take the move that leads there, under the same guards
+the engine applies to any other move.
 
 #### Scenario: The current step is marked
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
-- **GIVEN** a case type with statuses Ontvangen, In behandeling, Afgehandeld in that order
+- **GIVEN** a case type with statuses Ontvangen, In behandeling, Aangehouden, Afgehandeld in that order
 - **AND** a case in status In behandeling
 - **WHEN** the handler opens the case page
-- **THEN** the stepper SHALL show three stages
-- **AND** Ontvangen SHALL be done, In behandeling active, Afgehandeld pending
+- **THEN** the timeline SHALL show one stage per status, in that order
+- **AND** Ontvangen SHALL be done, In behandeling active, the rest pending
+- **AND** the stage the case is on SHALL be the one a screen reader is told about
 
 #### Scenario: The stepper follows a transition
 @e2e tests/e2e/case-lifecycle-on-the-page.spec.ts
 
 - **GIVEN** the same case
-- **WHEN** the handler moves it to Afgehandeld
-- **THEN** the stepper SHALL mark Afgehandeld as active without a reload
+- **WHEN** the handler clicks the Afgehandeld stage and gives the result it asks for
+- **THEN** the timeline SHALL mark Afgehandeld as active without a reload
+- **AND** In behandeling SHALL read as done
 
 #### Scenario: The progress tile is gone
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
@@ -679,19 +699,28 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 - **WHEN** the handler opens the History tab
 - **THEN** the upload SHALL read above the status change, with the handler as actor
 
-### Requirement: Six tabs hold every panel of the case (REQ-CDV-16)
+### Requirement: Nine tabs hold every panel of the case (REQ-CDV-16)
 
-You reach every panel of the case from one row of six tabs. The `case-panels`
-widget on `CaseDetail` SHALL list exactly six tabs, in the order Data
-(`case-core`), Documents (`case-documents-panel`), People
-(`case-people-panel`), Work (`case-work-panel`), Related
-(`case-related-panel`) and Objects and locations (`case-objects-panel`). The
-strip SHALL sit above the fold at 1024 pixels wide, and all six SHALL be
-visible there without a scroll or a gesture.
+You reach every panel of the case from one row of nine tabs. The `case-panels`
+widget on `CaseDetail` SHALL list exactly nine tabs, in the order Data
+(`case-data-panel`), Files (`case-files`), Notes (`case-notes-panel`), People
+(`case-people-panel`), Communication (`case-communication-panel`), Email
+(`case-email-panel`), Work (`case-work-panel`), Decisions
+(`case-decisions-panel`) and Related (`case-related-panel`). The strip SHALL
+sit above the fold at 1024 pixels wide, and all nine SHALL be visible there
+without a scroll or a gesture.
+
+Objects and locations is retired. Its objects are the last section of Related,
+an object linked to a case being a relation like any other, and its locations
+are a map on the Data tab: `case-location` already carries latitude and
+longitude, so the list was a table of coordinates nobody could picture.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
-render stacked under their own headings. Documents SHALL hold the dossier list
-and the case folder; People SHALL hold the parties and the contact moments;
+render stacked under their own headings. Files SHALL hold the case folder and
+nothing else, as a files browser on the Files app's primitives, with its own
+crumbs and no section heading over it (one title on the page, and the word is
+files; the ZGW document list left the page on 2026-09-13, its API and register
+stay); People SHALL hold the parties and the contact moments;
 Work SHALL hold the tasks and the appointments; Related SHALL hold the related
 cases and the sub-cases; Objects and locations SHALL hold the case objects and
 the case locations.
@@ -709,45 +738,64 @@ documents yet" tells the handler the section exists and holds nothing, which is
 the line of text the paragraph below is about. Only a section that renders
 literally nothing goes silent.
 
-The strip SHALL carry no Notes, Mail, Decisions or Timeline tab. Each of those
-duplicates a sidebar tab on the same page, and one surface in two places is
-duplication rather than coverage (REQ-CDV-17). A panel SHALL NOT be removed
-from the strip unless it is reachable elsewhere on the page: folding it into a
-tab and deleting it look identical in a tab count.
+No surface SHALL read in both the strip and the sidebar. One surface in two
+places is duplication rather than coverage (REQ-CDV-17). Until 2026-09-13 that
+rule was satisfied by keeping the sidebar copy and barring the strip tab; it is
+satisfied the other way now, because the strip is where a handler works and the
+sidebar is a shelf beside it. Notes, Email and Besluitvorming are strip tabs,
+and the sidebar carries only History, Sharing and Tags, none of which has a
+strip counterpart. The strip SHALL still carry no Timeline tab: the timeline is
+the History sidebar tab, and that one is not moving.
+
+A panel SHALL NOT be removed from the strip unless it is reachable elsewhere on
+the page: folding it into a tab and deleting it look identical in a tab count.
+The same holds for the sidebar, and it is the sharper risk in this direction,
+because a sidebar tab removed without a strip tab to receive it leaves nothing
+behind at all.
 
 The strip SHALL NOT need `visibleIf` on a tab entry. That was wanted so a
-collection holding nothing could be absent rather than empty; with six tabs
-each holding two collections, an empty section is a line of text inside a tab
-the handler opened deliberately.
+collection holding nothing could be absent rather than empty; with tabs that
+hold one or two collections each, an empty section is a line of text inside a
+tab the handler opened deliberately.
 
-#### Scenario: The strip holds six tabs and no more
+> The ceiling has moved twice, both times deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Decisions left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
+
+#### Scenario: The strip holds nine tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly six tabs
-- **AND** they SHALL read Data, Documents, People, Work, Related, Objects and locations, in that order
-- **AND** the strip SHALL carry no tab named Files, Notes, Mail or Decisions
+- **THEN** the tab strip SHALL contain exactly nine tabs
+- **AND** they SHALL read Data, Files, Notes, People, Communication, Email, Work, Decisions, Related, in that order
+- **AND** the strip SHALL carry no tab named Documents, Mail, Contacts or Objects and locations
 
-#### Scenario: The six tabs fit a laptop screen
+#### Scenario: The nine tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the six tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the nine tabs SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
 > at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
 > scrolling strip hides tabs behind an edge with nothing to say they are there. What the
 > handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
+>
+> More tabs do not change that answer, because one line was already out of reach and the
+> promise is about clipping rather than about lines. Measured 2026-09-13 in the strip's own
+> font (system-ui 700 15px): "Communication" is 131 pixels of text and about 173 as a tab box,
+> the second widest label after "Objects and locations" was at 212. Each extra tab costs
+> roughly one more wrapped row at a narrow viewport. The 661 figure is the six-tab number and
+> is left as it was taken; the assertion that matters is the e2e one, which measures every tab
+> box against the viewport rather than trusting a total.
 
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
-- **GIVEN** a case page whose strip holds six tabs
+- **GIVEN** a case page whose strip holds nine tabs
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading
@@ -761,14 +809,13 @@ the handler opened deliberately.
 - **AND** it SHALL reserve no vertical space and draw no divider
 - **AND** every section on the tab that did resolve SHALL keep its own heading
 
-#### Scenario: Files keeps its share and comment surface
-@e2e tests/e2e/case-documents.spec.ts
+#### Scenario: Files is the case folder and nothing else
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
 - **GIVEN** a case page
-- **WHEN** the handler opens the Documents tab
-- **THEN** the dossier list SHALL render first
-- **AND** the case folder SHALL render under it, as a section rather than a tab
+- **WHEN** the handler opens the Files tab
+- **THEN** the case folder SHALL render as a files browser, with crumbs from the user's files root down to the case folder
+- **AND** no section heading and no second list SHALL render in the tab
 
 #### Scenario: A panel that leaves the strip is still on the page
 @e2e exclude The three removed panels are sidebar tabs, and each already has its own e2e coverage on the sidebar; what needs guarding is that a LATER change cannot drop one body tab without the sidebar tab existing, which is a manifest shape rather than a rendered page. Asserted in tests/vitest/caseTabConsolidation.spec.js, which pairs each removed widget id with the sidebar tab id that carries it and fails when either half is missing.
