@@ -3960,7 +3960,13 @@ OC.L10N.register(
         "Your open tasks, deadlines and open cases": "Je open taken, deadlines en open zaken",
         "Your work lives here: today's tasks, deadlines and open cases in one place.": "Je werk staat hier: taken, deadlines en open zaken van vandaag op één plek.",
         "Locations on this case": "Locaties bij deze zaak",
-        "The locations could not be loaded.": "De locaties konden niet worden geladen."
+        "The locations could not be loaded.": "De locaties konden niet worden geladen.",
+        "Document properties": "Documenteigenschappen",
+        "Document properties saved": "Documenteigenschappen opgeslagen",
+        "Document properties could not be saved": "Documenteigenschappen konden niet worden opgeslagen",
+        "This file has no document record yet; saving creates one.": "Dit bestand heeft nog geen documentregistratie; opslaan maakt er een aan.",
+        "Default document type": "Standaard documenttype",
+        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid van het informatieobjecttype waaronder een bestand dat in een zaak van dit type wordt geplaatst wordt geregistreerd, tot een behandelaar in Documenteigenschappen een ander kiest. Optioneel: leeg betekent het eerste documenttype van het register op titel. Zie document-projection REQ-DPR-001."
     },
     "nplurals=2; plural=(n != 1);"
 )
