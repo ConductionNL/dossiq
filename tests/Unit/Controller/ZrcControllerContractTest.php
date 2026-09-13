@@ -39,6 +39,7 @@ use OCA\Dossiq\Controller\ZrcController;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -120,6 +121,7 @@ class ZrcControllerContractTest extends TestCase {
 			l10n: $this->l10n,
 			caseRelationService: $this->caseRelationService,
 			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
+			joinHoming: $this->createMock(originalClassName: DocumentJoinHoming::class),
 		);
 	}//end setUp()
 

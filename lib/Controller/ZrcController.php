@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -94,6 +95,7 @@ class ZrcController extends ZgwController {
 	 * @param CaseRelationService $caseRelationService Typed peer-relation service
 	 * @param ArchivalNominationDeriver $archivalDeriver The one zrc-021 derivation,
 	 *                                                   shared with the in-app closing path
+	 * @param DocumentJoinHoming $joinHoming Refuses a join to a case without a folder, and moves the file into it
 	 */
 	public function __construct(
 		string $appName,
@@ -102,6 +104,7 @@ class ZrcController extends ZgwController {
 		private readonly IL10N $l10n,
 		private readonly CaseRelationService $caseRelationService,
 		private readonly ArchivalNominationDeriver $archivalDeriver,
+		private readonly DocumentJoinHoming $joinHoming,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -249,6 +252,15 @@ class ZrcController extends ZgwController {
 				}
 			}
 
+			// Documents live on the case: a join names the case whose folder the
+			// document's file moves into, so a case without a folder refuses it.
+			if ($resource === 'zaakinformatieobjecten') {
+				$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
+				if ($refusal !== null) {
+					return new JSONResponse(data: ['detail' => $refusal], statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
+				}
+			}
+
 			$object = $this->zgwService->getObjectService()->saveObject(
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema'],
@@ -298,9 +310,12 @@ class ZrcController extends ZgwController {
 				$mapped = $this->enrichZioResponse(mapped: $mapped, body: $body);
 
 				// Zrc-005a: Create ObjectInformatieObject in DRC.
-				$caseUrl = $originalBody['case'] ?? ($body['case'] ?? '');
+				$caseUrl = $this->joinCaseUrl(originalBody: $originalBody, body: $body);
 				$ioUrl = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
 				$this->syncCreateObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
+
+				// Documents live on the case: the first join moves the file into the case.
+				$this->joinHoming->home(caseUrl: $caseUrl, informatieobjectUrl: (string)$ioUrl);
 			}
 
 			$this->zgwService->publishNotification(
@@ -322,6 +337,18 @@ class ZrcController extends ZgwController {
 			);
 		}//end try
 	}//end create()
+
+	/**
+	 * The case a zaakinformatieobject body names, as the ZGW client wrote it.
+	 *
+	 * @param array<string, mixed> $originalBody The body as received.
+	 * @param array<string, mixed> $body The body after the rules ran.
+	 *
+	 * @return string The zaak URL or uuid, '' when absent.
+	 */
+	private function joinCaseUrl(array $originalBody, array $body): string {
+		return (string)($originalBody['zaak'] ?? ($originalBody['case'] ?? ($body['zaak'] ?? ($body['case'] ?? ''))));
+	}//end joinCaseUrl()
 
 	/**
 	 * Show a specific resource.

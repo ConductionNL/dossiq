@@ -3960,7 +3960,13 @@ OC.L10N.register(
         "Your open tasks, deadlines and open cases": "Your open tasks, deadlines and open cases",
         "Your work lives here: today's tasks, deadlines and open cases in one place.": "Your work lives here: today's tasks, deadlines and open cases in one place.",
         "Locations on this case": "Locations on this case",
-        "The locations could not be loaded.": "The locations could not be loaded."
+        "The locations could not be loaded.": "The locations could not be loaded.",
+        "Document properties": "Document properties",
+        "Document properties saved": "Document properties saved",
+        "Document properties could not be saved": "Document properties could not be saved",
+        "This file has no document record yet; saving creates one.": "This file has no document record yet; saving creates one.",
+        "Default document type": "Default document type",
+        "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001.": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001."
     },
     "nplurals=2; plural=(n != 1);"
 )

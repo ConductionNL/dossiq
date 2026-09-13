@@ -763,6 +763,9 @@ $extra = [
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
     ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'GET'],
     ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'POST'],
+        // documents-live-on-the-case: the documents joined to this case whose file
+        // lives in another case's folder, as the Files tab's linked rows.
+    ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
         // Generate document: renders a library template over the case and
         // files the result as an informatieobject + join, through the same
