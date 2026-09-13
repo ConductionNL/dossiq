@@ -33,3 +33,5 @@ named change is archived.
   dependency; `archived-cases-leave-the-lenses` and
   `deelzaken-inherit-the-parent-grants` wait on openregister;
   `cases-views-are-places` waits on nextcloud-vue
+- [ ] 16 `one-date-write-path` (batch 11 row 8.22): no dependency, the
+  structural test first
