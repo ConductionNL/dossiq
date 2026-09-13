@@ -1,6 +1,6 @@
 # Competitor sources
 
-One entry per system in the parity ledger, so a reader of [competitor parity, September 2026](competitor-parity-2026-09.md) can open the code, the documentation, the API reference and the issue tracker behind a cell, and the corpus directory that holds the column. Generated from the ledger's sources register (`data.family.sources` in `procest/_ledger/parity-ledger.html`, `ConductionNL/market-intelligence`, `development`, ledger v7). Every link was fetched on 2026-09-13; a link marked *to verify* did not answer a plain fetch that day, and the note says what it answered instead. Two entries, Gitea and Taiga, come from their own corpus READMEs rather than the register, because batch 11 is merged in the corpus and not folded into the ledger yet; each says so in its note.
+One entry per system in the parity ledger, so a reader of [competitor parity, September 2026](competitor-parity-2026-09.md) can open the code, the documentation, the API reference and the issue tracker behind a cell, and the corpus directory that holds the column. Generated from the ledger's sources register (`data.family.sources` in `procest/_ledger/parity-ledger.html`, `ConductionNL/market-intelligence`, `development`, ledger v7). Every link was fetched on 2026-09-13; a link marked *to verify* did not answer a plain fetch that day, and the note says what it answered instead. Four entries, Gitea, Taiga, Tuleap and Huly, come from their own corpus READMEs rather than the register, because batches 11 and 12 are merged in the corpus and not folded into the ledger yet; each says so in its note.
 
 Corpus paths are relative to the `market-intelligence` repository. A column's ratings live in the system's `round<N>/` directory; the cross-system files live in `procest/_round<N>/compare/`.
 
@@ -376,6 +376,36 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 | corpus | procest/taiga/round4/ (M1-column.md, agile-objects.md, open-core.md, screenshots/) and procest/_round4/compare/ (PR 124) |
 | note | Driven in batch 11 and not in the ledger's sources register yet; this entry is from `procest/taiga/round4/README.md`. The licence is MPL-2.0, not the AGPL-3.0 the candidate table claimed from a vendor page. `AUTH_PASSWORD_VALIDATORS` read back from the running instance is empty, and `123456` was accepted on the superuser's own account. |
 
+### Tuleap Community Edition
+
+| | |
+|---|---|
+| version read | 17.5.99.1774534150, the project's own image `tuleap/tuleap-community-edition:latest` on Rocky Linux 9.7, at `https://localhost:8091` with MySQL 8.0. The tree was copied out of `/usr/share/tuleap` in the running container, because there is no public repository any more |
+| family | ALM suite: tracker, documents, code and test management |
+| licence | GPL-2.0 |
+| open core | yes, the thirteenth shape: the open edition ships the whole lock and none of the key. Twenty files under `src/common/SeatManagement/` verify an Ed25519-signed licence, bind its audience claim to the SHA-256 of this instance's own hostname, and decide the edition on whether a `keys` directory exists. It does not, so every screen brands the product a Dev Build. The tree carries the sentence the paid edition shows at expiry, "All accounts will be in read only mode in %d days", and not the code that would do it. Nineteen plugins the vendor marks part of Tuleap Enterprise are absent from the 35 in the image, against two dangling listeners in 130 |
+| code | [`github.com/Enalean/tuleap` answers 404 and is not in the organisation's repository list](https://github.com/Enalean/tuleap) (gone); [`tuleap.net/plugins/git/tuleap/tuleap/stable` answers 403 to an anonymous client](https://tuleap.net/plugins/git/tuleap/tuleap/stable) (gone) |
+| documentation | [documentation](https://docs.tuleap.org); [the plugin installation page, which marks nineteen plugins "part of Tuleap Entreprise"](https://docs.tuleap.com/installation-guide/step-by-step/install-plugins.html) |
+| API | the instance serves its own REST explorer at `/api/explorer`; no public API reference page |
+| issue tracker | [Requests tracker on tuleap.net](https://tuleap.net/plugins/tracker/?tracker=140) |
+| corpus | procest/tuleap/round4/ (usability.md, install.md, code-census.md, menu-tree.md, journeys.md, workflow.md, open-core.md, M1-column.md, screenshots/) and procest/_round4/compare/ (PR 127) |
+| note | Driven in batch 12 and not in the ledger's sources register yet; this entry is from `procest/tuleap/round4/README.md`. The two dead links are the evidence and not broken references. On 2026-09-13 `tuleap.net` announced that "Tuleap Community Edition development and releases are no longer public", with 30 September as the last day to download what is left, so this is the first column in the corpus a reader cannot check with a browser. |
+
+### Huly
+
+| | |
+|---|---|
+| version read | v0.7.426, the vendor's own `hcengineering/huly-selfhost` compose at commit `8655845`, fourteen containers, at `http://localhost:8092`. The clone was moved back from `develop` to the tag, because `develop` is two months ahead of the image |
+| family | issue tracker and workspace |
+| licence | EPL-2.0, seven LICENSE files, no second licence |
+| open core | no gate of any kind, and still the fourteenth shape. Zero hits for a licence key, an entitlement or a feature flag, one repository, one public `develop` branch. What is withheld is not withheld at all, it is un-deployed: of the 22 directories under `services/` the vendor's own self-host compose runs one, and of the 14 under `pods/` it runs six. Mail, calendar, signing, printing, export, backup, GitHub, Telegram, the AI bot and the process worker are absent, and the app rail still offers Processes, Calendar and Office with nothing behind them |
+| code | [hcengineering/platform](https://github.com/hcengineering/platform); [hcengineering/huly-selfhost, the compose this column ran](https://github.com/hcengineering/huly-selfhost) |
+| documentation | [documentation](https://docs.huly.io/) |
+| API | [`docs.huly.io/api/` answers 404; an examples repository exists](https://github.com/hcengineering/huly-examples) (to verify) |
+| issue tracker | [GitHub issues](https://github.com/hcengineering/platform/issues) |
+| corpus | procest/huly/round4/ (usability.md, install.md, code-census.md, menu-tree.md, journeys.md, process-engine.md, open-core.md, M1-column.md, screenshots/) and procest/_round4/compare/ (PR 127) |
+| note | Driven in batch 12 and not in the ledger's sources register yet; this entry is from `procest/huly/round4/README.md`. It has the best type editor in the corpus, attached to Cards rather than to the Tracker where the issues live. It reads inside uploaded files, measured with a control word, and cannot see its own `PublicHoliday` calendar. |
+
 ## Documented, not driven
 
 ### Jira Service Management
@@ -459,39 +489,6 @@ Corpus paths are relative to the `market-intelligence` repository. A column's ra
 | named on a comparison page | ALVAO, Jira Service Management alternatives |
 | corpus | none |
 | note | Moved from docs only to trial: an on-premises edition can be installed under licence. |
-
-## Not yet driven
-
-### Tuleap
-
-| | |
-|---|---|
-| version read | not yet driven |
-| family | ALM |
-| licence | GPL-2.0, to verify |
-| open core | Enterprise edition exists, to verify against the tree |
-| code | [source: `Enalean/tuleap` on GitHub answers 404, and `tuleap.net/plugins/git/tuleap/tuleap/stable` answers 403 to an anonymous browser](https://tuleap.net/plugins/git/tuleap/tuleap/stable) (to verify) |
-| documentation | [docs.tuleap.org](https://docs.tuleap.org); [documentation source](https://github.com/Enalean/tuleap-documentation-en) |
-| API | no API reference found (to verify) |
-| issue tracker | [Requests tracker on tuleap.net](https://tuleap.net/plugins/tracker/?tracker=140) |
-| named on a comparison page | Easy8, Atlassian Data Center alternatives |
-| corpus | none yet |
-| note | Getting a readable source tree is the first task; an account on tuleap.net may be enough. |
-
-### Huly
-
-| | |
-|---|---|
-| version read | not yet driven |
-| family | issue and workspace |
-| licence | EPL-2.0 per the GitHub licence field |
-| open core | to verify |
-| code | [hcengineering/platform](https://github.com/hcengineering/platform) |
-| documentation | [documentation](https://docs.huly.io/) |
-| API | [`docs.huly.io/api/` answers 404; an examples repository exists](https://github.com/hcengineering/huly-examples) (to verify) |
-| issue tracker | [GitHub issues](https://github.com/hcengineering/platform/issues) |
-| corpus | none yet |
-| note | Last pushed 2026-08-27. |
 
 ## Docs only: cloud only, landscape not evidence
 
@@ -666,6 +663,6 @@ Four vendor or community comparison pages were read to find candidates the round
 | the ledger, source of record | `procest/_ledger/parity-ledger.html`, with `procest/_ledger/README.md` on how to work with it |
 | the 206-row matrix, four Dutch columns | `procest/_round2/compare/M1-functionality.md` |
 | round 3, GLPI and Zammad, and the 21 proposals | `procest/_round3/compare/` |
-| round 4, batches 1 to 11, the tallies and the engines | `procest/_round4/compare/`, index in its `README.md` |
+| round 4, batches 1 to 12, the tallies and the engines | `procest/_round4/compare/`, index in its `README.md` |
 | the counting and ranking scripts | `procest/_round4/tools/corpus-tally.py`, `count-column.py`, `render-column.py`, `render-extra.py` |
 | the gap register | `procest/_gaps/README.md`, `gap-register.md`, `gap-register.json`, `ownership-rules.md` |
