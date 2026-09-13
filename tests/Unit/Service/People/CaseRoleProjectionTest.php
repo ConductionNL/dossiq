@@ -502,4 +502,102 @@ class CaseRoleProjectionTest extends TestCase {
 			),
 		);
 	}//end testAnEntityAnswerStillYieldsTheUuid()
+
+	/**
+	 * A case row with no uuid is not saved: the initiator name has nowhere to
+	 * go, and a save with no uuid would create a second case.
+	 *
+	 * @return void
+	 */
+	public function testACaseRowWithNoUuidIsNotSaved(): void {
+		// The case answers without an id of any kind, which findRow tolerates
+		// by falling back to the uuid asked for; strip that too.
+		$this->objects->rows['case-1'] = ['@schema' => 'case', 'title' => 'Dakkapel', 'id' => ''];
+		$this->objects->rows['rt-1'] = ['@self' => ['id' => 'rt-1'], '@schema' => 'roleType', 'name' => 'Indiener', 'genericRole' => 'initiator'];
+
+		$this->projection->project(
+			link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1', 'displayName' => 'Jan']
+		);
+
+		$this->assertSame(
+			expected: [],
+			actual: array_values(array_filter($this->objects->saves, static fn (array $save): bool => $save['schema'] === 'case')),
+		);
+	}//end testACaseRowWithNoUuidIsNotSaved()
+
+	/**
+	 * An empty uuid finds nothing, and a row the object service answers empty
+	 * is no row: neither reaches the role schema.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyUuidAndAnEmptyRowFindNothing(): void {
+		// A link whose role is '' asks for no role type at all, and a case that
+		// answers an empty row is not a case.
+		$this->objects->rows['case-1'] = ['@schema' => 'case'];
+
+		$this->assertSame(
+			expected: '',
+			actual: $this->projection->project(
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => '']
+			),
+		);
+		$this->assertSame(expected: [], actual: $this->objects->saves);
+	}//end testAnEmptyUuidAndAnEmptyRowFindNothing()
+
+	/**
+	 * A configured register with an unconfigured schema stops the projection
+	 * rather than writing against nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredSchemaStopsTheProjection(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				if ($key === 'register') {
+					return 'dossiq';
+				}
+
+				return $default;
+			}
+		);
+		$projection = new CaseRoleProjection(
+			settingsService: $settings,
+			people: new PersonLinkReader(settingsService: $settings),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(
+			expected: '',
+			actual: $projection->project(
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1']
+			),
+		);
+	}//end testAnUnconfiguredSchemaStopsTheProjection()
+
+	/**
+	 * A register that is not configured at all stops it too, with no write.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredRegisterStopsTheProjection(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturn('');
+		$projection = new CaseRoleProjection(
+			settingsService: $settings,
+			people: new PersonLinkReader(settingsService: $settings),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(
+			expected: '',
+			actual: $projection->project(
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1']
+			),
+		);
+		$this->assertSame(expected: [], actual: $this->objects->saves);
+	}//end testAnUnconfiguredRegisterStopsTheProjection()
 }//end class

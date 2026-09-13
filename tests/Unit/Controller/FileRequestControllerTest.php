@@ -211,4 +211,33 @@ class FileRequestControllerTest extends TestCase {
 			actual: $controller->create(caseId: 'case-1', personId: 'user:jan')->getStatus(),
 		);
 	}//end testACaseTheHandlerCannotSeeAnswersNotFound()
+
+	/**
+	 * Nobody signed in: neither endpoint answers anything about the case.
+	 *
+	 * @return void
+	 */
+	public function testAnAnonymousCallerIsRefusedByBothEndpoints(): void {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$controller = new FileRequestController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			people: $this->people,
+			fileRequests: $this->fileRequests,
+			access: $this->access,
+			userSession: $session,
+		);
+		$this->people->expects($this->never())->method('peopleOn');
+		$this->fileRequests->expects($this->never())->method('request');
+
+		$this->assertSame(
+			expected: Http::STATUS_UNAUTHORIZED,
+			actual: $controller->parties(caseId: 'case-1')->getStatus(),
+		);
+		$this->assertSame(
+			expected: Http::STATUS_UNAUTHORIZED,
+			actual: $controller->create(caseId: 'case-1', personId: 'user:jan')->getStatus(),
+		);
+	}//end testAnAnonymousCallerIsRefusedByBothEndpoints()
 }//end class

@@ -14,6 +14,7 @@ use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * The instance's role types become the roles a person can hold on a case.
@@ -312,4 +313,77 @@ class CaseRoleVocabularyTest extends TestCase {
 		);
 		$this->assertSame(expected: [], actual: $this->updated, message: 'reading the entries writes nothing');
 	}//end testTheEntriesAreReadableWithoutWriting()
+
+	/**
+	 * A schema mapper that cannot find the case schema leaves the vocabulary
+	 * unwritten, and says why in the log rather than throwing at the upgrade.
+	 *
+	 * @return void
+	 */
+	public function testACaseSchemaThatCannotBeReadStopsTheSync(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		$blindMapper = new class {
+			/**
+			 * No schema here.
+			 *
+			 * @param string|int $id The schema.
+			 *
+			 * @return object Never.
+			 */
+			public function find(string|int $id): object {
+				throw new RuntimeException('no such schema');
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getOpenRegisterClass')->willReturn($blindMapper);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+		$vocabulary = new CaseRoleVocabulary(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: -1, actual: $vocabulary->sync());
+	}//end testACaseSchemaThatCannotBeReadStopsTheSync()
+
+	/**
+	 * Without OpenRegister's schema mapper the sync writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testWithoutASchemaMapperTheSyncWritesNothing(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+		$vocabulary = new CaseRoleVocabulary(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: -1, actual: $vocabulary->sync());
+	}//end testWithoutASchemaMapperTheSyncWritesNothing()
+
+	/**
+	 * A register that is not configured stops the read of the role types
+	 * before it starts.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredRegisterStopsTheSync(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturn('');
+		$vocabulary = new CaseRoleVocabulary(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: -1, actual: $vocabulary->sync());
+	}//end testAnUnconfiguredRegisterStopsTheSync()
 }//end class
