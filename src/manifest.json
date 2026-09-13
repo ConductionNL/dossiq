@@ -1389,8 +1389,8 @@
 									"label": "Work"
 								},
 								{
-									"widgetId": "case-besluiten-panel",
-									"label": "Besluiten"
+									"widgetId": "case-decisions-panel",
+									"label": "Decisions"
 								},
 								{
 									"widgetId": "case-related-panel",
@@ -1594,11 +1594,11 @@
 						"_note": "The Email tab: correspondence linked to the case, through the mail leaf. A sidebar tab until the sidebar copies of Notes, Email and Besluitvorming were retired, so this is the only place it reads now. Rendered by TYPE (case-email-pane in registry.js): a tab child resolves from the widget registry, and CaseEmailTab was registered only as a sidebar component:, which draws an empty panel and logs nothing."
 					},
 					{
-						"id": "case-besluiten-panel",
-						"type": "case-besluiten-pane",
-						"title": "Besluiten",
+						"id": "case-decisions-panel",
+						"type": "case-decisions-pane",
+						"title": "Decisions",
 						"icon": "Gavel",
-						"_note": "The Besluiten tab: the decidiq decisions leaf (ADR-019/ADR-022). A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired."
+						"_note": "The Decisions tab: the decidiq decisions leaf (ADR-019/ADR-022). A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired. Labelled in English like every other tab: tab labels are read verbatim out of the manifest with no t() on the path, and the l10n gate refuses a key whose English value is the Dutch word. \"Decisions\" already maps to \"Besluiten\" in nl.json."
 					},
 					{
 						"id": "case-work-panel",

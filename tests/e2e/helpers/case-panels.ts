@@ -71,7 +71,7 @@ export const CASE_PANELS = {
 	email: { tab: /^Email$/, section: null },
 	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },
 	appointments: { tab: /^Work$/, section: 'case-section-case-calendar' },
-	besluiten: { tab: /^Besluiten$/, section: null },
+	besluiten: { tab: /^Decisions$/, section: null },
 	relatedCases: { tab: /^Related$/, section: 'case-section-case-related' },
 	subCases: { tab: /^Related$/, section: 'case-section-case-sub-cases' },
 	objects: { tab: /^Related$/, section: 'case-section-case-objects' },

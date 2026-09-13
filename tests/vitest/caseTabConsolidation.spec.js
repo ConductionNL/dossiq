@@ -70,7 +70,7 @@ const tabs = () => widget('case-panels').content.tabs
  * both times on purpose, and this is the record of both:
  *
  *   6 -> 7  2026-09-12  the Notes tab joined the strip beside Files
- *   7 -> 9  2026-09-13  Communication left People, and Email and Besluiten
+ *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
  *                       left the SIDEBAR
  *
  * The second move is not the growth this ceiling guards against. Nothing was
@@ -91,7 +91,7 @@ const EXPECTED_TABS = [
 	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
 	['case-work-panel', 'Work'],
-	['case-besluiten-panel', 'Besluiten'],
+	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 ]
 
@@ -142,7 +142,7 @@ const FOLDED = [
 const SINGLE_HOME = [
 	['case-notes-panel', 'notes'],
 	['case-email-panel', 'email'],
-	['case-besluiten-panel', 'besluitvorming'],
+	['case-decisions-panel', 'besluitvorming'],
 ]
 
 describe('the case page tab strip', () => {
@@ -266,7 +266,7 @@ describe('the container type this change depends on', () => {
 		const PANES = {
 			'case-notes-panel': 'case-notes-pane',
 			'case-email-panel': 'case-email-pane',
-			'case-besluiten-panel': 'case-besluiten-pane',
+			'case-decisions-panel': 'case-decisions-pane',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 

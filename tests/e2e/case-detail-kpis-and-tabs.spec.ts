@@ -74,7 +74,7 @@ const TAB_LABELS = [
 	'Communication',
 	'Email',
 	'Work',
-	'Besluiten',
+	'Decisions',
 	'Related',
 ]
 

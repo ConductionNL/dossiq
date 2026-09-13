@@ -62,7 +62,7 @@ const WORK_TABS = [
 	'Communication',
 	'Email',
 	'Work',
-	'Besluiten',
+	'Decisions',
 	'Related',
 ]
 

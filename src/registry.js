@@ -438,10 +438,10 @@ const registry = {
 	},
 
 	// @spec openspec/specs/case-dashboard-view/spec.md
-	'case-besluiten-pane': {
+	'case-decisions-pane': {
 		kind: 'widget',
 		component: BesluitvormingLeafTab,
-		_note: 'The Besluiten tab of the case panels: the decidiq decisions leaf (ADR-019/ADR-022). Was a sidebar tab. A decision is a case OUTCOME rather than correspondence or a related case, so it earns a tab rather than a section of one.',
+		_note: 'The Decisions tab of the case panels: the decidiq decisions leaf (ADR-019/ADR-022). Was a sidebar tab. A decision is a case OUTCOME rather than correspondence or a related case, so it earns a tab rather than a section of one.',
 	},
 
 	// --- The case's locations, as a map on the Data tab. ---

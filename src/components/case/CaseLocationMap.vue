@@ -182,12 +182,13 @@ export default {
 					.filter(Boolean)
 			} catch (err) {
 				// An empty map and a failed fetch look identical, so say which
-				// one this is rather than letting it read as "no locations".
-				this.error = t('dossiq', 'The locations could not be loaded.')
+				// one this is rather than letting it read as "no locations". The
+				// banner and the toast carry it; there is no console line,
+				// because a `no-console` disable is a debt-ratchet counter and
+				// a message the handler cannot see is not worth one.
+				this.error = `${t('dossiq', 'The locations could not be loaded.')} ${String(err.message ?? err)}`
 				showError(this.error)
 				this.features = []
-				// eslint-disable-next-line no-console
-				console.error('[CaseLocationMap] failed to load locations', err)
 			} finally {
 				this.loading = false
 			}

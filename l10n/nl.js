@@ -3954,7 +3954,9 @@ OC.L10N.register(
         "You are not allowed to see the plan for this case.": "U mag het plan van deze zaak niet inzien.",
         "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw.",
         "Bulk action changed nothing": "Bulkactie heeft niets gewijzigd",
-        "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt"
+        "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt",
+        "Locations on this case": "Locaties bij deze zaak",
+        "The locations could not be loaded.": "De locaties konden niet worden geladen."
     },
     "nplurals=2; plural=(n != 1);"
 )

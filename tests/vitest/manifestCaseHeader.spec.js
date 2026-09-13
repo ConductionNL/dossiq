@@ -270,7 +270,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 			'case-communication-panel',
 			'case-email-panel',
 			'case-work-panel',
-			'case-besluiten-panel',
+			'case-decisions-panel',
 			'case-related-panel',
 		])
 	})
@@ -309,7 +309,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		expect(caseDetail().config.sidebar.tabs.map((tab) => tab.id)).not.toContain(
 			'besluitvorming',
 		)
-		expect(panels.caseTabOf('case-besluiten-panel')?.tab).toBe('Besluiten')
+		expect(panels.caseTabOf('case-decisions-panel')?.tab).toBe('Decisions')
 	})
 
 	it('names a declared widget in every tab', () => {

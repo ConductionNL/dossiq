@@ -705,8 +705,8 @@ You reach every panel of the case from one row of nine tabs. The `case-panels`
 widget on `CaseDetail` SHALL list exactly nine tabs, in the order Data
 (`case-data-panel`), Files (`case-files`), Notes (`case-notes-panel`), People
 (`case-people-panel`), Communication (`case-communication-panel`), Email
-(`case-email-panel`), Work (`case-work-panel`), Besluiten
-(`case-besluiten-panel`) and Related (`case-related-panel`). The strip SHALL
+(`case-email-panel`), Work (`case-work-panel`), Decisions
+(`case-decisions-panel`) and Related (`case-related-panel`). The strip SHALL
 sit above the fold at 1024 pixels wide, and all nine SHALL be visible there
 without a scroll or a gesture.
 
@@ -758,7 +758,7 @@ collection holding nothing could be absent rather than empty; with tabs that
 hold one or two collections each, an empty section is a line of text inside a
 tab the handler opened deliberately.
 
-> The ceiling has moved twice, both times deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Besluiten left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
+> The ceiling has moved twice, both times deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Decisions left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
 
 #### Scenario: The strip holds nine tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
@@ -767,7 +767,7 @@ tab the handler opened deliberately.
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL contain exactly nine tabs
-- **AND** they SHALL read Data, Files, Notes, People, Communication, Email, Work, Besluiten, Related, in that order
+- **AND** they SHALL read Data, Files, Notes, People, Communication, Email, Work, Decisions, Related, in that order
 - **AND** the strip SHALL carry no tab named Documents, Mail, Contacts or Objects and locations
 
 #### Scenario: The nine tabs fit a laptop screen

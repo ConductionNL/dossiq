@@ -3954,7 +3954,9 @@ OC.L10N.register(
         "Not issued": "Not issued",
         "Not possible from the current status": "Not possible from the current status",
         "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
-        "Bulk action changed nothing": "Bulk action changed nothing"
+        "Bulk action changed nothing": "Bulk action changed nothing",
+        "Locations on this case": "Locations on this case",
+        "The locations could not be loaded.": "The locations could not be loaded."
     },
     "nplurals=2; plural=(n != 1);"
 )
