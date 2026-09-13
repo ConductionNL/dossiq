@@ -4,12 +4,12 @@ Tier: V1. Kind: config plus two PHP files. Row 1.8.
 
 ## 1. The document
 
-- [ ] 1.1 `lib/Service/Flow/PlannedFollowUpDocument.php`: accept a
+- [x] 1.1 `lib/Service/Flow/PlannedFollowUpDocument.php`: accept a
   recurrence (`none|monthly|quarterly|halfYearly|yearly`) and an end
   (`until` date or `count`); write the cron fields per D-1; keep `runAs`.
   - unit pair: each recurrence to its cron fields; none unchanged
   - `@spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md`
-- [ ] 1.2 `isSpent(document, firedCount, today)` on the document class (D-2).
+- [x] 1.2 `isSpent(document, firedCount, today)` on the document class (D-2).
   - unit: count reached, date passed, neither set
 
 ## 2. The sweep
