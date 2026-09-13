@@ -91,7 +91,7 @@ no artefact on that app's `development` yet.
 | `case-followers` | 13.18 | S | openregister `object-watchers` (to be specified) |
 | `timeline-entries-default-internal` | 6.15 | S | openregister `timeline-entry-visibility` (to be specified); portaliq contribution (shipped) |
 
-Sizes: 27 S, 5 M, 1 L.
+Sizes: 27 S, 5 M, 1 L. With `one-date-write-path`, 27 S, 6 M, 1 L.
 
 ### The eight gaps the regenerated register still lists, opened 2026-09-13
 
@@ -110,6 +110,19 @@ integriq `signed-outbound-webhooks` and `objecten-api-facade`, portaliq
 | `archived-cases-leave-the-lenses` | Q2.33 | S | openregister `object-archive-state` (open) |
 | `deelzaken-inherit-the-parent-grants` | Q13.23 | S | openregister `rbac-inherits-to-children` (open) |
 | `cases-views-are-places` | Q9.16 | S | nextcloud-vue `saved-view-as-a-place` (open); openregister `saved-search-views` (shipped) |
+
+### The batch 11 row that indicts us, opened 2026-09-13
+
+Batch 11 of round 4 (`procest/_round4/compare/proposed-rows-batch11.md`)
+proposed row 8.22 and rated dossiq `no` from the source. It is not a
+competitive row, it is an audit instruction: enumerate the writers of
+every date field, not the readers. The audit was run against
+`development` at `d28e11aa` and found nine write paths, nine private
+normalisers and an administered time zone no write path reads.
+
+| change | rows | size | consumes from |
+|---|---|---|---|
+| `one-date-write-path` | 8.22 (proposed) | M | openregister `calendar-time-zone` (openregister#3688); dossiq `terms-on-the-engine-calendar` (open) |
 
 Two of the eight need no dossiq change. Q6.20 signed outbound webhooks:
 the register's half reads "nothing beyond finishing
