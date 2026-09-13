@@ -699,15 +699,21 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 - **WHEN** the handler opens the History tab
 - **THEN** the upload SHALL read above the status change, with the handler as actor
 
-### Requirement: Seven tabs hold every panel of the case (REQ-CDV-16)
+### Requirement: Nine tabs hold every panel of the case (REQ-CDV-16)
 
-You reach every panel of the case from one row of seven tabs. The `case-panels`
-widget on `CaseDetail` SHALL list exactly seven tabs, in the order Data
-(`case-core`), Files (`case-files`), Notes (`case-notes-panel`), People
-(`case-people-panel`), Work (`case-work-panel`), Related
-(`case-related-panel`) and Objects and locations (`case-objects-panel`). The
-strip SHALL sit above the fold at 1024 pixels wide, and all seven SHALL be
-visible there without a scroll or a gesture.
+You reach every panel of the case from one row of nine tabs. The `case-panels`
+widget on `CaseDetail` SHALL list exactly nine tabs, in the order Data
+(`case-data-panel`), Files (`case-files`), Notes (`case-notes-panel`), People
+(`case-people-panel`), Communication (`case-communication-panel`), Email
+(`case-email-panel`), Work (`case-work-panel`), Besluiten
+(`case-besluiten-panel`) and Related (`case-related-panel`). The strip SHALL
+sit above the fold at 1024 pixels wide, and all nine SHALL be visible there
+without a scroll or a gesture.
+
+Objects and locations is retired. Its objects are the last section of Related,
+an object linked to a case being a relation like any other, and its locations
+are a map on the Data tab: `case-location` already carries latitude and
+longitude, so the list was a table of coordinates nobody could picture.
 
 A tab MAY hold more than one panel, as a `case-sections` widget whose sections
 render stacked under their own headings. Files SHALL hold the case folder and
@@ -732,47 +738,64 @@ documents yet" tells the handler the section exists and holds nothing, which is
 the line of text the paragraph below is about. Only a section that renders
 literally nothing goes silent.
 
-The strip SHALL carry no Notes, Mail, Decisions or Timeline tab. Each of those
-duplicates a sidebar tab on the same page, and one surface in two places is
-duplication rather than coverage (REQ-CDV-17). A panel SHALL NOT be removed
-from the strip unless it is reachable elsewhere on the page: folding it into a
-tab and deleting it look identical in a tab count.
+No surface SHALL read in both the strip and the sidebar. One surface in two
+places is duplication rather than coverage (REQ-CDV-17). Until 2026-09-13 that
+rule was satisfied by keeping the sidebar copy and barring the strip tab; it is
+satisfied the other way now, because the strip is where a handler works and the
+sidebar is a shelf beside it. Notes, Email and Besluitvorming are strip tabs,
+and the sidebar carries only History, Sharing and Tags, none of which has a
+strip counterpart. The strip SHALL still carry no Timeline tab: the timeline is
+the History sidebar tab, and that one is not moving.
+
+A panel SHALL NOT be removed from the strip unless it is reachable elsewhere on
+the page: folding it into a tab and deleting it look identical in a tab count.
+The same holds for the sidebar, and it is the sharper risk in this direction,
+because a sidebar tab removed without a strip tab to receive it leaves nothing
+behind at all.
 
 The strip SHALL NOT need `visibleIf` on a tab entry. That was wanted so a
-collection holding nothing could be absent rather than empty; with seven tabs
-each holding two collections, an empty section is a line of text inside a tab
-the handler opened deliberately.
+collection holding nothing could be absent rather than empty; with tabs that
+hold one or two collections each, an empty section is a line of text inside a
+tab the handler opened deliberately.
 
-> The ceiling moved from six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files, the same mention-aware surface the sidebar offers, so a handler reading the case file leaves a note without opening the sidebar. The laptop measurement below predates it.
+> The ceiling has moved twice, both times deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Besluiten left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
 
-#### Scenario: The strip holds seven tabs and no more
+#### Scenario: The strip holds nine tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly seven tabs
-- **AND** they SHALL read Data, Files, Notes, People, Work, Related, Objects and locations, in that order
-- **AND** the strip SHALL carry no tab named Files, Mail or Decisions
+- **THEN** the tab strip SHALL contain exactly nine tabs
+- **AND** they SHALL read Data, Files, Notes, People, Communication, Email, Work, Besluiten, Related, in that order
+- **AND** the strip SHALL carry no tab named Documents, Mail, Contacts or Objects and locations
 
-#### Scenario: The seven tabs fit a laptop screen
+#### Scenario: The nine tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the seven tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the nine tabs SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
 > at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
 > scrolling strip hides tabs behind an edge with nothing to say they are there. What the
 > handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
+>
+> More tabs do not change that answer, because one line was already out of reach and the
+> promise is about clipping rather than about lines. Measured 2026-09-13 in the strip's own
+> font (system-ui 700 15px): "Communication" is 131 pixels of text and about 173 as a tab box,
+> the second widest label after "Objects and locations" was at 212. Each extra tab costs
+> roughly one more wrapped row at a narrow viewport. The 661 figure is the six-tab number and
+> is left as it was taken; the assertion that matters is the e2e one, which measures every tab
+> box against the viewport rather than trusting a total.
 
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
-- **GIVEN** a case page whose strip holds seven tabs
+- **GIVEN** a case page whose strip holds nine tabs
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading

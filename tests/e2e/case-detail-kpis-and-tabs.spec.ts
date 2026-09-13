@@ -46,7 +46,7 @@ import {
 import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * The SIX tabs the strip holds, in order.
+ * The NINE tabs the strip holds, in order.
  *
  * These are exact strings and not locale alternatives, unlike almost every
  * other title this spec matches. A tab label is not translated: it is read
@@ -71,9 +71,11 @@ const TAB_LABELS = [
 	'Files',
 	'Notes',
 	'People',
+	'Communication',
+	'Email',
 	'Work',
+	'Besluiten',
 	'Related',
-	'Objects and locations',
 ]
 
 /**
@@ -81,17 +83,18 @@ const TAB_LABELS = [
  *
  * The count is the headline of this change, and a count is exactly the kind
  * of assertion that can be satisfied by deleting things. These are what make
- * the difference between six tabs and four missing features.
+ * the difference between a small strip and four missing features.
  */
 const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
+	['Data', 'case-section-case-core', 'registry'],
+	['Data', 'case-section-case-location-map', 'registry'],
 	['People', 'case-section-case-roles', 'registry'],
-	['People', 'case-section-case-communication', 'registry'],
+	['Communication', 'case-section-case-communication', 'registry'],
 	['Work', 'case-section-case-tasks', 'registry'],
 	['Work', 'case-section-case-calendar', 'integration'],
 	['Related', 'case-section-case-related', 'registry'],
 	['Related', 'case-section-case-sub-cases', 'registry'],
-	['Objects and locations', 'case-section-case-objects', 'registry'],
-	['Objects and locations', 'case-section-case-locaties', 'registry'],
+	['Related', 'case-section-case-objects', 'registry'],
 ]
 
 /**
@@ -107,11 +110,18 @@ const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
 const RETIRED_TAB_LABELS = [
 	/^(Contacts|Contacten|Connected contacts)$/,
 	/^Mail$/,
-	/^(Decisions|Besluiten|Besluitvorming)$/,
 	// The Documents group went on 2026-09-13: its Files half IS the Files tab
 	// now, and the ZGW document list left the page with it.
 	/^(Documents|Documenten)$/,
+	// Objects and locations went the same day: its objects are a section of
+	// Related and its locations are the map on the Data tab.
+	/^(Objects and locations|Objecten en locaties)$/,
 ]
+
+// `Besluiten` and `Notes` were on this list until 2026-09-13. Both are strip
+// TABS now, because the duplication REQ-CDV-17 bars was resolved the other way
+// round: the sidebar copies went instead of the body ones. Keeping them here
+// would assert the opposite of what the page is for.
 
 /**
  * The right column, top to bottom.
@@ -548,14 +558,14 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
-	test('the strip holds exactly six tabs, in order, and no more', async ({
+	test('the strip holds exactly nine tabs, in order, and no more', async ({
 		page,
 	}) => {
 		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
 		// over one programme while the app menu held at four, because the menu
 		// had a stated ceiling and the strip had nothing counting it. This is
 		// the thing that counts it, and it has to be an exact count: asserting
-		// that six named tabs are PRESENT would pass on a strip of nine.
+		// that nine named tabs are PRESENT would pass on a strip of twelve.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -713,7 +723,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		page,
 	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
-		// a reader counting six tabs would hear seven.
+		// a reader counting nine tabs would hear ten.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -730,7 +740,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test('only the open tab mounts, and a switched-to tab stays mounted', async ({
 		page,
 	}) => {
-		// Six eager panels would fire six requests on load to answer five
+		// Nine eager panels would fire nine requests on load to answer eight
 		// questions nobody asked. This is the assertion that keeps them lazy.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)

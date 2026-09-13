@@ -50,16 +50,20 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
  * one list now: there is nothing left after the work tabs to close the strip
  * with. Sub-cases, Locations, Appointments and Decisions are not gone from the
  * page. Decisions moved to the sidebar tab that already carried it; the other
- * three became sections of Related, Objects and locations, and Work.
+ * three became sections of Related and Work. Objects and locations is itself
+ * retired since: its objects are a section of Related, and its locations are
+ * the map on the Data tab.
  */
 const WORK_TABS = [
 	'Data',
 	'Files',
 	'Notes',
 	'People',
+	'Communication',
+	'Email',
 	'Work',
+	'Besluiten',
 	'Related',
-	'Objects and locations',
 ]
 
 /**
@@ -83,7 +87,8 @@ const WORK_TABS = [
 const TILE = { number: 0, type: 1, deadline: 2 } as const
 
 /** The Status field of the Data tab, the open tab on load. */
-const DATA_TAB_STATUS = '.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
+const DATA_TAB_STATUS =
+	'.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
 
 /**
  * One identity tile, by its place in the row.

@@ -23,6 +23,9 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The case's own locations on a map, on the Data tab.
+// @spec openspec/specs/case-dashboard-view/spec.md
+import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
 // and the stepper is the library `stages` widget, which is also how the case
@@ -412,6 +415,42 @@ const registry = {
 		kind: 'widget',
 		component: CaseTaskPane,
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
+	},
+
+	// --- Case panel tabs that were sidebar tabs first. ---
+	//
+	// A tab child renders by TYPE: CnDetailWidgetHost picks a renderer from
+	// `cnRegistry[widget.type]` and, failing that, renders NOTHING and logs
+	// nothing. Both components below were registered only as `kind: 'page'`
+	// for the sidebar, so naming them from a body tab silently drew an empty
+	// panel. `case-notes-pane`, registered further down, shipped in that state
+	// for a day before #2631 fixed it.
+	//
+	// Keyed by the TYPE the manifest names, like `case-task-pane` above and
+	// unlike the `component:` entries further down, which the sidebar resolves
+	// by component name instead.
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	'case-email-pane': {
+		kind: 'widget',
+		component: CaseEmailTab,
+		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
+	},
+
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	'case-besluiten-pane': {
+		kind: 'widget',
+		component: BesluitvormingLeafTab,
+		_note: 'The Besluiten tab of the case panels: the decidiq decisions leaf (ADR-019/ADR-022). Was a sidebar tab. A decision is a case OUTCOME rather than correspondence or a related case, so it earns a tab rather than a section of one.',
+	},
+
+	// --- The case's locations, as a map on the Data tab. ---
+	// @spec openspec/specs/case-dashboard-view/spec.md
+	'case-location-map': {
+		// @custom-widget-ratchet exclude blocked: the library `map` widget cannot be scoped to one case. `markers.dataSource.{register,schema}` fetches the register with `_limit` and no filter, and `markers.dataSource.url` is not token-resolved, so `@objectId` would be sent literally. Either route plots every case's locations on this case's page. This entry is deleted and the manifest returns to `type: "map"` the moment the library takes a filter (https://github.com/ConductionNL/nextcloud-vue/issues/1141)
+		kind: 'widget',
+		component: CaseLocationMap,
+		_note: 'Replaces the Locations list that was the second section of the retired Objects and locations tab. `case-location` already carries latitude and longitude, so the addresses were a table of coordinates nobody could picture. A row with no usable pair is skipped rather than plotted at (0, 0), which is open water and looks like a real pin.',
 	},
 
 	// --- The task page (`/tasks/:id`), over the engine (remove-casetask 2.1). ---

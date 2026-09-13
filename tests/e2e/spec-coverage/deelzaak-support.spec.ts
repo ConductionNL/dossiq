@@ -218,7 +218,7 @@ async function seedParentWithChildren(options: {
  * The sub-cases SECTION inside the open Related panel.
  *
  * Scoped exactly as `openSubCasesSectionOrSkip` scopes its wait, and for the
- * reason its comment records: since the strip came down to six tabs the
+ * reason its comment records: since the strip was folded the
  * Related panel holds the related-cases list ABOVE this one, so a page-wide
  * `table` locator is satisfied by the neighbouring table and every assertion
  * below would pass with the sub-cases list missing entirely.

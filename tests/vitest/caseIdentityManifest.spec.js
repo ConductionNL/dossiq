@@ -18,6 +18,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -57,13 +58,19 @@ function iconIsRegistered(name) {
 }
 
 /**
- * One widget of the CaseDetail page.
+ * One widget of the CaseDetail page, wherever it lives.
+ *
+ * Through the shared helper rather than a `find` over `config.widgets`: a
+ * widget that moves INTO a tab becomes a section of a `case-sections` group
+ * and disappears from the top level, so a top-level lookup returns undefined
+ * and every assertion below reads as "the widget was deleted". `case-core`
+ * made that move when the Data tab gained the locations map.
  *
  * @param {string} id The widget id.
  * @return {object|undefined} The widget entry.
  */
 function widget(id) {
-	return caseDetail().config.widgets.find((entry) => entry.id === id)
+	return panels.caseWidget(id)
 }
 
 describe('CaseDetail: the case number', () => {
@@ -175,7 +182,10 @@ describe('CaseDetail: terms and archive', () => {
 					&& above.gridX < cell.gridX + cell.gridWidth
 					&& cell.gridX < above.gridX + above.gridWidth,
 			)
-			expect(rests, `${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`).toBe(true)
+			expect(
+				rests,
+				`${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`,
+			).toBe(true)
 		}
 	})
 

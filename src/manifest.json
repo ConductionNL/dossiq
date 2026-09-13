@@ -1224,45 +1224,6 @@
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
-						"id": "case-core",
-						"type": "data",
-						"title": "Core case data",
-						"icon": "FileDocument",
-						"_note": "`identifier` carries `readOnly: true` in the schema because OpenRegister generates it, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it. So the case number sat in this include list and rendered nowhere at all — the very field five of the seven demo cases were reported as missing. The `identifier` override re-admits the field with `readOnly: false` and then keeps it un-editable with `editable: false`, which is the state the requirement asks for: shown, never typed.",
-						"content": {
-							"title": "Core case data",
-							"columns": 2,
-							"include": [
-								"title",
-								"identifier",
-								"description",
-								"caseType",
-								"status",
-								"assignee",
-								"assignedGroup",
-								"requester",
-								"priority",
-								"confidentiality",
-								"deadline",
-								"startDate",
-								"parentCase"
-							],
-							"overrides": {
-								"status": {
-									"editable": false
-								},
-								"identifier": {
-									"readOnly": false,
-									"editable": false
-								},
-								"requester": {
-									"widget": "InitiatorPicker",
-									"label": "Requester"
-								}
-							}
-						}
-					},
-					{
 						"id": "case-terms",
 						"type": "data",
 						"title": "Terms and payment",
@@ -1400,7 +1361,7 @@
 							"ariaLabel": "Case details",
 							"tabs": [
 								{
-									"widgetId": "case-core",
+									"widgetId": "case-data-panel",
 									"label": "Data"
 								},
 								{
@@ -1416,16 +1377,92 @@
 									"label": "People"
 								},
 								{
+									"widgetId": "case-communication-panel",
+									"label": "Communication"
+								},
+								{
+									"widgetId": "case-email-panel",
+									"label": "Email"
+								},
+								{
 									"widgetId": "case-work-panel",
 									"label": "Work"
 								},
 								{
-									"widgetId": "case-related-panel",
-									"label": "Related"
+									"widgetId": "case-besluiten-panel",
+									"label": "Besluiten"
 								},
 								{
-									"widgetId": "case-objects-panel",
-									"label": "Objects and locations"
+									"widgetId": "case-related-panel",
+									"label": "Related"
+								}
+							]
+						}
+					},
+					{
+						"id": "case-data-panel",
+						"type": "case-sections",
+						"title": "Data",
+						"icon": "FileDocumentOutline",
+						"_note": "The Data tab: the case record, and where it is. The map is a section here rather than a tab of its own because geography is metadata ON the case rather than a collection beside it, and a handler reading the address wants it next to the fields.",
+						"content": {
+							"sections": [
+								{
+									"label": "Core case data",
+									"widget": {
+										"id": "case-core",
+										"type": "data",
+										"title": "Core case data",
+										"icon": "FileDocument",
+										"_note": "`identifier` carries `readOnly: true` in the schema because OpenRegister generates it, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it. So the case number sat in this include list and rendered nowhere at all — the very field five of the seven demo cases were reported as missing. The `identifier` override re-admits the field with `readOnly: false` and then keeps it un-editable with `editable: false`, which is the state the requirement asks for: shown, never typed.",
+										"content": {
+											"title": "Core case data",
+											"columns": 2,
+											"include": [
+												"title",
+												"identifier",
+												"description",
+												"caseType",
+												"status",
+												"assignee",
+												"assignedGroup",
+												"requester",
+												"priority",
+												"confidentiality",
+												"deadline",
+												"startDate",
+												"parentCase"
+											],
+											"overrides": {
+												"status": {
+													"editable": false
+												},
+												"identifier": {
+													"readOnly": false,
+													"editable": false
+												},
+												"requester": {
+													"widget": "InitiatorPicker",
+													"label": "Requester"
+												}
+											}
+										}
+									}
+								},
+								{
+									"label": "Locations",
+									"widget": {
+										"id": "case-location-map",
+										"type": "case-location-map",
+										"title": "Locations",
+										"icon": "MapMarkerOutline",
+										"_note": "The case on a map, replacing the Locations LIST that was the second section of the retired Objects and locations tab. case-location already carries latitude and longitude, so that list was a table of coordinates nobody could picture. Bespoke rather than the library map type because that one cannot be scoped to a single case: its dataSource takes a register and a schema with no filter, and it resolves no manifest tokens, so either route plots every case-location in the register as this case. See registry.js and nextcloud-vue#1139.",
+										"content": {
+											"height": "260px",
+											"limit": 100,
+											"emptyText": "No locations linked to this case yet"
+										}
+									}
 								}
 							]
 						}
@@ -1450,7 +1487,7 @@
 						"type": "case-sections",
 						"title": "People",
 						"icon": "AccountGroupOutline",
-						"_note": "The People tab. Who is involved in the case, and every contact with them. A contactmoment records a channel, a direction and a summary against a person, so it belongs beside the roles rather than in a tab of its own. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"_note": "The People tab. Who is involved in the case. Contact WITH them was here too, on the reasoning that a contactmoment records a channel, a direction and a summary against a person; it is the Communication tab now, so a handler reaches the case log without opening the party list first. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
 						"content": {
 							"sections": [
 								{
@@ -1493,7 +1530,18 @@
 											"emptyText": "No parties on this case yet"
 										}
 									}
-								},
+								}
+							]
+						}
+					},
+					{
+						"id": "case-communication-panel",
+						"type": "case-sections",
+						"title": "Communication",
+						"icon": "ForumOutline",
+						"_note": "The Communication tab: every call, visit and message logged against this case by hand. It was the second section of People. Email is the tab beside this one rather than a section here, because the two are written differently: one is correspondence the system carries, the other a note a handler types after putting the phone down. The section moved verbatim, so its data-testid is still case-section-case-communication.",
+						"content": {
+							"sections": [
 								{
 									"label": "Communication",
 									"widget": {
@@ -1537,6 +1585,20 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "case-email-panel",
+						"type": "case-email-pane",
+						"title": "Email",
+						"icon": "EmailOutline",
+						"_note": "The Email tab: correspondence linked to the case, through the mail leaf. A sidebar tab until the sidebar copies of Notes, Email and Besluitvorming were retired, so this is the only place it reads now. Rendered by TYPE (case-email-pane in registry.js): a tab child resolves from the widget registry, and CaseEmailTab was registered only as a sidebar component:, which draws an empty panel and logs nothing."
+					},
+					{
+						"id": "case-besluiten-panel",
+						"type": "case-besluiten-pane",
+						"title": "Besluiten",
+						"icon": "Gavel",
+						"_note": "The Besluiten tab: the decidiq decisions leaf (ADR-019/ADR-022). A decision is an OUTCOME of the case rather than correspondence or a related case, so it earns a tab rather than a section of one. A sidebar tab until the sidebar copies were retired."
 					},
 					{
 						"id": "case-work-panel",
@@ -1612,7 +1674,7 @@
 						"type": "case-sections",
 						"title": "Related",
 						"icon": "LinkVariant",
-						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim. Objects joined on 2026-09-13, from the retired Objects and locations tab: an object linked to a case is a relation like any other, and the tab it came from held one collection once its Locations half became the map on the Data tab.",
 						"content": {
 							"sections": [
 								{
@@ -1622,7 +1684,7 @@
 										"type": "case-related-planned",
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister\u0027s related widget can include scheduled flows by subject (tasks 3.3)."
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
 									}
 								},
 								{
@@ -1666,18 +1728,7 @@
 											"emptyText": "No sub-cases yet"
 										}
 									}
-								}
-							]
-						}
-					},
-					{
-						"id": "case-objects-panel",
-						"type": "case-sections",
-						"title": "Objects and locations",
-						"icon": "CubeOutline",
-						"_note": "The Objects and locations tab. What the case is about. Locations sits HERE and not under Related, which is where the tab count sketch put it: a case-location carries a nummeraanduiding id and a parcel id, so it is a registry object the case concerns, the same kind of thing as a caseObject, and Related is case to case. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
-						"content": {
-							"sections": [
+								},
 								{
 									"label": "Objects",
 									"widget": {
@@ -1716,50 +1767,6 @@
 												}
 											],
 											"emptyText": "No objects linked to this case yet"
-										}
-									}
-								},
-								{
-									"label": "Locations",
-									"widget": {
-										"id": "case-locaties",
-										"type": "object-list",
-										"title": "Locations",
-										"icon": "Earth",
-										"content": {
-											"register": "dossiq",
-											"schema": "case-location",
-											"filter": {
-												"case": "@objectId"
-											},
-											"sort": {
-												"field": "order",
-												"dir": "asc"
-											},
-											"limit": 25,
-											"columns": [
-												{
-													"key": "label",
-													"label": "Label"
-												},
-												{
-													"key": "formattedAddress",
-													"label": "Address"
-												},
-												{
-													"key": "addressDesignationId",
-													"label": "Nummeraanduiding id"
-												},
-												{
-													"key": "parcelId",
-													"label": "Parcel id"
-												},
-												{
-													"key": "source",
-													"label": "Source"
-												}
-											],
-											"emptyText": "No locations linked to this case yet"
 										}
 									}
 								}
@@ -1865,28 +1872,10 @@
 							]
 						},
 						{
-							"id": "notes",
-							"label": "Notes",
-							"icon": "NoteTextOutline",
-							"component": "CaseNotesTab"
-						},
-						{
 							"id": "sharing",
 							"label": "Sharing",
 							"icon": "ShareVariant",
 							"component": "CaseSharingTab"
-						},
-						{
-							"id": "email",
-							"label": "Email",
-							"icon": "EmailOutline",
-							"component": "CaseEmailTab"
-						},
-						{
-							"id": "besluitvorming",
-							"label": "Besluitvorming",
-							"icon": "Gavel",
-							"component": "BesluitvormingLeafTab"
 						},
 						{
 							"id": "tags",
@@ -4691,7 +4680,7 @@
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			},
-			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose \u2014 the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
+			"_note": "The people dossiq knows, and the first place you can look one up without already having their case. `brpPerson` is a TEST register set seeded from the BRP personen-mock; on a real instance it holds whatever integriq's adapter writes into it (Tier B, B22), and the schema description says so. The address column reads `residence.city` rather than a composed address line: a column key IS a dot-path into the row (CnDataTable.getCellValue splits on `.`), and there is no composed address field to read. It is `sortable: false` on purpose — the dot-path resolves for RENDERING, off the row the page already holds, but a sort sends the key to OpenRegister as an `_order` field, and the same dot-path that reads an inline object client-side is not a column the server can order by."
 		},
 		{
 			"id": "Organisations",

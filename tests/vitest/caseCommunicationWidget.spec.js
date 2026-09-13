@@ -103,19 +103,22 @@ describe('the Communication widget', () => {
 		)
 	})
 
-	it('is the contact half of the People tab, never a layout cell of its own', () => {
+	it('is the Communication tab, never a layout cell of its own', () => {
 		const detail = caseDetail()
 		const where = panels.caseTabOf('case-communication')
 
-		// A contactmoment records a channel, a direction and a summary against a
-		// person, so it sits with the parties rather than in a tab of its own.
+		// It sat with the parties until 2026-09-13, on the reasoning that a
+		// contactmoment records a channel, a direction and a summary against a
+		// person. It is its own tab now, so a handler reaches the case log
+		// without opening the party list first, and the two are asserted apart
+		// rather than together.
 		expect(
 			where,
 			'case-communication is not reachable from the strip',
 		).toBeTruthy()
-		expect(where.tab).toBe('People')
+		expect(where.tab).toBe('Communication')
 		expect(where.label).toBe('Communication')
-		expect(panels.caseTabOf('case-roles').tab).toBe(where.tab)
+		expect(panels.caseTabOf('case-roles').tab).toBe('People')
 
 		// A widget rendered by the tabs widget AND placed in `layout` renders
 		// twice, which is why its siblings are absent from `layout` too.
