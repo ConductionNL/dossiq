@@ -12,5 +12,5 @@ Tier: V1. Kind: code. Row 3.8.
   the order and the reserved word.
 - [x] 1.3 Fixture pair: `DossiqAskPersonNode` and `CreateTaskHandler` land
   on the same principal for the same case.
-- [ ] 2.1 `tests/e2e/task-defaults-to-case-handler.spec.ts`; `openspec
+- [x] 2.1 `tests/e2e/task-defaults-to-case-handler.spec.ts`; `openspec
   validate task-defaults-to-case-handler --strict`.
