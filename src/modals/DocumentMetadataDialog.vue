@@ -18,7 +18,17 @@
 					<NcProgressBar
 						v-if="progress[idx] !== undefined"
 						:value="progress[idx]"
-						:error="errors[idx] === true" />
+						:error="Boolean(errors[idx])" />
+					<!-- The reason, in the server's words, under the bar that went
+					     red. Without it a full bar that then turned red read as an
+					     upload that finished, and the dialog that stayed open read
+					     as a dialog that forgot to close. -->
+					<span
+						v-if="typeof errors[idx] === 'string' && errors[idx] !== ''"
+						class="dossier-metadata-dialog__file-error"
+						role="alert">
+						{{ errors[idx] }}
+					</span>
 				</li>
 			</ul>
 
@@ -336,5 +346,9 @@ export default {
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 12px;
+}
+.dossier-metadata-dialog__file-error {
+	color: var(--color-error);
+	font-size: 0.9em;
 }
 </style>

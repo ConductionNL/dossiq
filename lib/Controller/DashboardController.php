@@ -51,9 +51,11 @@ use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IRequest;
+use OCP\Util;
 
 /**
  * Controller for the main Dossiq dashboard page plus the PWA assets.
@@ -76,7 +78,12 @@ class DashboardController extends Controller {
 	/**
 	 * The load events that put Nextcloud's file surfaces on a page.
 	 *
-	 * Only the Viewer. The Files sidebar's `LoadSidebar` was here too, and
+	 * The Viewer, and the Files app's additional scripts: on that event the
+	 * Files app and its plugins (files_sharing, text, versions) register their
+	 * file actions and their New menu entries, such as Request a file, into
+	 * the shared registries that `@nextcloud/files` reads, so the files
+	 * browser on a case page offers the same actions the Files app does. Not
+	 * the Files sidebar: the sidebar's `LoadSidebar` was here too, and
 	 * its scripts loaded, but on Nextcloud 34 the sidebar is a store bound to
 	 * the Files app's own router and node list (`OCA.Files._sidebar`, no
 	 * `OCA.Files.Sidebar.open`), so it cannot be opened from another app's
@@ -84,10 +91,11 @@ class DashboardController extends Controller {
 	 * the bytes; the files tab offers Show in Files for what the sidebar
 	 * would have shown.
 	 *
-	 * @var list<class-string<\OCP\EventDispatcher\Event>>
+	 * @var list<string> Class names, looked up at run time because neither app is a dependency.
 	 */
 	public const FILES_SURFACE_EVENTS = [
 		'OCA\\Viewer\\Event\\LoadViewer',
+		'OCA\\Files\\Event\\LoadAdditionalScriptsEvent',
 	];
 
 	public const PREFER_OPENREGISTER_CASE_PLAN = 'cmmn_prefer_openregister_case_plan';
@@ -199,13 +207,26 @@ class DashboardController extends Controller {
 	 * @spec openspec/specs/document-zaakdossier/spec.md
 	 */
 	private function loadFilesSurfaces(): void {
+		// The Files app's own actions (download, delete, rename, favourite,
+		// move and copy, open in Files) are registered by its `init` script,
+		// which only the Files page loads. Every other app's actions arrive on
+		// the additional-scripts event below; this one has to be asked for.
+		// Guarded on the server's script pipeline: `Util::addScript` reaches
+		// into `OC\AppScriptDependency`, which a unit test process does not
+		// autoload, and the controller is rendered in those.
+		if (class_exists('OC\\AppScriptDependency') === true) {
+			Util::addScript('files', 'init');
+		}
+
 		foreach (self::FILES_SURFACE_EVENTS as $eventClass) {
 			if (class_exists($eventClass) === false) {
 				continue;
 			}
 
 			$event = new $eventClass();
-			$this->eventDispatcher->dispatchTyped($event);
+			if ($event instanceof Event) {
+				$this->eventDispatcher->dispatchTyped($event);
+			}
 		}
 	}//end loadFilesSurfaces()
 

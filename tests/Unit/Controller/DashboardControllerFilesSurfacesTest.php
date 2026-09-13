@@ -59,7 +59,8 @@ class DashboardControllerFilesSurfacesTest extends TestCase
 
 
     /**
-     * The event is the Viewer's, by name, and the Files sidebar's is not.
+     * The events are the Viewer's and the Files app's additional scripts, by
+     * name, and the Files sidebar's is not.
      *
      * Named rather than imported, because the Viewer app is not a dependency;
      * a typo in the name would silently dispatch nothing, so the name is
@@ -68,11 +69,11 @@ class DashboardControllerFilesSurfacesTest extends TestCase
      *
      * @return void
      */
-    public function testTheEventIsTheViewersAndNotTheSidebars(): void
+    public function testTheEventsAreTheViewersAndTheAdditionalScriptsAndNotTheSidebars(): void
     {
         $this->assertSame(
-            expected: ['OCA\\Viewer\\Event\\LoadViewer'],
+            expected: ['OCA\\Viewer\\Event\\LoadViewer', 'OCA\\Files\\Event\\LoadAdditionalScriptsEvent'],
             actual: DashboardController::FILES_SURFACE_EVENTS
         );
-    }//end testTheEventIsTheViewersAndNotTheSidebars()
+    }//end testTheEventsAreTheViewersAndTheAdditionalScriptsAndNotTheSidebars()
 }//end class

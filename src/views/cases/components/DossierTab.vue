@@ -451,8 +451,15 @@ export default {
 					})
 					this.uploadProgress[index] = 100
 					anySuccess = true
-				} catch {
-					this.uploadErrors[index] = true
+				} catch (err) {
+					// The server names the step that failed per file, and that name
+					// is what the reader can act on: a file that was stored but
+					// could not be joined to the case is a different problem from
+					// one that never arrived. A bare red bar told neither.
+					const perFile = err?.response?.data?.results?.[0]?.error
+					this.uploadErrors[index] = typeof perFile === 'string' && perFile !== ''
+						? perFile
+						: (err?.response?.data?.error || this.t('dossiq', 'Upload failed'))
 				}
 			}
 			this.uploading = false
