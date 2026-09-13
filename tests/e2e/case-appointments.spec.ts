@@ -55,8 +55,10 @@
  *     a NULL `firstoccurence` and so appears in no time-range query — the
  *     Calendar app cannot show it — and which CalDAV refuses to DELETE or PUT
  *     with `ITipException: An event MUST have a DTSTART property`. It cannot
- *     be removed by any client. 182 of the 219 calendar objects on the shared
- *     dev instance are already in this state.
+ *     be removed by any client; only a SQL delete on `oc_calendarobjects`
+ *     clears one. The VTODOs sitting in the same table with a NULL
+ *     `firstoccurence` are NOT this fault: a task carries DUE and no DTSTART
+ *     and is correct that way.
  *
  *     That is why this spec does NOT drive the create dialog. A run that did
  *     would leave one permanently undeletable event per CI run.
