@@ -28,7 +28,7 @@ use Throwable;
  * data, an admin adds one whenever the process needs it, and a vocabulary
  * that ran once would go stale the first time they did.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
 class SyncCaseRoleVocabulary implements IRepairStep {
 
@@ -49,7 +49,7 @@ class SyncCaseRoleVocabulary implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function getName(): string {
 		return 'Declare this instance\'s role types as the roles a person can hold on a case';
@@ -62,7 +62,7 @@ class SyncCaseRoleVocabulary implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();

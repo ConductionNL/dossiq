@@ -24,7 +24,7 @@ use RuntimeException;
 /**
  * Who can be asked for a file, and the asking.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 class FileRequestControllerTest extends TestCase {
 
@@ -181,7 +181,7 @@ class FileRequestControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function testACaseTheHandlerCannotSeeAnswersNotFound(): void {
 		$access = $this->createMock(originalClassName: CaseAccessGuard::class);

@@ -20,7 +20,7 @@ use RuntimeException;
 /**
  * The upgrade step that declares this instance's role types on the case schema.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
 class SyncCaseRoleVocabularyTest extends TestCase {
 
