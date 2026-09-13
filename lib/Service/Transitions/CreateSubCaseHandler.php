@@ -3,8 +3,9 @@
 /**
  * Dossiq createSubCase action handler.
  *
- * Action config shape: `{type: 'createSubCase', caseType: '<uuid>', title?, hoofdzaakField?: 'hoofdzaak'}`.
- * Creates a deelzaak linked to the parent case via `hoofdzaak`.
+ * Action config shape: `{type: 'createSubCase', caseType: '<uuid>', title?, handoffSource?, hoofdzaakField?: 'hoofdzaak'}`.
+ * Creates a deelzaak linked to the parent case via `hoofdzaak`, carrying the
+ * provenance of whatever opened it when the caller declares one.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Transitions
@@ -76,6 +77,17 @@ class CreateSubCaseHandler implements ActionHandlerInterface {
 				'caseType' => (string)($actionConfig['caseType'] ?? ''),
 				'hoofdzaak' => $parentId,
 			];
+
+			// A case opened by a recurring planned follow-up says which series
+			// opened it (ADR-051 provenance). Without it the occurrences of one
+			// series are indistinguishable from any other sub-case, and the
+			// Related tab would have to scan every case asking where it came
+			// from. Absent for every other caller, and absent is not written:
+			// an empty `handoffSource` reads as a provenance claim of nothing.
+			$handoffSource = trim((string)($actionConfig['handoffSource'] ?? ''));
+			if ($handoffSource !== '') {
+				$subCase['handoffSource'] = $handoffSource;
+			}
 
 			// On the flow path the engine's RegistryStepDispatcher already runs
 			// this handler inside `ObjectService::runAs()` as the run's acting

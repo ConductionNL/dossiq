@@ -14,7 +14,7 @@ Tier: V1. Kind: config plus two PHP files. Row 1.8.
 
 ## 2. The sweep
 
-- [ ] 2.1 `lib/BackgroundJob/PlannedFollowUpSweepJob.php`: switch off only
+- [x] 2.1 `lib/BackgroundJob/PlannedFollowUpSweepJob.php`: switch off only
   when `isSpent()`; record the reason on the flow.
   - unit over a flow stub: single fires once; series survives; spent series off
 

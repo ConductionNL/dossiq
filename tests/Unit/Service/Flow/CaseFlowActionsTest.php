@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\Flow\PlannedFollowUpDocument;
 use OCA\Dossiq\Service\SettingsService;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -66,6 +67,7 @@ class CaseFlowActionsTest extends TestCase {
 			$container,
 			$this->createMock(SettingsService::class),
 			new PlannedFollowUpDocument(),
+			$this->createMock(IAppConfig::class),
 			$this->createMock(LoggerInterface::class),
 		);
 	}//end service()
@@ -279,6 +281,6 @@ class CaseFlowActionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSweepIsANoOpWithoutAFlowStore(): void {
-		$this->assertSame(0, $this->service()->retireFired());
+		$this->assertSame(0, $this->service()->retireSpent());
 	}//end testTheSweepIsANoOpWithoutAFlowStore()
 }//end class
