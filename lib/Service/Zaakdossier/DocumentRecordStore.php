@@ -185,7 +185,8 @@ class DocumentRecordStore {
 			object: [
 				'case' => $caseId,
 				'informatieobject' => $recordId,
-				'natureRelationshipDisplay' => 'Hoort bij, omgekeerd: kent',
+				// The schema's enum spells it this way, and createJoin() writes the same.
+				'natureRelationshipDisplay' => 'Hoort at omgekeerd',
 				'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 			],
 			register: $register,
