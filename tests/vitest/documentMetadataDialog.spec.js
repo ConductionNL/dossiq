@@ -249,7 +249,7 @@ describe('DocumentMetadataDialog', () => {
 
 	it('resolves the case id from the prop, falling back to the route when it still holds the @objectId token', async () => {
 		const wrapper = mount(DocumentMetadataDialog, {
-			props: { open: true, files: [{ name: 'a.pdf' }], caseId: '@objectId' },
+			props: { files: [{ name: 'a.pdf' }], caseId: '@objectId' },
 			global: { mocks: { $route: { params: { id: 'route-case' } } } },
 		})
 		await flushPromises()
