@@ -78,9 +78,9 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @return IUserSession The session, answering `tester`.
 	 */
 	private function session(): IUserSession {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('tester');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		return $session;
@@ -98,17 +98,17 @@ class RefusalCarriesAStatusTest extends TestCase {
 		StatusTransitionService $engine,
 		array $body = ['transitionId' => 't-close'],
 	): StatusTransitionController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParams')->willReturn($body);
 
 		return new StatusTransitionController(
 			appName: 'dossiq',
 			request: $request,
 			transitionEngine: $engine,
-			bulkEngine: $this->createMock(BulkStatusTransitionService::class),
+			bulkEngine: $this->createMock(originalClassName: BulkStatusTransitionService::class),
 			userSession: $this->session(),
-			logger: $this->createMock(LoggerInterface::class),
-			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),
 		);
 	}//end transitionController()
 
@@ -124,7 +124,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testARefusedTransitionAnswers409AndNamesTheRule(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willThrowException(
 			new RefusedException(
 				rule: 'transition-from-status-mismatch',
@@ -133,13 +133,13 @@ class RefusalCarriesAStatusTest extends TestCase {
 			)
 		);
 
-		$response = $this->transitionController($engine)->execute('case-1');
+		$response = $this->transitionController(engine: $engine)->execute('case-1');
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		self::assertSame('transition-from-status-mismatch', $body['error']);
-		self::assertSame('transition_from_status_mismatch', $body['code']);
-		self::assertSame('This move does not start from the status the case is in.', $body['message']);
+		self::assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		self::assertSame(expected: 'transition-from-status-mismatch', actual: $body['error']);
+		self::assertSame(expected: 'transition_from_status_mismatch', actual: $body['code']);
+		self::assertSame(expected: 'This move does not start from the status the case is in.', actual: $body['message']);
 	}//end testARefusedTransitionAnswers409AndNamesTheRule()
 
 	/**
@@ -150,13 +150,13 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAnAllowedTransitionAnswers200(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willReturn(['status' => 'closed']);
 
-		$response = $this->transitionController($engine)->execute('case-1');
+		$response = $this->transitionController(engine: $engine)->execute('case-1');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame(['status' => 'closed'], (array)$response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertSame(expected: ['status' => 'closed'], actual: (array)$response->getData());
 	}//end testAnAllowedTransitionAnswers200()
 
 	/**
@@ -171,7 +171,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAnUnauthorisedTransitionAnswers403(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willThrowException(
 			new RefusedException(
 				rule: 'transition-unauthorized',
@@ -180,11 +180,11 @@ class RefusalCarriesAStatusTest extends TestCase {
 			)
 		);
 
-		$response = $this->transitionController($engine)->execute('case-1');
+		$response = $this->transitionController(engine: $engine)->execute('case-1');
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		self::assertSame('transition-unauthorized', $body['error']);
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		self::assertSame(expected: 'transition-unauthorized', actual: $body['error']);
 	}//end testAnUnauthorisedTransitionAnswers403()
 
 	/**
@@ -195,7 +195,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testClosingWithoutAResultAnswers422(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willThrowException(
 			new RefusedException(
 				rule: 'result-type-required',
@@ -204,15 +204,15 @@ class RefusalCarriesAStatusTest extends TestCase {
 			)
 		);
 
-		$response = $this->transitionController($engine)->execute('case-1');
+		$response = $this->transitionController(engine: $engine)->execute('case-1');
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
-		self::assertSame('result-type-required', $body['error']);
+		self::assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
+		self::assertSame(expected: 'result-type-required', actual: $body['error']);
 		self::assertSame(
-			'result_type_required',
-			$body['code'],
-			'caseLifecycleHelpers reads `code`; dropping it would show the slug to a handler.'
+			expected: 'result_type_required',
+			actual: $body['code'],
+			message: 'caseLifecycleHelpers reads `code`; dropping it would show the slug to a handler.'
 		);
 	}//end testClosingWithoutAResultAnswers422()
 
@@ -224,18 +224,18 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAGuardRefusalNamesItsRuleAndKeepsTheGuards(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willThrowException(
-			new GuardFailedException([['type' => 'requiredDocument', 'passed' => false]])
+			new GuardFailedException(failedGuards: [['type' => 'requiredDocument', 'passed' => false]])
 		);
 
-		$response = $this->transitionController($engine)->execute('case-1');
+		$response = $this->transitionController(engine: $engine)->execute('case-1');
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		self::assertSame('transition-guard-failed', $body['error']);
-		self::assertSame('This move is blocked by a rule on the case.', $body['message']);
-		self::assertCount(1, (array)$body['failedGuards']);
+		self::assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		self::assertSame(expected: 'transition-guard-failed', actual: $body['error']);
+		self::assertSame(expected: 'This move is blocked by a rule on the case.', actual: $body['message']);
+		self::assertCount(expectedCount: 1, haystack: (array)$body['failedGuards']);
 	}//end testAGuardRefusalNamesItsRuleAndKeepsTheGuards()
 
 	/**
@@ -246,13 +246,13 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @return MandaatMatrixController The controller.
 	 */
 	private function mandateController(MandaatCheckService $check): MandaatMatrixController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParams')->willReturn(
 			['decisionType' => 'subsidie', 'caseId' => 'case-1', 'caseProperties' => []]
 		);
 		$request->method('getParam')->willReturn('');
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$settings->method('getConfigValue')->willReturn('');
 
@@ -261,11 +261,11 @@ class RefusalCarriesAStatusTest extends TestCase {
 			request: $request,
 			userSession: $this->session(),
 			check: $check,
-			escalation: $this->createMock(MandaatEscalatieService::class),
-			gebruik: $this->createMock(MandaatGebruikService::class),
-			import: $this->createMock(MandaatImportService::class),
+			escalation: $this->createMock(originalClassName: MandaatEscalatieService::class),
+			gebruik: $this->createMock(originalClassName: MandaatGebruikService::class),
+			import: $this->createMock(originalClassName: MandaatImportService::class),
 			settings: $settings,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end mandateController()
 
@@ -280,13 +280,13 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAReadableMandateRegisterAnswers200(): void {
-		$check = $this->createMock(MandaatCheckService::class);
+		$check = $this->createMock(originalClassName: MandaatCheckService::class);
 		$check->method('getApplicableForUser')->willReturn([['id' => 'm-1', 'unilateral' => true]]);
 
-		$response = $this->mandateController($check)->applicable('case-1');
+		$response = $this->mandateController(check: $check)->applicable('case-1');
 
-		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertCount(1, (array)$response->getData());
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertCount(expectedCount: 1, haystack: (array)$response->getData());
 	}//end testAReadableMandateRegisterAnswers200()
 
 	/**
@@ -301,7 +301,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testTheApplicableListDoesNotSwallowARefusal(): void {
-		$check = $this->createMock(MandaatCheckService::class);
+		$check = $this->createMock(originalClassName: MandaatCheckService::class);
 		$check->method('getApplicableForUser')->willThrowException(
 			RefusedException::indeterminate(
 				rule: 'mandaat-register-unreadable',
@@ -309,10 +309,10 @@ class RefusalCarriesAStatusTest extends TestCase {
 			)
 		);
 
-		$response = $this->mandateController($check)->applicable('case-1');
+		$response = $this->mandateController(check: $check)->applicable('case-1');
 
-		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		self::assertSame('mandaat-register-unreadable', ((array)$response->getData())['error']);
+		self::assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		self::assertSame(expected: 'mandaat-register-unreadable', actual: ((array)$response->getData())['error']);
 	}//end testTheApplicableListDoesNotSwallowARefusal()
 
 	/**
@@ -325,10 +325,10 @@ class RefusalCarriesAStatusTest extends TestCase {
 	private function decisionController(BeschikkingService $service): BeschikkingController {
 		return new BeschikkingController(
 			appName: 'dossiq',
-			request: $this->createMock(IRequest::class),
+			request: $this->createMock(originalClassName: IRequest::class),
 			decisionService: $service,
 			userSession: $this->session(),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end decisionController()
 
@@ -340,7 +340,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAnUnreadableMandateSchemeAnswers503(): void {
-		$service = $this->createMock(BeschikkingService::class);
+		$service = $this->createMock(originalClassName: BeschikkingService::class);
 		$service->method('akkoord')->willThrowException(
 			RefusedException::indeterminate(
 				rule: 'mandaat-regeling-unreadable',
@@ -348,11 +348,11 @@ class RefusalCarriesAStatusTest extends TestCase {
 			)
 		);
 
-		$response = $this->decisionController($service)->akkoord('decision-1');
+		$response = $this->decisionController(service: $service)->akkoord('decision-1');
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		self::assertSame('mandaat-regeling-unreadable', $body['error']);
+		self::assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		self::assertSame(expected: 'mandaat-regeling-unreadable', actual: $body['error']);
 	}//end testAnUnreadableMandateSchemeAnswers503()
 
 	/**
@@ -363,12 +363,12 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAnInsufficientMandateStillAnswers403(): void {
-		$service = $this->createMock(BeschikkingService::class);
+		$service = $this->createMock(originalClassName: BeschikkingService::class);
 		$service->method('akkoord')->willThrowException(new RuntimeException('mandaat_insufficient'));
 
-		$response = $this->decisionController($service)->akkoord('decision-1');
+		$response = $this->decisionController(service: $service)->akkoord('decision-1');
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testAnInsufficientMandateStillAnswers403()
 
 	/**
@@ -380,11 +380,11 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 */
 	private function mandateMiddleware(TenantAuthenticationService $auth): MandateValidationMiddleware {
 		return new MandateValidationMiddleware(
-			request: $this->createMock(IRequest::class),
+			request: $this->createMock(originalClassName: IRequest::class),
 			userSession: $this->session(),
-			context: $this->createMock(TenantContext::class),
+			context: $this->createMock(originalClassName: TenantContext::class),
 			authService: $auth,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end mandateMiddleware()
 
@@ -396,10 +396,10 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testAnUnreadableMandateMatrixAnswers503(): void {
-		$middleware = $this->mandateMiddleware($this->createMock(TenantAuthenticationService::class));
+		$middleware = $this->mandateMiddleware(auth: $this->createMock(originalClassName: TenantAuthenticationService::class));
 
 		$response = $middleware->afterException(
-			$this->createMock(Controller::class),
+			$this->createMock(originalClassName: Controller::class),
 			'update',
 			RefusedException::indeterminate(
 				rule: 'tenant-mandate-matrix-unreadable',
@@ -408,9 +408,9 @@ class RefusalCarriesAStatusTest extends TestCase {
 		);
 		$body = (array)$response->getData();
 
-		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		self::assertSame('tenant-mandate-matrix-unreadable', $body['error']);
-		self::assertSame('tenant_mandate_matrix_unreadable', $body['code']);
+		self::assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+		self::assertSame(expected: 'tenant-mandate-matrix-unreadable', actual: $body['error']);
+		self::assertSame(expected: 'tenant_mandate_matrix_unreadable', actual: $body['code']);
 	}//end testAnUnreadableMandateMatrixAnswers503()
 
 	/**
@@ -421,15 +421,15 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function testADeniedMandateStillAnswers403(): void {
-		$middleware = $this->mandateMiddleware($this->createMock(TenantAuthenticationService::class));
+		$middleware = $this->mandateMiddleware(auth: $this->createMock(originalClassName: TenantAuthenticationService::class));
 
 		$response = $middleware->afterException(
-			$this->createMock(Controller::class),
+			$this->createMock(originalClassName: Controller::class),
 			'update',
-			new MandateDeniedException('Role reader is not authorised for action edit', 403)
+			new MandateDeniedException(message: 'Role reader is not authorised for action edit', code: 403)
 		);
 
-		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testADeniedMandateStillAnswers403()
 
 	/**
@@ -445,12 +445,12 @@ class RefusalCarriesAStatusTest extends TestCase {
 			sentence: 'Another change reached this case first. Reload it and try again.',
 		);
 
-		self::assertSame('transition-conflict', $refusal->getRule());
-		self::assertSame('transition_conflict', $refusal->getMessage());
-		self::assertSame(409, $refusal->getStatus());
-		self::assertStringContainsString('Reload it', $refusal->getSentence());
+		self::assertSame(expected: 'transition-conflict', actual: $refusal->getRule());
+		self::assertSame(expected: 'transition_conflict', actual: $refusal->getMessage());
+		self::assertSame(expected: 409, actual: $refusal->getStatus());
+		self::assertStringContainsString(needle: 'Reload it', haystack: $refusal->getSentence());
 
 		$indeterminate = RefusedException::indeterminate(rule: 'x-unreadable', sentence: 'Could not tell.');
-		self::assertSame(503, $indeterminate->getStatus());
+		self::assertSame(expected: 503, actual: $indeterminate->getStatus());
 	}//end testTheRefusalCarriesAllFourFacts()
 }//end class

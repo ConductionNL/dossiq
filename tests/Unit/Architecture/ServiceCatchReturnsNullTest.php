@@ -91,9 +91,9 @@ class ServiceCatchReturnsNullTest extends TestCase {
 		);
 
 		self::assertSame(
-			[],
-			$result['unlisted'],
-			"These catch blocks answer null or [] and are not in catch-return-null.allowlist.json:\n"
+			expected: [],
+			actual: $result['unlisted'],
+			message: "These catch blocks answer null or [] and are not in catch-return-null.allowlist.json:\n"
 			. implode("\n", $result['unlisted'])
 			. "\n\nIf a rule refused, throw OCA\\Dossiq\\Exception\\RefusedException and let the "
 			. 'controller translate it. If a collaborator was absent, log at warning naming what '
@@ -119,9 +119,9 @@ class ServiceCatchReturnsNullTest extends TestCase {
 		);
 
 		self::assertSame(
-			[],
-			$result['stale'],
-			"These allowlist entries name no live site; remove them and lower the ceiling:\n"
+			expected: [],
+			actual: $result['stale'],
+			message: "These allowlist entries name no live site; remove them and lower the ceiling:\n"
 			. implode("\n", $result['stale'])
 		);
 	}//end testEveryAllowlistEntryNamesALiveSite()
@@ -138,9 +138,9 @@ class ServiceCatchReturnsNullTest extends TestCase {
 		$live = count($this->liveSites());
 
 		self::assertLessThanOrEqual(
-			(int)$allowlist['ceiling'],
-			$live,
-			sprintf(
+			expected: (int)$allowlist['ceiling'],
+			actual: $live,
+			message: sprintf(
 				'%d swallowing catches against a ceiling of %d. The ceiling only goes down: '
 				. 'convert a site or classify it, do not raise the number.',
 				$live,
@@ -149,9 +149,9 @@ class ServiceCatchReturnsNullTest extends TestCase {
 		);
 
 		self::assertSame(
-			count((array)$allowlist['sites']),
-			(int)$allowlist['ceiling'],
-			'The ceiling must equal the number of entries, so it cannot be padded with headroom.'
+			expected: count((array)$allowlist['sites']),
+			actual: (int)$allowlist['ceiling'],
+			message: 'The ceiling must equal the number of entries, so it cannot be padded with headroom.'
 		);
 	}//end testTheCeilingOnlyGoesDown()
 
@@ -171,9 +171,9 @@ class ServiceCatchReturnsNullTest extends TestCase {
 		}
 
 		self::assertSame(
-			[],
-			$refusals,
-			"A site where a rule said no is converted, not allowlisted (REQ-QG-CRN-2):\n"
+			expected: [],
+			actual: $refusals,
+			message: "A site where a rule said no is converted, not allowlisted (REQ-QG-CRN-2):\n"
 			. implode("\n", $refusals)
 		);
 	}//end testNoRefusalIsAllowlisted()
@@ -193,15 +193,15 @@ class ServiceCatchReturnsNullTest extends TestCase {
 			$key = CatchReturnNullScanner::key(entry: (array)$entry);
 
 			self::assertContains(
-				(string)$entry['class'],
-				CatchReturnNullScanner::CLASSES,
-				sprintf('Entry "%s" declares an unknown class "%s".', $key, (string)$entry['class'])
+				needle: (string)$entry['class'],
+				haystack: CatchReturnNullScanner::CLASSES,
+				message: sprintf('Entry "%s" declares an unknown class "%s".', $key, (string)$entry['class'])
 			);
 
 			self::assertStringContainsString(
-				(string)$entry['method'],
-				(string)$entry['reason'],
-				sprintf('Entry "%s" has a reason that does not name its own method.', $key)
+				needle: (string)$entry['method'],
+				haystack: (string)$entry['reason'],
+				message: sprintf('Entry "%s" has a reason that does not name its own method.', $key)
 			);
 		}//end foreach
 	}//end testEveryEntryCarriesAClassAndAReason()
@@ -219,16 +219,16 @@ class ServiceCatchReturnsNullTest extends TestCase {
 			root: (string)realpath(self::ROOT)
 		);
 
-		self::assertCount(2, $sites, 'Both fixture catches must be found.');
-		self::assertSame('findThing', $sites[0]['method']);
-		self::assertSame('return null;', $sites[0]['returns']);
-		self::assertSame('listThings', $sites[1]['method']);
-		self::assertSame('return [];', $sites[1]['returns']);
+		self::assertCount(expectedCount: 2, haystack: $sites, message: 'Both fixture catches must be found.');
+		self::assertSame(expected: 'findThing', actual: $sites[0]['method']);
+		self::assertSame(expected: 'return null;', actual: $sites[0]['returns']);
+		self::assertSame(expected: 'listThings', actual: $sites[1]['method']);
+		self::assertSame(expected: 'return [];', actual: $sites[1]['returns']);
 
 		$result = CatchReturnNullScanner::compare(sites: $sites, allowed: ['ceiling' => 2, 'sites' => []]);
-		self::assertCount(2, $result['unlisted'], 'An unlisted site must be reported.');
-		self::assertStringContainsString('SwallowingService', $result['unlisted'][0]);
-		self::assertStringContainsString('findThing', $result['unlisted'][0]);
+		self::assertCount(expectedCount: 2, haystack: $result['unlisted'], message: 'An unlisted site must be reported.');
+		self::assertStringContainsString(needle: 'SwallowingService', haystack: $result['unlisted'][0]);
+		self::assertStringContainsString(needle: 'findThing', haystack: $result['unlisted'][0]);
 	}//end testANewSwallowingCatchFailsTheBuild()
 
 	/**
@@ -248,7 +248,7 @@ class ServiceCatchReturnsNullTest extends TestCase {
 			root: (string)realpath(self::ROOT)
 		);
 
-		self::assertSame([], $sites, 'None of these five shapes is a swallowing catch.');
+		self::assertSame(expected: [], actual: $sites, message: 'None of these five shapes is a swallowing catch.');
 	}//end testTheOtherShapesAreNotFindings()
 
 	/**
@@ -279,14 +279,14 @@ class ServiceCatchReturnsNullTest extends TestCase {
 			sites: $sites,
 			allowed: ['ceiling' => 2, 'sites' => $entries]
 		);
-		self::assertSame([], $underCeiling['ceiling'], 'Two sites under a ceiling of two must pass.');
+		self::assertSame(expected: [], actual: $underCeiling['ceiling'], message: 'Two sites under a ceiling of two must pass.');
 
 		$overCeiling = CatchReturnNullScanner::compare(
 			sites: $sites,
 			allowed: ['ceiling' => 1, 'sites' => $entries]
 		);
-		self::assertCount(1, $overCeiling['ceiling'], 'Two sites against a ceiling of one must fail.');
-		self::assertStringContainsString('2 sites against a ceiling of 1', $overCeiling['ceiling'][0]);
+		self::assertCount(expectedCount: 1, haystack: $overCeiling['ceiling'], message: 'Two sites against a ceiling of one must fail.');
+		self::assertStringContainsString(needle: '2 sites against a ceiling of 1', haystack: $overCeiling['ceiling'][0]);
 	}//end testExceedingTheCeilingFails()
 
 	/**
@@ -308,7 +308,7 @@ class ServiceCatchReturnsNullTest extends TestCase {
 	 */
 	private function allowlist(): array {
 		$decoded = json_decode((string)file_get_contents(self::ALLOWLIST), true);
-		self::assertIsArray($decoded, 'catch-return-null.allowlist.json must be a JSON object.');
+		self::assertIsArray(actual: $decoded, message: 'catch-return-null.allowlist.json must be a JSON object.');
 
 		return $decoded;
 	}//end allowlist()
