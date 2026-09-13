@@ -16,6 +16,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const { STATUS_COLOURS } = require('../../src/utils/statusColour.js')
 const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -70,50 +71,136 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 	})
 })
 
-describe('CaseDetail — the identity row (task 2.1)', () => {
-	it('declares case-header as a custom widget on the page', () => {
-		const entry = widget('case-header')
-		expect(entry).toBeDefined()
-		expect(entry.type).toBe('custom')
+describe('CaseDetail — the identity row is four configured tiles', () => {
+	// Ruben, 2026-09-12: "The widgets on top of the page should be actual KPI
+	// widgets configured to show what they show... it should not be a custom
+	// widget spanning an entire row."
+	//
+	// So every assertion here is about a widget the LIBRARY renders from
+	// `content`. A `type` the library does not know falls back to the page's
+	// `widget-<id>` slot, and a page with no such slot renders an empty cell
+	// and logs nothing, which is the failure this file exists to catch.
+	const TILES = [
+		['case-tile-number', 'stat', 0, 2],
+		['case-tile-type', 'stat', 2, 3],
+		['case-tile-status', 'stat', 5, 3],
+		['case-tile-assignee', 'stat', 8, 2],
+		['case-tile-deadline', 'countdown', 10, 2],
+	]
+
+	it('has retired the custom band and its slot', () => {
+		expect(widget('case-header')).toBeUndefined()
+		expect(cells('case-header')).toHaveLength(0)
+		expect(caseDetail().slots['widget-case-header']).toBeUndefined()
+		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
+		// saying the three components went and why, and a bare name match would
+		// read that explanation as the thing it explains.
+		expect(registrySource).not.toContain('CaseHeaderRow.vue')
+		expect(registrySource).not.toContain('CaseHeaderRow: {')
 	})
 
-	it('leads the page as a full-width row of KPI cards', () => {
-		// THIS REVERSES A DELIBERATE MOVE, so the reason it is safe this time is
-		// written down. The strip was pulled OUT of full width because it was
-		// mostly air: twelve columns and two rows for three to five short facts
-		// laid out in a line, more than half of it empty on a real case. That
-		// objection was about the LAYOUT of the facts, not their placement.
-		//
-		// Each fact is its own card now, with `flex: 1 1 0` in
-		// CaseHeaderRow.vue, so the row divides evenly across the full width
-		// instead of ending in dead space. The rail card it replaced is gone,
-		// so the same facts are read once, across the top, where a handler
-		// looks first.
-		const placed = cells('case-header')
-		expect(placed).toHaveLength(1)
-		expect(placed[0].gridY).toBe(0)
-		expect(placed[0].gridX).toBe(0)
-		expect(placed[0].gridWidth).toBe(12)
-		// A KPI strip, not a titled panel: the cards carry their own labels, so
-		// a heading above them would name the group twice.
-		expect(placed[0].showTitle).toBe(false)
+	for (const [id, type, gridX, gridWidth] of TILES) {
+		it(`declares ${id} as a configured ${type} widget`, () => {
+			const entry = widget(id)
+			expect(entry).toBeDefined()
+			expect(entry.type).toBe(type)
+			// A configured widget carries its config, not a registry key. An
+			// empty `content` renders a tile with no label and no value, which
+			// looks exactly like a tile whose data has not arrived.
+			expect(Object.keys(entry.content ?? {}).length).toBeGreaterThan(0)
+		})
+
+		it(`places ${id} in the top row without spanning it`, () => {
+			const placed = cells(id)
+			expect(placed).toHaveLength(1)
+			expect(placed[0].gridY).toBe(0)
+			expect(placed[0].gridX).toBe(gridX)
+			expect(placed[0].gridWidth).toBe(gridWidth)
+			expect(placed[0].gridWidth).toBeLessThan(12)
+			// A card widget draws its own label, so the wrapper header would
+			// print the title twice.
+			expect(placed[0].showTitle).toBe(false)
+		})
+	}
+
+	it('fills the top row exactly, leaving no gap and no overhang', () => {
+		const top = caseDetail().config.layout.filter((c) => c.gridY === 0)
+		expect(top).toHaveLength(TILES.length)
+		expect(top.reduce((sum, c) => sum + c.gridWidth, 0)).toBe(12)
 		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
 	})
 
-	it('resolves the widget through a page slot to a registered component', () => {
-		// A `custom` widget renders through THREE declarations no build step
-		// compares: the widget entry, the layout cell, and the slot mapping.
-		// Miss the slot and the page renders an empty cell, silently.
-		expect(caseDetail().slots['widget-case-header']).toBe('CaseHeaderRow')
-		expect(registrySource).toContain('CaseHeaderRow:')
-		expect(registrySource).toContain('CaseHeaderRow.vue')
+	it('resolves the case type through the register, not in JavaScript', () => {
+		// The uuid-to-title resolve CaseHeaderRow did by hand. `emptyText` is
+		// what keeps a raw uuid off the page when the lookup finds nothing: a
+		// uuid under the title is a fact about the database, not about the case.
+		const content = widget('case-tile-type').content
+		expect(content.objectField.field).toBe('caseType')
+		expect(content.objectField.resolve).toMatchObject({
+			register: 'dossiq',
+			schema: 'caseType',
+			labelField: 'title',
+		})
+		expect(content.emptyText).toBeTruthy()
+	})
+
+	it('draws the status as a badge coloured by its own status type', () => {
+		const content = widget('case-tile-status').content
+		expect(content.display).toBe('badge')
+		expect(content.objectField.field).toBe('status')
+		expect(content.objectField.resolve).toMatchObject({
+			register: 'dossiq',
+			schema: 'statusType',
+			labelField: 'name',
+			variantField: 'colour',
+		})
+		// REQ-CT-19 asks for the case type's authored colour to reach this
+		// badge. CnStatusBadge takes one of six variants, so every one of the
+		// twelve palette names the schema enumerates must map to one, or an
+		// authored purple silently falls back to the default grey pill.
+		const map = content.objectField.resolve.variantMap
+		expect(Object.keys(map).sort()).toEqual([...STATUS_COLOURS].sort())
+		const variants = [
+			'default',
+			'primary',
+			'success',
+			'warning',
+			'error',
+			'info',
+		]
+		for (const [colour, variant] of Object.entries(map)) {
+			expect(variants, `${colour} maps to a real badge variant`).toContain(
+				variant,
+			)
+		}
+		expect(content.emptyText).toBeTruthy()
+	})
+
+	it('still prints the case number, which subtitleField does not', () => {
+		// REQ-CDV-14 asks for the number under the title through
+		// `config.subtitleField`. The key is set and no detail-page code in
+		// @conduction/nextcloud-vue reads it, so the number renders nowhere
+		// unless a widget carries it. Assert BOTH: the declaration the
+		// requirement names, and the tile that actually delivers it.
+		expect(caseDetail().config.subtitleField).toBe('identifier')
+		expect(widget('case-tile-number').content.objectField).toBe('identifier')
+	})
+
+	it('counts the deadline down in the bands the retired tile used', () => {
+		const content = widget('case-tile-deadline').content
+		expect(content.field).toBe('deadline')
+		expect(content.thresholds).toEqual({ warn: 14, danger: 5 })
 	})
 
 	it('names only icons that src/icons.js registers', () => {
 		// An unregistered name renders NO icon, not a fallback glyph (gate-60).
-		// The trail's crumb icon used to be in this list; the trail is gone, so
-		// the card's own icon is the only one this widget names.
-		const names = [widget('case-header').icon]
+		// Both spellings matter: the wrapper header reads `widget.icon` and the
+		// tile itself reads `content.icon`.
+		const names = TILES.flatMap(([id]) => [
+			widget(id).icon,
+			widget(id).content.icon,
+		]).filter(Boolean)
+		expect(names.length).toBeGreaterThan(0)
 		for (const name of names) {
 			expect(iconsSource, `icon ${name} is not registered`).toContain(
 				`import ${name} from 'vue-material-design-icons/${name}.vue'`,
@@ -122,16 +209,14 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 	})
 
 	it('has retired the Time left and Case type tiles from the page', () => {
-		// Both facts now read in the identity row. Leaving the tiles beside it
+		// Both facts read in the identity row. Leaving the old tiles beside it
 		// would print each of them twice.
 		for (const retired of ['case-kpi-time-left', 'case-kpi-casetype']) {
 			expect(widget(retired), `${retired} is still declared`).toBeUndefined()
 			expect(cells(retired), `${retired} is still placed`).toHaveLength(0)
 		}
 		// And no tab child names them either: a tabs entry is the third place
-		// a widget id can hide, and it is not covered by the two above. The
-		// `_note` prose still names both, on purpose, because that is where
-		// the reason they went lives.
+		// a widget id can hide, and it is not covered by the two above.
 		const tabIds = (widget('case-panels')?.content?.tabs ?? []).map(
 			(tab) => tab.widgetId,
 		)
@@ -145,13 +230,6 @@ describe('CaseDetail — the identity row (task 2.1)', () => {
 			expect(declared, `layout cell ${cell.id}`).toContain(cell.widgetId)
 		}
 	})
-
-	it('carries the countdown thresholds the retired tile counted with', () => {
-		expect(widget('case-header').props.thresholds).toEqual({
-			warn: 14,
-			danger: 5,
-		})
-	})
 })
 
 describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)', () => {
@@ -164,7 +242,12 @@ describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)
 		// oversight: without it, the next reader finds a `_breadcrumbsNote`
 		// explaining a key that is not there and re-adds the key.
 		expect(caseDetail().config.breadcrumbs).toBeUndefined()
-		expect(widget('case-header').props.breadcrumbs).toBeUndefined()
+		// The widget half of this guard went with CaseHeaderRow. Nothing on the
+		// page declares a trail now, so assert that across every widget rather
+		// than against one that no longer exists.
+		expect(JSON.stringify(caseDetail().config.widgets)).not.toContain(
+			'breadcrumb',
+		)
 	})
 
 	it('keeps the note that says why, so the removal is not re-litigated', () => {
