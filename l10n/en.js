@@ -3955,6 +3955,10 @@ OC.L10N.register(
         "Not possible from the current status": "Not possible from the current status",
         "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
         "Bulk action changed nothing": "Bulk action changed nothing",
+        "Case volume, status and performance across the team": "Case volume, status and performance across the team",
+        "Open My work in the menu": "Open My work in the menu",
+        "Your open tasks, deadlines and open cases": "Your open tasks, deadlines and open cases",
+        "Your work lives here: today's tasks, deadlines and open cases in one place.": "Your work lives here: today's tasks, deadlines and open cases in one place.",
         "Locations on this case": "Locations on this case",
         "The locations could not be loaded.": "The locations could not be loaded."
     },

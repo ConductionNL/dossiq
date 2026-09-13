@@ -60,7 +60,12 @@ class DashboardControllerServiceWorkerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$request = $this->createMock(IRequest::class);
-		$this->controller = new DashboardController(request: $request, initialState: $this->createMock(IInitialState::class), appConfig: $this->createMock(IAppConfig::class), eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class));
+		$this->controller = new DashboardController(
+			request: $request,
+			initialState: $this->createMock(originalClassName: IInitialState::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 	}//end setUp()
 
 	/**

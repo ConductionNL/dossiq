@@ -13,9 +13,19 @@ retrofit_extensions:
 
 ## Purpose
 
-The dashboard is the landing page of the Dossiq app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
+**Superseded 2026-09-13 (dashboard-my-work-split):** the app's landing page is
+now My Work (`openspec/specs/my-work/spec.md`, route `/`), not the Dashboard.
+The Dashboard moved to `/dashboard` and answers "how is the team doing":
+KPI cards, status and type distribution charts, and the stalled-cases panel.
+The personal-workload surface (open tasks, deadlines, open cases) moved onto
+My Work, because a handler opening the app wants "what do I do first today",
+not the team-wide aggregate. REQ-DASH-005 below is kept for its scenario
+detail but its panel now lives on My Work, not the Dashboard — see that
+spec's Requirements for the current widget set.
 
-**Feature tiers**: MVP (KPI cards, status chart, overdue panel, my work preview, activity feed, quick actions, empty state, refresh); V1 (average processing time KPI, case type breakdown chart, SLA compliance widget, workload distribution)
+The dashboard provides an at-a-glance overview of case management activity across the team: KPI cards with headline metrics, status and type distribution charts, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
+
+**Feature tiers**: MVP (KPI cards, status chart, quick actions, empty state, refresh); V1 (average processing time KPI, case type breakdown chart, SLA compliance widget)
 
 ## Data Sources
 
@@ -189,6 +199,13 @@ The dashboard MUST display a panel listing cases that have exceeded their proces
 - THEN the system MUST navigate to the case detail view for "2024-042"
 
 ### REQ-DASH-005: My Work Preview [MVP]
+
+**Superseded 2026-09-13 (dashboard-my-work-split):** this panel is no longer
+on the Dashboard. It now lives on My Work (route `/`) as three widgets — My
+work (open tasks), Deadlines, Open Cases — kept as separate object-tables
+rather than one merged cases+tasks panel. The scenarios below describe the
+pre-split panel shape and are retained for history, not as the current
+contract; see `openspec/specs/my-work/spec.md` for what ships today.
 
 The dashboard MUST display a preview of the current user's personal workload, showing the top 5 most urgent items.
 
@@ -761,11 +778,15 @@ Every table on the Dashboard SHALL carry a View all link whose route query equal
 ### Requirement: KPI tiles render on a fresh load (REQ-DASH-021)
 The five stat tiles SHALL render their values on the first load of the Dashboard in a new browser session. You never see "Widget not available" for a tile whose endpoint answers.
 
-#### Scenario: Fresh session lands on the Dashboard
+#### Scenario: A fresh load of the Dashboard shows every KPI tile
 - **GIVEN** a new browser context with no page visited before
-- **WHEN** you open `/apps/dossiq/`
+- **WHEN** you open `/apps/dossiq/dashboard`
 - **THEN** the tiles Open cases, Overdue, Completed this month, My tasks and SLA compliance each show a number
 - @e2e covered by `tests/e2e/dashboard-tiles.spec.ts` (tasks.md 3.1)
+- Superseded 2026-09-13 (dashboard-my-work-split): opening `/apps/dossiq/`
+  now lands on My Work, not the Dashboard — see
+  `openspec/specs/my-work-landing/spec.md`'s "My Work is the default landing
+  page" requirement for that scenario.
 
 ### Requirement: The case type list on New case is sorted and filtered (REQ-DASH-022)
 The New case form SHALL list case types ordered by title, without drafts and without types whose validity has ended. You pick from a list you can scan.

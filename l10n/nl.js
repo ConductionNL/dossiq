@@ -3955,6 +3955,10 @@ OC.L10N.register(
         "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw.",
         "Bulk action changed nothing": "Bulkactie heeft niets gewijzigd",
         "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt",
+        "Case volume, status and performance across the team": "Zaakvolume, status en prestaties van het team",
+        "Open My work in the menu": "Open Mijn werk in het menu",
+        "Your open tasks, deadlines and open cases": "Je open taken, deadlines en open zaken",
+        "Your work lives here: today's tasks, deadlines and open cases in one place.": "Je werk staat hier: taken, deadlines en open zaken van vandaag op één plek.",
         "Locations on this case": "Locaties bij deze zaak",
         "The locations could not be loaded.": "De locaties konden niet worden geladen."
     },

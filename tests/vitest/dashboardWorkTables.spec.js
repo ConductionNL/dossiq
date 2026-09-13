@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * The Dashboard shows your work once, not four times.
+ * My Work shows your work once, not four times.
  *
  * What this pins down: `my-tasks` and `task-reminders` read `caseTask` with
  * the same `assignee: @me` + `isTerminalStatus: false` filter and differed
@@ -16,23 +16,28 @@
  * shown again. A future tile added that way fails here, which is the point.
  * The predicate is proved able to say yes before the sweep asks it anything.
  *
- * @spec openspec/specs/dashboard/spec.md
+ * dashboard-my-work-split (2026-09-13) moved these tables off the Dashboard
+ * page onto the My Work landing page (`MyWorkHome`, route `/`) — this file
+ * moved with them rather than staying a Dashboard-shaped test that happens
+ * to read the wrong page.
+ *
+ * @spec openspec/specs/my-work-landing/spec.md
  * @spec openspec/specs/signalering-widgets/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'
 
 /**
- * The Dashboard page definition.
+ * The My Work landing page definition.
  *
- * @return {object} The manifest page whose id is `Dashboard`.
+ * @return {object} The manifest page whose id is `MyWorkHome`.
  */
-export function dashboardPage() {
-	return manifest.pages.find((p) => p.id === 'Dashboard')
+export function myWorkPage() {
+	return manifest.pages.find((p) => p.id === 'MyWorkHome')
 }
 
 /**
- * Every `object-table` widget on the Dashboard.
+ * Every `object-table` widget on My Work.
  *
  * `my-work` is deliberately NOT one of them since remove-casetask 2.3. Its
  * rows are engine tasks behind `/api/flow-tasks`, which have no register and
@@ -44,17 +49,17 @@ export function dashboardPage() {
  * @return {Array<object>} The widget entries, in manifest order.
  */
 export function objectTables() {
-	return dashboardPage().config.widgets.filter((w) => w.type === 'object-table')
+	return myWorkPage().config.widgets.filter((w) => w.type === 'object-table')
 }
 
 /**
- * One Dashboard widget by id, whatever its type.
+ * One My Work widget by id, whatever its type.
  *
  * @param {string} id The manifest widget id.
  * @return {object|undefined} The widget entry.
  */
 export function widgetById(id) {
-	return dashboardPage().config.widgets.find((w) => w.id === id)
+	return myWorkPage().config.widgets.find((w) => w.id === id)
 }
 
 /**
@@ -122,12 +127,12 @@ export function duplicatesAnother(a, b) {
  * @return {Array<object>} Matching layout entries.
  */
 export function cellsFor(widgetId) {
-	return dashboardPage().config.layout.filter((c) => c.widgetId === widgetId)
+	return myWorkPage().config.layout.filter((c) => c.widgetId === widgetId)
 }
 
-describe('dashboard work tables', () => {
+describe('my work tables', () => {
 	it('shows one My work table and one Deadlines table', () => {
-		const ids = dashboardPage().config.widgets.map((w) => w.id)
+		const ids = myWorkPage().config.widgets.map((w) => w.id)
 		expect(ids).toContain('my-work')
 		expect(ids).toContain('deadlines')
 		// The four tiles these two replace are gone, not merely hidden.
@@ -212,11 +217,11 @@ describe('dashboard work tables', () => {
 		expect(JSON.stringify(w.content)).not.toContain('caseTask')
 	})
 
-	it('no Dashboard widget reads caseTask any more', () => {
+	it('no My Work widget reads caseTask any more', () => {
 		// The whole page, not just this tile: `content` is where a retired
 		// slug survives a migration, and every other widget on the page is
 		// declared the same way.
-		for (const w of dashboardPage().config.widgets) {
+		for (const w of myWorkPage().config.widgets) {
 			expect(
 				JSON.stringify(w.content ?? {}),
 				`widget ${w.id} still reads caseTask`,
@@ -229,7 +234,7 @@ describe('dashboard work tables', () => {
 		// "Widget not available" placeholder and reports nothing. The map has
 		// to be a SIBLING of `config`: CnPageRenderer reads `page.slots`, and
 		// one nested under `config` is accepted by the schema and never read.
-		const page = dashboardPage()
+		const page = myWorkPage()
 		expect(page.slots).toBeTypeOf('object')
 		expect(page.slots['widget-my-work']).toBe('MyWorkWidget')
 		expect(
@@ -292,7 +297,7 @@ describe('dashboard work tables', () => {
 		// Every widget, not only the object-tables: `my-work` left that set
 		// when it became a custom widget, and a tile placed twice renders
 		// twice whatever its type.
-		const page = dashboardPage()
+		const page = myWorkPage()
 		for (const w of page.config.widgets) {
 			expect(cellsFor(w.id), `layout cells for ${w.id}`).toHaveLength(1)
 		}
@@ -313,7 +318,7 @@ describe('dashboard work tables', () => {
 	})
 
 	it('every widget on the page is placed, and every cell names a widget', () => {
-		const page = dashboardPage()
+		const page = myWorkPage()
 		const declared = new Set(page.config.widgets.map((w) => w.id))
 		const placed = new Set(page.config.layout.map((c) => c.widgetId))
 		expect([...declared].filter((id) => !placed.has(id))).toEqual([])

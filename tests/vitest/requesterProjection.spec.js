@@ -105,12 +105,12 @@ describe('RequesterProjection', () => {
 		const fetchObject = vi.fn().mockImplementation(async (type) =>
 			type === 'case'
 				? {
-					id: 'case-1',
-					requester: 'uuid-person-1',
-					initiatorType: 'person',
-					initiatorSourceId: '999990627',
-					initiatorDisplayName: 'Stephan Janssen',
-				}
+						id: 'case-1',
+						requester: 'uuid-person-1',
+						initiatorType: 'person',
+						initiatorSourceId: '999990627',
+						initiatorDisplayName: 'Stephan Janssen',
+					}
 				: PERSON_ROW,
 		)
 

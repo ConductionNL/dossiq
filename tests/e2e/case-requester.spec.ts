@@ -670,5 +670,4 @@ test.describe('The requester on the case', () => {
 			'the sidebar names the requester filter',
 		).toBeVisible({ timeout: 15_000 })
 	})
-
 })

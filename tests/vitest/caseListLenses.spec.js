@@ -254,7 +254,8 @@ describe('the relative-date tokens the windows are built from', () => {
 })
 
 /**
- * The dashboard widgets that link to the Cases page with a deadline filter.
+ * The dashboard / My Work widgets that link to the Cases page with a
+ * deadline filter.
  *
  * `dashboard-tiles` merged `overdue-cases` and `deadline-alerts` into one
  * `deadlines` table whose window is WIDER than the Overdue chip: everything
@@ -264,12 +265,18 @@ describe('the relative-date tokens the windows are built from', () => {
  * chip exactly; `deadlines` must reproduce its OWN filter, which is what
  * makes its count and its View all agree.
  *
- * @return {object} The Dashboard page's widgets, by id.
+ * dashboard-my-work-split (2026-09-13) moved `deadlines` off the Dashboard
+ * page onto the My Work landing page (`MyWorkHome`); `kpi-overdue` stayed on
+ * the Dashboard. Both pages are read here so either widget resolves.
+ *
+ * @return {object} The two pages' widgets, by id.
  */
 function dashboardWidgets() {
 	const byId = {}
-	for (const widget of page('Dashboard').config.widgets) {
-		byId[widget.id] = widget
+	for (const pageId of ['Dashboard', 'MyWorkHome']) {
+		for (const widget of page(pageId).config.widgets) {
+			byId[widget.id] = widget
+		}
 	}
 	return byId
 }
