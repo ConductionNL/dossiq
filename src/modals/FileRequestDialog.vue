@@ -172,6 +172,8 @@ export default {
 		 * The case uuid: the prop when it holds one, else the route's.
 		 *
 		 * @return {string} The uuid.
+		 *
+		 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
@@ -194,6 +196,8 @@ export default {
 		 * The people on the case, each with whether they can be asked.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 		 */
 		async loadParties() {
 			this.loading = true
@@ -221,6 +225,8 @@ export default {
 		 * Send the request to the selected party.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 		 */
 		async send() {
 			if (this.selected === '') {
