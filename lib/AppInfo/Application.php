@@ -124,3 +124,5 @@ class Application extends App implements IBootstrap {
 		);
 	}//end boot()
 }//end class
+
+// e2e trigger probe for .github#768: a code path change on a development PR. Delete this PR after reading its run.
