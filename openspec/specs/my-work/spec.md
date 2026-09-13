@@ -4,6 +4,14 @@ status: done
 
 # My Work Specification
 
+**Name collision, read before editing either file.** This spec is about the
+`/my-work` case index — labelled "Assigned to me" in the navigation since
+`add-work-queue`, and still called "My Work" here because that was its name
+when this spec was written. The app's *landing page* (route `/`, nav label
+"My work") is a different surface, specified in
+`openspec/specs/my-work-landing/spec.md`. If you are looking for the widgets a
+handler sees on opening the app, that is the other file.
+
 ## Purpose
 
 My Work is the personal starting point for a case handler: the list of cases
@@ -22,8 +30,12 @@ filtering, sorting, the sidebar and navigation behave identically.
 **Scope note (2026-07):** My Work was simplified from a bespoke cases+tasks
 "werkvoorraad" board (urgency grouping, filter tabs, show-completed) to a
 standard `CnIndexPage` card list of assigned cases. Task aggregation, urgency
-grouping and cross-app (Pipelinq) workload were dropped from this view; the
-personal-workload dashboard widgets (below) remain the at-a-glance surface.
+grouping and cross-app (Pipelinq) workload were dropped from this view.
+
+**Update 2026-09-13 (dashboard-my-work-split):** the personal-workload
+dashboard widgets this note used to point at have moved off the Dashboard
+onto the new My Work landing page (`openspec/specs/my-work-landing/spec.md`,
+route `/`) — they are no longer on `/dashboard`.
 
 **Competitive context**: Dimpact ZAC provides a configurable worklist with
 signaling cards and real-time updates; xxllnc Zaken uses phase-bound task

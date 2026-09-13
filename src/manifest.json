@@ -163,15 +163,15 @@
 						"id": "go-tasks",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
-						"body": "Your work lives here. Open My Work to see the tasks and cases assigned to you.",
-						"task": "Click My Work in the menu",
+						"body": "Your work lives here: today's tasks, deadlines and open cases in one place.",
+						"task": "Open My work in the menu",
 						"target": {
 							"kind": "nav-item",
-							"ref": "MyWork"
+							"ref": "WorkGroup"
 						},
 						"advanceOn": {
 							"type": "route-match",
-							"route": "MyWork"
+							"route": "MyWorkHome"
 						}
 					},
 					{
@@ -219,6 +219,7 @@
 			"id": "WorkGroup",
 			"label": "My work",
 			"icon": "ClipboardAccountOutline",
+			"route": "MyWorkHome",
 			"order": 20
 		},
 		{
@@ -413,11 +414,11 @@
 	"pages": [
 		{
 			"id": "Dashboard",
-			"route": "/",
+			"route": "/dashboard",
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
-				"description": "Cases, deadlines and your workload at a glance",
+				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
 						"id": "new-case",
@@ -668,124 +669,6 @@
 						}
 					},
 					{
-						"id": "open-cases",
-						"type": "object-table",
-						"title": "Open Cases",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false
-								},
-								"order": {
-									"startDate": "desc"
-								},
-								"limit": 7
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No cases found"
-						}
-					},
-					{
-						"id": "my-work",
-						"type": "custom",
-						"title": "My work",
-						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
-						"content": {
-							"limit": 10,
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks"
-							},
-							"viewAllLabel": "View all",
-							"emptyText": "You have no open tasks"
-						}
-					},
-					{
-						"id": "deadlines",
-						"type": "object-table",
-						"title": "Deadlines",
-						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"deadline": {
-										"lte": "@today+3d"
-									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 10
-							},
-							"columns": [
-								{
-									"key": "title",
-									"label": "Case",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDeadline",
-									"label": "Days left",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
-									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"rowClass": [
-								{
-									"when": {
-										"field": "daysUntilDeadline",
-										"op": "lt",
-										"value": 0
-									},
-									"class": "cn-row--danger"
-								}
-							],
-							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"deadline[lte]": "@today+3d"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": false,
-							"borderless": true,
-							"emptyText": "No deadlines in the next three days"
-						}
-					},
-					{
 						"id": "stalled-cases",
 						"type": "object-table",
 						"title": "Stalled Cases",
@@ -891,37 +774,10 @@
 						"showTitle": false
 					},
 					{
-						"id": "7",
-						"widgetId": "my-work",
-						"gridX": 0,
-						"gridY": 6,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "8",
-						"widgetId": "deadlines",
-						"gridX": 4,
-						"gridY": 6,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "9",
-						"widgetId": "open-cases",
-						"gridX": 8,
-						"gridY": 6,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
 						"id": "10",
 						"widgetId": "stalled-cases",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -938,8 +794,206 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "MyWorkHome",
+			"route": "/",
+			"type": "dashboard",
+			"title": "My Work",
+			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
+			"config": {
+				"description": "Your open tasks, deadlines and open cases",
+				"headerActions": [
+					{
+						"id": "new-case",
+						"type": "open-form",
+						"label": "New case",
+						"size": "large",
+						"columns": 2,
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"description",
+							"assignee",
+							"priority",
+							"confidentiality",
+							"intakeChannel",
+							"startDate",
+							"plannedEndDate"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							}
+						},
+						"icon": "Plus",
+						"register": "dossiq",
+						"schema": "case",
+						"onSuccessRoute": "CaseDetail",
+						"successMessage": "Case created.",
+						"props": {
+							"assignee": "@me",
+							"confidentiality": "vertrouwelijk"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "my-work",
+						"type": "custom",
+						"title": "My work",
+						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
+						"content": {
+							"limit": 10,
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks"
+							},
+							"viewAllLabel": "View all",
+							"emptyText": "You have no open tasks"
+						}
+					},
+					{
+						"id": "deadlines",
+						"type": "object-table",
+						"title": "Deadlines",
+						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false,
+									"deadline": {
+										"lte": "@today+3d"
+									}
+								},
+								"extend": ["calculations"],
+								"order": {
+									"deadline": "asc"
+								},
+								"limit": 10
+							},
+							"columns": [
+								{
+									"key": "title",
+									"label": "Case",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "daysUntilDeadline",
+									"label": "Days left",
+									"formatter": "conditionalPhrase",
+									"formatterOptions": {
+										"negative": "{n} days overdue",
+										"zero": "Due today",
+										"positive": "{n} days remaining"
+									},
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"rowClass": [
+								{
+									"when": {
+										"field": "daysUntilDeadline",
+										"op": "lt",
+										"value": 0
+									},
+									"class": "cn-row--danger"
+								}
+							],
+							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"deadline[lte]": "@today+3d"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": false,
+							"borderless": true,
+							"emptyText": "No deadlines in the next three days"
+						}
+					},
+					{
+						"id": "open-cases",
+						"type": "object-table",
+						"title": "Open Cases",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false
+								},
+								"order": {
+									"startDate": "desc"
+								},
+								"limit": 7
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted cn-cell--end"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No cases found"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "my-work",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "2",
+						"widgetId": "deadlines",
+						"gridX": 4,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "3",
+						"widgetId": "open-cases",
+						"gridX": 8,
+						"gridY": 0,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					}
+				],
+				"documentationUrl": "https://procest.conduction.nl"
 			},
-			"_note": "The `slots` map below is not decoration. A `type: \"custom\"` dashboard widget resolves ONLY through it, and it must sit here beside `config`, never inside it. CnPageRenderer reads `page.slots`; a slots map nested under `config` is never read, the widget renders the \"Widget not available\" placeholder, and the manifest schema accepts it either way because `config` is additionalProperties:true. Nine of decidesk's eleven widgets shipped that way on 2026-06-13.",
 			"slots": {
 				"widget-my-work": "MyWorkWidget"
 			}

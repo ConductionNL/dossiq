@@ -53,7 +53,7 @@ test.describe('Dashboard', () => {
 		// heading so a bare `<h2>Dashboard</h2>` rendered by some other chrome
 		// could not satisfy this on its own.
 		await expect(
-			page.getByText('Cases, deadlines and your workload at a glance'),
+			page.getByText('Case volume, status and performance across the team'),
 		).toBeVisible({ timeout: 30_000 })
 		// The single declared header action. `exact` matters: the widget grid
 		// below carries case rows whose text also contains "case".
@@ -62,7 +62,7 @@ test.describe('Dashboard', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#fresh-session-lands-on-the-dashboard
+	// @e2e openspec/specs/dashboard/spec.md#a-fresh-load-of-the-dashboard-shows-every-kpi-tile
 	test('the KPI tiles render numbers on a fresh load, not the widget fallback', async ({
 		page,
 	}) => {
@@ -70,7 +70,11 @@ test.describe('Dashboard', () => {
 		// used to be registered only by the lazy detail-page chunk, so the
 		// dashboard was fine after visiting a case and broken as the first
 		// page of a session. Client-side navigation cannot tell the two apart.
-		await page.goto('/index.php/apps/dossiq/')
+		//
+		// dashboard-my-work-split moved the app's landing page to My Work;
+		// the Dashboard (KPI tiles, charts, Stalled Cases) now lives at its
+		// own route.
+		await page.goto('/index.php/apps/dossiq/dashboard')
 		await dismissSupportDialog(page)
 		const tiles = page.locator('.cn-stat-widget')
 		await expect(tiles.first()).toBeVisible({ timeout: 30_000 })

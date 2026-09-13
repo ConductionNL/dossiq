@@ -56,14 +56,16 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// The subtitle is one key on one page. A change that moves the page
 		// count or the menu has done something else as well.
 		//
-		// 49, not 44: `pluggable-integration-registry` adds Integrations,
+		// 50, not 44: `pluggable-integration-registry` adds Integrations,
 		// `contacts-domain` adds Contacts, ContactDetail and
-		// OrganisationDetail, and `contacts-you-can-find` adds Organisations —
+		// OrganisationDetail, `contacts-you-can-find` adds Organisations —
 		// the index that makes OrganisationDetail reachable by something other
-		// than a case that already names the company. The number is what makes
+		// than a case that already names the company — and
+		// `dashboard-my-work-split` adds MyWorkHome, the new landing page that
+		// carries the widgets split off the Dashboard. The number is what makes
 		// this assertion worth anything, so it is raised by exactly the pages
 		// that were added rather than loosened to a range.
-		expect(manifest.pages).toHaveLength(49)
+		expect(manifest.pages).toHaveLength(50)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)

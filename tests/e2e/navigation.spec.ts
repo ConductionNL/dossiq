@@ -139,7 +139,16 @@ test.describe('Sidebar Navigation', () => {
 		// Expanding first is what makes this a real click-path test. Navigating
 		// straight to the href would pass without the group ever opening, which
 		// is precisely the interaction a reader depends on.
-		await nav.getByRole('link', { name: 'My work', exact: true }).click()
+		//
+		// dashboard-my-work-split gave the group's own label a route (it now
+		// opens the My Work landing page), so clicking the LABEL navigates
+		// instead of expanding — the collapse CHEVRON is the only thing that
+		// still toggles. Scoped to this one entry: Contacts is also a
+		// collapsible group and carries the same "Open menu" accessible name.
+		const workGroupEntry = page.getByTestId('cn-nav-entry-WorkGroup')
+		await workGroupEntry
+			.getByRole('button', { name: /^(Open menu|Collapse menu)$/ })
+			.click()
 
 		const casesLink = nav.getByRole('link', {
 			name: /^(All cases|Alle zaken)$/,
@@ -147,5 +156,17 @@ test.describe('Sidebar Navigation', () => {
 		await expect(casesLink).toBeVisible({ timeout: 15_000 })
 		await casesLink.click()
 		await expect(page).toHaveURL(/.*cases/)
+	})
+
+	// @e2e openspec/specs/my-work-landing/spec.md#scenario-clicking-the-label-navigates-without-requiring-expansion
+	test('clicking the My work label opens My Work without requiring expansion', async ({
+		page,
+	}) => {
+		// Land somewhere other than "/" first, so a navigation actually has to
+		// happen for this assertion to mean anything.
+		await page.goto('/index.php/apps/dossiq/cases')
+		const nav = sidebarNav(page)
+		await nav.getByRole('link', { name: 'My work', exact: true }).click()
+		await expect(page).toHaveURL(/\/index\.php\/apps\/dossiq\/?$/)
 	})
 })
