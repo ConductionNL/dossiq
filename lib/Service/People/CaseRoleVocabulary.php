@@ -83,7 +83,25 @@ class CaseRoleVocabulary {
 
 		$configuration['linkRoles'] = $roles;
 		$schema->setConfiguration($configuration);
-		$this->schemaMapper()->update($schema);
+		$stored = $this->schemaMapper()->update($schema);
+
+		// Read back rather than trust the write: OpenRegister drops a
+		// configuration key its own vocabulary does not know, in silence, which
+		// is what made the documented `x-contactRoles` a no-op for a year. An
+		// instance whose OpenRegister predates people-on-objects lands here.
+		$kept = [];
+		if (is_object($stored) === true && is_callable([$stored, 'getConfiguration']) === true) {
+			$kept = (array)(call_user_func([$stored, 'getConfiguration'])['linkRoles'] ?? []);
+		}
+
+		if ($kept === [] && $roles !== []) {
+			$this->logger->warning(
+				'Dossiq people: the case schema did not keep its link roles. OpenRegister drops a '
+				. 'configuration key it does not know, so people can be linked in no role until it '
+				. 'carries the people-on-objects vocabulary.'
+			);
+			return -1;
+		}
 
 		return count($roles);
 	}//end sync()

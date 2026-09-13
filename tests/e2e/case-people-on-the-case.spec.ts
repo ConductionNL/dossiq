@@ -115,7 +115,7 @@ test.describe('People on the case', () => {
 	})
 
 	// @e2e openspec/specs/people-on-the-case/spec.md#req-poc-002a-the-vocabulary-follows-the-role-types
-	test('the case schema declares the instance\'s role types as its roles', async () => {
+	test("the case schema declares the instance's role types as its roles", async () => {
 		const listing = await peopleOn(caseId)
 		expect(
 			Array.isArray(listing.roles) && listing.roles.length > 0,
@@ -139,7 +139,11 @@ test.describe('People on the case', () => {
 					'OCS-APIRequest': 'true',
 					'Content-Type': 'application/json',
 				},
-				data: { userId: ADMIN, role: roleTypeId, note: `${RUN_PREFIX} party` },
+				data: {
+					userId: ADMIN,
+					role: roleTypeId,
+					note: `${RUN_PREFIX} party`,
+				},
 			},
 		)
 		expect(
@@ -189,7 +193,10 @@ test.describe('People on the case', () => {
 			`/index.php/apps/dossiq/api/cases/${caseId}/file-requests/parties`,
 			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
 		)
-		expect(res.ok(), `the parties must be listed, got ${res.status()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`the parties must be listed, got ${res.status()}`,
+		).toBeTruthy()
 		const parties = (await res.json())?.parties ?? []
 		const party = parties.find(
 			(row: any) => String(row.id ?? '') === `user:${ADMIN}`,
@@ -231,7 +238,10 @@ test.describe('People on the case', () => {
 					(await rolesOn(caseId)).filter(
 						(row) => String(row.participant ?? '') === `user:${ADMIN}`,
 					).length,
-				{ timeout: 20_000, message: 'the role record must go with the link' },
+				{
+					timeout: 20_000,
+					message: 'the role record must go with the link',
+				},
 			)
 			.toBe(0)
 

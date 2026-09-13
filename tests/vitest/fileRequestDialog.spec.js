@@ -36,7 +36,7 @@ vi.mock('@nextcloud/dialogs', () => ({
 }))
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text, vars) =>
-		String(text).replace(/\{(\w+)\}/g, (_, key) => (vars?.[key] ?? '')),
+		String(text).replace(/\{(\w+)\}/g, (_, key) => vars?.[key] ?? ''),
 }))
 
 /**
@@ -48,7 +48,17 @@ vi.mock('@nextcloud/l10n', () => ({
 function control(name) {
 	return defineComponent({
 		name,
-		props: ['modelValue', 'value', 'label', 'placeholder', 'type', 'name', 'disabled', 'size', 'variant'],
+		props: [
+			'modelValue',
+			'value',
+			'label',
+			'placeholder',
+			'type',
+			'name',
+			'disabled',
+			'size',
+			'variant',
+		],
 		emits: ['update:modelValue', 'click'],
 		render() {
 			return h(
@@ -74,9 +84,8 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 // Imported AFTER the mocks so the dialog sees the stubbed packages.
-const { default: FileRequestDialog } = await import(
-	'../../src/modals/FileRequestDialog.vue'
-)
+const { default: FileRequestDialog } =
+	await import('../../src/modals/FileRequestDialog.vue')
 
 /**
  * Mount the dialog on a case, the way the registry mounts it.
@@ -96,8 +105,18 @@ beforeEach(() => {
 	mockGet.mockResolvedValue({
 		data: {
 			parties: [
-				{ id: 'contact-8', name: 'Piet Pietersen', email: 'piet@example.nl', canBeAsked: true },
-				{ id: 'user:jan', name: 'Jan de Vries', email: '', canBeAsked: false },
+				{
+					id: 'contact-8',
+					name: 'Piet Pietersen',
+					email: 'piet@example.nl',
+					canBeAsked: true,
+				},
+				{
+					id: 'user:jan',
+					name: 'Jan de Vries',
+					email: '',
+					canBeAsked: false,
+				},
 			],
 		},
 	})
@@ -112,7 +131,9 @@ describe('FileRequestDialog', () => {
 			'/apps/dossiq/api/cases/case-1/file-requests/parties',
 		)
 		const askable = wrapper.findAll('[data-testid="file-request-party"]')
-		const unavailable = wrapper.findAll('[data-testid="file-request-party-unavailable"]')
+		const unavailable = wrapper.findAll(
+			'[data-testid="file-request-party-unavailable"]',
+		)
 		expect(askable).toHaveLength(1)
 		expect(unavailable).toHaveLength(1)
 		expect(unavailable[0].text()).toContain('Jan de Vries')
@@ -129,18 +150,25 @@ describe('FileRequestDialog', () => {
 		await wrapper.setData({ note: 'The lease, please', days: '7' })
 		await wrapper.vm.send()
 
-		expect(mockPost).toHaveBeenCalledWith('/apps/dossiq/api/cases/case-1/file-requests', {
-			personId: 'contact-8',
-			note: 'The lease, please',
-			days: 7,
-		})
+		expect(mockPost).toHaveBeenCalledWith(
+			'/apps/dossiq/api/cases/case-1/file-requests',
+			{
+				personId: 'contact-8',
+				note: 'The lease, please',
+				days: 7,
+			},
+		)
 		expect(mockShowSuccess).toHaveBeenCalled()
 		expect(wrapper.emitted('close')).toBeTruthy()
 	})
 
-	it('shows the server\'s reason when the request cannot be sent, and stays open', async () => {
+	it("shows the server's reason when the request cannot be sent, and stays open", async () => {
 		mockPost.mockRejectedValue({
-			response: { data: { error: 'This person has no email address, so there is nobody to send the request to' } },
+			response: {
+				data: {
+					error: 'This person has no email address, so there is nobody to send the request to',
+				},
+			},
 		})
 		const wrapper = mountDialog()
 		await flushPromises()
@@ -158,13 +186,19 @@ describe('FileRequestDialog', () => {
 		const wrapper = mountDialog()
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="file-request-empty"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="file-request-empty"]').exists()).toBe(
+			true,
+		)
 		expect(wrapper.vm.selected).toBe('')
 	})
 
 	it('sends nothing while no party is selected', async () => {
 		mockGet.mockResolvedValue({
-			data: { parties: [{ id: 'user:jan', name: 'Jan', email: '', canBeAsked: false }] },
+			data: {
+				parties: [
+					{ id: 'user:jan', name: 'Jan', email: '', canBeAsked: false },
+				],
+			},
 		})
 		const wrapper = mountDialog()
 		await flushPromises()

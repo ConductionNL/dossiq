@@ -97,6 +97,13 @@ class CaseRoleVocabularyTest extends TestCase {
 			public ?array $configuration = null;
 
 			/**
+			 * Whether this schema's OpenRegister knows the key at all.
+			 *
+			 * @var bool
+			 */
+			public bool $dropsLinkRoles = false;
+
+			/**
 			 * The configuration.
 			 *
 			 * @return array<string, mixed>|null The configuration.
@@ -113,6 +120,10 @@ class CaseRoleVocabularyTest extends TestCase {
 			 * @return void
 			 */
 			public function setConfiguration(?array $configuration): void {
+				if ($this->dropsLinkRoles === true && is_array($configuration) === true) {
+					unset($configuration['linkRoles']);
+				}
+
 				$this->configuration = $configuration;
 			}
 		};
@@ -237,4 +248,23 @@ class CaseRoleVocabularyTest extends TestCase {
 
 		$this->assertSame(expected: -1, actual: $vocabulary->sync());
 	}//end testWithoutOpenRegisterTheSyncSaysSo()
-}//end class
+
+	/**
+	 * A schema that silently drops the key is reported, not called a success.
+	 *
+	 * OpenRegister drops a configuration key its own vocabulary does not know,
+	 * which is exactly how the documented `x-contactRoles` never did anything.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 */
+	public function testAVocabularyTheSchemaDropsIsReported(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+		// An OpenRegister that does not know the key keeps everything else and
+		// loses this one.
+		$this->schema->dropsLinkRoles = true;
+
+		$this->assertSame(expected: -1, actual: $this->vocabulary->sync());
+	}//end testAVocabularyTheSchemaDropsIsReported()
+}
