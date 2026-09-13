@@ -95,6 +95,7 @@ class ZrcController extends ZgwController {
 	 * @param CaseRelationService $caseRelationService Typed peer-relation service
 	 * @param ArchivalNominationDeriver $archivalDeriver The one zrc-021 derivation,
 	 *                                                   shared with the in-app closing path
+	 * @param DocumentJoinHoming $joinHoming Refuses a join to a case without a folder, and moves the file into it
 	 */
 	public function __construct(
 		string $appName,
@@ -251,7 +252,7 @@ class ZrcController extends ZgwController {
 				}
 			}
 
-			// documents-live-on-the-case: a join names the case whose folder the
+			// Documents live on the case: a join names the case whose folder the
 			// document's file moves into, so a case without a folder refuses it.
 			if ($resource === 'zaakinformatieobjecten') {
 				$refusal = $this->joinHoming->refusal(caseUrl: $this->joinCaseUrl(originalBody: $originalBody, body: $body));
@@ -313,7 +314,7 @@ class ZrcController extends ZgwController {
 				$ioUrl = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
 				$this->syncCreateObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
 
-				// documents-live-on-the-case: the first join moves the file into the case.
+				// Documents live on the case: the first join moves the file into the case.
 				$this->joinHoming->home(caseUrl: $caseUrl, informatieobjectUrl: (string)$ioUrl);
 			}
 
