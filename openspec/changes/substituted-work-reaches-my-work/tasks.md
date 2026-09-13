@@ -2,12 +2,12 @@
 
 Tier: V1. Kind: code. Row 13.17.
 
-- [ ] 1.1 `src/views/MyWorkCards.vue` and `src/views/widgets/MyWorkWidget.vue`:
+- [x] 1.1 `src/views/MyWorkCards.vue` and `src/views/widgets/MyWorkWidget.vue`:
   call `fetchSubstitutedWork()`, merge, mark, toggle (D-1).
   - vitest: rows merged and marked; toggle hides; every export of
     `substitutionHelpers.js` has a caller or is deleted
   - `@spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md`
-- [ ] 1.2 `lib/Service/SubstitutionService.php`: the leave read (D-2),
+- [x] 1.2 `lib/Service/SubstitutionService.php`: the leave read (D-2),
   bounded, guarded on humaniq's presence.
   - `tests/Unit/Service/SubstitutionServiceTest.php`: leave overrides,
     typed dates rule, humaniq absent
