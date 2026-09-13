@@ -138,13 +138,57 @@ class DocumentZaakdossierSchemaTest extends TestCase {
 	}//end testTheKeywordPropertyIsEnglishEverywhereInTheFile()
 
 	/**
-	 * Two new properties are a schema change, so the version moves.
+	 * A schema change moves the version, so the version is pinned.
+	 *
+	 * 1.1.0 added `keywords` and `direction`. 1.2.0 gave `status` and
+	 * `direction` the `x-enum-labels` asserted below, so a reader sees Draft
+	 * and Incoming rather than the stored codes.
 	 *
 	 * @return void
 	 */
-	public function testTheSchemaVersionCarriesTheTwoNewProperties(): void {
-		self::assertSame('1.1.0', $this->informatieobject()['version']);
-	}//end testTheSchemaVersionCarriesTheTwoNewProperties()
+	public function testTheSchemaVersionMovesWithEverySchemaChange(): void {
+		self::assertSame('1.2.0', $this->informatieobject()['version']);
+	}//end testTheSchemaVersionMovesWithEverySchemaChange()
+
+	/**
+	 * Every enum value of `status` and `direction` has a display label.
+	 *
+	 * A stored enum value is a contract code, and several read badly on
+	 * screen: `draft` and `incoming` are what a user saw before this map
+	 * existed. `x-enum-labels` is the convention the rest of the register set
+	 * uses, and `fieldsFromSchema` in @conduction/nextcloud-vue reads it.
+	 *
+	 * The map is asserted key by key rather than as a whole, so adding an
+	 * enum value without its label fails here and names the value.
+	 *
+	 * @return void
+	 */
+	public function testStatusAndDirectionLabelEveryEnumValue(): void {
+		$properties = ($this->informatieobject()['properties'] ?? []);
+
+		foreach (['status', 'direction'] as $name) {
+			$property = ($properties[$name] ?? []);
+			$labels = ($property['x-enum-labels'] ?? []);
+
+			self::assertNotEmpty(
+				$labels,
+				$name . ' must declare x-enum-labels, or its cells read the stored code'
+			);
+
+			foreach (($property['enum'] ?? []) as $value) {
+				self::assertArrayHasKey(
+					$value,
+					$labels,
+					$name . ' enum value "' . $value . '" has no display label'
+				);
+				self::assertNotSame(
+					$value,
+					$labels[$value],
+					$name . ' label for "' . $value . '" repeats the stored code'
+				);
+			}
+		}
+	}//end testStatusAndDirectionLabelEveryEnumValue()
 
 	/**
 	 * The join the Documents tab filters on is unchanged and still carries `case`.

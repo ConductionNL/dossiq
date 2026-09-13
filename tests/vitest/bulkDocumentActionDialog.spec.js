@@ -17,10 +17,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
 const mockPost = vi.fn()
+const mockGet = vi.fn()
 
-vi.mock('@nextcloud/axios', () => ({ default: { post: (...a) => mockPost(...a) } }))
-vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
-vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
+vi.mock('@nextcloud/axios', () => ({
+	default: { post: (...a) => mockPost(...a), get: (...a) => mockGet(...a) },
+}))
+// Substitutes `{placeholders}` the way @nextcloud/router does. The stub used
+// to return the path untouched, which quietly hid every id the component puts
+// in a URL: a per-row GET came out as the literal `.../{id}` and any assertion
+// about which row was fetched was unfalsifiable.
+vi.mock('@nextcloud/router', () => ({
+	generateUrl: (url, params) =>
+		String(url).replace(/\{(\w+)\}/g, (_, key) =>
+			String((params && params[key]) ?? `{${key}}`),
+		),
+}))
+const mockSuccess = vi.fn()
+const mockError = vi.fn()
+vi.mock('@nextcloud/dialogs', () => ({
+	showSuccess: (...a) => mockSuccess(...a),
+	showError: (...a) => mockError(...a),
+}))
 const mockEmit = vi.fn()
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
 
@@ -62,9 +79,31 @@ const { default: BulkDocumentActionDialog } =
 
 beforeEach(() => {
 	mockPost.mockReset()
+	mockGet.mockReset()
 	mockEmit.mockReset()
+	mockSuccess.mockReset()
+	mockError.mockReset()
 	mockPost.mockResolvedValue({
 		data: { results: [{ success: true }, { success: true }] },
+	})
+	// Every selected row is a zaakinformatieobject JOIN, and the id the
+	// endpoints want is the `informatieobject` it points at. `join-1` carries
+	// `doc-1` as a bare uuid and `join-2` carries `doc-2` inlined as an object,
+	// because `content.extend` decides which shape comes back and the component
+	// must read either.
+	mockGet.mockImplementation((url) => {
+		if (String(url).includes('join-1'))
+			return Promise.resolve({
+				data: { id: 'join-1', informatieobject: 'doc-1' },
+			})
+		if (String(url).includes('join-2'))
+			return Promise.resolve({
+				data: {
+					id: 'join-2',
+					informatieobject: { id: 'doc-2', title: 'Bulk two' },
+				},
+			})
+		return Promise.resolve({ data: { id: 'join-x', informatieobject: '' } })
 	})
 	// jsdom has no createObjectURL/revokeObjectURL by default.
 	window.URL.createObjectURL = vi.fn(() => 'blob:mock')
@@ -72,9 +111,77 @@ beforeEach(() => {
 })
 
 describe('BulkDocumentActionDialog — mark-final', () => {
-	it('POSTs the selected ids with status final', async () => {
+	// 🔴 THE IDS ARE THE POINT, AND THIS TEST USED TO ASSERT THE WRONG ONES.
+	// It passed `selectedIds: ['doc-1','doc-2']` and checked those same strings
+	// came back out, which is true of any component that forwards its prop. The
+	// widget selects `zaakinformatieobject` rows, so what arrives is join ids,
+	// and the endpoint resolves ids in the `informatieobject` schema. Sending
+	// them straight through matched nothing and left both documents `draft`.
+	it('resolves each join id to its document id before POSTing', async () => {
 		const wrapper = mount(BulkDocumentActionDialog, {
-			props: { mode: 'mark-final', selectedIds: ['doc-1', 'doc-2'] },
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-2'] },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockGet).toHaveBeenCalledWith(
+			'/apps/openregister/api/objects/dossiq/zaakinformatieobject/join-1',
+		)
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('bulk/status'),
+			{ ids: ['doc-1', 'doc-2'], status: 'final' },
+		)
+		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
+	})
+
+	// 🔴 A 200 IS NOT A RESULT. The endpoint answers 200 with a per-item list,
+	// and the dialog used to say "Bulk action applied" over a response in which
+	// every item had failed. That toast is why nothing on screen contradicted
+	// the join-id bug for as long as it shipped.
+	it('says nothing changed when every item failed', async () => {
+		mockPost.mockResolvedValue({
+			data: {
+				results: [
+					{ id: 'doc-1', success: false, error: 'not found' },
+					{ id: 'doc-2', success: false, error: 'not found' },
+				],
+			},
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-2'] },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockSuccess).not.toHaveBeenCalled()
+		expect(mockError).toHaveBeenCalledWith('Bulk action changed nothing')
+	})
+
+	it('counts what actually succeeded when only some items did', async () => {
+		mockPost.mockResolvedValue({
+			data: {
+				results: [
+					{ id: 'doc-1', success: true },
+					{ id: 'doc-2', success: false, error: 'not found' },
+				],
+			},
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-2'] },
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockError).not.toHaveBeenCalled()
+		expect(mockSuccess).toHaveBeenCalledWith('1 of 2 document(s) updated')
+	})
+
+	it('drops a join whose document cannot be resolved', async () => {
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', selectedIds: ['join-1', 'join-broken'] },
 		})
 
 		await wrapper.vm.onConfirm()
@@ -82,20 +189,20 @@ describe('BulkDocumentActionDialog — mark-final', () => {
 
 		expect(mockPost).toHaveBeenCalledWith(
 			expect.stringContaining('bulk/status'),
-			{ ids: ['doc-1', 'doc-2'], status: 'final' },
+			{ ids: ['doc-1'], status: 'final' },
 		)
-		expect(mockEmit).toHaveBeenCalledWith('cn:page:refresh')
 	})
 })
 
 describe('BulkDocumentActionDialog — confidentiality', () => {
 	it('POSTs the chosen level as metadata.vertrouwelijkheidaanduiding', async () => {
 		const wrapper = mount(BulkDocumentActionDialog, {
-			props: { mode: 'confidentiality', selectedIds: ['doc-1'] },
+			props: { mode: 'confidentiality', selectedIds: ['join-1'] },
 		})
 		await wrapper.setData({ level: 'geheim' })
 
 		await wrapper.vm.onConfirm()
+		await flushPromises()
 
 		// MUTATION CHECK (red half): sending `level` at the top level instead
 		// of nested under `metadata` would still hit the endpoint but the

@@ -3952,7 +3952,9 @@ OC.L10N.register(
         "The case plan is unavailable": "Het zaakplan is niet beschikbaar",
         "This case type has no adaptive plan": "Dit zaaktype heeft geen adaptief plan",
         "You are not allowed to see the plan for this case.": "U mag het plan van deze zaak niet inzien.",
-        "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw."
+        "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw.",
+        "Bulk action changed nothing": "Bulkactie heeft niets gewijzigd",
+        "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt"
     },
     "nplurals=2; plural=(n != 1);"
 )

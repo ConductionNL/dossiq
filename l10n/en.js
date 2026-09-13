@@ -3952,7 +3952,9 @@ OC.L10N.register(
         "Try again": "Try again",
         "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case.",
         "Not issued": "Not issued",
-        "Not possible from the current status": "Not possible from the current status"
+        "Not possible from the current status": "Not possible from the current status",
+        "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
+        "Bulk action changed nothing": "Bulk action changed nothing"
     },
     "nplurals=2; plural=(n != 1);"
 )
