@@ -435,17 +435,6 @@ class StatusTransitionController extends Controller {
 	private const GESTURES = [self::GESTURE_TRANSITION, 'suspend', 'resume', 'extend'];
 
 	/**
-	 * Read the requested gesture from a decoded request body.
-	 *
-	 * An absent or unrecognised gesture reads as `transition`, which keeps
-	 * every existing caller — the workflow board's dialog, which sends no
-	 * `gesture` at all — on exactly the path it was on.
-	 *
-	 * @param array<string, mixed> $body Decoded request body
-	 *
-	 * @return string One of the GESTURES
-	 */
-	/**
 	 * Translate a refusal into the response ADR-050 describes.
 	 *
 	 * The rule slug goes in `error`, the sentence the engine authored goes in
@@ -477,6 +466,17 @@ class StatusTransitionController extends Controller {
 		);
 	}//end refused()
 
+	/**
+	 * Read the requested gesture from a decoded request body.
+	 *
+	 * An absent or unrecognised gesture reads as `transition`, which keeps
+	 * every existing caller — the workflow board's dialog, which sends no
+	 * `gesture` at all — on exactly the path it was on.
+	 *
+	 * @param array<string, mixed> $body Decoded request body
+	 *
+	 * @return string One of the GESTURES
+	 */
 	private function readGesture(array $body): string {
 		$gesture = (string)($body['gesture'] ?? self::GESTURE_TRANSITION);
 		if (in_array($gesture, self::GESTURES, true) === false) {
