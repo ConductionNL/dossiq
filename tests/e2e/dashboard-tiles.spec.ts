@@ -184,7 +184,12 @@ function isoDay(days: number): string {
 }
 
 /**
- * Open the dashboard from a hard load and settle the support dialog.
+ * Open the team-overview Dashboard (`/dashboard`) from a hard load and settle
+ * the support dialog.
+ *
+ * dashboard-my-work-split moved the app's landing page to My Work
+ * (`openMyWork`, below); the Dashboard now holds only the KPI tiles, the
+ * status/type charts and Stalled Cases, at its own route.
  *
  * A HARD load, deliberately: the widget catalog used to register only inside
  * the lazy detail-page chunk, so the tiles were fine after a client-side visit
@@ -194,6 +199,22 @@ function isoDay(days: number): string {
  * @param page The Playwright page.
  */
 async function openDashboard(page: Page): Promise<void> {
+	await page.goto(`/index.php/apps/${REGISTER}/dashboard`)
+	await dismissSupportDialog(page)
+}
+
+/**
+ * Open My Work — the app's landing page — from a hard load and settle the
+ * support dialog. Carries the My work / Deadlines / Open Cases widgets that
+ * used to sit on the Dashboard; see the file header.
+ *
+ * A HARD load for the same reason `openDashboard` uses one: the widget
+ * catalog and header actions must be exercised on first paint, not after a
+ * client-side navigation.
+ *
+ * @param page The Playwright page.
+ */
+async function openMyWork(page: Page): Promise<void> {
 	await page.goto(`/index.php/apps/${REGISTER}/`)
 	await dismissSupportDialog(page)
 }
@@ -516,7 +537,7 @@ test.describe('Dashboard tiles', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-fresh-session-lands-on-the-dashboard
+	// @e2e openspec/specs/dashboard/spec.md#a-fresh-load-of-the-dashboard-shows-every-kpi-tile
 	test('every KPI tile shows a number on the first load of a session', async ({
 		page,
 	}) => {
@@ -558,7 +579,7 @@ test.describe('Dashboard tiles', () => {
 		test('My work lists each of your open tasks once, with days left', async ({
 			page,
 		}) => {
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -650,7 +671,7 @@ test.describe('Dashboard tiles', () => {
 		test('clicking a My work row opens that task on the task detail page', async ({
 			page,
 		}) => {
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await rows(table).filter({ hasText: TASK_SOON }).first().click()
@@ -673,7 +694,7 @@ test.describe('Dashboard tiles', () => {
 	test('Deadlines holds the overdue and the nearly due, overdue first and in red', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -725,7 +746,7 @@ test.describe('Dashboard tiles', () => {
 	test('a closed case stays off Deadlines, however late it was', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).filter({ hasText: CLOSED_CASE })).toHaveCount(0)
@@ -760,7 +781,7 @@ test.describe('Dashboard tiles', () => {
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 
@@ -832,7 +853,7 @@ test.describe('Dashboard tiles', () => {
 	test('New case offers the published case type and not the draft', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		await page.getByRole('button', { name: /^(New case|Nieuwe zaak)$/i }).click()
 		const dialog = page.getByRole('dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })

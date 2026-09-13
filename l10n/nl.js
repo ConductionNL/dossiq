@@ -3954,7 +3954,11 @@ OC.L10N.register(
         "You are not allowed to see the plan for this case.": "U mag het plan van deze zaak niet inzien.",
         "The case plan could not be loaded. Try again.": "Het zaakplan kon niet worden geladen. Probeer het opnieuw.",
         "Bulk action changed nothing": "Bulkactie heeft niets gewijzigd",
-        "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt"
+        "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt",
+        "Case volume, status and performance across the team": "Zaakvolume, status en prestaties van het team",
+        "Open My work in the menu": "Open Mijn werk in het menu",
+        "Your open tasks, deadlines and open cases": "Je open taken, deadlines en open zaken",
+        "Your work lives here: today's tasks, deadlines and open cases in one place.": "Je werk staat hier: taken, deadlines en open zaken van vandaag op één plek."
     },
     "nplurals=2; plural=(n != 1);"
 )
