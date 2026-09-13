@@ -569,6 +569,16 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+// people-on-the-case: OpenRegister's three person-link events, so
+// PersonLinkListenerTest can exercise handle() against the real getLink()
+// shape on a bare container. Declaration-only stubs, shared with psalm and
+// phpstan (see psalm.xml <stubs> and phpstan.neon scanFiles).
+if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {

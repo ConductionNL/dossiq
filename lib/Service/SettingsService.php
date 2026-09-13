@@ -251,6 +251,35 @@ class SettingsService {
 	}//end getObjectService()
 
 	/**
+	 * Lazily resolve OpenRegister's ContactService, the read side of people on objects.
+	 *
+	 * People on a case are OpenRegister links (`people-on-objects`), and the
+	 * app reads them in process the same way it reads objects: through the
+	 * container, absent when OpenRegister is not installed. The published
+	 * object contract has no people method, so this is the same exception
+	 * ADR-084 already makes for the file service.
+	 *
+	 * @return object|null The contact service, or null when OpenRegister is absent.
+	 *
+	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md
+	 */
+	public function getPeopleService(): ?object {
+		if ($this->isOpenRegisterAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\ContactService');
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq: Could not access OpenRegister ContactService',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end getPeopleService()
+
+	/**
 	 * Lazily resolve OpenRegister's FileService for in-process file attachment.
 	 *
 	 * ADR-084 publishes `ObjectServiceInterface` — 25 methods — and **none of

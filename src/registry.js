@@ -84,6 +84,7 @@ import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // @spec openspec/specs/document-zaakdossier/spec.md
 // @spec openspec/specs/document-zaakdossier/spec.md
 import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
@@ -383,6 +384,12 @@ const registry = {
 		kind: 'modal',
 		component: DocumentMetadataDialog,
 		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+	},
+	// @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	FileRequestDialog: {
+		kind: 'modal',
+		component: FileRequestDialog,
+		_note: "Ask a party of the case for a file. Opened by the Files tab's `newActions` entry as `type: open-modal`, so the registry mounts it with the action's props (the folder's path and whatever the manifest declared) and nothing else; it reads the case from `caseId` or the route and fetches the parties itself. The recipients are the people linked to the case (people-on-the-case), because Nextcloud's own file request can name nobody: it asks for an address a handler has to know by heart. A party with no address is listed and disabled with the reason.",
 	},
 	BulkDocumentActionDialog: {
 		kind: 'modal',

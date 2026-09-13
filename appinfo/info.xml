@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.19-unstable.20260913171455</version>
+    <version>0.4.20-unstable.20260913184305</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -530,6 +530,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- documents-live-on-the-case: every document's file moves into the
                  folder of the case that owns it, once, behind a persisted key. -->
             <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
+            <!-- people-on-the-case: the case schema declares this instance's role
+                 types as the roles a person can hold. Every upgrade, not once:
+                 role types are data an admin adds whenever the process needs one. -->
+            <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -675,6 +679,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 uid and an upgrade runs as nobody); it names what is outstanding
                 and the command that completes it. It never throws.
             -->
+            <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
         </install>
     </repair-steps>

@@ -53,6 +53,9 @@ parameters:
         # DeliveryConcludedEvent), same declaration-only-stub discipline as
         # the decision-app namespaces above.
         - tests/Stubs/Integriq
+        # OpenRegister's people-on-objects event contract, same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/OpenRegister/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an

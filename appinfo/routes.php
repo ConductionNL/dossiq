@@ -766,6 +766,9 @@ $extra = [
         // documents-live-on-the-case: the documents joined to this case whose file
         // lives in another case's folder, as the Files tab's linked rows.
     ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
+    // people-on-the-case: who can be asked for a file, and the asking.
+    ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
+    ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
         // Generate document: renders a library template over the case and
         // files the result as an informatieobject + join, through the same
