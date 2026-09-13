@@ -62,6 +62,7 @@ class ObjectListenerRegistrar {
 
 		$this->registerCacheInvalidationListeners(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new DocumentListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**

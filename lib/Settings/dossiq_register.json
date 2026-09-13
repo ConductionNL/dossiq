@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.9.0",
+                "version": "1.10.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -236,6 +236,12 @@
                         "type": "string",
                         "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
                         "title": "Default assignee"
+                    },
+                    "defaultInformatieobjecttype": {
+                        "type": "string",
+                        "title": "Default document type",
+                        "maxLength": 255,
+                        "description": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001."
                     },
                     "workflowDefinition": {
                         "type": "string",
