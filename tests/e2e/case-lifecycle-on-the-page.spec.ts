@@ -25,6 +25,24 @@
  * visible at all: a refused move that shared a target with an open one would
  * be hidden behind the open one whatever the widget does with `blocked`.
  *
+ * 🔴 FOUR TESTS HERE CANNOT PASS YET, AND THE REASON IS NOT IN THIS APP.
+ * OpenRegister's provider lifecycle mode is READ-ONLY: `deriveActions()` asks
+ * the provider, so `available-actions` answers a case's real guarded moves and
+ * the timeline renders them correctly, but `applyTransition()` has no provider
+ * branch and `LifecycleActionProviderInterface` declares no `execute()`. So a
+ * POST of an action the provider published is refused with
+ * `Transition "<action>" is not declared on this schema.` and the case does not
+ * move. Measured on CI run 34708664089 shard 1; the failure screenshot shows
+ * that sentence in the timeline with the case still on its original status.
+ * Filed as ConductionNL/openregister#3679.
+ *
+ * These tests are LEFT FAILING on purpose. Every workaround available here is
+ * worse than the red: a static `transitions` map defeats the reason provider
+ * mode exists, `{ kind: 'field' }` writes the status with nothing validating
+ * it, and skipping the tests would turn a broken gesture into a green run.
+ * They describe what the page is meant to do and they will pass the day the
+ * write path lands.
+ *
  * WHY THE FIXTURE BUILDS ITS OWN STATE MACHINE rather than calling
  * `seedStateMachine`: that helper's workflow carries no role guard, its case
  * type has no `suspensionAllowed` / `extensionAllowed` / `extensionPeriod` /
