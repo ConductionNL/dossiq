@@ -16,7 +16,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
-use OCP\Files\Folder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -213,6 +212,62 @@ class DocumentRecordStoreTest extends TestCase {
 	/**
 	 * @return void
 	 */
+	public function testAFileIsStoredOnTheObjectThroughTheFileService(): void {
+		$fileService = new class {
+			/** @var array<int, array<string, mixed>> Every addFile asked. */
+			public array $added = [];
+
+			/**
+			 * @param mixed $objectEntity The object.
+			 * @param string $fileName The name.
+			 * @param mixed $content The bytes.
+			 * @param bool $share Whether to share.
+			 * @param array<int, string> $tags Tags.
+			 * @param mixed $_schema Unused.
+			 * @param mixed $_register Unused.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return object A file with getFileId().
+			 */
+			public function addFile(
+				mixed $objectEntity,
+				string $fileName,
+				mixed $content,
+				bool $share = false,
+				array $tags = [],
+				mixed $_schema = null,
+				mixed $_register = null,
+				mixed $registerId = null,
+			): object {
+				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'register' => $registerId];
+				return new class {
+					/**
+					 * @return int The file id.
+					 */
+					public function getFileId(): int {
+						return 4711;
+					}
+				};
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getFileService')->willReturn($fileService);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$store = new DocumentRecordStore(settingsService: $settings);
+
+		$this->assertSame(expected: 4711, actual: $store->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF'));
+		$this->assertSame(expected: 'case-1', actual: $fileService->added[0]['object']);
+		$this->assertSame(expected: 'dossiq', actual: $fileService->added[0]['register']);
+
+		$without = $this->createMock(originalClassName: SettingsService::class);
+		$without->method('getFileService')->willReturn(null);
+		$this->expectException(exception: RuntimeException::class);
+		(new DocumentRecordStore(settingsService: $without))->storeFileOnObject(objectId: 'case-1', fileName: 'a.pdf', content: 'PDF');
+	}//end testAFileIsStoredOnTheObjectThroughTheFileService()
+
+	/**
+	 * @return void
+	 */
 	public function testTheStoreRefusesToWorkWithoutOpenRegister(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
@@ -223,35 +278,4 @@ class DocumentRecordStoreTest extends TestCase {
 		$store->saveRecord(record: ['title' => 'x']);
 	}//end testTheStoreRefusesToWorkWithoutOpenRegister()
 
-	/**
-	 * @return void
-	 */
-	public function testAFolderComesFromTheFileServiceOrNotAtAll(): void {
-		$this->settings->method('getFileService')->willReturn(null);
-		$this->assertNull(actual: $this->store->folderOf(objectId: 'case-1'));
-
-		$folder = $this->createMock(originalClassName: Folder::class);
-		$fileService = new class ($folder) {
-			/**
-			 * @param Folder $folder The folder every object gets.
-			 */
-			public function __construct(private readonly Folder $folder) {
-			}
-
-			/**
-			 * @param mixed $objectEntity The object.
-			 * @param mixed $registerId The register.
-			 *
-			 * @return Folder The folder.
-			 */
-			public function getObjectFolder(mixed $objectEntity, mixed $registerId = null): Folder {
-				return $this->folder;
-			}
-		};
-		$settings = $this->createMock(originalClassName: SettingsService::class);
-		$settings->method('getFileService')->willReturn($fileService);
-		$settings->method('getConfigValue')->willReturn('dossiq');
-		$store = new DocumentRecordStore(settingsService: $settings);
-		$this->assertSame(expected: $folder, actual: $store->folderOf(objectId: 'case-1'));
-	}//end testAFolderComesFromTheFileServiceOrNotAtAll()
 }//end class

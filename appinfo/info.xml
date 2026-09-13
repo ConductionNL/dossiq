@@ -527,6 +527,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 entry in the <install> block below for why it cannot adopt.
             -->
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
+            <!-- documents-live-on-the-case: every document's file moves into the
+                 folder of the case that owns it, once, behind a persisted key. -->
+            <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

@@ -11,7 +11,6 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\Files\Folder;
 use RuntimeException;
 use Throwable;
 
@@ -114,16 +113,13 @@ class DocumentRecordStore {
 	public function saveRecord(array $record): string {
 		[$objectService, $register] = $this->requireRegister();
 		$uuid = $this->idOf(row: $record);
+		$schema = $this->schema(key: 'dossier_informatieobject_schema');
+		$object = $this->withoutSelf(row: $record);
 		if ($uuid === '') {
-			$uuid = null;
+			return $this->resolveSavedUuid(saved: $objectService->saveObject(object: $object, register: $register, schema: $schema));
 		}
 
-		$saved = $objectService->saveObject(
-			object: $this->withoutSelf(row: $record),
-			register: $register,
-			schema: $this->schema(key: 'dossier_informatieobject_schema'),
-			uuid: $uuid,
-		);
+		$saved = $objectService->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 
 		return $this->resolveSavedUuid(saved: $saved);
 	}//end saveRecord()
@@ -264,28 +260,43 @@ class DocumentRecordStore {
 	}//end findDocumentType()
 
 	/**
-	 * An object's folder in the register tree, created when missing.
+	 * Store a file in an object's folder, attached to that object.
 	 *
-	 * @param string $objectId The object uuid, a case or a record.
+	 * @param string $objectId The object uuid, a case.
+	 * @param string $fileName The file name.
+	 * @param string $content The bytes.
 	 *
-	 * @return Folder|null The folder, null when OpenRegister is unavailable or answers none.
+	 * @return int The Nextcloud file id, 0 when it could not be read back.
+	 *
+	 * @throws RuntimeException When OpenRegister's file service is unavailable or the write fails.
 	 *
 	 * @spec openspec/specs/document-projection/spec.md
 	 */
-	public function folderOf(string $objectId): ?Folder {
+	public function storeFileOnObject(string $objectId, string $fileName, string $content): int {
 		$fileService = $this->settingsService->getFileService();
 		if ($fileService === null) {
-			return null;
+			throw new RuntimeException('OpenRegister is not available');
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$folder = $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
-		if (($folder instanceof Folder) === false) {
-			return null;
+		try {
+			$file = $fileService->addFile(
+				objectEntity: $objectId,
+				fileName: $fileName,
+				content: $content,
+				share: false,
+				tags: [],
+				registerId: $this->settingsService->getConfigValue('register'),
+			);
+		} catch (Throwable $e) {
+			throw new RuntimeException('The file could not be stored on ' . $objectId . ': ' . $e->getMessage(), 0, $e);
 		}
 
-		return $folder;
-	}//end folderOf()
+		if (is_object($file) === false || is_callable([$file, 'getFileId']) === false) {
+			return 0;
+		}
+
+		return (int)call_user_func([$file, 'getFileId']);
+	}//end storeFileOnObject()
 
 	/**
 	 * A row's uuid, from `id`, `uuid` or `@self.id`.

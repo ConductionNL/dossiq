@@ -21,9 +21,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
-use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
 use OCA\Dossiq\Tests\Unit\Fixtures\ReplacingObjectService;
 use OCP\IGroupManager;
@@ -117,11 +117,11 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 
 		return new ZaakdossierService(
 			$settings,
-			$this->createMock(ZgwDocumentService::class),
 			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger),
 			new InformatieobjectStatusLifecycle($settings, $logger),
 			new InformatieobjectMetadataNormaliser(),
 			$logger,
+			new DocumentRecordStore(settingsService: $settings),
 		);
 
 	}//end service()

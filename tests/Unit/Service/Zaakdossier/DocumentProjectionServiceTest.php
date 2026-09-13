@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentDefaults;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
@@ -46,6 +47,9 @@ class DocumentProjectionServiceTest extends TestCase {
 
 	/** @var DocumentProjectionService The service under test. */
 	private DocumentProjectionService $service;
+
+	/** @var array<string, Folder|null> The folder the file-service stub answers per object uuid. */
+	private array $folders = [];
 
 	/**
 	 * A service over a store that knows two cases and one document type.
@@ -92,9 +96,32 @@ class DocumentProjectionServiceTest extends TestCase {
 	 * @return DocumentProjectionService The service.
 	 */
 	private function serviceOver(DocumentRecordStore&MockObject $store, IUserSession $session): DocumentProjectionService {
+		$folders = &$this->folders;
+		$fileService = new class ($folders) {
+			/**
+			 * @param array<string, Folder|null> $folders The folders, by object uuid.
+			 */
+			public function __construct(private array &$folders) {
+			}
+
+			/**
+			 * @param mixed $objectEntity The object uuid.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return Folder|null The folder.
+			 */
+			public function getObjectFolder(mixed $objectEntity, mixed $registerId = null): ?Folder {
+				return ($this->folders[(string)$objectEntity] ?? null);
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getFileService')->willReturn($fileService);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+
 		return new DocumentProjectionService(
 			store: $store,
 			defaults: new DocumentDefaults(store: $store, caseTypes: $this->caseTypes, userSession: $session),
+			settingsService: $settings,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end serviceOver()
@@ -367,6 +394,29 @@ class DocumentProjectionServiceTest extends TestCase {
 	/**
 	 * @return void
 	 */
+	public function testACaseHasAFolderOnlyWhenTheFileServiceAnswersOne(): void {
+		$this->folders = [self::CASE_ID => $this->createMock(originalClassName: Folder::class)];
+		$this->assertTrue(condition: $this->service->caseHasFolder(caseId: self::CASE_ID));
+		$this->assertFalse(condition: $this->service->caseHasFolder(caseId: self::OTHER_CASE_ID));
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getFileService')->willReturn(null);
+		$withoutFiles = new DocumentProjectionService(
+			store: $this->store,
+			defaults: new DocumentDefaults(
+				store: $this->store,
+				caseTypes: $this->caseTypes,
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+			),
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+		$this->assertNull(actual: $withoutFiles->folderOf(objectId: self::CASE_ID), message: 'no file service, no folder');
+	}//end testACaseHasAFolderOnlyWhenTheFileServiceAnswersOne()
+
+	/**
+	 * @return void
+	 */
 	public function testTheFirstJoinMovesAnApiFirstFileIntoTheCase(): void {
 		$this->store->method('findRecord')->with(self::RECORD_ID, 0)->willReturn(['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 900]);
 		$moved = $this->createMock(originalClassName: File::class);
@@ -379,7 +429,7 @@ class DocumentProjectionServiceTest extends TestCase {
 		$own->method('get')->with('x.pdf')->willReturn($node);
 		$caseFolder = $this->createMock(originalClassName: Folder::class);
 		$caseFolder->method('getPath')->willReturn('/openregister/files/Open Registers/R/' . self::CASE_ID);
-		$this->store->method('folderOf')->willReturnMap([[self::RECORD_ID, $own], [self::CASE_ID, $caseFolder]]);
+		$this->folders = [self::RECORD_ID => $own, self::CASE_ID => $caseFolder];
 		$this->store->expects($this->once())->method('saveRecord')->with(
 			$this->callback(callback: static fn (array $record): bool => $record['fileId'] === 901)
 		)->willReturn(self::RECORD_ID);
@@ -394,7 +444,7 @@ class DocumentProjectionServiceTest extends TestCase {
 		$this->store->method('findRecord')->willReturn(['id' => self::RECORD_ID, 'fileName' => 'x.pdf', 'fileId' => 900]);
 		$own = $this->createMock(originalClassName: Folder::class);
 		$own->method('nodeExists')->willReturn(false);
-		$this->store->method('folderOf')->willReturn($own);
+		$this->folders = [self::RECORD_ID => $own, self::OTHER_CASE_ID => $own];
 		$this->store->expects($this->never())->method('saveRecord');
 
 		$this->assertFalse(condition: $this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::OTHER_CASE_ID));
@@ -408,7 +458,7 @@ class DocumentProjectionServiceTest extends TestCase {
 		$own = $this->createMock(originalClassName: Folder::class);
 		$own->method('nodeExists')->willReturn(true);
 		$own->expects($this->never())->method('get');
-		$this->store->method('folderOf')->willReturnMap([[self::RECORD_ID, $own], [self::CASE_ID, null]]);
+		$this->folders = [self::RECORD_ID => $own];
 
 		$this->expectException(exception: RuntimeException::class);
 		$this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID);

@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Files\File;
+use OCP\Files\Folder;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -41,11 +43,13 @@ class DocumentProjectionService {
 	/**
 	 * @param DocumentRecordStore $store Cases, records, joins and types in OpenRegister.
 	 * @param DocumentDefaults $defaults What a new file's record says, and what a write refreshes.
+	 * @param SettingsService $settingsService OpenRegister's file service, for object folders.
 	 * @param LoggerInterface $logger Where a move or a skipped step is reported.
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
 		private readonly DocumentDefaults $defaults,
+		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -191,13 +195,13 @@ class DocumentProjectionService {
 			return false;
 		}
 
-		$ownFolder = $this->store->folderOf(objectId: $recordId);
+		$ownFolder = $this->folderOf(objectId: $recordId);
 		if ($ownFolder === null || $ownFolder->nodeExists($fileName) === false) {
 			// Already under a case folder, or never stored: nothing to move.
 			return false;
 		}
 
-		$caseFolder = $this->store->folderOf(objectId: $caseId);
+		$caseFolder = $this->folderOf(objectId: $caseId);
 		if ($caseFolder === null) {
 			throw new RuntimeException('Case ' . $caseId . ' has no folder to hold its documents');
 		}
@@ -217,6 +221,43 @@ class DocumentProjectionService {
 
 		return true;
 	}//end homeDocument()
+
+	/**
+	 * Whether a case has a folder to hold documents.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return bool True when OpenRegister answers a folder for it.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 */
+	public function caseHasFolder(string $caseId): bool {
+		return $this->folderOf(objectId: $caseId) !== null;
+	}//end caseHasFolder()
+
+	/**
+	 * An object's folder in the register tree, created when missing.
+	 *
+	 * @param string $objectId The object uuid, a case or a record.
+	 *
+	 * @return Folder|null The folder, null when OpenRegister is unavailable or answers none.
+	 *
+	 * @spec openspec/specs/document-projection/spec.md
+	 */
+	public function folderOf(string $objectId): ?Folder {
+		$fileService = $this->settingsService->getFileService();
+		if ($fileService === null) {
+			return null;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$folder = $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
+		if (($folder instanceof Folder) === false) {
+			return null;
+		}
+
+		return $folder;
+	}//end folderOf()
 
 	/**
 	 * The case whose folder holds this node, or null.
