@@ -18,6 +18,10 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import { createApp } from 'vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
@@ -85,6 +89,54 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
 //     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
+
+/**
+ * Row-action handler for the Queue and Cases indexes: take this case.
+ *
+ * A FUNCTION handler rather than a declarative action, because an index row
+ * action can only be `navigate`, `open-page` or a handler name. `api-call` is
+ * not in the row dispatcher's vocabulary at all, and `object-op` merges
+ * `action.values` into the row VERBATIM, with no token resolution, so a
+ * declared assignee of `@me` would write that literal string onto the case.
+ *
+ * It posts the same endpoint the case page's Claim button does. The rule that
+ * refuses a claim on a case somebody else already took lives there and only
+ * there: a row the reader is looking at may have been picked up a second ago,
+ * and no amount of client-side gating closes that window.
+ *
+ * The refusal SENTENCE comes from the server rather than from a code mapped
+ * here, because the case page's Claim is a declarative `api-call` whose toast
+ * can only show what the response carries. One gesture told two different
+ * stories depending on which surface it was made from would be worse than the
+ * indirection. Both sentences come out of the same l10n catalogue either way.
+ *
+ * @param {{actionId: string, item: object}} scope The row the action was used on.
+ * @return {Promise<void>}
+ *
+ * @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+ */
+async function claimCase({ item }) {
+	const caseId = String(item?.id ?? item?.['@self']?.id ?? '')
+	if (caseId === '') {
+		return
+	}
+
+	try {
+		await axios.post(
+			generateUrl(`/apps/dossiq/api/case/${encodeURIComponent(caseId)}/claim`),
+		)
+		showSuccess(t('dossiq', 'You are now handling this case.'))
+		// The same signal the reassign and bulk-transition handlers send: the
+		// row the user just claimed no longer belongs on the queue, and leaving
+		// it on screen invites a second claim on a case that already moved. The
+		// list's own refresh comes from its live-collection subscription; this
+		// event is the app-level notice beside it.
+		window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+	} catch (err) {
+		const refusal = String(err?.response?.data?.error ?? '')
+		showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+	}
+}
 
 /**
  * Bulk-action handler for the Cases index: reassign the selected cases.
@@ -231,6 +283,12 @@ function extendTermSelection({ selectedIds }) {
 }
 
 export default {
+	// The Queue's and Cases' `claim` row action (case-claim-action, row 2.4).
+	// A function handler for the reason the bulk actions below are ones, plus
+	// one of its own: the row dispatcher knows neither `api-call` nor a
+	// token-resolving write, so a declarative claim would either do nothing or
+	// store the literal string `@me`.
+	claimCase,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an
