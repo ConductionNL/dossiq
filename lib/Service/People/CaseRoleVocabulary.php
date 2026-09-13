@@ -28,7 +28,7 @@ use Throwable;
  * Keys are role type uuids, so the projection resolves the role type
  * without guessing and a renamed role type keeps its links.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
  */
 class CaseRoleVocabulary {
 
@@ -61,7 +61,7 @@ class CaseRoleVocabulary {
 	 *
 	 * @return int How many roles the vocabulary now holds, -1 when it could not be written.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function sync(): int {
 		try {
@@ -115,7 +115,7 @@ class CaseRoleVocabulary {
 	 *
 	 * @return array<int, array<string, string>> The entries, ordered by label.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
 	 */
 	public function roleEntries(): array {
 		[$objectService, $register] = $this->requireRegister();

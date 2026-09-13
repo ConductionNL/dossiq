@@ -22,7 +22,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 /**
  * Hears OpenRegister's person links, so a person on a case becomes a role record.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
  */
 class PersonListenerRegistrar {
 
@@ -42,7 +42,7 @@ class PersonListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach (self::PERSON_EVENTS as $event) {
