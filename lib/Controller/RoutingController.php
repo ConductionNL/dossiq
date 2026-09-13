@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -150,6 +151,19 @@ class RoutingController extends Controller {
 					'caseId' => $id,
 					'affectedSteps' => $affected,
 				],
+			);
+		} catch (RefusedException $e) {
+			$this->logger->warning(
+				'Dossiq: reroute could not be answered for case ' . $id,
+				['rule' => $e->getRule(), 'status' => $e->getStatus()],
+			);
+			return new JSONResponse(
+				[
+					'message' => $e->getSentence(),
+					'error' => $e->getRule(),
+					'code' => $e->getMessage(),
+				],
+				$e->getStatus(),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

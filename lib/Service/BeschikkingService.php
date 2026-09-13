@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
@@ -156,8 +157,10 @@ class BeschikkingService {
 	 * @return array<string, mixed> The updated beschikking.
 	 *
 	 * @throws RuntimeException On a missing beschikking, invalid transition, or insufficient mandaat.
+	 * @throws RefusedException When the mandate scheme could not be read, so the mandate cannot be checked.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function akkoord(string $decisionId, string $approvedBy): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);

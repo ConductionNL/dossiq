@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -116,9 +117,12 @@ class MandaatVerifier {
 	 *
 	 * @param string $caseType The case type slug.
 	 *
-	 * @return array<string, mixed>
+	 * @return array<string, mixed> The regeling, or an empty array when the case type has none.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function resolveMandaatRegeling(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -141,8 +145,15 @@ class MandaatVerifier {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: resolveMandaatRegeling failed', ['exception' => $e->getMessage()]);
-			return [];
-		}
+			// An empty regeling here reached the approver as "insufficient
+			// mandate", which names the person. The register being unreadable
+			// is not a fact about the person.
+			throw RefusedException::indeterminate(
+				rule: 'mandaat-regeling-unreadable',
+				sentence: 'The mandate scheme could not be read, so this approval cannot be checked right now.',
+				previous: $e,
+			);
+		}//end try
 
 		foreach ((array)$regelingen as $regeling) {
 			$arr = $this->toArray(value: $regeling);
