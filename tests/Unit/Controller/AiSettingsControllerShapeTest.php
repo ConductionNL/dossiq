@@ -52,6 +52,7 @@ use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\AiService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
+use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -130,8 +131,16 @@ class AiSettingsControllerShapeTest extends TestCase {
 	 * @return void
 	 */
 	public function testSettingsAreReturnedUnderASettingsKey(): void {
-		$body = $this->controller(stored: [])->getSettings()->getData();
+		$response = $this->controller(stored: [])->getSettings();
+		$body = $response->getData();
 
+		// The status, beside the state: reading only the body would pass on a
+		// 500 that happened to carry the same keys (REQ-QG-CRN-2).
+		$this->assertSame(
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus(),
+			message: 'The settings read answers 200.'
+		);
 		$this->assertIsArray($body);
 		$this->assertArrayHasKey('settings', $body);
 		$this->assertIsArray($body['settings']);
