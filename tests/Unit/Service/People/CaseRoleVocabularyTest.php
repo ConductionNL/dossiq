@@ -278,7 +278,11 @@ class CaseRoleVocabularyTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				// The register is there; the role type schema is not.
-				return $key === 'register' ? 'dossiq' : $default;
+				if ($key === 'register') {
+					return 'dossiq';
+				}
+
+				return $default;
 			}
 		);
 		$vocabulary = new CaseRoleVocabulary(
