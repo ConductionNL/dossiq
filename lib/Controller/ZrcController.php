@@ -32,10 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
+use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -1329,6 +1331,26 @@ class ZrcController extends ZgwController {
 		// is handled by OpenRegister via onDelete: CASCADE in schema definitions.
 		try {
 			$objectService->deleteObject(uuid: $uuid);
+		} catch (HookStoppedException $stopped) {
+			// REQ-CM-35: the case delete guard stopped the event, and its
+			// refusal is a state conflict rather than a malformed request.
+			// ADR-105 puts the mapping for an app exception under
+			// lib/Exception/ where the app says it goes, so this is the one
+			// place the ZGW door translates it. Any OTHER hook that stopped
+			// the delete keeps the generic answer below: this arm claims only
+			// the refusal it can name.
+			$held = CaseHeldException::fromHookErrors(errors: $stopped->getErrors());
+			if ($held !== null) {
+				return new JSONResponse(
+					data: ($held->toResponseBody() + ['detail' => $held->getMessage()]),
+					statusCode: CaseHeldException::STATUS
+				);
+			}
+
+			return new JSONResponse(
+				data: ['detail' => 'Failed to delete case: ' . $stopped->getMessage()],
+				statusCode: Http::STATUS_BAD_REQUEST
+			);
 		} catch (\Throwable $e) {
 			return new JSONResponse(
 				data: ['detail' => 'Failed to delete case: ' . $e->getMessage()],

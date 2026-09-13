@@ -3977,7 +3977,13 @@ OC.L10N.register(
         "Send the request": "Verstuur het verzoek",
         "The request is on its way to {recipient}": "Het verzoek is onderweg naar {recipient}",
         "The parties of this case could not be read": "De partijen van deze zaak konden niet gelezen worden",
-        "The request could not be sent": "Het verzoek kon niet verstuurd worden"
+        "The request could not be sent": "Het verzoek kon niet verstuurd worden",
+        "You cannot delete this case yet.": "Je kunt deze zaak nog niet verwijderen.",
+        "A statutory term on this case is still running.": "Er loopt nog een wettelijke termijn op deze zaak.",
+        "This case still has sub-cases.": "Deze zaak heeft nog deelzaken.",
+        "A legal hold is on this case.": "Op deze zaak staat een juridische blokkade.",
+        "The retention period of this case has not ended.": "De bewaartermijn van deze zaak is nog niet verstreken.",
+        "Resolve this first, then delete the case.": "Los dat eerst op en verwijder de zaak daarna."
     },
     "nplurals=2; plural=(n != 1);"
 )

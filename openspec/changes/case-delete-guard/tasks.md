@@ -2,14 +2,14 @@
 
 Tier: V1. Kind: code. Row 2.17.
 
-- [ ] 1.1 `lib/Exception/CaseHeldException.php` carrying rule slugs and a
+- [x] 1.1 `lib/Exception/CaseHeldException.php` carrying rule slugs and a
   message; mapped to 409 in the controller translation table (ADR-105).
-- [ ] 1.2 `lib/Listener/CaseDeleteGuardListener.php`: the four rules of D-1,
+- [x] 1.2 `lib/Listener/CaseDeleteGuardListener.php`: the four rules of D-1,
   each one bounded query; stop the event with the exception.
   - `tests/Unit/Listener/CaseDeleteGuardListenerTest.php`: one test per rule,
     one for two rules together, one for a free case
   - `@spec openspec/changes/case-delete-guard/specs/case-management/spec.md`
-- [ ] 1.3 `lib/AppInfo/Registrar/ObjectListenerRegistrar.php`: bind to
+- [x] 1.3 `lib/AppInfo/Registrar/ObjectListenerRegistrar.php`: bind to
   schema `case` at the registration site.
 - [ ] 2.1 Remove `src/modals/DeelzaakDeleteWarningModal.vue` and its caller;
   the delete action shows the platform's refusal message.
