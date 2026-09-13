@@ -430,6 +430,31 @@ class CreateTaskHandlerTest extends TestCase {
 	}//end testAnActionNamingNobodyFallsBackToTheCasesHandler()
 
 	/**
+	 * `assignee: "none"` keeps the task unclaimed, team and all.
+	 *
+	 * Once an unauthored assignee defaults to the case handler, an action that
+	 * deliberately wants a queue task has to be able to say so, or every one of
+	 * them lands on one person. The word is reserved, and it is not a refusal
+	 * to route: the case's team still comes along, which is what puts the task
+	 * on a queue somebody watches.
+	 *
+	 * @return void
+	 */
+	public function testAnActionCanOptOutWithNone(): void {
+		$recorded = null;
+		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
+
+		$handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Pak op uit de wachtrij', 'assignee' => 'none'],
+			case: ['id' => 'case-9', 'assignee' => 'bob', 'assignedGroup' => 'rol-7'],
+			transitionContext: [],
+		);
+
+		self::assertSame('', $recorded['object']['assignee']);
+		self::assertSame('rol-7', $recorded['object']['assigneeGroup']);
+	}//end testAnActionCanOptOutWithNone()
+
+	/**
 	 * The case's team comes along, and is not confused with its handler.
 	 *
 	 * A case can carry a team, a personal assignee, or both, and the task
