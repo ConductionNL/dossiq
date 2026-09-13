@@ -716,33 +716,52 @@ from the strip unless it is reachable elsewhere on the page: folding it into a
 tab and deleting it look identical in a tab count.
 
 The strip SHALL NOT need `visibleIf` on a tab entry. That was wanted so a
-collection holding nothing could be absent rather than empty; with six tabs
-each holding two collections, an empty section is a line of text inside a tab
-the handler opened deliberately.
+collection holding nothing could be absent rather than empty; with tabs that
+each hold one or two collections, an empty section is a line of text inside a
+tab the handler opened deliberately.
 
-#### Scenario: The strip holds six tabs and no more
+#### Scenario: The strip holds seven tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly six tabs
-- **AND** they SHALL read Data, Documents, People, Work, Related, Objects and locations, in that order
+- **THEN** the tab strip SHALL contain exactly seven tabs
+- **AND** they SHALL read Data, Documents, People, Communication, Work, Related, Objects and locations, in that order
 - **AND** the strip SHALL carry no tab named Files, Notes, Mail or Decisions
 
-#### Scenario: The six tabs fit a laptop screen
+> Six until 2026-09-13, when Communication was promoted out of People and given a tab of
+> its own. The count is still the feature and the assertion is still an exact one: what
+> changed is the number it holds the strip to, not the fact that something holds it. The
+> ceiling exists because the strip grew from ten to fourteen unwatched while the app menu,
+> which had a stated limit, held at four.
+>
+> Communication does not breach REQ-CDV-17. That rule bars a strip tab that duplicates a
+> sidebar tab, and the sidebar's Email tab reads the mail leaf while this one reads
+> `contactmoment`: calls, visits and messages logged by hand. Two different logs, not one
+> log in two places. The Mail, Notes, Decisions and Timeline tabs stay barred.
+
+#### Scenario: The seven tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the six tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the seven tabs SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
 > at this viewport with these labels. `CnTabs` wraps rather than scrolls on purpose, because a
 > scrolling strip hides tabs behind an edge with nothing to say they are there. What the
 > handler needs is that no tab is clipped or off-screen, and wrapping already gives that.
+>
+> The seventh tab does not change that answer, because one line was already out of reach and
+> the promise is about clipping rather than about lines. Measured 2026-09-13 in the same font
+> (system-ui 700 15px): "Communication" is 131 pixels of text and about 173 as a tab box,
+> which makes it the second widest after "Objects and locations" at 212. It costs roughly one
+> more wrapped row at a narrow viewport. The 661 figure above is left as it was taken and is
+> now the six-tab number, not the current one; the assertion that matters is the e2e one,
+> which measures every tab box against the viewport rather than trusting a total.
 
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts

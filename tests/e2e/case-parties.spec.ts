@@ -158,7 +158,7 @@ async function openPartiesTab(page: Page, id: string) {
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// The SECTION, not the whole open panel. Now that the strip is folded
 	// instead of fourteen, a tab carries two collections, so an assertion made
 	// against the panel root can be satisfied by the wrong half of it. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold

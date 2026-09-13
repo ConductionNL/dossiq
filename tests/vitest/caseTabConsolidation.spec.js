@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds SIX tabs, and keeps holding six.
+ * The case page holds SEVEN tabs, and keeps holding seven.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -63,18 +63,26 @@ function widget(id) {
 const tabs = () => widget('case-panels').content.tabs
 
 /**
- * The ceiling the placement work set, and the number this change delivers.
+ * The ceiling the placement work set, and the number the strip holds today.
  *
- * Six is not a round number picked for tidiness. It is the count row A33
- * asked for, and the same ceiling the app menu is held to.
+ * Six was not a round number picked for tidiness: it was the count row A33
+ * asked for, and the same ceiling the app menu is held to. It is seven since
+ * 2026-09-13, when Communication was promoted out of People and given a tab
+ * of its own.
+ *
+ * Raising it is a deliberate act and this comment is the record of one. What
+ * the ceiling is for is unwatched GROWTH: the strip went from ten to fourteen
+ * while nothing counted it. A number that moves once, on purpose, with the
+ * spec scenario moved with it, is not that.
  */
-const TAB_CEILING = 6
+const TAB_CEILING = 7
 
-/** The six labels, in the order a handler reads them. */
+/** The seven labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-core', 'Data'],
 	['case-documents-panel', 'Documents'],
 	['case-people-panel', 'People'],
+	['case-communication-panel', 'Communication'],
 	['case-work-panel', 'Work'],
 	['case-related-panel', 'Related'],
 	['case-objects-panel', 'Objects and locations'],
@@ -92,7 +100,7 @@ const FOLDED = [
 	['case-documents-panel', 'case-documents'],
 	['case-documents-panel', 'case-files'],
 	['case-people-panel', 'case-roles'],
-	['case-people-panel', 'case-communication'],
+	['case-communication-panel', 'case-communication'],
 	['case-work-panel', 'case-tasks'],
 	['case-work-panel', 'case-calendar'],
 	['case-related-panel', 'case-related'],
@@ -121,7 +129,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the six tabs, in order', () => {
+	it('names the seven tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 

@@ -39,7 +39,7 @@ import {
 import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * The SIX tabs the strip holds, in order.
+ * The SEVEN tabs the strip holds, in order.
  *
  * These are exact strings and not locale alternatives, unlike almost every
  * other title this spec matches. A tab label is not translated: it is read
@@ -52,6 +52,7 @@ const TAB_LABELS = [
 	'Data',
 	'Documents',
 	'People',
+	'Communication',
 	'Work',
 	'Related',
 	'Objects and locations',
@@ -62,13 +63,16 @@ const TAB_LABELS = [
  *
  * The count is the headline of this change, and a count is exactly the kind
  * of assertion that can be satisfied by deleting things. These are what make
- * the difference between six tabs and four missing features.
+ * the difference between a small strip and four missing features.
  */
 const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
 	['Documents', 'case-section-case-documents', 'registry'],
 	['Documents', 'case-section-case-files', 'integration'],
 	['People', 'case-section-case-roles', 'registry'],
-	['People', 'case-section-case-communication', 'registry'],
+	// Communication was folded into People and has since been promoted back to
+	// a tab of its own. It stays in this list because the point of the list is
+	// that no capability was lost in the fold, and that is still what it proves.
+	['Communication', 'case-section-case-communication', 'registry'],
 	['Work', 'case-section-case-tasks', 'registry'],
 	['Work', 'case-section-case-calendar', 'integration'],
 	['Related', 'case-section-case-related', 'registry'],
@@ -545,15 +549,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
-	test('the strip holds exactly six tabs, in order, and no more', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-seven-tabs-and-no-more
+	test('the strip holds exactly seven tabs, in order, and no more', async ({
 		page,
 	}) => {
 		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
 		// over one programme while the app menu held at four, because the menu
 		// had a stated ceiling and the strip had nothing counting it. This is
 		// the thing that counts it, and it has to be an exact count: asserting
-		// that six named tabs are PRESENT would pass on a strip of nine.
+		// that seven named tabs are PRESENT would pass on a strip of nine.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -735,7 +739,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		page,
 	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
-		// a reader counting six tabs would hear seven.
+		// a reader counting seven tabs would hear eight.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -752,7 +756,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	test('only the open tab mounts, and a switched-to tab stays mounted', async ({
 		page,
 	}) => {
-		// Six eager panels would fire six requests on load to answer five
+		// Seven eager panels would fire seven requests on load to answer six
 		// questions nobody asked. This is the assertion that keeps them lazy.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)

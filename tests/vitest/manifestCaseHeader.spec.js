@@ -180,15 +180,20 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 
 	it('is the work a handler does, in order, and nothing else', () => {
 		// Task 4.1 asked for the work tabs to LEAD the strip, because there
-		// were nine more behind them. There are none behind them now: the strip
-		// is six tabs and this is all of them, so what was a prefix assertion is
-		// an exact one. Timeline is deliberately absent: the timeline is the
-		// sidebar History tab (change case-timeline), and a body panel over the
-		// same log would be the duplication that change exists to retire.
+		// were nine more behind them. There are none behind them now: this is
+		// the whole strip, so what was a prefix assertion is an exact one.
+		// Timeline is deliberately absent: the timeline is the sidebar History
+		// tab (change case-timeline), and a body panel over the same log would
+		// be the duplication that change exists to retire.
+		//
+		// Communication joined on 2026-09-13, promoted out of People. It is not
+		// that duplication: the sidebar Email tab reads the mail leaf, this one
+		// reads `contactmoment`, and they are two logs rather than one log twice.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-core',
 			'case-documents-panel',
 			'case-people-panel',
+			'case-communication-panel',
 			'case-work-panel',
 			'case-related-panel',
 			'case-objects-panel',

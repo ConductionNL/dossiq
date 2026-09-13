@@ -2,10 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Where a panel of the case page lives, now that the strip holds six tabs.
+ * Where a panel of the case page lives, now that the strip is folded.
  *
  * The strip carried fourteen tabs, one per panel, so every spec could write
- * `getByRole('tab', { name: /Parties/ })` and be done. Six tabs means most
+ * `getByRole('tab', { name: /Parties/ })` and be done. Folding it means most
  * panels are a SECTION inside a tab instead, and a spec that keeps clicking
  * for a tab named `Parties` fails with a locator timeout that says nothing
  * about what changed.
@@ -51,7 +51,7 @@ export const CASE_PANELS = {
 	files: { tab: /^Documents$/, section: 'case-section-case-files' },
 	parties: { tab: /^People$/, section: 'case-section-case-roles' },
 	communication: {
-		tab: /^People$/,
+		tab: /^Communication$/,
 		section: 'case-section-case-communication',
 	},
 	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },

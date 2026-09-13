@@ -1364,6 +1364,10 @@
 									"label": "People"
 								},
 								{
+									"widgetId": "case-communication-panel",
+									"label": "Communication"
+								},
+								{
 									"widgetId": "case-work-panel",
 									"label": "Work"
 								},
@@ -1445,7 +1449,7 @@
 						"type": "case-sections",
 						"title": "People",
 						"icon": "AccountGroupOutline",
-						"_note": "The People tab. Who is involved in the case, and every contact with them. A contactmoment records a channel, a direction and a summary against a person, so it belongs beside the roles rather than in a tab of its own. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
+						"_note": "The People tab. Who is involved in the case. Contact WITH them used to sit here too, on the reasoning that a contactmoment records a channel, a direction and a summary against a person and so belonged beside the roles. It is now the Communication tab, so a handler reaches the case log without opening the party list first. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
 						"content": {
 							"sections": [
 								{
@@ -1488,7 +1492,18 @@
 											"emptyText": "No parties on this case yet"
 										}
 									}
-								},
+								}
+							]
+						}
+					},
+					{
+						"id": "case-communication-panel",
+						"type": "case-sections",
+						"title": "Communication",
+						"icon": "EmailOutline",
+						"_note": "The Communication tab. Every call, visit and message logged against this case, in one place instead of stacked under the party list where it used to sit. The icon is EmailOutline, which src/icons.js both imports and exports: an icon a manifest names but the registry does not carry renders nothing at all, and a tab with no icon looks like a tab that was never given one. Its panel is an inline widget definition rather than a widget id because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. The section below is the definition that sat in case-people-panel before this change, moved verbatim, so its data-testid is still case-section-case-communication and the e2e keeps its handle: only the tab that opens it changed.",
+						"content": {
+							"sections": [
 								{
 									"label": "Communication",
 									"widget": {

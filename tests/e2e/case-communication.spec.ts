@@ -121,9 +121,10 @@ async function openCommunicationTab(page, id: string) {
 	await page.goto(`/apps/${REGISTER}/cases/${id}`)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
-	// instead of fourteen, a tab carries two collections, so an assertion made
-	// against the panel root can be satisfied by the wrong half of it. The
+	// The SECTION, not the whole open panel. Communication has its own tab
+	// again, so today the panel root and the section are the same box; the
+	// section is still what is addressed, because a tab that later gains a
+	// second collection must not silently widen what this spec accepts. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
 	// moves one table rather than every spec that opens a panel.
 	//

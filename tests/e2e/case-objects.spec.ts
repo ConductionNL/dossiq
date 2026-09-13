@@ -125,7 +125,7 @@ async function openObjectsTab(page: Page, id: string) {
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// The SECTION, not the whole open panel. Now that the strip is folded
 	// instead of fourteen, a tab carries two collections, so an assertion made
 	// against the panel root can be satisfied by the wrong half of it. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
@@ -325,7 +325,7 @@ test.describe('Case objects', () => {
 
 		// The tab is present rather than hidden, and the way out of the empty
 		// state is on the page rather than behind it. The tab is named for both
-		// collections it holds since the strip came down to six.
+		// collections it holds since the strip was folded.
 		await expect(
 			page.locator('.cn-tabs-widget').getByRole('tab', {
 				name: 'Objects and locations',
