@@ -381,7 +381,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-nine-tabs-and-no-more
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
@@ -401,7 +401,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		expect(labels).toEqual(WORK_TABS)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-six-tabs-fit-a-laptop-screen
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-nine-tabs-fit-a-laptop-screen
 	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {

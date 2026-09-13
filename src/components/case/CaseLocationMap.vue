@@ -109,6 +109,8 @@ export default {
 		 * The map's height, from the manifest or a compact default.
 		 *
 		 * @return {string} A CSS length.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		height() {
 			return String(this.content.height || '260px')
@@ -118,6 +120,8 @@ export default {
 		 * What to say when the case has no plottable location.
 		 *
 		 * @return {string} The empty text.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		emptyText() {
 			return String(
@@ -130,6 +134,8 @@ export default {
 		 * Accessible name for the map region.
 		 *
 		 * @return {string} The label.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		mapLabel() {
 			return t('dossiq', 'Locations on this case')
@@ -139,6 +145,18 @@ export default {
 	watch: {
 		objectId: {
 			immediate: true,
+
+			/**
+			 * Read the locations whenever the case changes, and on mount.
+			 *
+			 * `immediate` matters: a tab child mounts when its tab is first
+			 * opened, by which time `objectId` is already set, so a watcher
+			 * without it would never fire and the map would stay empty.
+			 *
+			 * @return {void}
+			 *
+			 * @spec openspec/specs/case-dashboard-view/spec.md
+			 */
 			handler() {
 				this.load()
 			},
@@ -154,6 +172,8 @@ export default {
 		 * looks like a real pin.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		async load() {
 			const caseId = String(this.objectId ?? '').trim()
@@ -199,6 +219,8 @@ export default {
 		 *
 		 * @param {object} row A `case-location` object.
 		 * @return {object|null} The feature, or null when it cannot be plotted.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		toFeature(row) {
 			const lat = Number(row.latitude)
@@ -219,6 +241,8 @@ export default {
 		 * The CSRF token Nextcloud requires on an API read.
 		 *
 		 * @return {string} The token, or an empty string.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		requestToken() {
 			const meta = document.head.querySelector('meta[name="csrf-token"]')

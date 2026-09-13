@@ -1538,8 +1538,8 @@
 						"id": "case-communication-panel",
 						"type": "case-sections",
 						"title": "Communication",
-						"icon": "ForumOutline",
-						"_note": "The Communication tab: every call, visit and message logged against this case by hand. It was the second section of People. Email is the tab beside this one rather than a section here, because the two are written differently: one is correspondence the system carries, the other a note a handler types after putting the phone down. The section moved verbatim, so its data-testid is still case-section-case-communication.",
+						"icon": "Forum",
+						"_note": "The Communication tab: every call, visit and message logged against this case by hand. It was the second section of People. Email is the tab beside this one rather than a section here, because the two are written differently: one is correspondence the system carries, the other a note a handler types after putting the phone down. The section moved verbatim, so its data-testid is still case-section-case-communication. The icon is Forum and not ForumOutline: ForumOutline is in neither icon registry, and an icon a manifest names but no registry carries renders the DEFAULT glyph with no visible breakage. Checked against src/icons.js rather than assumed, which is how this one was caught.",
 						"content": {
 							"sections": [
 								{
