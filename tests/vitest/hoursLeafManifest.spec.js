@@ -72,8 +72,8 @@ describe('the hours surface is a leaf placement', () => {
 		// 404 and rendered empty on any install without humaniq.
 		expect(
 			manifestSource.includes('"register": "humaniq"'),
-			'src/manifest.json must not query humaniq\'s register: the hours '
-				+ 'surface is a placement of humaniq\'s own leaf, and a cross-app '
+			"src/manifest.json must not query humaniq's register: the hours "
+				+ "surface is a placement of humaniq's own leaf, and a cross-app "
 				+ 'register query renders empty rather than failing when the app '
 				+ 'is absent',
 		).toBe(false)
@@ -169,8 +169,8 @@ describe('the hours surface is a leaf placement', () => {
 		const bottom = top + cell[0].gridHeight
 		const overlapping = others
 			.filter((entry) => {
-				const sameColumn
-					= entry.gridX < cell[0].gridX + cell[0].gridWidth
+				const sameColumn =
+					entry.gridX < cell[0].gridX + cell[0].gridWidth
 					&& cell[0].gridX < entry.gridX + (entry.gridWidth ?? 0)
 				const otherTop = entry.gridY
 				const otherBottom = otherTop + (entry.gridHeight ?? 0)

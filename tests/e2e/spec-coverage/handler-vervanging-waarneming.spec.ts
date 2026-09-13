@@ -960,7 +960,9 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await page.goto(`/index.php/apps/dossiq${SubstitutionAdmin}`)
 		await dismissSupportDialog(page)
 		await expect(
-			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			page
+				.getByRole('heading', { name: /Substitutions & reassignment/ })
+				.first(),
 			'the coordinator substitution console must render, and a build where it '
 				+ 'does not is the defect this test exists to report',
 		).toBeVisible({ timeout: 30_000 })
@@ -996,7 +998,9 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await dismissSupportDialog(page)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		await expect(
-			page.getByRole('heading', { name: /Substitutions & reassignment/ }).first(),
+			page
+				.getByRole('heading', { name: /Substitutions & reassignment/ })
+				.first(),
 			'the coordinator console must render its own heading, not merely avoid a 500',
 		).toBeVisible({ timeout: 30_000 })
 	})

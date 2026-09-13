@@ -36,13 +36,17 @@ namespace OCA\Dossiq\Lifecycle;
 
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
+use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
 use OCA\OpenRegister\Lifecycle\LifecycleActionProviderInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
- * Publishes a case's available status transitions on OpenRegister's vocabulary.
+ * Publishes a case's available status transitions on OpenRegister's vocabulary,
+ * and takes the move a client picks off that list.
  *
  * 🔑 IT DERIVES NOTHING. Every entry comes out of
  * {@see StatusTransitionService::getAvailableTransitions()} — the same reader
@@ -50,8 +54,15 @@ use Throwable;
  * would eventually offer a move the write refuses, and the user would meet
  * that disagreement as a stage that highlights on hover and then fails.
  *
- * Read-only, as the interface requires: no mutation, nothing derived written
- * back. The call is a GET a client may repeat at will.
+ * The same rule governs the write half. `availableActions()` reads and mutates
+ * nothing; `execute()` hands the move straight to
+ * {@see StatusTransitionService::execute()}, which owns the guard
+ * re-evaluation, the optimistic version lock, the closing result, the
+ * statusRecord and the side-effect dispatch. This class adds no validation of
+ * its own on either side. Its ONE job on the write path is to say which of
+ * OpenRegister's three failures the engine just had, because the engine's own
+ * vocabulary does not distinguish them and a handler's next move depends on
+ * which it was.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
@@ -65,6 +76,57 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * lets a client collect the answer first instead of meeting the refusal.
 	 */
 	private const CLOSING_INPUT = 'resultTypeId';
+
+	/**
+	 * The free-form note a move may carry.
+	 */
+	private const COMMENT_INPUT = 'comment';
+
+	/**
+	 * The engine's sentinel for a case it could not load.
+	 */
+	private const CASE_NOT_FOUND = 'case_not_found';
+
+	/**
+	 * Every failure of the engine's that is a REFUSAL and not a breakage.
+	 *
+	 * 🔴 THIS LIST IS THE WHOLE POINT OF THE CLASS ON THE WRITE PATH, AND IT IS
+	 * A CLOSED LIST ON PURPOSE. `StatusTransitionService::execute()` reports
+	 * every failure as a `RuntimeException` carrying a snake_case sentinel, and
+	 * OpenRegister reads an ordinary `RuntimeException` as "the object refused
+	 * that move" and answers 422. So a template that will not parse, a register
+	 * that is not configured and a storage layer that is down all arrive at a
+	 * handler as "that move is not allowed" unless they are re-thrown as
+	 * {@see LifecycleProviderException}. A handler told that tries a different
+	 * move and concludes the process forbids it, which is a lie about the
+	 * process rather than an error message.
+	 *
+	 * Hence the polarity: only a sentinel NAMED here is a refusal, and anything
+	 * else — an unrecognised sentinel, a `TypeError`, an `Error` — is a
+	 * breakage. Defaulting the other way would hide the next failure mode the
+	 * engine grows behind a 422.
+	 *
+	 * Each of these four is a refusal because the engine reached a verdict: the
+	 * case loaded, the transition resolved, and a rule said no.
+	 *
+	 * - `transition_from_status_mismatch`: the case is no longer in the status
+	 *   the transition leaves from. The client's timeline is stale.
+	 * - `transition_unauthorized`: the caller is not in the group the
+	 *   transition's `authorization` list names.
+	 * - `transition_conflict`: the optimistic lock lost — another transition
+	 *   landed between the read and the write.
+	 * - `result_type_required`: a closing move arrived without a result, the
+	 *   input `availableActions()` publishes for exactly this reason.
+	 *
+	 * {@see GuardFailedException} is the fifth refusal and is not listed: it is
+	 * matched by type, because it carries the failed guards a client renders.
+	 */
+	private const REFUSALS = [
+		'transition_from_status_mismatch',
+		'transition_unauthorized',
+		'transition_conflict',
+		'result_type_required',
+	];
 
 	/**
 	 * Constructor.
@@ -173,6 +235,206 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 
 		return $actions;
 	}//end availableActions()
+
+	/**
+	 * Take one of the moves this provider offered.
+	 *
+	 * THE PROVIDER DOES THE WRITE. {@see StatusTransitionService::execute()}
+	 * re-evaluates the transition's guards, takes the optimistic version lock,
+	 * refuses a closing move that carries no result, writes the status record
+	 * and dispatches the transition's side effects — all in one call, all in
+	 * dossiq's own model. Nothing here repeats any of it: a second check would
+	 * be the second authority this class exists to avoid, and could refuse a
+	 * move the engine allows.
+	 *
+	 * THE RETURN VALUE IS THE ENGINE'S REPORT, VERBATIM. OpenRegister reads one
+	 * key off it, `to`, and the engine names none: its `status` key is the
+	 * literal string `ok`, not a statusType. So `to` is deliberately NOT added.
+	 * OpenRegister then reads the target state off the lifecycle field of the
+	 * object it re-reads — `status`, per the case schema's
+	 * `x-openregister-lifecycle` — which is stored truth. An echoed `to` would
+	 * be a second claim about the same move, and the only way the two could
+	 * ever differ is if the echo were wrong.
+	 *
+	 * @param array<string, mixed> $object The case payload as it stood before the move.
+	 * @param string $userId The uid of the caller, empty when there is no session user.
+	 * @param string $action The transition id, one `availableActions()` published.
+	 * @param array<string, mixed> $data The inputs the caller supplied, keyed by field.
+	 *
+	 * @return array<string, mixed> The engine's report: `status`, `statusRecord`,
+	 *                              `dispatchedActions` and `version`.
+	 *
+	 * @throws RuntimeException When the move is refused — a guard said no, the case
+	 *                          already moved, the caller may not, a result is missing.
+	 * @throws LifecycleSubjectNotFoundException When the case has been deleted.
+	 * @throws LifecycleProviderException When the engine could not answer at all.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function execute(array $object, string $userId, string $action, array $data): array {
+		$caseId = $this->caseIdOf(object: $object);
+		if ($caseId === '') {
+			// Not a refusal: OpenRegister only calls this with an object it
+			// has just read, so a payload with no identity means dossiq or
+			// OpenRegister is broken, not that the move is disallowed. Same
+			// reading as `availableActions()`.
+			throw new LifecycleProviderException(
+				message: 'Dossiq case lifecycle provider: the object carries no case id.'
+			);
+		}
+
+		// An empty uid means OpenRegister had no session user to name. Handing
+		// that on as null lets the engine resolve the caller from IUserSession
+		// itself, which is the identity its authorization gate would use.
+		$caller = null;
+		if ($userId !== '') {
+			$caller = $userId;
+		}
+
+		try {
+			return $this->transitionEngine->execute(
+				caseId: $caseId,
+				transitionId: $action,
+				comment: $this->textOf(data: $data, field: self::COMMENT_INPUT),
+				userId: $caller,
+				resultTypeId: $this->textOf(data: $data, field: self::CLOSING_INPUT),
+			);
+		} catch (Throwable $e) {
+			throw $this->classify(failure: $e, object: $object, caseId: $caseId, action: $action);
+		}
+	}//end execute()
+
+	/**
+	 * Decide which of OpenRegister's three failures the engine just had.
+	 *
+	 * Returns the exception to throw rather than throwing it, so the whole
+	 * mapping is one expression a test can drive one row at a time.
+	 *
+	 * @param Throwable $failure What the engine threw.
+	 * @param array<string, mixed> $object The case payload OpenRegister handed over.
+	 * @param string $caseId The case UUID.
+	 * @param string $action The transition id that was asked for.
+	 *
+	 * @return Throwable The refusal unchanged, or the breakage/not-found type that wraps it.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function classify(Throwable $failure, array $object, string $caseId, string $action): Throwable {
+		// A guard said no, and said why. Matched by type rather than by message
+		// so the failed-guard snapshots reach the client intact.
+		if ($failure instanceof GuardFailedException) {
+			return $failure;
+		}
+
+		$code = '';
+		if ($failure instanceof RuntimeException) {
+			$code = $failure->getMessage();
+		}
+
+		if (in_array($code, self::REFUSALS, true) === true) {
+			return $failure;
+		}
+
+		// 🔴 `case_not_found` IS FOUR FAILURES WEARING ONE NAME.
+		// `CaseStatusStore::loadCase()` answers null when OpenRegister's
+		// ObjectService is absent, when the register or case schema is not
+		// configured, when `find()` throws — and when the row genuinely is not
+		// there. It logs the difference and returns the same null, so the
+		// engine cannot pass it on and neither can this class.
+		//
+		// The payload settles ONE of those four, and only that one: OpenRegister
+		// hands over the object it just read, and a soft-deleted object carries
+		// its deletion in `@self.deleted`. That is a case that is provably gone,
+		// so it is the 404. Every other `case_not_found` is reported as a
+		// breakage, which is the safer half of a coin this class cannot call: a
+		// storage failure told as a breakage is retried, while a storage failure
+		// told as "this case was deleted" sends a handler looking for a case
+		// nobody removed.
+		if ($code === self::CASE_NOT_FOUND && $this->isDeleted(object: $object) === true) {
+			$this->logger->warning(
+				'Dossiq case lifecycle provider: the case a move was asked for has been deleted',
+				['caseId' => $caseId, 'action' => $action],
+			);
+
+			return new LifecycleSubjectNotFoundException(
+				message: sprintf('Dossiq case lifecycle provider: case "%s" no longer exists.', $caseId),
+				code: 0,
+				previous: $failure,
+			);
+		}
+
+		$this->logger->error(
+			'Dossiq case lifecycle provider: the move could not be applied',
+			['exception' => $failure, 'caseId' => $caseId, 'action' => $action, 'code' => $code],
+		);
+
+		return new LifecycleProviderException(
+			message: sprintf('Dossiq case lifecycle provider: the move on case "%s" could not be applied.', $caseId),
+			code: 0,
+			previous: $failure,
+		);
+	}//end classify()
+
+	/**
+	 * Whether the payload OpenRegister handed over declares the case deleted.
+	 *
+	 * `@self.deleted` is OpenRegister's own soft-delete block, and its shape is
+	 * read the way OpenRegister reads it: a live object carries null or an
+	 * empty array there, so only a non-empty value means deleted. Reading it as
+	 * `!== null` would call every object deleted, which is the mistake
+	 * `ObjectEntity::isDeleted()` documents.
+	 *
+	 * @param array<string, mixed> $object The case payload.
+	 *
+	 * @return bool True when the payload says the case has been deleted.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function isDeleted(array $object): bool {
+		$self = ($object['@self'] ?? []);
+		if (is_array($self) === false) {
+			return false;
+		}
+
+		$deleted = ($self['deleted'] ?? null);
+		if (is_array($deleted) === true) {
+			return $deleted !== [];
+		}
+
+		return (is_string($deleted) === true && trim($deleted) !== '');
+	}//end isDeleted()
+
+	/**
+	 * Read one text input off the data OpenRegister collected.
+	 *
+	 * A value that is not text is dropped rather than cast. Casting an array
+	 * would raise a conversion warning and pass the string `Array` on as a
+	 * resultType, which the engine would store; dropping it leaves the engine
+	 * to refuse the move for the input it is actually missing.
+	 *
+	 * @param array<string, mixed> $data The caller's inputs.
+	 * @param string $field The field to read.
+	 *
+	 * @return string|null The trimmed value, null when absent, empty or not text.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function textOf(array $data, string $field): ?string {
+		$value = ($data[$field] ?? null);
+
+		$text = '';
+		if (is_string($value) === true) {
+			$text = trim($value);
+		} elseif (is_int($value) === true) {
+			$text = (string)$value;
+		}
+
+		if ($text === '') {
+			return null;
+		}
+
+		return $text;
+	}//end textOf()
 
 	/**
 	 * Map one dossiq transition onto OpenRegister's published action shape.

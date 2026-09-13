@@ -28,8 +28,6 @@ import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-// --- ZGW DRC case dossier sidebar tab. ---
-// @spec openspec/changes/document-zaakdossier/tasks.md#T10
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
 // @spec openspec/changes/deelzaak-support/tasks.md#T05

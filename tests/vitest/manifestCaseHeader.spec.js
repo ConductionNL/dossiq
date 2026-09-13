@@ -70,64 +70,153 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 	})
 })
 
-describe('CaseDetail — the facts lead the page as loose tiles (task 2.1, revised 2026-09-13)', () => {
-	// The identity row was one custom widget (`case-header`) drawing the
-	// facts inside a single cell, which clipped them and read as one strip.
-	// The facts are built-in tiles now, one per fact and each its own grid
-	// cell, laid out the way the page was arranged by hand in Buildiq edit
-	// mode; the tiles the handler did not need (status, assignee) were
-	// dropped there, and both facts read in the Data tab.
-	const TILES = ['case-kpi-number', 'case-kpi-casetype', 'case-kpi-deadline']
+describe('CaseDetail — the identity row is three configured tiles and the hours card', () => {
+	// Ruben, 2026-09-12: "The widgets on top of the page should be actual KPI
+	// widgets configured to show what they show... it should not be a custom
+	// widget spanning an entire row."
+	//
+	// So every assertion here is about a widget the LIBRARY renders from
+	// `content`. A `type` the library does not know falls back to the page's
+	// `widget-<id>` slot, and a page with no such slot renders an empty cell
+	// and logs nothing, which is the failure this file exists to catch.
+	//
+	// Three tiles, not five. Ruben laid the row out by hand in Buildiq edit
+	// mode on 2026-09-12 and dropped the status and the assignee: both read
+	// in the Data tab, the open tab on load, and the status also reads on the
+	// stages widget, which is where a case is moved. The hours card (the
+	// humaniq leaf) fills the fourth cell of the row.
+	const TILES = [
+		['case-tile-number', 'stat', 0, 3],
+		['case-tile-type', 'stat', 3, 3],
+		['case-tile-deadline', 'countdown', 6, 3],
+	]
+	const HOURS = ['case-kpis-hours', 'integration', 9, 3]
 
-	it('declares no case-header custom widget any more', () => {
+	it('has retired the custom band and its slot', () => {
 		expect(widget('case-header')).toBeUndefined()
 		expect(cells('case-header')).toHaveLength(0)
-		expect(caseDetail().slots?.['widget-case-header']).toBeUndefined()
+		expect(caseDetail().slots['widget-case-header']).toBeUndefined()
+		// The IMPORT and the ENTRY, not the name: the registry keeps a comment
+		// saying the three components went and why, and a bare name match would
+		// read that explanation as the thing it explains.
+		expect(registrySource).not.toContain('CaseHeaderRow.vue')
 		expect(registrySource).not.toContain('CaseHeaderRow: {')
 	})
 
-	it('leads the page with the tiles on row 0, each its own cell', () => {
-		for (const id of TILES) {
-			const [cell, ...more] = cells(id)
-			expect(cell, `${id} has no cell`).toBeTruthy()
-			expect(more, `${id} is placed twice`).toEqual([])
-			expect(cell.gridY, `${id} is not on the first row`).toBe(0)
-			expect(cell.showTitle, `${id} labels itself, so no grid heading`).toBe(false)
+	for (const [id, type, gridX, gridWidth] of TILES) {
+		it(`declares ${id} as a configured ${type} widget`, () => {
+			const entry = widget(id)
+			expect(entry).toBeDefined()
+			expect(entry.type).toBe(type)
+			// A configured widget carries its config, not a registry key. An
+			// empty `content` renders a tile with no label and no value, which
+			// looks exactly like a tile whose data has not arrived.
+			expect(Object.keys(entry.content ?? {}).length).toBeGreaterThan(0)
+		})
+
+		it(`places ${id} in the top row without spanning it`, () => {
+			const placed = cells(id)
+			expect(placed).toHaveLength(1)
+			expect(placed[0].gridY).toBe(0)
+			expect(placed[0].gridX).toBe(gridX)
+			expect(placed[0].gridWidth).toBe(gridWidth)
+			expect(placed[0].gridWidth).toBeLessThan(12)
+			// A card widget draws its own label, so the wrapper header would
+			// print the title twice.
+			expect(placed[0].showTitle).toBe(false)
+		})
+	}
+
+	it('places the hours card in the fourth cell of the row', () => {
+		const [id, type, gridX, gridWidth] = HOURS
+		expect(widget(id).type).toBe(type)
+		const placed = cells(id)
+		expect(placed).toHaveLength(1)
+		expect(placed[0].gridY).toBe(0)
+		expect(placed[0].gridX).toBe(gridX)
+		expect(placed[0].gridWidth).toBe(gridWidth)
+	})
+
+	it('declares neither a status tile nor an assignee tile', () => {
+		for (const id of ['case-tile-status', 'case-tile-assignee']) {
+			expect(widget(id), `${id} is declared`).toBeUndefined()
+			expect(cells(id), `${id} is placed`).toHaveLength(0)
 		}
 	})
 
-	it('reads each fact off the loaded record through a built-in type', () => {
-		expect(widget('case-kpi-number').type).toBe('stat')
-		expect(widget('case-kpi-number').content.objectField).toBe('identifier')
-		expect(widget('case-kpi-casetype').type).toBe('stat')
-		expect(widget('case-kpi-casetype').content.objectField.field).toBe('caseType')
-		expect(widget('case-kpi-deadline').type).toBe('countdown')
-		expect(widget('case-kpi-deadline').content.field).toBe('deadline')
+	it('fills the top row exactly, leaving no gap and no overhang', () => {
+		const top = caseDetail().config.layout.filter((c) => c.gridY === 0)
+		expect(top).toHaveLength(TILES.length + 1)
+		expect(top.reduce((sum, c) => sum + c.gridWidth, 0)).toBe(12)
+		expect(Math.min(...caseDetail().config.layout.map((c) => c.gridY))).toBe(0)
+	})
+
+	it('resolves the case type through the register, not in JavaScript', () => {
+		// The uuid-to-title resolve CaseHeaderRow did by hand. `emptyText` is
+		// what keeps a raw uuid off the page when the lookup finds nothing: a
+		// uuid under the title is a fact about the database, not about the case.
+		const content = widget('case-tile-type').content
+		expect(content.objectField.field).toBe('caseType')
+		expect(content.objectField.resolve).toMatchObject({
+			register: 'dossiq',
+			schema: 'caseType',
+			labelField: 'title',
+		})
+		expect(content.emptyText).toBeTruthy()
+	})
+
+	it('still prints the case number, which subtitleField does not', () => {
+		// REQ-CDV-14 asks for the number under the title through
+		// `config.subtitleField`. The key is set and no detail-page code in
+		// @conduction/nextcloud-vue reads it, so the number renders nowhere
+		// unless a widget carries it. Assert BOTH: the declaration the
+		// requirement names, and the tile that actually delivers it.
+		expect(caseDetail().config.subtitleField).toBe('identifier')
+		expect(widget('case-tile-number').content.objectField).toBe('identifier')
+	})
+
+	it('counts the deadline down in the bands the retired tile used', () => {
+		const content = widget('case-tile-deadline').content
+		expect(content.field).toBe('deadline')
+		expect(content.thresholds).toEqual({ warn: 14, danger: 5 })
 	})
 
 	it('names only icons that src/icons.js registers', () => {
-		for (const id of TILES) {
-			const icon = widget(id).icon
-			expect(icon, `${id} names no icon`).toBeTruthy()
-			expect(
-				iconsSource.includes(`import ${icon} from 'vue-material-design-icons/${icon}.vue'`),
-				`${icon} is not imported in src/icons.js`,
-			).toBe(true)
+		// An unregistered name renders NO icon, not a fallback glyph (gate-60).
+		// Both spellings matter: the wrapper header reads `widget.icon` and the
+		// tile itself reads `content.icon`.
+		const names = TILES.flatMap(([id]) => [
+			widget(id).icon,
+			widget(id).content.icon,
+		]).filter(Boolean)
+		expect(names.length).toBeGreaterThan(0)
+		for (const name of names) {
+			expect(iconsSource, `icon ${name} is not registered`).toContain(
+				`import ${name} from 'vue-material-design-icons/${name}.vue'`,
+			)
 		}
 	})
 
-	it('has retired the Time left tile, whose count the deadline tile carries', () => {
-		// The countdown tile computes days left from the deadline the way the
-		// old tile did, with the same bands: 14 days warns, 5 days is danger.
-		expect(widget('case-kpi-time-left')).toBeUndefined()
-		expect(cells('case-kpi-time-left')).toHaveLength(0)
-		expect(widget('case-kpi-deadline').content.thresholds).toEqual({ warn: 14, danger: 5 })
+	it('has retired the Time left and Case type tiles from the page', () => {
+		// Both facts read in the identity row. Leaving the old tiles beside it
+		// would print each of them twice.
+		for (const retired of ['case-kpi-time-left', 'case-kpi-casetype']) {
+			expect(widget(retired), `${retired} is still declared`).toBeUndefined()
+			expect(cells(retired), `${retired} is still placed`).toHaveLength(0)
+		}
+		// And no tab child names them either: a tabs entry is the third place
+		// a widget id can hide, and it is not covered by the two above.
+		const tabIds = (widget('case-panels')?.content?.tabs ?? []).map(
+			(tab) => tab.widgetId,
+		)
+		expect(tabIds).not.toContain('case-kpi-time-left')
+		expect(tabIds).not.toContain('case-kpi-casetype')
 	})
 
 	it('keeps every layout cell pointing at a declared widget', () => {
-		const ids = caseDetail().config.widgets.map((entry) => entry.id)
+		const declared = new Set(caseDetail().config.widgets.map((w) => w.id))
 		for (const cell of caseDetail().config.layout) {
-			expect(ids, `layout cell ${cell.id} points at ${cell.widgetId}, which is not declared`).toContain(cell.widgetId)
+			expect(declared, `layout cell ${cell.id}`).toContain(cell.widgetId)
 		}
 	})
 })
@@ -142,8 +231,12 @@ describe('CaseDetail — the breadcrumb is gone, deliberately (regression guard)
 		// oversight: without it, the next reader finds a `_breadcrumbsNote`
 		// explaining a key that is not there and re-adds the key.
 		expect(caseDetail().config.breadcrumbs).toBeUndefined()
-		// The identity row that once carried its own trail is gone as well.
-		expect(widget('case-header')).toBeUndefined()
+		// The widget half of this guard went with CaseHeaderRow. Nothing on the
+		// page declares a trail now, so assert that across every widget rather
+		// than against one that no longer exists.
+		expect(JSON.stringify(caseDetail().config.widgets)).not.toContain(
+			'breadcrumb',
+		)
 	})
 
 	it('keeps the note that says why, so the removal is not re-litigated', () => {
@@ -160,7 +253,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	it('is the work a handler does, in order, and nothing else', () => {
 		// Task 4.1 asked for the work tabs to LEAD the strip, because there
 		// were nine more behind them. There are none behind them now: the strip
-		// is seven tabs and this is all of them, so what was a prefix assertion is
+		// is six tabs and this is all of them, so what was a prefix assertion is
 		// an exact one. Timeline is deliberately absent: the timeline is the
 		// sidebar History tab (change case-timeline), and a body panel over the
 		// same log would be the duplication that change exists to retire.
@@ -238,13 +331,15 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 	it('grew case-panels to take the Data tab it absorbed', () => {
 		const panels = cells('case-panels')[0]
 		expect(cells('case-core')).toHaveLength(0)
-		// Nine rows since the layout was laid out by hand in Buildiq edit mode
-		// (2026-09-12): enough for the data grid without an inner scrollbar at
-		// a laptop height, with the terms and the case plan resting straight
-		// under it rather than a void (ADR-062: the cell is the budget).
-		expect(panels.gridHeight).toBeGreaterThanOrEqual(8)
+		// Nine rows by nine columns: Ruben's hand layout of 2026-09-12.
+		expect(panels.gridWidth).toBe(9)
+		expect(panels.gridHeight).toBeGreaterThanOrEqual(9)
+		// The left column runs to the bottom of the right one, so the page has
+		// no reserved void under the strip (ADR-062: the cell is the budget).
 		const bottom = (cell) => cell.gridY + cell.gridHeight
-		const under = caseDetail().config.layout.filter((c) => c.gridY === bottom(panels) && c.gridX < panels.gridX + panels.gridWidth)
-		expect(under.map((c) => c.widgetId).sort()).toEqual(['case-terms', 'cmmn-case-plan'])
+		const right = caseDetail().config.layout.filter(
+			(c) => c.gridX >= 9 && c.gridY >= 2,
+		)
+		expect(bottom(panels)).toBe(Math.max(...right.map(bottom)))
 	})
 })

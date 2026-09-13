@@ -47,7 +47,6 @@ import { dismissSupportDialog } from './nav.ts'
  */
 export const CASE_PANELS = {
 	data: { tab: /^(Data|Gegevens)$/, section: null },
-	documents: { tab: /^Documents$/, section: 'case-section-case-documents' },
 	files: { tab: /^Documents$/, section: 'case-section-case-files' },
 	parties: { tab: /^People$/, section: 'case-section-case-roles' },
 	communication: {

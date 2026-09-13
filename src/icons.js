@@ -112,6 +112,7 @@ import FlagCheckered from 'vue-material-design-icons/FlagCheckered.vue'
 import FlagOutline from 'vue-material-design-icons/FlagOutline.vue'
 import FolderAccountOutline from 'vue-material-design-icons/FolderAccountOutline.vue'
 import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
+import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
@@ -294,6 +295,7 @@ export default {
 	FlagCheckered,
 	FlagOutline,
 	FolderAccountOutline,
+	FolderMultipleOutline,
 	FolderCogOutline,
 	FolderOutline,
 	FolderPlusOutline,

@@ -204,7 +204,7 @@ test.describe('Contacts', () => {
 		// `initiatorDisplayName` AND `initiatorSourceId`. All three, or none of
 		// them, and two CI runs paid for learning why.
 		//
-		// They are not derived by OpenRegister. `InitiatorSection` BACK-FILLS
+		// They are not derived by OpenRegister. `RequesterProjection` BACK-FILLS
 		// them in the browser: opening a case whose `requester` is set but whose
 		// projection is missing fetches the row, shapes it through
 		// `personResult` / `companyResult` and saves it back to the case. So an

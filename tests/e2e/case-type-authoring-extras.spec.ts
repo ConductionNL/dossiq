@@ -392,16 +392,6 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('the case page draws the current status in its status’s colour', async ({
 		page,
 	}) => {
-		// The status is a built-in `stat` tile now (five loose KPI cards on the
-		// case page), and a stat tile has no variant that follows a resolved
-		// reference, so nothing on the case page draws the status type's
-		// colour. The requirement stands; the surface does not. This is a
-		// visible skip, not a green: it comes back the day nextcloud-vue's stat
-		// widget takes a `variantField` on its resolve.
-		test.fixme(
-			true,
-			'no surface on the case page carries the status colour since the KPI tiles',
-		)
 		const openCase = (
 			await listObjects(api, 'case', { caseType: parent.caseType })
 		).find((row) => String(row.status ?? '') === parent.progress)
@@ -410,9 +400,18 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${objectId(openCase)}`)
 		await dismissSupportDialog(page)
 
-		await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')).toHaveAttribute(
-			'data-colour',
-			'orange',
+		// 🔴 THE COLOUR SURVIVES, THE TOKEN DOES NOT, and this assertion says
+		// which. CaseHeaderRow carried the authored palette NAME on a
+		// `data-colour` attribute, read only by this test; the visible variant
+		// came from `isFinal`. The identity row is a configured `stat` tile
+		// now, and its badge takes ONE axis: `objectField.resolve.variantField`
+		// is `colour`, so the authored hue is what paints the pill, mapped
+		// through `variantMap` onto the six variants CnStatusBadge accepts.
+		// Orange maps to `warning`. What is gone is the exact
+		// `var(--nl-color-orange)` token and the six `-light` tints, which fold
+		// onto their full hue. That loss is in the PR that made this change.
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveClass(
+			/cn-status-badge--warning/,
 			{ timeout: 30_000 },
 		)
 	})

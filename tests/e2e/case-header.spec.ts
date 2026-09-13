@@ -22,7 +22,7 @@
  * same in either locale.
  */
 
-import type {Locator, Page} from '@playwright/test';
+import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
@@ -63,20 +63,48 @@ const WORK_TABS = [
 ]
 
 /**
- * One KPI tile in the case's top row, found by its label.
+ * The identity row is five CONFIGURED library tiles now, not one custom
+ * component, so there is no `case-header` element and no per-tile testid to
+ * ask for: a manifest widget definition cannot set one, and CnDetailPage puts
+ * no widget id on the grid cell it renders.
  *
- * The row is five built-in tiles now (`stat` in object-field mode and one
- * `countdown`), not the custom `case-header` widget with its testids, so a
- * tile is addressed by the label it prints, in either language.
+ * So the tiles are addressed by POSITION, which the manifest fixes. CnDetailPage
+ * renders `.cn-detail-page__grid-item` in `config.layout` order, and the first
+ * three entries are the identity row: number, type, deadline, with the hours
+ * card in the fourth cell. The status and the assignee are not tiles (Ruben's
+ * layout of 2026-09-12): the status reads on the stages widget beside the
+ * panels and in the Data tab, the assignee in the Data tab.
+ * `tests/vitest/manifestCaseHeader.spec.js` pins that order and those widths, so
+ * a reordering fails there with a readable message before it reaches a browser.
  *
- * @param page The page.
- * @param label The tile's label.
- * @return The tile.
+ * The one tile that HAS a stable hook is addressed by it instead: the deadline
+ * is the only `.cn-countdown-widget` on the page.
  */
-function tile(page: Page, label: RegExp): Locator {
-	return page
-		.locator('.cn-kpi-card')
-		.filter({ has: page.locator('.cn-kpi-card__title', { hasText: label }) })
+const TILE = { number: 0, type: 1, deadline: 2 } as const
+
+/** The Status field of the Data tab, the open tab on load. */
+const DATA_TAB_STATUS = '.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value'
+
+/**
+ * One identity tile, by its place in the row.
+ *
+ * @param page The page under test.
+ * @param index The tile's layout position, from TILE.
+ * @return The tile's grid cell.
+ */
+function tile(page: Page, index: number) {
+	return page.locator('.cn-detail-page__grid-item').nth(index)
+}
+
+/**
+ * The value one identity tile prints, without its label.
+ *
+ * @param page The page under test.
+ * @param index The tile's layout position, from TILE.
+ * @return The tile's value element.
+ */
+function tileValue(page: Page, index: number) {
+	return tile(page, index).locator('.cn-kpi-card__value')
 }
 
 test.describe('Case header — identity, no breadcrumb, and tab order', () => {
@@ -197,14 +225,14 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	// BELOW the title. Both halves, because either alone is satisfied by a
 	// layout the requirement exists to rule out. The page title is asserted
 	// outright, which closes the THEN that was never covered by anything.
-	test('the case number, type, status and assignee read under the title', async ({
+	test('the case number and the case type read under the title', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const number = tile(page, /^(Case number|Zaaknummer)$/)
-		await expect(number).toBeVisible({ timeout: 30_000 })
+		const numberTile = tileValue(page, TILE.number)
+		await expect(numberTile).toBeVisible({ timeout: 30_000 })
 
 		// THEN the page title reads the case title.
 		const pageTitle = page.locator('.cn-detail-page__title')
@@ -213,16 +241,16 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 			'the case page must name the case in its own title',
 		).toHaveText(caseTitle, { timeout: 20_000 })
 
-		await expect(number.locator('.cn-kpi-card__value')).toHaveText(
-			caseIdentifier,
-			{ timeout: 20_000 },
-		)
+		await expect(numberTile).toHaveText(caseIdentifier, { timeout: 20_000 })
 
-		// AND the number reads UNDER it: the tile is where the number renders,
-		// so this is the clause the scenario states, measured against the
-		// element that delivers it.
+		// AND the number reads UNDER it, which is the clause the scenario
+		// states, measured against the element that delivers it. That element
+		// is a tile rather than the subtitle the requirement names, because
+		// `config.subtitleField` is inert on a detail page in
+		// @conduction/nextcloud-vue 2.49: CnObjectRow, CnIndexPage and
+		// CnObjectList read it and no detail-page code does.
 		const titleBox = await pageTitle.boundingBox()
-		const numberBox = await number.boundingBox()
+		const numberBox = await numberTile.boundingBox()
 		expect(titleBox, 'the page title must have a box').not.toBeNull()
 		expect(numberBox, 'the case number must have a box').not.toBeNull()
 		expect(
@@ -230,18 +258,33 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 			`the case number must read under the title, not beside or above it: `
 				+ `title at y=${titleBox!.y}, number at y=${numberBox!.y}`,
 		).toBeGreaterThan(titleBox!.y)
-		await expect(
-			tile(page, /^(Case type|Zaaktype)$/).locator('.cn-kpi-card__value'),
-		).toHaveText(caseTypeTitle, { timeout: 20_000 })
-		// The assignee is not a tile: it reads in the Data tab, which is the
-		// open tab on load.
-		await expect(page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Assignee")) .cn-object-data-widget__value')).toContainText('admin')
 
-		// The tiles sit ABOVE the tab strip: an identity a reader has to
-		// scroll to is the state this row replaced.
+		// The case type is a uuid on the case. A tile printing that uuid would
+		// pass "renders something" and fail the feature.
+		const typeTile = tileValue(page, TILE.type)
+		await expect(typeTile).toHaveText(caseTypeTitle, { timeout: 20_000 })
+
+		// The row sits ABOVE the tab strip: an identity a reader has to scroll
+		// to is the state this row replaced.
+		const rowBox = await tile(page, TILE.number).boundingBox()
 		const stripBox = await page.locator('.cn-tabs-widget').boundingBox()
+		expect(rowBox, 'the identity row must have a box').not.toBeNull()
 		expect(stripBox, 'the tab strip must have a box').not.toBeNull()
-		expect(numberBox!.y).toBeLessThan(stripBox!.y)
+		expect(rowBox!.y).toBeLessThan(stripBox!.y)
+
+		// AND NO TILE SPANS THE ROW. That is the whole of Ruben's 2026-09-12
+		// ruling, and it is a geometry claim, so it belongs in a browser: the
+		// band this replaced was twelve columns wide and mostly air.
+		const pageWidth = (await page.locator('.cn-detail-page').boundingBox())!
+			.width
+		for (const index of Object.values(TILE)) {
+			const box = await tile(page, index).boundingBox()
+			expect(box, `tile ${index} must have a box`).not.toBeNull()
+			expect(
+				box!.width,
+				`tile ${index} is ${box!.width}px of a ${pageWidth}px row`,
+			).toBeLessThan(pageWidth * 0.9)
+		}
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#status-and-deadline-sit-in-the-header-row
@@ -250,53 +293,57 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
 
 		// The case carries a status UUID. A field showing the uuid would pass
-		// "renders something" and fail the feature. The status is not a tile
-		// any more; it reads in the Data tab, the open tab on load.
-		const status = page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')
+		// "renders something" and fail the feature. The status is not a tile:
+		// it reads in the Data tab, the open tab on load, and on the stages
+		// widget beside the panels.
+		const status = page.locator(DATA_TAB_STATUS)
 		await expect(status).toHaveText(statusName, { timeout: 30_000 })
 		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveCount(0)
 
 		// A start date in early 2024 puts the computed deadline behind us
-		// whatever term the case type carries, so the countdown reads overdue
-		// and paints in the danger band.
+		// whatever term the case type carries, so the countdown reads overdue.
+		// It is the library `countdown` widget now, which says "N days overdue"
+		// rather than a negative number and paints itself in the error variant:
+		// "-3 days left" is a puzzle, and overdue is the one state a handler
+		// must not have to decode.
 		const countdown = page.locator('.cn-countdown-widget')
 		await expect(countdown).toHaveCount(1)
 		await expect(countdown).toBeVisible({ timeout: 20_000 })
-		await expect(countdown).toHaveClass(/cn-countdown-widget--(danger|error)/)
+		await expect(countdown).toHaveClass(/cn-countdown-widget--error/)
 		await expect(countdown).toContainText(/\d+ (days?|dagen?)/)
-
-		// The deadline is the countdown tile and nothing else: no second tile
-		// labelled Time left, which is the duplication the earlier fold retired.
-		await expect(page.getByText(/^(Time left|Resterende tijd)$/)).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#a-case-without-a-status-or-a-deadline-still-has-a-header
-	test('a case with no status and no deadline still has its tiles', async ({
+	test('a case with no status and no deadline still has a header', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${bareCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		// The number tile is there, and the Data tab's status field names
-		// nothing it does not know: no uuid, and no name the record does not
-		// carry.
-		await expect(tile(page, /^(Case number|Zaaknummer)$/)).toBeVisible({
-			timeout: 30_000,
-		})
-		const status = page.locator('.cn-object-data-widget__cell:has(.cn-object-data-widget__label:text-is("Status")) .cn-object-data-widget__value')
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
+
+		// The Data tab's status field names nothing it does not know: no uuid,
+		// and no name the record does not carry.
+		const status = page.locator(DATA_TAB_STATUS)
 		await expect(status).toBeVisible({ timeout: 20_000 })
 		await expect(status).not.toContainText(
 			/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 		)
-		// And no count of days at all. "0 days left" would be a claim this case
-		// has not made.
+
+		// The countdown tile is still PLACED, and it says nothing. A dash and
+		// no threshold colour: a case with no deadline is not urgent and is not
+		// on time, and "0 days left" would be a claim this case has not made.
 		const countdown = page.locator('.cn-countdown-widget')
-		await expect(countdown).toHaveCount(1)
-		await expect(countdown).not.toContainText(/\d+ (days?|dagen?)/)
+		await expect(countdown).toBeVisible({ timeout: 20_000 })
+		await expect(countdown).toContainText('—')
+		await expect(countdown).not.toHaveClass(/cn-countdown-widget--error/)
+		await expect(countdown).not.toHaveClass(/cn-countdown-widget--warning/)
 	})
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#no-trail-is-rendered
@@ -307,11 +354,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		// it cost the top of the page a row.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(tile(page, /^(Case number|Zaaknummer)$/)).toBeVisible({
-			timeout: 30_000,
-		})
-
-		await expect(page.getByTestId('case-header-breadcrumbs')).toHaveCount(0)
+		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
 
 		// 🔑 THE TRAIL'S SIGNATURE, NOT A GLOBAL COUNT OF THE TITLE.
 		//
@@ -333,7 +376,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-seven-tabs-and-no-more
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-six-tabs-and-no-more
 	test('the work tabs ARE the strip, in order, with nothing after them', async ({
 		page,
 	}) => {
@@ -353,7 +396,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		expect(labels).toEqual(WORK_TABS)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-seven-tabs-fit-a-laptop-screen
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-six-tabs-fit-a-laptop-screen
 	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {

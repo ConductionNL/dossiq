@@ -23,8 +23,10 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-// The case's own state on the case page: the transition strip, the stepper
-// over the case type's statuses, and the reason dialog the Actions menu opens.
+// The case's own state on the case page is no longer a registry component at
+// all: the identity band is four configured library tiles (stat + countdown)
+// and the stepper is the library `stages` widget, which is also how the case
+// is moved. CaseHeaderRow, CaseStepsWidget and CaseTransitionsWidget are gone.
 // @spec openspec/specs/status-transition-engine/spec.md
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
@@ -32,8 +34,6 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
-import CaseStepsWidget from './components/case/CaseStepsWidget.vue'
-import CaseTransitionsWidget from './components/case/CaseTransitionsWidget.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -45,6 +45,7 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
+import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -72,6 +73,15 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
+// The Documents tab's upload dialog and bulk-action dialog
+// (documents-on-the-case task 2.2: the tab itself is now a `type:
+// "object-list"` CnObjectListWidget, resolved by the library, not a
+// registry widget entry — only the two modals it dispatches to are ours).
+// @spec openspec/specs/document-zaakdossier/spec.md
+// @spec openspec/specs/document-zaakdossier/spec.md
+import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -88,8 +98,6 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
-// The ZGW DRC case file, rendered as the CaseDetail Documents tab.
-// @spec openspec/specs/document-zaakdossier/spec.md
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -237,20 +245,17 @@ const registry = {
 	},
 
 	// --- The case's lifecycle on the case page (case-lifecycle-on-the-page). ---
-	// @spec openspec/specs/status-transition-engine/spec.md
-	CaseTransitionsWidget: {
-		// @custom-widget-ratchet exclude the transitions a case allows come from dossiq's own engine (workflow template, role filter, guard verdicts) and no declarative widget reads them: CnLifecycleActions asks OpenRegister, which answers nothing for a $ref status field
-		kind: 'widget',
-		component: CaseTransitionsWidget,
-		_note: 'CaseDetail header strip: the transitions this user may take from the current status, the confirm dialog that asks for a comment and, on a closing move, a result, plus the suspended marker and the Resume button a suspended case needs in front of the handler. Deleted when OpenRegister can express a per-caseType graph over a reference field (tasks 4.4).',
-	},
-	// @spec openspec/specs/case-dashboard-view/spec.md
-	CaseStepsWidget: {
-		// @custom-widget-ratchet exclude a stepper over a reference field's ordered sibling rows; the manifest vocabulary has no such widget type (tasks 3.3 asks for one)
-		kind: 'widget',
-		component: CaseStepsWidget,
-		_note: "CaseDetail: which step the case is in, over its case type's statusType rows in `order`. Replaces the milestone progress tile, which read 0% on every case because milestones are configured on almost none.",
-	},
+	//
+	// THREE ENTRIES USED TO LIVE HERE AND ALL THREE ARE GONE, with their
+	// components: CaseTransitionsWidget, CaseHeaderRow and CaseStepsWidget. Each
+	// carried a `@custom-widget-ratchet exclude` naming something the library
+	// could not express, and the library expresses all three now. The identity
+	// band is four configured tiles (`stat` twice for the case type and the
+	// status badge, `stat` for the assignee, `countdown` for the deadline), and
+	// the stepper is the `stages` widget, which reads OpenRegister
+	// /available-actions and moves the case when a stage is clicked. dossiq
+	// answers that endpoint through CaseActionProvider, so the moves are still
+	// its own engine's, asked for in the vocabulary the library speaks.
 	// --- The case type's effective blueprint (case-type-authoring-extras). ---
 	// @spec openspec/specs/case-types/spec.md
 	CaseTypeBlueprintWidget: {
@@ -303,9 +308,9 @@ const registry = {
 	// --- The Related cases tab, with the follow-ups still to come
 	//     (case-actions-menu, row A26). ---
 	//
-	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the reason
-	// `case-task-pane` and `dossier-tab` are: this is a child of the
-	// `case-panels` tabs widget, and a tab child has no layout grid item and
+	// KEYED BY THE WIDGET'S `type`, NOT BY A COMPONENT NAME, for the same
+	// reason `case-task-pane` is: this is a child of the `case-panels` tabs
+	// widget, and a tab child has no layout grid item and
 	// therefore no `widget-<id>` page slot. CnTabsWidget resolves a tab child
 	// through `cnRegistry[widget.type]` and renders nothing, silently, when no
 	// key answers.
@@ -362,6 +367,29 @@ const registry = {
 		kind: 'modal',
 		component: BeschikkingComposerDialog,
 		_note: "Picks a template from TemplateController#index and files the rendered letter on the case through MergeTemplateHandler with no targetField. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
+	},
+
+	// --- The case file as a tab on the case page (documents-on-the-case). ---
+	// The tab itself is `type: "object-list"` now (documents-on-the-case
+	// task 2.2), a library built-in resolved by nextcloud-vue and not listed
+	// here -- only the two dialogs its `dropZone`/upload and `bulkActions`
+	// dispatch to are dossiq's own.
+	// @spec openspec/specs/document-zaakdossier/spec.md
+	// @spec openspec/specs/document-zaakdossier/spec.md
+	DocumentMetadataDialog: {
+		kind: 'modal',
+		component: DocumentMetadataDialog,
+		_note: "Upload metadata dialog. Opened by the Documents tab's object-list `dropZone`/upload-button action as `type: open-modal`, which hands over `props.files` (the dropped or picked File[]) the same way a header action's `open-modal` props arrive -- verbatim, no `@`-token resolution. `caseId` is passed for the same reason BeschikkingComposerDialog's is, and falls back to the route when it still holds the literal token. Self-sufficient: fetches the informatieobjecttype catalog and performs the upload itself, since there is no parent DossierTab any more to do either.",
+	},
+	BulkDocumentActionDialog: {
+		kind: 'modal',
+		component: BulkDocumentActionDialog,
+		_note: 'Mark final / Change confidentiality / Download ZIP on a Documents-tab selection, one dialog in three `mode`s (mirrors BulkTransitionDialog). Opened by the object-list `bulkActions` entries as `type: open-modal`; CnObjectListWidget merges `props.selectedIds` onto the declared props the same way a drop merges `props.files`.',
+	},
+	VersionHistoryPanel: {
+		kind: 'modal',
+		component: VersionHistoryPanel,
+		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the object-list `rowActions` Versions entry as `type: open-modal`; CnObjectListWidget merges `props.row` (the clicked zaakinformatieobject row, `informatieobject` inlined by `content.extend`) onto the declared props (nextcloud-vue#1117) -- an open-modal row action otherwise carries no per-click information at all. Self-sufficient: reads the informatieobject off `row.informatieobject` and the signed-in user via `getCurrentUser()`, since there is no parent DossierTab any more to pass either down.',
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---
@@ -522,10 +550,39 @@ const registry = {
 	// to dossiq's own notification endpoint — see CaseNotesTab.vue for the
 	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
 	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
+	// --- The requester's projection, kept in step without a card. ---
+	//
+	// The initiator card left the page on 2026-09-12 (Ruben), but the card
+	// was also where a case saved with only the `requester` reference got its
+	// projection (type, source id, display name) written back, and the case
+	// list's Requester column and filter read that projection. This is the
+	// back-fill alone, mounted headless through the page's `actionsComponent`
+	// slot, which is the one place a detail page mounts a component of ours
+	// on load without giving it a grid cell.
+	// @spec openspec/specs/initiator-display/spec.md
+	RequesterProjection: {
+		kind: 'widget',
+		component: RequesterProjection,
+		_note: 'CaseDetail actions slot, headless: fills initiatorType, initiatorSourceId and initiatorDisplayName from the canonical requester uuid when the case carries the reference and no projection. Renders nothing.',
+	},
 	CaseNotesTab: {
 		kind: 'page',
 		component: CaseNotesTab,
 		_note: "Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab('notes')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.",
+	},
+	// --- The notes as a tab on the case page. ---
+	//
+	// The same component the sidebar's Notes tab mounts, keyed by a widget
+	// TYPE for the same reason `case-task-pane` is: a child of the
+	// `case-panels` tabs widget renders through CnDetailWidgetHost, which
+	// picks a renderer from `cnRegistry[widget.type]` and binds `objectId`,
+	// `register` and `schema` from the page, which is exactly the prop set
+	// CaseNotesTab takes from the sidebar. A `type: "custom"` widget would
+	// resolve through a page slot that only grid items get.
+	'case-notes-pane': {
+		kind: 'widget',
+		component: CaseNotesTab,
+		_note: 'CaseDetail Notes tab: the mention-aware CnNotesTab through CaseNotesTab, the same surface the sidebar offers, so a handler reading the case file does not have to open the sidebar to leave a note on it.',
 	},
 	// --- Sharing/transfer sidebar tab (federated-case-collaboration). ---
 	// Wires the previously-orphaned ShareTab/CreateShareDialog/

@@ -13,14 +13,16 @@
  */
 
 import type { FullConfig } from '@playwright/test'
+import type { ServedBundle } from './helpers/instance.ts'
 
 import { chromium, request } from '@playwright/test'
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
-import { BASE_URL } from './base-url.ts'
+import { BASE_URL, IS_SHARED_INSTANCE } from './base-url.ts'
 import { captureStorageState, STORAGE_STATE } from './helpers/auth.ts'
 import { getRequestToken, sweepFixtureResidue } from './helpers/fixtures.ts'
+import { reportInstanceUnderTest } from './helpers/instance.ts'
 import { assertOccReachable } from './helpers/occ.ts'
 import { residueMinAgeMs, sweepsAllResidue } from './helpers/residue.ts'
 
@@ -32,9 +34,43 @@ const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'dossiq-main.js')
  * On a fresh CI VM the shared quality.yml workflow runs `npm ci` +
  * `npx playwright install` but never `npm run build`, so without the
  * bundle the rendered page loads a 404 script tag and the Vue app
- * never mounts — every selector wait then times out.
+ * never mounts, and every selector wait then times out.
+ *
+ * This only makes sense when the instance serves THIS checkout. On CI it does:
+ * the runner's Nextcloud is `php -S` over `server/apps/dossiq`, which is this
+ * tree. On a rig built from this clone it does too.
+ *
+ * On the shared container it does not. That container serves the host checkout
+ * under `apps-extra/`, so a build here writes a file nothing reads, and running
+ * it would let an operator believe they had just put their code in front of the
+ * suite. So under the shared flag the build is skipped and the instance is
+ * asked what it is serving instead.
+ *
+ * @param served What the instance serves at the bundle path, when known.
  */
-function ensureBundleBuilt(): void {
+function ensureBundleBuilt(served: ServedBundle | null): void {
+	if (IS_SHARED_INSTANCE === true) {
+		if (served !== null && served.isScript === true) {
+			console.log(
+				'[playwright globalSetup] shared instance: skipping `npm run build`. '
+					+ `The instance serves its own bundle (${served.bytes} bytes, `
+					+ `sha256:${served.digest}), built from the HOST checkout.`,
+			)
+			return
+		}
+		throw new Error(
+			'[dossiq e2e] The shared instance is not serving a dossiq bundle.\n'
+				+ (served === null
+					? 'The bundle path could not be fetched at all.\n'
+					: `It answered ${served.status} ${served.contentType || 'with no content type'}, `
+						+ `${served.bytes} bytes. A content type that is not javascript means the `
+						+ 'single page shell came back, not a script.\n')
+				+ 'Building here would not fix it: this clone is not what that container serves.\n'
+				+ 'Build in the checkout the container mounts, then run the suite again:\n\n'
+				+ '    npm --prefix <host apps-extra checkout>/dossiq run build\n',
+		)
+	}
+
 	if (fs.existsSync(BUNDLE_PATH)) {
 		return
 	}
@@ -84,8 +120,8 @@ async function ensureNextcloudReachable(baseURL: string): Promise<void> {
  * set. The probe also proves the deployed OpenRegister actually HAS the command,
  * which is the other half of the same question.
  */
-async function ensureOccReachable(): Promise<void> {
-	const invocation = await assertOccReachable()
+async function ensureOccReachable(baseURL: string): Promise<void> {
+	const invocation = await assertOccReachable(baseURL)
 	console.log(`[playwright globalSetup] occ reachable via ${invocation}`)
 }
 
@@ -100,9 +136,12 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	const password =
 		process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
 
-	ensureBundleBuilt()
 	await ensureNextcloudReachable(baseURL)
-	await ensureOccReachable()
+	await ensureOccReachable(baseURL)
+	// Print what is actually under test BEFORE anything is seeded, so a run that
+	// aborts on the next line still told the operator which instance it touched.
+	const served = await reportInstanceUnderTest(baseURL)
+	ensureBundleBuilt(served)
 
 	// The login itself, and the two overlay dismissals that go with it, live in
 	// `helpers/auth.ts#captureStorageState`. They were inline here until

@@ -3932,6 +3932,15 @@
         "Could not save. Try again.": "Could not save. Try again.",
         "That mail account is not yours.": "That mail account is not yours.",
         "Choose a mail account first.": "Choose a mail account first.",
+        "{count} document(s) selected": "{count} document(s) selected",
+        "{ok} of {total} succeeded": "{ok} of {total} succeeded",
+        "A ZIP of the selected documents will download to your browser.": "A ZIP of the selected documents will download to your browser.",
+        "Bulk action applied": "Bulk action applied",
+        "Download ZIP": "Download ZIP",
+        "Mark final": "Mark final",
+        "New confidentiality": "New confidentiality",
+        "Create your first case type to start handling cases.": "Create your first case type to start handling cases.",
+        "No case types configured yet": "No case types configured yet",
         "Case plan": "Case plan",
         "Ready to start": "Ready to start",
         "Stop": "Stop",
@@ -3940,7 +3949,11 @@
         "The case plan is unavailable": "The case plan is unavailable",
         "This case type has no adaptive plan": "This case type has no adaptive plan",
         "Try again": "Try again",
-        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case."
+        "You are not allowed to see the plan for this case.": "You are not allowed to see the plan for this case.",
+        "Not issued": "Not issued",
+        "Not possible from the current status": "Not possible from the current status",
+        "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
+        "Bulk action changed nothing": "Bulk action changed nothing"
     },
     "plurals": ""
 }
