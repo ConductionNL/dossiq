@@ -104,7 +104,6 @@ const { default: DocumentMetadataDialog } =
 function mountDialog() {
 	return mount(DocumentMetadataDialog, {
 		props: {
-			open: true,
 			files: [{ name: 'bezwaarschrift.pdf' }],
 			caseId: 'case-1',
 		},
@@ -275,8 +274,7 @@ describe('DocumentMetadataDialog', () => {
 		function mountOnFile() {
 			return mount(DocumentMetadataDialog, {
 				props: {
-					open: true,
-					caseId: 'case-1',
+						caseId: 'case-1',
 					fileId: 12,
 					fileName: 'aanvraag.pdf',
 				},
@@ -337,6 +335,36 @@ describe('DocumentMetadataDialog', () => {
 				description: 'Het formulier',
 			})
 			expect(wrapper.emitted('close')).toBeTruthy()
+		})
+
+		it('renders when mounted with only the row action props, as the registry mounts it', async () => {
+			// The manifest's open-modal path hands the component fileId,
+			// fileName and path and nothing else; measured 2026-09-13 on the
+			// case page, a false `open` default left the modal unrendered
+			// with no warning anywhere.
+			mockGet.mockImplementation(async (url) => {
+				if (url.includes('/dossier')) {
+					return {
+						data: {
+							informatieobjecten: [
+								{ id: 'inf-1', fileId: 12, title: 'Aanvraag' },
+							],
+						},
+					}
+				}
+				return {
+					data: { results: [{ id: 'iot-1', description: 'Advies' }] },
+				}
+			})
+			const wrapper = mount(DocumentMetadataDialog, {
+				props: { caseId: 'case-1', fileId: 12, fileName: 'aanvraag.pdf' },
+			})
+			await flushPromises()
+
+			expect(
+				wrapper.get('[data-testid="document-properties-file"]').text(),
+			).toBe('aanvraag.pdf')
+			expect(wrapper.vm.title).toBe('Aanvraag')
 		})
 
 		it('says so when the file has no record yet, and does not pretend to save', async () => {

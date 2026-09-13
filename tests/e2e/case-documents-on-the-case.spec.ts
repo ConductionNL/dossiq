@@ -298,11 +298,12 @@ test.describe('Documents live on the case', () => {
 			),
 		).toHaveCount(0)
 		await linked.locator('.cn-files-browser__col-actions button').first().click()
+		// The testids sit on the action items; the href is on their anchor.
 		await expect(
-			page.getByTestId('cn-files-browser-linked-open'),
+			page.getByTestId('cn-files-browser-linked-open').locator('a'),
 		).toHaveAttribute('href', /\/f\/\d+/)
 		await expect(
-			page.getByTestId('cn-files-browser-linked-download'),
+			page.getByTestId('cn-files-browser-linked-download').locator('a'),
 		).toHaveAttribute('href', /enkelvoudiginformatieobjecten/)
 		await expect(page.getByTestId('cn-files-browser-action-rename')).toHaveCount(
 			0,

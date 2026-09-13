@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcModal v-if="open" size="normal" @close="$emit('close')">
+	<NcModal size="normal" @close="$emit('close')">
 		<div class="dossier-metadata-dialog">
 			<h2 class="dossier-metadata-dialog__title">
 				{{
@@ -158,11 +158,6 @@ export default {
 	},
 
 	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
 		files: {
 			type: Array,
 			default: () => [],
@@ -346,25 +341,24 @@ export default {
 			}
 		},
 
-		open: {
-			immediate: true,
-			/**
-			 * Load the type catalog the moment the dialog opens — mirrors
-			 * BeschikkingComposerDialog's `open` watcher, since this dialog is
-			 * now self-sufficient rather than fed props by a parent tab.
-			 *
-			 * @param {boolean} isOpen Whether the dialog is showing.
-			 * @spec openspec/specs/document-zaakdossier/spec.md
-			 */
-			handler(isOpen) {
-				if (isOpen) {
-					this.fetchTypes()
-					if (this.isEdit) {
-						this.loadRecord()
-					}
-				}
-			},
-		},
+	},
+
+	/**
+	 * A mounted dialog is an open one: the registry mounts this component
+	 * when the Files tab's Document properties action (or any other
+	 * `open-modal` action) names it, with the action's props and nothing
+	 * else, and unmounts it on close. So the type catalog and, on a file,
+	 * its record load here rather than behind an `open` prop nobody sets
+	 * (measured 2026-09-13: a false `open` default left the modal
+	 * unrendered with no warning anywhere).
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	created() {
+		this.fetchTypes()
+		if (this.isEdit) {
+			this.loadRecord()
+		}
 	},
 
 	methods: {
