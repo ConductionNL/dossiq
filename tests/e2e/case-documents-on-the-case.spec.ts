@@ -80,6 +80,29 @@ function davPath(caseId: string, name: string): string {
 }
 
 /**
+ * Give a case its own folder, the way opening its Files tab does.
+ *
+ * A case seeded through the object API has no folder: OpenRegister creates
+ * one the first time something asks for the object's files, and until then
+ * the path this spec writes to answers 404. The Files tab asks on render, so
+ * a handler never sees this; a spec that goes straight to WebDAV must ask
+ * first, or it measures the absent folder rather than the projection.
+ *
+ * @param caseId The case uuid.
+ * @return Nothing; the folder exists when it resolves.
+ */
+async function materialiseFolder(caseId: string): Promise<void> {
+	const res = await api.get(
+		`/index.php/apps/openregister/api/objects/${REGISTER}/case/${caseId}/files`,
+		{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+	)
+	expect(
+		res.ok(),
+		`the case's folder must be created, got ${res.status()}`,
+	).toBeTruthy()
+}
+
+/**
  * The case's dossier as the app lists it.
  *
  * @param caseId The case uuid.
@@ -126,6 +149,10 @@ test.describe('Documents live on the case', () => {
 			startDate: new Date().toISOString().slice(0, 10),
 		})
 		caseB = objectId(b)
+
+		// Both cases need their folder before anything can be dropped into it.
+		await materialiseFolder(caseA)
+		await materialiseFolder(caseB)
 	})
 
 	test.afterAll(async () => {
@@ -151,6 +178,17 @@ test.describe('Documents live on the case', () => {
 	test('a file dropped into the case folder is a document with derived defaults', async () => {
 		// Over WebDAV, the way the Files tab's browser uploads: no dialog, no
 		// metadata, just the file in the folder.
+		// The folder is there (materialiseFolder ran in beforeAll): a 404 here
+		// would mean the case never got one, not that the projection failed.
+		const folder = await api.fetch(davPath(caseA, ''), {
+			method: 'PROPFIND',
+			headers: { requesttoken: token, Depth: '0' },
+		})
+		expect(
+			folder.status(),
+			`the case folder must exist before the drop, got ${folder.status()}`,
+		).toBeLessThan(400)
+
 		const put = await api.put(davPath(caseA, FILE_NAME), {
 			headers: {
 				requesttoken: token,
