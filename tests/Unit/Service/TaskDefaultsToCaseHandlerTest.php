@@ -148,9 +148,9 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 * @return IUserSession The session.
 	 */
 	private function session(): IUserSession {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('sander');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		return $session;
@@ -166,10 +166,10 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 */
 	private function taskFromTransition(array $actionConfig, array $case): array {
 		$handler = new CreateTaskHandler(
-			new AssigneeResolver(new NullLogger()),
-			$this->engine(),
-			new NullLogger(),
-			$this->session()
+			assignees: new AssigneeResolver(logger: new NullLogger()),
+			engineTasks: $this->engine(),
+			logger: new NullLogger(),
+			userSession: $this->session()
 		);
 
 		$handler->handle(actionConfig: $actionConfig, case: $case, transitionContext: []);
@@ -186,15 +186,15 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 * @return array<string, mixed> The task the engine was handed.
 	 */
 	private function taskFromFlowStep(array $config, array $case): array {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
 		$node = new DossiqAskPersonNode(
-			new AssigneeResolver(new NullLogger()),
-			$l10n,
-			new NullLogger(),
-			$this->engine(),
-			$this->session()
+			assignees: new AssigneeResolver(logger: new NullLogger()),
+			l10n: $l10n,
+			logger: new NullLogger(),
+			engineTasks: $this->engine(),
+			userSession: $this->session()
 		);
 
 		$resume = (new FlowResumeState([]))->forNode('ask-behandelaar');
@@ -233,20 +233,20 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 */
 	public function testBothPathsLandOnTheCaseHandler(): void {
 		$fromTransition = $this->taskFromTransition(
-			['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
-			self::theCase()
+			actionConfig: ['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
+			case: self::theCase()
 		);
 		$fromFlow = $this->taskFromFlowStep(
-			['question' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
-			self::theCase()
+			config: ['question' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
+			case: self::theCase()
 		);
 
-		self::assertSame('alice', $fromTransition['assignee']);
-		self::assertSame('alice', $fromFlow['assignee']);
+		self::assertSame(expected: 'alice', actual: $fromTransition['assignee']);
+		self::assertSame(expected: 'alice', actual: $fromFlow['assignee']);
 		self::assertSame(
-			$fromTransition['assignee'],
-			$fromFlow['assignee'],
-			'A transition and a flow step must send the same case\'s work to the same person.'
+			expected: $fromTransition['assignee'],
+			actual: $fromFlow['assignee'],
+			message: 'A transition and a flow step must send the same case\'s work to the same person.'
 		);
 	}//end testBothPathsLandOnTheCaseHandler()
 
@@ -259,9 +259,12 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnauthoredTransitionReachesTheHandler(): void {
-		$task = $this->taskFromTransition(['type' => 'createTask', 'title' => 'Beoordeel'], self::theCase());
+		$task = $this->taskFromTransition(
+			actionConfig: ['type' => 'createTask', 'title' => 'Beoordeel'],
+			case: self::theCase()
+		);
 
-		self::assertSame('alice', $task['assignee']);
+		self::assertSame(expected: 'alice', actual: $task['assignee']);
 	}//end testAnUnauthoredTransitionReachesTheHandler()
 
 	/**
@@ -274,16 +277,16 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 	 */
 	public function testBothPathsRenderTheShippedSpellingTheSameWay(): void {
 		$fromTransition = $this->taskFromTransition(
-			['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.assignee }}'],
-			self::theCase()
+			actionConfig: ['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.assignee }}'],
+			case: self::theCase()
 		);
 		$fromFlow = $this->taskFromFlowStep(
-			['question' => 'Beoordeel', 'assignee' => '{{ case.assignee }}'],
-			self::theCase()
+			config: ['question' => 'Beoordeel', 'assignee' => '{{ case.assignee }}'],
+			case: self::theCase()
 		);
 
-		self::assertSame('alice', $fromTransition['assignee']);
-		self::assertSame($fromTransition['assignee'], $fromFlow['assignee']);
+		self::assertSame(expected: 'alice', actual: $fromTransition['assignee']);
+		self::assertSame(expected: $fromTransition['assignee'], actual: $fromFlow['assignee']);
 	}//end testBothPathsRenderTheShippedSpellingTheSameWay()
 
 	/**
@@ -300,14 +303,17 @@ class TaskDefaultsToCaseHandlerTest extends TestCase {
 		$case = ['id' => 'case-2', 'title' => 'Dakkapel'];
 
 		$fromTransition = $this->taskFromTransition(
-			['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
-			$case
+			actionConfig: ['type' => 'createTask', 'title' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
+			case: $case
 		);
 
-		self::assertSame('', $fromTransition['assignee']);
-		self::assertNotSame('sander', $fromTransition['assignee']);
+		self::assertSame(expected: '', actual: $fromTransition['assignee']);
+		self::assertNotSame(expected: 'sander', actual: $fromTransition['assignee']);
 
-		$this->expectException(\RuntimeException::class);
-		$this->taskFromFlowStep(['question' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'], $case);
+		$this->expectException(exception: \RuntimeException::class);
+		$this->taskFromFlowStep(
+			config: ['question' => 'Beoordeel', 'assignee' => '{{ case.responsible }}'],
+			case: $case
+		);
 	}//end testNeitherPathFallsBackToTheActor()
 }//end class

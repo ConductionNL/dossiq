@@ -220,8 +220,8 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testTheCaseHandlerGetsTheTaskWhenNothingElseNamesAnybody(): void {
 		self::assertSame(
-			'alice',
-			$this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+			expected: 'alice',
+			actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
 		);
 	}//end testTheCaseHandlerGetsTheTaskWhenNothingElseNamesAnybody()
 
@@ -232,8 +232,8 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testADeadPrimaryAndFallbackStillLandOnTheHandler(): void {
 		self::assertSame(
-			'alice',
-			$this->resolver->resolve(
+			expected: 'alice',
+			actual: $this->resolver->resolve(
 				primary: '{{ case.responsible }}',
 				fallback: '{{ case.caseTypeOwner }}',
 				case: ['id' => 'c', 'assignee' => 'alice']
@@ -251,12 +251,12 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testAnAuthoredAssigneeStillWinsOverTheCaseHandler(): void {
 		self::assertSame(
-			'carol',
-			$this->resolver->resolve(primary: 'carol', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+			expected: 'carol',
+			actual: $this->resolver->resolve(primary: 'carol', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
 		);
 		self::assertSame(
-			'behandelaars',
-			$this->resolver->resolve(
+			expected: 'behandelaars',
+			actual: $this->resolver->resolve(
 				primary: '{{ case.responsible }}',
 				fallback: 'behandelaars',
 				case: ['id' => 'c', 'assignee' => 'alice']
@@ -271,8 +271,8 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testAnExpandedHandlerReferenceAnswersItsId(): void {
 		self::assertSame(
-			'alice',
-			$this->resolver->resolve(
+			expected: 'alice',
+			actual: $this->resolver->resolve(
 				primary: '',
 				fallback: '',
 				case: ['id' => 'c', 'assignee' => ['id' => 'alice', 'displayName' => 'Alice']]
@@ -290,7 +290,7 @@ class AssigneeResolverTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithNoHandlerStillNamesNobody(): void {
-		self::assertSame('', $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c']));
+		self::assertSame(expected: '', actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c']));
 	}//end testACaseWithNoHandlerStillNamesNobody()
 
 	/**
@@ -300,16 +300,16 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testNoneStaysUnassigned(): void {
 		self::assertSame(
-			'',
-			$this->resolver->resolve(
+			expected: '',
+			actual: $this->resolver->resolve(
 				primary: 'none',
 				fallback: 'behandelaars',
 				case: ['id' => 'c', 'assignee' => 'alice']
 			)
 		);
 		self::assertSame(
-			'',
-			$this->resolver->resolve(primary: '  NONE  ', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+			expected: '',
+			actual: $this->resolver->resolve(primary: '  NONE  ', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
 		);
 	}//end testNoneStaysUnassigned()
 
@@ -324,15 +324,18 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testFallsBackToAssignedGroup(): void {
 		self::assertSame(
-			'rol-7',
-			$this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
+			expected: 'rol-7',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
 		);
 		self::assertSame(
-			'rol-7',
-			$this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['id' => 'rol-7', 'name' => 'Vergunningen']])
+			expected: 'rol-7',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['id' => 'rol-7', 'name' => 'Vergunningen']])
 		);
-		self::assertSame('', $this->resolver->resolveTeam(case: ['id' => 'c']));
-		self::assertNotSame('Array', $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['name' => 'V']]));
+		self::assertSame(expected: '', actual: $this->resolver->resolveTeam(case: ['id' => 'c']));
+		self::assertNotSame(
+			expected: 'Array',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['name' => 'V']])
+		);
 	}//end testFallsBackToAssignedGroup()
 
 	/**
@@ -342,8 +345,8 @@ class AssigneeResolverTest extends TestCase {
 	 */
 	public function testATeamIsNeverAnsweredAsThePerson(): void {
 		self::assertSame(
-			'',
-			$this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
+			expected: '',
+			actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
 		);
 	}//end testATeamIsNeverAnsweredAsThePerson()
 

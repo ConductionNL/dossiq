@@ -442,7 +442,11 @@ class CreateTaskHandlerTest extends TestCase {
 	 */
 	public function testAnActionCanOptOutWithNone(): void {
 		$recorded = null;
-		$handler = new CreateTaskHandler(new AssigneeResolver(new NullLogger()), self::recordingGateway($recorded, $this), new NullLogger());
+		$handler = new CreateTaskHandler(
+			assignees: new AssigneeResolver(logger: new NullLogger()),
+			engineTasks: self::recordingGateway(recorded: $recorded, test: $this),
+			logger: new NullLogger()
+		);
 
 		$handler->handle(
 			actionConfig: ['type' => 'createTask', 'title' => 'Pak op uit de wachtrij', 'assignee' => 'none'],
@@ -450,8 +454,8 @@ class CreateTaskHandlerTest extends TestCase {
 			transitionContext: [],
 		);
 
-		self::assertSame('', $recorded['object']['assignee']);
-		self::assertSame('rol-7', $recorded['object']['assigneeGroup']);
+		self::assertSame(expected: '', actual: $recorded['object']['assignee']);
+		self::assertSame(expected: 'rol-7', actual: $recorded['object']['assigneeGroup']);
 	}//end testAnActionCanOptOutWithNone()
 
 	/**
