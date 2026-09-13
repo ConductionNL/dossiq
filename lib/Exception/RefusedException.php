@@ -117,7 +117,11 @@ class RefusedException extends RuntimeException {
 		int $status = self::STATUS_REFUSED,
 		?Throwable $previous = null,
 	) {
-		parent::__construct(str_replace('-', '_', $rule), 0, $previous);
+		parent::__construct(
+			message: str_replace(search: '-', replace: '_', subject: $rule),
+			code: 0,
+			previous: $previous,
+		);
 		$this->rule = $rule;
 		$this->sentence = $sentence;
 		$this->status = $status;
