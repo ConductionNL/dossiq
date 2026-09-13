@@ -28,3 +28,8 @@ named change is archived.
 - [ ] 13 After openregister lands them: `edit-lock-on-the-case-page`,
   `case-type-rebind`
 - [ ] 14 Re-run the re-read when the register's batch 7 and 9 rows land
+- [ ] 15 The regenerated register's five dossiq changes (2026-09-13):
+  `status-capacity-limit` and `intake-says-when-the-term-starts` have no
+  dependency; `archived-cases-leave-the-lenses` and
+  `deelzaken-inherit-the-parent-grants` wait on openregister;
+  `cases-views-are-places` waits on nextcloud-vue

@@ -103,6 +103,7 @@ interface DossierObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle

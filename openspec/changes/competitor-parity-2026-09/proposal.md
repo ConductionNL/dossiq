@@ -93,6 +93,38 @@ no artefact on that app's `development` yet.
 
 Sizes: 27 S, 5 M, 1 L.
 
+### The eight gaps the regenerated register still lists, opened 2026-09-13
+
+The register was rebuilt the same evening this umbrella was written
+(market-intelligence #123). It ends on eight gaps with no change, across
+four owners. Five changes are dossiq's, two of its own rows and three
+consumer halves. The owner changes are opened in the same sweep:
+openregister `object-archive-state` and `rbac-inherits-to-children`,
+integriq `signed-outbound-webhooks` and `objecten-api-facade`, portaliq
+`embedded-intake-form`, nextcloud-vue `saved-view-as-a-place`.
+
+| change | rows | size | consumes from |
+|---|---|---|---|
+| `status-capacity-limit` | Q3.22 | S | nothing new |
+| `intake-says-when-the-term-starts` | Q8.21 | S | openregister `working-calendar-admin` (to be specified), dossiq `terms-on-the-engine-calendar` (open) |
+| `archived-cases-leave-the-lenses` | Q2.33 | S | openregister `object-archive-state` (open) |
+| `deelzaken-inherit-the-parent-grants` | Q13.23 | S | openregister `rbac-inherits-to-children` (open) |
+| `cases-views-are-places` | Q9.16 | S | nextcloud-vue `saved-view-as-a-place` (open); openregister `saved-search-views` (shipped) |
+
+Two of the eight need no dossiq change. Q6.20 signed outbound webhooks:
+the register's half reads "nothing beyond finishing
+dossiq-delivers-nothing, which retires WebhookHandler", and integriq's
+`webhook-signing` already specifies and ships the signing, so only its
+default was missing. Q1.16 the embedded intake form: the half reads
+"nothing beyond the intake binding it already has".
+
+**12.3 moved owner again.** The table below still reads openregister
+`objecten-api-facade` for it. The openregister lane handed the row to
+integriq under ADR-091 §6, and the change is now open there. dossiq's
+half is unchanged: declare the `caseObject` types as objecttypes and
+delete the controller answering today.
+
+
 ## Build order
 
 The register's five to build first come first, in its order. Everything
