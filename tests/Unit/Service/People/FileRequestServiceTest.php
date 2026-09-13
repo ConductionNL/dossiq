@@ -244,4 +244,61 @@ class FileRequestServiceTest extends TestCase {
 			actual: $capped['expiresAt'],
 		);
 	}//end testTheRequestStandsForTheDefaultWhenNoDaysAreNamed()
+
+	/**
+	 * Nobody signed in: no share, and the caller is told why.
+	 *
+	 * @return void
+	 */
+	public function testAnAnonymousCallerCannotAsk(): void {
+		$this->party();
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+		$service = new FileRequestService(
+			people: $this->people,
+			folders: $this->folders,
+			shares: $this->shares,
+			userSession: $session,
+		);
+		$this->shares->expects($this->never())->method('createShare');
+
+		try {
+			$service->request(caseId: 'case-1', personUid: 'contact-8');
+			$this->fail(message: 'an anonymous caller must be refused');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 401, actual: $e->getCode());
+		}
+	}//end testAnAnonymousCallerCannotAsk()
+
+	/**
+	 * A share the manager refuses comes back as a failure naming the reason,
+	 * not as a request the handler believes was sent.
+	 *
+	 * @return void
+	 */
+	public function testAShareTheManagerRefusesIsReported(): void {
+		$this->party();
+		$this->shares->method('createShare')->willThrowException(new RuntimeException('sharing by mail is disabled'));
+
+		try {
+			$this->service->request(caseId: 'case-1', personUid: 'contact-8');
+			$this->fail(message: 'a refused share must be reported');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 500, actual: $e->getCode());
+			$this->assertStringContainsString(needle: 'sharing by mail is disabled', haystack: $e->getMessage());
+		}
+	}//end testAShareTheManagerRefusesIsReported()
+
+	/**
+	 * With no note the share carries none, rather than an empty one.
+	 *
+	 * @return void
+	 */
+	public function testNoNoteMeansNoNoteOnTheShare(): void {
+		$this->party();
+		$this->shares->method('createShare')->willReturn($this->share);
+		$this->share->expects($this->never())->method('setNote');
+
+		$this->service->request(caseId: 'case-1', personUid: 'contact-8');
+	}//end testNoNoteMeansNoNoteOnTheShare()
 }//end class

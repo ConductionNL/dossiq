@@ -124,4 +124,65 @@ class PersonLinkListenerTest extends TestCase {
 
 		$this->assertTrue(condition: true, message: 'the listener swallowed the failure');
 	}//end testAFailingProjectionNeverThrows()
+
+	/**
+	 * A link that is already a row, and one that is neither row nor
+	 * serialisable, both reach the projection as what they are.
+	 *
+	 * @return void
+	 */
+	public function testALinkOfAnyShapeReachesTheProjection(): void {
+		$seen = [];
+		$this->projection->method('project')->willReturnCallback(
+			static function (array $link) use (&$seen): string {
+				$seen[] = $link;
+				return 'role-7';
+			}
+		);
+
+		// An entity with no jsonSerialize: its public properties are the row.
+		$plain = new class {
+			/**
+			 * The object the link is on.
+			 *
+			 * @var string
+			 */
+			public string $objectUuid = 'case-1';
+
+			/**
+			 * The person.
+			 *
+			 * @var string
+			 */
+			public string $contactUid = 'user:jan';
+		};
+		$this->listener->handle(event: new PersonLinkedEvent($plain));
+
+		$this->assertSame(expected: 'case-1', actual: $seen[0]['objectUuid']);
+		$this->assertSame(expected: 'user:jan', actual: $seen[0]['contactUid']);
+	}//end testALinkOfAnyShapeReachesTheProjection()
+
+	/**
+	 * An entity whose jsonSerialize answers something that is not a row is
+	 * dropped rather than projected as nonsense.
+	 *
+	 * @return void
+	 */
+	public function testALinkThatSerialisesToNothingIsDropped(): void {
+		// An empty row is no link at all, so the projection is never asked.
+		$this->projection->expects($this->never())->method('project');
+
+		$odd = new class {
+			/**
+			 * Not a row.
+			 *
+			 * @return string Something the listener cannot use.
+			 */
+			public function jsonSerialize(): string {
+				return 'not a row';
+			}
+		};
+
+		$this->listener->handle(event: new PersonLinkedEvent($odd));
+	}//end testALinkThatSerialisesToNothingIsDropped()
 }//end class

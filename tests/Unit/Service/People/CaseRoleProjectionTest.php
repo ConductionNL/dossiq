@@ -381,4 +381,125 @@ class CaseRoleProjectionTest extends TestCase {
 		$this->assertFalse(condition: $this->projection->retire(link: []));
 		$this->assertSame(expected: [], actual: $this->objects->saves);
 	}//end testAnIncompleteLinkIsIgnored()
+
+	/**
+	 * Without OpenRegister nothing is projected, and nothing throws either: a
+	 * link is somebody else's write, and failing it would fail theirs.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterNothingIsProjected(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('');
+		$projection = new CaseRoleProjection(
+			settingsService: $settings,
+			people: new PersonLinkReader(settingsService: $settings),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$link = ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1'];
+		$this->assertSame(expected: '', actual: $projection->project(link: $link));
+		$this->assertFalse(condition: $projection->retire(link: $link));
+	}//end testWithoutOpenRegisterNothingIsProjected()
+
+	/**
+	 * An object service that hands back entities rather than rows still yields
+	 * the record's uuid.
+	 *
+	 * @return void
+	 */
+	public function testAnEntityAnswerStillYieldsTheUuid(): void {
+		$this->seed();
+		$objects = $this->objects;
+		$entityService = new class($objects) {
+			/**
+			 * @param object $inner The row-shaped double to delegate to.
+			 */
+			public function __construct(private object $inner) {
+			}
+
+			/**
+			 * One row by uuid.
+			 *
+			 * @param string $id The uuid.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 *
+			 * @return array<string, mixed> The row.
+			 */
+			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+				return $this->inner->find($id, $register, $schema);
+			}
+
+			/**
+			 * Rows matching the filters.
+			 *
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return array<int, array<string, mixed>> The rows.
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return $this->inner->searchObjectsBySlug($register, $schema, $filters);
+			}
+
+			/**
+			 * Store a row, answering an entity the way OpenRegister does.
+			 *
+			 * @param array<string, mixed> $object The row.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 * @param string|null $uuid The uuid.
+			 *
+			 * @return object The saved entity.
+			 */
+			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): object {
+				$this->inner->saveObject($object, $register, $schema, $uuid);
+
+				return new class {
+					/**
+					 * The stored uuid.
+					 *
+					 * @return string The uuid.
+					 */
+					public function getUuid(): string {
+						return 'role-entity';
+					}
+				};
+			}
+
+			/**
+			 * Remove a row.
+			 *
+			 * @param string $uuid The uuid.
+			 * @param string|int|null $register The register.
+			 * @param string|int|null $schema The schema.
+			 *
+			 * @return void
+			 */
+			public function deleteObject(string $uuid, string|int|null $register = null, string|int|null $schema = null): void {
+				$this->inner->deleteObject($uuid, $register, $schema);
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($entityService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+		$projection = new CaseRoleProjection(
+			settingsService: $settings,
+			people: new PersonLinkReader(settingsService: $settings),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(
+			expected: 'role-entity',
+			actual: $projection->project(
+				link: ['objectUuid' => 'case-1', 'contactUid' => 'user:jan', 'role' => 'rt-1', 'displayName' => 'Jan']
+			),
+		);
+	}//end testAnEntityAnswerStillYieldsTheUuid()
 }//end class

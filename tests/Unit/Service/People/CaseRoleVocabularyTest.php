@@ -264,4 +264,48 @@ class CaseRoleVocabularyTest extends TestCase {
 
 		$this->assertSame(expected: -1, actual: $this->vocabulary->sync());
 	}//end testAVocabularyTheSchemaDropsIsReported()
-}
+
+	/**
+	 * A register that is configured but a schema that is not: the sync says so
+	 * rather than writing a vocabulary against nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMissingSchemaStopsTheSync(): void {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				// The register is there; the role type schema is not.
+				return $key === 'register' ? 'dossiq' : $default;
+			}
+		);
+		$vocabulary = new CaseRoleVocabulary(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertSame(expected: -1, actual: $vocabulary->sync());
+	}//end testAMissingSchemaStopsTheSync()
+
+	/**
+	 * The entries are readable on their own, so a caller can offer them
+	 * without writing anything.
+	 *
+	 * @return void
+	 */
+	public function testTheEntriesAreReadableWithoutWriting(): void {
+		$this->objects->answers['roleType'] = [
+			['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur', 'description' => 'Kijkt mee'],
+		];
+
+		$entries = $this->vocabulary->roleEntries();
+
+		$this->assertSame(
+			expected: [['key' => 'rt-1', 'label' => 'Adviseur', 'description' => 'Kijkt mee']],
+			actual: $entries,
+		);
+		$this->assertSame(expected: [], actual: $this->updated, message: 'reading the entries writes nothing');
+	}//end testTheEntriesAreReadableWithoutWriting()
+}//end class
