@@ -320,9 +320,10 @@ class RoleResolverService {
 			// An empty role list is how a routing rule resolves to nobody, so
 			// swallowing the read here made "the register threw" and "this case
 			// has no handler in that role" the same answer.
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'case-roles-unreadable',
 				sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}//end try

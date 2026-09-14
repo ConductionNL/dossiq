@@ -204,9 +204,10 @@ class MandaatCheckService {
 			// An empty list here made isAuthorized() answer "niet bevoegd",
 			// which is a statement about the user. An unreadable register is
 			// not one.
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'mandaat-register-unreadable',
 				sentence: 'The mandate register could not be read, so this decision cannot be authorised right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}//end try

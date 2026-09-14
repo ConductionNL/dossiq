@@ -208,9 +208,10 @@ class TenantAuthenticationService {
 				'Dossiq: mandate matrix could not be read',
 				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
 			);
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'tenant-mandate-matrix-unreadable',
 				sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}//end try

@@ -148,9 +148,10 @@ class MandaatVerifier {
 			// An empty regeling here reached the approver as "insufficient
 			// mandate", which names the person. The register being unreadable
 			// is not a fact about the person.
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'mandaat-regeling-unreadable',
 				sentence: 'The mandate scheme could not be read, so this approval cannot be checked right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,
 			);
 		}//end try
