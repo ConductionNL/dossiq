@@ -46,9 +46,11 @@ import { statusColourStyle } from '../../utils/statusColour.js'
 export default {
 	name: 'PriorityBadgeCell',
 
-	// Same reason as StatusBadgeCell: the undeclared cell props (`property`,
-	// `formatted`) would otherwise fall through onto the root span and render
-	// as DOM attributes on every row.
+	// Same reason as StatusBadgeCell: the cell props this component does not
+	// read (`value`, `property`, `formatted`) would otherwise fall through onto
+	// the root span and render as DOM attributes on every row. `value` is the
+	// declared order as an integer, which the server sorts on and no reader
+	// wants to see, so this cell takes the word off the row instead.
 	inheritAttrs: false,
 
 	props: {
@@ -56,12 +58,6 @@ export default {
 		row: {
 			type: Object,
 			default: () => ({}),
-		},
-
-		/** The column's own value: the declared order, as an integer. */
-		value: {
-			type: [String, Number],
-			default: 0,
 		},
 	},
 
