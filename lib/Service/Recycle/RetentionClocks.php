@@ -174,7 +174,12 @@ class RetentionClocks {
 	 */
 	private function lawfulPurposeClock(array $case): array {
 		$stored = trim((string)($case[self::CASE_FIELD] ?? ''));
-		$date = ($stored !== '' ? substr($stored, 0, 10) : $this->lawfulPurposeEndDate(case: $case));
+		$date = $this->lawfulPurposeEndDate(case: $case);
+		if ($stored !== '') {
+			// A date somebody set by hand wins over the derivation, so an FG's
+			// decision is not quietly recomputed away on the next read.
+			$date = substr($stored, 0, 10);
+		}
 
 		if ($date === null) {
 			return [
@@ -184,10 +189,15 @@ class RetentionClocks {
 			];
 		}
 
+		$months = (string)$this->retentionMonths(case: $case);
+
 		return [
 			'date' => $date,
 			'label' => $this->l10n->t('Lawful purpose ends'),
-			'rule' => $this->l10n->t('The case type keeps personal data for %1$s months after the case closes.', [(string)$this->retentionMonths(case: $case)]),
+			'rule' => $this->l10n->t(
+				'The case type keeps personal data for %1$s months after the case closes.',
+				[$months]
+			),
 		];
 	}//end lawfulPurposeClock()
 

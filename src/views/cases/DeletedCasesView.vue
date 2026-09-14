@@ -141,6 +141,7 @@ export default {
 		 * Load the deleted cases.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -158,6 +159,7 @@ export default {
 		 *
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 		 */
 		async restore(row) {
 			this.busy = row.id
@@ -177,6 +179,7 @@ export default {
 		 *
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 		 */
 		async destroy(row) {
 			this.busy = row.id

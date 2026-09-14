@@ -116,6 +116,33 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(typeof row.daysRemaining).toBe('number')
 	})
 
+	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
+	//
+	// The same scenario through the page a handler actually opens, because the
+	// endpoint answering correctly and the lens rendering are two facts. The
+	// page is `CasesDeleted` (src/views/cases/DeletedCasesView.vue), a custom
+	// page on dossiq's history-mode router, so the URL is a PATH: `#/cases/deleted`
+	// would render the Dashboard under this assertion.
+	test('the deleted lens renders the case and its date on the page', async ({ page }) => {
+		const seeded = await seedCase(api, token, {
+			title: `${RUN_PREFIX} shown in the lens`,
+			caseType: caseTypeId,
+		})
+		const caseId = objectId(seeded)
+
+		await tryDeleteObject(api, token, 'case', caseId)
+
+		await page.goto('/index.php/apps/dossiq/cases/deleted')
+		const row = page.getByTestId(`deleted-case-${caseId}`)
+
+		await expect(row).toBeVisible({ timeout: 30_000 })
+		await expect(
+			row.getByTestId('window-ends-on'),
+			'the row must carry the date the window ends, not an empty cell',
+		).toContainText(/\d{4}-\d{2}-\d{2}/)
+		await expect(row.getByTestId(`restore-${caseId}`)).toBeVisible()
+	})
+
 	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before
 	//
 	// The control on the whole change: the recovery window must not have

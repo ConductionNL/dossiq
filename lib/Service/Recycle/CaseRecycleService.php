@@ -117,16 +117,30 @@ class CaseRecycleService {
 	}//end __construct()
 
 	/**
-	 * The deleted cases that can still be recovered, newest first.
+	 * The deleted cases this caller may see, newest first.
+	 *
+	 * SCOPED, NOT LISTED WHOLE. The trash holds every deleted case on the
+	 * instance, so an unscoped lens would hand any signed-in user the title
+	 * and number of every bezwaar anybody ever deleted. A row is shown to an
+	 * administrator, to the handler the case was assigned to, and to whoever
+	 * deleted it. That mirrors `CaseAccessGuard::hasCaseMutationAccess()`,
+	 * read off the stored payload because the live case is gone.
 	 *
 	 * @param int $limit How many rows to return.
 	 * @param int $offset How many rows to skip.
+	 * @param string $forUser The caller's user id; an empty id sees nothing.
+	 * @param bool $isAdmin Whether the caller is an administrator.
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int}
 	 *
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
-	public function deletedCases(int $limit = self::PAGE_SIZE, int $offset = 0): array {
+	public function deletedCases(
+		int $limit = self::PAGE_SIZE,
+		int $offset = 0,
+		string $forUser = '',
+		bool $isAdmin = false,
+	): array {
 		$mapper = $this->settingsService->getOpenRegisterClass(class: self::MAGIC_MAPPER);
 		if ($mapper === null || method_exists($mapper, 'findDeletedAcrossAllMagicTables') === false) {
 			return [
@@ -148,6 +162,10 @@ class CaseRecycleService {
 		$cases = [];
 		foreach ($rows as $row) {
 			if ($this->isCase(entity: $row) === false) {
+				continue;
+			}
+
+			if ($this->maySee(entity: $row, userId: $forUser, isAdmin: $isAdmin) === false) {
 				continue;
 			}
 
@@ -414,6 +432,39 @@ class CaseRecycleService {
 	}//end requireMapper()
 
 	/**
+	 * Whether this caller may see one deleted case in the lens.
+	 *
+	 * Fails closed at every branch: an unresolved caller, a row with no
+	 * assignee and no deleter, and an unreadable payload all deny.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 * @param string $userId The caller's user id.
+	 * @param bool $isAdmin Whether the caller is an administrator.
+	 *
+	 * @return bool True when the row belongs in this caller's lens.
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function maySee(object $entity, string $userId, bool $isAdmin): bool {
+		if ($isAdmin === true) {
+			return true;
+		}
+
+		if ($userId === '') {
+			return false;
+		}
+
+		$marker = $this->marker(entity: $entity);
+		if (trim((string)($marker['deletedBy'] ?? '')) === $userId) {
+			return true;
+		}
+
+		$payload = $this->payload(entity: $entity);
+
+		return (trim((string)($payload['assignee'] ?? '')) === $userId);
+	}//end maySee()
+
+	/**
 	 * Whether an entity belongs to the configured case schema.
 	 *
 	 * @param mixed $entity OpenRegister's object entity.
@@ -461,8 +512,11 @@ class CaseRecycleService {
 		}
 
 		$marker = $entity->getDeleted();
+		if (is_array($marker) === false) {
+			return [];
+		}
 
-		return (is_array($marker) === true ? $marker : []);
+		return $marker;
 	}//end marker()
 
 	/**

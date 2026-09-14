@@ -373,7 +373,7 @@ $extra = [
     ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#delete',  'url' => '/api/case/{caseId}/delete',    'verb' => 'POST'],
 
-    // case-recycle-window: the deleted side of a case. Deleting puts the case
+    // The deleted side of a case (case-recycle-window). Deleting puts the case
     // in OpenRegister's recycle state; restoring and destroying are two
     // separate acts, and destroying needs the role the case type declares.
     ['name' => 'caseRecycle#deleted',            'url' => '/api/cases/deleted',                     'verb' => 'GET'],

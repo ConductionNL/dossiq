@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCP\AppFramework\Http;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -80,6 +81,13 @@ class CaseRecycleControllerTest extends TestCase {
 	private CaseAccessGuard $guard;
 
 	/**
+	 * Whether the caller is an administrator.
+	 *
+	 * @var IGroupManager&MockObject
+	 */
+	private IGroupManager $groupManager;
+
+	/**
 	 * The session.
 	 *
 	 * @var IUserSession&MockObject
@@ -103,6 +111,7 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->destruction = $this->createMock(originalClassName: CaseDestructionService::class);
 		$this->clocks = $this->createMock(originalClassName: RetentionClocks::class);
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$this->groupManager = $this->createMock(originalClassName: IGroupManager::class);
 		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
 		$this->request = $this->createMock(originalClassName: IRequest::class);
 
@@ -128,6 +137,7 @@ class CaseRecycleControllerTest extends TestCase {
 			$this->destruction,
 			$this->clocks,
 			$this->guard,
+			$this->groupManager,
 			$this->userSession,
 			$this->createMock(originalClassName: LoggerInterface::class)
 		);
@@ -154,6 +164,30 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('2034-01-31', $response->getData()['results'][0]['windowEndsOn']);
 	}//end testTheLensAnswersTheDeletedCases()
+
+	/**
+	 * The lens is scoped to the caller. An unscoped one would hand any
+	 * signed-in user the number and title of every case anybody deleted, and
+	 * it would look exactly like a working lens.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testTheLensIsScopedToTheCaller(): void {
+		$seen = [];
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->recycle->method('deletedCases')->willReturnCallback(
+			function (int $limit, int $offset, string $forUser, bool $isAdmin) use (&$seen): array {
+				$seen = [$forUser, $isAdmin];
+				return ['results' => [], 'total' => 0];
+			}
+		);
+
+		$this->controller()->deleted();
+
+		$this->assertSame(['behandelaar', false], $seen);
+	}//end testTheLensIsScopedToTheCaller()
 
 	/**
 	 * REQ-CRW-02: restoring answers the window the case came back inside.

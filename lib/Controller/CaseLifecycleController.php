@@ -259,10 +259,7 @@ class CaseLifecycleController extends Controller {
 			if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
 				$this->logger->info(
 					'CaseLifecycleController: the delete guard refused',
-					[
-						'caseId' => $caseId,
-						'errors' => (method_exists($e, 'getErrors') === true ? $e->getErrors() : []),
-					]
+					['caseId' => $caseId, 'errors' => $e->getErrors()]
 				);
 
 				throw new RuntimeException('case_held');

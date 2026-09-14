@@ -48,6 +48,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -82,6 +83,7 @@ class CaseRecycleController extends Controller {
 	 * @param CaseDestructionService $destruction The destroying role and the act
 	 * @param RetentionClocks $clocks The two clocks, read apart
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization for the clocks read
+	 * @param IGroupManager $groupManager Reads whether the caller is an administrator
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 */
@@ -92,6 +94,7 @@ class CaseRecycleController extends Controller {
 		private readonly CaseDestructionService $destruction,
 		private readonly RetentionClocks $clocks,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly IGroupManager $groupManager,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -99,7 +102,15 @@ class CaseRecycleController extends Controller {
 	}//end __construct()
 
 	/**
-	 * The cases that were deleted and can still be recovered.
+	 * The cases this caller deleted, or handled, and can still recover.
+	 *
+	 * THE LENS IS SCOPED TO THE CALLER. The trash holds every deleted case on
+	 * the instance, so an unscoped lens would hand any signed-in user the
+	 * number and title of every bezwaar anybody ever deleted. There is no
+	 * per-object guard to run here because there is no object in the request,
+	 * so the authority is resolved once and handed to the read: an
+	 * administrator sees everything, and everybody else sees the cases they
+	 * were assigned or deleted themselves.
 	 *
 	 * @return JSONResponse The rows, each with the date its window ends.
 	 *
@@ -107,7 +118,8 @@ class CaseRecycleController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function deleted(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -115,7 +127,19 @@ class CaseRecycleController extends Controller {
 		$offset = (int)$this->request->getParam('offset', 0);
 
 		try {
-			return new JSONResponse($this->recycle->deletedCases(limit: $limit, offset: $offset));
+			// `=== true` and not a cast: IGroupManager::isAdmin() carries no
+			// return type, so a double that answers null would otherwise reach
+			// a bool parameter and turn a read into a 500.
+			$isAdmin = ($this->groupManager->isAdmin($user->getUID()) === true);
+
+			return new JSONResponse(
+				$this->recycle->deletedCases(
+					limit: $limit,
+					offset: $offset,
+					forUser: $user->getUID(),
+					isAdmin: $isAdmin
+				)
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: the deleted lens failed: ' . $e->getMessage());
 

@@ -234,7 +234,7 @@ class CaseRecycleServiceTest extends TestCase {
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
 	public function testTheLensListsDeletedCasesWithTheirWindow(): void {
-		$rows = $this->service()->deletedCases();
+		$rows = $this->service()->deletedCases(forUser: 'archivaris', isAdmin: true);
 
 		$this->assertSame(1, $rows['total']);
 		$this->assertSame('case-9', $rows['results'][0]['id']);
@@ -242,6 +242,24 @@ class CaseRecycleServiceTest extends TestCase {
 		$this->assertSame('2034-01-31', $rows['results'][0]['windowEndsOn']);
 		$this->assertSame('behandelaar', $rows['results'][0]['deletedBy']);
 	}//end testTheLensListsDeletedCasesWithTheirWindow()
+
+	/**
+	 * The lens is scoped to the caller. The trash holds every deleted case on
+	 * the instance, so an unscoped lens would hand any signed-in user the
+	 * number and title of every bezwaar anybody ever deleted, and it would
+	 * look exactly like a working lens.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testAStrangerSeesNothingInTheLens(): void {
+		$stranger = $this->service()->deletedCases(forUser: 'iemand-anders', isAdmin: false);
+		$deleter = $this->service()->deletedCases(forUser: 'behandelaar', isAdmin: false);
+
+		$this->assertSame(0, $stranger['total']);
+		$this->assertSame(1, $deleter['total']);
+	}//end testAStrangerSeesNothingInTheLens()
 
 	/**
 	 * A row deleted before OpenRegister stated its window carries only a
