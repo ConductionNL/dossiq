@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Unit tests for the pure deelzaak (sub-case) presentation helpers in
- * src/utils/deelzaakHelpers.js — the case-list sub-case count badge (T10)
- * and the parent-deletion orphan warning (T11). These pin the exact
- * user-facing copy and the no-badge / no-warning thresholds that the
- * formatter and the orphan-warning modal rely on.
+ * src/utils/deelzaakHelpers.js: the case-list sub-case count badge (T10) and
+ * what a refused delete says (REQ-CM-35). These pin the exact user-facing
+ * copy and the no-badge threshold that the formatter relies on.
  *
  * `@nextcloud/l10n` is aliased to the deterministic stub (English source
  * string + {placeholder} substitution), so the asserted output is the
@@ -22,14 +21,13 @@
  * here rather than the (correct) production literal being reverted.
  *
  * @spec openspec/changes/deelzaak-support/tasks.md#T10
- * @spec openspec/changes/deelzaak-support/tasks.md#T11
+ * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
 import {
 	hasSubCaseBadge,
-	orphanWarningMessage,
-	requiresOrphanWarning,
+	refusalMessage,
 	subCaseCountBadge,
 } from '../../src/utils/deelzaakHelpers.js'
 
@@ -71,29 +69,44 @@ describe('hasSubCaseBadge', () => {
 	})
 })
 
-describe('orphanWarningMessage', () => {
-	it('states the sub-case count and the unlink consequence', () => {
-		const msg = orphanWarningMessage(2)
-		expect(msg).toContain('2 sub-cases')
-		expect(msg).toMatch(/unlink/i)
-		expect(msg).toMatch(/continue\?$/)
+describe('refusalMessage', () => {
+	it('shows the sentence a stopped delete guard sent back', () => {
+		const err = {
+			response: {
+				data: {
+					error: 'Object deletion rejected by hook',
+					errors: {
+						message:
+							'You cannot delete this case yet. This case still has sub-cases. Resolve this first, then delete the case.',
+						error: 'case.held',
+						blockedBy: ['has-subcases'],
+					},
+				},
+			},
+		}
+		expect(refusalMessage(err)).toMatch(/still has sub-cases/)
 	})
 
-	it('clamps negative / non-numeric counts to zero', () => {
-		expect(orphanWarningMessage(-5)).toContain('0 sub-cases')
-		expect(orphanWarningMessage(undefined)).toContain('0 sub-cases')
+	it('shows the sentence a dossiq door sent back at the top level', () => {
+		const err = {
+			response: {
+				data: {
+					message:
+						'You cannot delete this case yet. A legal hold is on this case. Resolve this first, then delete the case.',
+					error: 'case.held',
+					blockedBy: ['legal-hold'],
+				},
+			},
+		}
+		expect(refusalMessage(err)).toMatch(/A legal hold is on this case/)
 	})
-})
 
-describe('requiresOrphanWarning', () => {
-	it('requires the warning only when one or more sub-cases exist', () => {
-		expect(requiresOrphanWarning(1)).toBe(true)
-		expect(requiresOrphanWarning(10)).toBe(true)
-	})
-
-	it('does not require the warning when there are no sub-cases', () => {
-		expect(requiresOrphanWarning(0)).toBe(false)
-		expect(requiresOrphanWarning(undefined)).toBe(false)
-		expect(requiresOrphanWarning(NaN)).toBe(false)
+	it('falls back to the generic line only when no sentence came back', () => {
+		expect(refusalMessage(new Error('Network Error'))).toBe(
+			'The case could not be deleted. Please try again.',
+		)
+		expect(
+			refusalMessage({ response: { data: { errors: { message: '  ' } } } }),
+		).toBe('The case could not be deleted. Please try again.')
 	})
 })

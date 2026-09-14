@@ -3977,7 +3977,13 @@
         "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.": "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.",
         "The request could not be sent": "The request could not be sent",
         "The request is on its way to {recipient}": "The request is on its way to {recipient}",
-        "What do you need from them?": "What do you need from them?"
+        "What do you need from them?": "What do you need from them?",
+        "You cannot delete this case yet.": "You cannot delete this case yet.",
+        "A statutory term on this case is still running.": "A statutory term on this case is still running.",
+        "This case still has sub-cases.": "This case still has sub-cases.",
+        "A legal hold is on this case.": "A legal hold is on this case.",
+        "The retention period of this case has not ended.": "The retention period of this case has not ended.",
+        "Resolve this first, then delete the case.": "Resolve this first, then delete the case."
     },
     "plurals": ""
 }
