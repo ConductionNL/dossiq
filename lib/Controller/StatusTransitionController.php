@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\StatusTransitionService;
@@ -53,6 +55,8 @@ use RuntimeException;
  * @spec openspec/changes/status-transition-engine/tasks.md#T11
  */
 class StatusTransitionController extends Controller {
+	use TranslatesRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -164,27 +168,23 @@ class StatusTransitionController extends Controller {
 			return new JSONResponse($result);
 		} catch (GuardFailedException $e) {
 			return new JSONResponse(
-				['error' => 'Transition is not available', 'failedGuards' => $e->getFailedGuards()],
+				[
+					'message' => 'This move is blocked by a rule on the case.',
+					'error' => 'transition-guard-failed',
+					'code' => $e->getMessage(),
+					'failedGuards' => $e->getFailedGuards(),
+				],
 				Http::STATUS_CONFLICT,
 			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'execute', e: $e);
 		} catch (RuntimeException $e) {
 			$code = $e->getMessage();
 			$status = match ($code) {
 				'case_not_found', 'transition_not_found' => Http::STATUS_NOT_FOUND,
 				'forbidden_admin_only' => Http::STATUS_FORBIDDEN,
-				'result_type_required' => Http::STATUS_UNPROCESSABLE_ENTITY,
 				default => Http::STATUS_BAD_REQUEST,
 			};
-
-			// The one refusal the caller can act on: pick a result and retry.
-			// Every other code stays behind the static message, per this
-			// controller's contract.
-			if ($code === 'result_type_required') {
-				return new JSONResponse(
-					['error' => 'A result is required to close this case', 'code' => $code],
-					$status,
-				);
-			}
 
 			$this->logger->info('StatusTransitionController: execute rejected', ['code' => $code]);
 			return new JSONResponse(['error' => 'Could not execute transition'], $status);
@@ -241,6 +241,8 @@ class StatusTransitionController extends Controller {
 				comment: $comment,
 			);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'freeform', e: $e);
 		} catch (RuntimeException $e) {
 			$code = $e->getMessage();
 			$status = match ($code) {

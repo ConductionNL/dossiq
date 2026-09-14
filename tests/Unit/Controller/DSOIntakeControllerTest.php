@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\DSOIntakeController;
 use OCA\Dossiq\Service\DsoIntakeService;
 use OCP\IAppConfig;
+use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -160,6 +161,7 @@ class DSOIntakeControllerTest extends TestCase {
 	public function testIntakeReturnsJsonResponse(): void {
 		$this->request->method('getHeader')->willReturn('');
 		$this->request->method('getParams')->willReturn(['activiteiten' => [], 'procedureType' => 'regulier']);
+		$this->dsoIntakeService->method('processAanvraag')->willReturn(['caseId' => 'case-1']);
 
 		$response = $this->controller->intake();
 
@@ -167,5 +169,56 @@ class DSOIntakeControllerTest extends TestCase {
 			expected: \OCP\AppFramework\Http\JSONResponse::class,
 			actual: $response
 		);
+
+		// Alone, assertInstanceOf passes on the 400 and the 500 this method can
+		// also answer, so the accepted intake states its own status here
+		// (refusals-carry-a-status, REQ-QG-CRN-2).
+		$this->assertSame(
+			expected: Http::STATUS_CREATED,
+			actual: $response->getStatus(),
+			message: 'An accepted intake answers 201 with the case it made.'
+		);
 	}//end testIntakeReturnsJsonResponse()
+
+	/**
+	 * An unsigned payload is refused with 400 and a sentence, not accepted.
+	 *
+	 * The pair to the test above: the same endpoint, the same shape of
+	 * assertion, on the branch where the webhook's signature rule says no.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 */
+	public function testAnUnsignedIntakeIsRefusedWith400(): void {
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('a-configured-secret');
+
+		$request = $this->createMock(originalClassName: IRequest::class);
+		$request->method('getHeader')->willReturn('');
+		$request->method('getParams')->willReturn(['activiteiten' => []]);
+
+		$service = $this->createMock(originalClassName: DsoIntakeService::class);
+		$service->expects($this->never())->method('processAanvraag');
+
+		$controller = new DSOIntakeController(
+			appName: 'dossiq',
+			request: $request,
+			dsoIntakeService: $service,
+			appConfig: $appConfig,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$response = $controller->intake();
+
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $response->getStatus(),
+			message: 'An unsigned DSO payload is refused, and the refusal carries its status.'
+		);
+		$this->assertSame(
+			expected: 'Invalid or missing DSO signature',
+			actual: ((array)$response->getData())['message']
+		);
+	}//end testAnUnsignedIntakeIsRefusedWith400()
 }//end class
