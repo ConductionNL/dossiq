@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
+use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -261,6 +262,7 @@ class CaseTransferServiceFederationTest extends TestCase {
 			shareBroker: new TransferShareBroker($gateway, $logger),
 			logger: $logger,
 			auditTrail: $auditTrail,
+			internal: $this->createMock(originalClassName: InternalHandover::class),
 		);
 	}//end makeTransferService()
 
