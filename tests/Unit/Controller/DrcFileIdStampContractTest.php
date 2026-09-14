@@ -293,9 +293,9 @@ class DrcFileIdStampContractTest extends TestCase {
 
 		$this->assertInstanceOf(JSONResponse::class, $response);
 		$this->assertLessThan(
-			400,
-			$response->getStatus(),
-			'An unresolvable file id must not turn a written document into an error response.'
+			expected: 400,
+			actual: $response->getStatus(),
+			message: 'An unresolvable file id must not turn a written document into an error response.'
 		);
 		$this->assertNull($this->stampedObject(), 'nothing to stamp, so nothing is stamped');
 	}//end testAnUnresolvableFileIdDoesNotFailTheCreate()

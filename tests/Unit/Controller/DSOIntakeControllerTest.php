@@ -170,7 +170,7 @@ class DSOIntakeControllerTest extends TestCase {
 			actual: $response
 		);
 
-		// assertInstanceOf alone passes on the 400 and the 500 this method can
+		// Alone, assertInstanceOf passes on the 400 and the 500 this method can
 		// also answer, so the accepted intake states its own status here
 		// (refusals-carry-a-status, REQ-QG-CRN-2).
 		$this->assertSame(
