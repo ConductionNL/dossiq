@@ -190,8 +190,24 @@ class ConsultationAccessGuard {
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
 	 */
 	public function requestBody(): array {
-		$content = $this->request->getContent();
-		if ($content === '' || $content === false) {
+		// 🔴 `getContent()` IS PROTECTED ON THE CONCRETE REQUEST, AND ABSENT
+		// FROM `OCP\IRequest`. `OC\AppFramework\Http\Request` declares it
+		// protected and has `__get`, not `__call`, so calling it from outside
+		// is `Error: Call to protected method` and this endpoint answered 500
+		// for every caller. `is_callable()` is the honest test: false for a
+		// protected method seen from here, true for the public one the
+		// controller tests' request stub exposes. Production therefore reads
+		// the stream, which is what the request body is anyway.
+		$content = '';
+		if (is_callable([$this->request, 'getContent']) === true) {
+			$content = (string)call_user_func([$this->request, 'getContent']);
+		}
+
+		if ($content === '') {
+			$content = (string)file_get_contents('php://input');
+		}
+
+		if ($content === '') {
 			$content = '{}';
 		}
 
