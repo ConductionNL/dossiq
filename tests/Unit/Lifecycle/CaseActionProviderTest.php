@@ -415,4 +415,170 @@ class CaseActionProviderTest extends TestCase {
 		$this->expectException(LifecycleProviderException::class);
 		$provider->availableActions(object: ['title' => 'Nameless'], userId: 'behandelaar');
 	}//end testAnUnidentifiablePayloadThrows()
+
+	/**
+	 * A move OpenRegister refuses the caller is not offered (REQ-CGP-02).
+	 *
+	 * The two authorities answer different questions. dossiq's guards say
+	 * whether this MOVE is allowed from here; OpenRegister's grants say whether
+	 * this CALLER may write the object at all. A case they may not write offers
+	 * no move, whatever the workflow says, because the requirement is that an
+	 * action they may not take is not offered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testAMoveOpenRegisterRefusesIsNotOffered(): void {
+		$engine = $this->createMock(StatusTransitionService::class);
+		$engine->method('getAvailableTransitions')->willReturn(
+			[
+				'current' => self::CURRENT,
+				'transitions' => [
+					[
+						'id' => 'tr-in-behandeling',
+						'label' => 'In behandeling nemen',
+						'toStatus' => 'st-behandeling',
+						'guardsPassed' => true,
+						'failedGuards' => [],
+					],
+				],
+			]
+		);
+
+		$provider = new CaseActionProvider(
+			transitionEngine: $engine,
+			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+			grants: $this->grantsAnswering(
+				provenance: [
+					'update' => [
+						'action' => 'update',
+						'granted' => false,
+						'source' => 'deny',
+						'rule' => 'waarnemers',
+						'principal' => 'waarnemers',
+					],
+				]
+			),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		self::assertSame(
+			[],
+			$provider->availableActions(object: self::CASE_PAYLOAD, userId: 'waarnemer'),
+			'A caller OpenRegister refuses the write must be offered no move at all.',
+		);
+	}//end testAMoveOpenRegisterRefusesIsNotOffered()
+
+	/**
+	 * A grant from OpenRegister leaves dossiq's own answer exactly as it was.
+	 *
+	 * The mirror of the test above, and the one that proves the read is not a
+	 * filter: OpenRegister granting the write must add nothing and remove
+	 * nothing, because whether the MOVE is allowed is still dossiq's question.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testAGrantFromOpenRegisterChangesNothing(): void {
+		$engine = $this->createMock(StatusTransitionService::class);
+		$engine->method('getAvailableTransitions')->willReturn(
+			[
+				'current' => self::CURRENT,
+				'transitions' => [
+					[
+						'id' => 'tr-in-behandeling',
+						'label' => 'In behandeling nemen',
+						'toStatus' => 'st-behandeling',
+						'guardsPassed' => true,
+						'failedGuards' => [],
+					],
+				],
+			]
+		);
+
+		$provider = new CaseActionProvider(
+			transitionEngine: $engine,
+			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+			grants: $this->grantsAnswering(
+				provenance: [
+					'update' => ['action' => 'update', 'granted' => true, 'source' => 'role', 'role' => 'behandelaar'],
+				]
+			),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		self::assertSame(
+			['tr-in-behandeling'],
+			array_column($provider->availableActions(object: self::CASE_PAYLOAD, userId: 'behandelaar'), 'action'),
+		);
+	}//end testAGrantFromOpenRegisterChangesNothing()
+
+	/**
+	 * An OpenRegister that cannot answer does not empty the list.
+	 *
+	 * 🔴 THE FAIL-OPEN IS DELIBERATE AND IT IS THE POINT OF THE TEST. The
+	 * gateway answers null when OpenRegister is absent or predates
+	 * openregister#3726. Reading that as a refusal would lock every handler out
+	 * of every case the day the app is disabled, which is a worse failure than
+	 * the one this change is about. The authorization that still runs is
+	 * OpenRegister's own, at the object API, which dossiq never bypasses.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testAnOpenRegisterThatCannotAnswerLeavesTheListAlone(): void {
+		$engine = $this->createMock(StatusTransitionService::class);
+		$engine->method('getAvailableTransitions')->willReturn(
+			[
+				'current' => self::CURRENT,
+				'transitions' => [
+					[
+						'id' => 'tr-in-behandeling',
+						'label' => 'In behandeling nemen',
+						'toStatus' => 'st-behandeling',
+						'guardsPassed' => true,
+						'failedGuards' => [],
+					],
+				],
+			]
+		);
+
+		$provider = new CaseActionProvider(
+			transitionEngine: $engine,
+			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+			grants: $this->grantsAnswering(provenance: null),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		self::assertSame(
+			['tr-in-behandeling'],
+			array_column($provider->availableActions(object: self::CASE_PAYLOAD, userId: 'behandelaar'), 'action'),
+			'An absent OpenRegister must not read as a refusal.',
+		);
+	}//end testAnOpenRegisterThatCannotAnswerLeavesTheListAlone()
+
+	/**
+	 * A gateway answering the provenance we dictate.
+	 *
+	 * 🔑 `createMock` and NOT a double with added methods: a double that adds a
+	 * method the real class lacks can only ever pass, and `refuses()` here is
+	 * the REAL method reading the record, so a change to how the verdict is
+	 * read reddens these tests.
+	 *
+	 * @param array<string, array<string, mixed>>|null $provenance What OpenRegister answers.
+	 *
+	 * @return OpenRegisterGrantsGateway The gateway double.
+	 */
+	private function grantsAnswering(?array $provenance): OpenRegisterGrantsGateway {
+		$gateway = $this->getMockBuilder(OpenRegisterGrantsGateway::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['provenanceForCase'])
+			->getMock();
+		$gateway->method('provenanceForCase')->willReturn($provenance);
+
+		return $gateway;
+	}//end grantsAnswering()
 }//end class

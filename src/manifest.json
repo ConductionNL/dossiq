@@ -2007,6 +2007,13 @@
 							]
 						},
 						{
+							"id": "access",
+							"label": "Access",
+							"icon": "ShieldAccountOutline",
+							"_note": "case-grants-name-their-source REQ-CGP-01: who holds which right on this case and where each grant came from, so an auditor can be told after the fact who could open the dossier. A `component:` tab and not a `widgets[]` one, because a sidebar tab renders either a registered component or a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table), and none of the four can read OpenRegister's permission catalogue, role definitions or deny preview. dossiq computes no effective permission here: the panel renders what OpenRegister answered, one row per rule.",
+							"component": "CaseAccessTab"
+						},
+						{
 							"id": "sharing",
 							"label": "Sharing",
 							"icon": "ShareVariant",
