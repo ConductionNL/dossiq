@@ -42,7 +42,7 @@ class PriorityDerivationTest extends TestCase {
 	 * @return CasePriorityService The service.
 	 */
 	private function service(array $caseTypes = [], bool $throws = false): CasePriorityService {
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		if ($throws === true) {
 			$resolver->method('effectiveCaseType')->willThrowException(new RuntimeException('unreadable'));
 		} else {
@@ -51,7 +51,7 @@ class PriorityDerivationTest extends TestCase {
 			);
 		}
 
-		return new CasePriorityService($resolver, new NullLogger());
+		return new CasePriorityService(resolver: $resolver, logger: new NullLogger());
 	}//end service()
 
 	/**
@@ -86,13 +86,15 @@ class PriorityDerivationTest extends TestCase {
 	 * @param string $expected The priority the matrix must give.
 	 *
 	 * @dataProvider defaultMatrixCases
+	 *
+	 * @return void
 	 */
 	public function testTheInstanceDefaultMatrixAnswersEveryPair(
 		string $impact,
 		string $urgency,
 		string $expected,
 	): void {
-		self::assertSame($expected, $this->service()->derive(impact: $impact, urgency: $urgency));
+		self::assertSame(expected: $expected, actual: $this->service()->derive(impact: $impact, urgency: $urgency));
 	}//end testTheInstanceDefaultMatrixAnswersEveryPair()
 
 	/**
@@ -100,6 +102,8 @@ class PriorityDerivationTest extends TestCase {
 	 * a derivation that returned `normal` for everything would pass every
 	 * single-cell assertion above that happens to expect `normal`, and this
 	 * refuses it outright.
+	 *
+	 * @return void
 	 */
 	public function testTheMatrixDoesNotAnswerTheSameValueForEveryPair(): void {
 		$service = $this->service();
@@ -110,32 +114,36 @@ class PriorityDerivationTest extends TestCase {
 			}
 		}
 
-		self::assertCount(9, $answers);
+		self::assertCount(expectedCount: 9, haystack: $answers);
 		self::assertSame(
-			CasePriorityService::PRIORITY_VALUES,
-			array_values(array_unique($answers)),
-			'every declared priority must be reachable from some pair, in order'
+			expected: CasePriorityService::PRIORITY_VALUES,
+			actual: array_values(array_unique($answers)),
+			message: 'every declared priority must be reachable from some pair, in order'
 		);
 	}//end testTheMatrixDoesNotAnswerTheSameValueForEveryPair()
 
 	/**
 	 * Raising the urgency raises the priority, which is REQ-PRI-02's scenario
 	 * and the thing a handler actually does.
+	 *
+	 * @return void
 	 */
 	public function testRaisingTheUrgencyRaisesTheDerivedPriority(): void {
 		$service = $this->service();
 
-		self::assertSame('normal', $service->derive(impact: 'medium', urgency: 'medium'));
-		self::assertSame('high', $service->derive(impact: 'medium', urgency: 'high'));
+		self::assertSame(expected: 'normal', actual: $service->derive(impact: 'medium', urgency: 'medium'));
+		self::assertSame(expected: 'high', actual: $service->derive(impact: 'medium', urgency: 'high'));
 	}//end testRaisingTheUrgencyRaisesTheDerivedPriority()
 
 	/**
 	 * Two case types read the same pair differently, which is the whole reason
 	 * the matrix belongs to the case type and not to the instance.
+	 *
+	 * @return void
 	 */
 	public function testTwoCaseTypesReadTheSameImpactDifferently(): void {
 		$service = $this->service(
-			[
+			caseTypes: [
 				'bezwaar' => [
 					'id' => 'bezwaar',
 					'priorityMatrix' => [
@@ -162,9 +170,9 @@ class PriorityDerivationTest extends TestCase {
 			matrix: $service->matrixFor(caseTypeId: 'melding')
 		);
 
-		self::assertSame('urgent', $bezwaar);
-		self::assertSame('low', $melding);
-		self::assertNotSame($bezwaar, $melding);
+		self::assertSame(expected: 'urgent', actual: $bezwaar);
+		self::assertSame(expected: 'low', actual: $melding);
+		self::assertNotSame(expected: $bezwaar, actual: $melding);
 	}//end testTwoCaseTypesReadTheSameImpactDifferently()
 
 	/**
@@ -172,10 +180,12 @@ class PriorityDerivationTest extends TestCase {
 	 * losing them. A replace-whole-matrix implementation would leave a type
 	 * that cared about one corner with eight empty cells and a case with no
 	 * priority at all.
+	 *
+	 * @return void
 	 */
 	public function testADeclaredCellOverlaysTheDefaultRatherThanReplacingIt(): void {
 		$service = $this->service(
-			[
+			caseTypes: [
 				'ct' => [
 					'id' => 'ct',
 					'priorityMatrix' => [
@@ -186,30 +196,34 @@ class PriorityDerivationTest extends TestCase {
 		);
 		$matrix = $service->matrixFor(caseTypeId: 'ct');
 
-		self::assertSame('urgent', $service->derive(impact: 'low', urgency: 'low', matrix: $matrix));
-		self::assertSame('normal', $service->derive(impact: 'medium', urgency: 'medium', matrix: $matrix));
-		self::assertSame('urgent', $service->derive(impact: 'high', urgency: 'high', matrix: $matrix));
+		self::assertSame(expected: 'urgent', actual: $service->derive(impact: 'low', urgency: 'low', matrix: $matrix));
+		self::assertSame(expected: 'normal', actual: $service->derive(impact: 'medium', urgency: 'medium', matrix: $matrix));
+		self::assertSame(expected: 'urgent', actual: $service->derive(impact: 'high', urgency: 'high', matrix: $matrix));
 	}//end testADeclaredCellOverlaysTheDefaultRatherThanReplacingIt()
 
 	/**
 	 * A case type declaring no matrix still derives a priority (REQ-PRI-02).
+	 *
+	 * @return void
 	 */
 	public function testACaseTypeWithNoMatrixStillDerivesAPriority(): void {
-		$service = $this->service(['ct' => ['id' => 'ct']]);
+		$service = $this->service(caseTypes: ['ct' => ['id' => 'ct']]);
 
 		self::assertSame(
-			CasePriorityService::DEFAULT_MATRIX,
-			$service->matrixFor(caseTypeId: 'ct')
+			expected: CasePriorityService::DEFAULT_MATRIX,
+			actual: $service->matrixFor(caseTypeId: 'ct')
 		);
 	}//end testACaseTypeWithNoMatrixStillDerivesAPriority()
 
 	/**
 	 * A case with no case type at all still derives a priority.
+	 *
+	 * @return void
 	 */
 	public function testACaseWithNoCaseTypeStillDerivesAPriority(): void {
 		self::assertSame(
-			CasePriorityService::DEFAULT_MATRIX,
-			$this->service()->matrixFor(caseTypeId: '')
+			expected: CasePriorityService::DEFAULT_MATRIX,
+			actual: $this->service()->matrixFor(caseTypeId: '')
 		);
 	}//end testACaseWithNoCaseTypeStillDerivesAPriority()
 
@@ -217,21 +231,25 @@ class PriorityDerivationTest extends TestCase {
 	 * An unreadable case type falls back to the instance default rather than
 	 * leaving the case with no priority. A case with no priority drops out of
 	 * every sorted list, which is the failure this change exists to end.
+	 *
+	 * @return void
 	 */
 	public function testAnUnreadableCaseTypeFallsBackToTheInstanceDefault(): void {
 		$service = $this->service(throws: true);
 
-		self::assertSame(CasePriorityService::DEFAULT_MATRIX, $service->matrixFor(caseTypeId: 'ct'));
+		self::assertSame(expected: CasePriorityService::DEFAULT_MATRIX, actual: $service->matrixFor(caseTypeId: 'ct'));
 	}//end testAnUnreadableCaseTypeFallsBackToTheInstanceDefault()
 
 	/**
 	 * A declared cell naming a value outside the vocabulary is ignored rather
 	 * than stored. Accepting it would put a fifth word in the priority field
 	 * and break every reader of the enum at once.
+	 *
+	 * @return void
 	 */
 	public function testACellNamingAnUnknownValueIsIgnored(): void {
 		$service = $this->service(
-			[
+			caseTypes: [
 				'ct' => [
 					'id' => 'ct',
 					'priorityMatrix' => [
@@ -244,79 +262,89 @@ class PriorityDerivationTest extends TestCase {
 		);
 		$matrix = $service->matrixFor(caseTypeId: 'ct');
 
-		self::assertSame(CasePriorityService::DEFAULT_MATRIX, $matrix);
+		self::assertSame(expected: CasePriorityService::DEFAULT_MATRIX, actual: $matrix);
 	}//end testACellNamingAnUnknownValueIsIgnored()
 
 	/**
 	 * A case created by intake takes the case type's declared defaults
 	 * (REQ-PRI-01), and the defaults land as the derived priority.
+	 *
+	 * @return void
 	 */
 	public function testACaseCreatedByIntakeTakesTheDeclaredDefaults(): void {
 		$service = $this->service(
-			[
+			caseTypes: [
 				'ct' => ['id' => 'ct', 'defaultImpact' => 'high', 'defaultUrgency' => 'high'],
 			]
 		);
 
 		self::assertSame(
-			['impact' => 'high', 'urgency' => 'high'],
-			$service->defaultsFor(caseTypeId: 'ct')
+			expected: ['impact' => 'high', 'urgency' => 'high'],
+			actual: $service->defaultsFor(caseTypeId: 'ct')
 		);
 
 		$resolved = $service->resolve(case: ['caseType' => 'ct']);
-		self::assertSame('high', $resolved['impact']);
-		self::assertSame('high', $resolved['urgency']);
-		self::assertSame('urgent', $resolved['priority']);
+		self::assertSame(expected: 'high', actual: $resolved['impact']);
+		self::assertSame(expected: 'high', actual: $resolved['urgency']);
+		self::assertSame(expected: 'urgent', actual: $resolved['priority']);
 	}//end testACaseCreatedByIntakeTakesTheDeclaredDefaults()
 
 	/**
 	 * A case type declaring no defaults leaves a case at medium and medium,
 	 * which derives `normal` — the value every case in this app carries today.
+	 *
+	 * @return void
 	 */
 	public function testACaseTypeWithNoDefaultsLeavesTheCaseWhereItWas(): void {
-		$resolved = $this->service(['ct' => ['id' => 'ct']])->resolve(case: ['caseType' => 'ct']);
+		$resolved = $this->service(caseTypes: ['ct' => ['id' => 'ct']])->resolve(case: ['caseType' => 'ct']);
 
-		self::assertSame('medium', $resolved['impact']);
-		self::assertSame('medium', $resolved['urgency']);
-		self::assertSame('normal', $resolved['priority']);
+		self::assertSame(expected: 'medium', actual: $resolved['impact']);
+		self::assertSame(expected: 'medium', actual: $resolved['urgency']);
+		self::assertSame(expected: 'normal', actual: $resolved['priority']);
 	}//end testACaseTypeWithNoDefaultsLeavesTheCaseWhereItWas()
 
 	/**
 	 * A default the case type declares outside the vocabulary is refused, and
 	 * the instance default answers instead.
+	 *
+	 * @return void
 	 */
 	public function testADefaultOutsideTheVocabularyIsRefused(): void {
 		$service = $this->service(
-			['ct' => ['id' => 'ct', 'defaultImpact' => 'catastrophic', 'defaultUrgency' => 'low']]
+			caseTypes: ['ct' => ['id' => 'ct', 'defaultImpact' => 'catastrophic', 'defaultUrgency' => 'low']]
 		);
 
 		self::assertSame(
-			['impact' => 'medium', 'urgency' => 'low'],
-			$service->defaultsFor(caseTypeId: 'ct')
+			expected: ['impact' => 'medium', 'urgency' => 'low'],
+			actual: $service->defaultsFor(caseTypeId: 'ct')
 		);
 	}//end testADefaultOutsideTheVocabularyIsRefused()
 
 	/**
 	 * A case that names its own impact and urgency keeps them over the case
 	 * type's defaults. The defaults are what a case STARTS with, not a ceiling.
+	 *
+	 * @return void
 	 */
 	public function testACaseKeepsItsOwnImpactOverTheTypeDefault(): void {
 		$service = $this->service(
-			['ct' => ['id' => 'ct', 'defaultImpact' => 'low', 'defaultUrgency' => 'low']]
+			caseTypes: ['ct' => ['id' => 'ct', 'defaultImpact' => 'low', 'defaultUrgency' => 'low']]
 		);
 
 		$resolved = $service->resolve(
 			case: ['caseType' => 'ct', 'impact' => 'high', 'urgency' => 'high']
 		);
 
-		self::assertSame('high', $resolved['impact']);
-		self::assertSame('urgent', $resolved['priority']);
+		self::assertSame(expected: 'high', actual: $resolved['impact']);
+		self::assertSame(expected: 'urgent', actual: $resolved['priority']);
 	}//end testACaseKeepsItsOwnImpactOverTheTypeDefault()
 
 	/**
 	 * The resolved block carries the declared order, and the order agrees with
 	 * the priority beside it. A queue that sorts differently from how it reads
 	 * is worse than one that does not sort at all.
+	 *
+	 * @return void
 	 */
 	public function testTheResolvedOrderAgreesWithTheResolvedPriority(): void {
 		$service = $this->service();
@@ -325,9 +353,9 @@ class PriorityDerivationTest extends TestCase {
 			foreach (CasePriorityService::URGENCY_VALUES as $urgency) {
 				$resolved = $service->resolve(case: ['impact' => $impact, 'urgency' => $urgency]);
 				self::assertSame(
-					CasePriorityService::PRIORITY_ORDER[$resolved['priority']],
-					$resolved['priorityOrder'],
-					sprintf('%s / %s', $impact, $urgency)
+					expected: CasePriorityService::PRIORITY_ORDER[$resolved['priority']],
+					actual: $resolved['priorityOrder'],
+					message: sprintf('%s / %s', $impact, $urgency)
 				);
 			}
 		}
@@ -337,15 +365,17 @@ class PriorityDerivationTest extends TestCase {
 	 * A case type reference that arrived as an expanded row, not a uuid, still
 	 * finds its matrix. OpenRegister answers a `$ref` either way depending on
 	 * whether the caller asked for it to be extended.
+	 *
+	 * @return void
 	 */
 	public function testAnExpandedCaseTypeReferenceStillFindsItsMatrix(): void {
 		$service = $this->service(
-			['ct' => ['id' => 'ct', 'defaultImpact' => 'high', 'defaultUrgency' => 'high']]
+			caseTypes: ['ct' => ['id' => 'ct', 'defaultImpact' => 'high', 'defaultUrgency' => 'high']]
 		);
 
 		$resolved = $service->resolve(case: ['caseType' => ['id' => 'ct', 'title' => 'Bezwaar']]);
 
-		self::assertSame('urgent', $resolved['priority']);
+		self::assertSame(expected: 'urgent', actual: $resolved['priority']);
 	}//end testAnExpandedCaseTypeReferenceStillFindsItsMatrix()
 
 	/**
@@ -356,14 +386,16 @@ class PriorityDerivationTest extends TestCase {
 	 * field missing from it does not fail to inherit loudly — it simply never
 	 * inherits, and a child type quietly derives by the instance default while
 	 * its parent's matrix sits unread.
+	 *
+	 * @return void
 	 */
 	public function testTheInheritedFieldsAllowListCarriesTheMatrix(): void {
 		$reflection = new \ReflectionClass(CaseTypeResolver::class);
 		$inherited = $reflection->getConstant('INHERITED_FIELDS');
 
-		self::assertIsArray($inherited);
-		self::assertContains('priorityMatrix', $inherited);
-		self::assertContains('defaultImpact', $inherited);
-		self::assertContains('defaultUrgency', $inherited);
+		self::assertIsArray(actual: $inherited);
+		self::assertContains(needle: 'priorityMatrix', haystack: $inherited);
+		self::assertContains(needle: 'defaultImpact', haystack: $inherited);
+		self::assertContains(needle: 'defaultUrgency', haystack: $inherited);
 	}//end testTheInheritedFieldsAllowListCarriesTheMatrix()
 }//end class

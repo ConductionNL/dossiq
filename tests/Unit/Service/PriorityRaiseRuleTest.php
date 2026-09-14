@@ -40,24 +40,26 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * @return CasePriorityService The service.
 	 */
 	private function service(): CasePriorityService {
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn([]);
 
-		return new CasePriorityService($resolver, new NullLogger());
+		return new CasePriorityService(resolver: $resolver, logger: new NullLogger());
 	}//end service()
 
 	/**
 	 * The declaration is readable, and names OpenRegister as the engine
 	 * (REQ-PRI-04). A declaration that named no engine would be a rule dossiq
 	 * had quietly implemented itself.
+	 *
+	 * @return void
 	 */
 	public function testTheDeclarationNamesOpenRegisterAsTheEngine(): void {
 		$rule = $this->service()->termRaiseRule();
 
-		self::assertNotSame([], $rule, 'the declaration must be readable');
-		self::assertSame('openregister', $rule['engine']);
-		self::assertSame('raise-only', $rule['direction']);
-		self::assertStringContainsString('openregister', strtolower((string)$rule['engineNote']));
+		self::assertNotSame(expected: [], actual: $rule, message: 'the declaration must be readable');
+		self::assertSame(expected: 'openregister', actual: $rule['engine']);
+		self::assertSame(expected: 'raise-only', actual: $rule['direction']);
+		self::assertStringContainsString(needle: 'openregister', haystack: strtolower((string)$rule['engineNote']));
 	}//end testTheDeclarationNamesOpenRegisterAsTheEngine()
 
 	/**
@@ -68,6 +70,8 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * code decides. Read the declaration, change nothing in PHP, and the
 	 * answer changes: that is what it means to have declared rather than coded
 	 * the rule.
+	 *
+	 * @return void
 	 */
 	public function testTheFloorComesFromTheFileRatherThanFromTheCode(): void {
 		$service = $this->service();
@@ -76,24 +80,28 @@ class PriorityRaiseRuleTest extends TestCase {
 			$declared[(int)$threshold['daysToTerm']] = (string)$threshold['minimumPriority'];
 		}
 
-		self::assertNotSame([], $declared);
+		self::assertNotSame(expected: [], actual: $declared);
 		foreach ($declared as $days => $floor) {
-			self::assertSame($floor, $service->termRaiseFloor(daysToTerm: $days));
+			self::assertSame(expected: $floor, actual: $service->termRaiseFloor(daysToTerm: $days));
 		}
 	}//end testTheFloorComesFromTheFileRatherThanFromTheCode()
 
 	/**
 	 * A case inside two days of its term rises (REQ-PRI-04).
+	 *
+	 * @return void
 	 */
 	public function testACaseTwoDaysFromItsTermRises(): void {
-		self::assertSame('high', $this->service()->termRaiseFloor(daysToTerm: 2));
+		self::assertSame(expected: 'high', actual: $this->service()->termRaiseFloor(daysToTerm: 2));
 	}//end testACaseTwoDaysFromItsTermRises()
 
 	/**
 	 * A case whose term has run out rises further.
+	 *
+	 * @return void
 	 */
 	public function testACaseWhoseTermHasRunOutRisesToUrgent(): void {
-		self::assertSame('urgent', $this->service()->termRaiseFloor(daysToTerm: 0));
+		self::assertSame(expected: 'urgent', actual: $this->service()->termRaiseFloor(daysToTerm: 0));
 	}//end testACaseWhoseTermHasRunOutRisesToUrgent()
 
 	/**
@@ -103,46 +111,54 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * must leave the case exactly where it is rather than falling through to
 	 * some default, which would make every case in the instance `high` a
 	 * fortnight before its term.
+	 *
+	 * @return void
 	 */
 	public function testAThresholdTheDeclarationDoesNotNameRaisesNothing(): void {
 		$service = $this->service();
 
-		self::assertSame('', $service->termRaiseFloor(daysToTerm: 14));
-		self::assertSame('', $service->termRaiseFloor(daysToTerm: 7));
-		self::assertSame('', $service->termRaiseFloor(daysToTerm: 99));
+		self::assertSame(expected: '', actual: $service->termRaiseFloor(daysToTerm: 14));
+		self::assertSame(expected: '', actual: $service->termRaiseFloor(daysToTerm: 7));
+		self::assertSame(expected: '', actual: $service->termRaiseFloor(daysToTerm: 99));
 	}//end testAThresholdTheDeclarationDoesNotNameRaisesNothing()
 
 	/**
 	 * The rule raises and never lowers (REQ-PRI-04, D-5).
+	 *
+	 * @return void
 	 */
 	public function testTheRuleRaisesAndNeverLowers(): void {
 		$service = $this->service();
 
-		self::assertSame('urgent', $service->raise(current: 'normal', floor: 'urgent'));
-		self::assertSame('urgent', $service->raise(current: 'urgent', floor: 'high'));
-		self::assertSame('urgent', $service->raise(current: 'urgent', floor: 'low'));
-		self::assertSame('high', $service->raise(current: 'high', floor: 'high'));
+		self::assertSame(expected: 'urgent', actual: $service->raise(current: 'normal', floor: 'urgent'));
+		self::assertSame(expected: 'urgent', actual: $service->raise(current: 'urgent', floor: 'high'));
+		self::assertSame(expected: 'urgent', actual: $service->raise(current: 'urgent', floor: 'low'));
+		self::assertSame(expected: 'high', actual: $service->raise(current: 'high', floor: 'high'));
 	}//end testTheRuleRaisesAndNeverLowers()
 
 	/**
 	 * A floor outside the vocabulary moves nothing.
+	 *
+	 * @return void
 	 */
 	public function testAFloorOutsideTheVocabularyMovesNothing(): void {
-		self::assertSame('normal', $this->service()->raise(current: 'normal', floor: 'blocker'));
+		self::assertSame(expected: 'normal', actual: $this->service()->raise(current: 'normal', floor: 'blocker'));
 	}//end testAFloorOutsideTheVocabularyMovesNothing()
 
 	/**
 	 * A raised case reads its floor even though the matrix says lower
 	 * (REQ-PRI-04), which is what makes the raise stick past the next save.
+	 *
+	 * @return void
 	 */
 	public function testARaisedCaseKeepsItsFloorThroughTheNextDerivation(): void {
 		$resolved = $this->service()->resolve(
 			case: ['impact' => 'medium', 'urgency' => 'medium', 'priorityFloor' => 'urgent']
 		);
 
-		self::assertSame('urgent', $resolved['priority']);
-		self::assertSame('normal', $resolved['priorityDerived'], 'the matrix keeps answering underneath');
-		self::assertSame(4, $resolved['priorityOrder']);
+		self::assertSame(expected: 'urgent', actual: $resolved['priority']);
+		self::assertSame(expected: 'normal', actual: $resolved['priorityDerived'], message: 'the matrix keeps answering underneath');
+		self::assertSame(expected: 4, actual: $resolved['priorityOrder']);
 	}//end testARaisedCaseKeepsItsFloorThroughTheNextDerivation()
 
 	/**
@@ -153,6 +169,8 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * the derivation running again over a case whose impact and urgency were
 	 * ALSO relaxed, which is the strongest form of the claim: even a case that
 	 * now derives `low` stays where the rule put it.
+	 *
+	 * @return void
 	 */
 	public function testAnExtendedTermDoesNotLowerARaisedPriority(): void {
 		$resolved = $this->service()->resolve(
@@ -164,13 +182,15 @@ class PriorityRaiseRuleTest extends TestCase {
 			]
 		);
 
-		self::assertSame('low', $resolved['priorityDerived']);
-		self::assertSame('high', $resolved['priority']);
+		self::assertSame(expected: 'low', actual: $resolved['priorityDerived']);
+		self::assertSame(expected: 'high', actual: $resolved['priority']);
 	}//end testAnExtendedTermDoesNotLowerARaisedPriority()
 
 	/**
 	 * A human override still beats a floor a rule set. The rule raises the
 	 * cases nobody has looked at; a person who has looked at one outranks it.
+	 *
+	 * @return void
 	 */
 	public function testAHumanOverrideStillBeatsTheFloor(): void {
 		$resolved = $this->service()->resolve(
@@ -182,7 +202,7 @@ class PriorityRaiseRuleTest extends TestCase {
 			]
 		);
 
-		self::assertSame('low', $resolved['priority']);
+		self::assertSame(expected: 'low', actual: $resolved['priority']);
 	}//end testAHumanOverrideStillBeatsTheFloor()
 
 	/**
@@ -191,12 +211,14 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * A declaration naming a fifth word would put that word in `case.priority`
 	 * and break every reader of the enum at once, and it would do so only for
 	 * the cases that happened to reach that threshold.
+	 *
+	 * @return void
 	 */
 	public function testEveryDeclaredFloorIsInTheVocabulary(): void {
 		foreach ((array)$this->service()->termRaiseRule()['thresholds'] as $threshold) {
 			self::assertContains(
-				(string)$threshold['minimumPriority'],
-				CasePriorityService::PRIORITY_VALUES
+				needle: (string)$threshold['minimumPriority'],
+				haystack: CasePriorityService::PRIORITY_VALUES
 			);
 		}
 	}//end testEveryDeclaredFloorIsInTheVocabulary()
@@ -205,6 +227,8 @@ class PriorityRaiseRuleTest extends TestCase {
 	 * The declared thresholds rise as the term approaches, never the other way.
 	 * A declaration that set `urgent` at fourteen days and `high` at two would
 	 * be a rule that lowers, written as data.
+	 *
+	 * @return void
 	 */
 	public function testTheDeclaredThresholdsRiseAsTheTermApproaches(): void {
 		$service = $this->service();
@@ -219,9 +243,9 @@ class PriorityRaiseRuleTest extends TestCase {
 		foreach ($thresholds as $threshold) {
 			$order = $service->orderOf(priority: (string)$threshold['minimumPriority']);
 			self::assertGreaterThan(
-				$previous,
-				$order,
-				'a nearer term must name a higher floor than the one before it'
+				expected: $previous,
+				actual: $order,
+				message: 'a nearer term must name a higher floor than the one before it'
 			);
 			$previous = $order;
 		}

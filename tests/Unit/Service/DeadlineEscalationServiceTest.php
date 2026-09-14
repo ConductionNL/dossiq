@@ -73,33 +73,35 @@ class DeadlineEscalationServiceTest extends TestCase {
 	 * @return DeadlineEscalationService The service.
 	 */
 	private function service(LoggerInterface $logger, string $casePriority = 'normal'): DeadlineEscalationService {
-		$raiser = $this->createMock(CasePriorityRaiseService::class);
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
 		$raiser->method('raiseForThreshold')->willReturn($casePriority);
 
 		return new DeadlineEscalationService(
-			$this->createMock(TermijnService::class),
-			$raiser,
-			$logger
+			termService: $this->createMock(originalClassName: TermijnService::class),
+			priorityRaiseService: $raiser,
+			logger: $logger
 		);
 	}//end service()
 
 	/**
 	 * Nothing the escalation reports is called a priority except the case's own
 	 * (REQ-PRI-06).
+	 *
+	 * @return void
 	 */
 	public function testTheEscalationPayloadCallsOnlyTheCasePriorityAPriority(): void {
 		$logger = $this->recordingLogger();
-		$this->service($logger, casePriority: 'urgent')->notifyThreshold(
+		$this->service(logger: $logger, casePriority: 'urgent')->notifyThreshold(
 			['id' => 'ti-1', 'case' => 'case-1', 'endDateCurrent' => '2026-10-01'],
 			2
 		);
 
-		self::assertCount(1, $logger->records);
+		self::assertCount(expectedCount: 1, haystack: $logger->records);
 		$payload = $logger->records[0];
 
-		self::assertArrayNotHasKey('priority', $payload, 'the ambiguous key must be gone');
-		self::assertSame('high', $payload['notificationUrgency']);
-		self::assertSame('urgent', $payload['casePriority']);
+		self::assertArrayNotHasKey(key: 'priority', array: $payload, message: 'the ambiguous key must be gone');
+		self::assertSame(expected: 'high', actual: $payload['notificationUrgency']);
+		self::assertSame(expected: 'urgent', actual: $payload['casePriority']);
 	}//end testTheEscalationPayloadCallsOnlyTheCasePriorityAPriority()
 
 	/**
@@ -107,35 +109,39 @@ class DeadlineEscalationServiceTest extends TestCase {
 	 * (REQ-PRI-06). The two differ here on purpose: a notification urgency of
 	 * `high` beside a case priority of `urgent` is the exact pair that used to
 	 * be indistinguishable.
+	 *
+	 * @return void
 	 */
 	public function testTheEscalationReportsTheCasePriority(): void {
 		$logger = $this->recordingLogger();
-		$this->service($logger, casePriority: 'urgent')->notifyThreshold(
+		$this->service(logger: $logger, casePriority: 'urgent')->notifyThreshold(
 			['id' => 'ti-1', 'case' => 'case-1'],
 			2
 		);
 
 		$payload = $logger->records[0];
-		self::assertNotSame($payload['notificationUrgency'], $payload['casePriority']);
-		self::assertContains($payload['casePriority'], CasePriorityService::PRIORITY_VALUES);
+		self::assertNotSame(expected: $payload['notificationUrgency'], actual: $payload['casePriority']);
+		self::assertContains(needle: $payload['casePriority'], haystack: CasePriorityService::PRIORITY_VALUES);
 	}//end testTheEscalationReportsTheCasePriority()
 
 	/**
 	 * The rule is asked for the case that fired, at the threshold that fired.
 	 * Passing the termijn instance id, or a fixed threshold, would raise the
 	 * wrong case or raise it at the wrong moment, and neither would error.
+	 *
+	 * @return void
 	 */
 	public function testTheRuleIsAskedForTheCaseAndThresholdThatFired(): void {
-		$raiser = $this->createMock(CasePriorityRaiseService::class);
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
 		$raiser->expects(self::once())
 			->method('raiseForThreshold')
 			->with('case-42', 0)
 			->willReturn('urgent');
 
 		$service = new DeadlineEscalationService(
-			$this->createMock(TermijnService::class),
-			$raiser,
-			$this->recordingLogger()
+			termService: $this->createMock(originalClassName: TermijnService::class),
+			priorityRaiseService: $raiser,
+			logger: $this->recordingLogger()
 		);
 
 		$service->notifyThreshold(['id' => 'ti-9', 'case' => 'case-42'], 0);
@@ -145,19 +151,21 @@ class DeadlineEscalationServiceTest extends TestCase {
 	 * A duplicate threshold neither notifies nor raises. The rule must not run
 	 * on a catch-up fire for a threshold already handled, or a case could be
 	 * lifted twice by the same rung after a migration repair step.
+	 *
+	 * @return void
 	 */
 	public function testADuplicateThresholdDoesNotRunTheRule(): void {
-		$raiser = $this->createMock(CasePriorityRaiseService::class);
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
 		$raiser->expects(self::never())->method('raiseForThreshold');
 
 		$service = new DeadlineEscalationService(
-			$this->createMock(TermijnService::class),
-			$raiser,
-			$this->recordingLogger()
+			termService: $this->createMock(originalClassName: TermijnService::class),
+			priorityRaiseService: $raiser,
+			logger: $this->recordingLogger()
 		);
 
 		self::assertFalse(
-			$service->notifyThreshold(
+			condition: $service->notifyThreshold(
 				['id' => 'ti-1', 'case' => 'c-1', 'notificatiesVerstuurd' => [2]],
 				2
 			)
@@ -167,14 +175,16 @@ class DeadlineEscalationServiceTest extends TestCase {
 	/**
 	 * Every row of the matrix names its urgency as a notification urgency, and
 	 * none of them is called a priority (REQ-PRI-06).
+	 *
+	 * @return void
 	 */
 	public function testEveryMatrixRowNamesANotificationUrgency(): void {
-		$matrix = $this->service($this->recordingLogger())->matrix();
+		$matrix = $this->service(logger: $this->recordingLogger())->matrix();
 
-		self::assertSame([14, 7, 2, 0], array_keys($matrix));
+		self::assertSame(expected: [14, 7, 2, 0], actual: array_keys($matrix));
 		foreach ($matrix as $threshold => $row) {
-			self::assertArrayHasKey('notificationUrgency', $row, (string)$threshold);
-			self::assertArrayNotHasKey('priority', $row, (string)$threshold);
+			self::assertArrayHasKey(key: 'notificationUrgency', array: $row, message: (string)$threshold);
+			self::assertArrayNotHasKey(key: 'priority', array: $row, message: (string)$threshold);
 		}
 	}//end testEveryMatrixRowNamesANotificationUrgency()
 
@@ -183,15 +193,17 @@ class DeadlineEscalationServiceTest extends TestCase {
 	 * priority vocabulary. If the two ever became the same four words, the
 	 * rename would have bought nothing and a reader would be back to assuming
 	 * they agree.
+	 *
+	 * @return void
 	 */
 	public function testTheTwoVocabulariesStayDistinct(): void {
 		$urgencies = array_column(
-			$this->service($this->recordingLogger())->matrix(),
+			$this->service(logger: $this->recordingLogger())->matrix(),
 			'notificationUrgency'
 		);
 
-		self::assertSame(['low', 'medium', 'high', 'critical'], $urgencies);
-		self::assertNotSame(CasePriorityService::PRIORITY_VALUES, $urgencies);
+		self::assertSame(expected: ['low', 'medium', 'high', 'critical'], actual: $urgencies);
+		self::assertNotSame(expected: CasePriorityService::PRIORITY_VALUES, actual: $urgencies);
 	}//end testTheTwoVocabulariesStayDistinct()
 
 	/**
@@ -201,43 +213,49 @@ class DeadlineEscalationServiceTest extends TestCase {
 	 * priority lookup succeeding. The read failing leaves the priority unknown
 	 * and logged; it must not swallow the notification, and it must not report
 	 * a priority nobody actually asked the case for.
+	 *
+	 * @return void
 	 */
 	public function testTheNotificationStillGoesOutWhenTheCaseCannotBeRead(): void {
 		$logger = $this->recordingLogger();
-		$raiser = $this->createMock(CasePriorityRaiseService::class);
+		$raiser = $this->createMock(originalClassName: CasePriorityRaiseService::class);
 		$raiser->method('raiseForThreshold')->willThrowException(new RuntimeException('store down'));
 
 		$service = new DeadlineEscalationService(
-			$this->createMock(TermijnService::class),
-			$raiser,
-			$logger
+			termService: $this->createMock(originalClassName: TermijnService::class),
+			priorityRaiseService: $raiser,
+			logger: $logger
 		);
 
-		self::assertTrue($service->notifyThreshold(['id' => 'ti-1', 'case' => 'c-1'], 0));
+		self::assertTrue(condition: $service->notifyThreshold(['id' => 'ti-1', 'case' => 'c-1'], 0));
 
 		$dispatched = end($logger->records);
-		self::assertSame('critical', $dispatched['notificationUrgency']);
-		self::assertSame('', $dispatched['casePriority'], 'unknown, not guessed');
+		self::assertSame(expected: 'critical', actual: $dispatched['notificationUrgency']);
+		self::assertSame(expected: '', actual: $dispatched['casePriority'], message: 'unknown, not guessed');
 	}//end testTheNotificationStillGoesOutWhenTheCaseCannotBeRead()
 
 	/**
 	 * An instance with no id is refused before anything is written.
+	 *
+	 * @return void
 	 */
 	public function testAnInstanceWithNoIdIsRefused(): void {
 		self::assertFalse(
-			$this->service($this->recordingLogger())->notifyThreshold(['case' => 'c-1'], 2)
+			condition: $this->service(logger: $this->recordingLogger())->notifyThreshold(['case' => 'c-1'], 2)
 		);
 	}//end testAnInstanceWithNoIdIsRefused()
 
 	/**
 	 * The threshold buckets are unchanged by this change.
+	 *
+	 * @return void
 	 */
 	public function testTheThresholdBucketsAreUnchanged(): void {
-		$service = $this->service($this->recordingLogger());
+		$service = $this->service(logger: $this->recordingLogger());
 
-		self::assertSame([14, 7, 2, 0], $service->thresholds());
-		self::assertSame(7, $service->bucketFor(daysToDeadline: 7));
-		self::assertSame(0, $service->bucketFor(daysToDeadline: -3));
-		self::assertNull($service->bucketFor(daysToDeadline: 30));
+		self::assertSame(expected: [14, 7, 2, 0], actual: $service->thresholds());
+		self::assertSame(expected: 7, actual: $service->bucketFor(daysToDeadline: 7));
+		self::assertSame(expected: 0, actual: $service->bucketFor(daysToDeadline: -3));
+		self::assertNull(actual: $service->bucketFor(daysToDeadline: 30));
 	}//end testTheThresholdBucketsAreUnchanged()
 }//end class

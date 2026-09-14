@@ -322,7 +322,11 @@ class CasePriorityService {
 			return $floor;
 		}
 
-		return ($this->orderOf(priority: $floor) > $this->orderOf(priority: $current)) ? $floor : $current;
+		if ($this->orderOf(priority: $floor) > $this->orderOf(priority: $current)) {
+			return $floor;
+		}
+
+		return $current;
 	}//end raise()
 
 	/**
@@ -351,7 +355,10 @@ class CasePriorityService {
 		}
 
 		$decoded = json_decode($raw, true);
-		$this->raiseRule = (is_array($decoded) === true) ? $decoded : [];
+		$this->raiseRule = [];
+		if (is_array($decoded) === true) {
+			$this->raiseRule = $decoded;
+		}
 
 		return $this->raiseRule;
 	}//end termRaiseRule()
@@ -498,7 +505,11 @@ class CasePriorityService {
 			return $value;
 		}
 
-		return (in_array($fallback, self::IMPACT_VALUES, true) === true) ? $fallback : self::DEFAULT_IMPACT;
+		if (in_array($fallback, self::IMPACT_VALUES, true) === true) {
+			return $fallback;
+		}
+
+		return self::DEFAULT_IMPACT;
 	}//end normaliseImpact()
 
 	/**
@@ -515,7 +526,11 @@ class CasePriorityService {
 			return $value;
 		}
 
-		return (in_array($fallback, self::URGENCY_VALUES, true) === true) ? $fallback : self::DEFAULT_URGENCY;
+		if (in_array($fallback, self::URGENCY_VALUES, true) === true) {
+			return $fallback;
+		}
+
+		return self::DEFAULT_URGENCY;
 	}//end normaliseUrgency()
 
 	/**

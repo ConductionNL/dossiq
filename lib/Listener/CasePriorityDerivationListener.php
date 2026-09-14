@@ -133,10 +133,12 @@ class CasePriorityDerivationListener implements IEventListener {
 		$modified = $event->getModifiedData();
 		$payload = array_merge($payload, $modified);
 
-		$stamp = $this->overrideStamp(
-			payload: $payload,
-			previous: (($previous === null) ? null : $this->payload(entity: $previous))
-		);
+		$was = null;
+		if ($previous !== null) {
+			$was = $this->payload(entity: $previous);
+		}
+
+		$stamp = $this->overrideStamp(payload: $payload, previous: $was);
 		$payload = array_merge($payload, $stamp);
 
 		$event->setModifiedData(

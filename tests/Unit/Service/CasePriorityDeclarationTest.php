@@ -53,10 +53,10 @@ class CasePriorityDeclarationTest extends TestCase {
 	 */
 	private function caseProperties(): array {
 		$raw = file_get_contents($this->root() . '/lib/Settings/dossiq_register.json');
-		self::assertIsString($raw, 'the register declaration must be readable');
+		self::assertIsString(actual: $raw, message: 'the register declaration must be readable');
 
 		$decoded = json_decode($raw, true);
-		self::assertIsArray($decoded);
+		self::assertIsArray(actual: $decoded);
 
 		return (array)$decoded['components']['schemas']['case']['properties'];
 	}//end caseProperties()
@@ -65,32 +65,38 @@ class CasePriorityDeclarationTest extends TestCase {
 	 * The schema still carries the priority field it always had: same values,
 	 * same default, same facet, and no `format` (adding one to an existing
 	 * property is a breaking change for every stored row).
+	 *
+	 * @return void
 	 */
 	public function testThePriorityFieldItselfIsUnchanged(): void {
 		$priority = (array)$this->caseProperties()['priority'];
 
-		self::assertSame(CasePriorityService::PRIORITY_VALUES, $priority['enum']);
-		self::assertSame('normal', $priority['default']);
-		self::assertTrue($priority['facetable']);
-		self::assertArrayNotHasKey('format', $priority);
+		self::assertSame(expected: CasePriorityService::PRIORITY_VALUES, actual: $priority['enum']);
+		self::assertSame(expected: 'normal', actual: $priority['default']);
+		self::assertTrue(condition: $priority['facetable']);
+		self::assertArrayNotHasKey(key: 'format', array: $priority);
 	}//end testThePriorityFieldItselfIsUnchanged()
 
 	/**
 	 * The PHP copy of the order matches the declaration.
+	 *
+	 * @return void
 	 */
 	public function testTheOrderConstantMatchesTheDeclaration(): void {
 		$declared = (array)$this->caseProperties()['priority']['x-enum-order'];
 
-		self::assertSame(CasePriorityService::PRIORITY_ORDER, $declared);
+		self::assertSame(expected: CasePriorityService::PRIORITY_ORDER, actual: $declared);
 	}//end testTheOrderConstantMatchesTheDeclaration()
 
 	/**
 	 * The PHP copy of the colours matches the declaration.
+	 *
+	 * @return void
 	 */
 	public function testTheColourConstantMatchesTheDeclaration(): void {
 		$declared = (array)$this->caseProperties()['priority']['x-enum-colours'];
 
-		self::assertSame(CasePriorityService::PRIORITY_COLOURS, $declared);
+		self::assertSame(expected: CasePriorityService::PRIORITY_COLOURS, actual: $declared);
 	}//end testTheColourConstantMatchesTheDeclaration()
 
 	/**
@@ -100,49 +106,57 @@ class CasePriorityDeclarationTest extends TestCase {
 	 * The statusType enum is the palette this app resolves through
 	 * `src/utils/statusColour.js`, so a name outside it would render grey and
 	 * the declaration would have bought nothing.
+	 *
+	 * @return void
 	 */
 	public function testEveryDeclaredColourIsAPaletteToken(): void {
 		$raw = file_get_contents($this->root() . '/lib/Settings/dossiq_register.json');
-		self::assertIsString($raw);
+		self::assertIsString(actual: $raw);
 		$decoded = json_decode($raw, true);
 		$palette = (array)$decoded['components']['schemas']['statusType']['properties']['colour']['enum'];
 
 		foreach (CasePriorityService::PRIORITY_COLOURS as $value => $colour) {
-			self::assertContains($colour, $palette, $value);
-			self::assertStringStartsNotWith('#', $colour, $value);
+			self::assertContains(needle: $colour, haystack: $palette, message: $value);
+			self::assertStringStartsNotWith(prefix: '#', string: $colour, message: $value);
 		}
 	}//end testEveryDeclaredColourIsAPaletteToken()
 
 	/**
 	 * Every priority value has an order and a colour, and no value has two.
+	 *
+	 * @return void
 	 */
 	public function testEveryPriorityValueIsDeclaredExactlyOnce(): void {
 		$priority = (array)$this->caseProperties()['priority'];
 
-		self::assertSame(CasePriorityService::PRIORITY_VALUES, array_keys((array)$priority['x-enum-order']));
-		self::assertSame(CasePriorityService::PRIORITY_VALUES, array_keys((array)$priority['x-enum-colours']));
+		self::assertSame(expected: CasePriorityService::PRIORITY_VALUES, actual: array_keys((array)$priority['x-enum-order']));
+		self::assertSame(expected: CasePriorityService::PRIORITY_VALUES, actual: array_keys((array)$priority['x-enum-colours']));
 		self::assertSame(
-			[1, 2, 3, 4],
-			array_values((array)$priority['x-enum-order']),
-			'the order must be dense and ascending, or a sort has ties'
+			expected: [1, 2, 3, 4],
+			actual: array_values((array)$priority['x-enum-order']),
+			message: 'the order must be dense and ascending, or a sort has ties'
 		);
 	}//end testEveryPriorityValueIsDeclaredExactlyOnce()
 
 	/**
 	 * The case carries impact and urgency, on the scale the service reads.
+	 *
+	 * @return void
 	 */
 	public function testTheSchemaCarriesImpactAndUrgency(): void {
 		$props = $this->caseProperties();
 
-		self::assertSame(CasePriorityService::IMPACT_VALUES, (array)$props['impact']['enum']);
-		self::assertSame(CasePriorityService::URGENCY_VALUES, (array)$props['urgency']['enum']);
-		self::assertSame(CasePriorityService::DEFAULT_IMPACT, $props['impact']['default']);
-		self::assertSame(CasePriorityService::DEFAULT_URGENCY, $props['urgency']['default']);
+		self::assertSame(expected: CasePriorityService::IMPACT_VALUES, actual: (array)$props['impact']['enum']);
+		self::assertSame(expected: CasePriorityService::URGENCY_VALUES, actual: (array)$props['urgency']['enum']);
+		self::assertSame(expected: CasePriorityService::DEFAULT_IMPACT, actual: $props['impact']['default']);
+		self::assertSame(expected: CasePriorityService::DEFAULT_URGENCY, actual: $props['urgency']['default']);
 	}//end testTheSchemaCarriesImpactAndUrgency()
 
 	/**
 	 * The derived, floor and override fields exist, and the ones a person must
 	 * never type are declared read-only.
+	 *
+	 * @return void
 	 */
 	public function testTheDerivedAndStampedFieldsAreReadOnly(): void {
 		$props = $this->caseProperties();
@@ -157,13 +171,13 @@ class CasePriorityDeclarationTest extends TestCase {
 				'priorityOverrideAt',
 			] as $field
 		) {
-			self::assertArrayHasKey($field, $props, $field);
-			self::assertTrue(($props[$field]['readOnly'] ?? false), $field . ' must be read-only');
+			self::assertArrayHasKey(key: $field, array: $props, message: $field);
+			self::assertTrue(condition: ($props[$field]['readOnly'] ?? false), message: $field . ' must be read-only');
 		}
 
 		// The two a person DOES set are deliberately not read-only.
-		self::assertFalse(($props['priorityOverride']['readOnly'] ?? false));
-		self::assertFalse(($props['priorityOverrideReason']['readOnly'] ?? false));
+		self::assertFalse(condition: ($props['priorityOverride']['readOnly'] ?? false));
+		self::assertFalse(condition: ($props['priorityOverrideReason']['readOnly'] ?? false));
 	}//end testTheDerivedAndStampedFieldsAreReadOnly()
 
 	/**
@@ -172,6 +186,8 @@ class CasePriorityDeclarationTest extends TestCase {
 	 * Everything named `priority*` is either the derived value or a documented
 	 * part of how it got there. A new field called, say, `casePriority` or
 	 * `urgencyLevel` would put the app back where it started.
+	 *
+	 * @return void
 	 */
 	public function testNothingElseOnTheCaseIsASecondPriority(): void {
 		$named = array_values(
@@ -182,7 +198,7 @@ class CasePriorityDeclarationTest extends TestCase {
 		);
 
 		self::assertSame(
-			[
+			expected: [
 				'priority',
 				'priorityDerived',
 				'priorityOrder',
@@ -193,26 +209,28 @@ class CasePriorityDeclarationTest extends TestCase {
 				'priorityOverrideAt',
 				'priorityOverrideReason',
 			],
-			$named
+			actual: $named
 		);
 	}//end testNothingElseOnTheCaseIsASecondPriority()
 
 	/**
 	 * The case type carries the matrix and the two defaults.
+	 *
+	 * @return void
 	 */
 	public function testTheCaseTypeCarriesTheMatrix(): void {
 		$raw = file_get_contents($this->root() . '/lib/Settings/dossiq_register.json');
-		self::assertIsString($raw);
+		self::assertIsString(actual: $raw);
 		$decoded = json_decode($raw, true);
 		$props = (array)$decoded['components']['schemas']['caseType']['properties'];
 
-		self::assertSame(CasePriorityService::IMPACT_VALUES, (array)$props['defaultImpact']['enum']);
-		self::assertSame(CasePriorityService::URGENCY_VALUES, (array)$props['defaultUrgency']['enum']);
+		self::assertSame(expected: CasePriorityService::IMPACT_VALUES, actual: (array)$props['defaultImpact']['enum']);
+		self::assertSame(expected: CasePriorityService::URGENCY_VALUES, actual: (array)$props['defaultUrgency']['enum']);
 
 		$cell = (array)$props['priorityMatrix']['items']['properties'];
-		self::assertSame(CasePriorityService::IMPACT_VALUES, (array)$cell['impact']['enum']);
-		self::assertSame(CasePriorityService::URGENCY_VALUES, (array)$cell['urgency']['enum']);
-		self::assertSame(CasePriorityService::PRIORITY_VALUES, (array)$cell['priority']['enum']);
+		self::assertSame(expected: CasePriorityService::IMPACT_VALUES, actual: (array)$cell['impact']['enum']);
+		self::assertSame(expected: CasePriorityService::URGENCY_VALUES, actual: (array)$cell['urgency']['enum']);
+		self::assertSame(expected: CasePriorityService::PRIORITY_VALUES, actual: (array)$cell['priority']['enum']);
 	}//end testTheCaseTypeCarriesTheMatrix()
 
 	/**
@@ -226,6 +244,8 @@ class CasePriorityDeclarationTest extends TestCase {
 	 * matched here. `task.priority` belongs to the task engine, on a different
 	 * object, and renaming or deriving it is not this change's business:
 	 * REQ-PRI-06 asks that nothing else be a second priority ON A CASE.
+	 *
+	 * @return void
 	 */
 	public function testNoServiceWritesTheLiteralCasePriority(): void {
 		foreach (
@@ -236,11 +256,16 @@ class CasePriorityDeclarationTest extends TestCase {
 			] as $relative
 		) {
 			$source = file_get_contents($this->root() . '/' . $relative);
-			self::assertIsString($source, $relative);
+			self::assertIsString(actual: $source, message: $relative);
+
+			$lines = preg_split('/\R/', (string)$source);
+			if (is_array($lines) === false) {
+				$lines = [];
+			}
 
 			$offenders = array_values(
 				array_filter(
-					preg_split('/\R/', $source) ?: [],
+					$lines,
 					static fn (string $line): bool => (
 						preg_match("/'priority'\s*=>/", $line) === 1
 						&& str_contains($line, 'taskSeed') === false
@@ -248,24 +273,26 @@ class CasePriorityDeclarationTest extends TestCase {
 				)
 			);
 
-			self::assertSame([], $offenders, $relative . ' must not write a case priority');
+			self::assertSame(expected: [], actual: $offenders, message: $relative . ' must not write a case priority');
 		}
 	}//end testNoServiceWritesTheLiteralCasePriority()
 
 	/**
 	 * A copy carries the two facts behind a priority, and never somebody
 	 * else's override or the floor a rule set on the original.
+	 *
+	 * @return void
 	 */
 	public function testACopyCarriesTheFactsAndNotTheOverride(): void {
 		$source = file_get_contents($this->root() . '/lib/Service/CaseCopyService.php');
-		self::assertIsString($source);
+		self::assertIsString(actual: $source);
 
 		$reflection = new \ReflectionClass(\OCA\Dossiq\Service\CaseCopyService::class);
 		$carried = (array)$reflection->getConstant('CARRIED');
 		$never = (array)$reflection->getConstant('NEVER_COPIED');
 
-		self::assertContains('impact', $carried);
-		self::assertContains('urgency', $carried);
+		self::assertContains(needle: 'impact', haystack: $carried);
+		self::assertContains(needle: 'urgency', haystack: $carried);
 
 		foreach (
 			[
@@ -277,8 +304,8 @@ class CasePriorityDeclarationTest extends TestCase {
 				'priorityRaisedBy',
 			] as $field
 		) {
-			self::assertContains($field, $never, $field);
-			self::assertNotContains($field, $carried, $field);
+			self::assertContains(needle: $field, haystack: $never, message: $field);
+			self::assertNotContains(needle: $field, haystack: $carried, message: $field);
 		}
 	}//end testACopyCarriesTheFactsAndNotTheOverride()
 }//end class
