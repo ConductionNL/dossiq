@@ -2120,8 +2120,7 @@
 						"type": "open-modal",
 						"label": "Plan follow-up",
 						"icon": "CalendarClock",
-						"target": "CasePlanFollowUpDialog",
-						"_note": "Plan one follow-up case, or a series (planned-case-series, row 1.8). The form lives in CasePlanFollowUpDialog and NOT in this file, because an `open-modal` action carries a target and props only: there is no field vocabulary here to declare a picker with, and the five fields (case type, date, title, Repeat, Ends) are bound to each other -- the end fields appear only once a repeat is chosen, which no `visibleWhen` on a header action can express. What the manifest DOES decide is that the gesture is a modal rather than a `handler`: a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. Repeat is a picker of five tokens (none, monthly, quarterly, halfYearly, yearly), never a cron expression a handler types. The recurrence becomes the scheduled flow\u0027s cron fields in PlannedFollowUpDocument, with `L` in the day field when the chosen day does not exist in every month the series fires in: 31 August plus one month is 30 September, not 1 October."
+						"target": "CasePlanFollowUpDialog"
 					}
 				]
 			},

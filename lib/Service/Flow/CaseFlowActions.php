@@ -282,7 +282,19 @@ class CaseFlowActions {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{results: array<int, array{id: string, title: string, date: string, caseType: string, recurrence: string, until: string, count: int, occurrences: array<int, array{id: string, title: string}>}>, total: int} The planned rows.
+	 * @return array{
+	 *     results: array<int, array{
+	 *         id: string,
+	 *         title: string,
+	 *         date: string,
+	 *         caseType: string,
+	 *         recurrence: string,
+	 *         until: string,
+	 *         count: int,
+	 *         occurrences: array<int, array{id: string, title: string}>
+	 *     }>,
+	 *     total: int
+	 * } The planned rows.
 	 *
 	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 	 */

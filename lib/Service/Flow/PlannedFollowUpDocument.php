@@ -358,7 +358,15 @@ class PlannedFollowUpDocument {
 	 * @param array<int, mixed> $nodes The flow's nodes.
 	 * @param DateTimeImmutable|null $from The moment "next" is measured from, defaulting to now.
 	 *
-	 * @return array{case: string, caseType: string, title: string, date: string, recurrence: string, until: string, count: int}|null The marker, or null when the graph is not one of ours.
+	 * @return array{
+	 *     case: string,
+	 *     caseType: string,
+	 *     title: string,
+	 *     date: string,
+	 *     recurrence: string,
+	 *     until: string,
+	 *     count: int
+	 * }|null The marker, or null when the graph is not one of ours.
 	 *
 	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 	 */
