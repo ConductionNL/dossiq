@@ -4016,7 +4016,13 @@
         "The case is back in the queue.": "The case is back in the queue.",
         "You are already handling this case.": "You are already handling this case.",
         "You are not signed in.": "You are not signed in.",
-        "You can only release a case you handle yourself.": "You can only release a case you handle yourself."
+        "You can only release a case you handle yourself.": "You can only release a case you handle yourself.",
+        "Record receipt confirmed": "Record receipt confirmed",
+        "Receipt confirmation recorded on this case.": "Receipt confirmation recorded on this case.",
+        "The confirmation could not be recorded.": "The confirmation could not be recorded.",
+        "You can publish this, but read this first.": "You can publish this, but read this first.",
+        "You cannot change this case.": "You cannot change this case.",
+        "You cannot read this case.": "You cannot read this case."
     },
     "plurals": ""
 }
