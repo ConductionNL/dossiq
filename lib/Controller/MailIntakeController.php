@@ -52,6 +52,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Reads the intake log and performs the two named acts on a message.
@@ -164,7 +165,7 @@ class MailIntakeController extends Controller {
 			return $refusal;
 		}
 
-		$entry = $this->log->find(entryId: $entryId);
+		$entry = $this->entryOrNull(entryId: $entryId);
 		if ($entry === null) {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -192,7 +193,7 @@ class MailIntakeController extends Controller {
 			return $refusal;
 		}
 
-		$entry = $this->log->find(entryId: $entryId);
+		$entry = $this->entryOrNull(entryId: $entryId);
 		if ($entry === null) {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -245,7 +246,7 @@ class MailIntakeController extends Controller {
 			return $refusal;
 		}
 
-		$entry = $this->log->find(entryId: $entryId);
+		$entry = $this->entryOrNull(entryId: $entryId);
 		if ($entry === null) {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -293,7 +294,7 @@ class MailIntakeController extends Controller {
 			return $refusal;
 		}
 
-		$entry = $this->log->find(entryId: $entryId);
+		$entry = $this->entryOrNull(entryId: $entryId);
 		if ($entry === null) {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -340,7 +341,7 @@ class MailIntakeController extends Controller {
 			return $refusal;
 		}
 
-		$entry = $this->log->find(entryId: $entryId);
+		$entry = $this->entryOrNull(entryId: $entryId);
 		if ($entry === null) {
 			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -387,6 +388,30 @@ class MailIntakeController extends Controller {
 
 		return null;
 	}//end requireIntakeRole()
+
+	/**
+	 * One log entry, or null when there is none and when the log cannot answer.
+	 *
+	 * 🔴 THE TRY/CATCH IS HERE SO EVERY ENDPOINT INHERITS IT. `IntakeLog::find()`
+	 * already answers null rather than throwing, but it reaches an object store
+	 * this app does not own, and a store that starts throwing must turn into a
+	 * readable 404 on the log surface rather than a 500 with a stack trace in it.
+	 * One place to catch it is also one place to change when that stops being the
+	 * right answer.
+	 *
+	 * @param string $entryId The entry.
+	 *
+	 * @return array<string, mixed>|null The entry, or null.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	private function entryOrNull(string $entryId): ?array {
+		try {
+			return $this->log->find(entryId: $entryId);
+		} catch (Throwable $e) {
+			return null;
+		}
+	}//end entryOrNull()
 
 	/**
 	 * The caller's user id.
