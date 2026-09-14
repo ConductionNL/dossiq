@@ -185,11 +185,9 @@ class TermijnNotificationService {
 
 		switch ($type) {
 			case 'ontvangstbevestiging':
-				$subject = 'Ontvangstbevestiging zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'Wij hebben uw aanvraag ontvangen onder zaaknummer ' . $case . ".\n"
-					. 'De wettelijke termijn loopt af op ' . $end . ".\n"
-					. 'Volg uw zaak via het burgerportaal of neem contact op met de gemeente.';
+				$rendered = $this->acknowledgement(case: $case, end: $end, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
 				break;
 			case 'extension':
 				$newEnd = (string)($context['newEinddatum'] ?? $end);
@@ -219,4 +217,96 @@ class TermijnNotificationService {
 
 		return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
 	}//end renderTemplate()
+
+	/**
+	 * The acknowledgement of receipt, Awb 4:3a.
+	 *
+	 * It names the kenmerk, what was received, the statutory term and the date
+	 * it ends, how to follow the case and who to contact. A case type with no
+	 * beslistermijn still confirms receipt and says that no statutory term
+	 * applies, because "we have it" is the duty and the deadline is not.
+	 *
+	 * 🔴 THE TEXT IS NOT RUN THROUGH `IL10N`, AND THAT IS DELIBERATE. `IL10N`
+	 * serves the INTERFACE language of the signed-in reader. The reader here is
+	 * a citizen with no Nextcloud session, and the language is the one the case
+	 * type declares. Translating against the handler's interface would mail a
+	 * Dutch citizen in English because an administrator's browser was English.
+	 * So the two languages the spec asks for are rendered from the declared
+	 * locale, and the l10n files carry the interface strings this change adds.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $end     The end date of the statutory term.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The render context.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function acknowledgement(string $case, string $end, string $locale, array $context): array {
+		$english = ($locale === 'en');
+		$subjectOf = trim((string)($context['subject'] ?? ''));
+		$contact = trim((string)($context['contact'] ?? ''));
+		// The end date IS the test for a statutory term. Reading a separate
+		// `hasTerm` flag would let a caller that knows the date but not the
+		// flag render "no statutory period applies" beside the date itself.
+		$hasTerm = ($end !== '' && $end !== '–');
+
+		// The Berichtenbox pattern: say a message is waiting, and keep the
+		// content where it is. Not a second template — the same message with
+		// its content withheld, decided once per case type.
+		if (($context['contentWithheld'] ?? false) === true) {
+			if ($english === true) {
+				return [
+					'subject' => 'A message about your application is waiting for you',
+					'body' => "Dear applicant,\n\n"
+						. "We have received your application and a message about it is waiting for you.\n"
+						. "Sign in to the citizen portal to read it.\n\n"
+						. 'Kind regards',
+				];
+			}
+
+			return [
+				'subject' => 'Er staat een bericht over uw aanvraag voor u klaar',
+				'body' => "Beste aanvrager,\n\n"
+					. "Wij hebben uw aanvraag ontvangen en er staat een bericht voor u klaar.\n"
+					. "Log in op het burgerportaal om het te lezen.\n\n"
+					. 'Met vriendelijke groet',
+			];
+		}//end if
+
+		if ($english === true) {
+			$term = ($hasTerm === true)
+				? ('We decide on your application by ' . $end . ' at the latest. '
+					. "If we need more time, we tell you before that date.\n")
+				: "No statutory decision period applies to this application.\n";
+
+			return [
+				'subject' => 'Acknowledgement of receipt for case ' . $case,
+				'body' => "Dear applicant,\n\n"
+					. 'We have received your application' . ($subjectOf !== '' ? ' about ' . $subjectOf : '')
+					. ' and registered it under reference ' . $case . ".\n"
+					. $term
+					. "You can follow this case in the citizen portal.\n"
+					. ($contact !== '' ? 'Questions go to ' . $contact . ".\n" : '')
+					. "\nKind regards",
+			];
+		}//end if
+
+		$termijn = ($hasTerm === true)
+			? ('Wij nemen uiterlijk op ' . $end . ' een besluit op uw aanvraag. '
+				. "Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\n")
+			: "Op deze aanvraag geldt geen wettelijke beslistermijn.\n";
+
+		return [
+			'subject' => 'Ontvangstbevestiging zaak ' . $case,
+			'body' => "Beste aanvrager,\n\n"
+				. 'Wij hebben uw aanvraag' . ($subjectOf !== '' ? ' over ' . $subjectOf : '')
+				. ' ontvangen en geregistreerd onder kenmerk ' . $case . ".\n"
+				. $termijn
+				. "U volgt deze zaak via het burgerportaal.\n"
+				. ($contact !== '' ? 'Met vragen kunt u terecht bij ' . $contact . ".\n" : '')
+				. "\nMet vriendelijke groet",
+		];
+	}//end acknowledgement()
 }//end class

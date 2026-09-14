@@ -466,7 +466,6 @@ class AcknowledgementService {
 			'case' => (string)($quotable['identifier'] ?? ''),
 			'subject' => (string)($quotable['title'] ?? ''),
 			'endDate' => (string)($term['endDateCurrent'] ?? ($quotable['deadline'] ?? '')),
-			'hasTerm' => ($term !== null && ($term['endDateCurrent'] ?? '') !== ''),
 			'contentWithheld' => $withheld,
 			'notificationChannel' => $channel,
 			'contact' => (string)($caseType['responsible'] ?? ''),
