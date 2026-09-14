@@ -20,7 +20,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   normaliser; `DeadlineExtensionService` stops taking a raw string.
 - [x] 2.2 `ZrcController` `create` and `update`: the `datumStatusGezet`
   default and the `endDate` write.
-- [ ] 2.3 `ComplaintController` through `ComplaintService`, including the
+- [x] 2.3 `ComplaintController` through `ComplaintService`, including the
   `date('Y-m-d')` fallback at :301.
 - [ ] 2.4 `ConsultationController` through `ConsultationService`: the
   three `date('Y-m-d\TH:i:s')` writes gain an offset.
