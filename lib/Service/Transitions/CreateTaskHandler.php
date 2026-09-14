@@ -8,6 +8,19 @@
  * workflowStepId?}`. Creates a task linked to the case via OpenRegister
  * ObjectService.
  *
+ * WHO THE TASK GOES TO, in order:
+ *
+ * 1. `assignee`, the action's own, as a literal or a template such as
+ *    `{{ case.assignee }}`;
+ * 2. `assigneeFallback`, the declared second choice;
+ * 3. the case's `assignee`, its handler, because a task created on a case is
+ *    that case handler's work unless somebody said otherwise;
+ * 4. nobody, and the task carries the case's team so it still reaches a queue.
+ *
+ * `assignee: "none"` is a RESERVED WORD, not a uid: it stops at step 1 and
+ * leaves the task unclaimed, which is how an action authors a queue task that
+ * the default must not hand to one person. The case's team still comes along.
+ *
  * 🔴 THE ASSIGNEE IS RESOLVED, NOT COPIED. This handler used to write
  * `$actionConfig['assignee'] ?? ''` onto the task. That is wrong in two ways
  * and both are silent. A declaration writing `{{ case.assignee }}`, the
@@ -105,10 +118,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// field for each. Carrying the case's team over is what keeps a
 			// checklist task on somebody's queue when no person resolves.
 			//
-			// Read through referenceId, never a (string) cast: `assignedGroup`
+			// Read through the resolver, never a (string) cast: `assignedGroup`
 			// is a $ref, so an expanded read casts to the literal "Array" and
 			// writes a team that resolves to nothing.
-			$team = $this->assignees->referenceId(value: ($case['assignedGroup'] ?? ''));
+			$team = $this->assignees->resolveTeam(case: $case);
 			if ($team !== '') {
 				$task['assigneeGroup'] = $team;
 			}
@@ -212,11 +225,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * Who this task goes to.
 	 *
 	 * Three declared sources, in order: the action's own assignee, the
-	 * fallback it declares beside it, and the case's own handler. The third is
-	 * not a guess. A task created by a status transition belongs to the case,
-	 * and the case says who is handling it; before this, an action that named
-	 * nobody produced a task nobody was told about, on a case with a named
-	 * handler sitting one field away.
+	 * fallback it declares beside it, and the case's own handler. All three now
+	 * live in `AssigneeResolver`, where the flow node reads them too; this
+	 * method used to do the third step itself, which meant a human step in a
+	 * flow did not get it.
+	 *
+	 * `assignee: "none"` is the way out, and it is not the same as naming
+	 * nobody: it keeps the task unclaimed on purpose, and the case's team still
+	 * comes along, which is what a queue task is.
 	 *
 	 * 🔴 IT DOES NOT REFUSE, AND THE FLOW NODE DOES. The difference is real.
 	 * An unassigned FLOW task can be resumed by anybody, so leaving one
@@ -233,6 +249,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * @return string The principal, or '' when nothing names one.
 	 *
 	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
 	 */
 	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
 		$assignee = $this->assignees->resolve(
@@ -244,12 +261,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return $assignee;
 		}
 
-		$own = $this->assignees->referenceId(value: ($case['assignee'] ?? ''));
-		if ($own !== '') {
-			return $own;
+		// Authored to stay unclaimed. Saying so is not the same as forgetting,
+		// so the warning below would be a lie here.
+		$authored = trim((string)($actionConfig['assignee'] ?? ''));
+		if (strcasecmp($authored, AssigneeResolver::UNASSIGNED) === 0) {
+			return '';
 		}
 
-		if ($this->assignees->referenceId(value: ($case['assignedGroup'] ?? '')) === '') {
+		if ($this->assignees->resolveTeam(case: $case) === '') {
 			$this->logger->warning(
 				'CreateTaskHandler: the task "{title}" names nobody and its case has no handler and no team, '
 					. 'so nobody is notified that it exists',

@@ -31,7 +31,7 @@ use Throwable;
  * recipient is a person linked to the case, never a typed address, because
  * naming the party is the whole point.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 class FileRequestService {
 
@@ -66,7 +66,7 @@ class FileRequestService {
 	 *
 	 * @throws RuntimeException 404 when the person is not on the case, 422 when they have no address or the case has no folder.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function request(string $caseId, string $personUid, string $note = '', int $days = 0): array {
 		$person = $this->people->personOn(caseId: $caseId, personUid: $personUid);

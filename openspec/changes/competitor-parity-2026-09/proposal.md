@@ -124,6 +124,26 @@ normalisers and an administered time zone no write path reads.
 |---|---|---|---|
 | `one-date-write-path` | 8.22 (proposed) | M | openregister `calendar-time-zone` (openregister#3688); dossiq `terms-on-the-engine-calendar` (open) |
 
+### The batch 12 row the calendar does not reach, opened 2026-09-14
+
+Batch 12 of round 4 (`procest/_round4/compare/proposed-rows-batch12.md`)
+proposed row 8.23 and rated dossiq `partial`. The row does not ask
+whether the working calendar exists, it asks whether the engine reads it.
+Read at `9c478d810`: 37 files under `lib/` do date arithmetic, five reach
+`WorkingDayCalculator`, and three of the thirty-two that do not are term
+paths by name. Gap register v3 (market-intelligence #128) carries the
+row.
+
+| change | rows | size | consumes from |
+|---|---|---|---|
+| `every-term-on-the-engine-calendar` | 8.23 (proposed) | M | dossiq `terms-on-the-engine-calendar` (open, the roll rule); openregister `working-calendar-admin` and `end-date-roll-on-the-calendar` (to be built) |
+
+Neither open change carries it: `terms-on-the-engine-calendar` applies
+the roll to two call sites, and `termijnbewaking-op-engine-timers` names
+the three files to move their clock while freezing
+`DeadlinePauseService`'s arithmetic and leaving `NoticeOfDefaultService`
+unchanged.
+
 Two of the eight need no dossiq change. Q6.20 signed outbound webhooks:
 the register's half reads "nothing beyond finishing
 dossiq-delivers-nothing, which retires WebhookHandler", and integriq's

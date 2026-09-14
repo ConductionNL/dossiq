@@ -23,6 +23,12 @@
  * write `$config['assignee'] ?? ''` straight onto a task stop creating work
  * nobody is assigned and nobody is notified about.
  *
+ * And a case that DOES name a handler is not an empty answer. A task created
+ * on a case belongs to whoever is handling that case, so when nothing authored
+ * names anybody the work goes to `case.assignee`, and the caller that used to
+ * do that step for itself no longer has to. An action that genuinely wants a
+ * task nobody owns says so: `assignee: "none"`.
+ *
  * What the caller does with an empty answer is genuinely different per caller,
  * so this class does not decide it. The flow node refuses, because an
  * unassigned flow task can be resumed by anyone. A transition side effect
@@ -63,6 +69,17 @@ use Psr\Log\LoggerInterface;
 class AssigneeResolver {
 
 	/**
+	 * The authored value that means "leave this task unclaimed".
+	 *
+	 * A reserved word, not a uid. Without it there is no way to author a queue
+	 * task any more: once an unauthored assignee defaults to the case handler,
+	 * every action that deliberately names nobody would land on one person.
+	 *
+	 * @var string
+	 */
+	public const UNASSIGNED = 'none';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger.
@@ -75,44 +92,89 @@ class AssigneeResolver {
 	/**
 	 * The principal an authored assignee resolves to on this case.
 	 *
-	 * Tries the primary, then the declared fallback. Answers '' when neither
-	 * names anybody, which is a state the caller has to handle rather than a
-	 * state this class guesses its way out of.
+	 * Four steps, each one a declared field rather than a guess: the authored
+	 * assignee, its declared fallback, the case's own handler, and then
+	 * nobody. The third step is what this class was missing: an action that
+	 * named no assignee at all created a task addressed to nobody, so the task
+	 * schema's `taskAssigned` notification went nowhere and the work sat on a
+	 * case whose handler never heard about it.
+	 *
+	 * The team is NOT a step here, because the answer is a string and a team
+	 * is a different field on the task. See `resolveTeam()`.
+	 *
+	 * `assignee: "none"` short-circuits everything and answers '', which is
+	 * how an action keeps a queue task unclaimed.
 	 *
 	 * @param string               $primary  The authored assignee, template or literal.
 	 * @param string               $fallback The declared second choice, or ''.
 	 * @param array<string, mixed> $case     The case to render against.
 	 *
-	 * @return string The rendered principal, or '' when neither names anybody.
+	 * @return string The rendered principal, or '' when nothing names anybody.
 	 *
 	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
 	 */
 	public function resolve(string $primary, string $fallback, array $case): string {
+		$primary = trim($primary);
+		if (strcasecmp($primary, self::UNASSIGNED) === 0) {
+			return '';
+		}
+
 		$json = $this->renderingContext(case: $case);
 
-		$resolved = $this->renderPrincipal(raw: trim($primary), json: $json);
+		$resolved = $this->renderPrincipal(raw: $primary, json: $json);
 		if ($resolved !== '') {
 			return $resolved;
 		}
 
 		$fallback = trim($fallback);
-		if ($fallback === '') {
-			return '';
+		if ($fallback !== '') {
+			$resolved = $this->renderPrincipal(raw: $fallback, json: $json);
+			if ($resolved !== '') {
+				$this->logger->info(
+					'Dossiq assignee: "' . $primary . '" named nobody on this case, so the work goes to its '
+						. 'declared fallback "' . $resolved . '"',
+					['case' => $this->caseId(case: $case)]
+				);
+
+				return $resolved;
+			}
 		}
 
-		$resolved = $this->renderPrincipal(raw: $fallback, json: $json);
-		if ($resolved === '') {
-			return '';
+		$handler = $this->referenceId(value: ($case['assignee'] ?? ''));
+		if ($handler !== '') {
+			$this->logger->info(
+				'Dossiq assignee: nothing authored named anybody, so the work goes to the case handler "'
+					. $handler . '"',
+				['case' => $this->caseId(case: $case)]
+			);
+
+			return $handler;
 		}
 
-		$this->logger->info(
-			'Dossiq assignee: "' . $primary . '" named nobody on this case, so the work goes to its '
-				. 'declared fallback "' . $resolved . '"',
-			['case' => $this->caseId(case: $case)]
-		);
-
-		return $resolved;
+		return '';
 	}//end resolve()
+
+	/**
+	 * The team a piece of work falls to when no person resolves.
+	 *
+	 * The last declared step, and a separate answer on purpose: `resolve()`
+	 * returns a person, the task schema keeps the team in its own field, and
+	 * writing a group id into the person field is how you get a task addressed
+	 * to a principal nothing answers to.
+	 *
+	 * Read through `referenceId`, never a `(string)` cast: `assignedGroup` is a
+	 * `$ref`, so an expanded read casts to the literal "Array".
+	 *
+	 * @param array<string, mixed> $case The case to read.
+	 *
+	 * @return string The team id, or '' when the case names no team.
+	 *
+	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 */
+	public function resolveTeam(array $case): string {
+		return $this->referenceId(value: ($case['assignedGroup'] ?? ''));
+	}//end resolveTeam()
 
 	/**
 	 * Why a resolution came back empty, as a clause a person can read.

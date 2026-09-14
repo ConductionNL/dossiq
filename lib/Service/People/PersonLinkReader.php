@@ -23,7 +23,7 @@ use Throwable;
  * contact, in a role, for a period. This reads them; `CaseRoleProjection`
  * turns them into the case's `role` records.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class PersonLinkReader {
 
@@ -51,7 +51,7 @@ class PersonLinkReader {
 	 *
 	 * @return array<int, array<string, mixed>> The links.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function peopleOn(string $caseId): array {
 		$people = $this->settingsService->getOpenRegisterClass(class: self::PEOPLE_SERVICE);
@@ -81,7 +81,7 @@ class PersonLinkReader {
 	 *
 	 * @return array<string, mixed>|null The link.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function personOn(string $caseId, string $personUid): ?array {
 		foreach ($this->peopleOn(caseId: $caseId) as $row) {
@@ -100,7 +100,7 @@ class PersonLinkReader {
 	 *
 	 * @return string The address.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function emailOf(array $link): string {
 		return trim((string)($link['email'] ?? ''));
@@ -113,7 +113,7 @@ class PersonLinkReader {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function nameOf(array $link): string {
 		$name = trim((string)($link['displayName'] ?? ''));

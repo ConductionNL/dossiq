@@ -16,7 +16,7 @@
  * the on-disk config the importer and the manifest renderer actually read.
  *
  * @spec openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 import fs from 'fs'

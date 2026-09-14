@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * The people linked to a case, read from OpenRegister.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 class PersonLinkReaderTest extends TestCase {
 

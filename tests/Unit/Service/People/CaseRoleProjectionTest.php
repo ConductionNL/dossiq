@@ -20,7 +20,7 @@ use RuntimeException;
 /**
  * A person linked to a case becomes a role record on that case.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
  */
 class CaseRoleProjectionTest extends TestCase {
 
@@ -292,7 +292,7 @@ class CaseRoleProjectionTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
 	 */
 	public function testAnInitiatorLinkNamesTheRequester(): void {
 		$this->seed(genericRole: 'initiator');

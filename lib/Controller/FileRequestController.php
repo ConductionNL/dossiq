@@ -26,7 +26,7 @@ use RuntimeException;
 /**
  * Asks a party of a case for a file, and says who can be asked.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 class FileRequestController extends Controller {
 
@@ -59,7 +59,7 @@ class FileRequestController extends Controller {
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function parties(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -101,7 +101,7 @@ class FileRequestController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 */
 	public function create(string $caseId, string $personId = '', string $note = '', int $days = 0): JSONResponse {
 		$user = $this->userSession->getUser();
