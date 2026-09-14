@@ -25,8 +25,8 @@
  * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
  */
 import { describe, expect, it, vi } from 'vitest'
-import manifest from '../../src/manifest.json'
 import register from '../../lib/Settings/dossiq_register.json'
+import manifest from '../../src/manifest.json'
 
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text) => text,
