@@ -4016,7 +4016,20 @@
         "The case is back in the queue.": "The case is back in the queue.",
         "You are already handling this case.": "You are already handling this case.",
         "You are not signed in.": "You are not signed in.",
-        "You can only release a case you handle yourself.": "You can only release a case you handle yourself."
+        "You can only release a case you handle yourself.": "You can only release a case you handle yourself.",
+        "Impact": "Impact",
+        "Medium": "Medium",
+        "Derived priority": "Derived priority",
+        "Priority override": "Priority override",
+        "Overridden by": "Overridden by",
+        "Overridden at": "Overridden at",
+        "Override reason": "Override reason",
+        "Priority floor": "Priority floor",
+        "Priority raised by": "Priority raised by",
+        "Default impact": "Default impact",
+        "Default urgency": "Default urgency",
+        "Priority matrix": "Priority matrix",
+        "Priority set by hand, not derived": "Priority set by hand, not derived"
     },
     "plurals": ""
 }

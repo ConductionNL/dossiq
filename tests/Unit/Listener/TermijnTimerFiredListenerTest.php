@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
+use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\SettingsService;
@@ -76,7 +77,13 @@ class TermijnTimerFiredListenerTest extends TestCase {
 		$this->termService = new TermijnService($settings, $logger);
 		$this->listener = new TermijnTimerFiredListener(
 			$this->termService,
-			new DeadlineEscalationService($this->termService, $logger),
+			new DeadlineEscalationService(
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
+			),
 			new DwangsomCalculationService($settings, $logger),
 			$settings,
 			$logger

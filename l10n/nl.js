@@ -4017,7 +4017,20 @@ OC.L10N.register(
         "for {name}, until {date}": "voor {name}, tot {date}",
         "Hide substituted work": "Waargenomen werk verbergen",
         "Standing in for": "Waarneming voor",
-        "Work you are standing in for": "Werk dat je waarneemt"
+        "Work you are standing in for": "Werk dat je waarneemt",
+        "Impact": "Impact",
+        "Medium": "Middel",
+        "Derived priority": "Afgeleide prioriteit",
+        "Priority override": "Handmatige prioriteit",
+        "Overridden by": "Gezet door",
+        "Overridden at": "Gezet op",
+        "Override reason": "Reden",
+        "Priority floor": "Ondergrens prioriteit",
+        "Priority raised by": "Verhoogd door regel",
+        "Default impact": "Standaard impact",
+        "Default urgency": "Standaard urgentie",
+        "Priority matrix": "Prioriteitsmatrix",
+        "Priority set by hand, not derived": "Prioriteit met de hand gezet, niet afgeleid"
     },
     "nplurals=2; plural=(n != 1);"
 )

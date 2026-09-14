@@ -35,14 +35,21 @@ import {
 
 const DASHBOARD_URL = '/apps/dossiq/'
 
-/** The ten fields the New case action declares in the manifest. */
+/**
+ * The eleven fields the New case action declares in the manifest.
+ *
+ * `priority` used to be here and is not any more: a priority is DERIVED from
+ * impact and urgency, so the form asks for the two facts instead of the
+ * answer. See openspec/changes/case-priority-impact-urgency.
+ */
 const CREATE_FIELDS = [
 	'caseType',
 	'title',
 	'requester',
 	'description',
 	'assignee',
-	'priority',
+	'impact',
+	'urgency',
 	'confidentiality',
 	'intakeChannel',
 	'startDate',
