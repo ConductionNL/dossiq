@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Unit\Service\SlaCalculatorFake;
 use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarFake;
 use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarServiceFake;
@@ -45,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class BezwaarTermijnSchedulerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * A scheduler wired to an engine calendar that closes on the given dates.
 	 *
@@ -68,7 +71,12 @@ class BezwaarTermijnSchedulerTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$timers = new TermijnTimerService($settings, $logger, new WorkingDayCalculator());
+		$timers = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 
 		return new BezwaarTermijnScheduler($this->createMock(SettingsService::class), $logger, $timers);
 	}

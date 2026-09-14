@@ -204,12 +204,20 @@ class IntegrationStatusServiceTest extends TestCase {
 	}//end testAnUnknownKeyIsRefused()
 
 	/**
-	 * A status outside the five is refused, and each of the five is sent.
+	 * A status outside the six is refused, and each of the six is sent.
+	 *
+	 * The list is compared with contract D3's enum, not only with itself, so a
+	 * status the contract adds or drops cannot slip past this test.
 	 *
 	 * @return void
 	 */
-	public function testStatusMustBeOneOfTheFive(): void {
+	public function testStatusMustBeOneOfTheSix(): void {
 		$service = $this->service();
+
+		$this->assertEqualsCanonicalizing(
+			expected: ['configured', 'limited', 'unconfigured', 'simulated', 'unavailable', 'error'],
+			actual: IntegrationStatusService::STATUSES
+		);
 
 		$this->assertFalse(condition: $service->record(key: 'mailbox', status: 'degraded'));
 		$this->assertSame(expected: [], actual: $this->sent);
@@ -219,7 +227,7 @@ class IntegrationStatusServiceTest extends TestCase {
 		}
 
 		$this->assertCount(expectedCount: count(IntegrationStatusService::STATUSES), haystack: $this->sent);
-	}//end testStatusMustBeOneOfTheFive()
+	}//end testStatusMustBeOneOfTheSix()
 
 	/**
 	 * A listener that throws never escapes into the probe that reported.

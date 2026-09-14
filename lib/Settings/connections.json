@@ -85,6 +85,7 @@
             "requiredConfig": ["berichtenbox_adapter"],
             "adapter": {
                 "configKey": "berichtenbox_adapter",
+                "simulatedValues": ["", "OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter"],
                 "simulatedMessage": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class."
             }
         },
@@ -96,6 +97,7 @@
             "requiredConfig": ["beschikking_template_adapter"],
             "adapter": {
                 "configKey": "beschikking_template_adapter",
+                "simulatedValues": ["", "OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter"],
                 "simulatedMessage": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to OCA\\Dossiq\\Service\\Beschikking\\FilinqTemplateEngineAdapter to render through Filinq."
             }
         }

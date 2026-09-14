@@ -45,6 +45,28 @@
 			</template>
 
 			<template v-else>
+				<!--
+					A warning does not refuse publication. It says out loud that
+					this case type stops confirming receipt, because a statutory
+					duty that comes off quietly is how one ships unperformed.
+				-->
+				<template v-if="warnings.length > 0">
+					<p class="case-type-publish__explainer">
+						{{
+							t(
+								'dossiq',
+								'You can publish this, but read this first.',
+							)
+						}}
+					</p>
+					<ul
+						class="case-type-publish__warnings"
+						data-testid="case-type-publish-warnings">
+						<li v-for="warning in warnings" :key="warning">
+							{{ warning }}
+						</li>
+					</ul>
+				</template>
 				<p class="case-type-publish__explainer">
 					{{
 						t(
@@ -121,6 +143,7 @@ export default {
 		return {
 			loading: true,
 			findings: [],
+			warnings: [],
 			changeNote: '',
 			error: '',
 		}
@@ -202,11 +225,13 @@ export default {
 					),
 				)
 				this.findings = Array.isArray(data?.findings) ? data.findings : []
+				this.warnings = Array.isArray(data?.warnings) ? data.warnings : []
 				this.error = ''
 			} catch (e) {
 				// A validation that cannot run is not a validation that passed:
 				// the dialog says so and offers no Publish button.
 				this.findings = []
+				this.warnings = []
 				this.error = publishRefusalMessage(e, this.refusalMessages)
 			} finally {
 				this.loading = false
@@ -253,6 +278,12 @@ export default {
 	flex-direction: column;
 	gap: 8px;
 	padding: 0 12px 12px;
+}
+
+.case-type-publish__warnings {
+	margin: 0 0 12px 0;
+	padding-inline-start: 20px;
+	color: var(--color-warning-text, var(--color-main-text));
 }
 
 .case-type-publish__findings {
