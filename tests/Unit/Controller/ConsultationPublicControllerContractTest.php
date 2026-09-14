@@ -52,12 +52,16 @@ use Psr\Log\LoggerInterface;
 /**
  * Concrete IRequest stub serving a raw body for the ConsultationPublic tests.
  *
- * `getContent()` is NOT declared on the OCP\IRequest interface — it is a magic
- * accessor on the concrete OC request — so `createMock(IRequest::class)` has no
- * such method and calling it raises an Error. A concrete stub is the only way
- * to drive `publicResponsePost()`'s body decoding. The class name is prefixed
- * with the controller name because sibling contract suites define their own
- * stubs in this same namespace.
+ * `getContent()` is NOT declared on the OCP\IRequest interface, and it is NOT a
+ * magic accessor either: `OC\AppFramework\Http\Request` declares it
+ * `protected` and implements `__get`, not `__call`. So an outside call on the
+ * real request is `Error: Call to protected method`, which is what made this
+ * public endpoint answer 500 for every caller while this suite stayed green
+ * over a stub whose `getContent()` is public. The controller now reads
+ * `php://input` unless `is_callable()` says the method can really be called;
+ * this stub keeps its public one so the decoding path stays drivable from a
+ * test. The class name is prefixed with the controller name because sibling
+ * contract suites define their own stubs in this same namespace.
  */
 class ConsultationPublicControllerContractRequestStub implements IRequest {
 
@@ -451,4 +455,36 @@ class ConsultationPublicControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(['error' => 'Consultation is already closed'], $response->getData());
 	}//end testPublicResponsePostMapsADomainRefusalToA400WithItsMessage()
+
+	/**
+	 * A protected getContent(), which is what every real request has, must not
+	 * look callable: that is the test the production path now makes before
+	 * calling it, and the reason this endpoint answered 500 before.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 */
+	public function testAProtectedGetContentIsNotCallableFromOutside(): void {
+		$realShape = new class {
+			/**
+			 * Mirrors OC\AppFramework\Http\Request, which declares this protected.
+			 *
+			 * @return string The body.
+			 */
+			protected function getContent(): string {
+				return '{"never":"reached"}';
+			}
+		};
+
+		$this->assertFalse(
+			is_callable([$realShape, 'getContent']),
+			'a protected getContent() must not look callable, or the guard lets the 500 back in',
+		);
+		// And the stub this suite drives the controller with is public, which
+		// is why the decoding path stays reachable from a test at all.
+		$this->assertTrue(
+			is_callable([new ConsultationPublicControllerContractRequestStub('{}'), 'getContent']),
+		);
+	}//end testAProtectedGetContentIsNotCallableFromOutside()
 }//end class
