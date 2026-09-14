@@ -1,14 +1,15 @@
 <?php
 
 /**
- * The probes and saves that write an integration card.
+ * The probes and saves that report a connection to integriq.
  *
  * A connection test the admin runs and a settings form the admin saves are the
- * only two things that know whether a connection works. If they do not write
- * their outcome, the Integrations page shows the seed forever and is worse
- * than no page at all — it looks like an answer. Every test here asserts that
- * the write happens with the outcome the caller actually had, not that the
- * caller returned the right JSON.
+ * only two things dossiq knows about whether a connection works. Since
+ * adopt-connection-registry the Integrations page lists integriq's rows, and
+ * integriq only learns what dossiq tells it. If these callers stop reporting,
+ * the page keeps showing an old status and looks like an answer. Every test
+ * here asserts that the report happens with the outcome the caller actually
+ * had, not that the caller returned the right JSON.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -19,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -217,7 +218,7 @@ class IntegrationProbesRecordTest extends TestCase {
 		$this->recorder->expects($this->once())
 			->method('recordFromSave')
 			->with($payload)
-			->willReturn(['kcc' => 'configured']);
+			->willReturn(['kcc']);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('has')->willReturn(true);
