@@ -48,7 +48,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
 - [x] 4.1 `OneDateWritePathTest` green, and it fails on a planted private
   normaliser and a planted zone literal. Prove both plants red before
   removing them (D-6).
-- [ ] 4.2 `tests/e2e/one-date-write-path.spec.ts`: one date through all
+- [x] 4.2 `tests/e2e/one-date-write-path.spec.ts`: one date through all
   nine paths, one stored value out; a Belgian tenant reads Belgian
   offsets (D-7).
 - [ ] 4.3 `openspec validate one-date-write-path --strict`.
