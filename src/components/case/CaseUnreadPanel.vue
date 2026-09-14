@@ -41,7 +41,7 @@
 		<ul v-if="entries.length > 0" class="case-unread__list">
 			<li v-for="entry in entries" :key="entry.name">
 				<NcButton
-					type="tertiary"
+					variant="tertiary"
 					:disabled="busy"
 					:data-testid="`case-unread-${entry.name}`"
 					@click="acknowledge(entry.name)">
@@ -51,7 +51,7 @@
 		</ul>
 
 		<NcButton
-			type="tertiary"
+			variant="tertiary"
 			class="case-unread__reset"
 			:disabled="busy"
 			data-testid="case-unread-mark-unread"
@@ -201,14 +201,17 @@ export default {
 				this.lastSeenAt = state.lastSeenAt
 				this.wasUnread = state.unread
 				this.loaded = true
-			} catch (err) {
+			} catch {
+				// An instance whose OpenRegister does not carry the read state
+				// yet answers 404, and a strip that is not drawn is the right
+				// answer to that. Nothing else on the page depends on it.
 				this.loaded = false
 				return
 			}
 
 			try {
 				await markRead(this.caseId)
-			} catch (err) {
+			} catch {
 				// The strip still shows what it read. A case that could not be
 				// recorded as seen stays unread, which is the safe direction.
 			}
@@ -227,8 +230,8 @@ export default {
 			try {
 				await markRead(this.caseId, name)
 				this.counts = { ...this.counts, [name]: 0 }
-			} catch (err) {
-				const refusal = String(err?.response?.data?.message ?? '')
+			} catch (error) {
+				const refusal = String(error?.response?.data?.message ?? '')
 				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
 			} finally {
 				this.busy = false
@@ -248,8 +251,8 @@ export default {
 				await markUnread(this.caseId)
 				this.wasUnread = true
 				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
-			} catch (err) {
-				const refusal = String(err?.response?.data?.message ?? '')
+			} catch (error) {
+				const refusal = String(error?.response?.data?.message ?? '')
 				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
 			} finally {
 				this.busy = false
