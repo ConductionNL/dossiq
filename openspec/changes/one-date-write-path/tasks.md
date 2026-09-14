@@ -18,7 +18,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   D-5).
 - [x] 2.1 `TermijnController` `hervat`, `verleng` and `voltooi` onto the
   normaliser; `DeadlineExtensionService` stops taking a raw string.
-- [ ] 2.2 `ZrcController` `create` and `update`: the `datumStatusGezet`
+- [x] 2.2 `ZrcController` `create` and `update`: the `datumStatusGezet`
   default and the `endDate` write.
 - [ ] 2.3 `ComplaintController` through `ComplaintService`, including the
   `date('Y-m-d')` fallback at :301.
