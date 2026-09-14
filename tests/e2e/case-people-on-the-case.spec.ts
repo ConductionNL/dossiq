@@ -83,6 +83,12 @@ async function rolesOn(id: string): Promise<any[]> {
 test.describe('People on the case', () => {
 	test.describe.configure({ mode: 'serial' })
 
+	// One page load is budgeted 45s (helpers/nav.ts), more than the config's
+	// 30s default gives a whole test: a browser test that does not set its own
+	// budget dies inside page.goto naming nothing. Every other browser spec
+	// here sets this.
+	test.setTimeout(180_000)
+
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)

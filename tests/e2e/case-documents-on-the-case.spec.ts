@@ -122,7 +122,18 @@ async function dossierOf(caseId: string): Promise<any[]> {
 test.describe('Documents live on the case', () => {
 	test.describe.configure({ mode: 'serial' })
 
+	// 🔴 A BROWSER TEST NEEDS MORE THAN THE CONFIG'S 30s DEFAULT. Two tests here
+	// open a case page, and one page load is budgeted `PAGE_LOAD_MS` = 45s
+	// (helpers/nav.ts): more than the whole test had. Both then died as
+	// `Test timeout of 30000ms exceeded` inside `page.goto`, naming nothing,
+	// which is exactly the failure nav.ts#journeyBudget documents. Every other
+	// browser spec in this suite sets this; this one did not.
+	test.setTimeout(180_000)
+
 	test.beforeAll(async ({ playwright, baseURL }) => {
+		// The describe's budget governs TESTS, not hooks: a hook gets the
+		// config default unless it sets its own.
+		test.setTimeout(120_000)
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
 		registerFolder = await registerFolderName()
@@ -270,7 +281,31 @@ test.describe('Documents live on the case', () => {
 			{ timeout: 15_000 },
 		)
 		await expect(page.getByTestId('document-properties-missing')).toHaveCount(0)
-		const title = page.locator('.dossier-metadata-dialog input').first()
+		// 🔴 NOT `.dossier-metadata-dialog input` FIRST. The first input in this
+		// dialog is the Document type NcSelect's own search box
+		// (`role="combobox"`, `type="search"`); the title is the fourth field
+		// down. Filling the first one typed the new title into a combobox
+		// search, left the record's title as it was, and the PATCH that
+		// followed carried `"title":"…-drop"` — a save that changed nothing,
+		// reported as the projection failing to store it.
+		const title = page
+			.locator('.dossier-metadata-dialog')
+			.getByRole('textbox', { name: /^(Title|Titel)$/ })
+		// 🔴 NEITHER GATE ABOVE MEANS THE FORM HOLDS THE RECORD YET. The
+		// dialog renders at once and `created()` starts `loadRecord()`; when
+		// that resolves it writes every field from the record, the title
+		// included, over whatever is in the form. The file name is a prop, so
+		// it is there before the fetch, and `document-properties-missing`
+		// renders only once the fetch has come back empty-handed, so its
+		// absence is equally true before the fetch. Measured on the trace of
+		// this test: the title input was `""`, took the typed value, and
+		// reverted to the record's title 237 ms later, and the PATCH that
+		// followed carried the OLD title. So wait for the value the record
+		// puts in the field; anything typed earlier is typed into a field
+		// that is about to be overwritten.
+		await expect(title).toHaveValue(FILE_NAME.replace(/\.pdf$/, ''), {
+			timeout: 15_000,
+		})
 		await title.fill(`${RUN_PREFIX} Aanvraagformulier, herzien`)
 		await page.getByTestId('document-properties-save').click()
 
