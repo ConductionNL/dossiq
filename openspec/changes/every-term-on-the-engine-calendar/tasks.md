@@ -30,4 +30,4 @@ nothing and can run first.
 - [x] 3.1 Re-run the count in the audit's header after 1.2 to 1.4 and
   record the new one beside the old, so the row can be re-rated from the
   file rather than from a grep.
-- [ ] 3.2 `openspec validate every-term-on-the-engine-calendar --strict`.
+- [x] 3.2 `openspec validate every-term-on-the-engine-calendar --strict`.
