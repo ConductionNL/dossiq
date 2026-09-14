@@ -4,9 +4,9 @@ The [parity page](competitor-parity-2026-09.md) measures dossiq against a list w
 
 Thirty-six product surfaces were walked, item by item. Every item became a candidate or was dropped against a row the corpus already holds. What is left is, by construction, what nobody has specified yet: **636 consolidated candidates in 71 capability clusters**, of which dossiq fails 434.
 
-Ruben took all twenty-two decisions on 2026-09-14, and six of the answers differ from the recommendation. The candidates were re-rated against them, and **506 of the 636 are now carried by an OpenSpec change** you can open in the repository that owns it.
+Ruben took all twenty-two decisions on 2026-09-14, and six of the answers differ from the recommendation. The candidates were re-rated against them, and **618 of the 636 are now carried by an OpenSpec change** you can open in the repository that owns it, and 70 of the 71 clusters have one.
 
-The record is `procest/_ledger/parity-ledger.html` (`data.discovery`, `data.decisions.openspec` and `data.register`) on `development` in `ConductionNL/market-intelligence`, at ledger v10. The long versions are `procest/_round4/discovery/found-and-lacking.md` (the two-page executive view), `build-plan.md` (the 71 clusters), `decisions.md` (the 22 decisions with what was taken), `casetype-configurability.md` (the depth study) and `candidates.md` with `candidates.json` (the 636). Which change carries which candidate is in `procest/_gaps/gap-register.md` and `.json`, fourth version. Every corpus path on this page is relative to that repository.
+The record is `procest/_ledger/parity-ledger.html` (`data.discovery`, `data.decisions.openspec` and `data.register`) on `development` in `ConductionNL/market-intelligence`, at ledger v10.1. The long versions are `procest/_round4/discovery/found-and-lacking.md` (the two-page executive view), `build-plan.md` (the 71 clusters), `decisions.md` (the 22 decisions with what was taken), `casetype-configurability.md` (the depth study) and `candidates.md` with `candidates.json` (the 636). Which change carries which candidate is in `procest/_gaps/gap-register.md` and `.json`, fourth version at v4.1. Every corpus path on this page is relative to that repository.
 
 ## Method
 
@@ -47,7 +47,7 @@ Every figure comes from `python3 procest/_round4/tools/build-clusters.py summary
 | **consolidated candidates** | **636** |
 | **capability clusters** | **71** |
 | **matrix holes** | **47** |
-| **carried by an OpenSpec change** | **506** |
+| **carried by an OpenSpec change** | **618** |
 
 The Jira Data Center and Easy Redmine lanes state no surface-item count, because both were read from documents.
 
@@ -195,48 +195,57 @@ So when a gemeente says smart fields, they are naming two things xxllnc keeps ap
 
 The ownership rule decides the owner before any design does. dossiq reaches full comparability with the competition, and logic that belongs to another app is specified in that app and consumed by dossiq. That rule moves **536 of the 636 candidates out of dossiq**.
 
-The carried column is the one to read. It counts the candidates whose cluster has an OpenSpec change open in that repository, from the gap register's fourth version.
+The carried column is the one to read. It counts the candidates whose cluster has an OpenSpec change open in that repository, from the gap register at v4.1.
 
 | owner | candidates | clusters | carried |
 |---|---|---|---|
-| openregister | 280 | 31 | 278 |
-| dossiq | 100 | 13 | 26 |
-| integriq | 52 | 7 | 43 |
+| openregister | 280 | 31 | 280 |
+| dossiq | 100 | 13 | 100 |
+| integriq | 52 | 7 | 52 |
 | nextcloud-vue | 47 | 3 | 47 |
 | filinq | 34 | 4 | 34 |
 | opencatalogi | 27 | 3 | 27 |
 | portaliq | 23 | 3 | 23 |
-| launchpad | 11 | 1 | 0 |
-| decidiq | 11 | 1 | 0 |
+| launchpad | 11 | 1 | 11 |
+| decidiq | 11 | 1 | 11 |
 | hermiq | 9 | 1 | 9 |
 | humaniq | 9 | 1 | 9 |
 | pipelinq | 9 | 1 | 9 |
-| shillinq | 5 | 1 | 0 |
+| shillinq | 5 | 1 | 5 |
 | nobody, recorded and not built | 19 | 1 | 1 |
 
-Seventy-seven changes carry the 506, across eleven repositories: openregister 29, dossiq 9, integriq 8, filinq 6, hermiq 5, nextcloud-vue 5, humaniq 4, opencatalogi 3, pipelinq 3, portaliq 3, buildiq 2. Read a change as `<repo>/openspec/changes/<slug>/`, so `openregister/object-watchers` opens at [that path in openregister](https://github.com/ConductionNL/openregister/tree/development/openspec/changes/object-watchers).
+Ninety-four changes carry the 618, across fourteen repositories: openregister 30, dossiq 21, integriq 9, filinq 6, hermiq 5, nextcloud-vue 5, humaniq 4, opencatalogi 3, pipelinq 3, portaliq 3, buildiq 2, decidiq 1, launchpad 1, shillinq 1. Read a change as `<repo>/openspec/changes/<slug>/`, so `openregister/object-watchers` opens at [that path in openregister](https://github.com/ConductionNL/openregister/tree/development/openspec/changes/object-watchers).
 
-### The fifteen clusters nothing carries yet
+### The fourteen clusters opened on 2026-09-14
 
-130 candidates sit in a cluster with no change open. Each cluster says why, so nobody rediscovers it.
+The fourth version left 130 candidates in fifteen clusters with no change open. Fourteen of those clusters were opened that evening, and only cluster 59 is left. Six pull requests carry them, three of which had to create a parity umbrella in a repository that had none.
+
+| cluster | owner | candidates | change now open |
+|---|---|---:|---|
+| What a new instance starts with | dossiq | 21 | `starter-content-and-templates` and `first-run-and-the-tour` |
+| The term model: phases, chains, suspension | dossiq | 11 | `phase-terms-and-the-internal-target` |
+| Dashboards, widgets and who may see them | launchpad | 11 | `dashboards-and-who-may-see-them`, with dossiq's `widget-roles-declared` |
+| The decision as a walked process | decidiq | 11 | `the-decision-as-a-walked-process`, with dossiq's `decision-outcomes-on-the-case` |
+| Lifecycle acts as separate, permissioned acts | dossiq | 10 | `lifecycle-acts-on-the-case` |
+| Outbound sender identity and deliverability | integriq | 9 | `outbound-sender-identity-and-deliverability` |
+| The task as a first-class record | dossiq | 8 | `task-as-a-first-class-record`, with buildiq's page layout |
+| Intake routing, refusal and triage | dossiq | 7 | `intake-triage-and-refusal`, with hermiq's report collapsing |
+| One personal queue fed by every mechanism | dossiq | 6 | `one-personal-queue` |
+| Mail accounts, OAuth2 and alias domains | dossiq | 5 | `inbound-mail-filters` |
+| Money and obligations: leges and payments | shillinq | 5 | `fees-payments-and-the-contract-register`, with dossiq's `fees-and-payments-on-the-case` |
+| Handing a case to another team or handler | dossiq | 4 | `handing-a-case-over` |
+| Talking to the citizen live, and to the assistant | dossiq | 4 | `live-conversation-on-the-case` |
+| The satisfaction survey as its own object | openregister | 2 | `survey-object` |
+
+The pull requests: [dossiq#2762](https://github.com/ConductionNL/dossiq/pull/2762) with nine changes, [decidiq#1316](https://github.com/ConductionNL/decidiq/pull/1316), [launchpad#637](https://github.com/ConductionNL/launchpad/pull/637) and [shillinq#1608](https://github.com/ConductionNL/shillinq/pull/1608), the last three each opening a parity umbrella the repository did not have, plus [integriq#2012](https://github.com/ConductionNL/integriq/pull/2012) and [openregister#3720](https://github.com/ConductionNL/openregister/pull/3720).
+
+### The one cluster left
 
 | cluster | owner | candidates | why |
-|---|---|---|---|
-| What a new instance starts with | dossiq | 21 | no change opened; the plan hands the seed to `lib/Settings/vth-templates/` and the setup walkthrough |
-| Capabilities re-read with an MKB lens | nobody | 18 | D17 records the twenty rather than building them; humaniq took the one that is its own |
-| The term model: phases, chains, suspension | dossiq | 11 | no change opened |
-| Dashboards, widgets and who may see them | launchpad | 11 | launchpad opened no parity umbrella |
-| The decision as a walked process | decidiq | 11 | decidiq opened no parity umbrella |
-| Lifecycle acts as separate, permissioned acts | dossiq | 10 | no change opened |
-| Outbound sender identity and deliverability | integriq | 9 | deliberately not opened; `outbound-communication-log` adds the sender identity as one more field |
-| The task as a first-class record | dossiq | 7 | nothing beyond buildiq taking one member |
-| Intake routing, refusal and triage | dossiq | 6 | nothing beyond hermiq taking one member |
-| One personal queue fed by every mechanism | dossiq | 6 | no change opened |
-| Mail accounts, OAuth2 and alias domains | dossiq | 5 | deliberately not opened; D12 puts the account in Nextcloud Mail |
-| Money and obligations: leges and payments | shillinq | 5 | shillinq opened no parity umbrella; its two changes carry register rows, not this cluster |
-| Handing a case to another team or handler | dossiq | 4 | the plan's own decision line reads `none` |
-| Talking to the citizen live, and to the assistant | dossiq | 4 | no change opened |
-| The satisfaction survey as its own object | openregister | 2 | pipelinq's `customer-satisfaction-closed-loop` carries a ledger row, not this cluster |
+|---|---|---:|---|
+| Capabilities re-read with an MKB lens | nobody | 18 | D17 records the twenty rather than building them; humaniq took the one that is its own job |
+
+Cluster 59 stays open on purpose. It is the cluster decision D17 created, and the decision was to record the capabilities rather than build them. It is not a backlog item.
 
 ## The three waves
 
