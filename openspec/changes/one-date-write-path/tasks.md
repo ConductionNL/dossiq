@@ -28,7 +28,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   instead of stored verbatim, and a bad value is refused (D-3).
 - [x] 2.6 `WOOAssessmentController` through `WOODeadlineService`;
   `parseIsoDate()` and `requireIsoDate()` retire.
-- [ ] 2.7 `ContactMomentController` through `QuickActionService` and
+- [x] 2.7 `ContactMomentController` through `QuickActionService` and
   `ContactMomentService`: `startDate`, the 42 day deadline and the
   activity timestamps.
 - [ ] 2.8 `DwangsomController` through `DwangsomCalculationService`: the

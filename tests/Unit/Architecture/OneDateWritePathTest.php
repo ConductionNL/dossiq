@@ -115,6 +115,7 @@ class OneDateWritePathTest extends TestCase {
 		'ContactMomentController' => [
 			'Controller/ContactMomentController.php',
 			'Service/QuickActionService.php',
+			'Service/ContactMomentService.php',
 			'Service/Kcc/ContactMomentService.php',
 		],
 		'DwangsomController' => [
