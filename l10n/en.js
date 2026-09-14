@@ -4001,7 +4001,23 @@ OC.L10N.register(
         "This case still has sub-cases.": "This case still has sub-cases.",
         "A legal hold is on this case.": "A legal hold is on this case.",
         "The retention period of this case has not ended.": "The retention period of this case has not ended.",
-        "Resolve this first, then delete the case.": "Resolve this first, then delete the case."
+        "Resolve this first, then delete the case.": "Resolve this first, then delete the case.",
+        "Claim": "Claim",
+        "for {name}": "for {name}",
+        "for {name}, until {date}": "for {name}, until {date}",
+        "Hide substituted work": "Hide substituted work",
+        "Release": "Release",
+        "Standing in for": "Standing in for",
+        "Work you are standing in for": "Work you are standing in for",
+        "You are now handling this case.": "You are now handling this case.",
+        "Nobody is handling this case.": "Nobody is handling this case.",
+        "Someone else is already handling this case.": "Someone else is already handling this case.",
+        "The assignment could not be changed.": "The assignment could not be changed.",
+        "The case could not be read.": "The case could not be read.",
+        "The case is back in the queue.": "The case is back in the queue.",
+        "You are already handling this case.": "You are already handling this case.",
+        "You are not signed in.": "You are not signed in.",
+        "You can only release a case you handle yourself.": "You can only release a case you handle yourself."
     },
     "nplurals=2; plural=(n != 1);"
 )

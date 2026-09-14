@@ -4012,7 +4012,12 @@ OC.L10N.register(
         "Nobody is handling this case.": "Niemand behandelt deze zaak.",
         "You can only release a case you handle yourself.": "Je kunt alleen een zaak teruggeven die je zelf behandelt.",
         "The case could not be read.": "De zaak kon niet gelezen worden.",
-        "The assignment could not be changed.": "De toewijzing kon niet gewijzigd worden."
+        "The assignment could not be changed.": "De toewijzing kon niet gewijzigd worden.",
+        "for {name}": "voor {name}",
+        "for {name}, until {date}": "voor {name}, tot {date}",
+        "Hide substituted work": "Waargenomen werk verbergen",
+        "Standing in for": "Waarneming voor",
+        "Work you are standing in for": "Werk dat je waarneemt"
     },
     "nplurals=2; plural=(n != 1);"
 )
