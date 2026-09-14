@@ -93,6 +93,9 @@ import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+// Federated case sharing/transfer/activity — federated-case-collaboration.
+// @spec openspec/specs/federated-case-collaboration/spec.md
+import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
@@ -102,8 +105,6 @@ import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
-// Federated case sharing/transfer/activity — federated-case-collaboration.
-// @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
@@ -657,6 +658,21 @@ const registry = {
 	// change) plus the new federated-share/activity UI into the real
 	// case-detail sidebar. See CaseSharingTab.vue + design.md §7.
 	// @spec openspec/specs/federated-case-collaboration/spec.md#the-case-detail-sharing-surface-is-wired-not-orphaned
+	// --- Access sidebar tab (case-grants-name-their-source). ---
+	// Who holds which right on this case, and where each grant came from,
+	// read from OpenRegister and computed nowhere. A `component:` sidebar tab
+	// rather than a built-in: a sidebar tab renders EITHER a registered
+	// component or a `widgets[]` entry whose type is one of CnObjectSidebar's
+	// four built-ins (data, metadata, audit, object-table), and none of them
+	// can read `/api/permissions`, `/api/scopes` or `/api/permissions/
+	// deny-preview`. A `type: "custom"` entry here resolves to nothing and
+	// renders an empty panel with a console warning nobody reads.
+	// @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	CaseAccessTab: {
+		kind: 'page',
+		component: CaseAccessTab,
+		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
 	CaseSharingTab: {
 		kind: 'page',
 		component: CaseSharingTab,

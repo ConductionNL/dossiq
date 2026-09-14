@@ -65,7 +65,10 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// carries the widgets split off the Dashboard. The number is what makes
 		// this assertion worth anything, so it is raised by exactly the pages
 		// that were added rather than loosened to a range.
-		expect(manifest.pages).toHaveLength(50)
+		// 50 -> 51: `case-recycle-window` adds CasesDeleted, the deleted lens.
+		// It is a page rather than a chip on the case list because the objects
+		// endpoint those chips filter excludes soft-deleted rows by design.
+		expect(manifest.pages).toHaveLength(51)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)

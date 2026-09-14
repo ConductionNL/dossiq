@@ -34,6 +34,7 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
@@ -304,6 +305,10 @@ export default {
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds
 	// the capability comparison. See the component header.
 	FeaturesRoadmapView,
+	// The deleted lens. A plain component rather than an index page: the
+	// deleted rows are not in the objects endpoint the index renderer fetches
+	// from, they are in OpenRegister's trash, which answers on its own door.
+	DeletedCasesView,
 	MailIntakeLogView,
 	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.

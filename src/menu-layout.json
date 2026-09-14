@@ -20,6 +20,7 @@
 		"Queue": "WorkGroup",
 		"MyWork": "WorkGroup",
 		"Cases": "WorkGroup",
+		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
 	},
