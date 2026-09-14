@@ -8,7 +8,9 @@ The rows are no longer `dossiqIntegration` objects: the page SHALL be an
 `index` page over integriq's `app_connection` schema, preset to `app` equal to
 `dossiq` through its menu entry's `query`, and SHALL declare Integriq as the
 app it requires (hydra REQ-CONN-006). The menu entry SHALL only render when
-integriq is installed. The page SHALL NOT offer the generic Add button. Its
+integriq is installed. The status column SHALL name all six statuses of hydra contract D3,
+`limited` included, and SHALL never show a raw enum value for one of them.
+The page SHALL NOT offer the generic Add button. Its
 Add integration action SHALL open integriq's Connections overview with
 `app=dossiq&link=1`, where a source is linked to a declared connection.
 
@@ -21,6 +23,13 @@ Add integration action SHALL open integriq's Connections overview with
 - **WHEN** an admin opens the gear and chooses Integrations
 - **THEN** the page SHALL list the twelve declared connections in declared order
 - **AND** every listed row SHALL have `app` equal to `dossiq`
+
+#### Scenario: A connection that works in part reads Limited
+@e2e exclude No dossiq declaration or report produces limited, so no browser flow reaches it; tests/vitest/formatters.spec.js asserts the label and that it differs from Configured, Not available and Error.
+
+- **GIVEN** a dossiq row whose status is `limited`
+- **WHEN** the admin reads the Integrations page
+- **THEN** the status column SHALL read Limited, or Beperkt on a Dutch instance
 
 #### Scenario: Without integriq the page says what is missing
 @e2e exclude The CI instance installs integriq, so no browser flow can reach a dossiq without it; the manifest declaration is asserted in tests/vitest/integrationsPage.spec.js and the screen is nextcloud-vue's CnPageRenderer.
@@ -48,7 +57,9 @@ REQ-CONN-008). A `settingsUrl` SHALL only point at a section that exists on
 the admin page. KvK SHALL be declared not available with a message saying the
 adapter is built and bound and nothing calls it. Berichtenbox and Document
 templates SHALL name their adapter config key and a message that says a mock
-adapter answers. The connections dossiq probes itself, StUF, the mailbox and
+adapter answers. Their `simulatedValues` SHALL list the empty string and the
+mock class the registrar falls back to, so naming the mock class still reads
+Simulated (hydra#673, contract D4 rule 3). The connections dossiq probes itself, StUF, the mailbox and
 the store, SHALL declare no config keys.
 
 BRP SHALL be declared with an `unconfiguredMessage` that names
@@ -72,6 +83,13 @@ BRP SHALL be declared with an `unconfiguredMessage` that names
 - **WHEN** the admin opens the Integrations page
 - **THEN** the Berichtenbox and Document templates rows SHALL read Simulated
 - **AND** each message SHALL say a mock adapter answers
+
+#### Scenario: Naming the mock class still reads Simulated
+@e2e exclude Rule 3 runs in integriq, and the CI instance cannot set berichtenbox_adapter without occ; tests/Unit/Settings/ConnectionsDeclarationTest.php::testMockBackedSeamsNameTheirMockAsSimulated asserts both lists and that each class implements its seam.
+
+- **GIVEN** `berichtenbox_adapter` set to `OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter`
+- **WHEN** integriq resolves the Berichtenbox row
+- **THEN** the row SHALL read Simulated, not Configured
 
 #### Scenario: BRP reads Not configured and names the key that wakes it
 @e2e tests/e2e/integrations-page.spec.ts

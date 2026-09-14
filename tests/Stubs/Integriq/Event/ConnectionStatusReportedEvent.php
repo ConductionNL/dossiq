@@ -37,7 +37,7 @@ final class ConnectionStatusReportedEvent extends Event {
 	 *
 	 * @param string $app The declaring app id.
 	 * @param string $key The connection key from the app's connections.json.
-	 * @param string $status configured, unconfigured, simulated, unavailable or error.
+	 * @param string $status configured, limited, unconfigured, simulated, unavailable or error.
 	 * @param string $message What the app observed.
 	 */
 	public function __construct(

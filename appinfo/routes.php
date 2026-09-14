@@ -383,6 +383,16 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
+        // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
+        // read that answers "did we confirm receipt, when, to whom and by
+        // which channel", and one write for the case an acknowledgement never
+        // reached, where a person confirmed it by post and the case has to
+        // record who said so. Both are literal segments after `{caseId}`, so
+        // neither collides with the lifecycle, claim or actions routes around
+        // them.
+    ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
+    ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
+
         // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up
         // case for a later date — once, or as a series that comes round again

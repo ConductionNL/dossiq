@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
+use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use PHPUnit\Framework\TestCase;
 
@@ -55,6 +59,19 @@ class ConnectionsDeclarationTest extends TestCase {
 		'unavailableMessage',
 		'unconfiguredMessage',
 		'sourceTemplate',
+		'reportedOnly',
+	];
+
+	/**
+	 * The fields design D2 allows inside `adapter`.
+	 *
+	 * @var array<int, string>
+	 */
+	private const ALLOWED_ADAPTER_FIELDS = [
+		'configKey',
+		'jsonPath',
+		'simulatedValues',
+		'simulatedMessage',
 	];
 
 	/**
@@ -275,4 +292,69 @@ class ConnectionsDeclarationTest extends TestCase {
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);
 	}//end testBrpNamesTheKeyThatWakesIt()
+
+	/**
+	 * An adapter block uses only D2 fields, and `simulatedValues` is a list of strings.
+	 *
+	 * @return void
+	 */
+	public function testAdapterBlocksUseOnlyD2Fields(): void {
+		foreach ($this->declaration()['connections'] as $connection) {
+			if (isset($connection['adapter']) === false) {
+				continue;
+			}
+
+			$this->assertSame(
+				expected: [],
+				actual: array_diff(array_keys($connection['adapter']), self::ALLOWED_ADAPTER_FIELDS),
+				message: $connection['key'] . ' carries an adapter field D2 does not allow'
+			);
+			foreach (($connection['adapter']['simulatedValues'] ?? []) as $value) {
+				$this->assertIsString(actual: $value, message: $connection['key']);
+			}
+		}
+	}//end testAdapterBlocksUseOnlyD2Fields()
+
+	/**
+	 * A mock-backed seam reads Simulated when its key is empty or names the mock.
+	 *
+	 * Contract D4 rule 3 matches the key's value against `simulatedValues`. The
+	 * default is only the empty string, so an admin who typed the mock class
+	 * into the key would read Configured under rule 5 while the mock answered.
+	 * Each list therefore names the exact class the registrar falls back to,
+	 * and that class must exist and implement the seam, or the entry matches a
+	 * value nothing can bind.
+	 *
+	 * @return void
+	 */
+	public function testMockBackedSeamsNameTheirMockAsSimulated(): void {
+		$byKey = $this->connectionsByKey();
+		$seams = [
+			'berichtenbox' => [MockAdapter::class, BerichtenboxAdapterInterface::class],
+			'templates' => [MockTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class],
+		];
+
+		foreach ($seams as $key => [$mockClass, $interface]) {
+			$values = $byKey[$key]['adapter']['simulatedValues'] ?? null;
+
+			$this->assertSame(expected: ['', $mockClass], actual: $values, message: $key);
+			$this->assertTrue(condition: is_a($mockClass, $interface, true), message: $mockClass . ' does not implement ' . $interface);
+		}
+	}//end testMockBackedSeamsNameTheirMockAsSimulated()
+
+	/**
+	 * No dossiq row is `reportedOnly`.
+	 *
+	 * The flag makes integriq skip rules 3 and 5. Every dossiq row that has an
+	 * adapter key or required settings is one integriq can judge from app
+	 * config, and the rows only a probe can judge (StUF, mailbox, store) carry
+	 * neither, so the flag would change nothing on them.
+	 *
+	 * @return void
+	 */
+	public function testNoRowIsReportedOnly(): void {
+		foreach ($this->declaration()['connections'] as $connection) {
+			$this->assertArrayNotHasKey(key: 'reportedOnly', array: $connection, message: $connection['key']);
+		}
+	}//end testNoRowIsReportedOnly()
 }//end class

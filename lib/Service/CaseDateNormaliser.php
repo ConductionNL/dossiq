@@ -47,6 +47,14 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) Fourteen public methods is the
+ * point of the class, not a symptom. Being the single entry point for dates is
+ * what removed the nine write paths, so splitting it to satisfy the count would
+ * hand callers two objects to choose between and reopen that hole. The methods
+ * are one-line conversions over one private zone resolver, and every other size
+ * and coupling rule in the ruleset passes on this class, which is the control:
+ * the raw method count is the only measure that reads it as large.
+ *
  * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
  */
 class CaseDateNormaliser {
