@@ -10,7 +10,7 @@
   "A gemeente must be able to prove after the fact who could open a dossier"
   is the clause behind this panel. The answer to it lives in OpenRegister: the
   grant, its provenance, the deny and the inheritance. This component fetches
-  four of OpenRegister's reads through src/services/caseAccessApi.js and lists
+  five of OpenRegister's reads through src/services/caseAccessApi.js and lists
   what came back, one row per rule, each with the holder OpenRegister named and
   the source it reported.
 

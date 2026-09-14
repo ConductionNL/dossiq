@@ -6,12 +6,12 @@
  * D22 put the grant, its provenance, the deny and the inheritance in
  * OpenRegister, and the design note that follows from it (D-1) says a method in
  * dossiq that decides who may see a case is a finding. So this module fetches
- * four OpenRegister answers and hands them on in the shape they arrived in. It
+ * five OpenRegister answers and hands them on in the shape they arrived in. It
  * does not merge a grant with a deny, does not fill a missing answer with a
  * default, and does not cache: a copy of an access decision is a second access
  * decision that nobody updates (D-5).
  *
- * The four reads, and why each one is here:
+ * The five reads, and why each one is here:
  *
  *   GET /apps/openregister/api/permissions
  *       The grantable verbs, each with the app that owns it and a sentence a
