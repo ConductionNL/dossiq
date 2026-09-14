@@ -125,7 +125,6 @@ class ComplaintService {
 		// Generate klachtnummer.
 		$data['complaintNumber'] = $this->generateComplaintNumber();
 		$data['status'] = 'received';
-		$data['priority'] = $data['priority'] ?? 'normal';
 		$data['postponementPossible'] = true;
 
 		// Compute Awb deadlines.

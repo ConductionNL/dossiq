@@ -117,21 +117,47 @@ class CasePriorityService {
 	/**
 	 * The instance default matrix, keyed impact then urgency.
 	 *
-	 * Nine cells onto four values, the shape every system in the GitLab lane
-	 * uses. The diagonal is the ordinary case: medium impact and medium
-	 * urgency is `high` rather than `normal` because a case that matters and
-	 * is due is the work, and a queue where everything reads `normal` sorts
-	 * into nothing.
+	 * Nine cells onto four values, scored rather than hand-picked: low counts
+	 * 1, medium 2, high 3, and the two are added. A sum of 2 or 3 is `low`, 4
+	 * is `normal`, 5 is `high`, 6 is `urgent`. That makes the matrix symmetric
+	 * (high impact with low urgency reads the same as low impact with high
+	 * urgency), monotone in both directions, and reachable on every one of the
+	 * four values, which a hand-picked table usually is not.
 	 *
-	 * A case type that declares its own matrix replaces this one cell for
-	 * cell; a case type that declares none uses it whole.
+	 * MEDIUM AND MEDIUM IS `normal` ON PURPOSE. Every case in this app carries
+	 * `normal` today, written as a literal by the intake services. A default
+	 * matrix whose centre cell said anything else would silently re-grade the
+	 * whole caseload on the day it shipped.
+	 *
+	 * A case type overlays the cells it cares about; the rest stay as they are
+	 * here.
 	 *
 	 * @var array<string, array<string, string>>
 	 */
 	public const DEFAULT_MATRIX = [
-		'high' => ['low' => 'high', 'medium' => 'urgent', 'high' => 'urgent'],
-		'medium' => ['low' => 'normal', 'medium' => 'high', 'high' => 'urgent'],
-		'low' => ['low' => 'low', 'medium' => 'normal', 'high' => 'high'],
+		'high' => ['low' => 'normal', 'medium' => 'high', 'high' => 'urgent'],
+		'medium' => ['low' => 'low', 'medium' => 'normal', 'high' => 'high'],
+		'low' => ['low' => 'low', 'medium' => 'low', 'high' => 'normal'],
+	];
+
+	/**
+	 * The impact and urgency pair that derives each priority, for a writer
+	 * that has a priority in hand and needs the two facts behind it.
+	 *
+	 * Seed data and fixtures name a priority, because that is the thing a
+	 * person reading the demo caseload sees. They cannot write it directly any
+	 * more: the derivation recomputes `priority` on every save, so a seeded
+	 * `urgent` would have been silently flattened to the default on the way
+	 * in. Writing the pair instead means the seeded priority is the priority
+	 * that comes back out, through the same matrix as everything else.
+	 *
+	 * @var array<string, array{impact: string, urgency: string}>
+	 */
+	public const PRIORITY_SEED_PAIRS = [
+		'low' => ['impact' => 'medium', 'urgency' => 'low'],
+		'normal' => ['impact' => 'medium', 'urgency' => 'medium'],
+		'high' => ['impact' => 'high', 'urgency' => 'medium'],
+		'urgent' => ['impact' => 'high', 'urgency' => 'high'],
 	];
 
 	/**
@@ -409,6 +435,22 @@ class CasePriorityService {
 			'priorityOrder' => $this->orderOf(priority: $effective),
 		];
 	}//end resolve()
+
+	/**
+	 * The impact and urgency behind a priority a writer already has.
+	 *
+	 * @param string $priority One of PRIORITY_VALUES.
+	 *
+	 * @return array{impact: string, urgency: string} The pair that derives it
+	 *                                                under the instance
+	 *                                                default matrix.
+	 *
+	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 */
+	public function pairFor(string $priority): array {
+		return (self::PRIORITY_SEED_PAIRS[trim($priority)]
+			?? self::PRIORITY_SEED_PAIRS['normal']);
+	}//end pairFor()
 
 	/**
 	 * A matrix built from a case type's declared cells, over the default.

@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -100,7 +101,11 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		// fires the armed timers, and this listener does the domain side.
 		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
-			new DeadlineEscalationService($this->termService, $logger),
+			new DeadlineEscalationService(
+				$this->termService,
+				$this->createMock(CasePriorityRaiseService::class),
+				$logger
+			),
 			$this->calcService,
 			$settings,
 			$logger
