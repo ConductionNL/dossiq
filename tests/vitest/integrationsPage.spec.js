@@ -6,7 +6,7 @@
  *
  * Since adopt-connection-registry the rows are integriq's. Dossiq ships two
  * things: the page in its manifest and `lib/Settings/connections.json`, which
- * integriq syncs into its `connection` schema.
+ * integriq syncs into its `app_connection` schema.
  *
  * Everything asserted here fails SILENTLY in the browser. A menu entry without
  * its `query` lists every app's rows as though they were dossiq's; an icon that
@@ -46,12 +46,12 @@ const connections = declaration.connections
 const byKey = Object.fromEntries(connections.map((c) => [c.key, c]))
 
 describe('the Integrations page', () => {
-	it('is declared, admin only, and reads integriq\'s connection schema', () => {
+	it('is declared, admin only, and reads integriq\'s app_connection schema', () => {
 		expect(page).toBeDefined()
 		expect(page.permission).toBe('admin')
 		expect(page.route).toBe('/settings/integrations')
 		expect(page.config.register).toBe('integriq')
-		expect(page.config.schema).toBe('connection')
+		expect(page.config.schema).toBe('app_connection')
 	})
 
 	// Without it, a deep link on an instance without integriq renders an empty
@@ -206,6 +206,14 @@ describe('the connection declaration', () => {
 	// The rows this page exists for. A mock adapter WORKS and delivers
 	// nothing, so integriq shows Simulated while the adapter key is empty, and
 	// the message has to say the word.
+	// BRP is built and called, and reaches nothing until its tier key moves.
+	// No admin section writes that key, so the row's message has to name it.
+	it('names the key that wakes BRP, and offers no settings link', () => {
+		expect(byKey.brp.unconfiguredMessage).toMatch(/integration\.brp\.mode/)
+		expect(byKey.brp.unconfiguredMessage).not.toMatch(/not built/i)
+		expect(byKey.brp.settingsUrl).toBeUndefined()
+	})
+
 	it('names the adapter key of the two mock-backed seams', () => {
 		expect(byKey.berichtenbox.adapter.configKey).toBe('berichtenbox_adapter')
 		expect(byKey.templates.adapter.configKey).toBe('beschikking_template_adapter')

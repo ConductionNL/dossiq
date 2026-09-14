@@ -18,7 +18,7 @@
     and listed in `psalm.xml`.
   - `tests/Unit/AppInfo/AdapterHonestyTest.php` reads the mock messages from
     the declaration.
-- [x] 3.1 `src/manifest.json` `#Integrations`: `integriq/connection`,
+- [x] 3.1 `src/manifest.json` `#Integrations`: `integriq/app_connection`,
   `requiresApp`, `showAdd: false`, header action Add integration; menu entry
   `query` and `visibleIf.appInstalled`.
 - [x] 3.2 `src/services/formatters.js`: `connectionStatus` and
@@ -27,7 +27,7 @@
   - `tests/vitest/integrationsPage.spec.js` and `tests/vitest/formatters.spec.js`.
 - [x] 4.1 Remove `lib/Settings/register.d/96-integrations.json`; `_meta` note
   on `dossiqIntegration` in `lib/Settings/dossiq_register.json`.
-- [x] 5.1 `tests/e2e/integrations-page.spec.ts` reads `integriq/connection`
+- [x] 5.1 `tests/e2e/integrations-page.spec.ts` reads `integriq/app_connection`
   filtered on `app=dossiq`. Not run here: it needs integriq's side installed.
 - [ ] 6.1 After integriq ships: run the e2e spec against an instance with both
   apps, then archive this change and fold the delta into `admin-settings`.

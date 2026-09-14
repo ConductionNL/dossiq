@@ -59,6 +59,7 @@
             "title": "BRP",
             "description": "Looking a person up in the municipal population register.",
             "order": 80,
+            "unconfiguredMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
             "sourceTemplate": "brp-haalcentraal"
         },
         {

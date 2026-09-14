@@ -5,7 +5,7 @@
 This requirement replaces the data source of REQ-ADMIN-018. The page, its
 route, its columns and its admin gate stay as REQ-ADMIN-018 describes them.
 The rows are no longer `dossiqIntegration` objects: the page SHALL be an
-`index` page over integriq's `connection` schema, preset to `app` equal to
+`index` page over integriq's `app_connection` schema, preset to `app` equal to
 `dossiq` through its menu entry's `query`, and SHALL declare Integriq as the
 app it requires (hydra REQ-CONN-006). The menu entry SHALL only render when
 integriq is installed. The page SHALL NOT offer the generic Add button. Its
@@ -51,10 +51,8 @@ templates SHALL name their adapter config key and a message that says a mock
 adapter answers. The connections dossiq probes itself, StUF, the mailbox and
 the store, SHALL declare no config keys.
 
-REQ-ADMIN-019's promise that the BRP row names `integration.brp.mode` cannot
-be kept on the registry: the declaration has no field for the message of an
-unconfigured connection. The design records the gap, and the PR asks the
-contract for one.
+BRP SHALL be declared with an `unconfiguredMessage` that names
+`integration.brp.mode`, so REQ-ADMIN-019's BRP promise holds on the registry.
 
 **Feature tier**: MVP
 
@@ -74,6 +72,16 @@ contract for one.
 - **WHEN** the admin opens the Integrations page
 - **THEN** the Berichtenbox and Document templates rows SHALL read Simulated
 - **AND** each message SHALL say a mock adapter answers
+
+#### Scenario: BRP reads Not configured and names the key that wakes it
+@e2e tests/e2e/integrations-page.spec.ts
+
+- **GIVEN** the declaration integriq synced
+- **AND** `integration.brp.mode` at its `log` default
+- **WHEN** the admin reads the BRP row
+- **THEN** it SHALL read Not configured
+- **AND** its message SHALL name `integration.brp.mode`
+- **AND** it SHALL NOT offer Open settings
 
 #### Scenario: KvK reads Not available and says why
 @e2e tests/e2e/integrations-page.spec.ts

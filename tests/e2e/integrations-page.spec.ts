@@ -6,12 +6,12 @@
  * on one page, with a status the app can back.
  *
  * WHERE THE ROWS COME FROM (adopt-connection-registry). The rows are
- * integriq's `connection` objects, synced from `lib/Settings/connections.json`,
+ * integriq's `app_connection` objects, synced from `lib/Settings/connections.json`,
  * with `app` equal to `dossiq`. Dossiq no longer seeds or writes a row: a probe
  * sends integriq a report and a save asks integriq to resolve again, and
  * integriq decides the status (hydra connection-registry D4). So this spec
  * needs integriq installed and synced, and it reads the rows from
- * `/apps/openregister/api/objects/integriq/connection?app=dossiq`.
+ * `/apps/openregister/api/objects/integriq/app_connection?app=dossiq`.
  *
  * WHAT THIS SPEC IS GUARDING, because none of it fails loudly on its own.
  * The page's whole value is that it does not overstate. A seed row that
@@ -76,10 +76,9 @@ const UNAVAILABLE_KEYS = ['kvk']
 /**
  * Built, called, and dormant until its tier key is set.
  *
- * The seed's message named `integration.brp.mode`. The registry cannot carry
- * that: contract D4 gives every unconfigured connection "Not checked yet.",
- * and D2 has no field for another message. The design of
- * adopt-connection-registry records the gap and the PR asks hydra for one.
+ * connections.json gives it an `unconfiguredMessage` naming
+ * `integration.brp.mode`, which integriq shows while the row is unconfigured
+ * (contract D4 rule 6), because no admin section writes that key.
  */
 const DORMANT_KEYS = ['brp']
 
@@ -87,7 +86,7 @@ const DORMANT_KEYS = ['brp']
 const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
 
 /** Integriq's objects endpoint for dossiq's connection rows. */
-const CONNECTIONS_API = '/index.php/apps/openregister/api/objects/integriq/connection'
+const CONNECTIONS_API = '/index.php/apps/openregister/api/objects/integriq/app_connection'
 
 /**
  * The two seams that ship a mock adapter.
@@ -117,7 +116,7 @@ let token: string
  */
 async function listConnections(request: APIRequestContext): Promise<any[]> {
 	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
-	expect(res.ok(), `list integriq/connection -> ${res.status()}`).toBeTruthy()
+	expect(res.ok(), `list integriq/app_connection -> ${res.status()}`).toBeTruthy()
 	const body = await res.json()
 	return body.results ?? []
 }
@@ -271,6 +270,7 @@ test.describe('Integrations', () => {
 			}
 			if (DORMANT_KEYS.includes(key)) {
 				expect(row.status).toBe('unconfigured')
+				expect(row.statusMessage).toMatch(/integration\.brp\.mode/)
 				continue
 			}
 			if (SIMULATED_KEYS.includes(key)) {
@@ -519,7 +519,7 @@ test.describe('Integrations', () => {
 	 * The test above proves the ROUTER turns an ordinary account away. It
 	 * cannot prove anything about the rows, because the rows are not the
 	 * page's to withhold: they live in OpenRegister and the page fetches them
-	 * over `GET /apps/openregister/api/objects/integriq/connection`. Since
+	 * over `GET /apps/openregister/api/objects/integriq/app_connection`. Since
 	 * adopt-connection-registry the `authorization` block that guards them is
 	 * integriq's (connection-registry D3), not dossiq's.
 	 * A client-side guard cannot narrow a server-side list, so for as long as
@@ -619,7 +619,7 @@ test.describe('Integrations', () => {
 				body.results ?? [],
 				`${PLAIN_USER} holds no group and must see no integration rows; `
 					+ `the admin sees ${adminRows.length}. Rows here mean the `
-					+ '`authorization` block on integriq\'s connection schema is '
+					+ '`authorization` block on integriq\'s app_connection schema is '
 					+ 'absent or was not imported — OpenRegister treats an absent '
 					+ 'block as open, so this is exactly how it read before the fix',
 			).toHaveLength(0)

@@ -4637,10 +4637,10 @@
 			},
 			"config": {
 				"register": "integriq",
-				"schema": "connection",
+				"schema": "app_connection",
 				"showViewAction": false,
 				"showAdd": false,
-				"_registryNote": "The rows are integriq's, not dossiq's (adopt-connection-registry, hydra connection-registry D8). Dossiq declares its twelve connections in lib/Settings/connections.json, integriq syncs them into its `connection` schema and works out each status. The `app=dossiq` preset is NOT here: it is the menu entry's `query`, which ADR-097 decision 5 names as the way to scope an index page, and the index page merges the route query into the fetch as a bare filter key. A deep link without the query lists every app's rows, which the admin-only schema already lets an admin see on integriq's overview. `showAdd` is false because a row nothing declared has nothing to check (D9); Add integration leaves for integriq's overview through the `openIntegriqConnections` handler, since a header action's `navigate` only pushes a route name inside this app.",
+				"_registryNote": "The rows are integriq's, not dossiq's (adopt-connection-registry, hydra connection-registry D8). Dossiq declares its twelve connections in lib/Settings/connections.json, integriq syncs them into its `app_connection` schema and works out each status. The `app=dossiq` preset is NOT here: it is the menu entry's `query`, which ADR-097 decision 5 names as the way to scope an index page, and the index page merges the route query into the fetch as a bare filter key. A deep link without the query lists every app's rows, which the admin-only schema already lets an admin see on integriq's overview. `showAdd` is false because a row nothing declared has nothing to check (D9); Add integration leaves for integriq's overview through the `openIntegriqConnections` handler, since a header action's `navigate` only pushes a route name inside this app.",
 				"headerActions": [
 					{
 						"id": "add-integration",

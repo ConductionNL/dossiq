@@ -18,7 +18,7 @@ copies.
 
 - New `lib/Settings/connections.json` with the twelve keys the page already
   uses: the same titles, descriptions, order and settings links as the seed.
-- The Integrations page reads `integriq/connection`, preset to `app=dossiq`
+- The Integrations page reads `integriq/app_connection`, preset to `app=dossiq`
   through its menu entry, and names Integriq as the app it needs.
 - The generic Add button is gone. Add integration sends the admin to
   integriq's overview, where a source is linked to a declared connection.
@@ -34,7 +34,7 @@ copies.
 
 - hydra `openspec/changes/connection-registry` (the contract, design D2 to D10).
 - integriq `openspec/changes/connection-registry` on branch
-  `feat/connection-registry`: the `connection` schema, the declaration sync,
+  `feat/connection-registry`: the `app_connection` schema, the declaration sync,
   both events and their listeners, and the Connections overview.
 
 Until integriq ships those, the page shows the missing-dependency screen or an

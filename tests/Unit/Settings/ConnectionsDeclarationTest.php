@@ -53,6 +53,7 @@ class ConnectionsDeclarationTest extends TestCase {
 		'adapter',
 		'available',
 		'unavailableMessage',
+		'unconfiguredMessage',
 		'sourceTemplate',
 	];
 
@@ -254,4 +255,24 @@ class ConnectionsDeclarationTest extends TestCase {
 		$this->assertMatchesRegularExpression(pattern: '/built and bound/i', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
+
+	/**
+	 * BRP names the key that wakes it, and offers no settings link.
+	 *
+	 * BRP is built and called, and reaches nothing until its tier key moves off
+	 * `log`. No admin section writes that key, so the row's message is the only
+	 * place an integrator learns it (REQ-ADMIN-019).
+	 *
+	 * @return void
+	 */
+	public function testBrpNamesTheKeyThatWakesIt(): void {
+		$brp = $this->connectionsByKey()['brp'];
+
+		$message = (string)($brp['unconfiguredMessage'] ?? '');
+
+		$this->assertMatchesRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
+		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
+		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
+		$this->assertArrayNotHasKey(key: 'available', array: $brp);
+	}//end testBrpNamesTheKeyThatWakesIt()
 }//end class

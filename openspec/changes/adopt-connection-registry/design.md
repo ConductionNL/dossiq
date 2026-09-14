@@ -19,6 +19,9 @@ omitted field here, as contract D2 asks.
   messages the service used to write. They also keep that key in
   `requiredConfig`, so a filled key reads Configured under contract D4 rule 5
   instead of falling through to Not checked yet.
+- BRP carries `unconfiguredMessage` with the seed's message, which names
+  `integration.brp.mode`, the key that wakes it. No admin section writes that
+  key, so the row is the only place an integrator learns it.
 - KvK is `available: false`. The seed's reason holds: the adapter is built and
   bound, and no screen or service calls it.
 - `sourceTemplate` is set only where integriq ships a template today:
@@ -28,19 +31,9 @@ omitted field here, as contract D2 asks.
 `ConnectionsDeclarationTest` keeps the file, `KEYS`, `SAVE_REQUIRED_KEYS`
 and the anchors in `AdminRoot.vue` in step.
 
-### What the contract cannot carry: the BRP message
-
-The seed gave BRP the status Not configured with a message naming
-`integration.brp.mode`, the key that wakes it. Contract D4 gives an
-unconfigured connection one fixed message, "Not checked yet.", and D2 has no
-field for a custom one. BRP has no probe, so no report can carry the text
-either. The BRP row therefore loses the key name. REQ-ADMIN-019's BRP scenario
-cannot pass against the registry, and the PR asks hydra for an
-`unconfiguredMessage` field that mirrors `unavailableMessage`.
-
 ## D2. The page
 
-- `register: integriq`, `schema: connection`, `requiresApp: {id: integriq,
+- `register: integriq`, `schema: app_connection`, `requiresApp: {id: integriq,
   name: Integriq}`. The installed nextcloud-vue 2.53.1 renders the
   missing-dependency screen for a page whose `requiresApp` is absent.
 - The menu entry carries `query: {app: dossiq}` and
@@ -54,11 +47,7 @@ cannot pass against the registry, and the PR asks hydra for an
   pushes a route name inside dossiq, so leaving the app needs a function.
   It opens `/apps/integriq/connections?app=dossiq&link=1`.
 
-**Assumed route.** Integriq's manifest has no Connections page yet. Contract D8
-names the overview and its Connections group but no route. Integriq's other
-index pages sit at `/<plural>` (`/sources`), so this change assumes
-`/connections`. If integriq picks another path, only the handler's constant
-moves.
+The route is the one contract D9 names (hydra#667).
 
 ## D3. The writer
 
@@ -107,8 +96,8 @@ nothing in the fleet names them.
 
 - **ZGW may read Configured on a fresh instance.** Its `requiredConfig` is
   `register` and `case_schema`, which the register import fills. The seed said
-  Not checked yet until someone saved the section. Under the registry, filled
-  settings are the evidence, and contract D4 rule 5 says so on the row.
+  Not checked yet until someone saved the section. Contract D4 rule 5 now says
+  "Required settings are filled.", which stays true after an import.
 - **Upgraded instances keep old rows.** Nothing reads them after this change.
   The follow-up that removes the schema removes them.
 - **Named arguments on events dossiq cannot see.** The events are built with

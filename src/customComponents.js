@@ -246,8 +246,7 @@ export const INTEGRIQ_CONNECTIONS_PATH = '/apps/integriq/connections?app=dossiq&
  * A FUNCTION handler because a header action's `navigate` keyword only pushes
  * a route name inside this app's router, which cannot leave the app.
  *
- * The route is ASSUMED: integriq's manifest had no Connections page when this
- * was written, and its other index pages sit at `/<plural>` (`/sources`).
+ * The route is the one hydra connection-registry D9 names.
  *
  * @return {void}
  *
