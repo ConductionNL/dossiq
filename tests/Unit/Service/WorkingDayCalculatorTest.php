@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -53,6 +54,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class WorkingDayCalculatorTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private WorkingDayCalculator $calculator;
 
@@ -510,4 +513,72 @@ class WorkingDayCalculatorTest extends TestCase {
 
 		return array_values(array_unique($called));
 	}//end functionCallsIn()
+
+	/**
+	 * Under date.timezone=UTC, Tweede Paasdag 2026 is 6 April and the next
+	 * working day is Tuesday 7 April.
+	 *
+	 * This is the bug the tree already shipped, stated as an assertion.
+	 * `easter_date()` returns a fixed CEST-midnight timestamp, so
+	 * `date('Y-m-d', easter_date(2026))` reads 4 April under UTC, Tweede
+	 * Paasdag lands on the 5th, and the Awt roll hands back Monday the 6th as
+	 * an ordinary working day. The bootstrap could not see it, because it
+	 * handed the tests a polyfill production did not have; that polyfill is
+	 * gone and this test is what stands in its place.
+	 *
+	 * The calendar day is built through CaseDateNormaliser::fromParts() rather
+	 * than a bare constructor, so the day under test does not inherit the
+	 * process zone either.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
+	public function testTweedePaasdagAndTheNextWorkingDayUnderUtc(): void {
+		$original = date_default_timezone_get();
+
+		try {
+			date_default_timezone_set('UTC');
+			$calculator = new WorkingDayCalculator();
+			$dates = $this->caseDates();
+
+			$tweedePaasdag = $dates->fromParts(2026, 4, 6);
+			$this->assertSame('2026-04-06', $tweedePaasdag->format('Y-m-d'));
+			$this->assertSame('Monday', $tweedePaasdag->format('l'));
+			$this->assertTrue(
+				$calculator->isHoliday($tweedePaasdag),
+				'Tweede Paasdag 2026 is 6 April; reading it as the 5th is the easter_date() defect'
+			);
+			$this->assertFalse($calculator->isWorkingDay($tweedePaasdag));
+
+			$next = $calculator->addWorkingDays(start: $tweedePaasdag, days: 1);
+			$this->assertSame('2026-04-07', $next->format('Y-m-d'));
+			$this->assertSame('Tuesday', $next->format('l'));
+
+			$this->assertSame('2026-04-05', $calculator->easterSunday(2026)->format('Y-m-d'));
+		} finally {
+			date_default_timezone_set($original);
+		}
+	}//end testTweedePaasdagAndTheNextWorkingDayUnderUtc()
+
+	/**
+	 * The bootstrap does not hand the tests a function production lacks.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
+	public function testTheBootstrapDefinesNoEasterPolyfill(): void {
+		$bootstrap = (string)file_get_contents(__DIR__ . '/../../bootstrap.php');
+
+		$this->assertDoesNotMatchRegularExpression(
+			'/function\s+easter_date\s*\(/',
+			$bootstrap,
+			'A polyfill in the bootstrap is a function the tests have and production does not.'
+		);
+		$this->assertFalse(
+			function_exists('easter_date') && extension_loaded('calendar') === false,
+			'easter_date() exists without ext-calendar, so something defined it.'
+		);
+	}//end testTheBootstrapDefinesNoEasterPolyfill()
 }//end class
