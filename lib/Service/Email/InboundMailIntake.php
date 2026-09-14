@@ -64,6 +64,15 @@ use Throwable;
  *  other class in it able to know only its own.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
+ *  constructors and value-object factories (`InboundMessage::fromRow()`,
+ *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
+ *  state and exist so a caller cannot build a half-built value.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — the ten collaborators are the
+ *  ten steps of the intake path, and this is the one class allowed to know all of
+ *  them. Bundling them behind a holder would hide which step is missing when one is.
  */
 class InboundMailIntake {
 

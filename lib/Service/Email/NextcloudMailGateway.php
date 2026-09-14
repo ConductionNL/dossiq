@@ -61,6 +61,12 @@ use Throwable;
  *  it is gathered here so no other class carries any of it.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — the complexity is the price of
+ *  design D-1: ONE class names every `OCA\Mail` symbol, guards each one and answers
+ *  a documented empty value when Mail is absent. Splitting it would spread that
+ *  coupling over several files and make a grep for `OCA\Mail` stop being the
+ *  measurement it is.
  */
 class NextcloudMailGateway implements MailGatewayInterface {
 

@@ -62,6 +62,20 @@ use OCP\IUserSession;
  *  part of the intake path by design; each collaborator knows only its own.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
+ *  constructors and value-object factories (`InboundMessage::fromRow()`,
+ *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
+ *  state and exist so a caller cannot build a half-built value.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — the surface reaches every part of
+ *  the intake path by design, and each collaborator is injected rather than resolved
+ *  so a test can replace exactly one of them.
+ *
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — `junk` is one endpoint because a
+ *  correction is one act in both directions, and the request body carries the
+ *  direction. Two endpoints would let a caller mark a message junk and not junk at
+ *  once, and the log would carry both.
  */
 class MailIntakeController extends Controller {
 

@@ -49,6 +49,11 @@ use OCP\IUserSession;
  * REST controller for email-template templating + IMAP settings.
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — this surface is the settings form
+ *  for mail, so it names the mail gateway and the sender block list beside the
+ *  template services. The block list is here rather than written straight to
+ *  appconfig so the class that reads it is the class that normalises it.
  */
 class EmailTemplateController extends Controller {
 

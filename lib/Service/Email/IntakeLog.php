@@ -52,6 +52,11 @@ use Throwable;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
+ *  constructors and value-object factories (`InboundMessage::fromRow()`,
+ *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
+ *  state and exist so a caller cannot build a half-built value.
  */
 class IntakeLog {
 
