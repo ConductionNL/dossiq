@@ -346,6 +346,15 @@ test.describe('Documents live on the case', () => {
 				data: {},
 			},
 		)
+		// 🔴 A 500 HERE IS USUALLY ANOTHER APP, NOT THIS ONE. Measured
+		// 2026-09-14 on the shared instance: dossiq creates the join and then
+		// zaakafhandelapp's ZGWLogicService::createOio() throws on it
+		// ("Argument #1 ($objectUrl) must be of type string, null given"), so
+		// the response is 500 while the join exists. That checkout is 41
+		// commits stale and its own #665 fixes it. The assertion stays strict
+		// on purpose: the endpoint must answer 2xx, and a 500 from a
+		// listener is a real failure of the request even when the write
+		// landed. Read the server log before reading this as dossiq's bug.
 		expect(
 			link.ok(),
 			`the join must be created, got ${link.status()}`,
