@@ -91,6 +91,7 @@ import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EmoticonSad from 'vue-material-design-icons/EmoticonSad.vue'
 import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import Factory from 'vue-material-design-icons/Factory.vue'
@@ -277,6 +278,7 @@ export default {
 	Earth,
 	EmailAlert,
 	EmailOutline,
+	EmailSearchOutline,
 	EmoticonSad,
 	EyeOutline,
 	Factory,

@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.22-unstable.20260914052736</version>
+    <version>0.4.23-unstable.20260914175550</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -534,6 +534,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  types as the roles a person can hold. Every upgrade, not once:
                  role types are data an admin adds whenever the process needs one. -->
             <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
+            <!-- inbound-mail-filters: Nextcloud Mail holds the account now, so
+                 the mailbox password dossiq used to store is deleted rather than
+                 migrated. A credential nobody uses is still a credential in a
+                 database backup. -->
+            <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -681,6 +686,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
+            <!-- inbound-mail-filters: Nextcloud Mail holds the account now, so
+                 the mailbox password dossiq used to store is deleted rather than
+                 migrated. A credential nobody uses is still a credential in a
+                 database backup. -->
+            <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
         </install>
     </repair-steps>
 

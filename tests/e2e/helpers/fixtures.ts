@@ -170,6 +170,11 @@ export const FIXTURE_SCHEMAS = [
 	// it stops declaring. They are orphan rows under an orphan schema and
 	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
+	// One intake log entry names the case a message became, so it goes before
+	// `case` like every other child. An entry also holds the ORIGINAL of a
+	// message, which is why a run that leaves one behind is worse than an
+	// orphan row: it is somebody's mail sitting in a log a person can read.
+	'mailIntakeEntry',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
 	// its objects with it and the sweep then reports rows it cannot find.

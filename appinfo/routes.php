@@ -570,7 +570,18 @@ $extra = [
     ['name' => 'emailTemplate#prefillDraft',   'url' => '/api/cases/{caseId}/email-templates/{templateId}/draft',       'verb' => 'POST'],
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
-    ['name' => 'emailTemplate#testImap',       'url' => '/api/settings/email/test-imap',                                 'verb' => 'POST'],
+    ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
+
+    // Inbound-mail-filters: the intake log as a surface, and the two named acts
+    // a handler can perform on a message that should not have come to us. Every
+    // one of these is gated on the intake role in the controller body, because
+    // the log holds the original of every message the mailbox received.
+    ['name' => 'mailIntake#index',   'url' => '/api/mail-intake/log',                    'verb' => 'GET'],
+    ['name' => 'mailIntake#show',    'url' => '/api/mail-intake/log/{entryId}',          'verb' => 'GET'],
+    ['name' => 'mailIntake#release', 'url' => '/api/mail-intake/log/{entryId}/release',  'verb' => 'POST'],
+    ['name' => 'mailIntake#junk',    'url' => '/api/mail-intake/log/{entryId}/junk',     'verb' => 'POST'],
+    ['name' => 'mailIntake#bounce',  'url' => '/api/mail-intake/log/{entryId}/bounce',   'verb' => 'POST'],
+    ['name' => 'mailIntake#move',    'url' => '/api/mail-intake/log/{entryId}/move',     'verb' => 'POST'],
     // Email-to-case matching (email-case-matching): each user's own settings, and the instance's.
     ['name' => 'caseEmailMatch#getSettings',   'url' => '/api/settings/email-case-matching',                             'verb' => 'GET'],
     ['name' => 'caseEmailMatch#saveSettings',  'url' => '/api/settings/email-case-matching',                             'verb' => 'PUT'],
