@@ -76,6 +76,10 @@ import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
 import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
+// The Queue's and Cases' Claim row action, in its own module so a unit test
+// can reach it without importing every page this file mounts.
+// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+import { claimCase } from './utils/caseClaim.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with dossiq's offline schema mapping in src/main.js. The custom
@@ -231,6 +235,12 @@ function extendTermSelection({ selectedIds }) {
 }
 
 export default {
+	// The Queue's and Cases' `claim` row action (case-claim-action, row 2.4).
+	// A function handler for the reason the bulk actions below are ones, plus
+	// one of its own: the row dispatcher knows neither `api-call` nor a
+	// token-resolving write, so a declarative claim would either do nothing or
+	// store the literal string `@me`.
+	claimCase,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an

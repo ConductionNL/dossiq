@@ -44,6 +44,46 @@
 				</NcButton>
 			</div>
 		</template>
+		<!-- Work routed here by an active substitution, above the reader's own
+		     list and marked with whose it is. It is a group of its own because
+		     the list below is self-fetched by CnIndexPage from OpenRegister:
+		     handing it rows through `:objects` would take the facet sidebar and
+		     the server-side search with it. -->
+		<template #before-collection>
+			<section
+				v-if="substitutedCases.length"
+				class="mywork-substituted"
+				data-testid="substituted-work">
+				<div class="mywork-substituted__head">
+					<h3 class="mywork-substituted__title">
+						{{ t('dossiq', 'Work you are standing in for') }}
+					</h3>
+					<NcButton
+						variant="tertiary"
+						data-testid="substituted-toggle"
+						:aria-pressed="String(showSubstituted)"
+						@click="toggleSubstituted">
+						{{
+							showSubstituted
+								? t('dossiq', 'Hide substituted work')
+								: t('dossiq', 'Show substituted work')
+						}}
+					</NcButton>
+				</div>
+				<div v-if="visibleSubstitutedCases.length" class="mywork-substituted__grid">
+					<MyWorkCaseCard
+						v-for="row in visibleSubstitutedCases"
+						:key="row.id"
+						:object="row"
+						:caseTypeMap="caseTypeMap"
+						:statusMap="statusMap"
+						:urgencyMap="urgencyMap"
+						:substitutedFor="absenteeOf(row)"
+						:substitutedUntil="untilOf(row)"
+						@open="openCase" />
+				</div>
+			</section>
+		</template>
 		<!-- Custom card so case-type + status render as names, not raw UUIDs
 		     (card view does not apply column formatters). -->
 		<template #card="{ object, selected }">
@@ -66,8 +106,18 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton } from '@nextcloud/vue'
 import MyWorkCaseCard from './MyWorkCaseCard.vue'
 import WorkloadSummaryBar from './WorkloadSummaryBar.vue'
+import { fetchSubstitutedWork } from '../services/substitutionApi.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { initializeStores } from '../store/store.js'
+import {
+	applySubstitutedFilter,
+	asSubstitutedItems,
+	buildSubstitutedMap,
+	readShowSubstituted,
+	substitutedFor,
+	substitutedUntil,
+	writeShowSubstituted,
+} from '../utils/substitutionHelpers.js'
 import { buildUrgencyMap, resolveSortConfig } from '../utils/workQueueHelpers.js'
 
 /**
@@ -98,6 +148,12 @@ export default {
 			 * Stays empty (no error UI) for non-coordinators, who get a 403.
 			 */
 			workloadHandlers: [],
+			/** Open cases routed here by an active substitution. */
+			substitutedCases: [],
+			/** `case:<id>` -> the routing context, for the marker and the filter. */
+			substitutedMap: {},
+			/** Whether the substituted group is shown; remembered per browser. */
+			showSubstituted: readShowSubstituted(),
 		}
 	},
 
@@ -153,6 +209,25 @@ export default {
 		sidebar() {
 			return { enabled: true, showMetadata: false }
 		},
+
+		/**
+		 * The substituted cases the reader currently sees.
+		 *
+		 * Empty while the toggle is off, which is what "hideable" means here:
+		 * the rows are still fetched and still counted in the group's own
+		 * heading, they are simply not listed.
+		 *
+		 * @return {Array<object>} The cards to render.
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		visibleSubstitutedCases() {
+			return applySubstitutedFilter(
+				this.substitutedCases,
+				this.substitutedMap,
+				this.showSubstituted,
+			)
+		},
 	},
 
 	/**
@@ -160,6 +235,11 @@ export default {
 	 * maps so the cards show human names (card view does not apply the column
 	 * formatters, and the lazy formatter self-load is unreliable through a
 	 * scoped-slot child's computed).
+	 *
+	 * @return {Promise<void>} Resolves once the name maps are built; the three
+	 *   loads after them are deliberately not awaited.
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
 	 */
 	async mounted() {
 		await initializeStores()
@@ -175,9 +255,11 @@ export default {
 			// Names simply fall back to hidden chips; never block the list.
 		}
 
-		// Urgency chips + coordinator workload never block the list rendering.
+		// Urgency chips, coordinator workload and substituted work never block
+		// the list rendering.
 		this.fetchWorkQueue()
 		this.fetchWorkload()
+		this.loadSubstitutedWork()
 	},
 
 	methods: {
@@ -237,6 +319,65 @@ export default {
 		},
 
 		/**
+		 * Fetch the work an active substitution routes to the signed-in user.
+		 *
+		 * The resolver already applied the substitution scope and the reader's
+		 * own OpenRegister permissions, so what comes back is exactly what may
+		 * be shown. A failure leaves the group absent rather than emptying the
+		 * page: this is work added to the list, never work the list depends on.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		async loadSubstitutedWork() {
+			try {
+				const work = await fetchSubstitutedWork()
+				this.substitutedMap = buildSubstitutedMap(work.cases, work.tasks)
+				this.substitutedCases = asSubstitutedItems(work.cases, 'case')
+			} catch {
+				this.substitutedCases = []
+				this.substitutedMap = {}
+			}
+		},
+
+		/**
+		 * The absentee one substituted card stands in for.
+		 *
+		 * @param {object} row A substituted case row.
+		 * @return {string} The absentee's user id, or ''.
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		absenteeOf(row) {
+			return substitutedFor(this.substitutedMap, row)
+		},
+
+		/**
+		 * The day one substituted card stops being routed here.
+		 *
+		 * @param {object} row A substituted case row.
+		 * @return {string} The end date, or ''.
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		untilOf(row) {
+			return substitutedUntil(this.substitutedMap, row)
+		},
+
+		/**
+		 * Show or hide the substituted group, and remember which.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		toggleSubstituted() {
+			this.showSubstituted = !this.showSubstituted
+			writeShowSubstituted(this.showSubstituted)
+		},
+
+		/**
 		 * Switch the active sort mode.
 		 *
 		 * @param {string} mode 'urgency' or 'newest'.
@@ -271,5 +412,33 @@ export default {
 	display: flex;
 	gap: 8px;
 	margin-bottom: 8px;
+}
+
+.mywork-substituted {
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.mywork-substituted__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.mywork-substituted__title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--color-main-text);
+}
+
+.mywork-substituted__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+	margin-top: 12px;
 }
 </style>

@@ -35,3 +35,6 @@ named change is archived.
   `cases-views-are-places` waits on nextcloud-vue
 - [ ] 16 `one-date-write-path` (batch 11 row 8.22): no dependency, the
   structural test first
+- [ ] 17 `every-term-on-the-engine-calendar` (batch 12 row 8.23): the
+  audit first, which depends on nothing; the three fixes wait on
+  `terms-on-the-engine-calendar` for the roll rule
