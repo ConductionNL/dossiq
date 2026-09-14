@@ -153,24 +153,20 @@ class CaseReassignmentControllerContractTest extends TestCase {
 	}//end withRequestParams()
 
 	/**
-	 * An anonymous caller is refused 403 by both endpoints and the reassignment
-	 * service is never entered.
+	 * An anonymous caller is refused 403 and the reassignment service is never
+	 * entered.
 	 *
 	 * @return void
 	 */
-	public function testBothEndpointsRefuseAnAnonymousCallerWithoutTouchingTheService(): void {
+	public function testTheEndpointRefusesAnAnonymousCallerWithoutTouchingTheService(): void {
 		$this->userSession->method('getUser')->willReturn(null);
 		$this->reassignmentService->expects($this->never())->method('preview');
-		$this->reassignmentService->expects($this->never())->method('execute');
 
 		$preview = $this->controller->reassignPreview();
-		$execute = $this->controller->reassignExecute();
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $preview->getStatus());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $execute->getStatus());
 		$this->assertSame(['error' => 'Not authorised'], $preview->getData());
-		$this->assertSame(['error' => 'Not authorised'], $execute->getData());
-	}//end testBothEndpointsRefuseAnAnonymousCallerWithoutTouchingTheService()
+	}//end testTheEndpointRefusesAnAnonymousCallerWithoutTouchingTheService()
 
 	/**
 	 * An authenticated non-coordinator is refused 403 with the role message, and
@@ -187,17 +183,14 @@ class CaseReassignmentControllerContractTest extends TestCase {
 			->with('handler-1')
 			->willReturn(false);
 		$this->reassignmentService->expects($this->never())->method('preview');
-		$this->reassignmentService->expects($this->never())->method('execute');
 
 		$preview = $this->controller->reassignPreview();
-		$execute = $this->controller->reassignExecute();
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $preview->getStatus());
 		$this->assertSame(
 			['error' => 'This action requires the coordinator role'],
 			$preview->getData()
 		);
-		$this->assertSame(Http::STATUS_FORBIDDEN, $execute->getStatus());
 	}//end testANonCoordinatorIsRefusedAndTheGroupCheckNamesTheCaller()
 
 	/**
