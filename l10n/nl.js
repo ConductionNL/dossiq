@@ -3983,7 +3983,18 @@ OC.L10N.register(
         "This case still has sub-cases.": "Deze zaak heeft nog deelzaken.",
         "A legal hold is on this case.": "Op deze zaak staat een juridische blokkade.",
         "The retention period of this case has not ended.": "De bewaartermijn van deze zaak is nog niet verstreken.",
-        "Resolve this first, then delete the case.": "Los dat eerst op en verwijder de zaak daarna."
+        "Resolve this first, then delete the case.": "Los dat eerst op en verwijder de zaak daarna.",
+        "Claim": "Oppakken",
+        "Release": "Teruggeven",
+        "You are now handling this case.": "Je behandelt deze zaak nu.",
+        "The case is back in the queue.": "De zaak staat weer in de wachtrij.",
+        "You are not signed in.": "Je bent niet ingelogd.",
+        "Someone else is already handling this case.": "Iemand anders behandelt deze zaak al.",
+        "You are already handling this case.": "Je behandelt deze zaak al.",
+        "Nobody is handling this case.": "Niemand behandelt deze zaak.",
+        "You can only release a case you handle yourself.": "Je kunt alleen een zaak teruggeven die je zelf behandelt.",
+        "The case could not be read.": "De zaak kon niet gelezen worden.",
+        "The assignment could not be changed.": "De toewijzing kon niet gewijzigd worden."
     },
     "nplurals=2; plural=(n != 1);"
 )

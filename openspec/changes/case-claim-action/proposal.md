@@ -1,5 +1,5 @@
 ---
-kind: config
+kind: code
 depends_on: []
 ---
 
@@ -24,20 +24,23 @@ The best competitor in the register: xxllnc Zaken,
 
 ## What changes
 
-- Header action Claim on `#CaseDetail`, visible when `assignee` is empty:
-  writes `assignee` = the signed-in user.
-- Header action Release on `#CaseDetail`, visible when you are the assignee:
-  clears `assignee`.
-- Row action Claim on `#Queue` and on the Unclaimed lens of `#Cases`.
-- Both write through the object store and record nothing of their own: the
-  audit trail already carries the field change.
+- Header action Claim on `#CaseDetail`, offered on an open case: writes
+  `assignee` = the signed-in user.
+- Header action Release on `#CaseDetail`, offered on an open case: clears
+  `assignee`.
+- Row action Claim on `#Queue` and on `#Cases`.
+- One endpoint behind all three, because only the server can refuse a claim on
+  a case somebody else took a second earlier (design D-1). It records nothing
+  of its own: the audit trail already carries the field change.
 
 ## Ownership
 
-dossiq builds the two handlers and the three placements. It consumes
-OpenRegister's object write and audit trail, and nextcloud-vue's `handler`
-action type, all shipped. A declared `patch-object` action type would make
-the handler unnecessary; that is a nextcloud-vue nicety, not a blocker.
+dossiq builds the rule, one endpoint and the three placements. It consumes
+OpenRegister's object write and audit trail, and nextcloud-vue's `api-call`
+action type, all shipped. The `handler` header action the design named does
+not exist as a function seam on this surface (design D-4), and a declared
+`patch-object` type would not help either: the rule this change is about is a
+refusal, not a write.
 
 ## ADRs
 
@@ -53,6 +56,9 @@ the handler unnecessary; that is a nextcloud-vue nicety, not a blocker.
 
 ## Impact
 
-`src/manifest.json` pages `CaseDetail`, `Queue`, `Cases`; two handlers in
-`src/customComponents.js`; `tests/vitest/caseActionsMenu.spec.js`; one e2e
-spec. No PHP.
+`src/manifest.json` pages `CaseDetail`, `Queue`, `Cases`; one row handler in
+`src/utils/caseClaim.js`, registered in `src/customComponents.js`; two new
+icons in `src/icons.js`; Dutch in `l10n/nl.{json,js}`. In PHP:
+`CaseAssignmentService`, `CaseAssignmentController` and three routes. Tests:
+`tests/Unit/Controller/CaseAssignmentControllerTest.php`,
+`tests/vitest/caseClaimAction.spec.js`, `tests/e2e/case-claim.spec.ts`.

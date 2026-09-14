@@ -330,24 +330,31 @@ class AdapterHonestyTest extends TestCase {
 	}//end testBothSeamsAdvertiseTheConfigKeyTheyRead()
 
 	/**
-	 * An unconfigured adapter seam reads as Simulated, never as Not configured.
+	 * An unconfigured adapter seam is declared so it reads as Simulated.
 	 *
 	 * "Not configured" is what every other row says when it knows nothing about
-	 * itself. These two rows know something: a mock is running. Understating
-	 * that is the same lie the page was built to remove.
+	 * itself. These two rows know something: a mock is running. Integriq shows
+	 * Simulated when `adapter.configKey` is empty (connection-registry D4 rule
+	 * 3), so the declaration has to name the key this registrar really reads
+	 * and carry a message that says the word mock.
 	 *
 	 * @return void
 	 */
 	public function testAnUnconfiguredAdapterSeamReadsAsSimulated(): void {
-		foreach (['berichtenbox', 'templates'] as $key) {
-			$state = IntegrationStatusService::SAVE_UNFILLED_STATE[$key];
+		$expected = [
+			'berichtenbox' => SubstitutableAdapterRegistrar::BERICHTENBOX_CONFIG_KEY,
+			'templates' => SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY,
+		];
 
-			$this->assertSame('simulated', $state[0], $key . ' must not read as Not configured');
-			$this->assertStringContainsStringIgnoringCase('mock', $state[1]);
-			$this->assertContains($key, IntegrationStatusService::KEYS);
+		foreach ($expected as $key => $configKey) {
+			$adapter = ($this->declaredConnection(key: $key)['adapter'] ?? []);
+
+			$this->assertSame(expected: $configKey, actual: ($adapter['configKey'] ?? null), message: $key . ' must name the key the registrar reads');
+			$this->assertStringContainsStringIgnoringCase(needle: 'mock', haystack: (string)($adapter['simulatedMessage'] ?? ''));
+			$this->assertContains(needle: $key, haystack: IntegrationStatusService::KEYS);
 		}
 
-		$this->assertContains('simulated', IntegrationStatusService::STATUSES);
+		$this->assertContains(needle: 'simulated', haystack: IntegrationStatusService::STATUSES);
 	}//end testAnUnconfiguredAdapterSeamReadsAsSimulated()
 
 	/**
@@ -365,16 +372,37 @@ class AdapterHonestyTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam(): void {
-		$message = IntegrationStatusService::SAVE_UNFILLED_STATE['templates'][1];
+		$message = (string)($this->declaredConnection(key: 'templates')['adapter']['simulatedMessage'] ?? '');
 
 		$this->assertStringContainsString(
-			FilinqTemplateEngineAdapter::class,
-			$message,
-			'the row must name the adapter an admin is supposed to paste'
+			needle: FilinqTemplateEngineAdapter::class,
+			haystack: $message,
+			message: 'the row must name the adapter an admin is supposed to paste'
 		);
 		$this->assertTrue(
-			is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
-			'the named class must implement the seam, or ConfiguredAdapter will refuse it'
+			condition: is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
+			message: 'the named class must implement the seam, or ConfiguredAdapter will refuse it'
 		);
 	}//end testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam()
+
+	/**
+	 * One entry of lib/Settings/connections.json, by key.
+	 *
+	 * @param string $key The connection key.
+	 *
+	 * @return array<string, mixed> The entry, or an empty array when absent.
+	 */
+	private function declaredConnection(string $key): array {
+		$raw = file_get_contents(__DIR__ . '/../../../lib/Settings/connections.json');
+		$this->assertIsString(actual: $raw);
+		$declaration = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+
+		foreach ($declaration['connections'] as $connection) {
+			if ($connection['key'] === $key) {
+				return $connection;
+			}
+		}
+
+		$this->fail(message: 'connections.json declares no ' . $key);
+	}//end declaredConnection()
 }//end class
