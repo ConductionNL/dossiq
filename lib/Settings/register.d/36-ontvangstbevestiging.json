@@ -25,15 +25,32 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["manual", "balie", "phone", "email", "post", "website", "other", "zgw-api"]
+                  "enum": [
+                    "manual",
+                    "balie",
+                    "phone",
+                    "email",
+                    "post",
+                    "website",
+                    "other",
+                    "zgw-api"
+                  ]
                 },
-                "default": ["email", "website", "zgw-api"],
+                "default": [
+                  "email",
+                  "website",
+                  "zgw-api"
+                ],
                 "title": "Intake channels that owe one",
                 "description": "The values of case.intakeChannel that owe an acknowledgement. The default is every electronic channel: mail, the portal and the API."
               },
               "defaultChannel": {
                 "type": "string",
-                "enum": ["email", "portal", "post"],
+                "enum": [
+                  "email",
+                  "portal",
+                  "post"
+                ],
                 "default": "email",
                 "title": "Default channel",
                 "description": "The channel used when the citizen recorded no choice of their own."
@@ -61,8 +78,14 @@
               "properties": {
                 "moment": {
                   "type": "string",
-                  "enum": ["case-received", "case-incomplete", "status-changed", "case-decided"],
-                  "title": "Moment"
+                  "enum": [
+                    "case-received",
+                    "case-incomplete",
+                    "status-changed",
+                    "case-decided"
+                  ],
+                  "title": "Moment",
+                  "description": "Which moment this entry describes. case-received is the Awb 4:3a acknowledgement of receipt."
                 },
                 "template": {
                   "type": "string",
@@ -72,12 +95,14 @@
                 "statutory": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Statutory"
+                  "title": "Statutory",
+                  "description": "Marks the entry as a legal duty rather than a courtesy, so removing it warns on publication."
                 },
                 "enabled": {
                   "type": "boolean",
                   "default": true,
-                  "title": "Enabled"
+                  "title": "Enabled",
+                  "description": "Off stops this moment sending, without removing what it was for."
                 }
               }
             }
@@ -93,47 +118,62 @@
             "properties": {
               "required": {
                 "type": "boolean",
-                "title": "Owed"
+                "title": "Owed",
+                "description": "Whether this case owes an acknowledgement of receipt at all."
               },
               "status": {
                 "type": "string",
-                "enum": ["not-required", "pending", "met", "unmet"],
+                "enum": [
+                  "not-required",
+                  "pending",
+                  "met",
+                  "unmet"
+                ],
                 "title": "Status",
-                "facetable": true
+                "facetable": true,
+                "description": "Where the duty stands: not owed, still being sent, met, or spent every retry without going out."
               },
               "channel": {
                 "type": "string",
-                "title": "Channel"
+                "title": "Channel",
+                "description": "The channel the acknowledgement went out through."
               },
               "recipient": {
                 "type": "string",
-                "title": "Recipient"
+                "title": "Recipient",
+                "description": "The address it went to."
               },
               "sentAt": {
                 "type": "string",
                 "format": "date-time",
-                "title": "Sent at"
+                "title": "Sent at",
+                "description": "When it went out."
               },
               "attempts": {
                 "type": "integer",
-                "title": "Attempts"
+                "title": "Attempts",
+                "description": "How many attempts have been made, so a handler can tell a first failure from a spent budget."
               },
               "lastError": {
                 "type": "string",
-                "title": "Last failure"
+                "title": "Last failure",
+                "description": "What went wrong on the last attempt, in one sentence a handler can act on."
               },
               "metBy": {
                 "type": "string",
-                "title": "Recorded by"
+                "title": "Recorded by",
+                "description": "Who recorded that receipt was confirmed another way."
               },
               "metAt": {
                 "type": "string",
                 "format": "date-time",
-                "title": "Recorded at"
+                "title": "Recorded at",
+                "description": "When they recorded it."
               },
               "metHow": {
                 "type": "string",
-                "title": "Met another way"
+                "title": "Met another way",
+                "description": "How receipt was confirmed, in the recorder's own words."
               }
             }
           },
@@ -146,32 +186,39 @@
               "properties": {
                 "moment": {
                   "type": "string",
-                  "title": "Moment"
+                  "title": "Moment",
+                  "description": "Which declared moment this message was sent at."
                 },
                 "channel": {
                   "type": "string",
-                  "title": "Channel"
+                  "title": "Channel",
+                  "description": "The channel it went out through."
                 },
                 "recipient": {
                   "type": "string",
-                  "title": "Recipient"
+                  "title": "Recipient",
+                  "description": "The address it went to."
                 },
                 "template": {
                   "type": "string",
-                  "title": "Template"
+                  "title": "Template",
+                  "description": "The template it was rendered from."
                 },
                 "templateVersion": {
                   "type": "string",
-                  "title": "Template version"
+                  "title": "Template version",
+                  "description": "The version of that template, so a message queried a year later reads back against the wording that was sent."
                 },
                 "sentAt": {
                   "type": "string",
                   "format": "date-time",
-                  "title": "Sent at"
+                  "title": "Sent at",
+                  "description": "When it went out."
                 },
                 "contentWithheld": {
                   "type": "boolean",
-                  "title": "Content withheld"
+                  "title": "Content withheld",
+                  "description": "Whether the case content stayed on the platform and the message only said one was waiting."
                 }
               }
             }

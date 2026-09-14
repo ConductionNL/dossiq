@@ -248,12 +248,19 @@ class AcknowledgementService {
 	public function recordFailedAttempt(string $caseId, string $sentence, int $attempt): bool {
 		$more = ($attempt < self::MAX_ATTEMPTS);
 
+		$status = self::STATUS_UNMET;
+		$outcome = 'the duty now reads unmet';
+		if ($more === true) {
+			$status = self::STATUS_PENDING;
+			$outcome = 'another is due';
+		}
+
 		$this->write(
 			caseId: $caseId,
 			changes: [
 				'acknowledgementDuty' => [
 					'required' => true,
-					'status' => ($more === true) ? self::STATUS_PENDING : self::STATUS_UNMET,
+					'status' => $status,
 					'attempts' => $attempt,
 					'lastError' => $sentence,
 				],
@@ -265,7 +272,7 @@ class AcknowledgementService {
 			[
 				'case' => $caseId,
 				'attempt' => $attempt,
-				'outcome' => ($more === true) ? 'another is due' : 'the duty now reads unmet',
+				'outcome' => $outcome,
 				'reason' => $sentence,
 			],
 		);
@@ -502,8 +509,11 @@ class AcknowledgementService {
 	 */
 	private function dutyOn(array $case): array {
 		$duty = ($case['acknowledgementDuty'] ?? null);
+		if (is_array($duty) === false) {
+			return [];
+		}
 
-		return (is_array($duty) === true) ? $duty : [];
+		return $duty;
 	}//end dutyOn()
 
 	/**

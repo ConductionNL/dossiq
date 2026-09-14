@@ -2185,8 +2185,7 @@
 							"how": "Confirmed outside the app, recorded by the handler"
 						},
 						"successMessage": "Receipt confirmation recorded on this case.",
-						"errorMessage": "The confirmation could not be recorded.",
-						"_note": "ontvangstbevestiging REQ-TERM-024: an acknowledgement that failed every retry is a statutory duty somebody must now perform by hand, and once they have, the case has to say so. The endpoint stamps WHO and WHEN from the session, which is the half the scenario asks for; `how` is a fixed sentence because an api-call action carries a static payload and the library has no free-text prompt for one. An API caller passes its own. Confirm-gated: clearing a statutory duty is not a click to make by accident."
+						"errorMessage": "The confirmation could not be recorded."
 					},
 					{
 						"id": "copy-case",

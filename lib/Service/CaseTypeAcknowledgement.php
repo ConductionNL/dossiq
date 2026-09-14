@@ -125,10 +125,14 @@ class CaseTypeAcknowledgement {
 		$declaration['contentOnPlatform'] = ($declaration['contentOnPlatform'] === true);
 		$declaration['intakeChannels'] = $this->channelList(value: $declaration['intakeChannels']);
 		$declaration['defaultChannel'] = trim((string)$declaration['defaultChannel']);
-		$declaration['language'] = (trim((string)$declaration['language']) ?: 'nl');
+		$declaration['language'] = trim((string)$declaration['language']);
 
 		if ($declaration['defaultChannel'] === '') {
 			$declaration['defaultChannel'] = (string)self::DEFAULTS['defaultChannel'];
+		}
+
+		if ($declaration['language'] === '') {
+			$declaration['language'] = (string)self::DEFAULTS['language'];
 		}
 
 		return $declaration;

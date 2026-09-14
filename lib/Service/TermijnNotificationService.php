@@ -276,36 +276,58 @@ class TermijnNotificationService {
 		}//end if
 
 		if ($english === true) {
-			$term = ($hasTerm === true)
-				? ('We decide on your application by ' . $end . ' at the latest. '
-					. "If we need more time, we tell you before that date.\n")
-				: "No statutory decision period applies to this application.\n";
+			$term = "No statutory decision period applies to this application.\n";
+			if ($hasTerm === true) {
+				$term = 'We decide on your application by ' . $end . ' at the latest. '
+					. "If we need more time, we tell you before that date.\n";
+			}
+
+			$about = '';
+			if ($subjectOf !== '') {
+				$about = ' about ' . $subjectOf;
+			}
+
+			$where = '';
+			if ($contact !== '') {
+				$where = 'Questions go to ' . $contact . ".\n";
+			}
 
 			return [
 				'subject' => 'Acknowledgement of receipt for case ' . $case,
 				'body' => "Dear applicant,\n\n"
-					. 'We have received your application' . ($subjectOf !== '' ? ' about ' . $subjectOf : '')
+					. 'We have received your application' . $about
 					. ' and registered it under reference ' . $case . ".\n"
 					. $term
 					. "You can follow this case in the citizen portal.\n"
-					. ($contact !== '' ? 'Questions go to ' . $contact . ".\n" : '')
+					. $where
 					. "\nKind regards",
 			];
 		}//end if
 
-		$termijn = ($hasTerm === true)
-			? ('Wij nemen uiterlijk op ' . $end . ' een besluit op uw aanvraag. '
-				. "Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\n")
-			: "Op deze aanvraag geldt geen wettelijke beslistermijn.\n";
+		$termijn = "Op deze aanvraag geldt geen wettelijke beslistermijn.\n";
+		if ($hasTerm === true) {
+			$termijn = 'Wij nemen uiterlijk op ' . $end . ' een besluit op uw aanvraag. '
+				. "Hebben wij meer tijd nodig, dan laten wij u dat voor die datum weten.\n";
+		}
+
+		$waarover = '';
+		if ($subjectOf !== '') {
+			$waarover = ' over ' . $subjectOf;
+		}
+
+		$waar = '';
+		if ($contact !== '') {
+			$waar = 'Met vragen kunt u terecht bij ' . $contact . ".\n";
+		}
 
 		return [
 			'subject' => 'Ontvangstbevestiging zaak ' . $case,
 			'body' => "Beste aanvrager,\n\n"
-				. 'Wij hebben uw aanvraag' . ($subjectOf !== '' ? ' over ' . $subjectOf : '')
+				. 'Wij hebben uw aanvraag' . $waarover
 				. ' ontvangen en geregistreerd onder kenmerk ' . $case . ".\n"
 				. $termijn
 				. "U volgt deze zaak via het burgerportaal.\n"
-				. ($contact !== '' ? 'Met vragen kunt u terecht bij ' . $contact . ".\n" : '')
+				. $waar
 				. "\nMet vriendelijke groet",
 		];
 	}//end acknowledgement()
