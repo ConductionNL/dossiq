@@ -151,7 +151,7 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->duty(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testDutyRefusesAnAnonymousReader()
 
 	/**
@@ -167,7 +167,7 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->duty(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testDutyRefusesAUserWithoutReadAccess()
 
 	/**
@@ -187,8 +187,8 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->duty(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['duty' => $this->dutyState()], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['duty' => $this->dutyState()], actual: $response->getData());
 	}//end testDutyAnswersTheRecordedAcknowledgement()
 
 	/**
@@ -204,7 +204,7 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->recordMet(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testRecordMetRefusesAUserWithoutMutationAccess()
 
 	/**
@@ -225,8 +225,8 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->recordMet(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['duty' => $this->dutyState()], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['duty' => $this->dutyState()], actual: $response->getData());
 	}//end testRecordMetNamesWhoSaidSo()
 
 	/**
@@ -251,13 +251,13 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->recordMet(caseId: 'case-1');
 
-		$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $response->getStatus());
+		$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $response->getStatus());
 		$this->assertSame(
-			[
+			expected: [
 				'error' => 'acknowledgement-needs-a-reason',
 				'message' => 'Say how receipt was confirmed.',
 			],
-			$response->getData()
+			actual: $response->getData()
 		);
 	}//end testRecordMetAnswersARefusalWithItsRuleAndSentence()
 
@@ -277,9 +277,9 @@ class AcknowledgementControllerContractTest extends TestCase {
 
 		$response = $this->controller()->recordMet(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
 		$data = $response->getData();
-		$this->assertIsArray($data);
-		$this->assertStringNotContainsStringIgnoringCase('SQLSTATE', (string)($data['error'] ?? ''));
+		$this->assertIsArray(actual: $data);
+		$this->assertStringNotContainsStringIgnoringCase(needle: 'SQLSTATE', haystack: (string)($data['error'] ?? ''));
 	}//end testRecordMetHidesAnUnexpectedFailure()
 }//end class

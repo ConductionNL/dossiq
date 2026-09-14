@@ -65,12 +65,12 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	public function testACaseTypeThatDeclaresNothingStillOwesTheDuty(): void {
 		$declaration = $this->declaration->declarationFor(caseType: []);
 
-		self::assertTrue($declaration['enabled']);
-		self::assertTrue($declaration['statutory']);
-		self::assertSame(['email', 'website', 'zgw-api'], $declaration['intakeChannels']);
-		self::assertSame('email', $declaration['defaultChannel']);
-		self::assertFalse($declaration['contentOnPlatform']);
-		self::assertSame('nl', $declaration['language']);
+		self::assertTrue(condition: $declaration['enabled']);
+		self::assertTrue(condition: $declaration['statutory']);
+		self::assertSame(expected: ['email', 'website', 'zgw-api'], actual: $declaration['intakeChannels']);
+		self::assertSame(expected: 'email', actual: $declaration['defaultChannel']);
+		self::assertFalse(condition: $declaration['contentOnPlatform']);
+		self::assertSame(expected: 'nl', actual: $declaration['language']);
 	}//end testACaseTypeThatDeclaresNothingStillOwesTheDuty()
 
 	/**
@@ -88,11 +88,11 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 */
 	public function testEveryElectronicIntakePathOwesOne(string $channel): void {
 		self::assertTrue(
-			$this->declaration->owesAcknowledgement(
+			condition: $this->declaration->owesAcknowledgement(
 				case: ['intakeChannel' => $channel],
 				caseType: [],
 			),
-			$channel . ' is an electronic submission and owes a confirmation of receipt'
+			message: $channel . ' is an electronic submission and owes a confirmation of receipt'
 		);
 	}//end testEveryElectronicIntakePathOwesOne()
 
@@ -120,7 +120,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 */
 	public function testANonElectronicIntakeOwesNothing(string $channel): void {
 		self::assertFalse(
-			$this->declaration->owesAcknowledgement(
+			condition: $this->declaration->owesAcknowledgement(
 				case: ['intakeChannel' => $channel],
 				caseType: [],
 			)
@@ -151,10 +151,10 @@ class CaseTypeAcknowledgementTest extends TestCase {
 		$caseType = ['acknowledgement' => ['intakeChannels' => ['balie']]];
 
 		self::assertTrue(
-			$this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'balie'], caseType: $caseType)
+			condition: $this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'balie'], caseType: $caseType)
 		);
 		self::assertFalse(
-			$this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'email'], caseType: $caseType)
+			condition: $this->declaration->owesAcknowledgement(case: ['intakeChannel' => 'email'], caseType: $caseType)
 		);
 	}//end testACaseTypeMayNameAChannelOfItsOwn()
 
@@ -167,7 +167,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAbsentIntakeChannelOwesNothing(): void {
-		self::assertFalse($this->declaration->owesAcknowledgement(case: [], caseType: []));
+		self::assertFalse(condition: $this->declaration->owesAcknowledgement(case: [], caseType: []));
 	}//end testAnAbsentIntakeChannelOwesNothing()
 
 	/**
@@ -177,7 +177,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 */
 	public function testADeclarationSwitchedOffIsHonoured(): void {
 		self::assertFalse(
-			$this->declaration->owesAcknowledgement(
+			condition: $this->declaration->owesAcknowledgement(
 				case: ['intakeChannel' => 'website'],
 				caseType: ['acknowledgement' => ['enabled' => false]],
 			)
@@ -194,8 +194,8 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			caseType: ['acknowledgement' => ['enabled' => false]]
 		);
 
-		self::assertCount(1, $warnings);
-		self::assertStringContainsString('Awb 4:3a', $warnings[0]);
+		self::assertCount(expectedCount: 1, haystack: $warnings);
+		self::assertStringContainsString(needle: 'Awb 4:3a', haystack: $warnings[0]);
 	}//end testSwitchingTheDutyOffWarnsAndNamesTheArticle()
 
 	/**
@@ -210,8 +210,8 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			caseType: ['acknowledgement' => ['intakeChannels' => []]]
 		);
 
-		self::assertCount(1, $warnings);
-		self::assertStringContainsString('Awb 4:3a', $warnings[0]);
+		self::assertCount(expectedCount: 1, haystack: $warnings);
+		self::assertStringContainsString(needle: 'Awb 4:3a', haystack: $warnings[0]);
 	}//end testAnEmptyChannelListWarns()
 
 	/**
@@ -220,7 +220,7 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 * @return void
 	 */
 	public function testADefaultCaseTypeWarnsAboutNothing(): void {
-		self::assertSame([], $this->declaration->publicationWarnings(caseType: []));
+		self::assertSame(expected: [], actual: $this->declaration->publicationWarnings(caseType: []));
 	}//end testADefaultCaseTypeWarnsAboutNothing()
 
 	/**
@@ -238,8 +238,8 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			]
 		);
 
-		self::assertCount(1, $warnings);
-		self::assertStringContainsString('Awb 4:3a', $warnings[0]);
+		self::assertCount(expectedCount: 1, haystack: $warnings);
+		self::assertStringContainsString(needle: 'Awb 4:3a', haystack: $warnings[0]);
 	}//end testRemovingTheStatutoryMomentWarns()
 
 	/**
@@ -250,9 +250,9 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	public function testTheStatutoryMomentIsAlwaysInTheList(): void {
 		$moments = $this->declaration->momentsFor(caseType: []);
 
-		self::assertSame('case-received', $moments[0]['moment']);
-		self::assertTrue($moments[0]['statutory']);
-		self::assertSame('ontvangstbevestiging', $moments[0]['template']);
+		self::assertSame(expected: 'case-received', actual: $moments[0]['moment']);
+		self::assertTrue(condition: $moments[0]['statutory']);
+		self::assertSame(expected: 'ontvangstbevestiging', actual: $moments[0]['template']);
 	}//end testTheStatutoryMomentIsAlwaysInTheList()
 
 	/**
@@ -278,10 +278,10 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			$byMoment[$moment['moment']] = $moment['template'];
 		}
 
-		self::assertArrayHasKey('case-received', $byMoment);
-		self::assertSame('aanvulling', $byMoment['case-incomplete']);
-		self::assertSame('status', $byMoment['status-changed']);
-		self::assertNotSame($byMoment['case-incomplete'], $byMoment['status-changed']);
+		self::assertArrayHasKey(key: 'case-received', array: $byMoment);
+		self::assertSame(expected: 'aanvulling', actual: $byMoment['case-incomplete']);
+		self::assertSame(expected: 'status', actual: $byMoment['status-changed']);
+		self::assertNotSame(expected: $byMoment['case-incomplete'], actual: $byMoment['status-changed']);
 	}//end testAskingForSomethingIsNotTheStatusChangeMoment()
 
 	/**
@@ -293,12 +293,12 @@ class CaseTypeAcknowledgementTest extends TestCase {
 		$caseType = ['acknowledgement' => ['defaultChannel' => 'email']];
 
 		self::assertSame(
-			'portal',
-			$this->declaration->channelFor(case: ['communicationChannel' => 'portal'], caseType: $caseType)
+			expected: 'portal',
+			actual: $this->declaration->channelFor(case: ['communicationChannel' => 'portal'], caseType: $caseType)
 		);
 		self::assertSame(
-			'email',
-			$this->declaration->channelFor(case: [], caseType: $caseType)
+			expected: 'email',
+			actual: $this->declaration->channelFor(case: [], caseType: $caseType)
 		);
 	}//end testTheCitizensRecordedChannelWins()
 
@@ -309,11 +309,11 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 */
 	public function testContentOnThePlatformIsACaseTypeDecision(): void {
 		self::assertTrue(
-			$this->declaration->contentStaysOnPlatform(
+			condition: $this->declaration->contentStaysOnPlatform(
 				caseType: ['acknowledgement' => ['contentOnPlatform' => true]]
 			)
 		);
-		self::assertFalse($this->declaration->contentStaysOnPlatform(caseType: []));
+		self::assertFalse(condition: $this->declaration->contentStaysOnPlatform(caseType: []));
 	}//end testContentOnThePlatformIsACaseTypeDecision()
 
 	/**
@@ -322,10 +322,10 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheLanguageIsDutchUnlessDeclared(): void {
-		self::assertSame('nl', $this->declaration->languageFor(caseType: []));
+		self::assertSame(expected: 'nl', actual: $this->declaration->languageFor(caseType: []));
 		self::assertSame(
-			'en',
-			$this->declaration->languageFor(caseType: ['acknowledgement' => ['language' => 'en']])
+			expected: 'en',
+			actual: $this->declaration->languageFor(caseType: ['acknowledgement' => ['language' => 'en']])
 		);
 	}//end testTheLanguageIsDutchUnlessDeclared()
 }//end class

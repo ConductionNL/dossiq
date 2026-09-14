@@ -52,13 +52,13 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 	 * @return AcknowledgementOnCreateListener The listener.
 	 */
 	private function listener(string $slug, IJobList $jobList): AcknowledgementOnCreateListener {
-		$resolver = $this->createMock(ObjectSchemaSlugResolver::class);
+		$resolver = $this->createMock(originalClassName: ObjectSchemaSlugResolver::class);
 		$resolver->method('resolveFromPayload')->willReturn($slug);
 
 		return new AcknowledgementOnCreateListener(
 			jobList: $jobList,
 			slugResolver: $resolver,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end listener()
 
@@ -87,7 +87,7 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testACreatedCaseQueuesItsAcknowledgement(): void {
-		$jobList = $this->createMock(IJobList::class);
+		$jobList = $this->createMock(originalClassName: IJobList::class);
 		$jobList->expects($this->once())
 			->method('add')
 			->with(
@@ -95,8 +95,8 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 				['caseId' => 'case-9', 'attempt' => 1]
 			);
 
-		$this->listener('case', $jobList)->handle(
-			$this->event(['id' => 'case-9', 'intakeChannel' => 'website'])
+		$this->listener(slug: 'case', jobList: $jobList)->handle(
+			$this->event(object: ['id' => 'case-9', 'intakeChannel' => 'website'])
 		);
 	}//end testACreatedCaseQueuesItsAcknowledgement()
 
@@ -106,10 +106,10 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnotherSchemaIsLeftAlone(): void {
-		$jobList = $this->createMock(IJobList::class);
+		$jobList = $this->createMock(originalClassName: IJobList::class);
 		$jobList->expects($this->never())->method('add');
 
-		$this->listener('caseTask', $jobList)->handle($this->event(['id' => 't1']));
+		$this->listener(slug: 'caseTask', jobList: $jobList)->handle($this->event(object: ['id' => 't1']));
 	}//end testAnotherSchemaIsLeftAlone()
 
 	/**
@@ -124,10 +124,10 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnresolvableSchemaQueuesNothing(): void {
-		$jobList = $this->createMock(IJobList::class);
+		$jobList = $this->createMock(originalClassName: IJobList::class);
 		$jobList->expects($this->never())->method('add');
 
-		$this->listener('', $jobList)->handle($this->event(['id' => 'x1']));
+		$this->listener(slug: '', jobList: $jobList)->handle($this->event(object: ['id' => 'x1']));
 	}//end testAnUnresolvableSchemaQueuesNothing()
 
 	/**
@@ -136,12 +136,12 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithoutAnIdQueuesNothing(): void {
-		$jobList = $this->createMock(IJobList::class);
+		$jobList = $this->createMock(originalClassName: IJobList::class);
 		$jobList->expects($this->never())->method('add');
 
 		$entity = new ObjectEntity();
 		$entity->setObject(['intakeChannel' => 'email']);
 
-		$this->listener('case', $jobList)->handle(new ObjectCreatedEvent($entity));
+		$this->listener(slug: 'case', jobList: $jobList)->handle(new ObjectCreatedEvent($entity));
 	}//end testACaseWithoutAnIdQueuesNothing()
 }//end class

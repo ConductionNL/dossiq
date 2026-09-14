@@ -145,9 +145,9 @@ class AcknowledgementDutyTest extends TestCase {
 	 * @return AcknowledgementService The service under test.
 	 */
 	private function service(): AcknowledgementService {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
@@ -159,15 +159,15 @@ class AcknowledgementDutyTest extends TestCase {
 			}
 		);
 
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturnCallback(fn (): array => $this->caseType);
 
-		$store = $this->createMock(CaseTypeStore::class);
+		$store = $this->createMock(originalClassName: CaseTypeStore::class);
 		$store->method('referenceId')->willReturnCallback(
 			static fn (mixed $value): string => (string)$value
 		);
 
-		$terms = $this->createMock(TermijnService::class);
+		$terms = $this->createMock(originalClassName: TermijnService::class);
 		$terms->method('getTermijnInstanceForZaak')->willReturnCallback(fn (): ?array => $this->term);
 
 		return new AcknowledgementService(
@@ -177,9 +177,9 @@ class AcknowledgementDutyTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				$this->createMock(TermijnService::class),
-				new BerichtenboxRoutingService($logger),
-				$logger
+				termService: $this->createMock(originalClassName: TermijnService::class),
+				router: new BerichtenboxRoutingService(logger: $logger),
+				logger: $logger
 			),
 			contacts: new CaseContactDirectory(),
 			portal: new PortalContributionProvider(),
@@ -223,30 +223,30 @@ class AcknowledgementDutyTest extends TestCase {
 	 * @dataProvider electronicIntakePaths
 	 */
 	public function testAnElectronicIntakeIsConfirmedOnceAndRecorded(string $channel): void {
-		$caseId = $this->seedCase(['intakeChannel' => $channel]);
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => $channel]);
 		$service = $this->service();
 
 		$first = $service->acknowledge(caseId: $caseId);
-		self::assertTrue($first['sent'], $channel . ' owes a confirmation of receipt');
-		self::assertSame(AcknowledgementService::STATUS_MET, $first['duty']['status']);
+		self::assertTrue(condition: $first['sent'], message: $channel . ' owes a confirmation of receipt');
+		self::assertSame(expected: AcknowledgementService::STATUS_MET, actual: $first['duty']['status']);
 
 		$stored = $this->store->cases[$caseId];
-		self::assertCount(1, $stored['outboundCommunications']);
+		self::assertCount(expectedCount: 1, haystack: $stored['outboundCommunications']);
 
 		$record = $stored['outboundCommunications'][0];
-		self::assertSame('case-received', $record['moment']);
-		self::assertSame('email', $record['channel']);
-		self::assertSame('aanvrager@example.nl', $record['recipient']);
-		self::assertSame('ontvangstbevestiging', $record['template']);
-		self::assertSame(AcknowledgementService::TEMPLATE_VERSION, $record['templateVersion']);
-		self::assertNotSame('', (string)$record['sentAt']);
+		self::assertSame(expected: 'case-received', actual: $record['moment']);
+		self::assertSame(expected: 'email', actual: $record['channel']);
+		self::assertSame(expected: 'aanvrager@example.nl', actual: $record['recipient']);
+		self::assertSame(expected: 'ontvangstbevestiging', actual: $record['template']);
+		self::assertSame(expected: AcknowledgementService::TEMPLATE_VERSION, actual: $record['templateVersion']);
+		self::assertNotSame(expected: '', actual: (string)$record['sentAt']);
 
 		// Sending twice is worse than sending late: the citizen reads the
 		// second one as a second case.
 		$second = $service->acknowledge(caseId: $caseId);
-		self::assertFalse($second['sent']);
-		self::assertSame('already-met', $second['reason']);
-		self::assertCount(1, $this->store->cases[$caseId]['outboundCommunications']);
+		self::assertFalse(condition: $second['sent']);
+		self::assertSame(expected: 'already-met', actual: $second['reason']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->cases[$caseId]['outboundCommunications']);
 	}//end testAnElectronicIntakeIsConfirmedOnceAndRecorded()
 
 	/**
@@ -268,17 +268,17 @@ class AcknowledgementDutyTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseTypedAtTheBalieIsNotMailed(): void {
-		$caseId = $this->seedCase(['intakeChannel' => 'balie']);
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => 'balie']);
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertFalse($result['sent']);
-		self::assertSame('not-required', $result['reason']);
+		self::assertFalse(condition: $result['sent']);
+		self::assertSame(expected: 'not-required', actual: $result['reason']);
 		self::assertSame(
-			AcknowledgementService::STATUS_NOT_REQUIRED,
-			$this->store->cases[$caseId]['acknowledgementDuty']['status']
+			expected: AcknowledgementService::STATUS_NOT_REQUIRED,
+			actual: $this->store->cases[$caseId]['acknowledgementDuty']['status']
 		);
-		self::assertArrayNotHasKey('outboundCommunications', $this->store->cases[$caseId]);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
 	}//end testACaseTypedAtTheBalieIsNotMailed()
 
 	/**
@@ -291,18 +291,18 @@ class AcknowledgementDutyTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithNoAddressRefusesWithAStatusAndASentence(): void {
-		$caseId = $this->seedCase(['email' => null]);
+		$caseId = $this->seedCase(overrides: ['email' => null]);
 
 		try {
 			$this->service()->acknowledge(caseId: $caseId);
-			self::fail('a case with no address must refuse rather than send nowhere');
+			self::fail(message: 'a case with no address must refuse rather than send nowhere');
 		} catch (RefusedException $e) {
-			self::assertSame('acknowledgement-no-address', $e->getRule());
-			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
-			self::assertStringContainsString('no address', $e->getSentence());
+			self::assertSame(expected: 'acknowledgement-no-address', actual: $e->getRule());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $e->getStatus());
+			self::assertStringContainsString(needle: 'no address', haystack: $e->getSentence());
 		}
 
-		self::assertArrayNotHasKey('outboundCommunications', $this->store->cases[$caseId]);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
 	}//end testACaseWithNoAddressRefusesWithAStatusAndASentence()
 
 	/**
@@ -312,13 +312,13 @@ class AcknowledgementDutyTest extends TestCase {
 	 */
 	public function testTheMailIntakeSenderIsAnAddress(): void {
 		$caseId = $this->seedCase(
-			['email' => null, 'intakeChannel' => 'email', 'initiatorSourceId' => 'Afzender@Example.NL']
+			overrides: ['email' => null, 'intakeChannel' => 'email', 'initiatorSourceId' => 'Afzender@Example.NL']
 		);
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertTrue($result['sent']);
-		self::assertSame('afzender@example.nl', $result['duty']['recipient']);
+		self::assertTrue(condition: $result['sent']);
+		self::assertSame(expected: 'afzender@example.nl', actual: $result['duty']['recipient']);
 	}//end testTheMailIntakeSenderIsAnAddress()
 
 	/**
@@ -330,14 +330,14 @@ class AcknowledgementDutyTest extends TestCase {
 		$caseId = $this->seedCase();
 		$service = $this->service();
 
-		self::assertTrue($service->recordFailedAttempt(caseId: $caseId, sentence: 'SMTP refused', attempt: 1));
+		self::assertTrue(condition: $service->recordFailedAttempt(caseId: $caseId, sentence: 'SMTP refused', attempt: 1));
 		self::assertSame(
-			AcknowledgementService::STATUS_PENDING,
-			$this->store->cases[$caseId]['acknowledgementDuty']['status']
+			expected: AcknowledgementService::STATUS_PENDING,
+			actual: $this->store->cases[$caseId]['acknowledgementDuty']['status']
 		);
 
 		self::assertFalse(
-			$service->recordFailedAttempt(
+			condition: $service->recordFailedAttempt(
 				caseId: $caseId,
 				sentence: 'SMTP refused',
 				attempt: AcknowledgementService::MAX_ATTEMPTS,
@@ -345,9 +345,9 @@ class AcknowledgementDutyTest extends TestCase {
 		);
 
 		$duty = $this->store->cases[$caseId]['acknowledgementDuty'];
-		self::assertSame(AcknowledgementService::STATUS_UNMET, $duty['status']);
-		self::assertSame('SMTP refused', $duty['lastError']);
-		self::assertSame(AcknowledgementService::MAX_ATTEMPTS, $duty['attempts']);
+		self::assertSame(expected: AcknowledgementService::STATUS_UNMET, actual: $duty['status']);
+		self::assertSame(expected: 'SMTP refused', actual: $duty['lastError']);
+		self::assertSame(expected: AcknowledgementService::MAX_ATTEMPTS, actual: $duty['attempts']);
 	}//end testAFailureIsPendingThenUnmetAndNeverOnlyALogLine()
 
 	/**
@@ -365,11 +365,11 @@ class AcknowledgementDutyTest extends TestCase {
 
 		$duty = $service->recordMetAnotherWay(caseId: $caseId, how: 'Confirmed by post', by: 'ruben');
 
-		self::assertSame(AcknowledgementService::STATUS_MET, $duty['status']);
-		self::assertSame('ruben', $duty['metBy']);
-		self::assertSame('Confirmed by post', $duty['metHow']);
-		self::assertNotSame('', (string)$duty['metAt']);
-		self::assertCount(1, $this->store->cases[$caseId]['outboundCommunications']);
+		self::assertSame(expected: AcknowledgementService::STATUS_MET, actual: $duty['status']);
+		self::assertSame(expected: 'ruben', actual: $duty['metBy']);
+		self::assertSame(expected: 'Confirmed by post', actual: $duty['metHow']);
+		self::assertNotSame(expected: '', actual: (string)$duty['metAt']);
+		self::assertCount(expectedCount: 1, haystack: $this->store->cases[$caseId]['outboundCommunications']);
 	}//end testAHandlerCanRecordThatItWasMetAnotherWay()
 
 	/**
@@ -380,7 +380,7 @@ class AcknowledgementDutyTest extends TestCase {
 	public function testClearingTheDutyWithoutSayingHowIsRefused(): void {
 		$caseId = $this->seedCase();
 
-		$this->expectException(RefusedException::class);
+		$this->expectException(exception: RefusedException::class);
 		$this->service()->recordMetAnotherWay(caseId: $caseId, how: '  ', by: 'ruben');
 	}//end testClearingTheDutyWithoutSayingHowIsRefused()
 
@@ -395,8 +395,8 @@ class AcknowledgementDutyTest extends TestCase {
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertTrue($result['sent']);
-		self::assertStringContainsString('geen wettelijke beslistermijn', $result['payload']['body']);
+		self::assertTrue(condition: $result['sent']);
+		self::assertStringContainsString(needle: 'geen wettelijke beslistermijn', haystack: $result['payload']['body']);
 	}//end testACaseWithNoTermStillConfirmsReceipt()
 
 	/**
@@ -418,13 +418,13 @@ class AcknowledgementDutyTest extends TestCase {
 			]
 		);
 
-		self::assertSame(['identifier', 'title'], array_keys($quotable));
-		self::assertArrayNotHasKey('initiatorSourceId', $quotable);
-		self::assertArrayNotHasKey('assignee', $quotable);
+		self::assertSame(expected: ['identifier', 'title'], actual: array_keys($quotable));
+		self::assertArrayNotHasKey(key: 'initiatorSourceId', array: $quotable);
+		self::assertArrayNotHasKey(key: 'assignee', array: $quotable);
 		self::assertSame(
-			PortalContributionProvider::CITIZEN_CASE_FIELDS,
-			(new PortalContributionProvider())->citizenCaseFields(),
-			'the acknowledgement reads the portal\'s own list, not a second copy'
+			expected: PortalContributionProvider::CITIZEN_CASE_FIELDS,
+			actual: (new PortalContributionProvider())->citizenCaseFields(),
+			message: 'the acknowledgement reads the portal\'s own list, not a second copy'
 		);
 	}//end testAFieldTheCitizenMayNotSeeIsNotQuotedBack()
 
@@ -439,11 +439,11 @@ class AcknowledgementDutyTest extends TestCase {
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertTrue($result['sent']);
-		self::assertTrue($result['record']['contentWithheld']);
-		self::assertStringNotContainsString('2026-0042', $result['payload']['body']);
-		self::assertStringNotContainsString('Dakkapel', $result['payload']['body']);
-		self::assertStringContainsString('bericht', $result['payload']['body']);
+		self::assertTrue(condition: $result['sent']);
+		self::assertTrue(condition: $result['record']['contentWithheld']);
+		self::assertStringNotContainsString(needle: '2026-0042', haystack: $result['payload']['body']);
+		self::assertStringNotContainsString(needle: 'Dakkapel', haystack: $result['payload']['body']);
+		self::assertStringContainsString(needle: 'bericht', haystack: $result['payload']['body']);
 	}//end testContentOnThePlatformCarriesNoCaseContent()
 
 	/**
@@ -452,12 +452,12 @@ class AcknowledgementDutyTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCitizensRecordedChannelIsTheOneRecorded(): void {
-		$caseId = $this->seedCase(['communicationChannel' => 'portal']);
+		$caseId = $this->seedCase(overrides: ['communicationChannel' => 'portal']);
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertSame('portal', $result['record']['channel']);
-		self::assertSame('portal', $this->store->cases[$caseId]['acknowledgementDuty']['channel']);
+		self::assertSame(expected: 'portal', actual: $result['record']['channel']);
+		self::assertSame(expected: 'portal', actual: $this->store->cases[$caseId]['acknowledgementDuty']['channel']);
 	}//end testTheCitizensRecordedChannelIsTheOneRecorded()
 
 	/**
@@ -470,8 +470,8 @@ class AcknowledgementDutyTest extends TestCase {
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertStringContainsString('2026-0042', $result['payload']['subject']);
-		self::assertStringContainsString('2026-11-01', $result['payload']['body']);
-		self::assertStringContainsString('Dakkapel Kerkstraat 12', $result['payload']['body']);
+		self::assertStringContainsString(needle: '2026-0042', haystack: $result['payload']['subject']);
+		self::assertStringContainsString(needle: '2026-11-01', haystack: $result['payload']['body']);
+		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
 }//end class
