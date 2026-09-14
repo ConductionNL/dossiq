@@ -58,7 +58,7 @@ The test cuts both ways. Classifying a row as statutory removes it from the deno
 
 Counted and ranked by `procest/_round4/tools/corpus-tally.py`, printed in `procest/_round4/compare/twenty-six-system-tally.md`, which supersedes the eighteen, twenty-two and twenty-four column tallies before it. The script sorts on `yes` only and keeps file order on a tie, so OTOBO prints above Odoo and nothing in the method ranks on `partial`. It prints two rankings, so a documented cell is never read as a driven one.
 
-### Driven columns, twenty-six as of ledger v7 plus batches 11 and 12
+### Driven columns, twenty-six as of ledger v10
 
 | rank | system | yes | partial | family |
 |---|---|---|---|---|
@@ -95,7 +95,7 @@ Two more are a coincidence worth naming, because the total is a poor summary of 
 
 Huly carries 74 `partial` cells, more than any other driven column. That is the signature of a product with the pieces and not the assembly: a process engine with thirteen actions and no case, a holiday calendar nothing reads, and a contact registry with no case to attach a contact to.
 
-### Documented columns, four as of ledger v7, graded `documented, not driven`
+### Documented columns, four as of ledger v10, graded `documented, not driven`
 
 | system | yes | partial | where it would sit among all columns |
 |---|---|---|---|
@@ -318,6 +318,8 @@ Two more sit in the corpus and not in the ledger. Batch 11's is proposed row 8.2
 
 **273 rows read, 161 gaps**: 110 from the matrix, 16 from the promoted rows, 35 from the pending proposals. 101 are `partial`, 60 are `no`. 11 of the 26 statutory rows are gaps.
 
+The 273 is 206 matrix rows, 19 promoted rows and 48 pending proposals, which is the queue as ledger v10 folds it from the batch files. The 146 of decision D1 is a second half of the same register, counted separately below, because 98 of those proposals have never had a column read against them but ours.
+
 | owner | gaps | S | M | L | carried | not carried |
 |---|---|---|---|---|---|---|
 | openregister | 69 | 51 | 17 | 1 | 66 | 3 |
@@ -354,7 +356,11 @@ Eleven gaps are not carried, and each says why in the register rather than waiti
 | 12.7 staff SSO, 12.20 object storage, 13.15 two-factor and login history, Q13.22 weak-credential refusal | nextcloud | platform facts to write down, not work to schedule |
 | Q9.15, a command language a person types | hermiq | waits for a driven `yes` |
 
-Why the third version and the fourth differ, and the arithmetic is simple. 268 rows became 273, because decision D1 moved the pending queue from 48 to 146 and 35 of those rate dossiq below `yes` where 32 did before. 158 gaps became 161. The [re-read of 2026-09-13](competitor-gap-re-read-2026-09-13.md) read all 40 rows the register flags, the 36 marked stale plus 4 the archived changes had moved, against `828da9a69`: 12 closed, 24 stay, 4 stay narrowed. The two umbrellas are what the register became: [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643) with [five more](https://github.com/ConductionNL/dossiq/pull/2684), and [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688).
+### The pending half
+
+The register's second half is decision D1's queue: **146 pending proposals, 32 of them carried**, 29 by a named change and three by a spec someone already wrote. 98 entered under D1 on 2026-09-14, and 35 of the 146 are the ones the first half already counts as gaps. The other 111 sit outside the first half. 98 of them entered under D1 on 2026-09-14 with no competitor column read against them but ours, and 21 of the 111 dossiq already passes. They are questions rather than measurements, so they stay out of every count on this page.
+
+Why the third version and the fourth differ, and the arithmetic is simple. 268 rows became 273, because ledger v10 folded batches 11 and 12 and their five proposals joined the 43 the third version read. 158 gaps became 161, because three of those five rate dossiq below `yes`. The [re-read of 2026-09-13](competitor-gap-re-read-2026-09-13.md) read all 40 rows the register flags, the 36 marked stale plus 4 the archived changes had moved, against `828da9a69`: 12 closed, 24 stay, 4 stay narrowed. The two umbrellas are what the register became: [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643) with [five more](https://github.com/ConductionNL/dossiq/pull/2684), and [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688).
 
 ## The five to build first
 

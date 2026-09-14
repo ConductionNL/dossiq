@@ -92,23 +92,24 @@ Ordered by driven passers. A driven passer was installed, seeded with Dutch muni
 
 ## What dossiq lacks
 
-The heaviest clusters, by how many members dossiq fails. The full list of 70 is in `build-plan.md`.
+The heaviest clusters, by how many members dossiq fails. The full list of 71 is in `build-plan.md`.
 
 | cluster | dossiq `no` | of |
 |---|---|---|
+| Capabilities a gemeente does not need, re-read with an MKB lens | 19 | 19 |
 | Security hardening of the instance | 18 | 18 |
-| The administrator's own screens: jobs, logs, health, maintenance | 15 | 19 |
+| The administrator's own screens: jobs, logs, health and maintenance | 15 | 19 |
 | Code lists, hierarchies and expiring values | 15 | 20 |
 | The case page and the list as a place | 14 | 17 |
+| Saved views, their tree and their labels | 13 | 19 |
 | The timeline, the note and what can be searched in it | 13 | 15 |
 | The party model beyond the requester | 13 | 16 |
 | Who may do what: roles, grants and their provenance | 12 | 23 |
 | The rules engine | 12 | 17 |
-| Saved views, their tree and their labels | 11 | 16 |
-| Portal identity and the organisation's cases | 10 | 12 |
+| Portal identity, registration and the organisation's cases | 10 | 12 |
 | Publication, inspection and the national indexes | 10 | 15 |
 
-Four clusters have no `no` at all: the calendar, the phase vocabulary, access compiled into the query, and tenancy. Twenty candidates sit in the `not` bucket and will not be built.
+The heaviest cluster is the one D17 created. Twenty candidates had been rated `not` by the lane that found them; re-read with an MKB lens they became a cluster of nineteen, and dossiq fails all nineteen. Four clusters have no `no` at all: the calendar, the phase vocabulary, access compiled into the query, and tenancy.
 
 ### The twenty-five loudest gaps
 
