@@ -96,7 +96,8 @@ class DeadlinePauseService {
 		// only the day it lands on: `endDateCurrent` is the date a handler is
 		// judged on, so Algemene termijnenwet art. 1 applies to it and the
 		// administered calendar decides, not this service.
-		$newEnd = $this->onWorkingDay(date: $current->modify('+' . $durationDays . ' days'))->format('Y-m-d');
+		$credited = $current->modify('+' . $durationDays . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $credited) ?? $credited)->format('Y-m-d');
 		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		// Opschorting maps onto the engine: suspend the beslistermijn timer
@@ -138,24 +139,6 @@ class DeadlinePauseService {
 	}//end registerPauze()
 
 	/**
-	 * Roll a recomputed `endDateCurrent` onto the administered working calendar.
-	 *
-	 * @param DateTimeImmutable $date The recomputed end date.
-	 *
-	 * @return DateTimeImmutable The day the term actually ends on.
-	 */
-	private function onWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
-		if ($this->timerService === null) {
-			return $date;
-		}
-
-		return $this->timerService->rollTermEnd(
-			date: $date,
-			roll: $this->timerService->rollEnabled(definitie: [])
-		);
-	}//end onWorkingDay()
-
-	/**
 	 * Resume after pauze with the aanvulling-datum.
 	 *
 	 * Computes consumed vs. unconsumed pause days; adds only the
@@ -194,7 +177,8 @@ class DeadlinePauseService {
 		// Pull back the unused portion of einddatumActueel, then let the
 		// administered calendar decide the day it lands on (Awt art. 1).
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
-		$newEnd = $this->onWorkingDay(date: $current->modify('-' . $unused . ' days'))->format('Y-m-d');
+		$remaining = $current->modify('-' . $unused . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $remaining) ?? $remaining)->format('Y-m-d');
 
 		// Resume the engine timer: it re-projects the fire moment from the
 		// unconsumed remainder (AWB 4:15), landing on the same date the

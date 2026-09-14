@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
@@ -80,6 +81,7 @@ class TussenrapportageService {
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -90,13 +92,15 @@ class TussenrapportageService {
 	 * @param DateTimeImmutable $periodEnd The reporting period end.
 	 * @param int $termWeken The regeling assessment term.
 	 *
-	 * @return DateTimeImmutable The assessment deadline.
+	 * @return DateTimeImmutable The assessment deadline, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
 		$termWeken = max(1, $termWeken);
-		return $periodEnd->add(new DateInterval('P' . ($termWeken * 7) . 'D'));
+		$deadline = $periodEnd->add(new DateInterval('P' . ($termWeken * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $deadline) ?? $deadline);
 	}//end computeBeoordelingstermijn()
 
 	/**

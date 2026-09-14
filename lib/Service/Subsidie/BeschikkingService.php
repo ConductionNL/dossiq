@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
@@ -66,6 +67,7 @@ class BeschikkingService {
 		private readonly SubsidieService $subsidyService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -74,12 +76,14 @@ class BeschikkingService {
 	 *
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
-	 * @return DateTimeImmutable The bezwaartermijn end.
+	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
-		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end);
 	}//end computeBezwaartermijn()
 
 	/**

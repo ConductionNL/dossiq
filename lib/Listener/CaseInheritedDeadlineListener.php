@@ -48,6 +48,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -75,6 +76,7 @@ class CaseInheritedDeadlineListener implements IEventListener {
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -178,7 +180,11 @@ class CaseInheritedDeadlineListener implements IEventListener {
 				$start = new DateTimeImmutable(substr(trim($startDate), 0, 10));
 			}
 
-			return $start->add(new DateInterval($term))->format('Y-m-d');
+			// A deelzaak inherits the parent case type's term, so it inherits
+			// the Awt roll on the day that term ends.
+			$end = $start->add(new DateInterval($term));
+
+			return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not derive an inherited case deadline',

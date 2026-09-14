@@ -57,6 +57,7 @@ class DwangsomUitbetalingService {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -98,7 +99,9 @@ class DwangsomUitbetalingService {
 		);
 
 		$receiptDate = ($receiptDate ?? new DateTimeImmutable());
-		$uiterlijk = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
+		// Awb 4:17: the day the payment is late after, so it rolls (Awt art. 1).
+		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
+		$uiterlijk = ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)->format('Y-m-d');
 
 		$row = [
 			'penaltyPaymentCalculation' => $calculationId,

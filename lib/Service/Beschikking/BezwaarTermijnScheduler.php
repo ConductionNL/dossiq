@@ -85,31 +85,11 @@ class BezwaarTermijnScheduler {
 		$endDate = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
 		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
-		$roll = ($this->timerService?->rollEnabled(definitie: $definitie) ?? false);
-
 		return [
-			'endDate' => $this->onWorkingDay(date: $endDate, roll: $roll)->format('Y-m-d'),
-			'herinnering' => $this->onWorkingDay(date: $herinnering, roll: $roll)->format('Y-m-d'),
+			'endDate' => ($this->timerService?->rollTermEndFor(date: $endDate, definitie: $definitie) ?? $endDate)->format('Y-m-d'),
+			'herinnering' => ($this->timerService?->rollTermEndFor(date: $herinnering, definitie: $definitie) ?? $herinnering)->format('Y-m-d'),
 		];
 	}//end computeTermijn()
-
-	/**
-	 * Roll a date onto the administered working calendar.
-	 *
-	 * @param DateTimeImmutable $date The computed date.
-	 * @param bool $roll Whether the term declares the roll.
-	 *
-	 * @return DateTimeImmutable The date the term actually lands on.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the declared `rollToWorkingDay`.
-	 */
-	private function onWorkingDay(DateTimeImmutable $date, bool $roll): DateTimeImmutable {
-		if ($this->timerService === null) {
-			return $date;
-		}
-
-		return $this->timerService->rollTermEnd(date: $date, roll: $roll);
-	}//end onWorkingDay()
 
 	/**
 	 * Create the BezwaarTrigger scheduling record on verzending.

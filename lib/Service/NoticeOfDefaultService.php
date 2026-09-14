@@ -177,7 +177,7 @@ class NoticeOfDefaultService {
 		// the day the dwangsom starts running. The regime's validity rules
 		// above are untouched: only the day this date lands on moves.
 		$graceEnd = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days');
-		$startAt = $this->onWorkingDay(date: $graceEnd)->format('Y-m-d');
+		$startAt = ($this->timerService?->rollTermEndFor(date: $graceEnd) ?? $graceEnd)->format('Y-m-d');
 
 		$regimeLabel = 'awb-default';
 		if ($regime['custom'] === true) {
@@ -221,24 +221,6 @@ class NoticeOfDefaultService {
 
 		return $calculation;
 	}//end startDwangsomBerekening()
-
-	/**
-	 * Roll the grace end onto the administered working calendar.
-	 *
-	 * @param DateTimeImmutable $date The computed grace end.
-	 *
-	 * @return DateTimeImmutable The day the dwangsom window opens on.
-	 */
-	private function onWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
-		if ($this->timerService === null) {
-			return $date;
-		}
-
-		return $this->timerService->rollTermEnd(
-			date: $date,
-			roll: $this->timerService->rollEnabled(definitie: [])
-		);
-	}//end onWorkingDay()
 
 	/**
 	 * Resolve the dwangsom regime (AWB-default or custom from definition).

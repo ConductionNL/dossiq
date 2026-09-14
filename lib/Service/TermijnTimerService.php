@@ -399,13 +399,38 @@ class TermijnTimerService {
 			return $date;
 		}
 
-		$rolled = $this->engineRoll(date: $date, calendarSlug: $calendarSlug, organisation: $organisation);
-		if ($rolled !== null) {
-			return $rolled;
-		}
-
-		return $this->fallbackRoll(date: $date);
+		return $this->rollOnCalendar(date: $date, calendarSlug: $calendarSlug, organisation: $organisation);
 	}//end rollTermEnd()
+
+	/**
+	 * The call every term site makes: roll this end date if the term declares
+	 * the roll, on the calendar the organisation administers.
+	 *
+	 * One expression per site, so a site cannot half-adopt the calendar. The
+	 * primitive is {@see rollTermEnd()}; this reads the declared flag first.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 * @param array<string, mixed> $definitie The term definition, when one is known.
+	 * @param string|null $calendarSlug The calendar named on the term, when any.
+	 * @param string|null $organisation The subject's organisation, when any.
+	 *
+	 * @return DateTimeImmutable The day the term actually ends on.
+	 *
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function rollTermEndFor(
+		DateTimeImmutable $date,
+		array $definitie = [],
+		?string $calendarSlug = null,
+		?string $organisation = null,
+	): DateTimeImmutable {
+		return $this->rollTermEnd(
+			date: $date,
+			roll: $this->rollEnabled(definitie: $definitie),
+			calendarSlug: $calendarSlug,
+			organisation: $organisation
+		);
+	}//end rollTermEndFor()
 
 	/**
 	 * Whether a term declares the Algemene termijnenwet roll.
@@ -431,23 +456,23 @@ class TermijnTimerService {
 	}//end rollEnabled()
 
 	/**
-	 * The roll as the engine computes it, or null when the engine cannot answer.
+	 * The roll as the engine computes it, falling back when it cannot answer.
 	 *
 	 * @param DateTimeImmutable $date The computed end date.
 	 * @param string|null $calendarSlug The calendar named on the term, when any.
 	 * @param string|null $organisation The subject's organisation, when any.
 	 *
-	 * @return DateTimeImmutable|null The rolled date, or null to fall back.
+	 * @return DateTimeImmutable The first ordinary day on or after the date.
 	 */
-	private function engineRoll(
+	private function rollOnCalendar(
 		DateTimeImmutable $date,
 		?string $calendarSlug,
 		?string $organisation,
-	): ?DateTimeImmutable {
+	): DateTimeImmutable {
 		$calendars = $this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS);
 		$calculator = $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS);
 		if ($calendars === null || $calculator === null) {
-			return null;
+			return $this->fallbackRoll(date: $date, because: 'OpenRegister is not installed');
 		}
 
 		try {
@@ -461,24 +486,26 @@ class TermijnTimerService {
 			);
 		} catch (\Throwable $e) {
 			$this->logFailure(operation: 'roll to working day', timerId: $date->format('Y-m-d'), error: $e);
-			return null;
+			return $this->fallbackRoll(date: $date, because: 'the engine calendar could not be read');
 		}
-	}//end engineRoll()
+	}//end rollOnCalendar()
 
 	/**
-	 * The roll on dossiq's own calendar, used only when the engine is absent.
+	 * The roll on dossiq's own calendar, used only when the engine cannot answer.
 	 *
 	 * @param DateTimeImmutable $date The computed end date.
+	 * @param string $because What was absent, so the operator can tell an
+	 *        uninstalled engine from a broken calendar.
 	 *
 	 * @return DateTimeImmutable The first ordinary day on or after the date.
 	 */
-	private function fallbackRoll(DateTimeImmutable $date): DateTimeImmutable {
+	private function fallbackRoll(DateTimeImmutable $date, string $because): DateTimeImmutable {
 		$calculator = ($this->fallbackCalendar ?? new WorkingDayCalculator());
 		$rolled = $calculator->nextWorkingDay(date: $date);
 
 		$this->logger->info(
 			'Dossiq termijn: engine calendar unavailable, term end rolled on the local calendar',
-			['date' => $date->format('Y-m-d'), 'rolled' => $rolled->format('Y-m-d')]
+			['date' => $date->format('Y-m-d'), 'rolled' => $rolled->format('Y-m-d'), 'because' => $because]
 		);
 
 		return $rolled;
