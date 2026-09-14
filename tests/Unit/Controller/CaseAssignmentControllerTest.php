@@ -75,11 +75,11 @@ class CaseAssignmentControllerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->assignment = $this->createMock(CaseAssignmentService::class);
-		$this->guard = $this->createMock(CaseAccessGuard::class);
-		$this->userSession = $this->createMock(IUserSession::class);
+		$this->assignment = $this->createMock(originalClassName: CaseAssignmentService::class);
+		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('behandelaar');
 		$this->userSession->method('getUser')->willReturn($user);
 	}//end setUp()
@@ -90,17 +90,17 @@ class CaseAssignmentControllerTest extends TestCase {
 	 * @return CaseAssignmentController
 	 */
 	private function controller(): CaseAssignmentController {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
 		return new CaseAssignmentController(
-			'dossiq',
-			$this->createMock(IRequest::class),
-			$this->assignment,
-			$this->guard,
-			$this->userSession,
-			$l10n,
-			$this->createMock(LoggerInterface::class),
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			assignment: $this->assignment,
+			caseAccessGuard: $this->guard,
+			userSession: $this->userSession,
+			l10n: $l10n,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end controller()
 
@@ -134,8 +134,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->claim(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame('already_assigned', $response->getData()['code']);
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		$this->assertSame(expected: 'already_assigned', actual: $response->getData()['code']);
 	}//end testClaimOnAnAssignedCaseIsRefusedWithAStatus()
 
 	/**
@@ -151,8 +151,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->claim(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame('already_yours', $response->getData()['code']);
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		$this->assertSame(expected: 'already_yours', actual: $response->getData()['code']);
 	}//end testClaimOnYourOwnCaseIsRefusedAsAlreadyYours()
 
 	/**
@@ -167,8 +167,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->claim(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		$this->assertSame('case_not_found', $response->getData()['code']);
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertSame(expected: 'case_not_found', actual: $response->getData()['code']);
 	}//end testClaimOnAnUnreadableCaseIsNotFound()
 
 	/**
@@ -188,7 +188,7 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$this->controller()->claim(caseId: 'case-42');
 
-		$this->assertSame(['case-42', 'behandelaar'], $seen);
+		$this->assertSame(expected: ['case-42', 'behandelaar'], actual: $seen);
 	}//end testTheClaimGuardReadsTheRoutesCaseAsTheSessionUser()
 
 	/**
@@ -205,8 +205,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->claim(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['mine']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertTrue(condition: $response->getData()['mine']);
 	}//end testClaimOnAFreeCaseRuns()
 
 	/**
@@ -221,8 +221,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->claim(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame('already_assigned', $response->getData()['code']);
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		$this->assertSame(expected: 'already_assigned', actual: $response->getData()['code']);
 	}//end testAClaimThatLosesTheRaceStillAnswers409()
 
 	/**
@@ -237,7 +237,7 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->release(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testReleaseIsRefusedWithoutCaseAccess()
 
 	/**
@@ -253,8 +253,8 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->release(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame('not_yours', $response->getData()['code']);
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
+		$this->assertSame(expected: 'not_yours', actual: $response->getData()['code']);
 	}//end testReleaseOfSomebodyElsesCaseIsRefusedWithAStatus()
 
 	/**
@@ -271,9 +271,9 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->release(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('', $response->getData()['assignee']);
-		$this->assertTrue($response->getData()['claimable']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: '', actual: $response->getData()['assignee']);
+		$this->assertTrue(condition: $response->getData()['claimable']);
 	}//end testReleaseOfYourOwnCaseRuns()
 
 	/**
@@ -282,16 +282,16 @@ class CaseAssignmentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnonymousCallerIsUnauthenticated(): void {
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn(null);
 		$this->userSession = $session;
 		$this->assignment->expects($this->never())->method('state');
 		$this->assignment->expects($this->never())->method('claim');
 		$this->guard->expects($this->never())->method('hasCaseMutationAccess');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->claim(caseId: 'case-1')->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->release(caseId: 'case-1')->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->state(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller()->claim(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller()->release(caseId: 'case-1')->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller()->state(caseId: 'case-1')->getStatus());
 	}//end testAnonymousCallerIsUnauthenticated()
 
 	/**
@@ -305,9 +305,9 @@ class CaseAssignmentControllerTest extends TestCase {
 
 		$response = $this->controller()->state(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('collega', $response->getData()['assignee']);
-		$this->assertFalse($response->getData()['mine']);
-		$this->assertFalse($response->getData()['claimable']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: 'collega', actual: $response->getData()['assignee']);
+		$this->assertFalse(condition: $response->getData()['mine']);
+		$this->assertFalse(condition: $response->getData()['claimable']);
 	}//end testStateAnswersWhoHoldsTheCase()
 }//end class

@@ -223,10 +223,12 @@ class CaseAssignmentController extends Controller {
 			return null;
 		}
 
-		return $this->refusal(
-			code: ($state['mine'] === true) ? 'already_yours' : 'already_assigned',
-			caseId: $caseId
-		);
+		$code = 'already_assigned';
+		if ($state['mine'] === true) {
+			$code = 'already_yours';
+		}
+
+		return $this->refusal(code: $code, caseId: $caseId);
 	}//end requireClaimableCase()
 
 	/**
