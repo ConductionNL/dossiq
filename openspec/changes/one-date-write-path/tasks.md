@@ -22,7 +22,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   default and the `endDate` write.
 - [x] 2.3 `ComplaintController` through `ComplaintService`, including the
   `date('Y-m-d')` fallback at :301.
-- [ ] 2.4 `ConsultationController` through `ConsultationService`: the
+- [x] 2.4 `ConsultationController` through `ConsultationService`: the
   three `date('Y-m-d\TH:i:s')` writes gain an offset.
 - [ ] 2.5 `AdviceController` through `AdviceService`: `deadline` is parsed
   instead of stored verbatim, and a bad value is refused (D-3).
