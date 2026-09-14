@@ -73,7 +73,7 @@ class NoLocalReadStateTest extends TestCase {
 	 */
 	public function testNothingCreatesAReadStateTable(): void {
 		$offenders = [];
-		foreach ($this->phpFiles(self::LIB_DIR) as $file) {
+		foreach ($this->phpFiles(dir: self::LIB_DIR) as $file) {
 			$body = (string)file_get_contents($file);
 			if (preg_match('/createTable\s*\(\s*[\'"][^\'"]*(read|seen|unread)/i', $body) === 1) {
 				$offenders[] = $this->shortName(file: $file);
@@ -81,9 +81,9 @@ class NoLocalReadStateTest extends TestCase {
 		}
 
 		$this->assertSame(
-			[],
-			$offenders,
-			'dossiq must not create a read-state table. '.self::ADVICE
+			expected: [],
+			actual: $offenders,
+			message: 'dossiq must not create a read-state table. '.self::ADVICE
 		);
 	}//end testNothingCreatesAReadStateTable()
 
@@ -99,8 +99,8 @@ class NoLocalReadStateTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 	 */
 	public function testTheScannerCanFindSomething(): void {
-		$files = $this->phpFiles(self::LIB_DIR);
-		$this->assertGreaterThan(200, count($files), 'the scan root must be dossiq\'s lib/');
+		$files = $this->phpFiles(dir: self::LIB_DIR);
+		$this->assertGreaterThan(expected: 200, actual: count($files), message: 'the scan root must be dossiq\'s lib/');
 
 		$hits = 0;
 		foreach ($files as $file) {
@@ -110,9 +110,9 @@ class NoLocalReadStateTest extends TestCase {
 		}
 
 		$this->assertGreaterThan(
-			0,
-			$hits,
-			'the scan must be able to see a createTable call, or its silence proves nothing'
+			expected: 0,
+			actual: $hits,
+			message: 'the scan must be able to see a createTable call, or its silence proves nothing'
 		);
 	}//end testTheScannerCanFindSomething()
 
@@ -125,7 +125,7 @@ class NoLocalReadStateTest extends TestCase {
 	 */
 	public function testNoClassHoldsAReadState(): void {
 		$offenders = [];
-		foreach ($this->phpFiles(self::LIB_DIR) as $file) {
+		foreach ($this->phpFiles(dir: self::LIB_DIR) as $file) {
 			$name = basename($file, '.php');
 			if (preg_match('/(ReadState|UnreadState|SeenState)(Mapper|Store|Entity|Repository)?$/', $name) === 1) {
 				$offenders[] = $name;
@@ -133,9 +133,9 @@ class NoLocalReadStateTest extends TestCase {
 		}
 
 		$this->assertSame(
-			[],
-			$offenders,
-			'dossiq must not hold a read-state entity, mapper or store. '.self::ADVICE
+			expected: [],
+			actual: $offenders,
+			message: 'dossiq must not hold a read-state entity, mapper or store. '.self::ADVICE
 		);
 	}//end testNoClassHoldsAReadState()
 
@@ -151,7 +151,7 @@ class NoLocalReadStateTest extends TestCase {
 	 */
 	public function testNoUserPreferenceIsUsedAsAReadMarker(): void {
 		$offenders = [];
-		foreach ($this->phpFiles(self::LIB_DIR) as $file) {
+		foreach ($this->phpFiles(dir: self::LIB_DIR) as $file) {
 			$body = (string)file_get_contents($file);
 			if (preg_match('/setUserValue\s*\([^)]*(read|seen|unread)/i', $body) === 1) {
 				$offenders[] = $this->shortName(file: $file);
@@ -159,9 +159,9 @@ class NoLocalReadStateTest extends TestCase {
 		}
 
 		$this->assertSame(
-			[],
-			$offenders,
-			'dossiq must not keep a read marker in user preferences. '.self::ADVICE
+			expected: [],
+			actual: $offenders,
+			message: 'dossiq must not keep a read marker in user preferences. '.self::ADVICE
 		);
 	}//end testNoUserPreferenceIsUsedAsAReadMarker()
 
@@ -178,9 +178,9 @@ class NoLocalReadStateTest extends TestCase {
 
 		foreach (['IDBConnection', 'QBMapper', 'IConfig', 'setUserValue', 'saveObject'] as $writer) {
 			$this->assertStringNotContainsString(
-				$writer,
-				$body,
-				'UnreadTriggerService is a declaration reader and must not store anything. '.self::ADVICE
+				needle: $writer,
+				haystack: $body,
+				message: 'UnreadTriggerService is a declaration reader and must not store anything. '.self::ADVICE
 			);
 		}
 	}//end testTheTriggerServiceOnlyReadsADeclaration()
@@ -193,7 +193,10 @@ class NoLocalReadStateTest extends TestCase {
 	 * @return string The readable name.
 	 */
 	private function shortName(string $file): string {
-		$root = (realpath(self::LIB_DIR) ?: self::LIB_DIR);
+		$root = realpath(self::LIB_DIR);
+		if ($root === false) {
+			$root = self::LIB_DIR;
+		}
 
 		return ltrim(str_replace($root, '', $file), '/');
 	}//end shortName()

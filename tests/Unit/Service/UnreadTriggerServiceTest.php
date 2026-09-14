@@ -67,12 +67,12 @@ class UnreadTriggerServiceTest extends TestCase {
 	 */
 	public function testAnUndeclaredCaseTypeGetsTheDefault(): void {
 		$this->assertSame(
-			['status', 'documents', 'messages'],
-			$this->service->triggersFor(caseType: ['id' => 'ct'])
+			expected: ['status', 'documents', 'messages'],
+			actual: $this->service->triggersFor(caseType: ['id' => 'ct'])
 		);
 		$this->assertSame(
-			['status', 'documents', 'messages'],
-			$this->service->triggersFor(caseType: ['id' => 'ct', 'unreadTriggers' => []])
+			expected: ['status', 'documents', 'messages'],
+			actual: $this->service->triggersFor(caseType: ['id' => 'ct', 'unreadTriggers' => []])
 		);
 	}//end testAnUndeclaredCaseTypeGetsTheDefault()
 
@@ -87,9 +87,9 @@ class UnreadTriggerServiceTest extends TestCase {
 	public function testADeclarationReplacesTheDefault(): void {
 		$caseType = ['unreadTriggers' => ['deadline', 'status']];
 
-		$this->assertSame(['status', 'deadline'], $this->service->triggersFor(caseType: $caseType));
-		$this->assertTrue($this->service->declares(caseType: $caseType, trigger: 'status'));
-		$this->assertFalse($this->service->declares(caseType: $caseType, trigger: 'documents'));
+		$this->assertSame(expected: ['status', 'deadline'], actual: $this->service->triggersFor(caseType: $caseType));
+		$this->assertTrue(condition: $this->service->declares(caseType: $caseType, trigger: 'status'));
+		$this->assertFalse(condition: $this->service->declares(caseType: $caseType, trigger: 'documents'));
 	}//end testADeclarationReplacesTheDefault()
 
 	/**
@@ -104,10 +104,10 @@ class UnreadTriggerServiceTest extends TestCase {
 	public function testAnUnnamedChangeIsNotNews(): void {
 		$caseType = ['unreadTriggers' => ['status']];
 
-		$this->assertFalse($this->service->declares(caseType: $caseType, trigger: 'assignee'));
-		$this->assertFalse($this->service->declares(caseType: $caseType, trigger: 'deadline'));
-		$this->assertSame(['status'], $this->service->propertiesFor($this->service->triggersFor(caseType: $caseType)));
-		$this->assertSame([], $this->service->subResourcesFor($this->service->triggersFor(caseType: $caseType)));
+		$this->assertFalse(condition: $this->service->declares(caseType: $caseType, trigger: 'assignee'));
+		$this->assertFalse(condition: $this->service->declares(caseType: $caseType, trigger: 'deadline'));
+		$this->assertSame(expected: ['status'], actual: $this->service->propertiesFor($this->service->triggersFor(caseType: $caseType)));
+		$this->assertSame(expected: [], actual: $this->service->subResourcesFor($this->service->triggersFor(caseType: $caseType)));
 	}//end testAnUnnamedChangeIsNotNews()
 
 	/**
@@ -122,11 +122,11 @@ class UnreadTriggerServiceTest extends TestCase {
 	public function testAnUnknownNameWarnsInsteadOfGoingDark(): void {
 		$caseType = ['unreadTriggers' => ['statsu']];
 
-		$this->assertSame(['status', 'documents', 'messages'], $this->service->triggersFor(caseType: $caseType));
+		$this->assertSame(expected: ['status', 'documents', 'messages'], actual: $this->service->triggersFor(caseType: $caseType));
 
 		$warnings = $this->service->publicationWarnings(caseType: $caseType);
-		$this->assertCount(1, $warnings);
-		$this->assertStringContainsString('statsu', $warnings[0]);
+		$this->assertCount(expectedCount: 1, haystack: $warnings);
+		$this->assertStringContainsString(needle: 'statsu', haystack: $warnings[0]);
 	}//end testAnUnknownNameWarnsInsteadOfGoingDark()
 
 	/**
@@ -140,11 +140,11 @@ class UnreadTriggerServiceTest extends TestCase {
 	public function testDroppingTheStatusIsWarnedAbout(): void {
 		$warnings = $this->service->publicationWarnings(caseType: ['unreadTriggers' => ['documents']]);
 
-		$this->assertCount(1, $warnings);
-		$this->assertStringContainsString('status', $warnings[0]);
+		$this->assertCount(expectedCount: 1, haystack: $warnings);
+		$this->assertStringContainsString(needle: 'status', haystack: $warnings[0]);
 
-		$this->assertSame([], $this->service->publicationWarnings(caseType: ['unreadTriggers' => ['status']]));
-		$this->assertSame([], $this->service->publicationWarnings(caseType: []));
+		$this->assertSame(expected: [], actual: $this->service->publicationWarnings(caseType: ['unreadTriggers' => ['status']]));
+		$this->assertSame(expected: [], actual: $this->service->publicationWarnings(caseType: []));
 	}//end testDroppingTheStatusIsWarnedAbout()
 
 	/**
@@ -159,8 +159,8 @@ class UnreadTriggerServiceTest extends TestCase {
 	public function testDocumentsAreASubResourceAndNotAProperty(): void {
 		$triggers = ['documents', 'messages'];
 
-		$this->assertSame([], $this->service->propertiesFor($triggers));
-		$this->assertSame(['files'], $this->service->subResourcesFor($triggers));
+		$this->assertSame(expected: [], actual: $this->service->propertiesFor($triggers));
+		$this->assertSame(expected: ['files'], actual: $this->service->subResourcesFor($triggers));
 	}//end testDocumentsAreASubResourceAndNotAProperty()
 
 	/**
@@ -185,14 +185,14 @@ class UnreadTriggerServiceTest extends TestCase {
 		$block = $fragment['components']['schemas']['case']['x-openregister-read-state'];
 
 		$this->assertSame(
-			$this->service->propertiesFor(UnreadTriggerService::VOCABULARY),
-			$block['properties'],
-			'the case schema watches exactly the properties the vocabulary maps onto'
+			expected: $this->service->propertiesFor(UnreadTriggerService::VOCABULARY),
+			actual: $block['properties'],
+			message: 'the case schema watches exactly the properties the vocabulary maps onto'
 		);
 		$this->assertSame(
-			$this->service->subResourcesFor(UnreadTriggerService::VOCABULARY),
-			array_keys($block['subResources']),
-			'the case schema badges exactly the sub-resources the vocabulary names'
+			expected: $this->service->subResourcesFor(UnreadTriggerService::VOCABULARY),
+			actual: array_keys($block['subResources']),
+			message: 'the case schema badges exactly the sub-resources the vocabulary names'
 		);
 	}//end testTheCaseSchemaDeclaresExactlyThisVocabulary()
 
@@ -211,8 +211,8 @@ class UnreadTriggerServiceTest extends TestCase {
 
 		$property = $fragment['components']['schemas']['caseType']['properties']['unreadTriggers'];
 
-		$this->assertSame(UnreadTriggerService::VOCABULARY, $property['items']['enum']);
-		$this->assertSame(UnreadTriggerService::DEFAULTS, $property['default']);
+		$this->assertSame(expected: UnreadTriggerService::VOCABULARY, actual: $property['items']['enum']);
+		$this->assertSame(expected: UnreadTriggerService::DEFAULTS, actual: $property['default']);
 	}//end testTheCaseTypeEnumIsTheVocabulary()
 
 	/**
@@ -229,8 +229,8 @@ class UnreadTriggerServiceTest extends TestCase {
 	 */
 	public function testTheAnnotationKeyIsReconciledOntoTheLiveSchema(): void {
 		$this->assertContains(
-			'x-openregister-read-state',
-			\OCA\Dossiq\Service\Settings\SchemaSlugMap::SCHEMA_ANNOTATION_KEYS
+			needle: 'x-openregister-read-state',
+			haystack: \OCA\Dossiq\Service\Settings\SchemaSlugMap::SCHEMA_ANNOTATION_KEYS
 		);
 	}//end testTheAnnotationKeyIsReconciledOntoTheLiveSchema()
 }//end class
