@@ -30,7 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use ReflectionClass;
 use RuntimeException;
 
@@ -60,10 +59,12 @@ class DeadlineExtensionService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
+		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
@@ -259,8 +260,13 @@ class DeadlineExtensionService {
 			$currentInput = $current;
 		}
 
-		$currentDate = new DateTimeImmutable($currentInput);
-		$newDate = new DateTimeImmutable($newEndDate);
+		if ($currentInput === 'now') {
+			$currentDate = $this->dates->now();
+		} else {
+			$currentDate = $this->dates->parse($currentInput, 'einddatumActueel');
+		}
+
+		$newDate = $this->dates->parse($newEndDate, 'newEinddatum');
 
 		return (int)$currentDate->diff($newDate)->days;
 	}//end calculateDagenImpact()

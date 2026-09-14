@@ -28,8 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 
 /**
  * Persists and updates StufMessage audit rows.
@@ -68,9 +67,11 @@ class StufMessageHandler {
 	 * Constructor.
 	 *
 	 * @param StufRegisterAccess $register The register access helper.
+	 * @param CaseDateNormaliser $dates The one date write path, which owns the zone.
 	 */
 	public function __construct(
 		private StufRegisterAccess $register,
+		private CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -253,17 +254,16 @@ class StufMessageHandler {
 	 * @return string The new id.
 	 */
 	private function newId(string $prefix): string {
-		$now = new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'Europe/Amsterdam'));
+		$now = $this->dates->now();
 		return $prefix . '-' . $now->format(format: 'Y-m-d-H-i-s') . '-' . bin2hex(string: random_bytes(length: 3));
 	}//end newId()
 
 	/**
-	 * ISO-8601 timestamp at second precision in Europe/Amsterdam.
+	 * ISO-8601 timestamp at second precision, in the administered zone.
 	 *
 	 * @return string The ISO timestamp.
 	 */
 	private function isoNow(): string {
-		$now = new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'Europe/Amsterdam'));
-		return $now->format(format: 'c');
+		return $this->dates->nowAsMoment();
 	}//end isoNow()
 }//end class

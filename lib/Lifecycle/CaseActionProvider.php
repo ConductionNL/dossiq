@@ -249,7 +249,8 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 *
 	 * THE RETURN VALUE IS THE ENGINE'S REPORT, VERBATIM. OpenRegister reads one
 	 * key off it, `to`, and the engine names none: its `status` key is the
-	 * literal string `ok`, not a statusType. So `to` is deliberately NOT added.
+	 * outcome of the move, `ok` or `partial`, not a statusType. So `to` is
+	 * deliberately NOT added.
 	 * OpenRegister then reads the target state off the lifecycle field of the
 	 * object it re-reads — `status`, per the case schema's
 	 * `x-openregister-lifecycle` — which is stored truth. An echoed `to` would
@@ -262,7 +263,11 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param array<string, mixed> $data The inputs the caller supplied, keyed by field.
 	 *
 	 * @return array<string, mixed> The engine's report: `status`, `statusRecord`,
-	 *                              `dispatchedActions` and `version`.
+	 *                              `dispatchedActions`, `failedActions` and `version`.
+	 *                              `status` is `ok`, or `partial` when the case moved
+	 *                              and an action it dispatched failed; `failedActions`
+	 *                              then lists those as `{type, error}`. A partial move
+	 *                              is not a refusal and throws nothing.
 	 *
 	 * @throws RuntimeException When the move is refused — a guard said no, the case
 	 *                          already moved, the caller may not, a result is missing.
@@ -270,6 +275,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @throws LifecycleProviderException When the engine could not answer at all.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	public function execute(array $object, string $userId, string $action, array $data): array {
 		$caseId = $this->caseIdOf(object: $object);

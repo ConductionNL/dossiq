@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ProcessMining;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 
 /**
  * Reconstructs per-status dwell intervals and ranks the resulting bottlenecks.
@@ -42,6 +43,16 @@ use DateTimeImmutable;
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
  */
 class DwellTimeAnalyzer {
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+	) {
+	}//end __construct()
+
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit), the
 	 * time the case spent in that status before the next recorded
@@ -86,7 +97,7 @@ class DwellTimeAnalyzer {
 			$endDate = ($case['endDate'] ?? null);
 			$closedAt = null;
 			if (is_string($endDate) === true && $endDate !== '') {
-				$closedAt = $this->parseDate(value: $endDate, fallback: $now);
+				$closedAt = ($this->dates->tryParse($endDate) ?? $now);
 			}
 
 			$intervals = array_merge(
@@ -284,7 +295,7 @@ class DwellTimeAnalyzer {
 			return null;
 		}
 
-		return $this->parseDate(value: $raw, fallback: null);
+		return $this->dates->tryParse($raw);
 	}//end extractTimestamp()
 
 	/**
@@ -313,25 +324,4 @@ class DwellTimeAnalyzer {
 		return $sorted[($rank - 1)];
 	}//end percentile()
 
-	/**
-	 * Parse a date/datetime string; return `$fallback` on empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
-	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 */
-	private function parseDate(mixed $value, ?DateTimeImmutable $fallback): ?DateTimeImmutable {
-		if (is_string($value) === false || $value === '') {
-			return $fallback;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return $fallback;
-		}
-	}//end parseDate()
 }//end class

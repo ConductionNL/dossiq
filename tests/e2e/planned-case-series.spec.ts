@@ -102,7 +102,9 @@ test.describe('A planned follow-up that repeats', () => {
 				caseType: followUpType,
 				description: `Seeded for the ${key} scenario.`,
 				confidentiality: 'openbaar',
-				priority: 'high',
+				// high + medium derives `high`; a seeded priority is replaced.
+				impact: 'high',
+				urgency: 'medium',
 				intakeChannel: 'website',
 				startDate: new Date().toISOString().slice(0, 10),
 			})
@@ -328,7 +330,8 @@ test.describe('A planned follow-up that repeats', () => {
 				caseType: followUpType,
 				description: 'An occurrence of the series.',
 				confidentiality: 'openbaar',
-				priority: 'normal',
+				impact: 'medium',
+				urgency: 'medium',
 				intakeChannel: 'website',
 				startDate: new Date().toISOString().slice(0, 10),
 				relatedCases: [cases.occurrences],

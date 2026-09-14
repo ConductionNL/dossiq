@@ -17,13 +17,15 @@
  * the computus here means nothing in lib/ depends on ext-calendar, which is why
  * composer.json does not require it. WorkingDayCalculatorTest holds that line.
  *
- * NOT IMPLEMENTED HERE, deliberately: the Algemene termijnenwet end-date roll.
- * Article 1 Awt extends a term that ends on a Saturday, Sunday or generally
- * recognised holiday to the next following ordinary day. This class computes
- * working days; it does not roll a statutory end date, and no caller does
- * either. That is a real gap, it needs the recognised-holiday list confirmed by
- * someone qualified to read Awt art. 3 against our case types, and it is a
- * separate change.
+ * The Algemene termijnenwet art. 1 end-date roll lives here as
+ * nextWorkingDay(), and this class is its FALLBACK, not its home. The
+ * authority is the calendar the organisation administers in OpenRegister;
+ * every statutory term reaches it through
+ * {@see TermijnTimerService::rollTermEnd()}, which walks the engine's own
+ * businessDays unit. This implementation answers only when the engine is
+ * absent, and the call logs that it did. See
+ * docs/research/date-arithmetic-audit-2026-09-14.md for which files compute a
+ * statutory term and which do not.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -175,6 +177,31 @@ class WorkingDayCalculator {
 
 		return $result;
 	}//end addWorkingDays()
+
+	/**
+	 * The first working day on or after a date.
+	 *
+	 * This is the Algemene termijnenwet art. 1 roll computed on dossiq's own
+	 * holiday list, and it is a FALLBACK. The engine calendar is the authority
+	 * whenever OpenRegister is installed; {@see TermijnTimerService::rollTermEnd()}
+	 * reaches this method only when the engine cannot answer, and logs that it
+	 * did. A date that already falls on a working day is returned unchanged, so
+	 * the roll never lengthens a term that does not need it.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 *
+	 * @return DateTimeImmutable The first working day on or after the date.
+	 *
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function nextWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
+		$cursor = $date;
+		while ($this->isWorkingDay(date: $cursor) === false) {
+			$cursor = $cursor->modify('+1 day');
+		}
+
+		return $cursor;
+	}//end nextWorkingDay()
 
 	/**
 	 * Count the working days in an inclusive date range.

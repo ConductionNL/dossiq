@@ -438,7 +438,8 @@
 							"requester",
 							"description",
 							"assignee",
-							"priority",
+							"impact",
+							"urgency",
 							"confidentiality",
 							"intakeChannel",
 							"startDate",
@@ -823,7 +824,8 @@
 							"requester",
 							"description",
 							"assignee",
-							"priority",
+							"impact",
+							"urgency",
 							"confidentiality",
 							"intakeChannel",
 							"startDate",
@@ -1018,7 +1020,7 @@
 					"isFinalStatus": false
 				},
 				"allowSavedViews": true,
-				"excludeFields": ["status"],
+				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards"],
 				"showViewAction": false,
 				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of customComponents.js, because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
@@ -1052,7 +1054,12 @@
 						"label": "Status",
 						"formatter": "statusTypeName"
 					},
-					"priority",
+					{
+						"key": "priorityOrder",
+						"label": "Priority",
+						"widget": "priorityBadge",
+						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) stored as an integer, so the server sorts it right, and the `priorityBadge` cell reads the word back off the row so the reader still sees a priority. A cell WIDGET rather than a formatter for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour."
+					},
 					"deadline"
 				],
 				"emptyText": "Nothing is waiting. Every open case has someone on it.",
@@ -1127,7 +1134,7 @@
 				"register": "dossiq",
 				"schema": "case",
 				"allowSavedViews": true,
-				"excludeFields": ["status"],
+				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
@@ -1247,6 +1254,12 @@
 						"formatter": "statusTypeName",
 						"widget": "statusBadge",
 						"_note": "The Status column reads the status's own colour. `statusTypeName` alone resolves the $ref to a name and stops there, so five different statuses read as one grey column. A cell WIDGET rather than a second formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a colour. The formatter stays as the fallback label the widget renders while the statusType collection is still loading."
+					},
+					{
+						"key": "priorityOrder",
+						"label": "Priority",
+						"widget": "priorityBadge",
+						"_note": "Keyed on `priorityOrder`, not on `priority`, and that is not a typo. CnDataTable sorts on the server, on the stored value of the column's key, and the stored value of `priority` is a word: sorting by it gives high, low, normal, urgent, which is neither the order a handler means nor a usable one. `priorityOrder` is the order the schema declares (x-enum-order on the priority property) written as an integer by the derivation, so the server sorts it right, and the `priorityBadge` cell reads the word back off the row so the reader still sees a priority. The priority FACET in the sidebar is unaffected: it comes from `facetable: true` on `priority` itself, which this change did not touch."
 					},
 					"assignee",
 					{
@@ -1503,6 +1516,8 @@
 												"assignee",
 												"assignedGroup",
 												"requester",
+												"impact",
+												"urgency",
 												"priority",
 												"confidentiality",
 												"deadline",
@@ -1517,9 +1532,61 @@
 													"readOnly": false,
 													"editable": false
 												},
+												"priority": {
+													"editable": false
+												},
 												"requester": {
 													"widget": "InitiatorPicker",
 													"label": "Requester"
+												}
+											}
+										}
+									}
+								},
+								{
+									"label": "Priority",
+									"widget": {
+										"id": "case-priority",
+										"type": "data",
+										"title": "Priority",
+										"icon": "FlagOutline",
+										"_note": "Where this case's priority came from. `priority` itself sits in Core case data above, shown and never typed; this section is the reasoning behind it. Every field here is `readOnly: true` in the schema except the two a person actually sets, and fieldsFromSchema DROPS a readOnly property outright unless an override re-admits it — the same trap the `identifier` note records one section up — so each carries `readOnly: false` with `editable: false`, which is the state the requirement asks for: shown, never typed. THE TWO EDITABLE FIELDS ARE THE OVERRIDE AND ITS REASON. Setting `priorityOverride` is how a person overrules the matrix; who set it and when are stamped from the session by CasePriorityDerivationListener rather than offered as fields, because whose decision it was is a fact about the edit and not something anybody should be able to type. Clearing the override clears its byline and its reason with it and returns the case to the value the matrix derives now. `hideEmpty` stays off: a case with no override must show the row empty, because the absence is the answer a handler is looking for.",
+										"content": {
+											"title": "Priority",
+											"columns": 2,
+											"include": [
+												"priorityDerived",
+												"priorityOverride",
+												"priorityOverrideReason",
+												"priorityOverrideBy",
+												"priorityOverrideAt",
+												"priorityFloor",
+												"priorityRaisedBy"
+											],
+											"hideEmpty": false,
+											"overrides": {
+												"priorityDerived": {
+													"readOnly": false,
+													"editable": false
+												},
+												"priorityOverrideReason": {
+													"widget": "textarea"
+												},
+												"priorityOverrideBy": {
+													"readOnly": false,
+													"editable": false
+												},
+												"priorityOverrideAt": {
+													"readOnly": false,
+													"editable": false
+												},
+												"priorityFloor": {
+													"readOnly": false,
+													"editable": false
+												},
+												"priorityRaisedBy": {
+													"readOnly": false,
+													"editable": false
 												}
 											}
 										}
@@ -4908,7 +4975,8 @@
 							"requester",
 							"description",
 							"assignee",
-							"priority",
+							"impact",
+							"urgency",
 							"confidentiality",
 							"intakeChannel",
 							"startDate",
@@ -5125,7 +5193,8 @@
 							"requester",
 							"description",
 							"assignee",
-							"priority",
+							"impact",
+							"urgency",
 							"confidentiality",
 							"intakeChannel",
 							"startDate",

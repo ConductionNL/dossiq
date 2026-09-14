@@ -56,3 +56,19 @@ named change is archived.
   words, and rate every driven column for it
 - [ ] 22 Carry the two rating corrections above back to the discovery
   lanes: C-intake-23 and C-search-6
+- [ ] 23 The pending proposals of 2026-09-14, thirty rows: ten changes,
+  none of which blocks another. `aanvullingsverzoek-as-a-record` waits on
+  `pause-reason-with-chasing`; `term-configuration-beyond-the-case-type`
+  waits on `termijnbewaking-op-engine-timers`;
+  `what-a-status-declares`, `what-a-transition-declares`,
+  `task-dependencies-and-the-next-planned-action`,
+  `routing-by-weight-position-and-area`,
+  `custody-and-handover-of-a-case`,
+  `markers-and-assessments-on-the-case`,
+  `splitting-a-case-and-its-incidents` and
+  `the-social-domain-plan-and-its-grounds` have no dossiq dependency and
+  each names the openregister slug it consumes
+- [ ] 24 Rows 2.34, 7.8 and Q8.23 are carried by `case-priority-impact-urgency`,
+  `frozen-beschikking-and-numbered-successor` and
+  `every-term-on-the-engine-calendar`. Re-rate them from those changes
+  when each is archived, not from a fresh reading of the tree
