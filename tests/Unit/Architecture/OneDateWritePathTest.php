@@ -153,9 +153,12 @@ class OneDateWritePathTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const PARSER_ALLOWLIST = [
-		'Repair/ArmTermijnEngineTimers.php::dateOrNull' => 'one-shot repair step arming engine timers; it reads stored values rather than writing a case date, and it retires with the repair step itself',
-		'Service/Beschikking/OpenRegisterArchivalAdapter.php::computeDestructionDate' => 'archival retention arithmetic, not a case date write; belongs to the archival capability and its own change',
-		'Service/Bezwaar/BeroepService.php::shiftDate' => 'beroep term arithmetic on an already normalised value; moves with openspec/changes/terms-on-the-engine-calendar',
+		'Repair/ArmTermijnEngineTimers.php::dateOrNull' => 'one-shot repair step arming engine timers; it reads stored values rather'
+			. ' than writing a case date, and it retires with the repair step itself',
+		'Service/Beschikking/OpenRegisterArchivalAdapter.php::computeDestructionDate' => 'archival retention arithmetic, not a case'
+			. ' date write; belongs to the archival capability and its own change',
+		'Service/Bezwaar/BeroepService.php::shiftDate' => 'beroep term arithmetic on an already normalised value; moves with'
+			. ' openspec/changes/terms-on-the-engine-calendar',
 		'Service/CaseLifecycleService.php::requireLaterDate' => 'a comparison guard, not a writer: it refuses an earlier date and stores nothing itself',
 	];
 

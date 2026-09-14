@@ -108,7 +108,11 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheContactMappingIsFoundAgain(): void {
-		$mapper = new ContactBetrokkeneMapper(register: $this->register, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
+		$mapper = new ContactBetrokkeneMapper(
+			register: $this->register,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 		$contact = ['id' => 'c-1', 'bsn' => '123456789'];
 		$endpoint = ['id' => 'ep-1'];
 
@@ -292,7 +296,11 @@ class StufRegisterContractTest extends TestCase {
 		$mappings->find(case: $case, endpoint: $endpoint);
 		$mappings->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
 
-		$mapper = new ContactBetrokkeneMapper(register: $this->register, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
+		$mapper = new ContactBetrokkeneMapper(
+			register: $this->register,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 		$mapper->linkContact(contact: $contact, involvedParty: 'NPS-001', endpoint: $endpoint);
 		$mapper->findOrCreateBetrokkene(
 			contact: $contact,

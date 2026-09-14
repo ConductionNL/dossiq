@@ -51,10 +51,13 @@ class CaseDateNormaliserTest extends TestCase {
 		$context->method('isBound')->willReturn($tenantZone !== null);
 		$context->method('getTenantId')->willReturn('tenant-1');
 
+		$configured = null;
+		if ($tenantZone !== null) {
+			$configured = ['timezone' => $tenantZone];
+		}
+
 		$config = $this->createMock(originalClassName: TenantConfigurationService::class);
-		$config->method('getConfig')->willReturn(
-			$tenantZone === null ? null : ['timezone' => $tenantZone]
-		);
+		$config->method('getConfig')->willReturn($configured);
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
@@ -67,6 +70,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * No tenant leaves the zone at the default the register declares.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testNoTenantFallsBackToTheDeclaredDefault(): void {
 		self::assertSame(
 			expected: 'Europe/Amsterdam',
@@ -74,6 +84,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * The administered tenant zone is the zone the normaliser answers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testTheTenantZoneIsRead(): void {
 		self::assertSame(
 			expected: 'Europe/Brussels',
@@ -81,6 +98,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A zone the allow list does not admit falls back, it is not trusted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAZoneOutsideTheAllowListIsRefused(): void {
 		self::assertSame(
 			expected: 'Europe/Amsterdam',
@@ -88,6 +112,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * The fallback is logged once per request, not once per date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testTheFallbackIsLoggedOncePerRequest(): void {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects(self::once())->method('info');
@@ -116,6 +147,13 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(expected: '2028-01-31', actual: $normaliser->toCalendarDate('2028-01-31T00:00:00+01:00', 'endDate'));
 	}
 
+	/**
+	 * A moment carries the offset the tenant zone gives that date, winter and summer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAMomentCarriesTheTenantOffset(): void {
 		self::assertSame(
 			expected: '2028-01-31T00:00:00+01:00',
@@ -127,6 +165,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A Belgian tenant reads Belgian offsets.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testABelgianTenantGetsBelgianOffsets(): void {
 		self::assertSame(
 			expected: '2028-01-31T00:00:00+01:00',
@@ -134,6 +179,13 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * A UTC tenant keeps the instant and re-reads it in UTC.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAUtcTenantReadsAnOffsetValueInUtc(): void {
 		self::assertSame(
 			expected: '2028-01-30T23:00:00+00:00',
@@ -141,22 +193,50 @@ class CaseDateNormaliserTest extends TestCase {
 		);
 	}
 
+	/**
+	 * An unreadable value is refused, and the refusal names the field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAnUnreadableValueIsRefusedAndNamesTheField(): void {
 		$this->expectException(exception: InvalidArgumentException::class);
 		$this->expectExceptionMessageMatches(regularExpression: '/deadline/');
 		$this->normaliser(tenantZone: 'Europe/Amsterdam')->parse('31-01-2028', 'deadline');
 	}
 
+	/**
+	 * An empty value is refused rather than read as today.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAnEmptyValueIsRefused(): void {
 		$this->expectException(exception: InvalidArgumentException::class);
 		$this->normaliser(tenantZone: 'Europe/Amsterdam')->parse('', 'deadline');
 	}
 
+	/**
+	 * A day the calendar does not have is refused, not rolled over.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAnImpossibleCalendarDayIsRefused(): void {
 		$this->expectException(exception: InvalidArgumentException::class);
 		$this->normaliser(tenantZone: 'Europe/Amsterdam')->parse('2028-02-31', 'deadline');
 	}
 
+	/**
+	 * A refusal never carries today, which is the substitution this change ends.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testARefusedValueIsNeverReplacedByToday(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
 		try {
@@ -167,6 +247,13 @@ class CaseDateNormaliserTest extends TestCase {
 		}
 	}
 
+	/**
+	 * A read path gets null from tryParse, where a throw would be wrong.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testTryParseAnswersNullForAReadPath(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
 		self::assertNull(actual: $normaliser->tryParse('31-01-2028'));
@@ -176,6 +263,13 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(expected: '2028-01-31', actual: $normaliser->toCalendarDateOrNull('2028-01-31T18:00:00+01:00'));
 	}
 
+	/**
+	 * A value written before this change reads back as the same day.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testAStoredValueReadsBackUnchanged(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
 		foreach (['2026-03-02', '2026-03-02T09:30:00+01:00'] as $stored) {
@@ -186,6 +280,13 @@ class CaseDateNormaliserTest extends TestCase {
 		}
 	}
 
+	/**
+	 * A DateTime instance is accepted and re-read in the administered zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testADateTimeInstanceIsAcceptedAndRezoned(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
 		$moment = new DateTimeImmutable('2028-01-31T00:00:00+00:00');
@@ -193,6 +294,13 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(expected: '2028-01-31', actual: $normaliser->formatCalendarDate($moment));
 	}
 
+	/**
+	 * Today is midnight in the administered zone, not in the process zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testTodayIsMidnightInTheAdministeredZone(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Brussels');
 		$today = $normaliser->today();
@@ -200,6 +308,13 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(expected: 'Europe/Brussels', actual: $today->getTimezone()->getName());
 	}
 
+	/**
+	 * A date built from parts does not inherit the process zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
+	 */
 	public function testFromPartsDoesNotInheritTheProcessZone(): void {
 		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
 		$easterMonday = $normaliser->fromParts(2026, 4, 6);

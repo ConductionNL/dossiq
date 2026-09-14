@@ -240,8 +240,10 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		return [
 			'termijn voltooiDatum (TermijnController::voltooi)' => fn (string $v): string => $this->termijnVoltooiDatum(submitted: $v),
 			'termijn newEinddatum (TermijnController::verleng)' => fn (string $v): string => $this->termijnNewEinddatum(submitted: $v),
-			'klacht afhandelDeadline (ComplaintService::addCalendarWeeks)' => fn (string $v): string => $this->complaints()->addCalendarWeeks(startDate: $v, weeks: 0),
-			'klacht ontvangstbevestiging (ComplaintService::addWorkingDays)' => fn (string $v): string => $this->complaints()->addWorkingDays(startDate: $v, days: 0),
+			'klacht afhandelDeadline (ComplaintService::addCalendarWeeks)' => fn (string $v): string =>
+				$this->complaints()->addCalendarWeeks(startDate: $v, weeks: 0),
+			'klacht ontvangstbevestiging (ComplaintService::addWorkingDays)' => fn (string $v): string =>
+				$this->complaints()->addWorkingDays(startDate: $v, days: 0),
 			'advies deadline (AdviceService::requestAdvice)' => fn (string $v): string => $this->adviceDeadline(submitted: $v),
 			'woo expectedResolution (WOODeadlineService::calculate)' => fn (string $v): string => $this->wooReceiptDay(submitted: $v),
 			'contactmoment startedAt (Kcc\ContactMomentService::create)' => fn (string $v): string => $this->contactMomentStartDay(submitted: $v),
