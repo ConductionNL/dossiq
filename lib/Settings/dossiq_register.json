@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.10.0",
+                "version": "1.11.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -414,6 +414,65 @@
                         "$ref": "caseType",
                         "description": "The version that replaced this one, written the moment that version is published. A version with this filled in keeps running its own cases and is no longer offered for new ones. Empty means this is the version in use.",
                         "title": "Superseded by",
+                        "facetable": true
+                    },
+                    "rightsMatrix": {
+                        "type": "array",
+                        "title": "Rights",
+                        "description": "Who may do what with cases of this type, as a matrix of department by role, separately per confidentiality level. Confidentiality is an AXIS of this declaration and is never folded into a role name: a role per level per department is the combinatorial explosion every mandate matrix eventually becomes. Declared here and evaluated in OpenRegister, which owns the grant, its provenance and the deny. dossiq computes no effective permission from these rows.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "department",
+                                "role",
+                                "confidentiality",
+                                "actions"
+                            ],
+                            "properties": {
+                                "department": {
+                                    "type": "string",
+                                    "title": "Department",
+                                    "description": "The department the right is granted to. Matches organisatieRol.department.",
+                                    "maxLength": 255
+                                },
+                                "role": {
+                                    "type": "string",
+                                    "title": "Role",
+                                    "description": "The organisational role the right is granted to, an organisatieRol id or its roleName. A role name never encodes a confidentiality level; that is what the axis beside it is for.",
+                                    "maxLength": 255
+                                },
+                                "confidentiality": {
+                                    "type": "string",
+                                    "title": "Confidentiality",
+                                    "description": "The confidentiality level this row grants at. The same vocabulary the case and the case type use, so a row and a case can be compared without a translation table.",
+                                    "enum": [
+                                        "openbaar",
+                                        "beperkt_openbaar",
+                                        "intern",
+                                        "zaakvertrouwelijk",
+                                        "vertrouwelijk",
+                                        "confidentieel",
+                                        "geheim",
+                                        "zeer_geheim"
+                                    ]
+                                },
+                                "actions": {
+                                    "type": "array",
+                                    "title": "Actions",
+                                    "description": "The verbs granted, in OpenRegister's vocabulary. GET /apps/openregister/api/permissions publishes the grantable set; a verb outside it is refused at save time and names itself.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "caseTypeGroup": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseTypeGroup",
+                        "title": "Case type group",
+                        "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
                     }
                 }
