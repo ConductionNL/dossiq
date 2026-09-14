@@ -18,6 +18,7 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import { generateUrl } from '@nextcloud/router'
 import { createApp } from 'vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
@@ -76,6 +77,10 @@ import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
 import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
+// The Queue's and Cases' Claim row action, in its own module so a unit test
+// can reach it without importing every page this file mounts.
+// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+import { claimCase } from './utils/caseClaim.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with dossiq's offline schema mapping in src/main.js. The custom
@@ -230,7 +235,38 @@ function extendTermSelection({ selectedIds }) {
 	openBulkDialog('extend', selectedIds)
 }
 
+/**
+ * Where Add integration lands: integriq's overview, preset and linking.
+ */
+export const INTEGRIQ_CONNECTIONS_PATH = '/apps/integriq/connections?app=dossiq&link=1'
+
+/**
+ * The Integrations page's Add integration header action.
+ *
+ * A connection row is integriq's, and a source is linked to it on integriq's
+ * Connections overview (hydra connection-registry D9). `link=1` opens the
+ * link-a-source dialog there, pre-filtered to dossiq's connections.
+ *
+ * A FUNCTION handler because a header action's `navigate` keyword only pushes
+ * a route name inside this app's router, which cannot leave the app.
+ *
+ * The route is the one hydra connection-registry D9 names.
+ *
+ * @return {void}
+ *
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ */
+export function openIntegriqConnections() {
+	window.location.assign(generateUrl(INTEGRIQ_CONNECTIONS_PATH))
+}
+
 export default {
+	// The Queue's and Cases' `claim` row action (case-claim-action, row 2.4).
+	// A function handler for the reason the bulk actions below are ones, plus
+	// one of its own: the row dispatcher knows neither `api-call` nor a
+	// token-resolving write, so a declarative claim would either do nothing or
+	// store the literal string `@me`.
+	claimCase,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an
@@ -244,6 +280,9 @@ export default {
 	suspendSelection,
 	resumeSelection,
 	extendTermSelection,
+	// The Integrations page's Add integration header action. A FUNCTION
+	// handler because it leaves the app for integriq's Connections overview.
+	openIntegriqConnections,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds

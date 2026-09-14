@@ -30,6 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,6 +50,8 @@ use Throwable;
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
 class TenantAuthenticationService {
+	use RefusesWhenIndeterminate;
+
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
 	 *
@@ -91,7 +95,10 @@ class TenantAuthenticationService {
 	 *
 	 * @return array{allowed: bool, reason: string} Decision payload.
 	 *
+	 * @throws RefusedException When the matrix could not be read, so the answer is neither yes nor no.
+	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
 		try {
@@ -111,6 +118,11 @@ class TenantAuthenticationService {
 			}
 
 			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+		} catch (RefusedException $e) {
+			// A refusal already says what happened and with which status.
+			// Folding it into the fail-closed branch below is what made an
+			// unreadable matrix indistinguishable from a role that may not act.
+			throw $e;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: mandate matrix validation failed (fail-closed)',
@@ -165,9 +177,12 @@ class TenantAuthenticationService {
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
-	 * @return array<string, array<string, bool>>|null Active matrix or null.
+	 * @return array<string, array<string, bool>>|null Active matrix, or null when the tenant has none.
+	 *
+	 * @throws RefusedException When the matrix store could not be read at all.
 	 *
 	 * @spec openspec/specs/tenant-mandate/spec.md#requirement-mandate-matrix-validation-per-action-req-002-d-req-006-d
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function loadActiveMatrix(string $tenantId): ?array {
 		$objectService = $this->getObjectService();
@@ -175,12 +190,13 @@ class TenantAuthenticationService {
 			return null;
 		}
 
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
+		// ObjectService::findAll() takes a single $config array — the previous
+		// named-argument form threw "Unknown named parameter $register" and was
+		// swallowed by the catch that stood here, which is how an unreadable
+		// matrix became "not authorised". Register/schema live inside
+		// `filters`; limit/offset are top-level config keys.
+		$rows = $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll(
 				[
 					'filters' => [
 						'register' => TenantSaasService::REGISTER,
@@ -190,10 +206,11 @@ class TenantAuthenticationService {
 					'limit' => 50,
 					'offset' => 0,
 				]
-			);
-		} catch (Throwable $e) {
-			return null;
-		}
+			),
+			what: 'the mandate matrix for tenant ' . $tenantId,
+			rule: 'tenant-mandate-matrix-unreadable',
+			sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
+		);
 
 		if (is_array($rows) === false || count($rows) === 0) {
 			return null;

@@ -5,6 +5,14 @@
  * The Integrations page: every connection Dossiq has to a system outside it,
  * on one page, with a status the app can back.
  *
+ * WHERE THE ROWS COME FROM (adopt-connection-registry). The rows are
+ * integriq's `app_connection` objects, synced from `lib/Settings/connections.json`,
+ * with `app` equal to `dossiq`. Dossiq no longer seeds or writes a row: a probe
+ * sends integriq a report and a save asks integriq to resolve again, and
+ * integriq decides the status (hydra connection-registry D4). So this spec
+ * needs integriq installed and synced, and it reads the rows from
+ * `/apps/openregister/api/objects/integriq/app_connection?app=dossiq`.
+ *
  * WHAT THIS SPEC IS GUARDING, because none of it fails loudly on its own.
  * The page's whole value is that it does not overstate. A seed row that
  * claimed Configured, a card whose Open settings link points at an anchor no
@@ -16,8 +24,8 @@
  * Locale: nothing forces the language of the E2E instance, so nothing is
  * asserted on an English label. Status is read back from the saved object over
  * the API, and the page itself is addressed by route, by row identity (the
- * connection's own title, which is seeded here and not translated) and by the
- * href of the settings link.
+ * connection's own title, which is declared in connections.json and not
+ * translated) and by the href of the settings link.
  *
  * The Required apps section (REQ-ADMIN-021) has no test that can pass yet and
  * is `test.fixme` with the reason: the installed @conduction/nextcloud-vue
@@ -33,10 +41,10 @@ import {
 	STORAGE_STATE,
 	storageStatePath,
 } from './helpers/auth.ts'
-import { getRequestToken, listObjects, updateObject } from './helpers/fixtures.ts'
+import { getRequestToken } from './helpers/fixtures.ts'
 import { dismissSupportDialog } from './helpers/nav.ts'
 
-/** The connection keys the seed ships, in the order row A34 lists them. */
+/** The connection keys connections.json declares, in the order row A34 lists them. */
 const SEEDED_KEYS = [
 	'zgw',
 	'stuf',
@@ -65,8 +73,20 @@ const SEEDED_KEYS = [
  */
 const UNAVAILABLE_KEYS = ['kvk']
 
-/** Built, called, and dormant until its tier key is set. */
+/**
+ * Built, called, and dormant until its tier key is set.
+ *
+ * connections.json gives it an `unconfiguredMessage` naming
+ * `integration.brp.mode`, which integriq shows while the row is unconfigured
+ * (contract D4 rule 6), because no admin section writes that key.
+ */
 const DORMANT_KEYS = ['brp']
+
+/** Declared without a settings section. */
+const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
+
+/** Integriq's objects endpoint for dossiq's connection rows. */
+const CONNECTIONS_API = '/index.php/apps/openregister/api/objects/integriq/app_connection'
 
 /**
  * The two seams that ship a mock adapter.
@@ -87,16 +107,34 @@ let api: APIRequestContext
 let token: string
 
 /**
- * The seeded integration rows, keyed by connection key.
+ * Dossiq's rows in integriq's connection registry.
+ *
+ * `app` is a BARE filter key: the objects endpoint reads `filter[app]` as a
+ * filter on nothing and answers the empty set without an error.
+ *
+ * @param request The authenticated request context.
+ */
+async function listConnections(request: APIRequestContext): Promise<any[]> {
+	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
+	expect(res.ok(), `list integriq/app_connection -> ${res.status()}`).toBeTruthy()
+	const body = await res.json()
+	return body.results ?? []
+}
+
+/**
+ * Dossiq's connection rows, keyed by connection key.
  *
  * @param request The authenticated request context.
  */
 async function integrationsByKey(
 	request: APIRequestContext,
 ): Promise<Record<string, any>> {
-	const rows = await listObjects(request, 'dossiqIntegration')
+	const rows = await listConnections(request)
 	const byKey: Record<string, any> = {}
 	for (const row of rows) {
+		// The preset is the page's; this read makes its own. A row from another
+		// app here would mean the filter was dropped, not that dossiq owns it.
+		expect(String(row.app), 'a connection row from another app').toBe('dossiq')
 		byKey[String(row.key)] = row
 	}
 	return byKey
@@ -108,7 +146,8 @@ async function integrationsByKey(
  * @param page The Playwright page.
  */
 async function openIntegrations(page: any) {
-	await page.goto('/apps/dossiq/settings/integrations')
+	// The menu entry carries `query: {app: dossiq}`; open the page the way it does.
+	await page.goto('/apps/dossiq/settings/integrations?app=dossiq')
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 }
@@ -149,7 +188,7 @@ test.describe('Integrations', () => {
 		await api.dispose()
 	})
 
-	test('lists the twelve connections in the seeded order', async ({ page }) => {
+	test('lists the twelve declared connections in order', async ({ page }) => {
 		const byKey = await integrationsByKey(api)
 		expect(Object.keys(byKey).sort()).toEqual([...SEEDED_KEYS].sort())
 
@@ -192,17 +231,17 @@ test.describe('Integrations', () => {
 		page,
 	}) => {
 		const byKey = await integrationsByKey(api)
-		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
-			expect(byKey[key].statusMessage).not.toMatch(/not built/i)
-			// The seed writes `""` and the register does not store an empty
-			// string, so the row reads back with no such key at all. Both
-			// spellings say the same thing, and the assertion that matters is
-			// the one below: the affordance is absent from the page.
+		for (const key of UNLINKED_KEYS) {
+			expect(byKey[key].statusMessage || '').not.toMatch(/not built/i)
+			// connections.json omits the field, so the row reads back with no
+			// such key at all or an empty one. Both say the same thing, and the
+			// assertion that matters is the one below: the affordance is absent
+			// from the page.
 			expect(byKey[key].settingsUrl || '').toBe('')
 		}
 
 		await openIntegrations(page)
-		for (const key of [...UNAVAILABLE_KEYS, ...DORMANT_KEYS]) {
+		for (const key of UNLINKED_KEYS) {
 			const row = page.getByRole('row', {
 				name: new RegExp(byKey[key].title, 'i'),
 			})
@@ -260,10 +299,10 @@ test.describe('Integrations', () => {
 		const outcome = await res.json()
 
 		const mailbox = (await integrationsByKey(api)).mailbox
-		// The probe writes what it found, whichever way it went: an instance
+		// The probe reports what it found, whichever way it went: an instance
 		// with no IMAP host saved is Not configured, one with an unreachable
-		// host is Error. Both are claims backed by the probe; neither is the
-		// seed.
+		// host is Error. Integriq takes the newer of report and probe (D4 rule
+		// 4), and the mailbox has no linked source, so the report is the row.
 		expect(['error', 'unconfigured', 'configured']).toContain(mailbox.status)
 		if (outcome.ok === false && outcome.error === 'connection_failed') {
 			expect(mailbox.status).toBe('error')
@@ -275,19 +314,59 @@ test.describe('Integrations', () => {
 	})
 
 	test('marks the KCC section configured once it is saved', async () => {
-		const res = await api.post('/index.php/apps/dossiq/api/settings', {
-			headers: {
-				requesttoken: token,
-				'OCS-APIRequest': 'true',
-				'Content-Type': 'application/json',
-			},
-			data: { identification_method: 'both' },
-		})
-		expect(res.ok(), `settings save -> ${res.status()}`).toBeTruthy()
+		const settingsApi = '/index.php/apps/dossiq/api/settings'
+		const writeHeaders = {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		}
 
-		const kcc = (await integrationsByKey(api)).kcc
-		expect(kcc.status).toBe('configured')
-		expect(String(kcc.checkedAt || '')).not.toBe('')
+		// Snapshot the one key this test writes. The row is integriq's now and
+		// follows the saved value, so putting the VALUE back is what leaves the
+		// next run a page that claims nothing it has not checked.
+		const before = await api.get(settingsApi)
+		expect(before.ok(), `settings read -> ${before.status()}`).toBeTruthy()
+		const previous = String((await before.json())?.config?.identification_method ?? '')
+
+		try {
+			const res = await api.post(settingsApi, {
+				headers: writeHeaders,
+				data: { identification_method: 'both' },
+			})
+			expect(res.ok(), `settings save -> ${res.status()}`).toBeTruthy()
+
+			// The save sent a refresh request; integriq resolved the row from
+			// the saved value (D4 rule 5).
+			const kcc = (await integrationsByKey(api)).kcc
+			expect(kcc.status).toBe('configured')
+			expect(String(kcc.checkedAt || '')).not.toBe('')
+		} finally {
+			await api.post(settingsApi, {
+				headers: writeHeaders,
+				data: { identification_method: previous },
+			})
+		}
+	})
+
+	test('sends Add integration to integriq instead of offering a form', async ({
+		page,
+	}) => {
+		await openIntegrations(page)
+
+		// No generic Add button: a row nothing declared has nothing to check.
+		await expect(page.locator('[data-testid="cn-cta-primary"]')).toHaveCount(0)
+
+		// The action lives in the overflow menu. English and Dutch are the two
+		// catalogues this app ships, and nothing forces the E2E locale.
+		await page.locator('[data-testid="cn-actions"] button').first().click()
+		await Promise.all([
+			page.waitForURL(/\/apps\/integriq\/connections\?app=dossiq&link=1$/, {
+				timeout: 30_000,
+			}),
+			page
+				.getByRole('menuitem', { name: /Add integration|Integratie toevoegen/i })
+				.click(),
+		])
 	})
 
 	/**
@@ -440,7 +519,9 @@ test.describe('Integrations', () => {
 	 * The test above proves the ROUTER turns an ordinary account away. It
 	 * cannot prove anything about the rows, because the rows are not the
 	 * page's to withhold: they live in OpenRegister and the page fetches them
-	 * over `GET /apps/openregister/api/objects/dossiq/dossiqIntegration`.
+	 * over `GET /apps/openregister/api/objects/integriq/app_connection`. Since
+	 * adopt-connection-registry the `authorization` block that guards them is
+	 * integriq's (connection-registry D3), not dossiq's.
 	 * A client-side guard cannot narrow a server-side list, so for as long as
 	 * that endpoint answered, "not reachable" was true of the page and false
 	 * of the data. Measured before the fix, as an account in no groups at all:
@@ -482,7 +563,7 @@ test.describe('Integrations', () => {
 		// CONTROL FIRST. Everything below reads a denial out of an empty list,
 		// so the list has to be non-empty for someone before that means
 		// anything. `api` is the admin context this file's other tests use.
-		const adminRows = await listObjects(api, 'dossiqIntegration')
+		const adminRows = await listConnections(api)
 		expect(
 			adminRows.length,
 			'the control failed, not the guard: the admin sees no integration '
@@ -530,10 +611,7 @@ test.describe('Integrations', () => {
 			// and unwraps, and the shape of the refusal is part of what is
 			// being asserted: OpenRegister narrows a list in SQL, so a denial
 			// here is HTTP 200 with an empty result set, not a 403.
-			const res = await plainApi.get(
-				'/index.php/apps/openregister/api/objects/dossiq/dossiqIntegration'
-					+ '?_limit=200',
-			)
+			const res = await plainApi.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
 			expect(res.status()).toBe(200)
 			const body = await res.json()
 
@@ -541,7 +619,7 @@ test.describe('Integrations', () => {
 				body.results ?? [],
 				`${PLAIN_USER} holds no group and must see no integration rows; `
 					+ `the admin sees ${adminRows.length}. Rows here mean the `
-					+ '`authorization` block on the dossiqIntegration schema is '
+					+ '`authorization` block on integriq\'s app_connection schema is '
 					+ 'absent or was not imported — OpenRegister treats an absent '
 					+ 'block as open, so this is exactly how it read before the fix',
 			).toHaveLength(0)
@@ -560,7 +638,7 @@ test.describe('Integrations', () => {
 
 		for (const key of SIMULATED_KEYS) {
 			const row = byKey[key]
-			expect(row, `no seeded row for ${key}`).toBeTruthy()
+			expect(row, `no declared row for ${key}`).toBeTruthy()
 			// The claim, not the rendering. A Simulated row whose message says
 			// nothing would render perfectly and tell the reader nothing, which
 			// is the failure mode this whole page exists to catch.
@@ -613,23 +691,5 @@ test.describe('Integrations', () => {
 				+ 'section is product work in src/manifest.json (and possibly '
 				+ 'nextcloud-vue), not a change to this spec.',
 		)
-	})
-
-	test('leaves the seeded rows where the next run expects them', async () => {
-		// A guard on this spec's own residue, not a scenario. The KCC test
-		// writes app config that persists, and the next run must still start
-		// from a page that claims nothing it has not checked. Restoring the row
-		// is cheap and keeps the "fresh instance" assertion honest on a reused
-		// instance.
-		const kcc = (await integrationsByKey(api)).kcc
-		if (kcc && kcc.status === 'configured') {
-			await updateObject(
-				api,
-				token,
-				'dossiqIntegration',
-				String(kcc['@self']?.id ?? kcc.id),
-				{ status: 'unconfigured', statusMessage: 'Not checked yet' },
-			)
-		}
 	})
 })

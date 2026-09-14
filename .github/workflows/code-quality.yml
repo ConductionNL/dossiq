@@ -243,7 +243,13 @@ jobs:
       # cost is that decidiq also loads during PHPUnit. `app` is the `<id>` in
       # decidiq's appinfo/info.xml on `development` (verified: `decidiq`, NC
       # 32-34); the repo was renamed from decidesk, which still redirects.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"}]'
+      #
+      # integriq is here because the Integrations page reads integriq's
+      # `app_connection` rows since dossiq#2715. Without it the page shows the
+      # missing-dependency screen and `integrations-page.spec.ts` fails on
+      # every run. `app` is `integriq`, verified in its appinfo/info.xml on
+      # `development` on 2026-09-14.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/decidiq","app":"decidiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
       # SBOM was disabled here until @conduction/nextcloud-vue's dependency
       # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
       # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version

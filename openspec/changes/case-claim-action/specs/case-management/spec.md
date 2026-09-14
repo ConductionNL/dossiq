@@ -2,18 +2,19 @@
 
 ### Requirement: You claim an unassigned case with one click (REQ-CM-33)
 
-`#CaseDetail` SHALL offer Claim when the case has no assignee. Claim SHALL
-set `assignee` to the signed-in user through the object store and SHALL
-record nothing beyond the platform audit row. `#Queue` and the Unclaimed lens
-of `#Cases` SHALL offer Claim as a row action.
+`#CaseDetail` SHALL offer Claim on an open case. Claim SHALL set `assignee` to
+the signed-in user and SHALL record nothing beyond the audit row the field
+change already carries. A claim on a case that already has a handler SHALL be
+refused with a status naming the rule, and SHALL leave the assignee unchanged.
+`#Queue` and `#Cases` SHALL offer Claim as a row action.
 
 #### Scenario: Claim from the case page
 @e2e tests/e2e/case-claim.spec.ts
 
 - **GIVEN** an open case without an assignee
 - **WHEN** you press Claim
-- **THEN** the case header SHALL show you as assignee
-- **AND** Claim SHALL no longer be offered
+- **THEN** the case SHALL have you as assignee
+- **AND** a second claim SHALL be refused, naming that you already hold it
 
 #### Scenario: Claim from the queue
 @e2e tests/e2e/case-claim.spec.ts
@@ -25,9 +26,9 @@ of `#Cases` SHALL offer Claim as a row action.
 
 ### Requirement: You release a case you hold (REQ-CM-34)
 
-`#CaseDetail` SHALL offer Release when you are the assignee. Release SHALL
-clear `assignee`. A refused write SHALL show the platform's message and
-change nothing.
+`#CaseDetail` SHALL offer Release on an open case. Release SHALL clear
+`assignee`. A release by anyone who is not the assignee SHALL be refused with a
+status naming the rule, SHALL show that refusal, and SHALL change nothing.
 
 #### Scenario: Release returns the case to the queue
 @e2e tests/e2e/case-claim.spec.ts

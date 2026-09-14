@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -78,7 +79,10 @@ class MandaatCheckService {
 	 *
 	 * @return array{authorized:bool, mandaatId?:string, reden?:string|null, conflictReason?:string, failedConditions?:array<int,string>}
 	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 *
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function isAuthorized(
 		string $userId,
@@ -168,9 +172,12 @@ class MandaatCheckService {
 	 * @param string $caseType Case type slug (may be empty).
 	 * @param DateTimeImmutable|null $date Date (default today).
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<int, array<string, mixed>> The mandates, or an empty list when none apply.
+	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array {
 		$date = ($date ?? new DateTimeImmutable());
@@ -190,8 +197,20 @@ class MandaatCheckService {
 				filters: ['status' => 'active']
 			);
 		} catch (\Throwable $e) {
-			return [];
-		}
+			$this->logger->warning(
+				'Dossiq MandaatCheckService: mandate register could not be read',
+				['decisionType' => $decisionType, 'caseType' => $caseType, 'exception' => $e->getMessage()]
+			);
+			// An empty list here made isAuthorized() answer "niet bevoegd",
+			// which is a statement about the user. An unreadable register is
+			// not one.
+			throw new RefusedException(
+				rule: 'mandaat-register-unreadable',
+				sentence: 'The mandate register could not be read, so this decision cannot be authorised right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
 
 		$out = [];
 		foreach ($rows as $row) {
@@ -272,7 +291,10 @@ class MandaatCheckService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
+	 * @throws RefusedException When the mandate register could not be read at all.
+	 *
 	 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array {
 		$date = new DateTimeImmutable();

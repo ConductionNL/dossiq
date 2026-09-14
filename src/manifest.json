@@ -378,9 +378,15 @@
 			"label": "Integrations",
 			"icon": "PowerPlugOutline",
 			"route": "Integrations",
+			"query": {
+				"app": "dossiq"
+			},
 			"section": "settings",
 			"order": 99,
-			"permission": "admin"
+			"permission": "admin",
+			"visibleIf": {
+				"appInstalled": "integriq"
+			}
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
@@ -1015,6 +1021,7 @@
 				"excludeFields": ["status"],
 				"viewModes": ["table", "cards"],
 				"showViewAction": false,
+				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of customComponents.js, because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
 				"actions": [
 					{
 						"id": "view",
@@ -1022,6 +1029,13 @@
 						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
+						"type": "handler"
+					},
+					{
+						"id": "claim",
+						"label": "Claim",
+						"icon": "AccountCheckOutline",
+						"handler": "claimCase",
 						"type": "handler"
 					}
 				],
@@ -1138,6 +1152,7 @@
 					]
 				},
 				"showViewAction": false,
+				"_claimNote": "The Claim row action is the same one the Queue carries (case-claim-action, row 2.4), reachable from every lens rather than only from Unclaimed. It is offered on every row, including rows that already have a handler: a row action's `visible` predicate is a FUNCTION and this file is JSON, so per-row visibility cannot be declared here. A claim on a case that is already somebody's is refused by the endpoint with a sentence.",
 				"actions": [
 					{
 						"id": "view",
@@ -1145,6 +1160,13 @@
 						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
+						"type": "handler"
+					},
+					{
+						"id": "claim",
+						"label": "Claim",
+						"icon": "AccountCheckOutline",
+						"handler": "claimCase",
 						"type": "handler"
 					}
 				],
@@ -1730,7 +1752,7 @@
 										"type": "case-related-planned",
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
 									}
 								},
 								{
@@ -1947,6 +1969,7 @@
 					]
 				},
 				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
+				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
 				"headerActions": [
 					{
 						"id": "add-party",
@@ -2093,6 +2116,34 @@
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "eq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-claim",
+						"type": "api-call",
+						"label": "Claim",
+						"icon": "AccountCheckOutline",
+						"url": "/apps/dossiq/api/case/@objectId/claim",
+						"method": "POST",
+						"successMessage": "You are now handling this case.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-release",
+						"type": "api-call",
+						"label": "Release",
+						"icon": "AccountArrowRightOutline",
+						"url": "/apps/dossiq/api/case/@objectId/release",
+						"method": "POST",
+						"successMessage": "The case is back in the queue.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
 							"value": true
 						}
 					},
@@ -4625,16 +4676,30 @@
 			"type": "index",
 			"title": "Integrations",
 			"permission": "admin",
+			"requiresApp": {
+				"id": "integriq",
+				"name": "Integriq"
+			},
 			"config": {
-				"register": "dossiq",
-				"schema": "dossiqIntegration",
+				"register": "integriq",
+				"schema": "app_connection",
 				"showViewAction": false,
+				"showAdd": false,
+				"_registryNote": "The rows are integriq's, not dossiq's (adopt-connection-registry, hydra connection-registry D8). Dossiq declares its twelve connections in lib/Settings/connections.json, integriq syncs them into its `app_connection` schema and works out each status. The `app=dossiq` preset is NOT here: it is the menu entry's `query`, which ADR-097 decision 5 names as the way to scope an index page, and the index page merges the route query into the fetch as a bare filter key. A deep link without the query lists every app's rows, which the admin-only schema already lets an admin see on integriq's overview. `showAdd` is false because a row nothing declared has nothing to check (D9); Add integration leaves for integriq's overview through the `openIntegriqConnections` handler, since a header action's `navigate` only pushes a route name inside this app.",
+				"headerActions": [
+					{
+						"id": "add-integration",
+						"label": "Add integration",
+						"icon": "PowerPlugOutline",
+						"handler": "openIntegriqConnections"
+					}
+				],
 				"defaultSort": {
 					"field": "order",
 					"direction": "asc"
 				},
-				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021 — the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget — and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns and the seed are the page.",
-				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text — which is exactly what REQ-ADMIN-019 asks for on the BRP and KvK rows: no Open settings offered.",
+				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021, the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget, and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns are the page, and the rows come from integriq's registry either way.",
+				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text, which is exactly what REQ-ADMIN-019 asks for on the BRP, KvK, PDOK, Berichtenbox and Document templates rows: no Open settings offered. Integriq copies `settingsUrl` from lib/Settings/connections.json, where those five rows omit it.",
 				"columns": [
 					{
 						"key": "title",
@@ -4643,7 +4708,7 @@
 					{
 						"key": "status",
 						"label": "Status",
-						"formatter": "integrationStatus"
+						"formatter": "connectionStatus"
 					},
 					{
 						"key": "statusMessage",
@@ -4658,7 +4723,7 @@
 						"key": "settingsUrl",
 						"label": "Settings",
 						"sortable": false,
-						"formatter": "integrationSettingsLabel",
+						"formatter": "connectionSettingsLabel",
 						"widget": "link",
 						"widgetProps": {
 							"href": "{settingsUrl}"

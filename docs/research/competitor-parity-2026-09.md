@@ -42,6 +42,8 @@ The ledger holds **225 rows**: the original 206-row matrix from round 2 (`proces
 
 Proposals are kept out of the matrix for a reason the round 2 file states: a proposed row has a verdict for the system that produced it and nothing for the systems nobody re-read, and filling those blanks would be a fabricated reading. Pending proposals carry a `Q` prefix in the gap register because their ids collide with promoted ids (Q2.27 is identifier uniqueness, 2.27 is the edit lock).
 
+**The pending set became 146 on 2026-09-14, and 225 did not move.** dossiq's customer page carried 329 rows against the ledger's 225: 104 of them were added in dossiq#2314 on 2026-09-10, under ids the corpus had never issued, rating every competitor `unknown`. 42 of those ids collided with a pending proposal that asked a different question. The reconciliation is `procest/_round4/compare/dossiq-matrix-drift.md` and decision D1 took the corpus as the record: the 104 entered the queue as proposals with ids assigned centrally, 91 renumbered and 13 kept, and six absorbed into a proposal that already asked their question. 48 + 98 = **146 pending**. The rows are still 225, because not one of the 104 had ever had a column read against it but ours. `src/data/capabilityComparison.json` is now re-issued from the corpus by `scripts/sync-capability-comparison.mjs`, and `tests/vitest/capabilityComparison.spec.js` fails when its id set drifts from the corpus again.
+
 ### The statutory split
 
 Round 3 estimated that roughly forty rows named Dutch statutory concepts. Round 4 replaced the estimate with a test and published the list: **26 rows** (`procest/_round4/compare/statutory-rows.md`). A row is statutory when it names a Dutch statutory instrument, a national register, a government authentication scheme, a government interoperability standard, or a Dutch government software vendor. Everything else is domain neutral, even when Dutch municipalities are the reason it matters: retention, e-signing, payments, SSO and citizen portals are ordinary product capabilities a Dutch buyer happens to need.
@@ -347,6 +349,29 @@ The register's own order (`procest/_gaps/README.md`), which the dossiq umbrella 
 5. **Substituted work reaches My work.** Row 13.17, dossiq, S. The spec `handler-vervanging-waarneming` requires it and `fetchSubstitutedWork()` has no call site, so a case assigned to someone on leave is invisible until it breaches. In the umbrella as `substituted-work-reaches-my-work`, with humaniq's leave as the absence signal.
 
 The ledger's own first pick, the schema-only registrations (Q11.31), is sixth: right, a privacy argument, and larger than the eight cells the matrix named once the re-read counted 27.
+
+## What the discovery sweep found after this page
+
+This page measures dossiq against a list we wrote. A second sweep asked the opposite question: what do thirty-six other systems have that the list never thought to ask. It is written up on [competitor discovery, September 2026](competitor-discovery-2026-09.md), and its corpus is `procest/_round4/discovery/` beside the files cited above.
+
+The short version. Thirty-six product surfaces were walked item by item, 2,010 items in the 34 lanes that state a count. Those raised 1,008 distinct raw candidates, which `consolidate-discovery.py` reduced to **631 consolidated candidates** in **70 clusters**. 183 are a `must` for a gemeente and dossiq fails 431 of the 631.
+
+**Read the 631 as candidates, not as rows.** A candidate is a question the sweep found worth asking. It is not in the matrix, it has no column read across the corpus, and it has no ledger id. The counting rule above still holds: 225 rows and, since 2026-09-14, 146 pending proposals. Decision D6 on the discovery page proposes the bar a candidate has to clear before it becomes a row, and until that is taken, no number on this page moves because of a candidate. What the sweep does show about the matrix itself is the **47 matrix holes**: a `must` with two or more driven passers and no row in the corpus able to hold it.
+
+### The four ledger cells the depth study moved
+
+The case-type depth study (`procest/_round4/discovery/casetype-configurability.md`) read dossiq's tree rather than the matrix, and four cells changed. Three ran in dossiq's favour and one against.
+
+| row | capability | was | is | why |
+|---|---|---|---|---|
+| 2.7 | Configurable status vocabulary with colour and order | partial | **yes** | `statusType.colour` is a twelve-value NL Design System enum and `src/views/settings/tabs/StatusesTab.vue:47` renders the swatch. The note said "no colour". |
+| 3.3 | Checklist items per phase | partial | **yes** | `statusType.checklist[]` carries a title and a required flag, `lib/Service/Transitions/StatusChecklistGuard.php` enforces it on every transition, and `StatusTypeForm.vue:118` authors it. |
+| 2.3 | Case type versioning with draft, publish, activate | partial | **yes**, with a caveat | `caseType` carries `version`, `previousVersion` and `supersededBy`, and `lib/Service/CaseTypePublishService.php` publishes and retires. The caveat: a new version drops `workflowDefinition` (`DerivedCaseTypePayload.php:115`), so the process model is re-authored every time. |
+| 11.2 | Config as code, import and export of case types | yes | **no** | The export is a declared placeholder. |
+
+Row 11.2 is the one that runs the other way, and it is the hollow-green shape this programme keeps finding. `lib/Service/CaseDefinitionExportService.php:268` says so in its own comment: a placeholder that returns structured placeholders instead of querying OpenRegister. All six components return empty arrays, behind three live admin-authorised routes. `POST /api/case-definitions/{id}/export` answers 200 with a structurally valid, empty package, so a test that checks the response shape passes. A municipality that exports a case type gets nothing, and is told nothing.
+
+Two further defects turned up on the way, neither of them a ledger row. `propertyDefinition.requiredAtStatus` is authored in `PropertiesTab.vue:155`, stored in the schema and read by no backend code, because it is not in the `x-openregister-extends-form.map`. And `WorkflowEditor` does not honour `lifecycleStatus: published`, which the schema's own description calls immutable: the canvas, node create, drag and delete and the whole `TransitionConfigPanel` stay editable on a published template.
 
 ## Where to check a cell
 

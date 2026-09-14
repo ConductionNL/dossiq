@@ -163,23 +163,44 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		// single round had ever added rows. A second round made it a lie about
 		// the first round's 19: they were asked a day earlier, and the page
 		// would have said otherwise while every test went on passing.
+		//
+		// This test used to require more than one addition date, and said in
+		// its own comment that a compaction collapsing them should be said out
+		// loud rather than passed over. That happened on 2026-09-14: round 4's
+		// 104 rows were never corpus rows and left the scored list for
+		// `pending`, so round 3's 19 are the only additions left and they
+		// share a date. The phrasing guard below is what the test is FOR, and
+		// it is kept; the precondition is not, because it would now fail on a
+		// file that is correct.
 		const text = (await mountComparison()).text()
 		const dates = data.capabilities
 			.filter((row) => row.addedOn)
 			.map((row) => row.addedOn)
 		const latest = [...dates].sort().at(-1)
-		const onLatest = dates.filter((date) => date === latest).length
 
-		// Only meaningful while more than one round has added rows. If a
-		// future compaction ever collapses them, this says so out loud rather
-		// than passing vacuously.
-		expect(new Set(dates).size).toBeGreaterThan(1)
-		expect(onLatest).toBeLessThan(dates.length)
+		expect(dates.length).toBeGreaterThan(0)
 
 		// The page names the most recent date and the total, and must not
 		// glue them together into a claim that they all landed that day.
 		expect(text).toContain('the most recent of them on')
 		expect(text).not.toContain(`On ${latest} we added ${dates.length}`)
+	})
+
+	it('says the proposals are proposed and counted in nothing', async () => {
+		// The one thing a reader must not do with `pending` is read it as a
+		// score. Four of its five columns are empty and the fifth is ours, so
+		// a proposal that renders like a row would publish our own rating as
+		// if three other teams had been measured beside it.
+		const text = (await mountComparison()).text()
+
+		expect(text).toContain(
+			`Another ${data.pending.length} capabilities are proposed and not yet rated`,
+		)
+		expect(text).toContain('they are in no total on this page')
+		// And the totals table still counts the rows, not the two lists.
+		expect(text).toContain(
+			`Totals over all ${data.capabilities.length} capabilities`,
+		)
 	})
 
 	it('shows Unknown as a column in the totals, not as a silent gap', async () => {

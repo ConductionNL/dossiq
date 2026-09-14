@@ -225,7 +225,7 @@ export function lifecycleRefusalCode(action, state) {
 /**
  * Turn a server refusal into a sentence.
  *
- * @param {object} body The refusal body ({error, code, failedGuards}).
+ * @param {object} body The refusal body ({message, error, code, failedGuards}).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
@@ -272,7 +272,11 @@ export function refusalMessage(body, translate) {
 		case 'reason_required':
 			return t('Give a reason first.')
 		default:
-			return String(body?.error ?? t('The case could not be changed.'))
+			// `message` before `error`: since refusals-carry-a-status, `error`
+			// is a kebab-case rule slug meant for code, and `message` is the
+			// sentence the refusal authored. Reading `error` first would put
+			// "transition-from-status-mismatch" in front of a handler.
+			return String(body?.message ?? body?.error ?? t('The case could not be changed.'))
 	}
 }
 
