@@ -3815,6 +3815,7 @@ OC.L10N.register(
         "We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.": "We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.",
         "The case number. Filled declaratively by OpenRegister (x-openregister-calculations.identifier) as YEAR-NNNN, e.g. 2026-0042, where the year comes from startDate and NNNN from a yearly sequence. A number supplied on create is KEPT: the expression coalesces the given value ahead of the sequence, so an imported or migrated case keeps the number it already had. The sequence is not consumed in that case, because coalesce stops at the first non-null operand.": "The case number. Filled declaratively by OpenRegister (x-openregister-calculations.identifier) as YEAR-NNNN, e.g. 2026-0042, where the year comes from startDate and NNNN from a yearly sequence. A number supplied on create is KEPT: the expression coalesces the given value ahead of the sequence, so an imported or migrated case keeps the number it already had. The sequence is not consumed in that case, because coalesce stops at the first non-null operand.",
         "Simulated": "Simulated",
+        "Limited": "Limited",
         "Berichtenbox": "Berichtenbox",
         "Document templates": "Document templates",
         "Messages to a citizen's Mijn Overheid Berichtenbox.": "Messages to a citizen's Mijn Overheid Berichtenbox.",

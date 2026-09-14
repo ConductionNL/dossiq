@@ -32,3 +32,11 @@
 - [ ] 6.1 After integriq ships: run the e2e spec against an instance with both
   apps, then archive this change and fold the delta into `admin-settings`.
 - [ ] 6.2 Follow-up issue: remove `dossiqIntegration` from the register.
+- [x] 7.1 Contract amendments (hydra#673): `simulatedValues` on the two
+  mock-backed seams, `limited` in `connectionStatus` and in
+  `IntegrationStatusService::STATUSES`, `l10n` en and nl.
+  - `ConnectionsDeclarationTest`: `reportedOnly` and the adapter fields D2
+    allows, the mock class in each list implements its seam, no row is
+    `reportedOnly`. `IntegrationStatusServiceTest` compares the statuses
+    with contract D3.
+  - `tests/vitest/formatters.spec.js` and `tests/vitest/integrationsPage.spec.js`.

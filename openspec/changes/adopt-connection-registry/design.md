@@ -19,6 +19,10 @@ omitted field here, as contract D2 asks.
   messages the service used to write. They also keep that key in
   `requiredConfig`, so a filled key reads Configured under contract D4 rule 5
   instead of falling through to Not checked yet.
+- Both adapter blocks list `simulatedValues`: the empty string and the mock
+  class the registrar falls back to. An admin who names the mock class in the
+  key binds the mock too, and without it in the list that row would read
+  Configured under contract D4 rule 5 while the mock answered.
 - BRP carries `unconfiguredMessage` with the seed's message, which names
   `integration.brp.mode`, the key that wakes it. No admin section writes that
   key, so the row is the only place an integrator learns it.
@@ -91,6 +95,33 @@ this change. Its removal is a follow-up issue listed in the PR body.
 uses, so every adopting app can copy the same seven lines. `integrationStatus`
 and `integrationSettingsLabel` stay as aliases of the same functions until
 nothing in the fleet names them.
+
+`connectionStatus` names six statuses, `limited` among them ("Limited",
+"Beperkt"). The copy stays local: nextcloud-vue#1163 made both formatters
+built-ins, and the pinned 2.53.1 was released before it merged.
+
+## D6. The contract amendments (hydra#673)
+
+The contract gained `adapter.jsonPath`, `adapter.simulatedValues`,
+`reportedOnly`, rule 4a, the `limited` status and an hourly resolve of every
+row. Dossiq takes two of them.
+
+- **`simulatedValues`** on Berichtenbox and Document templates, as D1 says.
+- **`limited`** in the formatter and in `IntegrationStatusService::STATUSES`.
+  No dossiq caller reports it yet.
+
+Dossiq leaves the rest alone, for these reasons.
+
+- **No `reportedOnly`.** The flag skips rules 3 and 5. Every row with an
+  adapter key or required settings is one integriq can judge from app config.
+  StUF, the mailbox and the store carry neither, so the flag would change
+  nothing on them.
+- **No `jsonPath`.** Both adapter keys hold a class name, not a JSON object.
+- **BRP keeps `unconfiguredMessage`.** `integration.brp.mode` could be
+  declared as an adapter key with `simulatedValues` `["", "log"]`. The log
+  adapter does not answer like a mock, though: it returns a deferred lookup and
+  no person. Not configured is the true reading, and REQ-ADMIN-019 promises
+  it. The hourly resolve now picks up a mode set with `occ`.
 
 ## Risks
 
