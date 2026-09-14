@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -32,6 +33,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\DwangsomUitbetalingService
  */
 class DwangsomUitbetalingServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private DwangsomUitbetalingService $service;
 
@@ -50,7 +53,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			},
 		);
 
-		$this->service = new DwangsomUitbetalingService($settings);
+		$this->service = new DwangsomUitbetalingService($settings, $this->caseDates());
 
 		// Seed a stopped berekening.
 		$this->objects->seed('penaltyPaymentCalculation', [

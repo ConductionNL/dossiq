@@ -92,7 +92,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->extService = new DeadlineExtensionService($this->termService, $this->caseDates());
 		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
 		$this->calcService = new DwangsomCalculationService($settings, $logger, $this->caseDates());
-		$this->outService = new DwangsomUitbetalingService($settings);
+		$this->outService = new DwangsomUitbetalingService($settings, $this->caseDates());
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,

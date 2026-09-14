@@ -54,9 +54,11 @@ class DwangsomUitbetalingService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -97,8 +99,10 @@ class DwangsomUitbetalingService {
 			calculationId: $calculationId
 		);
 
-		$receiptDate = ($receiptDate ?? new DateTimeImmutable());
-		$uiterlijk = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
+		$receiptDate = ($receiptDate ?? $this->dates->now());
+		$uiterlijk = $this->dates->formatCalendarDate(
+			$receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')
+		);
 
 		$row = [
 			'penaltyPaymentCalculation' => $calculationId,
@@ -318,7 +322,7 @@ class DwangsomUitbetalingService {
 		}
 
 		if ($paymentDate !== null) {
-			$row['actualPaymentDate'] = $paymentDate->format('Y-m-d');
+			$row['actualPaymentDate'] = $this->dates->formatCalendarDate($paymentDate);
 		}
 
 		return $row;

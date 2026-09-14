@@ -33,7 +33,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   activity timestamps.
 - [x] 2.8 `DwangsomController` through `DwangsomCalculationService`: the
   accrual clock and the day granularity comparison.
-- [ ] 2.9 `DwangsomPaymentCallbackController`: its private `parseDate()`
+- [x] 2.9 `DwangsomPaymentCallbackController`: its private `parseDate()`
   retires; `actualPaymentDate` goes through the normaliser.
 - [ ] 3.1 Retire the remaining private normalisers:
   `CaseEnricher::normaliseDate()`, `WorkQueueService::parseDateOnly()`,
