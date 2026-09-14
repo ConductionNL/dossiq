@@ -177,11 +177,20 @@ class CasePriorityRaiseService {
 	}//end writeFloor()
 
 	/**
-	 * Read one case, or null when it cannot be read.
+	 * Read one case, or null when there is no case to read.
+	 *
+	 * NO `catch (Throwable) { return null; }` HERE, DELIBERATELY. A case that
+	 * does not exist already comes back as null from `findObjectAsArray()`
+	 * without anything being thrown, so the only thing a catch here could
+	 * swallow is the store itself failing — and swallowing that would report a
+	 * case as having no priority when what actually happened is that nobody
+	 * could read it. The escalation path decides what to do about a store
+	 * failure, because it is the one that knows a termijn notification must go
+	 * out either way. See `DeadlineEscalationService::notifyThreshold()`.
 	 *
 	 * @param string $caseId The case.
 	 *
-	 * @return array<string, mixed>|null The case, or null.
+	 * @return array<string, mixed>|null The case, or null when there is none.
 	 */
 	private function readCase(string $caseId): ?array {
 		$caseId = trim($caseId);
@@ -197,22 +206,14 @@ class CasePriorityRaiseService {
 			return null;
 		}
 
-		try {
-			return $this->runAsSystemIfAvailable(
+		return $this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): ?array => $this->findObjectAsArray(
 				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $caseId,
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read a case to apply the priority term rule',
-				['case' => $caseId, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
+				register: $register,
+				schema: $schema,
+				id: $caseId,
+			)
+		);
 	}//end readCase()
 }//end class

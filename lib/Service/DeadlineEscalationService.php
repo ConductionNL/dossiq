@@ -154,11 +154,26 @@ class DeadlineEscalationService {
 		// than the one it carried a moment earlier. A threshold the
 		// declaration does not name raises nothing and this reads back
 		// unchanged.
+		//
+		// THIS IS WHERE A STORE FAILURE IS CONTAINED, and it is contained here
+		// rather than inside the raise service because this is the method that
+		// knows what the failure costs. A termijn notification is a statutory
+		// deadline warning: it goes out whether or not the case could be read.
+		// So a failed read leaves the priority unknown and says so, rather than
+		// reporting a case as `normal` when nobody actually asked it.
 		$caseId = (string)($instance['case'] ?? '');
-		$casePriority = $this->priorityRaiseService->raiseForThreshold(
-			caseId: $caseId,
-			threshold: $threshold
-		);
+		$casePriority = '';
+		try {
+			$casePriority = $this->priorityRaiseService->raiseForThreshold(
+				caseId: $caseId,
+				threshold: $threshold
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijn escalation: the case priority was unreadable, notifying without it',
+				['case' => $caseId, 'threshold' => $threshold, 'error' => $e->getMessage()]
+			);
+		}
 
 		$payload = [
 			'threshold' => $threshold,
