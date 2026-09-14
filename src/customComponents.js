@@ -18,6 +18,7 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import { generateUrl } from '@nextcloud/router'
 import { createApp } from 'vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
@@ -234,6 +235,31 @@ function extendTermSelection({ selectedIds }) {
 	openBulkDialog('extend', selectedIds)
 }
 
+/**
+ * Where Add integration lands: integriq's overview, preset and linking.
+ */
+export const INTEGRIQ_CONNECTIONS_PATH = '/apps/integriq/connections?app=dossiq&link=1'
+
+/**
+ * The Integrations page's Add integration header action.
+ *
+ * A connection row is integriq's, and a source is linked to it on integriq's
+ * Connections overview (hydra connection-registry D9). `link=1` opens the
+ * link-a-source dialog there, pre-filtered to dossiq's connections.
+ *
+ * A FUNCTION handler because a header action's `navigate` keyword only pushes
+ * a route name inside this app's router, which cannot leave the app.
+ *
+ * The route is the one hydra connection-registry D9 names.
+ *
+ * @return {void}
+ *
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ */
+export function openIntegriqConnections() {
+	window.location.assign(generateUrl(INTEGRIQ_CONNECTIONS_PATH))
+}
+
 export default {
 	// The Queue's and Cases' `claim` row action (case-claim-action, row 2.4).
 	// A function handler for the reason the bulk actions below are ones, plus
@@ -254,6 +280,9 @@ export default {
 	suspendSelection,
 	resumeSelection,
 	extendTermSelection,
+	// The Integrations page's Add integration header action. A FUNCTION
+	// handler because it leaves the app for integriq's Connections overview.
+	openIntegriqConnections,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds

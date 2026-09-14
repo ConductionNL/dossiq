@@ -38,6 +38,31 @@ const INTEGRATION_STATUS_LABELS = {
 	error: 'Error',
 }
 
+/**
+ * The label for a connection status, translated on each call.
+ *
+ * @param {string} value The `status` enum value.
+ * @return {string} The label, or the raw value when it is not one of the five.
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ */
+function connectionStatus(value) {
+	const source = INTEGRATION_STATUS_LABELS[value]
+	return source ? t('dossiq', source) : String(value ?? '')
+}
+
+/**
+ * The Open settings link text, or '' when the row has nowhere to send a reader.
+ *
+ * @param {string} value The row's `settingsUrl`.
+ * @return {string} The link text, or ''.
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ */
+function connectionSettingsLabel(value) {
+	return typeof value === 'string' && value.length > 0
+		? t('dossiq', 'Open settings')
+		: ''
+}
+
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
 
@@ -120,35 +145,44 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
-	 * The five states an integration card may show, as the label a reader
+	 * The five states a connection row may show, as the label a reader
 	 * understands. An unknown value renders itself rather than an empty cell:
 	 * a status the app cannot name is still a status the admin should see.
 	 *
+	 * The name is the one hydra's connection-registry contract (D8) gives it,
+	 * so every app adopting the registry carries the same formatter.
+	 *
 	 * @param {string} value The `status` enum value.
 	 * @return {string} The label, or the raw value when it is not one of the five.
-	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
 	 */
-	integrationStatus: (value) => {
-		const source = INTEGRATION_STATUS_LABELS[value]
-		return source ? t('dossiq', source) : String(value ?? '')
-	},
+	connectionStatus,
 
 	/**
-	 * The text of the Open settings link on an integration row.
+	 * The text of the Open settings link on a connection row.
 	 *
 	 * Empty when the connection has no settings section, which is what makes
-	 * the cell fall through to plain text and offer nothing to click. A
-	 * connection configured by an app-config key rather than a form has nowhere
-	 * to send a reader, so its row names the key in its message instead.
+	 * the cell fall through to plain text and offer nothing to click.
 	 *
 	 * @param {string} value The row's `settingsUrl`.
 	 * @return {string} The link text, or '' when there is no destination.
-	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
 	 */
-	integrationSettingsLabel: (value) =>
-		typeof value === 'string' && value.length > 0
-			? t('dossiq', 'Open settings')
-			: '',
+	connectionSettingsLabel,
+
+	/**
+	 * Alias of `connectionStatus`, the name before adopt-connection-registry.
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 */
+	integrationStatus: connectionStatus,
+
+	/**
+	 * Alias of `connectionSettingsLabel`, the name before adopt-connection-registry.
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 */
+	integrationSettingsLabel: connectionSettingsLabel,
 
 	/**
 	 * Human label for a case's `caseType` UUID reference.

@@ -16,6 +16,7 @@
  *
  * @spec openspec/specs/case-management/spec.md
  * @spec openspec/specs/workflow-definition-engine/spec.md
+ * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
  */
 
 import fs from 'fs'
@@ -24,9 +25,12 @@ import { describe, expect, it } from 'vitest'
 import {
 	caseActionRefusal,
 	earliestFollowUpDate,
+	endOptions,
 	isPlanComplete,
 	plannedRows,
 	proposedCopyTitle,
+	recurrenceLabel,
+	recurrenceOptions,
 } from '../../src/utils/caseActionsHelpers.js'
 const panels = require('./helpers/casePanels.js')
 
@@ -196,6 +200,115 @@ describe('Plan a follow-up', () => {
 	it('is swept single-shot by a registered background job', () => {
 		const info = fs.readFileSync(path.join(ROOT, 'appinfo', 'info.xml'), 'utf8')
 		expect(info).toContain('OCA\\Dossiq\\BackgroundJob\\PlannedFollowUpSweepJob')
+	})
+
+	it('has a stop endpoint, which is the only gesture a series needs extra', () => {
+		expect(routes).toContain("'caseActions#stopSeries'")
+		expect(routes).toContain('/api/case/{caseId}/planned/{flowId}/stop')
+	})
+})
+
+describe('Planning a series', () => {
+	const t = (s) => s
+
+	it('offers the five recurrences the server accepts, and no others', () => {
+		// The ids are the server's tokens. A drifting list here is refused with
+		// `invalid_recurrence` rather than silently planned as a one-off, which
+		// is why the ids are asserted and not just the count.
+		expect(recurrenceOptions(t).map((row) => row.id)).toEqual([
+			'none',
+			'monthly',
+			'quarterly',
+			'halfYearly',
+			'yearly',
+		])
+	})
+
+	it('offers three ends: never, a date, a count', () => {
+		expect(endOptions(t).map((row) => row.id)).toEqual([
+			'open',
+			'until',
+			'count',
+		])
+	})
+
+	it('uses sentence case and no em-dash in every option label', () => {
+		// Sentence case is checked on the words AFTER the first: a capital
+		// mid-label is Title Case, which the voice bans outright (voice.md
+		// section 8). The previous form of this assertion compared a string
+		// with itself and could not fail.
+		for (const row of [...recurrenceOptions(t), ...endOptions(t)]) {
+			expect(row.label).not.toContain('—')
+			expect(row.label).not.toContain('--')
+			const rest = row.label.split(' ').slice(1)
+			expect(
+				rest.filter((word) => /^[A-Z]/.test(word)),
+				`"${row.label}" is Title Case`,
+			).toEqual([])
+		}
+	})
+
+	it('says nothing about repeating for a follow-up that happens once', () => {
+		expect(recurrenceLabel('none', t)).toBe('')
+		expect(recurrenceLabel('yearly', t)).toBe('every year')
+	})
+
+	it('needs an end date on or after the first occurrence', () => {
+		const base = {
+			caseType: 'type-1',
+			date: '2026-10-15',
+			title: 'Controle',
+			recurrence: 'yearly',
+			end: 'until',
+		}
+		expect(isPlanComplete({ ...base, until: '2029-10-15' }, '2026-09-14')).toBe(
+			true,
+		)
+		expect(isPlanComplete({ ...base, until: '2026-01-01' }, '2026-09-14')).toBe(
+			false,
+		)
+		expect(isPlanComplete({ ...base, until: '' }, '2026-09-14')).toBe(false)
+	})
+
+	it('needs at least one case when the series ends on a count', () => {
+		const base = {
+			caseType: 'type-1',
+			date: '2026-10-15',
+			title: 'Controle',
+			recurrence: 'yearly',
+			end: 'count',
+		}
+		expect(isPlanComplete({ ...base, count: 3 }, '2026-09-14')).toBe(true)
+		expect(isPlanComplete({ ...base, count: 0 }, '2026-09-14')).toBe(false)
+	})
+
+	it('asks nothing extra of a follow-up that happens once', () => {
+		expect(
+			isPlanComplete(
+				{
+					caseType: 'type-1',
+					date: '2026-10-15',
+					title: 'Controle',
+					recurrence: 'none',
+				},
+				'2026-09-14',
+			),
+		).toBe(true)
+	})
+
+	it('lets a series run with no end at all', () => {
+		expect(
+			isPlanComplete(
+				{
+					caseType: 'type-1',
+					date: '2026-10-15',
+					title: 'Vergunningcontrole',
+					recurrence: 'yearly',
+					end: 'open',
+				},
+				'2026-09-14',
+			),
+		).toBe(true)
 	})
 })
 
@@ -377,5 +490,84 @@ describe('plannedRows', () => {
 	it('drops a row with no id rather than rendering a keyless one', () => {
 		expect(plannedRows([{ title: 'Controle' }], t)).toEqual([])
 		expect(plannedRows(null, t)).toEqual([])
+	})
+
+	it('says how often a series comes back and how many it has opened', () => {
+		const rows = plannedRows(
+			[
+				{
+					id: 'flow-1',
+					title: 'Jaarlijkse controle',
+					date: '2027-03-01',
+					recurrence: 'yearly',
+					occurrences: [
+						{ id: 'case-a', title: 'Controle 2026' },
+						{ id: 'case-b', title: 'Controle 2027' },
+					],
+				},
+			],
+			t,
+		)
+		expect(rows[0].recurrence).toBe('yearly')
+		expect(rows[0].label).toContain('every year')
+		expect(rows[0].label).toContain('2027-03-01')
+		expect(rows[0].label).toContain('2 opened so far')
+		expect(rows[0].occurrences).toHaveLength(2)
+	})
+
+	it('leaves a single follow-up reading as it did', () => {
+		const rows = plannedRows(
+			[{ id: 'flow-2', title: 'Controle', date: '2026-10-15' }],
+			t,
+		)
+		expect(rows[0].recurrence).toBe('none')
+		expect(rows[0].label).not.toContain('every')
+		expect(rows[0].occurrences).toEqual([])
+	})
+
+	it('uses no em-dash in a series label either', () => {
+		const rows = plannedRows(
+			[
+				{
+					id: 'f',
+					title: 'Controle',
+					date: '2026-10-15',
+					recurrence: 'quarterly',
+					occurrences: [{ id: 'c' }],
+				},
+			],
+			t,
+		)
+		expect(rows[0].label).not.toContain('—')
+		expect(rows[0].label).not.toContain('--')
+	})
+})
+
+describe('The series row on the Related tab', () => {
+	const widget = fs.readFileSync(
+		path.join(ROOT, 'src', 'components', 'case', 'CasePlannedWidget.vue'),
+		'utf8',
+	)
+
+	it('offers Stop series, and posts it to the endpoint the routes declare', () => {
+		expect(widget).toContain('case-planned-stop-')
+		expect(widget).toContain('/planned/${encodeURIComponent(flowId)}/stop')
+		expect(routes).toContain('/api/case/{caseId}/planned/{flowId}/stop')
+	})
+
+	it('lists the occurrences under the series row', () => {
+		expect(widget).toContain('case-planned-occurrence-')
+		expect(widget).toContain('row.occurrences')
+	})
+
+	it('offers Stop series only on the rows that repeat', () => {
+		expect(widget).toContain("row.recurrence !== 'none'")
+	})
+
+	it('says out loud when a stop is refused', () => {
+		// A stop that silently does nothing and a stop that worked look
+		// identical on this tab: the row only disappears on the reload.
+		expect(widget).toContain('case-planned-error')
+		expect(widget).toContain('caseActionRefusal')
 	})
 })
