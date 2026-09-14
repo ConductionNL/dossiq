@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -43,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class TermijnTimerRollTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * The engine's calendar resolver.
 	 *
@@ -95,7 +98,12 @@ class TermijnTimerRollTest extends TestCase {
 			}
 		);
 
-		return new TermijnTimerService($settings, $this->createMock(LoggerInterface::class), new WorkingDayCalculator());
+		return new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 	}
 
 	/**
@@ -148,7 +156,12 @@ class TermijnTimerRollTest extends TestCase {
 				};
 			}
 		);
-		$service = new TermijnTimerService($settings, $this->createMock(LoggerInterface::class), new WorkingDayCalculator());
+		$service = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 
 		// A local closure no national list carries.
 		self::assertSame('2026-06-17', $service->rollTermEnd(date: new DateTimeImmutable('2026-06-16'))->format('Y-m-d'));
@@ -226,7 +239,12 @@ class TermijnTimerRollTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
-		$service = new TermijnTimerService($settings, $logger, new WorkingDayCalculator());
+		$service = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 
 		// 2026-06-21 is a Sunday; dossiq's own list moves it to the Monday.
 		self::assertSame(
