@@ -93,8 +93,9 @@ describe('the caseTitle formatter', () => {
  * @spec openspec/specs/admin-settings/spec.md
  */
 describe('the connection status formatter', () => {
-	it('names each of the five states', () => {
+	it('names each of the six states', () => {
 		expect(formatters.connectionStatus('configured')).toBe('Configured')
+		expect(formatters.connectionStatus('limited')).toBe('Limited')
 		expect(formatters.connectionStatus('unconfigured')).toBe('Not configured')
 		expect(formatters.connectionStatus('unavailable')).toBe('Not available')
 		expect(formatters.connectionStatus('simulated')).toBe('Simulated')
@@ -112,6 +113,17 @@ describe('the connection status formatter', () => {
 		expect(formatters.connectionStatus('simulated')).not.toBe(
 			formatters.connectionStatus('unavailable'),
 		)
+	})
+
+	// Limited came with the contract amendment (hydra#673). A connection that
+	// works in part is neither working nor broken, so it must not borrow either
+	// label, and it must not fall through to its raw enum value.
+	it('keeps a connection that works in part apart from working and broken', () => {
+		const limited = formatters.connectionStatus('limited')
+		expect(limited).not.toBe('limited')
+		expect(limited).not.toBe(formatters.connectionStatus('configured'))
+		expect(limited).not.toBe(formatters.connectionStatus('unavailable'))
+		expect(limited).not.toBe(formatters.connectionStatus('error'))
 	})
 
 	it('renders an unknown value as itself, not as an empty cell', () => {
