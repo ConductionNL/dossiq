@@ -1876,9 +1876,8 @@ class ZrcController extends ZgwController {
 				// value was truncated to ten characters, which read an offset as
 				// part of the day. Both go through the one write path now.
 				$submitted = ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null));
-				if ($submitted === null || $submitted === '') {
-					$dateStatusGezet = $this->dates->todayAsCalendarDate();
-				} else {
+				$dateStatusGezet = $this->dates->todayAsCalendarDate();
+				if ($submitted !== null && $submitted !== '') {
 					$dateStatusGezet = $this->dates->toCalendarDate($submitted, 'datumStatusGezet');
 				}
 
