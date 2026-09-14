@@ -31,7 +31,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
 - [x] 2.7 `ContactMomentController` through `QuickActionService` and
   `ContactMomentService`: `startDate`, the 42 day deadline and the
   activity timestamps.
-- [ ] 2.8 `DwangsomController` through `DwangsomCalculationService`: the
+- [x] 2.8 `DwangsomController` through `DwangsomCalculationService`: the
   accrual clock and the day granularity comparison.
 - [ ] 2.9 `DwangsomPaymentCallbackController`: its private `parseDate()`
   retires; `actualPaymentDate` goes through the normaliser.
