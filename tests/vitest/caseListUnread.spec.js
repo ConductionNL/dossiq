@@ -246,7 +246,7 @@ describe('the row handlers write to OpenRegister and nowhere else', () => {
 		expect(axios.delete.mock.calls[0][0]).toBe(
 			'/index.php/apps/openregister/api/objects/dossiq/case/case-7/read-state',
 		)
-		expect(mockShowSuccess).toHaveBeenCalledWith('This case reads unread again.')
+		expect(mockShowSuccess).toHaveBeenCalledWith('You will see this as unread again.')
 	})
 
 	it('marks a case read with a PUT carrying no sub-resource', async () => {
