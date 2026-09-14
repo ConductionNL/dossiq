@@ -28,5 +28,5 @@ Tier: V1. Kind: config plus two PHP files. Row 1.8.
 
 ## 4. Verify
 
-- [ ] 4.1 `tests/e2e/planned-case-series.spec.ts` covering the three cited
+- [x] 4.1 `tests/e2e/planned-case-series.spec.ts` covering the three cited
   scenarios; `openspec validate --change planned-case-series --strict`.
