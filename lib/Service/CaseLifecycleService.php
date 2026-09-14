@@ -70,6 +70,8 @@ class CaseLifecycleService {
 	 * @param DeadlinePauseService $pauseService Opschorten / hervatten (Awb 4:5)
 	 * @param DeadlineExtensionService $extensionService Verlengen (Awb 4:14)
 	 * @param LoggerInterface $logger Logger
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 *
 	 * @return void
 	 */
@@ -80,6 +82,7 @@ class CaseLifecycleService {
 		private readonly DeadlinePauseService $pauseService,
 		private readonly DeadlineExtensionService $extensionService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -518,7 +521,11 @@ class CaseLifecycleService {
 			throw new RuntimeException('extension_period_unreadable');
 		}
 
-		return $start->add($interval)->format('Y-m-d');
+		// The extended end date is the one a handler is judged on, so the
+		// organisation's calendar decides the day it lands on (Awt art. 1).
+		$end = $start->add($interval);
+
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 	}//end addPeriod()
 
 	/**

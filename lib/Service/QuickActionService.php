@@ -53,11 +53,14 @@ class QuickActionService {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param ContactMomentService $contactMomentService The contactmoment service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ContactMomentService $contactMomentService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -154,8 +157,10 @@ class QuickActionService {
 
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
-		// Awb 9:11: six weeks (42 days) decision term.
-		$deadline = (new DateTimeImmutable('today'))->modify('+42 days')->format('Y-m-d');
+		// Awb 9:11: six weeks (42 days) decision term, landing on a day the
+		// organisation's calendar calls a working day (Awt art. 1).
+		$raw = (new DateTimeImmutable('today'))->modify('+42 days');
+		$deadline = ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)->format('Y-m-d');
 
 		$record = [
 			'caseType' => self::KLACHT_ZAAKTYPE,
