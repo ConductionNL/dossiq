@@ -8,7 +8,7 @@ the triage.
   each with class and reason (D-1). Fixture test for a new site and for
   the ceiling.
   - `@spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md`
-  - Seeded at **203 sites in 121 files**, not the 47 the proposal
+  - Seeded at **203 sites in 119 files**, not the 47 the proposal
     estimated. The proposal measured a three-LINE window; D-1 specifies
     three STATEMENTS, and a multi-line logger call in front of the
     return is the same shape a line window cannot see. The same tree
@@ -26,7 +26,7 @@ the triage.
     fails.
   - The class and reason on every entry were derived from the site's own
     evidence (what it returns, whether and how it logs). They record
-    what the site does, not that it is right. **74 of the 203 log
+    what the site does, not that it is right. **72 of the 203 log
     nothing at all**, which is the number the next batch should read
     first. The `refusal` class was assigned by hand over the 21
     guard-resolver sites, the class hydra gate 8 exists for; gate 8's
@@ -69,3 +69,15 @@ the triage.
     PR body so the count is not silently dropped.
 - [x] 4.1 `tests/e2e/refusal-status.spec.ts`; `openspec validate
   refusals-carry-a-status --strict`.
+- [x] 5.1 Merge `development` before the PR, and re-seed the allowlist
+  with whatever it brought.
+  - One new site arrived with #2719:
+    `Substitution/HumaniqLeaveReader::readLeave#1`. It logs at warning
+    naming the HR app, and the caller falls back to the typed
+    substitution dates, so it is a **degradation**. The ceiling goes
+    203 to 204 for that one site and nothing else: **204 sites in 120
+    files, 72 of them logging nothing**.
+  - The four phpmd threshold findings the change added were each one
+    unit over, and each was duplication: `TranslatesRefusals`,
+    `ReadsJsonRequests` and `RefusesWhenIndeterminate` now hold the one
+    copy, and `reroute()` hands its step loop to `resolveSteps()`.
