@@ -13,12 +13,12 @@
  * the same mechanism for the BAG claim; this is the same shape with three
  * declarations behind it.
  *
- * WHY THE UPDATE EVENT IS NOT LISTENED TO. What must be answered before the
- * case EXISTS is exactly that, a creation rule. Refusing later updates on the
- * same list would make a case that is already valid unsavable the moment an
- * administrator adds a field to the declaration, and it would refuse the very
- * edit that fills the field in. The narrowing is the exception: who may hold a
- * case is a rule about the case at rest, so it is checked on the update too.
+ * WHY THE UPDATE EVENT ENFORCES ONLY ONE OF THE THREE. What must be answered
+ * before the case EXISTS is exactly that, a creation rule. Refusing later
+ * updates on the same list would make a case that is already valid unsavable
+ * the moment an administrator adds a field to the declaration, and it would
+ * refuse the very edit that fills the field in. Who may HOLD a case is a rule
+ * about the case at rest, so the narrowing is checked on the update too.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -139,6 +139,14 @@ class IntakeRequirementsListener implements IEventListener {
 			return;
 		}
 
+		// 🔴 AN UNRESOLVABLE CASE TYPE LEAVES THE SAVE ALONE, ON PURPOSE.
+		// `CaseTypeResolver` answers `[]` both for "there is no such case type"
+		// and for "the store could not be read", because `CaseTypeStore` never
+		// throws. Refusing on `[]` would stop every case creation on the
+		// instance the moment OpenRegister hiccups, which is a worse failure
+		// than the one it would prevent. Telling the two apart is an
+		// openregister change; `IntakeRequirementsListenerTest` pins the
+		// behaviour so it stays a decision rather than an accident.
 		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
 		if ($caseType === []) {
 			return;
