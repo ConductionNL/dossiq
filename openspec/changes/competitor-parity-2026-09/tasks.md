@@ -38,3 +38,21 @@ named change is archived.
 - [ ] 17 `every-term-on-the-engine-calendar` (batch 12 row 8.23): the
   audit first, which depends on nothing; the three fixes wait on
   `terms-on-the-engine-calendar` for the roll rule
+- [ ] 18 Discovery wave 1, the nine changes opened 2026-09-14:
+  `casetype-field-vocabulary` (CT-1, no dependency, the cheapest rows in
+  the study); `inbound-mail-filters` (cluster 25, D12 as answered for
+  Nextcloud Mail); `ontvangstbevestiging` (cluster 32, Awb 4:3a, after
+  the mail gateway); `case-priority-impact-urgency` (D14);
+  `case-page-and-list-as-a-place` (cluster 58, waits on nextcloud-vue);
+  `case-recycle-window`, `bulk-actions-report-progress` and
+  `unread-state-on-the-case` (wait on openregister, wave 1);
+  `case-grants-name-their-source` (openregister's halves already open)
+- [ ] 19 Record the openregister slug in each of the four proposals that
+  wait on one, as that lane opens it
+- [ ] 20 Follow the property source key integriq asked openregister for,
+  `x-openregister-property-source`, in `casetype-field-vocabulary`; if
+  openregister picks another name, follow it rather than the reverse
+- [ ] 21 Ask the corpus lane for the missing priority row, in D14's own
+  words, and rate every driven column for it
+- [ ] 22 Carry the two rating corrections above back to the discovery
+  lanes: C-intake-23 and C-search-6
