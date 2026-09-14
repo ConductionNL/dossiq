@@ -75,10 +75,10 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$timerService = new TermijnTimerService($settings, $logger, $this->caseDates());
+		$timerService = new TermijnTimerService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
 		$this->termService = new TermijnService($settings, $logger, $timerService);
 		$this->pauseService = new DeadlinePauseService($this->termService, $timerService);
-		$this->extService = new DeadlineExtensionService($this->termService, $this->caseDates(), $timerService);
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates(), timerService: $timerService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
 		$this->objects->seed('deadlineDefinition', [

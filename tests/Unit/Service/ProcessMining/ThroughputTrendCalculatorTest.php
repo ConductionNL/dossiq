@@ -47,7 +47,7 @@ class ThroughputTrendCalculatorTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->calculator = new ThroughputTrendCalculator($this->caseDates());
+		$this->calculator = new ThroughputTrendCalculator(dates: $this->caseDates());
 
 	}//end setUp()
 

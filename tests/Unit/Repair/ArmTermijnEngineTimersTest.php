@@ -80,7 +80,7 @@ class ArmTermijnEngineTimersTest extends TestCase {
 		$this->step = new ArmTermijnEngineTimers(
 			$settings,
 			$termService,
-			new TermijnTimerService($settings, $logger, $this->caseDates()),
+			new TermijnTimerService(settingsService: $settings, logger: $logger, dates: $this->caseDates()),
 			$logger
 		);
 

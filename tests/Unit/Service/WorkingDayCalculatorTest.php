@@ -543,19 +543,19 @@ class WorkingDayCalculatorTest extends TestCase {
 			$dates = $this->caseDates();
 
 			$tweedePaasdag = $dates->fromParts(2026, 4, 6);
-			$this->assertSame('2026-04-06', $tweedePaasdag->format('Y-m-d'));
-			$this->assertSame('Monday', $tweedePaasdag->format('l'));
+			$this->assertSame(expected: '2026-04-06', actual: $tweedePaasdag->format('Y-m-d'));
+			$this->assertSame(expected: 'Monday', actual: $tweedePaasdag->format('l'));
 			$this->assertTrue(
-				$calculator->isHoliday($tweedePaasdag),
-				'Tweede Paasdag 2026 is 6 April; reading it as the 5th is the easter_date() defect'
+				condition: $calculator->isHoliday($tweedePaasdag),
+				message: 'Tweede Paasdag 2026 is 6 April; reading it as the 5th is the easter_date() defect'
 			);
-			$this->assertFalse($calculator->isWorkingDay($tweedePaasdag));
+			$this->assertFalse(condition: $calculator->isWorkingDay($tweedePaasdag));
 
 			$next = $calculator->addWorkingDays(start: $tweedePaasdag, days: 1);
-			$this->assertSame('2026-04-07', $next->format('Y-m-d'));
-			$this->assertSame('Tuesday', $next->format('l'));
+			$this->assertSame(expected: '2026-04-07', actual: $next->format('Y-m-d'));
+			$this->assertSame(expected: 'Tuesday', actual: $next->format('l'));
 
-			$this->assertSame('2026-04-05', $calculator->easterSunday(2026)->format('Y-m-d'));
+			$this->assertSame(expected: '2026-04-05', actual: $calculator->easterSunday(2026)->format('Y-m-d'));
 		} finally {
 			date_default_timezone_set($original);
 		}
@@ -572,13 +572,13 @@ class WorkingDayCalculatorTest extends TestCase {
 		$bootstrap = (string)file_get_contents(__DIR__ . '/../../bootstrap.php');
 
 		$this->assertDoesNotMatchRegularExpression(
-			'/function\s+easter_date\s*\(/',
-			$bootstrap,
-			'A polyfill in the bootstrap is a function the tests have and production does not.'
+			pattern: '/function\s+easter_date\s*\(/',
+			string: $bootstrap,
+			message: 'A polyfill in the bootstrap is a function the tests have and production does not.'
 		);
 		$this->assertFalse(
-			function_exists('easter_date') && extension_loaded('calendar') === false,
-			'easter_date() exists without ext-calendar, so something defined it.'
+			condition: function_exists('easter_date') && extension_loaded('calendar') === false,
+			message: 'easter_date() exists without ext-calendar, so something defined it.'
 		);
 	}//end testTheBootstrapDefinesNoEasterPolyfill()
 }//end class

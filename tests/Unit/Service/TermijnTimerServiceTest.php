@@ -51,7 +51,7 @@ class TermijnTimerServiceTest extends TestCase {
 		$settings->method('getOpenRegisterClass')
 			->with(TermijnTimerService::ENGINE_CLASS)
 			->willReturn($this->engine);
-		$this->service = new TermijnTimerService($settings, $this->createMock(LoggerInterface::class), $this->caseDates());
+		$this->service = new TermijnTimerService(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
 	}
 
 	/**
@@ -220,7 +220,7 @@ class TermijnTimerServiceTest extends TestCase {
 	public function testAbsentEngineDegradesToNoOp(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
-		$service = new TermijnTimerService($settings, $this->createMock(LoggerInterface::class), $this->caseDates());
+		$service = new TermijnTimerService(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
 
 		self::assertNull($service->armBeslistermijn(instance: $this->instance(), definitie: []));
 		self::assertFalse($service->suspendBeslistermijn(instance: $this->instance(), reason: 'x', until: null));

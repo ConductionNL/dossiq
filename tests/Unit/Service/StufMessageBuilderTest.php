@@ -78,7 +78,7 @@ class StufMessageBuilderTest extends TestCase {
 		parent::setUp();
 		$this->builder = new StufMessageBuilder(
 			new NullLogger(),
-			$this->createMock(StufVaultService::class),
+			$this->createMock(originalClassName: StufVaultService::class),
 			$this->caseDates()
 		);
 	}//end setUp()

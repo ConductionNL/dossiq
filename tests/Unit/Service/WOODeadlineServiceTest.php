@@ -130,7 +130,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 */
 	public function testCalculateThrowsForInvalidDate(): void {
 		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessageMatches('/receiptDate/');
+		$this->expectExceptionMessageMatches(regularExpression: '/receiptDate/');
 
 		$this->service->calculate('not-a-date');
 	}//end testCalculateThrowsForInvalidDate()
@@ -141,7 +141,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateRefusesADayMonthYearValue(): void {
-		$this->expectException(\InvalidArgumentException::class);
+		$this->expectException(exception: \InvalidArgumentException::class);
 		$this->service->calculate('31-01-2028');
 	}//end testCalculateRefusesADayMonthYearValue()
 

@@ -94,7 +94,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 		$this->vault = $this->createMock(StufVaultService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->vault->method('resolveSecret')->willReturn('test-password');
-		$this->builder = new StufMessageBuilder($this->logger, $this->vault, $this->caseDates());
+		$this->builder = new StufMessageBuilder(logger: $this->logger, vault: $this->vault, dates: $this->caseDates());
 	}//end setUp()
 
 	/**

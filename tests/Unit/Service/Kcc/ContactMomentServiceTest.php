@@ -46,7 +46,7 @@ class ContactMomentServiceTest extends TestCase {
 	protected function setUp(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->service = new ContactMomentService($settings, $logger, $this->caseDates());
+		$this->service = new ContactMomentService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
 	}//end setUp()
 
 	/**

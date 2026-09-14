@@ -59,7 +59,7 @@ class ContactBetrokkeneMapperTest extends TestCase {
 		$this->register = new SchemaAwareStufRegister();
 		$this->mapper = new ContactBetrokkeneMapper(
 			$this->register,
-			$this->createMock(LoggerInterface::class),
+			$this->createMock(originalClassName: LoggerInterface::class),
 			$this->caseDates()
 		);
 	}//end setUp()

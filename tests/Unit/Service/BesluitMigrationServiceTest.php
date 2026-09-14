@@ -147,7 +147,7 @@ final class BesluitMigrationServiceTest extends TestCase {
 			$appManager,
 			$this->container(),
 			$settings,
-			$this->createMock(LoggerInterface::class),
+			$this->createMock(originalClassName: LoggerInterface::class),
 			$this->caseDates()
 		);
 
@@ -347,7 +347,7 @@ final class BesluitMigrationServiceTest extends TestCase {
 		// move the besluit at all. The widening is midnight in the administered
 		// zone since openspec/changes/one-date-write-path; it used to be midnight
 		// UTC, which reads as the previous evening for every Dutch reader.
-		$this->assertSame('2026-09-01T00:00:00+02:00', $written['decisionDate']);
+		$this->assertSame(expected: '2026-09-01T00:00:00+02:00', actual: $written['decisionDate']);
 		$this->assertSame('2026-09-02', $written['deliveryDate'], 'a `date` target stays a date');
 		$this->assertSame('2026-09-02', $written['deliveryDate']);
 		$this->assertSame('2026-09-03', $written['publicationDate']);

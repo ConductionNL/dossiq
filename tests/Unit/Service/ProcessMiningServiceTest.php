@@ -76,9 +76,9 @@ class ProcessMiningServiceTest extends TestCase {
 
 		$this->service = new ProcessMiningService(
 			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer($this->caseDates()),
+			new DwellTimeAnalyzer(dates: $this->caseDates()),
 			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator($this->caseDates()),
+			new ThroughputTrendCalculator(dates: $this->caseDates()),
 			$this->caseDates(),
 		);
 	}//end setUp()

@@ -46,21 +46,21 @@ trait MakesCaseDateNormaliser {
 	 * @return CaseDateNormaliser
 	 */
 	private function caseDates(string $zone = 'Europe/Amsterdam'): CaseDateNormaliser {
-		$context = $this->createMock(TenantContext::class);
+		$context = $this->createMock(originalClassName: TenantContext::class);
 		$context->method('isBound')->willReturn(true);
 		$context->method('getTenantId')->willReturn('tenant-under-test');
 
-		$configuration = $this->createMock(TenantConfigurationService::class);
+		$configuration = $this->createMock(originalClassName: TenantConfigurationService::class);
 		$configuration->method('getConfig')->willReturn(['timezone' => $zone]);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
 
 		return new CaseDateNormaliser(
 			tenantContext: $context,
 			tenantConfiguration: $configuration,
 			settingsService: $settings,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end caseDates()
 }//end trait

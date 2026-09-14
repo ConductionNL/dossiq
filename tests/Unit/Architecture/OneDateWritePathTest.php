@@ -211,9 +211,9 @@ class OneDateWritePathTest extends TestCase {
 		}
 
 		self::assertSame(
-			[],
-			$survivors,
-			"These private date normalisers still exist:\n - " . implode("\n - ", $survivors)
+			expected: [],
+			actual: $survivors,
+			message: "These private date normalisers still exist:\n - " . implode("\n - ", $survivors)
 			. "\n" . self::ADVICE
 		);
 	}//end testTheNinePrivateNormalisersAreRetired()
@@ -232,7 +232,7 @@ class OneDateWritePathTest extends TestCase {
 				continue;
 			}
 
-			foreach ($this->privateDateParsers($source) as $method) {
+			foreach ($this->privateDateParsers(source: $source) as $method) {
 				$key = $relative . '::' . $method;
 				if (array_key_exists($key, self::PARSER_ALLOWLIST) === true) {
 					continue;
@@ -244,9 +244,9 @@ class OneDateWritePathTest extends TestCase {
 
 		sort($violations);
 		self::assertSame(
-			[],
-			$violations,
-			"A private date parser is a second rule for what a date is:\n - "
+			expected: [],
+			actual: $violations,
+			message: "A private date parser is a second rule for what a date is:\n - "
 			. implode("\n - ", $violations) . "\n" . self::ADVICE
 		);
 	}//end testNoPrivateMethodParsesADate()
@@ -260,11 +260,11 @@ class OneDateWritePathTest extends TestCase {
 	 */
 	public function testEveryAllowlistEntryCarriesAReason(): void {
 		foreach (self::PARSER_ALLOWLIST as $key => $reason) {
-			self::assertNotSame('', trim($reason), 'Allowlist entry ' . $key . ' needs a reason.');
+			self::assertNotSame(expected: '', actual: trim($reason), message: 'Allowlist entry ' . $key . ' needs a reason.');
 			[$file] = explode('::', $key);
 			self::assertFileExists(
-				self::LIB_DIR . '/' . $file,
-				'Allowlisted file ' . $file . ' is gone; drop the entry.'
+				filename: self::LIB_DIR . '/' . $file,
+				message: 'Allowlisted file ' . $file . ' is gone; drop the entry.'
 			);
 		}
 	}//end testEveryAllowlistEntryCarriesAReason()
@@ -298,9 +298,9 @@ class OneDateWritePathTest extends TestCase {
 
 		sort($violations);
 		self::assertSame(
-			[],
-			$violations,
-			"A hard-coded zone is a zone the administrator never chose:\n - "
+			expected: [],
+			actual: $violations,
+			message: "A hard-coded zone is a zone the administrator never chose:\n - "
 			. implode("\n - ", $violations) . "\n" . self::ADVICE
 		);
 	}//end testNoClassNamesATimeZoneLiteral()
@@ -318,7 +318,7 @@ class OneDateWritePathTest extends TestCase {
 			$reached = false;
 			foreach ($files as $file) {
 				$full = self::LIB_DIR . '/' . $file;
-				self::assertFileExists($full, 'Write path ' . $path . ' names a file that is gone: ' . $file);
+				self::assertFileExists(filename: $full, message: 'Write path ' . $path . ' names a file that is gone: ' . $file);
 				if (str_contains((string)file_get_contents($full), 'CaseDateNormaliser') === true) {
 					$reached = true;
 					break;
@@ -331,9 +331,9 @@ class OneDateWritePathTest extends TestCase {
 		}
 
 		self::assertSame(
-			[],
-			$dark,
-			"These write paths still set a case date without the normaliser:\n - "
+			expected: [],
+			actual: $dark,
+			message: "These write paths still set a case date without the normaliser:\n - "
 			. implode("\n - ", $dark) . "\n" . self::ADVICE
 		);
 	}//end testEveryWritePathReachesTheNormaliser()
@@ -348,10 +348,10 @@ class OneDateWritePathTest extends TestCase {
 	public function testStufMessagesReadTheTenantZone(): void {
 		foreach (self::STUF_FILES as $file) {
 			$full = self::LIB_DIR . '/' . $file;
-			self::assertFileExists($full, 'StUF file is gone: ' . $file);
+			self::assertFileExists(filename: $full, message: 'StUF file is gone: ' . $file);
 			self::assertTrue(
-				str_contains((string)file_get_contents($full), 'CaseDateNormaliser'),
-				$file . ' still states its own zone. A Belgian tenant then sends Dutch timestamps. ' . self::ADVICE
+				condition: str_contains((string)file_get_contents($full), 'CaseDateNormaliser'),
+				message: $file . ' still states its own zone. A Belgian tenant then sends Dutch timestamps. ' . self::ADVICE
 			);
 		}
 	}//end testStufMessagesReadTheTenantZone()
@@ -365,21 +365,21 @@ class OneDateWritePathTest extends TestCase {
 	 */
 	public function testTheNormaliserItselfIsAllowed(): void {
 		$path = self::LIB_DIR . '/' . self::NORMALISER;
-		self::assertFileExists($path, 'CaseDateNormaliser is the deliverable of one-date-write-path.');
+		self::assertFileExists(filename: $path, message: 'CaseDateNormaliser is the deliverable of one-date-write-path.');
 
 		$source = (string)file_get_contents($path);
 		foreach (['toCalendarDate', 'toMoment', 'parse'] as $method) {
 			self::assertMatchesRegularExpression(
-				'/public\s+function\s+' . $method . '\s*\(/',
-				$source,
-				'CaseDateNormaliser::' . $method . '() is part of the published surface.'
+				pattern: '/public\s+function\s+' . $method . '\s*\(/',
+				string: $source,
+				message: 'CaseDateNormaliser::' . $method . '() is part of the published surface.'
 			);
 		}
 
 		self::assertMatchesRegularExpression(
-			'/new\s+DateTimeZone\s*\(/',
-			$source,
-			'CaseDateNormaliser is the one class that resolves a zone.'
+			pattern: '/new\s+DateTimeZone\s*\(/',
+			string: $source,
+			message: 'CaseDateNormaliser is the one class that resolves a zone.'
 		);
 	}//end testTheNormaliserItselfIsAllowed()
 
@@ -424,7 +424,7 @@ class OneDateWritePathTest extends TestCase {
 				continue;
 			}
 
-			$body = $this->methodBody($source, (int)$matches[0][$index][1]);
+			$body = $this->methodBody(source: $source, offset: (int)$matches[0][$index][1]);
 			if (preg_match(self::PARSE_BODY_PATTERN, $body) === 1) {
 				$found[] = $name;
 			}

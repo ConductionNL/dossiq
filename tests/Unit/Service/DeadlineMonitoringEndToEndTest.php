@@ -89,10 +89,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
-		$this->extService = new DeadlineExtensionService($this->termService, $this->caseDates());
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates());
 		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
-		$this->calcService = new DwangsomCalculationService($settings, $logger, $this->caseDates());
-		$this->outService = new DwangsomUitbetalingService($settings, $this->caseDates());
+		$this->calcService = new DwangsomCalculationService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
+		$this->outService = new DwangsomUitbetalingService(settingsService: $settings, dates: $this->caseDates());
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,

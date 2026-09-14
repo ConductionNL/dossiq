@@ -62,7 +62,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			},
 		);
 
-		$this->service = new DwangsomCalculationService($settings, $this->createMock(LoggerInterface::class), $this->caseDates());
+		$this->service = new DwangsomCalculationService(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
 	}
 
 	/**

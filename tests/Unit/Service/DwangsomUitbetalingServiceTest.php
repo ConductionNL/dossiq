@@ -53,7 +53,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			},
 		);
 
-		$this->service = new DwangsomUitbetalingService($settings, $this->caseDates());
+		$this->service = new DwangsomUitbetalingService(settingsService: $settings, dates: $this->caseDates());
 
 		// Seed a stopped berekening.
 		$this->objects->seed('penaltyPaymentCalculation', [

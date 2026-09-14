@@ -135,9 +135,9 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		}
 
 		self::assertSame(
-			['2028-01-31'],
-			array_values(array_unique($stored)),
-			"The write paths disagree about what 2028-01-31 is:\n" . print_r($stored, true)
+			expected: ['2028-01-31'],
+			actual: array_values(array_unique($stored)),
+			message: "The write paths disagree about what 2028-01-31 is:\n" . print_r($stored, true)
 		);
 	}//end testEveryWritePathStoresTheSameString()
 
@@ -154,9 +154,9 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			}
 
 			self::assertSame(
-				['2028-01-31'],
-				array_values(array_unique($values)),
-				$label . ' reads the four spellings of one instant differently: ' . print_r($values, true)
+				expected: ['2028-01-31'],
+				actual: array_values(array_unique($values)),
+				message: $label . ' reads the four spellings of one instant differently: ' . print_r($values, true)
 			);
 		}
 	}//end testAllFourSpellingsAgreeOnEveryPath()
@@ -170,9 +170,9 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		foreach ($this->writePaths() as $label => $write) {
 			try {
 				$stored = $write('31-01-2028');
-				self::fail($label . ' accepted a d-m-Y value and stored ' . $stored . '.');
+				self::fail(message: $label . ' accepted a d-m-Y value and stored ' . $stored . '.');
 			} catch (InvalidArgumentException $exception) {
-				self::assertStringContainsString('ISO 8601', $exception->getMessage(), $label);
+				self::assertStringContainsString(needle: 'ISO 8601', haystack: $exception->getMessage(), message: $label);
 			}
 		}
 	}//end testAnUnreadableValueIsRefusedByEveryPath()
@@ -190,9 +190,9 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	public function testTheTenantZoneDecidesTheStoredDay(): void {
 		$submitted = '2028-01-31T00:00:00+01:00';
 
-		self::assertSame('2028-02-28', $this->woo('Europe/Amsterdam')->calculate($submitted)['expectedResolution']);
-		self::assertSame('2028-02-28', $this->woo('Europe/Brussels')->calculate($submitted)['expectedResolution']);
-		self::assertSame('2028-02-27', $this->woo('UTC')->calculate($submitted)['expectedResolution']);
+		self::assertSame(expected: '2028-02-28', actual: $this->woo(zone: 'Europe/Amsterdam')->calculate($submitted)['expectedResolution']);
+		self::assertSame(expected: '2028-02-28', actual: $this->woo(zone: 'Europe/Brussels')->calculate($submitted)['expectedResolution']);
+		self::assertSame(expected: '2028-02-27', actual: $this->woo(zone: 'UTC')->calculate($submitted)['expectedResolution']);
 	}//end testTheTenantZoneDecidesTheStoredDay()
 
 	/**
@@ -211,14 +211,14 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			$stamp = (string)$payload['startedAt'];
 
 			self::assertMatchesRegularExpression(
-				'/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
-				$stamp,
-				'a stamp without an offset is the defect this change removes'
+				pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
+				string: $stamp,
+				message: 'a stamp without an offset is the defect this change removes'
 			);
 			self::assertSame(
-				$expected,
-				substr($stamp, -6),
-				$zone . ' stamped an offset it does not have right now'
+				expected: $expected,
+				actual: substr($stamp, -6),
+				message: $zone . ' stamped an offset it does not have right now'
 			);
 		}
 	}//end testAStampCarriesTheAdministeredOffset()
@@ -238,13 +238,13 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function writePaths(): array {
 		return [
-			'termijn voltooiDatum (TermijnController::voltooi)' => fn (string $v): string => $this->termijnVoltooiDatum($v),
-			'termijn newEinddatum (TermijnController::verleng)' => fn (string $v): string => $this->termijnNewEinddatum($v),
+			'termijn voltooiDatum (TermijnController::voltooi)' => fn (string $v): string => $this->termijnVoltooiDatum(submitted: $v),
+			'termijn newEinddatum (TermijnController::verleng)' => fn (string $v): string => $this->termijnNewEinddatum(submitted: $v),
 			'klacht afhandelDeadline (ComplaintService::addCalendarWeeks)' => fn (string $v): string => $this->complaints()->addCalendarWeeks(startDate: $v, weeks: 0),
 			'klacht ontvangstbevestiging (ComplaintService::addWorkingDays)' => fn (string $v): string => $this->complaints()->addWorkingDays(startDate: $v, days: 0),
-			'advies deadline (AdviceService::requestAdvice)' => fn (string $v): string => $this->adviceDeadline($v),
-			'woo expectedResolution (WOODeadlineService::calculate)' => fn (string $v): string => $this->wooReceiptDay($v),
-			'contactmoment startedAt (Kcc\ContactMomentService::create)' => fn (string $v): string => $this->contactMomentStartDay($v),
+			'advies deadline (AdviceService::requestAdvice)' => fn (string $v): string => $this->adviceDeadline(submitted: $v),
+			'woo expectedResolution (WOODeadlineService::calculate)' => fn (string $v): string => $this->wooReceiptDay(submitted: $v),
+			'contactmoment startedAt (Kcc\ContactMomentService::create)' => fn (string $v): string => $this->contactMomentStartDay(submitted: $v),
 		];
 	}//end writePaths()
 
@@ -257,7 +257,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function termijnVoltooiDatum(string $submitted): string {
 		$captured = null;
-		$term = $this->createMock(TermijnService::class);
+		$term = $this->createMock(originalClassName: TermijnService::class);
 		$term->method('markTermijnCompleted')->willReturnCallback(
 			function (string $id, ?DateTimeImmutable $voltooiDatum = null, string $link = '') use (&$captured): ?array {
 				$captured = $voltooiDatum;
@@ -265,7 +265,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			}
 		);
 
-		$controller = $this->termijnController($term, $this->createMock(DeadlineExtensionService::class));
+		$controller = $this->termijnController(term: $term, extension: $this->createMock(originalClassName: DeadlineExtensionService::class));
 		$response = PhpInputStream::with(
 			(string)json_encode(['voltooiDatum' => $submitted]),
 			static fn () => $controller->voltooi('instance-1')
@@ -287,7 +287,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function termijnNewEinddatum(string $submitted): string {
 		$captured = null;
-		$extension = $this->createMock(DeadlineExtensionService::class);
+		$extension = $this->createMock(originalClassName: DeadlineExtensionService::class);
 		$extension->method('requestExtension')->willReturnCallback(
 			function (string $id, string $rationale, string $newEndDate, string $link = '') use (&$captured): array {
 				$captured = $newEndDate;
@@ -295,7 +295,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			}
 		);
 
-		$controller = $this->termijnController($this->createMock(TermijnService::class), $extension);
+		$controller = $this->termijnController(term: $this->createMock(originalClassName: TermijnService::class), extension: $extension);
 		$response = PhpInputStream::with(
 			(string)json_encode(['rationale' => 'Awb 4:14 lid 1', 'newEinddatum' => $submitted]),
 			static fn () => $controller->verleng('instance-1')
@@ -317,21 +317,21 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 * @return TermijnController
 	 */
 	private function termijnController(TermijnService $term, DeadlineExtensionService $extension): TermijnController {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 
-		$session = $this->createMock(IUserSession::class);
-		$session->method('getUser')->willReturn($this->createMock(IUser::class));
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($this->createMock(originalClassName: IUser::class));
 
 		return new TermijnController(
 			appName: 'dossiq',
 			request: $request,
 			term: $term,
-			pause: $this->createMock(DeadlinePauseService::class),
+			pause: $this->createMock(originalClassName: DeadlinePauseService::class),
 			extension: $extension,
 			dates: $this->caseDates(),
-			caseTypeSlugs: $this->createMock(CaseTypeSlugResolver::class),
+			caseTypeSlugs: $this->createMock(originalClassName: CaseTypeSlugResolver::class),
 			userSession: $session,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end termijnController()
 
@@ -344,7 +344,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function adviceDeadline(string $submitted): string {
 		$captured = [];
-		$store = $this->createMock(RoundTripObjectStoreStub::class);
+		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
@@ -356,28 +356,28 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			}
 		);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? ''
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
-		$session = $this->createMock(IUserSession::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 
 		$service = new AdviceService(
 			settingsService: $settings,
 			userSession: $session,
 			logger: $logger,
-			adviceDelegation: $this->createMock(AdviceDelegationService::class),
+			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
 			repository: new AdviceRepository(settingsService: $settings, logger: $logger),
 			guard: new AdviceAuthorizationGuard(
 				settingsService: $settings,
 				userSession: $session,
-				groupManager: $this->createMock(IGroupManager::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class),
 			),
 			notifier: new AdviceNotifier(
-				notificationManager: $this->createMock(INotificationManager::class),
+				notificationManager: $this->createMock(originalClassName: INotificationManager::class),
 				logger: $logger,
 			),
 			dates: $this->caseDates(),
@@ -400,7 +400,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 * @return string The receipt day the service read.
 	 */
 	private function wooReceiptDay(string $submitted): string {
-		$resolution = $this->woo('Europe/Amsterdam')->calculate(receiptDate: $submitted)['expectedResolution'];
+		$resolution = $this->woo(zone: 'Europe/Amsterdam')->calculate(receiptDate: $submitted)['expectedResolution'];
 		return (new DateTimeImmutable($resolution))->modify('-28 days')->format('Y-m-d');
 	}//end wooReceiptDay()
 
@@ -428,7 +428,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function contactMomentPayload(string $zone, array $data): array {
 		$captured = [];
-		$store = $this->createMock(RoundTripObjectStoreStub::class);
+		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
 			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
 				$captured = $object;
@@ -436,7 +436,7 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			}
 		);
 
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ['register' => 'dossiq', 'customer_contact_schema' => 'customerContact'][$key] ?? ''
@@ -444,8 +444,8 @@ class OneDateWritePathRoundTripTest extends TestCase {
 
 		$service = new KccContactMomentService(
 			$settings,
-			$this->createMock(LoggerInterface::class),
-			$this->caseDates($zone),
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->caseDates(zone: $zone),
 		);
 
 		$service->create(
@@ -463,8 +463,8 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function complaints(): ComplaintService {
 		return new ComplaintService(
-			settingsService: $this->createMock(SettingsService::class),
-			logger: $this->createMock(LoggerInterface::class),
+			settingsService: $this->createMock(originalClassName: SettingsService::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			workingDays: new WorkingDayCalculator(),
 			dates: $this->caseDates(),
 		);
@@ -479,10 +479,10 @@ class OneDateWritePathRoundTripTest extends TestCase {
 	 */
 	private function woo(string $zone): WOODeadlineService {
 		return new WOODeadlineService(
-			$this->createMock(SettingsService::class),
-			$this->createMock(INotificationManager::class),
-			$this->createMock(LoggerInterface::class),
-			$this->caseDates($zone),
+			settingsService: $this->createMock(originalClassName: SettingsService::class),
+			notificationManager: $this->createMock(originalClassName: INotificationManager::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(zone: $zone),
 		);
 	}//end woo()
 }//end class

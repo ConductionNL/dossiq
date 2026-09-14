@@ -101,7 +101,7 @@ class WorkQueueServiceTest extends TestCase {
 			}
 		};
 
-		$this->service = new WorkQueueService($settings, $engineTasks, $this->createMock(LoggerInterface::class), $this->caseDates());
+		$this->service = new WorkQueueService(settingsService: $settings, engineTasks: $engineTasks, logger: $this->createMock(originalClassName: LoggerInterface::class), dates: $this->caseDates());
 	}//end setUp()
 
 	// ── Pure scoreItem() tests ──────────────────────────────────────────

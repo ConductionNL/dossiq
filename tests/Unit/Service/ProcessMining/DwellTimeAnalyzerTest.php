@@ -54,7 +54,7 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->analyzer = new DwellTimeAnalyzer($this->caseDates());
+		$this->analyzer = new DwellTimeAnalyzer(dates: $this->caseDates());
 		$this->now = new DateTimeImmutable('2026-07-01T00:00:00+00:00');
 		$this->from = new DateTimeImmutable('2026-01-01');
 		$this->to = new DateTimeImmutable('2026-12-31');
