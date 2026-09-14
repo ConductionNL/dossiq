@@ -23,7 +23,7 @@ use RuntimeException;
 /**
  * The listener hands a person link to the projection, and never throws.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
  */
 class PersonLinkListenerTest extends TestCase {
 

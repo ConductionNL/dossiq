@@ -27,7 +27,7 @@ use Throwable;
  * one record per link and touches no record it did not write. A link in
  * the generic initiator role also names the requester on the case.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 class CaseRoleProjection {
 
@@ -57,7 +57,7 @@ class CaseRoleProjection {
 	 *
 	 * @return string The role record's uuid, '' when the link produced none.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
 	 */
 	public function project(array $link): string {
 		$caseId = trim((string)($link['objectUuid'] ?? ''));
@@ -103,7 +103,7 @@ class CaseRoleProjection {
 	 *
 	 * @return bool True when a record was removed.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
 	 */
 	public function retire(array $link): bool {
 		$caseId = trim((string)($link['objectUuid'] ?? ''));
@@ -202,7 +202,7 @@ class CaseRoleProjection {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
 	 */
 	private function nameInitiator(array $case, array $link, array $roleType): void {
 		if (trim((string)($roleType['genericRole'] ?? '')) !== self::INITIATOR) {
@@ -222,7 +222,7 @@ class CaseRoleProjection {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-003-an-initiator-link-shall-name-the-requester-on-the-case
 	 */
 	private function clearInitiator(array $case, string $personUid): void {
 		if (trim((string)($case['initiatorSourceId'] ?? '')) !== $personUid) {

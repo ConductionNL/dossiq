@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * A listener registered for two of the three looks exactly like one
  * registered for all three until the missing event fires in production.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
  */
 class PersonListenerRegistrarTest extends TestCase {
 

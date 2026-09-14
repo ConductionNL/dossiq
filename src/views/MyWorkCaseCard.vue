@@ -23,6 +23,12 @@
 				>{{ statusLabel }}</span
 			>
 			<span
+				v-if="substitutedMarker"
+				class="mywork-card__chip mywork-card__chip--substituted"
+				data-testid="substituted-marker">
+				{{ substitutedMarker }}
+			</span>
+			<span
 				v-if="urgencyChipLabel"
 				class="mywork-card__chip mywork-card__urgency-chip"
 				:class="urgencyChipClassName">
@@ -86,6 +92,21 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The absentee this card is routed here for, or '' for own work.
+		 * Set only on the substituted group of the My work index.
+		 */
+		substitutedFor: {
+			type: String,
+			default: '',
+		},
+
+		/** The day that routing stops (`YYYY-MM-DD`), or ''. */
+		substitutedUntil: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['open'],
@@ -145,6 +166,31 @@ export default {
 			if (!raw) return false
 			const d = new Date(raw)
 			return !isNaN(d.getTime()) && d.getTime() < Date.now()
+		},
+
+		/**
+		 * The marker naming whose work this is and how long it stays here.
+		 *
+		 * Both halves, because either one alone leaves a question the reader
+		 * has to answer somewhere else: the name without the date says nothing
+		 * about when the case goes back, and the date without the name says
+		 * nothing about who is waiting for it.
+		 *
+		 * @return {string} The marker text, or '' on own work.
+		 *
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		substitutedMarker() {
+			if (!this.substitutedFor) {
+				return ''
+			}
+			if (!this.substitutedUntil) {
+				return t('dossiq', 'for {name}', { name: this.substitutedFor })
+			}
+			return t('dossiq', 'for {name}, until {date}', {
+				name: this.substitutedFor,
+				date: this.substitutedUntil,
+			})
 		},
 
 		/** This card's urgency entry from the parent-supplied work-queue map. */
@@ -245,6 +291,15 @@ export default {
 	&--status {
 		background: var(--color-primary-element-light);
 		color: var(--color-primary-element-text-dark, var(--color-main-text));
+	}
+
+	// The substitution marker reads as a note about the row, not as a status
+	// of the case itself, so it is outlined rather than filled.
+	&--substituted {
+		background: transparent;
+		border: 1px solid var(--color-primary-element);
+		color: var(--color-main-text);
+		font-weight: 600;
 	}
 }
 

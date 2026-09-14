@@ -813,25 +813,34 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	})
 
 	/**
-	 * Deliberately carries no `@e2e` anchor, and the toggle branch is gone.
+	 * The scenario this file could not cite until the call site existed.
 	 *
-	 * This used to cite `#waarnemer-sees-substituted-work-in-my-work` and to
-	 * click a `substituted-toggle` inside an `if` that stood down when the
-	 * toggle was absent. It is absent on every build: `getByTestId(
-	 * 'substituted-toggle')` matched nothing in `src/` at all, because the My
-	 * Work substitution integration has no call site. `fetchSubstitutedWork()`
-	 * is never called, every helper in `src/utils/substitutionHelpers.js` is
-	 * imported by nothing, and neither `MyWorkCards.vue` nor `MyWorkWidget.vue`
-	 * mentions substitution. So the `if` could only ever take its empty branch,
-	 * and the two unconditional assertions left — a button and the absence of a
-	 * 500 — are satisfied by a build that routes no substituted work whatsoever.
+	 * It used to click a `substituted-toggle` inside an `if` that stood down
+	 * when the toggle was absent, which it always was: `fetchSubstitutedWork()`
+	 * had no caller, every helper in `src/utils/substitutionHelpers.js` was
+	 * imported by nothing, and neither My work surface mentioned substitution.
+	 * So the `if` could only take its empty branch and the two assertions left
+	 * — a button and the absence of a 500 — were satisfied by a build that
+	 * routed no substituted work at all. The scenario carried an `@e2e exclude`
+	 * saying exactly that.
 	 *
-	 * The scenario now carries a reason-bearing `@e2e exclude` naming that gap.
-	 * What survives here is what the body actually did: a My Work page-load
-	 * regression check, kept because the route is worth guarding and honest
-	 * because it claims nothing else.
+	 * What is asserted now is the requirement: the absentee's in-scope case is
+	 * ON this reader's My work, carrying a marker that names the absentee, and
+	 * hiding substituted work removes it. The signed-in account is the
+	 * waarnemer of the scope-limited substitution seeded in `beforeAll`
+	 * (`PLAIN_USER` covered by `ADMIN_USER`), so nothing here needs its own
+	 * fixture and nothing here writes one.
+	 *
+	 * MUTATION-CHECKED, because "a test that cannot fail" is what this file is
+	 * the rewrite of: dropping `this.loadSubstitutedWork()` from
+	 * `MyWorkCards.vue` reds the marker assertion below and the three vitest
+	 * cases in `tests/vitest/substitutedWorkOnMyWork.spec.js` that cover the
+	 * same three claims off a stubbed resolver.
 	 */
-	test('My Work renders without a server error', async ({ page }) => {
+	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
+	test('the absentee in-scope case is on the waarnemer My work, marked and hideable', async ({
+		page,
+	}) => {
 		await page.goto('/index.php/apps/dossiq/my-work')
 		await dismissSupportDialog(page)
 		// The My Work route renders no page heading (measured on a CI runner
@@ -840,6 +849,44 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 			timeout: 15000,
 		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+
+		const group = page.getByTestId('substituted-work')
+		await expect(
+			group,
+			'an active substitution routes the absentee open work here, so the group must render',
+		).toBeVisible({ timeout: 30_000 })
+
+		// The seeded case itself, by the title `beforeAll` gave it: a group
+		// that rendered empty would pass a bare visibility check.
+		await expect(
+			group.getByText(IN_SCOPE_CASE, { exact: false }),
+			'the case assigned to the absentee must be listed',
+		).toBeVisible({ timeout: 30_000 })
+
+		// The marker NAMES the absentee. `not.toBe('')` would pass on any
+		// marker at all, including one naming the wrong colleague.
+		const marker = group.getByTestId('substituted-marker').first()
+		await expect(marker).toBeVisible()
+		await expect(
+			marker,
+			`the marker must name ${PLAIN_USER}, whose work this is`,
+		).toContainText(PLAIN_USER)
+
+		// And a case OUTSIDE the substitution scope must not have come with it.
+		await expect(
+			group.getByText(OUT_OF_SCOPE_CASE, { exact: false }),
+		).toHaveCount(0)
+
+		await page.getByTestId('substituted-toggle').click()
+		await expect(
+			group.getByTestId('substituted-marker'),
+			'hiding substituted work must remove it from the list',
+		).toHaveCount(0)
+		await expect(
+			group.getByText(IN_SCOPE_CASE, { exact: false }),
+		).toHaveCount(0)
+		// The toggle survives being used, or hiding is a one-way door.
+		await expect(page.getByTestId('substituted-toggle')).toBeVisible()
 	})
 
 	/**

@@ -11,7 +11,7 @@
  * disabled with the reason rather than hidden. A dialog that hid them would
  * reproduce exactly the "nobody to send to" it replaces.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
