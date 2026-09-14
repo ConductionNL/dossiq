@@ -255,15 +255,9 @@ class DeadlineExtensionService {
 	 * @return int Absolute number of days between the current and the new deadline.
 	 */
 	private function calculateDaysImpact(string $current, string $newEndDate): int {
-		$currentInput = 'now';
-		if ($current !== '') {
-			$currentInput = $current;
-		}
-
-		if ($currentInput === 'now') {
-			$currentDate = $this->dates->now();
-		} else {
-			$currentDate = $this->dates->parse($currentInput, 'einddatumActueel');
+		$currentDate = $this->dates->now();
+		if ($current !== '' && $current !== 'now') {
+			$currentDate = $this->dates->parse($current, 'einddatumActueel');
 		}
 
 		$newDate = $this->dates->parse($newEndDate, 'newEinddatum');

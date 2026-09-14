@@ -45,6 +45,13 @@ use RuntimeException;
 /**
  * Service for advice request (adviesAanvraag) workflow.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
+ * CaseDateNormaliser, and it replaced inline date handling rather than adding a
+ * concern: the two calls here are the received moment and the deadline, both of
+ * which used to be formatted in this class. Control: phpmd on this file at
+ * 8f9dc479^ is clean at twelve, so dropping the dependency is the only way back
+ * under the threshold and it puts a second date write path back.
+ *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService {
