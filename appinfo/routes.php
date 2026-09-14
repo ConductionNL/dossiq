@@ -383,18 +383,22 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
-        // The Actions menu's three non-lifecycle gestures (case-actions-menu):
+        // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up
-        // case for a later date. `startable-flows` and `planned` are the two
-        // reads the case page needs to offer the other two honestly, so a
+        // case for a later date — once, or as a series that comes round again
+        // (planned-case-series). `startable-flows` and `planned` are the two
+        // reads the case page needs to offer the others honestly, so a
         // handler is never shown a Start list the type does not allow or a
-        // planned row that has already become an ordinary case. All four are
+        // planned row that has already become an ordinary case. All of them are
         // literal segments after `{caseId}`, so none collides with the
-        // lifecycle or transition routes above.
+        // lifecycle or transition routes above. `stop` sits under `planned/`
+        // with the series uuid between them, because stopping a series is an
+        // act on one planned row rather than on the case.
     ['name' => 'caseActions#copy',           'url' => '/api/case/{caseId}/copy',            'verb' => 'POST'],
     ['name' => 'caseActions#startableFlows', 'url' => '/api/case/{caseId}/startable-flows', 'verb' => 'GET'],
     ['name' => 'caseActions#plan',           'url' => '/api/case/{caseId}/plan',            'verb' => 'POST'],
     ['name' => 'caseActions#planned',        'url' => '/api/case/{caseId}/planned',         'verb' => 'GET'],
+    ['name' => 'caseActions#stopSeries',     'url' => '/api/case/{caseId}/planned/{flowId}/stop', 'verb' => 'POST'],
 
         // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
         // prefix with literal `bulk-transition` segments, distinct from the
