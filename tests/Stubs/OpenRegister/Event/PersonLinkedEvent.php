@@ -30,7 +30,7 @@
  * @spec exclude A declaration-only mirror of another app's event contract, not
  * behaviour of this one: the requirement it serves is OpenRegister's
  * people-on-objects, and the dossiq side it lets the analysers see is specified
- * in openspec/changes/people-on-the-case.
+ * in openspec/specs/people-on-the-case.
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ class PersonLinkedEvent extends Event {
 	 *
 	 * @return object The link.
 	 *
-	 * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
+	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-001-a-person-linked-to-a-case-shall-become-a-role-record-on-that-case
 	 */
 	public function getLink(): object {
 		return $this->link;
