@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -51,6 +52,8 @@ use Psr\Log\LoggerInterface;
  * Drives all 5 termijnbewaking E2E scenarios against the chain.
  */
 class DeadlineMonitoringEndToEndTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
 	private TermijnService $termService;
@@ -86,7 +89,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
-		$this->extService = new DeadlineExtensionService($this->termService);
+		$this->extService = new DeadlineExtensionService($this->termService, $this->caseDates());
 		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
 		$this->calcService = new DwangsomCalculationService($settings, $logger);
 		$this->outService = new DwangsomUitbetalingService($settings);

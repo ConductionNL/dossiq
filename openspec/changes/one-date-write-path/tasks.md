@@ -16,7 +16,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
 - [x] 1.3 The zone resolves inside the normaliser: engine calendar first,
   `tenantConfiguration.timezone` second, `Europe/Amsterdam` last (D-4,
   D-5).
-- [ ] 2.1 `TermijnController` `hervat`, `verleng` and `voltooi` onto the
+- [x] 2.1 `TermijnController` `hervat`, `verleng` and `voltooi` onto the
   normaliser; `DeadlineExtensionService` stops taking a raw string.
 - [ ] 2.2 `ZrcController` `create` and `update`: the `datumStatusGezet`
   default and the `endDate` write.

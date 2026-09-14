@@ -35,7 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use DateTimeImmutable;
+use InvalidArgumentException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -65,6 +66,7 @@ class TermijnController extends Controller {
 	 * @param TermijnService $term Termijn service.
 	 * @param DeadlinePauseService $pause Pause service.
 	 * @param DeadlineExtensionService $extension Extension service.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
@@ -75,6 +77,7 @@ class TermijnController extends Controller {
 		private readonly TermijnService $term,
 		private readonly DeadlinePauseService $pause,
 		private readonly DeadlineExtensionService $extension,
+		private readonly CaseDateNormaliser $dates,
 		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -218,7 +221,11 @@ class TermijnController extends Controller {
 		$when = (string)($body['aanvullingDatum'] ?? '');
 		$resumeAt = null;
 		if ($when !== '') {
-			$resumeAt = new DateTimeImmutable($when);
+			try {
+				$resumeAt = $this->dates->parse($when, 'aanvullingDatum');
+			} catch (InvalidArgumentException $e) {
+				return $this->badRequest(msg: $e->getMessage());
+			}
 		}
 
 		try {
@@ -251,6 +258,15 @@ class TermijnController extends Controller {
 		$newEndDate = (string)($body['newEinddatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 		$isSupervisor = (bool)($body['supervisorOverride'] ?? false);
+
+		// The extension service used to take this as a raw string and parse it
+		// its own way. It is normalised here, once, before it reaches any
+		// arithmetic.
+		try {
+			$newEndDate = $this->dates->toCalendarDate($newEndDate, 'newEinddatum');
+		} catch (InvalidArgumentException $e) {
+			return $this->badRequest(msg: $e->getMessage());
+		}
 
 		try {
 			if ($isSupervisor === true) {
@@ -292,7 +308,11 @@ class TermijnController extends Controller {
 		$documentLink = (string)($body['documentLink'] ?? '');
 		$completedAt = null;
 		if ($when !== '') {
-			$completedAt = new DateTimeImmutable($when);
+			try {
+				$completedAt = $this->dates->parse($when, 'voltooiDatum');
+			} catch (InvalidArgumentException $e) {
+				return $this->badRequest(msg: $e->getMessage());
+			}
 		}
 
 		try {
