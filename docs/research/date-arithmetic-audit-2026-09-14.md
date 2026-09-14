@@ -72,10 +72,12 @@ consults for the day a date lands on, after this change.
 
 | file | lines | verdict | reaches | reason |
 |---|---|---|---|---|
+| `lib/BackgroundJob/AcknowledgementDispatchJob.php` | 136 | neither | | the retry counter for an acknowledgement that failed to send, `attempt + 1` passed to `IJobList::add()`. It is one of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |
 | `lib/Flow/DossiqAskPersonNode.php` | 648, 669 | neither | | a flow task due date and a node timeout in minutes, both process plumbing |
 | `lib/Flow/DossiqRequestDecisionNode.php` | 615 | neither | | a node timeout in minutes |
+| `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
 | `lib/Listener/CaseInheritedDeadlineListener.php` | 181 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
 | `lib/Service/Actions/ScheduleReminderHandler.php` | 162, 167 | neither | | when a reminder background job runs |
 | `lib/Service/Archival/ArchivalNominationDeriver.php` | 259 | neither | | a retention period counted in years, where a weekend cannot move the answer |
@@ -110,6 +112,16 @@ consults for the day a date lands on, after this change.
 | `lib/Service/TermijnService.php` | 109 | statutory | allowlisted | `endDateCalculated`, owned by `terms-on-the-engine-calendar` task 1.3, which declares `deadlineDefinition.rollToWorkingDay` and applies it here |
 | `lib/Service/WOODeadlineService.php` | 101, 172 | statutory | engine calendar | Woo art. 4.4: the decision term and its statutory extension |
 | `lib/Service/WorkingDayCalculator.php` | 170, 204 | neither | itself | the calendar. It is the fallback the three sites use when the engine is absent, and the only holiday list dossiq is allowed to hold |
+
+## Two rows added after the reading
+
+`lib/BackgroundJob/AcknowledgementDispatchJob.php` and
+`lib/Listener/AcknowledgementOnCreateListener.php` did not exist at
+`16f00124a` and so are not in the 37 counted above. The change
+`ontvangstbevestiging` added them, and both are `->add(` matches on
+`IJobList`, not on a date. They carry the verdict `neither` for the reason
+this file already names: two of the five patterns cannot be anchored to a
+date type. The counts below describe the reading, not the table.
 
 ## What the table is not
 

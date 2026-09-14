@@ -42,8 +42,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use OCA\Dossiq\Service\Stuf\PayloadTooLargeException;
 use OCA\Dossiq\Service\Stuf\StufVaultService;
 use OCA\Dossiq\Service\Stuf\VrijBerichtNotRegisteredException;
@@ -115,10 +113,12 @@ class StufMessageBuilder {
 	 *
 	 * @param LoggerInterface $logger The logger instance.
 	 * @param StufVaultService $vault The vault adapter (resolves WSSE credential references for outbound builds).
+	 * @param CaseDateNormaliser $dates The one date write path, which owns the zone.
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly StufVaultService $vault,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -416,14 +416,14 @@ class StufMessageBuilder {
 	}//end generateReferentienummer()
 
 	/**
-	 * Generate a tijdstipBericht in StUF format (yyyyMMddHHmmssSSS) in Europe/Amsterdam.
+	 * Generate a tijdstipBericht in StUF format (yyyyMMddHHmmssSSS), in the administered zone.
 	 *
 	 * @return string The 17-character timestamp.
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
 	 */
 	public function currentTimestampStuf(): string {
-		$now = new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'Europe/Amsterdam'));
+		$now = $this->dates->now();
 		$millis = (int)substr(string: $now->format(format: 'u'), offset: 0, length: 3);
 		return $now->format(format: 'YmdHis') . str_pad(string: (string)$millis, length: 3, pad_string: '0', pad_type: STR_PAD_LEFT);
 	}//end currentTimestampStuf()

@@ -170,6 +170,11 @@ export const FIXTURE_SCHEMAS = [
 	// it stops declaring. They are orphan rows under an orphan schema and
 	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
+	// One intake log entry names the case a message became, so it goes before
+	// `case` like every other child. An entry also holds the ORIGINAL of a
+	// message, which is why a run that leaves one behind is worse than an
+	// orphan row: it is somebody's mail sitting in a log a person can read.
+	'mailIntakeEntry',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
 	// its objects with it and the sweep then reports rows it cannot find.
@@ -646,7 +651,13 @@ export async function seedCase(
 ): Promise<any> {
 	return createObject(api, token, 'case', {
 		identifier: `${RUN_PREFIX}-${Math.floor(Math.random() * 1e4)}`,
-		priority: 'normal',
+		// THE TWO FACTS, NOT THE DERIVED VALUE. `case.priority` is derived from
+		// impact and urgency on every save, so a fixture that seeded a priority
+		// directly would have it silently replaced and would stop meaning
+		// anything. medium + medium derives `normal`, which is what this seeded
+		// before. See openspec/changes/case-priority-impact-urgency.
+		impact: 'medium',
+		urgency: 'medium',
 		intakeChannel: 'manual',
 		...fields,
 	})

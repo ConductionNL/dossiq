@@ -58,6 +58,7 @@ class ListenerRegistrar {
 		(new ObjectListenerRegistrar())->register(context: $context);
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
 		(new CaseTypeListenerRegistrar())->register(context: $context);
+		(new CasePriorityListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);

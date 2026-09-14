@@ -18,18 +18,21 @@ that it is unavailable and SHALL NOT throw on the scheduled run.
 - **AND** no password field SHALL be offered
 
 #### Scenario: the stored password is deleted on upgrade
+@e2e exclude An upgrade step, not a browser act; covered by tests/Unit/Repair/RetireImapCredentialsTest.php.
 
 - **GIVEN** an instance carrying `email_imap_password`
 - **WHEN** the upgrade runs
 - **THEN** the value SHALL be removed
 
 #### Scenario: only one file names the Mail app
+@e2e exclude A property of the tree, not of a running page; covered by tests/Unit/Service/Email/NextcloudMailGatewayTest.php.
 
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for `OCA\Mail` symbols
 - **THEN** they SHALL appear in the gateway class only
 
 #### Scenario: intake is unavailable rather than broken when Mail is gone
+@e2e exclude Needs the Mail app disabled under the suite; covered by tests/Unit/Service/Email/InboundMailIntakeTest.php and NextcloudMailGatewayTest.php.
 
 - **GIVEN** an instance where the Mail app is disabled
 - **WHEN** the intake run fires
@@ -45,7 +48,7 @@ filter that decided and its reason. A message reaching the end of the
 pipeline with no decision SHALL be accepted.
 
 #### Scenario: an auto-reply does not open a case
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a mail server to deliver one; covered by tests/Unit/Service/Email/FilterPipelineTest.php.
 
 - **GIVEN** a message carrying an out-of-office auto-submitted header
 - **WHEN** intake runs
@@ -53,13 +56,14 @@ pipeline with no decision SHALL be accepted.
 - **AND** the intake log SHALL name the filter that decided
 
 #### Scenario: a bounce does not open a case
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a mail server to generate one; covered by tests/Unit/Service/Email/FilterPipelineTest.php.
 
 - **GIVEN** a permanent delivery failure notification
 - **WHEN** intake runs
 - **THEN** no case SHALL be created
 
 #### Scenario: our own notification coming back does not open a case
+@e2e exclude Needs a mail server to deliver it back; covered by tests/Unit/Service/Email/FilterPipelineTest.php.
 
 - **GIVEN** a message dossiq itself sent, delivered back to the intake folder
 - **WHEN** intake runs
@@ -67,7 +71,7 @@ pipeline with no decision SHALL be accepted.
 - **AND** no loop SHALL start
 
 #### Scenario: a message nothing objects to is accepted
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a mail server to deliver one; covered by tests/Unit/Service/Email/FilterPipelineTest.php.
 
 - **GIVEN** a message no filter decides on
 - **WHEN** intake runs
@@ -82,7 +86,7 @@ reason. A bounce SHALL NOT create a case and SHALL NOT reject the message
 back to its sender.
 
 #### Scenario: a misdirected aanvraag is sent on, per Awb 2:3
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Sends real mail; covered by tests/Unit/Service/Email/BounceActionTest.php.
 
 - **GIVEN** a message for another administrative body
 - **WHEN** a handler bounces it to that body's address
@@ -91,13 +95,14 @@ back to its sender.
 - **AND** no case SHALL exist for it
 
 #### Scenario: a bounce is not a rejection
+@e2e exclude Sends real mail; covered by tests/Unit/Service/Email/BounceActionTest.php.
 
 - **GIVEN** a bounced message
 - **WHEN** the sender's mailbox is read
 - **THEN** no delivery failure SHALL have been sent to them
 
 #### Scenario: a message is filed in another folder
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a mail account with folders; covered by tests/Unit/Service/Email/BounceActionTest.php.
 
 - **GIVEN** an account with a second folder
 - **WHEN** a message is moved to it
@@ -110,13 +115,14 @@ inbox carrying its verdict. dossiq SHALL NOT discard an inbound message,
 and SHALL NOT leave one unaccounted for.
 
 #### Scenario: an unmappable request is waiting for somebody
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs intake to run over a mailbox; covered by tests/Unit/Service/Email/InboundMailIntakeTest.php.
 
 - **GIVEN** a message matching no case and no case type
 - **WHEN** intake runs
 - **THEN** it SHALL appear in the intake inbox with its verdict
 
 #### Scenario: every processed message is accounted for
+@e2e exclude Needs a delivered batch; covered by tests/Unit/Service/Email/InboundMailIntakeTest.php.
 
 - **GIVEN** a batch of inbound messages
 - **WHEN** intake has run
@@ -132,6 +138,7 @@ absent. DKIM SHALL come from Nextcloud Mail's DKIM service. dossiq SHALL
 NOT report `unavailable` as `pass`.
 
 #### Scenario: an unsigned message is not reported as authenticated
+@e2e exclude Reads a raw message source; covered by tests/Unit/Service/Email/AuthenticationVerdictTest.php.
 
 - **GIVEN** a message with no authentication-results header
 - **WHEN** intake runs
@@ -139,7 +146,7 @@ NOT report `unavailable` as `pass`.
 - **AND** neither SHALL be `pass`
 
 #### Scenario: a signed message passes
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Reads a raw message source; covered by tests/Unit/Service/Email/AuthenticationVerdictTest.php.
 
 - **GIVEN** a message whose headers carry SPF pass, DKIM pass and DMARC pass
 - **WHEN** intake runs
@@ -155,7 +162,7 @@ SHALL NOT link a message to a case on a subject tag alone when its
 threading result is `fail`.
 
 #### Scenario: a forged reference does not reach somebody else's case
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a forged message delivered; covered by tests/Unit/Service/Email/ThreadingCheckTest.php and InboundMailIntakeTest.php.
 
 - **GIVEN** a message whose `In-Reply-To` names a message id this account never held
 - **AND** whose subject carries another person's case tag
@@ -164,7 +171,7 @@ threading result is `fail`.
 - **AND** the message SHALL NOT be linked to that case
 
 #### Scenario: a genuine reply reaches its case
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a threaded reply delivered; covered by tests/Unit/Service/Email/ThreadingCheckTest.php and InboundMailIntakeTest.php.
 
 - **GIVEN** a reply to a message this account sent about a case
 - **WHEN** intake runs
@@ -172,6 +179,7 @@ threading result is `fail`.
 - **AND** the message SHALL be linked to that case
 
 #### Scenario: a first message makes no threading claim
+@e2e exclude Needs a message delivered; covered by tests/Unit/Service/Email/ThreadingCheckTest.php.
 
 - **GIVEN** a message with no threading header
 - **WHEN** intake runs
@@ -187,7 +195,7 @@ and SHALL NOT be deleted. A refusal SHALL be recorded and SHALL tell the
 sender.
 
 #### Scenario: a bezwaar from an unauthenticated sender waits for a human
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a failing verdict on a delivered message; covered by tests/Unit/Service/Email/IntakePolicyTest.php.
 
 - **GIVEN** a bezwaar case type with the default policy
 - **AND** a message whose DMARC result is `fail`
@@ -196,7 +204,7 @@ sender.
 - **AND** no case SHALL be created yet
 
 #### Scenario: a melding from an unauthenticated sender is normal
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a failing verdict on a delivered message; covered by tests/Unit/Service/Email/IntakePolicyTest.php.
 
 - **GIVEN** a melding case type declaring `accept`
 - **AND** a message whose DMARC result is `fail`
@@ -228,7 +236,7 @@ case type's retention rule.
 - **THEN** the message SHALL be found with its original and its reason
 
 #### Scenario: the log is not readable by everyone
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Playwright signs in as admin, who passes the role check; covered by tests/Unit/Service/Email/IntakePolicyTest.php.
 
 - **GIVEN** a user without the intake role
 - **WHEN** they open the intake log
@@ -243,7 +251,7 @@ anyone else on the instance. Every block decision SHALL be recorded in the
 intake log.
 
 #### Scenario: a blocked sender opens no case
-@e2e tests/e2e/inbound-mail-filters.spec.ts
+@e2e exclude Needs a message delivered from the blocked address; covered by tests/Unit/Service/Email/FilterPipelineTest.php and SenderBlocklistTest.php.
 
 - **GIVEN** a blocked sender address
 - **WHEN** a message arrives from it
@@ -251,6 +259,7 @@ intake log.
 - **AND** the block SHALL be recorded in the log
 
 #### Scenario: blocking in dossiq does not block the mailbox
+@e2e exclude A property of the gateway surface; covered by tests/Unit/Service/Email/SenderBlocklistTest.php.
 
 - **GIVEN** a sender blocked in dossiq
 - **WHEN** they mail a colleague on the same instance

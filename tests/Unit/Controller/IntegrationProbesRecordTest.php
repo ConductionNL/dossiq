@@ -34,6 +34,8 @@ use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
@@ -105,40 +107,60 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * An unconfigured mailbox records Not configured, not Error.
+	 * A mailbox nothing can be read from records Not configured, not Error.
 	 *
-	 * "No host saved" is not a broken connection, and calling it one would put
-	 * a red card on the page of a fresh install.
+	 * "The Mail app is not installed" is not a broken connection, and calling
+	 * it one would put a red card on the page of a fresh install.
 	 *
 	 * @return void
 	 */
-	public function testUnconfiguredMailboxRecordsUnconfigured(): void {
+	public function testAMailboxWithoutTheMailAppRecordsUnconfigured(): void {
 		$this->templateService->expects($this->once())
 			->method('recordMailboxStatus')
 			->with('unconfigured', $this->anything());
 
-		$controller = $this->emailController(host: '');
-		$response = $controller->testImap();
+		$response = $this->emailController(mailAvailable: false)->mailAccounts();
 
-		$this->assertFalse($response->getData()['ok']);
-	}//end testUnconfiguredMailboxRecordsUnconfigured()
+		$this->assertFalse($response->getData()['available']);
+		$this->assertSame([], $response->getData()['accounts']);
+	}//end testAMailboxWithoutTheMailAppRecordsUnconfigured()
 
 	/**
-	 * A mailbox host that does not answer records Error with the failure text.
+	 * Mail installed with no account is also Not configured.
+	 *
+	 * An installed app with nothing to read is exactly as unusable as an
+	 * absent one, and the difference is not one an administrator can act on
+	 * from a red card.
 	 *
 	 * @return void
 	 */
-	public function testFailedMailboxTestRecordsError(): void {
+	public function testAMailAppWithNoAccountRecordsUnconfigured(): void {
 		$this->templateService->expects($this->once())
 			->method('recordMailboxStatus')
-			->with('error', $this->isType('string'));
+			->with('unconfigured', $this->anything());
 
-		// Port 0 on an unroutable host: fsockopen fails without a network.
-		$controller = $this->emailController(host: '192.0.2.1', port: '9');
-		$response = $controller->testImap();
+		$response = $this->emailController(accounts: [])->mailAccounts();
 
-		$this->assertFalse($response->getData()['ok']);
-	}//end testFailedMailboxTestRecordsError()
+		$this->assertSame([], $response->getData()['accounts']);
+	}//end testAMailAppWithNoAccountRecordsUnconfigured()
+
+	/**
+	 * An account intake can read records Configured, and is offered.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountIntakeCanReadRecordsConfigured(): void {
+		$this->templateService->expects($this->once())
+			->method('recordMailboxStatus')
+			->with('configured', $this->isType('string'));
+
+		$response = $this->emailController(
+			accounts: [['id' => 7, 'name' => 'Postbus Zaken', 'email' => 'zaken@gemeente.nl']]
+		)->mailAccounts();
+
+		$this->assertTrue($response->getData()['available']);
+		$this->assertCount(1, $response->getData()['accounts']);
+	}//end testAnAccountIntakeCanReadRecordsConfigured()
 
 	/**
 	 * The signed-out caller is rejected before anything is recorded.
@@ -148,8 +170,7 @@ class IntegrationProbesRecordTest extends TestCase {
 	public function testSignedOutCallerRecordsNothing(): void {
 		$this->templateService->expects($this->never())->method('recordMailboxStatus');
 
-		$controller = $this->emailController(host: 'mail.example.org', signedIn: false);
-		$controller->testImap();
+		$this->emailController(signedIn: false)->mailAccounts();
 	}//end testSignedOutCallerRecordsNothing()
 
 	/**
@@ -292,17 +313,23 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end settingsController()
 
 	/**
-	 * Build an EmailTemplateController whose IMAP config is what we say.
+	 * Build an EmailTemplateController over the accounts Nextcloud Mail holds.
 	 *
-	 * @param string $host The saved IMAP host.
-	 * @param string $port The saved IMAP port.
-	 * @param bool $signedIn Whether a user is signed in.
+	 * 🔴 THERE IS NO HOST TO DIAL ANY MORE. This helper used to name an IMAP
+	 * host and port, because the probe it feeds opened a socket to whatever an
+	 * administrator had typed. Nextcloud Mail holds the account now, so what
+	 * the card reports is whether Mail is installed and whether it has an
+	 * account intake can read.
 	 *
-	 * @return EmailTemplateController
+	 * @param bool  $mailAvailable Whether the Mail app answers at all.
+	 * @param array $accounts      The accounts it offers.
+	 * @param bool  $signedIn      Whether a user is signed in.
+	 *
+	 * @return EmailTemplateController The controller.
 	 */
 	private function emailController(
-		string $host,
-		string $port = '993',
+		bool $mailAvailable = true,
+		array $accounts = [],
 		bool $signedIn = true,
 	): EmailTemplateController {
 		$userSession = $this->createMock(IUserSession::class);
@@ -310,23 +337,20 @@ class IntegrationProbesRecordTest extends TestCase {
 			$signedIn === true ? $this->createMock(IUser::class) : null
 		);
 
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = ''): string => match ($key) {
-				'email_imap_host' => $host,
-				'email_imap_port' => $port,
-				default => $default,
-			}
-		);
+		$gateway = $this->createMock(MailGatewayInterface::class);
+		$gateway->method('isAvailable')->willReturn($mailAvailable);
+		$gateway->method('accounts')->willReturn($accounts);
 
 		return new EmailTemplateController(
 			request: $this->createMock(IRequest::class),
 			templateService: $this->templateService,
 			settingsService: $this->createMock(SettingsService::class),
-			appConfig: $appConfig,
+			appConfig: $this->createMock(IAppConfig::class),
 			userSession: $userSession,
 			groupManager: $this->createMock(IGroupManager::class),
 			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			mailGateway: $gateway,
+			blocklist: $this->createMock(SenderBlocklist::class),
 		);
 	}//end emailController()
 

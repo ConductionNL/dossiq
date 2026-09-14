@@ -103,6 +103,72 @@
                         "title": "Handling Model",
                         "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case model. A case type is driven by exactly one of the two."
                     },
+                    "defaultImpact": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "description": "The impact a case of this type starts with. An intake channel that creates cases takes this rather than inventing one. Leave it empty and a case starts at medium.",
+                        "title": "Default impact"
+                    },
+                    "defaultUrgency": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "description": "The urgency a case of this type starts with. Leave it empty and a case starts at medium.",
+                        "title": "Default urgency"
+                    },
+                    "priorityMatrix": {
+                        "type": "array",
+                        "description": "How impact and urgency become a priority for cases of this type. High impact on a bezwaar and high impact on a melding openbare ruimte are not the same urgency, which is why the matrix belongs to the case type rather than to the instance. Declare only the cells that differ: the rest come from the instance default, and a child case type inherits its parent's cells along with everything else it inherits.",
+                        "title": "Priority matrix",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "impact": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "medium",
+                                        "high"
+                                    ],
+                                    "title": "Impact",
+                                    "description": "The impact half of the pair this cell answers for."
+                                },
+                                "urgency": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "medium",
+                                        "high"
+                                    ],
+                                    "title": "Urgency",
+                                    "description": "The urgency half of the pair this cell answers for."
+                                },
+                                "priority": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "normal",
+                                        "high",
+                                        "urgent"
+                                    ],
+                                    "title": "Priority",
+                                    "description": "The priority a case of this type takes for that pair. Leave a cell undeclared and the instance default answers it."
+                                }
+                            },
+                            "required": [
+                                "impact",
+                                "urgency",
+                                "priority"
+                            ]
+                        }
+                    },
                     "confidentiality": {
                         "type": "string",
                         "enum": [
@@ -1812,6 +1878,42 @@
                         "facetable": true,
                         "order": 8
                     },
+                    "impact": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "default": "medium",
+                        "description": "How much it matters if this case goes wrong. One half of what the case type's matrix reads to derive the priority; urgency is the other half. They are two questions rather than one scale because a different person often knows each, and turning the pair into a priority is work the product should do rather than a handler.",
+                        "title": "Impact",
+                        "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "medium": "Medium",
+                            "high": "High"
+                        },
+                        "order": 15
+                    },
+                    "urgency": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "default": "medium",
+                        "description": "How soon this case matters. The other half of the pair the case type's matrix reads. A case type may declare a default for a new case, and an intake channel that creates cases takes that default rather than inventing one.",
+                        "title": "Urgency",
+                        "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "medium": "Medium",
+                            "high": "High"
+                        },
+                        "order": 16
+                    },
                     "priority": {
                         "type": "string",
                         "enum": [
@@ -1821,10 +1923,101 @@
                             "urgent"
                         ],
                         "default": "normal",
-                        "description": "Case priority",
+                        "description": "Case priority, derived and never typed. The case type's matrix answers for this case's impact and urgency, a declared rule may raise it as the statutory term approaches, and a person may override it on the record. The field, its values and its facet are unchanged, so everything written before the derivation keeps reading it.",
                         "title": "Priority",
                         "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "normal": "Normal",
+                            "high": "High",
+                            "urgent": "Urgent"
+                        },
+                        "x-enum-order": {
+                            "low": 1,
+                            "normal": 2,
+                            "high": 3,
+                            "urgent": 4
+                        },
+                        "x-enum-colours": {
+                            "low": "grey",
+                            "normal": "blue",
+                            "high": "orange",
+                            "urgent": "red"
+                        },
                         "order": 6
+                    },
+                    "priorityDerived": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "readOnly": true,
+                        "description": "What the matrix says this case's priority is, kept beside the value everything reads. It carries on being computed underneath a raise or an override, so clearing an override returns the case to the right answer rather than to whatever was last typed.",
+                        "title": "Derived priority",
+                        "order": 17
+                    },
+                    "priorityOrder": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "The declared order of this case's priority, so a list can sort by it. A list cannot sort on the word: alphabetically high comes before low and urgent comes last of all, which is neither the order a handler means nor a usable one. Written from x-enum-order on the priority property.",
+                        "title": "Priority order",
+                        "order": 18
+                    },
+                    "priorityFloor": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "readOnly": true,
+                        "description": "The lowest priority a declared rule has raised this case to. A floor rather than a value, because writing the raised priority straight into priority would last until the next save and then sink back down the queue. A floor only ever lifts, which is why an extended term cannot make a raised case less urgent.",
+                        "title": "Priority floor",
+                        "order": 19
+                    },
+                    "priorityRaisedBy": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The declared rule that last raised this case's priority, so a handler can see why a case moved up without anybody touching it.",
+                        "title": "Priority raised by",
+                        "order": 20
+                    },
+                    "priorityOverride": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "description": "A priority a person set by hand, which wins over the derived answer until it is cleared. Set it with a reason. Clearing it returns the case to the value the matrix derives now, not to the one it derived when the override was made.",
+                        "title": "Priority override",
+                        "order": 21
+                    },
+                    "priorityOverrideBy": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Who set the override. Written from the session rather than offered as a field, because who made a decision is a fact about the edit and not something anybody should be able to type.",
+                        "title": "Overridden by",
+                        "order": 22
+                    },
+                    "priorityOverrideAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "description": "When the override was set.",
+                        "title": "Overridden at",
+                        "order": 23
+                    },
+                    "priorityOverrideReason": {
+                        "type": "string",
+                        "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
+                        "title": "Override reason",
+                        "order": 24
                     },
                     "parentCase": {
                         "type": "string",

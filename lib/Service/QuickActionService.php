@@ -30,7 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -53,6 +52,7 @@ class QuickActionService {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param ContactMomentService $contactMomentService The contactmoment service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
 	 */
@@ -60,6 +60,7 @@ class QuickActionService {
 		private readonly SettingsService $settingsService,
 		private readonly ContactMomentService $contactMomentService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
@@ -118,7 +119,7 @@ class QuickActionService {
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
 			'status' => 'intake',
-			'startDate' => date('c'),
+			'startDate' => $this->dates->nowAsMoment(),
 			'title' => (string)($details['title'] ?? ('Melding via KCC: ' . $caseType)),
 			'description' => (string)($details['description'] ?? ''),
 		];
@@ -159,15 +160,17 @@ class QuickActionService {
 
 		// Awb 9:11: six weeks (42 days) decision term, landing on a day the
 		// organisation's calendar calls a working day (Awt art. 1).
-		$raw = (new DateTimeImmutable('today'))->modify('+42 days');
-		$deadline = ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)->format('Y-m-d');
+		$raw = $this->dates->today()->modify('+42 days');
+		$deadline = $this->dates->formatCalendarDate(
+			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
+		);
 
 		$record = [
 			'caseType' => self::KLACHT_ZAAKTYPE,
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
 			'status' => 'intake',
-			'startDate' => date('c'),
+			'startDate' => $this->dates->nowAsMoment(),
 			'deadline' => $deadline,
 			'title' => 'Klacht (Awb 9:1)',
 			'description' => $summary,
@@ -219,7 +222,7 @@ class QuickActionService {
 			],
 		);
 
-		return ['burgerId' => $burgerId, 'window' => $window, 'scheduledAt' => date('c')];
+		return ['burgerId' => $burgerId, 'window' => $window, 'scheduledAt' => $this->dates->nowAsMoment()];
 	}//end executeBelTerug()
 
 	/**

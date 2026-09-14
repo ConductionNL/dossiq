@@ -17,6 +17,7 @@
 // formatter first; add an entry here only when the cell has a state to show.
 
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
+import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
 import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
 
 export default {
@@ -24,6 +25,13 @@ export default {
 	// the deadline, empty when the case has none.
 	// @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	deadlineCountdown: DeadlineCountdownCell,
+
+	// The Priority column on the case lists. The column is keyed on
+	// `priorityOrder` so the server sorts it by the declared order rather than
+	// alphabetically; the cell reads the word back off the row and draws it in
+	// the hue the schema declares.
+	// @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	priorityBadge: PriorityBadgeCell,
 
 	// The Status column on the Cases index: the status name in the colour its
 	// status type carries.

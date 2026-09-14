@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
@@ -129,6 +130,17 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
+		);
+
+		// Awb 4:3a: a case created from an electronic submission owes its
+		// sender a confirmation of receipt. The text, the renderer and the
+		// requirement all shipped and nothing ever triggered them, so a
+		// statutory duty sat unperformed behind a spec that described it. This
+		// is that trigger. It queues rather than sends, so a mail server that
+		// is down cannot stop a case being created.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()
 

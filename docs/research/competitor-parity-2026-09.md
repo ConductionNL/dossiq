@@ -1,14 +1,20 @@
 # Competitor parity, September 2026
 
-This page is the result of the competitor parity programme, as of ledger v7 plus batches 11 and 12 (2026-09-13). Thirty columns stand in the matrix: dossiq, three other Dutch case systems, twenty-two non-Dutch systems that were installed and driven, and four products rated from their documentation. Every number below comes from a corpus file, named by path. The record is `procest/_ledger/parity-ledger.html` on `development` in `ConductionNL/market-intelligence`; the corpus paths on this page are relative to that repository. The sources per system, with the links a reader needs to check a cell, are on [competitor sources](competitor-sources.md).
+This page is the result of the competitor parity programme, as of ledger v10.1 and gap register v4.1 (2026-09-14). Thirty columns stand in the matrix: dossiq, three other Dutch case systems, twenty-two non-Dutch systems that were installed and driven, and four products rated from their documentation. Every number below comes from a corpus file, named by path. The record is `procest/_ledger/parity-ledger.html` on `development` in `ConductionNL/market-intelligence`; the corpus paths on this page are relative to that repository. The sources per system, with the links a reader needs to check a cell, are on [competitor sources](competitor-sources.md).
 
-Batches 9 and 10 are folded into ledger v7: Request Tracker 5.0.10 and Frappe Helpdesk 1.30.1 driven, Jira Software Data Center 11.3 and Easy Redmine 16.0 rated from documents. Batches 11 and 12 are merged in the corpus and not in the ledger yet: Gitea 1.27.3, Taiga 6.10.2, Tuleap Community Edition 17.5 and Huly v0.7.426, all four driven, counted in `procest/_round4/compare/twenty-six-system-tally.md`. That closes the undriven set the candidate table has carried since round 3. Where a count depends on the batch set, the text says which set it means and names the count.
+Every batch is folded in. Ledger v7 took batches 9 and 10: Request Tracker 5.0.10 and Frappe Helpdesk 1.30.1 driven, Jira Software Data Center 11.3 and Easy Redmine 16.0 rated from documents. Ledger v10 took batches 11 and 12: Gitea 1.27.3, Taiga 6.10.2, Tuleap Community Edition 17.5 and Huly v0.7.426, all four driven, counted in `procest/_round4/compare/twenty-six-system-tally.md`. That closes the undriven set the candidate table has carried since round 3. No count on this page now depends on which batch set you mean.
 
 What followed from the results is written elsewhere and cited here:
 
 - the re-read of the stale rows, [competitor gap re-read 2026-09-13](competitor-gap-re-read-2026-09-13.md), which closed 12 of the 36 rows the register marked stale
 - dossiq's OpenSpec umbrella, `openspec/changes/competitor-parity-2026-09/proposal.md`, merged as [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643), 33 changes
 - openregister's umbrella, merged as [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688), 26 changes
+- the discovery sweep and the twenty-two decisions Ruben took on 2026-09-14, [competitor discovery, September 2026](competitor-discovery-2026-09.md)
+- the case-type depth study, `procest/_round4/discovery/casetype-configurability.md`, which moved four ledger cells and is summarised below
+
+Ledger v10 also folded the gap register's own numbering. Every row and every pending proposal now names the OpenSpec change that carries it, in the repository that owns it, and the counts below are read from that register rather than estimated.
+
+Ledger v10.1 and register v4.1 closed the last of it on 2026-09-14. Every gap the register can act on, every pending proposal that asks dossiq for work, and every discovery cluster now names a change you can open. What is left uncarried is nine gaps, 22 pending proposals and 18 candidates, and each of them says in the register why nothing is open rather than waiting to be rediscovered. Nothing in that remainder is a backlog item.
 
 ## Method
 
@@ -54,7 +60,7 @@ The test cuts both ways. Classifying a row as statutory removes it from the deno
 
 Counted and ranked by `procest/_round4/tools/corpus-tally.py`, printed in `procest/_round4/compare/twenty-six-system-tally.md`, which supersedes the eighteen, twenty-two and twenty-four column tallies before it. The script sorts on `yes` only and keeps file order on a tie, so OTOBO prints above Odoo and nothing in the method ranks on `partial`. It prints two rankings, so a documented cell is never read as a driven one.
 
-### Driven columns, twenty-six as of ledger v7 plus batches 11 and 12
+### Driven columns, twenty-six as of ledger v10
 
 | rank | system | yes | partial | family |
 |---|---|---|---|---|
@@ -91,7 +97,7 @@ Two more are a coincidence worth naming, because the total is a poor summary of 
 
 Huly carries 74 `partial` cells, more than any other driven column. That is the signature of a product with the pieces and not the assembly: a process engine with thirteen actions and no case, a holiday calendar nothing reads, and a contact registry with no case to attach a contact to.
 
-### Documented columns, four as of ledger v7, graded `documented, not driven`
+### Documented columns, four as of ledger v10, graded `documented, not driven`
 
 | system | yes | partial | where it would sit among all columns |
 |---|---|---|---|
@@ -310,33 +316,72 @@ Two more sit in the corpus and not in the ledger. Batch 11's is proposed row 8.2
 
 ## The gap register, counted by owner
 
-`procest/_gaps/gap-register.md`, generated by `procest/_gaps/tools/build-gap-register.py` and rebuilt on the evening of 2026-09-13 from the 206-row matrix, the 19 promoted rows and the 43 pending proposals in the ledger and the batch files. A row is a gap when dossiq's rating is not `yes`. Every gap has one owner, the app that holds the logic, and dossiq keeps a half on every row it does not own: a leaf placement, a schema declaration, a store call or an event (`procest/_gaps/ownership-rules.md`).
+`procest/_gaps/gap-register.md`, generated by `procest/_gaps/tools/build-gap-register.py`, fourth version, 2026-09-14. A row is a gap when dossiq's rating is not `yes`. Every gap has one owner, the app that holds the logic, and dossiq keeps a half on every row it does not own: a leaf placement, a schema declaration, a store call or an event (`procest/_gaps/ownership-rules.md`).
 
-**268 rows read, 158 gaps**: 110 from the matrix, 16 from the promoted rows, 32 from the pending proposals. 100 are `partial`, 58 are `no`. 11 of the 26 statutory rows are gaps.
+**273 rows read, 161 gaps**: 110 from the matrix, 16 from the promoted rows, 35 from the pending proposals. 101 are `partial`, 60 are `no`. 11 of the 26 statutory rows are gaps.
+
+The 273 is 206 matrix rows, 19 promoted rows and 48 pending proposals, which is the queue as ledger v10 folds it from the batch files. The 146 of decision D1 is a second half of the same register, counted separately below, because 98 of those proposals have never had a column read against them but ours.
 
 | owner | gaps | S | M | L | carried | not carried |
 |---|---|---|---|---|---|---|
-| openregister | 68 | 51 | 16 | 1 | 64 | 4 |
-| dossiq | 32 | 26 | 5 | 1 | 30 | 2 |
-| integriq | 15 | 5 | 7 | 3 | 11 | 4 |
+| openregister | 69 | 51 | 17 | 1 | 67 | 2 |
+| dossiq | 34 | 26 | 7 | 1 | 34 | 0 |
+| integriq | 15 | 5 | 7 | 3 | 13 | 2 |
 | nextcloud (the platform) | 13 | 13 | 0 | 0 | 9 | 4 |
+| portaliq | 6 | 0 | 6 | 0 | 6 | 0 |
 | buildiq | 6 | 0 | 4 | 2 | 6 | 0 |
-| portaliq | 6 | 0 | 6 | 0 | 5 | 1 |
-| nextcloud-vue | 5 | 3 | 2 | 0 | 4 | 1 |
-| pipelinq | 3 | 1 | 2 | 0 | 3 | 0 |
+| nextcloud-vue | 5 | 3 | 2 | 0 | 5 | 0 |
 | filinq | 3 | 0 | 3 | 0 | 3 | 0 |
-| humaniq | 2 | 2 | 0 | 0 | 2 | 0 |
+| pipelinq | 3 | 1 | 2 | 0 | 3 | 0 |
 | shillinq | 2 | 0 | 2 | 0 | 2 | 0 |
+| humaniq | 2 | 2 | 0 | 0 | 2 | 0 |
 | decidiq | 1 | 1 | 0 | 0 | 1 | 0 |
 | thematiq | 1 | 1 | 0 | 0 | 1 | 0 |
 | hermiq | 1 | 0 | 1 | 0 | 0 | 1 |
-| **total** | **158** | **103** | **48** | **7** | **141** | **17** |
+| **total** | **161** | **103** | **51** | **7** | **152** | **9** |
 
-Sizes: S is a placement, a declaration or one action, under a day; M a change with a handful of tasks; L a new mechanism or a certification track. Carried means a spec, an open change, or a change the OpenSpec phase opened, whose scope contains the row. 141 gaps have one and 17 do not. Seventy-one changes carry seventy of the rows: dossiq 33, openregister 25, filinq 3, portaliq 3, buildiq 2, shillinq 2, nextcloud-vue 1, pipelinq 1, integriq 1. Of the 17 not carried, eight needed a change opened and nine are deliberate no's, platform facts to write down, or a proposal waiting for a driven `yes`. opencatalogi, planninq and keepiq carry no gap.
+Sizes: S is a placement, a declaration or one action, under a day; M a change with a handful of tasks; L a new mechanism or a certification track.
 
-Why the two versions differ, and the arithmetic is simple. 258 rows became 268, because batch 7 reached the ledger with five proposals and batches 9 and 10 added five the ledger has not folded in. 163 gaps became 158, because the dossiq re-read closed twelve rows and seven of the ten new proposals rate dossiq below `yes`. The [re-read of 2026-09-13](competitor-gap-re-read-2026-09-13.md) read all 40 rows the register flags, the 36 marked stale plus 4 the archived changes had moved, against `828da9a69`: 12 closed, 24 stay, 4 stay narrowed.
+### Carried means a change you can open
 
-The eight uncovered gaps were opened the same evening, in a sweep of eleven changes. Five are dossiq's, `status-capacity-limit` (Q3.22), `intake-says-when-the-term-starts` (Q8.21), `archived-cases-leave-the-lenses` (Q2.33), `deelzaken-inherit-the-parent-grants` (Q13.23) and `cases-views-are-places` (Q9.16), merged as [dossiq#2684](https://github.com/ConductionNL/dossiq/pull/2684) and taking the umbrella to 38 changes. Six are the owners': openregister `object-archive-state` and `rbac-inherits-to-children`, integriq `signed-outbound-webhooks` and `objecten-api-facade`, portaliq `embedded-intake-form`, nextcloud-vue `saved-view-as-a-place`. The two umbrellas are what the register became: [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643) and [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688).
+This is what the fourth version adds. Carried no longer means "a spec or an open change exists somewhere". It means the register names the change directory, in the repository that owns it, and a reader can open it. **85 distinct changes carry 152 of the 161 gaps**: dossiq 40, openregister 28, portaliq 4, filinq 3, integriq 3, buildiq 2, nextcloud-vue 2, shillinq 2, pipelinq 1. Read one as `<repo>/openspec/changes/<slug>/`, so `dossiq/case-delete-guard` is [`openspec/changes/case-delete-guard`](https://github.com/ConductionNL/dossiq/tree/development/openspec/changes/case-delete-guard) in this repository, and `openregister/object-watchers` is [the same path](https://github.com/ConductionNL/openregister/tree/development/openspec/changes/object-watchers) in openregister.
+
+The two rows the fourth version left needing a change have one. Q8.23, the calendar the deadline engine reads, is carried by dossiq's `every-term-on-the-engine-calendar`, and Q13.25, where a role's permissions come from, by openregister's `permission-provenance-and-deny`.
+
+Nine gaps are not carried, and none of the nine is waiting on a decision. Each says why in the register rather than waiting to be rediscovered.
+
+| gap | owner | why nothing is open |
+|---|---|---|
+| 1.9 and 4.6, Office, Teams and Outlook | integriq | deliberate no |
+| 10.7, export files area with expiry and download counts | openregister | deliberate no |
+| 13.14, locked rows for restricted cases in lists | openregister | deliberate no |
+| 12.7 staff SSO, 12.20 object storage, 13.15 two-factor and login history, Q13.22 weak-credential refusal | nextcloud | platform facts to write down, not work to schedule |
+| Q9.15, a command language a person types | hermiq | waits for a driven `yes` |
+
+### The pending half
+
+The register's second half is decision D1's queue: **146 pending proposals, 124 of them carried**, 121 by a named change and three by a spec someone already wrote. 35 of the 146 are the ones the first half already counts as gaps. The other 111 sit outside it: 98 entered under D1 on 2026-09-14 with no competitor column read against them but ours, and 21 of the 111 dossiq already passes. They are questions rather than measurements, so they stay out of every count on this page.
+
+**The 32 became 124 on the evening of 2026-09-14.** Eleven repositories read their own share of the queue and opened 72 new changes, and mapped 20 more proposals onto changes that already said the same thing in different words. The mapping, one row per proposal with the change and the basis, is `procest/_gaps/pending-changes-2026-09-14.json`.
+
+| repository | proposals | pull request |
+|---|---:|---|
+| openregister | 40 | [#3722](https://github.com/ConductionNL/openregister/pull/3722) |
+| dossiq | 30 | [#2759](https://github.com/ConductionNL/dossiq/pull/2759) |
+| filinq | 4 | [#1092](https://github.com/ConductionNL/filinq/pull/1092) |
+| integriq | 4 | [#2013](https://github.com/ConductionNL/integriq/pull/2013) |
+| nextcloud-vue | 3 | [#1168](https://github.com/ConductionNL/nextcloud-vue/pull/1168) |
+| portaliq | 3 | [#554](https://github.com/ConductionNL/portaliq/pull/554) |
+| buildiq | 2 | [#773](https://github.com/ConductionNL/buildiq/pull/773) |
+| decidiq | 2 | [#1320](https://github.com/ConductionNL/decidiq/pull/1320) |
+| pipelinq | 2 | [#1947](https://github.com/ConductionNL/pipelinq/pull/1947) |
+| humaniq | 1 | [#437](https://github.com/ConductionNL/humaniq/pull/437) |
+| opencatalogi | 1 | [#1517](https://github.com/ConductionNL/opencatalogi/pull/1517) |
+| nextcloud (the platform) | 1 | none, it is a platform fact |
+
+The 22 with no change are not a backlog. 21 of them rate dossiq `yes`, so there is nothing to build. The twenty-second is Q13.22: Nextcloud holds the credentials and the password policy, not dossiq.
+
+Why the third version and the fourth differ, and the arithmetic is simple. 268 rows became 273, because ledger v10 folded batches 11 and 12 and their five proposals joined the 43 the third version read. 158 gaps became 161, because three of those five rate dossiq below `yes`. The [re-read of 2026-09-13](competitor-gap-re-read-2026-09-13.md) read all 40 rows the register flags, the 36 marked stale plus 4 the archived changes had moved, against `828da9a69`: 12 closed, 24 stay, 4 stay narrowed. The two umbrellas are what the register became: [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643) with [five more](https://github.com/ConductionNL/dossiq/pull/2684), and [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688).
 
 ## The five to build first
 
@@ -348,15 +393,19 @@ The register's own order (`procest/_gaps/README.md`), which the dossiq umbrella 
 4. **Refusals carry a status.** Row Q10.14, dossiq, M. The fail-open shape gate 13 exists to catch, and no test asserts the status code beside the state. In the umbrella as `refusals-carry-a-status`, with the re-read's counts: 47 sites in 37 files, 93 of 106 controller suites asserting a status.
 5. **Substituted work reaches My work.** Row 13.17, dossiq, S. The spec `handler-vervanging-waarneming` requires it and `fetchSubstitutedWork()` has no call site, so a case assigned to someone on leave is invisible until it breaches. In the umbrella as `substituted-work-reaches-my-work`, with humaniq's leave as the absence signal.
 
+Two of the five are shipped and three are half shipped. `refusals-carry-a-status` merged as [dossiq#2744](https://github.com/ConductionNL/dossiq/pull/2744) and `substituted-work-reaches-my-work` as [dossiq#2719](https://github.com/ConductionNL/dossiq/pull/2719). The platform halves of the first three merged in openregister: the administered working calendar as [#3714](https://github.com/ConductionNL/openregister/pull/3714), watchers as [#3707](https://github.com/ConductionNL/openregister/pull/3707) and timeline visibility as [#3711](https://github.com/ConductionNL/openregister/pull/3711), with dossiq's own half of the calendar as [#2748](https://github.com/ConductionNL/dossiq/pull/2748). The dossiq halves of watchers and timeline visibility, and the four remaining calendar changes, are still open.
+
 The ledger's own first pick, the schema-only registrations (Q11.31), is sixth: right, a privacy argument, and larger than the eight cells the matrix named once the re-read counted 27.
 
 ## What the discovery sweep found after this page
 
 This page measures dossiq against a list we wrote. A second sweep asked the opposite question: what do thirty-six other systems have that the list never thought to ask. It is written up on [competitor discovery, September 2026](competitor-discovery-2026-09.md), and its corpus is `procest/_round4/discovery/` beside the files cited above.
 
-The short version. Thirty-six product surfaces were walked item by item, 2,010 items in the 34 lanes that state a count. Those raised 1,008 distinct raw candidates, which `consolidate-discovery.py` reduced to **631 consolidated candidates** in **70 clusters**. 183 are a `must` for a gemeente and dossiq fails 431 of the 631.
+The short version. Thirty-six product surfaces were walked item by item, 2,010 items in the 34 lanes that state a count. Those raised 1,008 distinct raw candidates, which `consolidate-discovery.py` reduced to **636 consolidated candidates** in **71 clusters**. 184 are a `must` for a gemeente and dossiq fails 434 of the 636. **618 of them are carried by 94 OpenSpec changes in fourteen repositories**, and the 18 that are not sit in one cluster. 70 of the 71 clusters are carried.
 
-**Read the 631 as candidates, not as rows.** A candidate is a question the sweep found worth asking. It is not in the matrix, it has no column read across the corpus, and it has no ledger id. The counting rule above still holds: 225 rows and, since 2026-09-14, 146 pending proposals. Decision D6 on the discovery page proposes the bar a candidate has to clear before it becomes a row, and until that is taken, no number on this page moves because of a candidate. What the sweep does show about the matrix itself is the **47 matrix holes**: a `must` with two or more driven passers and no row in the corpus able to hold it.
+The last four clusters were opened on the evening of 2026-09-14: the dashboard cluster as [launchpad#637](https://github.com/ConductionNL/launchpad/pull/637), the decision as a walked process as [decidiq#1316](https://github.com/ConductionNL/decidiq/pull/1316), the money cluster as [shillinq#1608](https://github.com/ConductionNL/shillinq/pull/1608) with three new umbrellas, outbound sender identity as [integriq#2012](https://github.com/ConductionNL/integriq/pull/2012), the satisfaction survey as [openregister#3720](https://github.com/ConductionNL/openregister/pull/3720), and dossiq's own nine as [dossiq#2762](https://github.com/ConductionNL/dossiq/pull/2762), fourteen changes. The one cluster left is 59, the twenty capabilities decision D17 re-rated with an MKB lens and recorded rather than built. humaniq took the member that is its own job.
+
+**Read the 636 as candidates, not as rows.** A candidate is a question the sweep found worth asking. It is not in the matrix, it has no column read across the corpus, and it has no ledger id. The counting rule above still holds: 225 rows and, since 2026-09-14, 146 pending proposals. Decision D6 set the promotion bar on 2026-09-14: relevance, not passer count. Every `must` enters, whatever the passer count, and every statutory candidate enters with it. So a row can now enter that nobody passes, which is why the driven passer count is printed beside every row. What the sweep shows about the matrix itself is the **47 matrix holes**: a `must` with two or more driven passers and no row in the corpus able to hold it.
 
 ### The four ledger cells the depth study moved
 
@@ -372,6 +421,20 @@ The case-type depth study (`procest/_round4/discovery/casetype-configurability.m
 Row 11.2 is the one that runs the other way, and it is the hollow-green shape this programme keeps finding. `lib/Service/CaseDefinitionExportService.php:268` says so in its own comment: a placeholder that returns structured placeholders instead of querying OpenRegister. All six components return empty arrays, behind three live admin-authorised routes. `POST /api/case-definitions/{id}/export` answers 200 with a structurally valid, empty package, so a test that checks the response shape passes. A municipality that exports a case type gets nothing, and is told nothing.
 
 Two further defects turned up on the way, neither of them a ledger row. `propertyDefinition.requiredAtStatus` is authored in `PropertiesTab.vue:155`, stored in the schema and read by no backend code, because it is not in the `x-openregister-extends-form.map`. And `WorkflowEditor` does not honour `lifecycleStatus: published`, which the schema's own description calls immutable: the canvas, node create, drag and delete and the whole `TransitionConfigPanel` stay editable on a published template.
+
+## What is built so far
+
+Eighteen pull requests that change behaviour are merged on `development`, in five repositories. A specification is not a feature, so the OpenSpec pull requests listed above are not in this table.
+
+| repository | merged |
+|---|---|
+| dossiq | [#2719](https://github.com/ConductionNL/dossiq/pull/2719), [#2721](https://github.com/ConductionNL/dossiq/pull/2721), [#2723](https://github.com/ConductionNL/dossiq/pull/2723), [#2729](https://github.com/ConductionNL/dossiq/pull/2729), [#2732](https://github.com/ConductionNL/dossiq/pull/2732), [#2744](https://github.com/ConductionNL/dossiq/pull/2744), [#2746](https://github.com/ConductionNL/dossiq/pull/2746), [#2748](https://github.com/ConductionNL/dossiq/pull/2748), [#2752](https://github.com/ConductionNL/dossiq/pull/2752), [#2754](https://github.com/ConductionNL/dossiq/pull/2754) |
+| openregister | [#3707](https://github.com/ConductionNL/openregister/pull/3707), [#3711](https://github.com/ConductionNL/openregister/pull/3711), [#3714](https://github.com/ConductionNL/openregister/pull/3714), [#3719](https://github.com/ConductionNL/openregister/pull/3719), [#3724](https://github.com/ConductionNL/openregister/pull/3724) |
+| filinq | [#1090](https://github.com/ConductionNL/filinq/pull/1090) |
+| integriq | [#2015](https://github.com/ConductionNL/integriq/pull/2015) |
+| portaliq | [#551](https://github.com/ConductionNL/portaliq/pull/551) |
+
+More build lanes are in flight and are not counted here. They are not merged, so nothing on this page counts them. A change directory that appears in the register and not in the table above is specified and not yet shipped.
 
 ## Where to check a cell
 

@@ -88,6 +88,7 @@ class ConsultationService {
 	 * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
 	 * @param ConsultationRepository $repository OpenRegister reads/writes for consultations
 	 * @param ConsultationDependencyGraph $dependencyGraph `dependsOn` cycle detection
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -95,6 +96,7 @@ class ConsultationService {
 		private readonly AdviceDelegationService $adviceDelegation,
 		private readonly ConsultationRepository $repository,
 		private readonly ConsultationDependencyGraph $dependencyGraph,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -138,7 +140,7 @@ class ConsultationService {
 
 		// Set defaults.
 		$data['status'] = 'open';
-		$data['createdAt'] = date('Y-m-d\TH:i:s');
+		$data['createdAt'] = $this->dates->nowAsMoment();
 
 		$consultation = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
@@ -238,7 +240,7 @@ class ConsultationService {
 
 		$updateData = ['status' => $newStatus];
 		if ($newStatus === 'closed') {
-			$updateData['closedAt'] = date('Y-m-d\TH:i:s');
+			$updateData['closedAt'] = $this->dates->nowAsMoment();
 		}
 
 		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
@@ -283,7 +285,7 @@ class ConsultationService {
 		$updateData = [
 			'advice' => $advies,
 			'notes' => $response['notes'] ?? '',
-			'adviesDatum' => date('Y-m-d'),
+			'adviesDatum' => $this->dates->todayAsCalendarDate(),
 			'status' => 'advice_uitgebracht',
 		];
 
@@ -409,7 +411,7 @@ class ConsultationService {
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
 		$updateData = [
-			'extensionRequestedAt' => date('Y-m-d\TH:i:s'),
+			'extensionRequestedAt' => $this->dates->nowAsMoment(),
 			'extensionJustification' => $justification,
 			'extensionApproved' => false,
 		];

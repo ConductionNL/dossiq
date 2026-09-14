@@ -38,7 +38,9 @@ Closed: 2.7, 2.12, 2.15, 3.3, 3.10, 5.1, 9.10, 11.21, 11.22, 12.15, 12.17,
 
 ## The changes
 
-Thirty-three changes. Size S is a placement, a declaration or one action;
+Forty-three changes: thirty-three from the register and the discovery
+wave, and ten more for the pending proposals of 2026-09-14, indexed in
+their own section below. Size S is a placement, a declaration or one action;
 M a handful of tasks; L a new mechanism. "Consumes from" names the app
 and its spec or change; "to be specified" means the register's slug has
 no artefact on that app's `development` yet.
@@ -156,6 +158,68 @@ default was missing. Q1.16 the embedded intake form: the half reads
 integriq under ADR-091 §6, and the change is now open there. dossiq's
 half is unchanged: declare the `caseObject` types as objecttypes and
 delete the controller answering today.
+
+
+### The thirty pending-proposal rows owned by dossiq, opened 2026-09-14
+
+Wave 4 of the parity programme entered the 104 dossiq rows that had no
+corpus provenance as pending proposals, under decision D1
+(`procest/_round4/compare/proposed-rows-dossiq-2026-09-10.md` in
+ConductionNL/market-intelligence). Thirty of them are dossiq's own and are
+closed here: three by changes already open, twenty-seven by ten new ones.
+
+**What the competitor evidence is, for all thirty.** Twenty-nine of them are
+D1 rows whose competitor columns are all `unread`. The batch file says why
+in as many words: "Every competitor column is `unread`, and none of them is
+`no`. ... `no` is a reading of a product somebody opened, and filling these
+cells with it would fabricate thirty readings per row." Every proposal below
+quotes that rather than claiming a competitor. The exception is Q8.23, which
+came from batch 12 and carries a read `best`: no competitor scores yes, Huly
+0.7.426 administers a `PublicHoliday` object nothing outside HR reads, and
+Tuleap CE 17.5 has a weekday mask and no holiday object at all.
+
+| change | rows | size | consumes from |
+|---|---|---|---|
+| `aanvullingsverzoek-as-a-record` | 1.17 | S | openregister `flow-business-timers` (shipped); dossiq `pause-reason-with-chasing` (open) |
+| `splitting-a-case-and-its-incidents` | 2.35, 2.45 | M | openregister relations and audit trail (shipped); `relation-types-with-inverses` (to be specified, row 2.26) |
+| `custody-and-handover-of-a-case` | 2.37, 2.38, 13.28 | M | openregister organisation, audit trail, engine tasks (shipped); `row-field-level-security` (spec); `share-scope-on-an-object` (to be specified in openregister) |
+| `markers-and-assessments-on-the-case` | 2.36, 2.40, 2.44 | M | openregister `row-field-level-security` (spec); `lifecycle-declarative-conditions` (to be specified in openregister) |
+| `what-a-status-declares` | 2.43, 2.46, 8.25, 10.18 | M | openregister `flow-business-timers` (shipped); `working-calendar-admin` (to be specified, row 8.12); `lifecycle-declarative-conditions` (to be specified) |
+| `what-a-transition-declares` | 2.39, 3.30, 11.41, 13.26 | M | openregister engine tasks, timers, RBAC and audit trail (shipped); `lifecycle-declarative-conditions` (to be specified) |
+| `routing-by-weight-position-and-area` | 3.25, 11.35 | M | openregister organisation and RBAC, `flow-business-timers` (shipped); integriq `pdok-geo-boundaries` (to be specified in integriq) |
+| `task-dependencies-and-the-next-planned-action` | 3.27, 3.28, 3.29 | M | openregister engine tasks, `flow-business-timers`, RBAC (shipped); `working-calendar-admin` (to be specified, row 8.12) |
+| `term-configuration-beyond-the-case-type` | 8.24, 8.29, 8.30 | M | openregister `flow-business-timers` and organisation (shipped); `working-calendar-admin` (to be specified); dossiq `case-priority-impact-urgency` (open) |
+| `the-social-domain-plan-and-its-grounds` | 5.18, 14.1 | L | openregister objects and relations, audit trail (shipped); `row-field-level-security` (spec); `cross-register-existence-query` (to be specified in openregister) |
+
+Sizes: 1 S, 8 M, 1 L.
+
+**Three rows an open change already carries, by substance.** Each was read
+before it was claimed, proposal and specs both.
+
+| row | change | the requirement that carries it |
+|---|---|---|
+| 2.34 | `case-priority-impact-urgency` | REQ-PRI-02, "Priority is derived from a matrix the case type declares", with the instance default the row's administered-per-case-type half asks for |
+| 7.8 | `frozen-beschikking-and-numbered-successor` | REQ-BES-012, "A correction is a numbered successor, never an edit", which adds the pointer at the record replaced and the successor number the ledger note names as the only missing part |
+| Q8.23 | `every-term-on-the-engine-calendar` | REQ-TERM-018, "Every statutory term computes on the engine calendar", with REQ-TERM-019 for the audit of the 37 files and REQ-TERM-020 for the structural test |
+
+**Four candidates that did not survive the reading.** The closing lane
+matched these by name, and by substance they answer a different question, so
+the rows stay with the new changes above.
+
+| row | candidate | why it does not carry the row |
+|---|---|---|
+| 1.17 | `pause-reason-with-chasing` | it types the pause and chases the applicant; the row asks for the request itself as a listable record, which its REQ-TERM-011 and REQ-TERM-012 do not write |
+| 10.18 | `dwell-time-on-the-working-calendar` | it decides which clock the process mining page counts on; the row asks for the number to be held on the case as a column and a filter |
+| 2.40 | `sensitive-fields-declared` | it declares the BSN and the special categories behind an extra group; it declares no risk assessment, which is the subject of the row |
+| 3.27 | `dependent-term-follows-predecessor` | its REQ-RCL-10 and REQ-RCL-11 move a term when another case's term moves; the row is about items inside one case's timeline |
+
+`planned-case-series`, `case-reminder-as-task`, `citizen-status-labels`,
+`case-grants-name-their-source`, `intake-says-when-the-term-starts`,
+`ontvangstbevestiging`, `case-claim-action`, `case-merge`,
+`status-capacity-limit`, `counting-mode-per-term` and
+`unread-state-on-the-case` were read for the same reason and carry none of
+these rows either. Each is named in the proposal of the change that took the
+row, with the sentence that separates them.
 
 
 ## Build order

@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -41,6 +42,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnService
  */
 class NoticeOfDefaultServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
 	private NoticeOfDefaultService $service;
@@ -236,7 +239,12 @@ class NoticeOfDefaultServiceTest extends TestCase {
 				};
 			}
 		);
-		$timers = new TermijnTimerService($settings, $this->logger, new WorkingDayCalculator());
+		$timers = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 
 		return new NoticeOfDefaultService($this->settings, $this->termService, $this->logger, $timers);
 	}

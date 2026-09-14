@@ -223,6 +223,22 @@ describe('the connection declaration', () => {
 		}
 	})
 
+	// Contract D4 rule 3 (hydra#673) matches the key's value against
+	// `simulatedValues`, default only the empty string. Naming the mock class
+	// in the key binds the mock too, so the list has to carry that class or
+	// the row reads Configured while the mock answers.
+	it('reads Simulated when the key is empty or names the mock class', () => {
+		expect(byKey.berichtenbox.adapter.simulatedValues).toEqual([
+			'',
+			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
+		])
+		expect(byKey.templates.adapter.simulatedValues).toEqual([
+			'',
+			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
+		])
+		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)
+	})
+
 	it('lets the probed connections arrive as reports', () => {
 		for (const key of ['stuf', 'mailbox', 'store']) {
 			expect(byKey[key].requiredConfig).toBeUndefined()

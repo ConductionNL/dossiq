@@ -81,7 +81,7 @@ class IntegrationStatusService {
 	];
 
 	/**
-	 * The five states the registry accepts. Anything else is refused here, so
+	 * The six states the registry accepts. Anything else is refused here, so
 	 * a typo never travels to integriq only to be dropped with a warning there.
 	 *
 	 * `simulated` says the quiet part. A seam bound to a mock adapter WORKS:
@@ -89,10 +89,15 @@ class IntegrationStatusService {
 	 * instance. `unavailable` would be wrong for it, because the seam is
 	 * available; it just is not real.
 	 *
+	 * `limited` means the connection works in part (contract D4, hydra#673).
+	 * No dossiq caller reports it yet; the service accepts it because the
+	 * contract does.
+	 *
 	 * @var array<int, string>
 	 */
 	public const STATUSES = [
 		'configured',
+		'limited',
 		'unconfigured',
 		'unavailable',
 		'simulated',

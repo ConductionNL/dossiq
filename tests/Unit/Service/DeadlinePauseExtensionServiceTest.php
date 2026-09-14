@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -46,6 +47,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private FlowTimerEngineFake $engine;
 	private TermijnService $termService;
@@ -95,10 +98,15 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$timerService = new TermijnTimerService($settings, $logger, new WorkingDayCalculator());
+		$timerService = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 		$this->termService = new TermijnService($settings, $logger, $timerService);
 		$this->pauseService = new DeadlinePauseService($this->termService, $timerService);
-		$this->extService = new DeadlineExtensionService($this->termService, $timerService);
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates(), timerService: $timerService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
 		$this->objects->seed('deadlineDefinition', [
