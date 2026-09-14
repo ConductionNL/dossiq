@@ -137,6 +137,7 @@ describe('Cases index lenses', () => {
 	it('spells the Overdue operator as a flat bracket key', () => {
 		expect(chip('Cases', 'Overdue').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
 			'deadline[lt]': '@today',
 		})
 	})
@@ -144,6 +145,7 @@ describe('Cases index lenses', () => {
 	it('gives Due this week the half-open window on deadline', () => {
 		expect(chip('Cases', 'Due this week').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
 			'deadline[gte]': '@today',
 			'deadline[lt]': '@today+7d',
 		})

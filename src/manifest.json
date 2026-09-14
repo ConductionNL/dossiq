@@ -541,6 +541,7 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -638,7 +639,8 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false
 								},
 								"aggregate": {
 									"groupBy": "status",
@@ -665,7 +667,8 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false
 								},
 								"aggregate": {
 									"groupBy": "caseType",
@@ -691,7 +694,8 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false
 								},
 								"extend": ["calculations"],
 								"order": {
@@ -718,6 +722,7 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
 									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
 								}
 							},
@@ -885,6 +890,7 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
+									"statusHiddenInLists": false,
 									"deadline": {
 										"lte": "@today+3d"
 									}
@@ -929,6 +935,7 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
 									"deadline[lte]": "@today+3d"
 								}
 							},
@@ -947,7 +954,8 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false
 								},
 								"order": {
 									"startDate": "desc"
@@ -968,7 +976,8 @@
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
-									"isFinalStatus": "false"
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false"
 								}
 							},
 							"viewAllLabel": "View all",
@@ -1018,13 +1027,14 @@
 			"route": "/queue",
 			"type": "index",
 			"title": "Queue",
-			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
+			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. `statusHiddenInLists: false` is the third condition, added by lifecycle-acts-on-the-case REQ-LIFE-01, and it is kept LITERALLY EQUAL to the Cases page Unclaimed chip for the reason that note gives: the two lists answer the same question and a drift between them is invisible. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
 				"filter": {
 					"assignee": "IS NULL",
-					"isFinalStatus": false
+					"isFinalStatus": false,
+					"statusHiddenInLists": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1221,7 +1231,7 @@
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
 				"extend": ["assignedGroup"],
-				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. lifecycle-acts-on-the-case REQ-LIFE-01: every WORKING lens now carries `statusHiddenInLists: false`, not only All. A status an administrator marked hidden used to empty one chip and leave the same cases filling Overdue, Due this week, Mine, Unclaimed, the Queue, My Work and the dashboard tiles beside it, so the list and the count disagreed and neither said why. Two lenses deliberately do NOT carry it. Closed is the lens a person explicitly filtered onto the terminal statuses, and hidden statuses are mostly those, so filtering there would empty the one list that is supposed to hold them. The same reasoning keeps it off the Completed this month tile. Hidden means out of the WORKING list, never out of search and never off the case's own page.",
 				"quickFilters": [
 					{
 						"label": "All",
@@ -1233,21 +1243,24 @@
 					{
 						"label": "Unread",
 						"filter": {
-							"_unread": true
+							"_unread": true,
+							"statusHiddenInLists": false
 						}
 					},
 					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
-							"isFinalStatus": false
+							"isFinalStatus": false,
+							"statusHiddenInLists": false
 						}
 					},
 					{
 						"label": "Unclaimed",
 						"filter": {
 							"assignee": "IS NULL",
-							"isFinalStatus": false
+							"isFinalStatus": false,
+							"statusHiddenInLists": false
 						}
 					},
 					{
@@ -1260,6 +1273,7 @@
 						"label": "Overdue",
 						"filter": {
 							"isFinalStatus": false,
+							"statusHiddenInLists": false,
 							"deadline[lt]": "@today"
 						}
 					},
@@ -1267,6 +1281,7 @@
 						"label": "Due this week",
 						"filter": {
 							"isFinalStatus": false,
+							"statusHiddenInLists": false,
 							"deadline[gte]": "@today",
 							"deadline[lt]": "@today+7d"
 						}

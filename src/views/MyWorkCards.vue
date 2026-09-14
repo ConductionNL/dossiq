@@ -170,11 +170,20 @@ export default {
 		/**
 		 * Base filter scoping the case list to the current user's assignments.
 		 *
+		 * `statusHiddenInLists: false` is the second condition, and it is the
+		 * one a reader would otherwise notice as a disagreement. A status an
+		 * administrator marks hidden drops out of the Cases index; My Work read
+		 * the same cases without it, so the same case was gone from one list and
+		 * present in the other with nothing on either page to say why. Search
+		 * and the case's own page are untouched: hidden means out of the working
+		 * list, not unfindable.
+		 *
 		 * @spec openspec/specs/my-work/spec.md
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 		 */
 		filter() {
 			const uid = (getCurrentUser() && getCurrentUser().uid) || ''
-			return { assignee: uid }
+			return { assignee: uid, statusHiddenInLists: false }
 		},
 
 		/**
