@@ -73,7 +73,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$store = $this->createMock(CaseStatusStore::class);
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$store->method('loadCase')->willReturn(
 			[
 				'id' => 'case-1',
@@ -89,7 +89,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 		$store->method('writeStatusRecord')->willReturn(['id' => 'rec-1']);
 		$store->method('updateStatusRecord')->willReturnArgument(0);
 
-		$templateLoader = $this->createMock(WorkflowTemplateLoader::class);
+		$templateLoader = $this->createMock(originalClassName: WorkflowTemplateLoader::class);
 		$templateLoader->method('getTransitionForCase')->willReturn(
 			[
 				'id' => 't1',
@@ -100,23 +100,23 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			]
 		);
 
-		$guardRegistry = $this->createMock(GuardRegistry::class);
+		$guardRegistry = $this->createMock(originalClassName: GuardRegistry::class);
 		$guardRegistry->method('evaluateAll')->willReturn([]);
 
-		$specReader = $this->createMock(TransitionSpecReader::class);
+		$specReader = $this->createMock(originalClassName: TransitionSpecReader::class);
 		$specReader->method('extractGuards')->willReturn([]);
 		$specReader->method('extractActions')->willReturn([]);
 		$specReader->method('isRoleHidden')->willReturn(false);
 
-		$authorizer = $this->createMock(TransitionAuthorizer::class);
+		$authorizer = $this->createMock(originalClassName: TransitionAuthorizer::class);
 		$authorizer->method('isAdmin')->willReturn(true);
 		$authorizer->method('isTransitionGroupAuthorized')->willReturn(true);
 
-		$resultWriter = $this->createMock(CaseResultWriter::class);
+		$resultWriter = $this->createMock(originalClassName: CaseResultWriter::class);
 		$resultWriter->method('isFinalStatus')->willReturn(false);
 
-		$this->dispatcher = $this->createMock(SideEffectDispatcher::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->dispatcher = $this->createMock(originalClassName: SideEffectDispatcher::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$this->service = new StatusTransitionService(
 			templateLoader: $templateLoader,
@@ -125,10 +125,10 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			store: $store,
 			authorizer: $authorizer,
 			specReader: $specReader,
-			userSession: $this->createMock(IUserSession::class),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: $this->logger,
 			resultWriter: $resultWriter,
-			statusChecklist: $this->createMock(StatusChecklist::class),
+			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
 		);
 	}//end setUp()
 
@@ -168,9 +168,9 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 
 		$outcome = $this->service->execute(caseId: 'case-1', transitionId: 't1', comment: null);
 
-		$this->assertSame('ok', $outcome['status']);
-		$this->assertSame([], $outcome['failedActions']);
-		$this->assertSame(4, $outcome['version'], 'the answer still carries the saved version');
+		$this->assertSame(expected: 'ok', actual: $outcome['status']);
+		$this->assertSame(expected: [], actual: $outcome['failedActions']);
+		$this->assertSame(expected: 4, actual: $outcome['version'], message: 'the answer still carries the saved version');
 	}//end testExecuteAnswersOkWhenEveryActionRan()
 
 	/**
@@ -183,9 +183,9 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 		$this->logger->expects($this->once())
 			->method('warning')
 			->with(
-				$this->stringContains('did not run'),
+				$this->stringContains(string: 'did not run'),
 				$this->callback(
-					static fn (array $context): bool => $context['case'] === 'case-1'
+					callback: static fn (array $context): bool => $context['case'] === 'case-1'
 						&& $context['count'] === 2
 						&& count($context['failed']) === 2
 				),
@@ -193,16 +193,16 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 
 		$outcome = $this->service->execute(caseId: 'case-1', transitionId: 't1', comment: null);
 
-		$this->assertSame('partial', $outcome['status']);
+		$this->assertSame(expected: 'partial', actual: $outcome['status']);
 		$this->assertSame(
-			[
+			expected: [
 				['type' => 'createTask', 'error' => 'no_actor'],
 				['type' => '', 'error' => 'action_failed'],
 			],
-			$outcome['failedActions'],
+			actual: $outcome['failedActions'],
 		);
-		$this->assertSame('rec-1', $outcome['statusRecord']['id'], 'the move is recorded, not rolled back');
-		$this->assertCount(5, $outcome['dispatchedActions']);
+		$this->assertSame(expected: 'rec-1', actual: $outcome['statusRecord']['id'], message: 'the move is recorded, not rolled back');
+		$this->assertCount(expectedCount: 5, haystack: $outcome['dispatchedActions']);
 	}//end testExecuteAnswersPartialAndNamesTheFailedActions()
 
 	/**
@@ -221,8 +221,8 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			userId: 'admin',
 		);
 
-		$this->assertSame('ok', $outcome['status']);
-		$this->assertSame([], $outcome['failedActions']);
+		$this->assertSame(expected: 'ok', actual: $outcome['status']);
+		$this->assertSame(expected: [], actual: $outcome['failedActions']);
 	}//end testFreeFormAnswersOkWhenEveryActionRan()
 
 	/**
@@ -245,7 +245,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			userId: 'admin',
 		);
 
-		$this->assertSame('partial', $outcome['status']);
-		$this->assertSame([['type' => 'createTask', 'error' => 'no_actor']], $outcome['failedActions']);
+		$this->assertSame(expected: 'partial', actual: $outcome['status']);
+		$this->assertSame(expected: [['type' => 'createTask', 'error' => 'no_actor']], actual: $outcome['failedActions']);
 	}//end testFreeFormAnswersPartialAndNamesTheFailedActions()
 }//end class

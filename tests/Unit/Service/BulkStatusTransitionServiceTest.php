@@ -274,11 +274,14 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 
 		$result = $this->service->execute(['case-1', 'case-2'], 'submit', null);
 
-		$this->assertSame('succeeded', $result['results']['case-1']['status']);
-		$this->assertSame([], $result['results']['case-1']['failedActions']);
-		$this->assertSame('succeeded', $result['results']['case-2']['status']);
-		$this->assertSame($failedActions, $result['results']['case-2']['failedActions']);
-		$this->assertSame(['total' => 2, 'succeeded' => 2, 'failed' => 0, 'error' => 0], $result['summary']);
+		$this->assertSame(expected: 'succeeded', actual: $result['results']['case-1']['status']);
+		$this->assertSame(expected: [], actual: $result['results']['case-1']['failedActions']);
+		$this->assertSame(expected: 'succeeded', actual: $result['results']['case-2']['status']);
+		$this->assertSame(expected: $failedActions, actual: $result['results']['case-2']['failedActions']);
+		$this->assertSame(
+			expected: ['total' => 2, 'succeeded' => 2, 'failed' => 0, 'error' => 0],
+			actual: $result['summary'],
+		);
 	}//end testExecuteCarriesEachCasesFailedActions()
 
 	/**

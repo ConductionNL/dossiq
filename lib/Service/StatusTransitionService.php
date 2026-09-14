@@ -200,7 +200,13 @@ class StatusTransitionService {
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 * @param string|null $resultTypeId ResultType chosen for a closing transition
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, failedActions: array<int, array{type: string, error: string}>, version: int}
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 *     version: int,
+	 * }
 	 *         `status` is `ok`, or `partial` when the case moved and an action it
 	 *         should have brought did not run. See `outcome()`.
 	 *
@@ -674,7 +680,12 @@ class StatusTransitionService {
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, failedActions: array<int, array{type: string, error: string}>}
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 * }
 	 *
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
