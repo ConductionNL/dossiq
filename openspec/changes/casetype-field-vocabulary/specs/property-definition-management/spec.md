@@ -4,9 +4,15 @@
 
 `propertyDefinition.propertyType` SHALL offer the types OpenRegister's
 `PropertyValidatorHandler` validates, and SHALL NOT offer a type the
-engine does not validate. Every added type SHALL also be forwarded by
-`schemas.case.properties.caseType.x-openregister-extends-form.map`. A type
-present in the enum but absent from the map SHALL be a build failure.
+engine does not validate. The enum MAY additionally accept a type dossiq
+used to offer, so a stored definition keeps working and keeps its value,
+and every such value SHALL name the vocabulary type that replaces it.
+
+`schemas.case.properties.caseType.x-openregister-extends-form.map` SHALL
+forward the `type` key and every key the definition adds to carry the
+vocabulary. A key on the definition that the map does not forward, and a
+key the map forwards that the vocabulary does not hold, SHALL both be a
+build failure.
 
 #### Scenario: an administrator declares a set-valued answer
 @e2e tests/e2e/casetype-field-vocabulary.spec.ts
@@ -27,16 +33,18 @@ present in the enum but absent from the map SHALL be a build failure.
 @e2e exclude {a build check over two JSON objects, asserted and mutation-checked in tests/vitest/propertyDefinitionSchema.spec.js}
 
 - **GIVEN** the `propertyDefinition` schema and the extends-form map
-- **WHEN** the two are compared
-- **THEN** every `propertyType` value SHALL be forwarded by the map
-- **AND** a value in one and not the other SHALL fail the build
+- **WHEN** the two are compared with the published vocabulary
+- **THEN** every key the definition adds SHALL be forwarded by the map
+- **AND** every key the map forwards SHALL be one the vocabulary holds
+- **AND** a key in one and not the other SHALL fail the build
 
 #### Scenario: no type is offered that the engine cannot check
 @e2e exclude {compares the enum with the published vocabulary, asserted in tests/vitest/propertyDefinitionSchema.spec.js}
 
 - **GIVEN** the `propertyType` enum
 - **WHEN** each value is compared with the engine's validator list
-- **THEN** every value SHALL appear on that list
+- **THEN** every value SHALL appear on that list, or be one of the five
+  dossiq used to offer, each naming its replacement
 
 ### Requirement: A field carries its format, its constraints and its help text (REQ-PDM-11)
 

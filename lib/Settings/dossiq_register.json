@@ -734,8 +734,8 @@
                         "items": {
                             "type": "string"
                         },
-                        "description": "The allowed values, when propertyType is 'enum'. Ignored for every other type. Without this the 'enum' type would be indistinguishable from 'string' at runtime, which is the flattening it exists to prevent.",
-                        "title": "Enum Values"
+                        "description": "The answers this field accepts, one per entry. OpenRegister's `enum` constraint applies to every type, so a choice list is not a type of its own: a text field, a number field or a date field can each limit its answers to a list. Leave it empty and the field takes any answer its type allows. A field whose stored type is the old 'enum' keeps its values here.",
+                        "title": "Choice list"
                     },
                     "format": {
                         "type": "string",
