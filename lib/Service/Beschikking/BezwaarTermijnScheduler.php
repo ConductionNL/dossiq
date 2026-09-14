@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -52,35 +53,63 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @param SettingsService $settingsService The settings/config service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; the
+	 *        bezwaartermijn rolls on the administered calendar through it.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
 	/**
 	 * Compute the bezwaartermijn end date and its reminder date.
 	 *
-	 * Six weeks from bekendmaking (Awb 6:7), reminder one week before.
+	 * Six weeks from bekendmaking (Awb 6:7), reminder one week before. Six weeks
+	 * is the term; where it LANDS is Algemene termijnenwet art. 1, so both dates
+	 * go through the calendar the organisation administers. The reminder rolls
+	 * too: one that falls on Tweede Kerstdag reaches nobody.
 	 *
 	 * @param string $bekendmaking The bekendmaking date (Y-m-d).
+	 * @param array<string, mixed> $definitie The term definition, when one is known;
+	 *        `rollToWorkingDay` false returns the raw dates.
 	 *
 	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
-	public function computeTermijn(string $bekendmaking): array {
+	public function computeTermijn(string $bekendmaking, array $definitie = []): array {
 		$endDate = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
 		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
+		$roll = ($this->timerService?->rollEnabled(definitie: $definitie) ?? false);
+
 		return [
-			'endDate' => $endDate->format('Y-m-d'),
-			'herinnering' => $herinnering->format('Y-m-d'),
+			'endDate' => $this->onWorkingDay(date: $endDate, roll: $roll)->format('Y-m-d'),
+			'herinnering' => $this->onWorkingDay(date: $herinnering, roll: $roll)->format('Y-m-d'),
 		];
 	}//end computeTermijn()
+
+	/**
+	 * Roll a date onto the administered working calendar.
+	 *
+	 * @param DateTimeImmutable $date The computed date.
+	 * @param bool $roll Whether the term declares the roll.
+	 *
+	 * @return DateTimeImmutable The date the term actually lands on.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the declared `rollToWorkingDay`.
+	 */
+	private function onWorkingDay(DateTimeImmutable $date, bool $roll): DateTimeImmutable {
+		if ($this->timerService === null) {
+			return $date;
+		}
+
+		return $this->timerService->rollTermEnd(date: $date, roll: $roll);
+	}//end onWorkingDay()
 
 	/**
 	 * Create the BezwaarTrigger scheduling record on verzending.

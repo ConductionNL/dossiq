@@ -55,11 +55,14 @@ class NoticeOfDefaultService {
 	 * @param SettingsService $settingsService Settings service.
 	 * @param TermijnService $termService TermijnService.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; the
+	 *        grace period lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -168,7 +171,13 @@ class NoticeOfDefaultService {
 		);
 
 		$regime = $this->resolveRegime(instance: $instance);
-		$startAt = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days')->format('Y-m-d');
+
+		// Awb 4:17: the grace period is a statutory term, so its end goes
+		// through the calendar the organisation administers before it becomes
+		// the day the dwangsom starts running. The regime's validity rules
+		// above are untouched: only the day this date lands on moves.
+		$graceEnd = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days');
+		$startAt = $this->onWorkingDay(date: $graceEnd)->format('Y-m-d');
 
 		$regimeLabel = 'awb-default';
 		if ($regime['custom'] === true) {
@@ -212,6 +221,24 @@ class NoticeOfDefaultService {
 
 		return $calculation;
 	}//end startDwangsomBerekening()
+
+	/**
+	 * Roll the grace end onto the administered working calendar.
+	 *
+	 * @param DateTimeImmutable $date The computed grace end.
+	 *
+	 * @return DateTimeImmutable The day the dwangsom window opens on.
+	 */
+	private function onWorkingDay(DateTimeImmutable $date): DateTimeImmutable {
+		if ($this->timerService === null) {
+			return $date;
+		}
+
+		return $this->timerService->rollTermEnd(
+			date: $date,
+			roll: $this->timerService->rollEnabled(definitie: [])
+		);
+	}//end onWorkingDay()
 
 	/**
 	 * Resolve the dwangsom regime (AWB-default or custom from definition).
