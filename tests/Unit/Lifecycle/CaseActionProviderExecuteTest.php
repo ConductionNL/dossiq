@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
+use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -93,6 +94,7 @@ class CaseActionProviderExecuteTest extends TestCase {
 		return new CaseActionProvider(
 			transitionEngine: $engine,
 			resultWriter: $this->createMock(CaseResultWriter::class),
+			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerOver()
