@@ -3977,7 +3977,13 @@ OC.L10N.register(
         "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.": "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.",
         "The request could not be sent": "The request could not be sent",
         "The request is on its way to {recipient}": "The request is on its way to {recipient}",
-        "What do you need from them?": "What do you need from them?"
+        "What do you need from them?": "What do you need from them?",
+        "You moved the case, but {count} automatic action did not run. Its status record shows which.": "You moved the case, but {count} automatic action did not run. Its status record shows which.",
+        "You moved the case, but {count} automatic actions did not run. Its status record shows which.": "You moved the case, but {count} automatic actions did not run. Its status record shows which.",
+        "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": ["You moved the case, but {count} automatic action did not run. Its status record shows which.","You moved the case, but {count} automatic actions did not run. Its status record shows which."],
+        "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} case moved without all of its automatic actions. Its status record shows which.",
+        "{count} cases moved without all of their automatic actions. Their status records show which.": "{count} cases moved without all of their automatic actions. Their status records show which.",
+        "_{count} case moved without all of its automatic actions. Its status record shows which._::_{count} cases moved without all of their automatic actions. Their status records show which._": ["{count} case moved without all of its automatic actions. Its status record shows which.","{count} cases moved without all of their automatic actions. Their status records show which."]
     },
     "nplurals=2; plural=(n != 1);"
 )
