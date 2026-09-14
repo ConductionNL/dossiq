@@ -487,4 +487,34 @@ class ConsultationPublicControllerContractTest extends TestCase {
 			is_callable([new ConsultationPublicControllerContractRequestStub('{}'), 'getContent']),
 		);
 	}//end testAProtectedGetContentIsNotCallableFromOutside()
+
+	/**
+	 * A real request, whose getContent() cannot be called from outside, leaves
+	 * the controller reading the stream: in a test that is empty, so the body
+	 * decodes to nothing and the endpoint answers on its own terms rather than
+	 * throwing.
+	 *
+	 * This is the path every production caller takes, and the one that used to
+	 * be an Error before the fix. The suite's own stub cannot exercise it,
+	 * because its getContent() is public.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 */
+	public function testARequestWhoseGetContentIsUnreachableStillAnswers(): void {
+		$controller = new ConsultationPublicController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			consultationService: $this->consultationService,
+			logger: $this->logger,
+		);
+		$this->consultationService->expects($this->never())->method('findBySecureToken');
+
+		$response = $controller->publicResponsePost(token: '');
+
+		// No Error, no 500: the empty token is refused on its own merits.
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Token is required'], actual: $response->getData());
+	}//end testARequestWhoseGetContentIsUnreachableStillAnswers()
 }//end class
