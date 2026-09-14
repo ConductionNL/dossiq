@@ -100,7 +100,7 @@ class TermijnTimerRollTest extends TestCase {
 
 		return new TermijnTimerService(
 			settingsService: $settings,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(),
 			fallbackCalendar: new WorkingDayCalculator(),
 		);
@@ -158,7 +158,7 @@ class TermijnTimerRollTest extends TestCase {
 		);
 		$service = new TermijnTimerService(
 			settingsService: $settings,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(),
 			fallbackCalendar: new WorkingDayCalculator(),
 		);
