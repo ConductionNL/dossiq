@@ -10234,6 +10234,46 @@
           }
         }
       },
+      "caseTypeGroup": {
+        "slug": "caseTypeGroup",
+        "icon": "FolderAccountOutline",
+        "version": "1.0.0",
+        "title": "Case Type Group",
+        "description": "A group of case types granted as one.",
+        "type": "object",
+        "required": [
+          "groupName"
+        ],
+        "properties": {
+          "groupName": {
+            "type": "string",
+            "title": "Group Name",
+            "description": "Human-readable name of this group of case types.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What this group is for, and who it belongs to."
+          },
+          "partner": {
+            "type": "string",
+            "title": "Partner",
+            "description": "The samenwerkingsverband or partner organisation the group belongs to.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "caseTypes": {
+            "type": "array",
+            "title": "Case Types",
+            "description": "The case types in this group.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
@@ -20554,6 +20594,48 @@
         "noticeOfDefault": "2026-03-03",
         "penaltyPayment": 0,
         "decisionDeadline": "2026-03-03"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-1-1",
+          "id": "5f2b0c41-9d8e-4f27-8a13-6c0d5b7e9a24"
+        },
+        "groupName": "Voorbeeld Groupname 1",
+        "description": "Voorbeeld Description 1",
+        "partner": "Voorbeeld Partner 1",
+        "caseTypes": [
+          "Voorbeeld Casetypes 1"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-2-2",
+          "id": "8a4d1e63-2b7c-4f19-9e05-71c3d8a6b4f2"
+        },
+        "groupName": "Voorbeeld Groupname 2",
+        "description": "Voorbeeld Description 2",
+        "partner": "Voorbeeld Partner 2",
+        "caseTypes": [
+          "Voorbeeld Casetypes 2"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-3-3",
+          "id": "c93f7a25-6e41-4d0b-b28f-0a5e14c7d9b3"
+        },
+        "groupName": "Voorbeeld Groupname 3",
+        "description": "Voorbeeld Description 3",
+        "partner": "Voorbeeld Partner 3",
+        "caseTypes": [
+          "Voorbeeld Casetypes 3"
+        ]
       },
       {
         "@self": {

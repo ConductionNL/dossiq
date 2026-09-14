@@ -50,7 +50,6 @@ namespace OCA\Dossiq\Tests\Unit\Architecture;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * Scans lib/ for a second answer to "who may open this case".
@@ -221,15 +220,18 @@ class NoSecondPermissionEvaluatorTest extends TestCase {
 		$root = (string)realpath(self::LIB_DIR);
 		$files = [];
 
+		// Iterated by PATH rather than by SplFileInfo: the object form needs an
+		// inline docblock to type it, and an inline docblock is the one
+		// Squiz.Commenting sniff this repository enforces on tests.
 		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
-		/** @var SplFileInfo $file */
-		foreach ($iterator as $file) {
-			if ($file->isFile() === false || $file->getExtension() !== 'php') {
+		foreach (array_keys(iterator_to_array($iterator)) as $path) {
+			$path = (string)$path;
+			if (is_file($path) === false || pathinfo($path, PATHINFO_EXTENSION) !== 'php') {
 				continue;
 			}
 
-			$relative = substr((string)$file->getRealPath(), (strlen($root) + 1));
-			$files[$relative] = (string)file_get_contents($file->getRealPath());
+			$relative = substr($path, (strlen($root) + 1));
+			$files[$relative] = (string)file_get_contents($path);
 		}
 
 		ksort($files);

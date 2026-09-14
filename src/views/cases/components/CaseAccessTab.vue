@@ -129,6 +129,7 @@ export default {
 		 * What the deny switch means for the rows below.
 		 *
 		 * @return {string} One sentence, empty when the mode is unknown.
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 		 */
 		enforcementSentence() {
 			if (this.enforcement === 'enforcing') {
@@ -188,6 +189,7 @@ export default {
 		 * @param {string} right The verb.
 		 *
 		 * @return {string} The description, empty when the catalogue has none.
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 		 */
 		describe(right) {
 			const entry = this.catalogue.find((permission) => permission?.action === right)
@@ -200,6 +202,7 @@ export default {
 		 * @param {string} source The source key.
 		 *
 		 * @return {string} The label, the raw key when it is one we do not know.
+		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 		 */
 		sourceLabel(source) {
 			const labels = {
