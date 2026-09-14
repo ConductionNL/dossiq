@@ -281,7 +281,16 @@ describe('an attribute without a case type is shared', () => {
 	})
 
 	it('moves the propertyDefinition version, or the loosening is inert', () => {
-		expect(schema('propertyDefinition').version).toBe('1.2.0')
+		// OpenRegister re-imports a schema when its version moves, so the
+		// loosened `required` list only reaches an installed instance if this
+		// number is ahead of the one that shipped with `caseType` required.
+		// The assertion used to pin the literal `1.2.0`, which made every
+		// later edit of the schema red for the wrong reason: the clause is
+		// that the version MOVED, not that it stopped at that number.
+		const [major, minor] = schema('propertyDefinition')
+			.version.split('.')
+			.map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1002)
 	})
 })
 
