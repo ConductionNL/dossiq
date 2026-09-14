@@ -220,6 +220,14 @@ class SchemaSlugMap {
 		'x-openregister-lifecycle',
 		'x-openregister-aggregations',
 		'x-openregister-object-source',
+		// Which changes to a case are news to somebody who has already seen
+		// it. OpenRegister's SubstantiveChangeEvaluator reads this block off
+		// `Schema::getConfiguration()`, and an ABSENT block is not an inert
+		// default: it means every non-computed property counts, so one bulk
+		// correction marks four hundred cases unread. Leaving the key out of
+		// this list would therefore not disable the badge, it would make it
+		// cry wolf, with nothing anywhere saying so.
+		'x-openregister-read-state',
 	];
 
 	/**
