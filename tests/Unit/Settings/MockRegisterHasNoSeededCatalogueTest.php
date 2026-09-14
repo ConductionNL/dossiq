@@ -7,8 +7,10 @@
  * The demo data set must not carry objects for a schema the app already seeds
  * as a catalogue.
  *
- * `lib/Settings/register.d/96-integrations.json` seeds the twelve
- * `dossiqIntegration` rows, each with a stable slug (`integration-brp`). The
+ * `lib/Settings/register.d/96-integrations.json` seeded the twelve
+ * `dossiqIntegration` rows, each with a stable slug (`integration-brp`), until
+ * adopt-connection-registry moved the rows to integriq. The guard stays while
+ * the schema does: demo rows for it would still be rows nobody declared. The
  * mock descriptor is generated from the app's own schemas by
  * `hydra-gates/scripts/lib/generate_mock_register.py`, which has no notion of
  * "this schema is a catalogue, do not invent rows for it", so it produced three

@@ -9151,6 +9151,11 @@
                 }
             },
             "dossiqIntegration": {
+                "_meta": {
+                    "status": "deprecated",
+                    "change": "openspec/changes/adopt-connection-registry",
+                    "note": "Kept for one release so a revert brings the old Integrations page back. Nothing seeds or writes these rows any more: the page reads integriq's connection schema, dossiq declares its connections in lib/Settings/connections.json, and IntegrationStatusService reports to integriq by event. Removal is a follow-up issue, tracked in the PR body of adopt-connection-registry."
+                },
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
                 "version": "1.2.0",
