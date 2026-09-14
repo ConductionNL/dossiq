@@ -24,7 +24,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   `date('Y-m-d')` fallback at :301.
 - [x] 2.4 `ConsultationController` through `ConsultationService`: the
   three `date('Y-m-d\TH:i:s')` writes gain an offset.
-- [ ] 2.5 `AdviceController` through `AdviceService`: `deadline` is parsed
+- [x] 2.5 `AdviceController` through `AdviceService`: `deadline` is parsed
   instead of stored verbatim, and a bad value is refused (D-3).
 - [ ] 2.6 `WOOAssessmentController` through `WOODeadlineService`;
   `parseIsoDate()` and `requireIsoDate()` retire.
