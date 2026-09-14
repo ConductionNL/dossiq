@@ -47,11 +47,15 @@ never the problem itself.
 
 | | at `9c478d810` (proposal) | at `16f00124a` (this change, before) | after this change (task 3.1) |
 |---|---|---|---|
-| files matching the patterns | 37 | 37 | 37 |
-| of those, reaching a working calendar | 5 | 5 | 18 |
+| files matching the patterns | 37 | 37 | 38 |
+| of those, reaching a working calendar | 5 | 5 | 19 |
 | of those, verdict `statutory` | not measured | 16 | 16 |
 | `statutory` files reaching a calendar | not measured | 3 | 15 |
 | `statutory` files allowlisted with a named owner | not measured | n/a | 1 |
+
+The set grew by one file, and by nothing else: `lib/Service/TermijnTimerService.php`
+now calls the engine's `SlaCalculator::add()`, which the `->add(` pattern
+matches. It is the bridge, not a term, and its row says so.
 
 The proposal counted five files referencing `WorkingDayCalculator`, and
 those five are all inside the 37. A sixth file references it at
@@ -102,6 +106,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Subsidie/TerugvorderingService.php` | 88, 101 | statutory | engine calendar | the bezwaartermijn and the payment term of a clawback decision |
 | `lib/Service/Subsidie/TussenrapportageService.php` | 99 | statutory | engine calendar | the assessment term of an interim report, the date the applicant is answered by |
 | `lib/Service/TermijnNotificationService.php` | 97 | neither | | not date arithmetic: `IJobList::add()` matched the `->add(` pattern |
+| `lib/Service/TermijnTimerService.php` | 481 | neither | itself | not date arithmetic: the engine's `SlaCalculator::add()` matched the `->add(` pattern. This file IS the bridge; it asks the engine for the roll and computes no date of its own |
 | `lib/Service/TermijnService.php` | 109 | statutory | allowlisted | `endDateCalculated`, owned by `terms-on-the-engine-calendar` task 1.3, which declares `deadlineDefinition.rollToWorkingDay` and applies it here |
 | `lib/Service/WOODeadlineService.php` | 101, 172 | statutory | engine calendar | Woo art. 4.4: the decision term and its statutory extension |
 | `lib/Service/WorkingDayCalculator.php` | 170, 204 | neither | itself | the calendar. It is the fallback the three sites use when the engine is absent, and the only holiday list dossiq is allowed to hold |

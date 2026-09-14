@@ -20,14 +20,14 @@ nothing and can run first.
   suspension and the unused remainder land on a working day; the
   arithmetic stays case data per REQ-TOT-002 (D-2).
   - `tests/Unit/Service/DeadlinePauseServiceTest.php`
-- [ ] 2.1 `tests/Unit/Architecture/EveryTermOnTheCalendarTest.php`: a
+- [x] 2.1 `tests/Unit/Architecture/EveryTermOnTheCalendarTest.php`: a
   file the audit marks statutory that computes a date without reaching
   the calendar fails, naming the file and the line; the allowlist entry
   carries a reason (D-3).
-- [ ] 2.2 Every file the audit marks statutory and does not fix in 1.2 to
+- [x] 2.2 Every file the audit marks statutory and does not fix in 1.2 to
   1.4 gets an allowlist entry naming the change that will take it, or is
   fixed here. An entry without a named owner is not an entry.
-- [ ] 3.1 Re-run the count in the audit's header after 1.2 to 1.4 and
+- [x] 3.1 Re-run the count in the audit's header after 1.2 to 1.4 and
   record the new one beside the old, so the row can be re-rated from the
   file rather than from a grep.
 - [ ] 3.2 `openspec validate every-term-on-the-engine-calendar --strict`.
