@@ -371,6 +371,16 @@ $extra = [
     ['name' => 'caseLifecycle#resume',  'url' => '/api/case/{caseId}/resume',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#extend',  'url' => '/api/case/{caseId}/extend',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
+    ['name' => 'caseLifecycle#delete',  'url' => '/api/case/{caseId}/delete',    'verb' => 'POST'],
+
+    // The deleted side of a case (case-recycle-window). Deleting puts the case
+    // in OpenRegister's recycle state; restoring and destroying are two
+    // separate acts, and destroying needs the role the case type declares.
+    ['name' => 'caseRecycle#deleted',            'url' => '/api/cases/deleted',                     'verb' => 'GET'],
+    ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
+    ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
+    ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
+    ['name' => 'caseRecycle#clocks',             'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
 
         // Claim and release (case-claim-action, row 2.4). Who holds a case is
         // one field, and OpenRegister would take that write straight from the

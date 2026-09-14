@@ -245,6 +245,13 @@
 			"order": 30
 		},
 		{
+			"id": "CasesDeletedMenu",
+			"label": "Deleted cases",
+			"icon": "DeleteClockOutline",
+			"route": "CasesDeleted",
+			"order": 33
+		},
+		{
 			"id": "CaseObjectsMenu",
 			"label": "Objects",
 			"icon": "CubeOutline",
@@ -1295,6 +1302,14 @@
 				},
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
+		},
+		{
+			"id": "CasesDeleted",
+			"route": "/cases/deleted",
+			"type": "custom",
+			"title": "Deleted cases",
+			"component": "DeletedCasesView",
+			"_note": "case-recycle-window 1.2, the deleted lens. NOT a quickFilter chip beside All, Mine and Closed, and the reason is mechanical rather than stylistic: those chips are filters on the objects endpoint, and that endpoint excludes soft-deleted rows by design. A chip spelling `deleted: true` would send a filter OpenRegister answers with the empty set, which reads exactly like a working lens over an empty trash. The deleted rows live behind their own door, so the lens is its own place and a component that fetches from dossiq's /api/cases/deleted, which reads OpenRegister's trash and attaches the window. 🔴 WHY `type: \"custom\"` AND NOT `index`, which is what hydra gate 69 asks: an index page binds a register and a schema and fetches that same objects endpoint, so it would render an empty list here and look like a working lens over an empty trash, which is the one failure this page exists to prevent. There is no `entitySource` that can name OpenRegister's trash (checked against the installed @conduction/nextcloud-vue 2.47). The gate reds by exactly one finding, deliberately, and the unit comes back the day CnIndexPage grows such a source. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
 		{
 			"id": "CaseDetail",

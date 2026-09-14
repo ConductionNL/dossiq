@@ -71,9 +71,19 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * compares the head count with the base and fires on any growth, with no
  * `_note` escape of the kind rule (b) offers. So this PR reds that gate by
  * exactly one finding, deliberately.
+ *
+ * Moved 12 -> 13 on 2026-09-14 by `CasesDeleted` (case-recycle-window 1.2),
+ * and this one had no choice either. A `type: "index"` page binds a register
+ * and a schema and fetches the objects endpoint, and that endpoint excludes
+ * soft-deleted rows BY DESIGN: the deleted cases live in OpenRegister's trash
+ * and answer on their own door. An index page pointed at the case schema
+ * would therefore render an empty list and look like a working lens over an
+ * empty trash, which is the exact failure the lens exists to prevent. The
+ * unit comes back the day CnIndexPage grows an `entitySource` that can name
+ * the trash, the same condition the two entries above are waiting on.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_BEFORE = 12
+const CUSTOM_PAGE_COUNT_AFTER = 13
 
 /**
  * One page as the manifest declares it.

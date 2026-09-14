@@ -227,6 +227,23 @@
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension Period"
                     },
+                    "destructionRole": {
+                        "type": "string",
+                        "description": "The group whose members may destroy a deleted case of this type. Destroying is a second act after deleting, and it cannot be undone, so the right is named per case type: a melding and a bezwaar do not need the same seniority behind it. A case type that names no group refuses every destruction except an administrator's, which is the same answer OpenRegister's own destroy right gives.",
+                        "title": "Destroying role"
+                    },
+                    "recoveryWindowDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days a deleted case of this type can still be recovered. OpenRegister keeps the recycle state and the window, and dossiq refuses a destruction while this many days have not passed. Leave it empty to use the window the instance already applies.",
+                        "title": "Recovery window in days"
+                    },
+                    "lawfulPurposeRetention": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many months the personal data in a case of this type still has a lawful purpose after the case closes (AVG art. 5.1e). This is not the Archiefwet period: that one comes from the selectielijst through the result type, and the two are kept apart on purpose.",
+                        "title": "Lawful purpose retention in months"
+                    },
                     "publicationRequired": {
                         "type": "boolean",
                         "default": false,
@@ -1022,7 +1039,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.19.0",
+                "version": "1.20.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2155,6 +2172,12 @@
                         "format": "date",
                         "description": "Date when the archive action should be executed",
                         "title": "Archive action date"
+                    },
+                    "lawfulPurposeEndDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The day the personal data in this case stops having a lawful purpose (AVG art. 5.1e). Counted from the case's end date and the case type's own retention, never from the archive action date. The two clocks disagree on purpose, and a case that carries one date answers whichever question it was built for and gets the other one wrong.",
+                        "title": "Lawful purpose ends"
                     },
                     "archiveStatus": {
                         "type": "string",
