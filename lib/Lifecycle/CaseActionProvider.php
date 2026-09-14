@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
+use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -133,13 +134,16 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 *
 	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
+	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $transitionEngine,
 		private readonly CaseResultWriter $resultWriter,
+		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -233,8 +237,72 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			}
 		}
 
+		// OpenRegister's grants, beside dossiq's own guards (REQ-CGP-02).
+		//
+		// The two authorities answer different questions and neither replaces
+		// the other: dossiq's guards say whether this MOVE is allowed from
+		// here, OpenRegister's grants say whether this CALLER may write this
+		// object at all. A case a reader may not write offers them no move,
+		// whatever the workflow says, so a refusal from OpenRegister empties
+		// the list rather than greying it: the requirement is that an action
+		// they may not take is not offered.
+		//
+		// 🔑 The verdict is OpenRegister's, read and not derived. When it
+		// cannot be had — the app is absent, or predates openregister#3726 —
+		// the gateway answers null and the list is published exactly as it was
+		// before this change. Falling closed on an absent authority would lock
+		// every handler out of every case the day the app is disabled.
+		if ($this->refusedByOpenRegister(caseId: $caseId, userId: $caller) === true) {
+			return [];
+		}
+
 		return $actions;
 	}//end availableActions()
+
+	/**
+	 * Whether OpenRegister refuses this caller the write a move needs.
+	 *
+	 * Reads `granted` off OpenRegister's own provenance record for the write
+	 * verb and logs the rule that decided, verbatim, so the refusal is
+	 * traceable to the rule rather than to an empty screen. Nothing is merged
+	 * and nothing is stored: D-5 forbids a copy of an access decision, because
+	 * a copy is a second decision that nobody updates.
+	 *
+	 * @param string      $caseId The case uuid.
+	 * @param string|null $userId The caller, null when the session decides.
+	 *
+	 * @return bool True only when OpenRegister itself said no.
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	private function refusedByOpenRegister(string $caseId, ?string $userId): bool {
+		$action = OpenRegisterGrantsGateway::WRITE_ACTION;
+
+		$provenance = $this->grants->provenanceForCase(
+			caseId: $caseId,
+			actions: [$action],
+			userId: $userId,
+		);
+		if ($provenance === null) {
+			return false;
+		}
+
+		$record = ($provenance[$action] ?? null);
+		if (is_array($record) === false) {
+			return false;
+		}
+
+		if ($this->grants->refuses(record: $record) !== true) {
+			return false;
+		}
+
+		$this->logger->info(
+			'Dossiq case lifecycle provider: OpenRegister refuses this caller the case, so no move is offered',
+			['caseId' => $caseId, 'action' => $action, 'provenance' => $record],
+		);
+
+		return true;
+	}//end refusedByOpenRegister()
 
 	/**
 	 * Take one of the moves this provider offered.
