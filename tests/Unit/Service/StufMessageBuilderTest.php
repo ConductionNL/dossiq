@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Stuf\StufVaultService;
 use OCA\Dossiq\Service\Stuf\ZaaktypeNotMappedException;
 use OCA\Dossiq\Service\StufMessageBuilder;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -40,6 +41,8 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\StufMessageBuilder
  */
 class StufMessageBuilderTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * Builder under test.
@@ -75,7 +78,8 @@ class StufMessageBuilderTest extends TestCase {
 		parent::setUp();
 		$this->builder = new StufMessageBuilder(
 			new NullLogger(),
-			$this->createMock(StufVaultService::class)
+			$this->createMock(StufVaultService::class),
+			$this->caseDates()
 		);
 	}//end setUp()
 

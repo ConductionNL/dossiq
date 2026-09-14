@@ -31,12 +31,15 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  */
 class ThroughputTrendCalculatorTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private ThroughputTrendCalculator $calculator;
 
@@ -44,7 +47,7 @@ class ThroughputTrendCalculatorTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->calculator = new ThroughputTrendCalculator();
+		$this->calculator = new ThroughputTrendCalculator($this->caseDates());
 
 	}//end setUp()
 

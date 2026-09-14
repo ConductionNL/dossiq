@@ -261,11 +261,14 @@ class TermijnController extends Controller {
 
 		// The extension service used to take this as a raw string and parse it
 		// its own way. It is normalised here, once, before it reaches any
-		// arithmetic.
-		try {
-			$newEndDate = $this->dates->toCalendarDate($newEndDate, 'newEinddatum');
-		} catch (InvalidArgumentException $e) {
-			return $this->badRequest(msg: $e->getMessage());
+		// arithmetic. An absent value stays absent: the service owns the
+		// "a new deadline is required" rule and states it in Awb terms.
+		if ($newEndDate !== '') {
+			try {
+				$newEndDate = $this->dates->toCalendarDate($newEndDate, 'newEinddatum');
+			} catch (InvalidArgumentException $e) {
+				return $this->badRequest(msg: $e->getMessage());
+			}
 		}
 
 		try {

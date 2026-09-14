@@ -79,10 +79,12 @@ class TermijnTimerService {
 	 *
 	 * @param SettingsService $settingsService Lazy OpenRegister access.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -105,7 +107,7 @@ class TermijnTimerService {
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
-		$start = $this->dateOrNull(value: (string)($instance['startDate'] ?? ''));
+		$start = $this->dates->tryParse($instance['startDate'] ?? null);
 		if ($instanceId === '' || $start === null) {
 			return null;
 		}
@@ -375,9 +377,12 @@ class TermijnTimerService {
 	 * @return int Calendar days, at least 1 (the engine refuses 0).
 	 */
 	private function slaDaysFor(array $instance, array $definitie, DateTimeImmutable $start): int {
-		$end = $this->dateOrNull(value: (string)($instance['endDateCurrent'] ?? ''));
+		$end = $this->dates->tryParse($instance['endDateCurrent'] ?? null);
 		if ($end !== null) {
-			$startDay = new DateTimeImmutable($start->format('Y-m-d'));
+			// Both sides at day granularity in the administered zone. Reading
+			// one of them through the process zone is how a term lost a day
+			// between two servers.
+			$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
 			$days = (int)$startDay->diff($end)->days;
 			if ($end >= $startDay && $days > 0) {
 				return $days;
@@ -387,24 +392,6 @@ class TermijnTimerService {
 		return max(1, (int)($definitie['standardDurationDays'] ?? 1));
 	}//end slaDaysFor()
 
-	/**
-	 * Parse a stored date string, or null.
-	 *
-	 * @param string $value The stored value.
-	 *
-	 * @return DateTimeImmutable|null The parsed date.
-	 */
-	private function dateOrNull(string $value): ?DateTimeImmutable {
-		if (trim($value) === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return null;
-		}
-	}//end dateOrNull()
 
 	/**
 	 * Resolve the engine, or null when OpenRegister (or the timer stack) is absent.

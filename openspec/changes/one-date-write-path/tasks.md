@@ -35,14 +35,14 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   accrual clock and the day granularity comparison.
 - [x] 2.9 `DwangsomPaymentCallbackController`: its private `parseDate()`
   retires; `actualPaymentDate` goes through the normaliser.
-- [ ] 3.1 Retire the remaining private normalisers:
+- [x] 3.1 Retire the remaining private normalisers:
   `CaseEnricher::normaliseDate()`, `WorkQueueService::parseDateOnly()`,
   `TermijnTimerService::dateOrNull()`,
   `ProcessMiningService::parseDate()`,
   `ProcessMining/DwellTimeAnalyzer::parseDate()`,
   `ProcessMining/ThroughputTrendCalculator::parseDate()`,
   `BesluitMigrationService::asDateTime()`.
-- [ ] 3.2 The five StUF literals read the tenant zone:
+- [x] 3.2 The five StUF literals read the tenant zone:
   `StufMessageBuilder`, `Stuf/StufMessageHandler` (two sites),
   `Stuf/StufCaseMappingStore`, `Stuf/ContactBetrokkeneMapper` (D-4).
 - [ ] 4.1 `OneDateWritePathTest` green, and it fails on a planted private

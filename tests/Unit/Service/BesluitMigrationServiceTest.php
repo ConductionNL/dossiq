@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\BesluitMigrationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -62,6 +63,8 @@ interface BesluitMigrationObjectServiceStub {
  * duplicating on a re-run, losing the case link, and detaching too early.
  */
 final class BesluitMigrationServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * Objects written by the ObjectService stub during a run.
@@ -144,7 +147,8 @@ final class BesluitMigrationServiceTest extends TestCase {
 			$appManager,
 			$this->container(),
 			$settings,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->caseDates()
 		);
 
 	}//end service()
@@ -340,8 +344,10 @@ final class BesluitMigrationServiceTest extends TestCase {
 
 		// decidiq declares `decisionDate` as `date-time` where this app declares
 		// `date`. OpenRegister validates on write, so an unwidened value does not
-		// move the besluit at all.
-		$this->assertSame('2026-09-01T00:00:00+00:00', $written['decisionDate']);
+		// move the besluit at all. The widening is midnight in the administered
+		// zone since openspec/changes/one-date-write-path; it used to be midnight
+		// UTC, which reads as the previous evening for every Dutch reader.
+		$this->assertSame('2026-09-01T00:00:00+02:00', $written['decisionDate']);
 		$this->assertSame('2026-09-02', $written['deliveryDate'], 'a `date` target stays a date');
 		$this->assertSame('2026-09-02', $written['deliveryDate']);
 		$this->assertSame('2026-09-03', $written['publicationDate']);

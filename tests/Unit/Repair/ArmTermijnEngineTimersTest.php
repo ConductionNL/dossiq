@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Dossiq\Tests\Unit\Service\FlowTimerEngineFake;
 use OCP\Migration\IOutput;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -47,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  */
 class ArmTermijnEngineTimersTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private FlowTimerEngineFake $engine;
 	private ArmTermijnEngineTimers $step;
@@ -77,7 +80,7 @@ class ArmTermijnEngineTimersTest extends TestCase {
 		$this->step = new ArmTermijnEngineTimers(
 			$settings,
 			$termService,
-			new TermijnTimerService($settings, $logger),
+			new TermijnTimerService($settings, $logger, $this->caseDates()),
 			$logger
 		);
 

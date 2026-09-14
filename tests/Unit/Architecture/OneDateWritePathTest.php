@@ -160,6 +160,19 @@ class OneDateWritePathTest extends TestCase {
 	];
 
 	/**
+	 * The files allowed to name an IANA identifier as a literal.
+	 *
+	 * The tenant allow-list IS the administered set: it states which zones an
+	 * administrator may choose. Naming them there is the opposite of hard
+	 * coding one in a write path.
+	 *
+	 * @var array<int, string>
+	 */
+	private const ZONE_LITERAL_EXEMPT = [
+		'Service/TenantConfigurationService.php',
+	];
+
+	/**
 	 * A private method whose name reads like a date helper.
 	 *
 	 * @var string
@@ -266,7 +279,9 @@ class OneDateWritePathTest extends TestCase {
 	public function testNoClassNamesATimeZoneLiteral(): void {
 		$violations = [];
 		foreach ($this->libraryFiles() as $relative => $source) {
-			if ($relative === self::NORMALISER) {
+			if ($relative === self::NORMALISER
+				|| in_array($relative, self::ZONE_LITERAL_EXEMPT, true) === true
+			) {
 				continue;
 			}
 

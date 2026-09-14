@@ -75,7 +75,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$timerService = new TermijnTimerService($settings, $logger);
+		$timerService = new TermijnTimerService($settings, $logger, $this->caseDates());
 		$this->termService = new TermijnService($settings, $logger, $timerService);
 		$this->pauseService = new DeadlinePauseService($this->termService, $timerService);
 		$this->extService = new DeadlineExtensionService($this->termService, $this->caseDates(), $timerService);
