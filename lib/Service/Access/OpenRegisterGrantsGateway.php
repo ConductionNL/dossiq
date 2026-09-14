@@ -263,6 +263,17 @@ class OpenRegisterGrantsGateway {
 	 * that carries no block of its own. So a lookup that fails degrades to the
 	 * broader answer rather than to no answer at all.
 	 *
+	 * ⚠️ THIS IS A SECOND READ OF A CASE OPENREGISTER HAS USUALLY JUST READ,
+	 * and it is paid only where it buys something. It is reached after both
+	 * guards in `permissionHandler()`, so an OpenRegister without the
+	 * provenance reader never gets here at all, which is most instances today.
+	 * The object level cannot be skipped on the ones that do: an object block
+	 * is exactly where a share on one case lives, and reporting the schema
+	 * answer as though it were the whole answer would name the wrong rule. If
+	 * this shows up in a profile, the fix is an OpenRegister that carries the
+	 * permitted actions on the object it already read (its tasks 7.1 to 7.3),
+	 * not a copy of the grant kept here.
+	 *
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return object|null The object entity, or null.
