@@ -572,7 +572,7 @@ $extra = [
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
 
-    // inbound-mail-filters: the intake log as a surface, and the two named acts
+    // Inbound-mail-filters: the intake log as a surface, and the two named acts
     // a handler can perform on a message that should not have come to us. Every
     // one of these is gated on the intake role in the controller body, because
     // the log holds the original of every message the mailbox received.
