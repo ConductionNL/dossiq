@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
@@ -199,6 +200,7 @@ class BeschikkingServiceTest extends TestCase {
 			new MandaatVerifier($settings, $logger),
 			new AuditPacketBuilder($settings, $signingAdapter, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
+			$this->createMock(CoordinatorRequirement::class),
 		);
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.

@@ -239,6 +239,12 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->onderteken($id, $tspProvider, $uid);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// The coordinator seat, and anything else that refuses with a rule
+			// rather than a sentinel. Caught BEFORE RuntimeException, which
+			// RefusedException extends: the other order would answer every
+			// refusal with mapRuntime()'s default 500.
+			return $this->refused(op: 'onderteken', e: $e);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'onderteken', e: $e);
 		} catch (\Throwable $e) {

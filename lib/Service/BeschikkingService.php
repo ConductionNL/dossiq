@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use RuntimeException;
 
 /**
@@ -68,6 +69,7 @@ class BeschikkingService {
 	 * @param MandaatVerifier $mandateVerifier Mandaat resolution + verification.
 	 * @param AuditPacketBuilder $auditPacket Verifiable audit-pakket assembly.
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
+	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
 	 *
 	 * @return void
 	 */
@@ -81,6 +83,7 @@ class BeschikkingService {
 		private readonly MandaatVerifier $mandateVerifier,
 		private readonly AuditPacketBuilder $auditPacket,
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
+		private readonly CoordinatorRequirement $coordinator,
 	) {
 	}//end __construct()
 
@@ -220,6 +223,12 @@ class BeschikkingService {
 		if ($this->stateMachine->validateTransition($current, 'signed') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
+
+		// BEFORE THE TSP IS CALLED, not after. A signature is minted at a
+		// provider and countersigned onto the file; refusing afterwards would
+		// leave a signed document behind a refused act, which is worse than
+		// either outcome on its own.
+		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
