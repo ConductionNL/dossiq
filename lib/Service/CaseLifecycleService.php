@@ -70,6 +70,8 @@ class CaseLifecycleService {
 	 * @param DeadlinePauseService $pauseService Opschorten / hervatten (Awb 4:5)
 	 * @param DeadlineExtensionService $extensionService Verlengen (Awb 4:14)
 	 * @param LoggerInterface $logger Logger
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 *
 	 * @return void
 	 */

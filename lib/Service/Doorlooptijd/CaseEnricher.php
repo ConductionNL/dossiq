@@ -50,6 +50,8 @@ class CaseEnricher {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger Logger, for unparseable caseType durations.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 *
 	 * @return void
 	 */

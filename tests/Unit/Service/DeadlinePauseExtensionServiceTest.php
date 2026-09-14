@@ -51,6 +51,11 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
+	/**
+	 * The engine's calendar resolver, seeded from `$closedDates`.
+	 *
+	 * @var WorkingCalendarServiceFake
+	 */
 	private WorkingCalendarServiceFake $calendars;
 
 	/**

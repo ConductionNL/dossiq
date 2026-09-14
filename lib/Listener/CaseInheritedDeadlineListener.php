@@ -71,6 +71,8 @@ class CaseInheritedDeadlineListener implements IEventListener {
 	 * @param SettingsService  $settingsService Schema slug bridge.
 	 * @param CaseTypeResolver $resolver        The effective blueprint of a case type.
 	 * @param LoggerInterface  $logger          Structured logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

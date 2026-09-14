@@ -53,6 +53,8 @@ class QuickActionService {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param ContactMomentService $contactMomentService The contactmoment service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

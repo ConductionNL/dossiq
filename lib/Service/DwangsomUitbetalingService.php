@@ -54,6 +54,8 @@ class DwangsomUitbetalingService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

@@ -44,7 +44,18 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
 	private NoticeOfDefaultService $service;
+	/**
+	 * The settings mock, reused when a second service is built on a calendar.
+	 *
+	 * @var SettingsService
+	 */
 	private SettingsService $settings;
+
+	/**
+	 * The logger, reused for the same reason.
+	 *
+	 * @var LoggerInterface
+	 */
 	private LoggerInterface $logger;
 
 	protected function setUp(): void {

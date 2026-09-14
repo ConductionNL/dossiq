@@ -36,10 +36,32 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Tests\Unit\Architecture\TermCalendarScanner
  */
 class EveryTermOnTheCalendarTest extends TestCase {
+	/**
+	 * The app root, so the scanner walks the real tree.
+	 *
+	 * @var string
+	 */
 	private string $root;
+
+	/**
+	 * The date-arithmetic audit this test enforces.
+	 *
+	 * @var string
+	 */
 	private string $auditPath;
+
+	/**
+	 * The allowlist of statutory files not yet on the calendar.
+	 *
+	 * @var string
+	 */
 	private string $allowlistPath;
 
+	/**
+	 * Resolve the paths the scanner reads.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->root = dirname(__DIR__, 3);
 		$this->auditPath = $this->root . '/docs/research/date-arithmetic-audit-2026-09-14.md';

@@ -43,9 +43,25 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class TermijnTimerRollTest extends TestCase {
+	/**
+	 * The engine's calendar resolver.
+	 *
+	 * @var WorkingCalendarServiceFake
+	 */
 	private WorkingCalendarServiceFake $calendars;
+
+	/**
+	 * The engine's business-time calculator, whose walk is the roll.
+	 *
+	 * @var SlaCalculatorFake
+	 */
 	private SlaCalculatorFake $calculator;
 
+	/**
+	 * Seed the administered calendar these cases roll against.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		// The administered calendar closes on Tweede Paasdag 2027 and on
 		// Koningsdag 2026. Nothing else: a term that rolls here rolled
