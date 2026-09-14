@@ -76,8 +76,8 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->dispatcher = $this->createMock(IEventDispatcher::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->sent = [];
 		$this->dispatcher->method('dispatchTyped')->willReturnCallback(
 			function (Event $event): void {
@@ -129,15 +129,15 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReportIsSentWithTheAppKeyStatusAndMessage(): void {
-		$this->assertTrue($this->service()->record(key: 'mailbox', status: 'error', message: 'Connection refused'));
+		$this->assertTrue(condition: $this->service()->record(key: 'mailbox', status: 'error', message: 'Connection refused'));
 
-		$this->assertCount(1, $this->sent);
+		$this->assertCount(expectedCount: 1, haystack: $this->sent);
 		$event = $this->sent[0];
-		$this->assertInstanceOf(ConnectionStatusReportedEvent::class, $event);
-		$this->assertSame('dossiq', $event->app);
-		$this->assertSame('mailbox', $event->key);
-		$this->assertSame('error', $event->status);
-		$this->assertSame('Connection refused', $event->message);
+		$this->assertInstanceOf(expected: ConnectionStatusReportedEvent::class, actual: $event);
+		$this->assertSame(expected: 'dossiq', actual: $event->app);
+		$this->assertSame(expected: 'mailbox', actual: $event->key);
+		$this->assertSame(expected: 'error', actual: $event->status);
+		$this->assertSame(expected: 'Connection refused', actual: $event->message);
 	}//end testAReportIsSentWithTheAppKeyStatusAndMessage()
 
 	/**
@@ -149,8 +149,8 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheEventNamesAreTheContractNames(): void {
-		$this->assertSame(ConnectionStatusReportedEvent::class, IntegrationStatusService::STATUS_EVENT);
-		$this->assertSame(ConnectionRefreshRequestedEvent::class, IntegrationStatusService::REFRESH_EVENT);
+		$this->assertSame(expected: ConnectionStatusReportedEvent::class, actual: IntegrationStatusService::STATUS_EVENT);
+		$this->assertSame(expected: ConnectionRefreshRequestedEvent::class, actual: IntegrationStatusService::REFRESH_EVENT);
 	}//end testTheEventNamesAreTheContractNames()
 
 	/**
@@ -164,10 +164,10 @@ class IntegrationStatusServiceTest extends TestCase {
 	public function testTheLookupAnswersNullForAnAbsentClass(): void {
 		$method = new ReflectionMethod(IntegrationStatusService::class, 'resolveEventClass');
 
-		$this->assertNull($method->invoke($this->service(), 'OCA\\Nobody\\Event\\ShipsThisEvent'));
+		$this->assertNull(actual: $method->invoke($this->service(), 'OCA\\Nobody\\Event\\ShipsThisEvent'));
 		$this->assertSame(
-			'\\' . IntegrationStatusService::STATUS_EVENT,
-			$method->invoke($this->service(), IntegrationStatusService::STATUS_EVENT)
+			expected: '\\' . IntegrationStatusService::STATUS_EVENT,
+			actual: $method->invoke($this->service(), IntegrationStatusService::STATUS_EVENT)
 		);
 	}//end testTheLookupAnswersNullForAnAbsentClass()
 
@@ -186,8 +186,8 @@ class IntegrationStatusServiceTest extends TestCase {
 
 		$service = $this->serviceWithoutIntegriq();
 
-		$this->assertFalse($service->record(key: 'mailbox', status: 'configured', message: 'ok'));
-		$this->assertSame([], $service->recordFromSave(saved: ['identification_method' => 'both']));
+		$this->assertFalse(condition: $service->record(key: 'mailbox', status: 'configured', message: 'ok'));
+		$this->assertSame(expected: [], actual: $service->recordFromSave(saved: ['identification_method' => 'both']));
 	}//end testWithoutIntegriqNothingIsSentOrLogged()
 
 	/**
@@ -197,10 +197,10 @@ class IntegrationStatusServiceTest extends TestCase {
 	 */
 	public function testAnUnknownKeyIsRefused(): void {
 		$this->logger->expects($this->once())->method('warning')
-			->with($this->stringContains('unknown connection key'), ['key' => 'sharepoint']);
+			->with($this->stringContains(string: 'unknown connection key'), ['key' => 'sharepoint']);
 
-		$this->assertFalse($this->service()->record(key: 'sharepoint', status: 'configured'));
-		$this->assertSame([], $this->sent);
+		$this->assertFalse(condition: $this->service()->record(key: 'sharepoint', status: 'configured'));
+		$this->assertSame(expected: [], actual: $this->sent);
 	}//end testAnUnknownKeyIsRefused()
 
 	/**
@@ -211,14 +211,14 @@ class IntegrationStatusServiceTest extends TestCase {
 	public function testStatusMustBeOneOfTheFive(): void {
 		$service = $this->service();
 
-		$this->assertFalse($service->record(key: 'mailbox', status: 'degraded'));
-		$this->assertSame([], $this->sent);
+		$this->assertFalse(condition: $service->record(key: 'mailbox', status: 'degraded'));
+		$this->assertSame(expected: [], actual: $this->sent);
 
 		foreach (IntegrationStatusService::STATUSES as $status) {
-			$this->assertTrue($service->record(key: 'mailbox', status: $status));
+			$this->assertTrue(condition: $service->record(key: 'mailbox', status: $status));
 		}
 
-		$this->assertCount(count(IntegrationStatusService::STATUSES), $this->sent);
+		$this->assertCount(expectedCount: count(IntegrationStatusService::STATUSES), haystack: $this->sent);
 	}//end testStatusMustBeOneOfTheFive()
 
 	/**
@@ -227,15 +227,15 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAThrowingListenerNeverEscapes(): void {
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willThrowException(new RuntimeException('registry down'));
 		$this->logger->expects($this->atLeastOnce())->method('warning')
-			->with($this->stringContains('could not send'), $this->anything());
+			->with($this->stringContains(string: 'could not send'), $this->anything());
 
 		$service = new IntegrationStatusService(eventDispatcher: $dispatcher, logger: $this->logger);
 
-		$this->assertFalse($service->record(key: 'stuf', status: 'configured', message: 'Gemeente Zuid'));
-		$this->assertSame([], $service->recordFromSave(saved: ['identification_method' => 'both']));
+		$this->assertFalse(condition: $service->record(key: 'stuf', status: 'configured', message: 'Gemeente Zuid'));
+		$this->assertSame(expected: [], actual: $service->recordFromSave(saved: ['identification_method' => 'both']));
 	}//end testAThrowingListenerNeverEscapes()
 
 	/**
@@ -249,12 +249,12 @@ class IntegrationStatusServiceTest extends TestCase {
 	public function testASaveRequestsARefreshForTheTouchedConnection(): void {
 		$refreshed = $this->service()->recordFromSave(saved: ['identification_method' => 'both']);
 
-		$this->assertSame(['kcc'], $refreshed);
-		$this->assertCount(1, $this->sent);
+		$this->assertSame(expected: ['kcc'], actual: $refreshed);
+		$this->assertCount(expectedCount: 1, haystack: $this->sent);
 		$event = $this->sent[0];
-		$this->assertInstanceOf(ConnectionRefreshRequestedEvent::class, $event);
-		$this->assertSame('dossiq', $event->app);
-		$this->assertSame('kcc', $event->key);
+		$this->assertInstanceOf(expected: ConnectionRefreshRequestedEvent::class, actual: $event);
+		$this->assertSame(expected: 'dossiq', actual: $event->app);
+		$this->assertSame(expected: 'kcc', actual: $event->key);
 	}//end testASaveRequestsARefreshForTheTouchedConnection()
 
 	/**
@@ -266,7 +266,7 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAClearedKeyStillRequestsARefresh(): void {
-		$this->assertSame(['berichtenbox'], $this->service()->recordFromSave(saved: ['berichtenbox_adapter' => '']));
+		$this->assertSame(expected: ['berichtenbox'], actual: $this->service()->recordFromSave(saved: ['berichtenbox_adapter' => '']));
 	}//end testAClearedKeyStillRequestsARefresh()
 
 	/**
@@ -279,8 +279,8 @@ class IntegrationStatusServiceTest extends TestCase {
 			saved: ['case_schema' => 'case', 'dwangsom_callback_secret' => 's3cret']
 		);
 
-		$this->assertSame(['zgw', 'financial'], $refreshed);
-		$this->assertCount(2, $this->sent);
+		$this->assertSame(expected: ['zgw', 'financial'], actual: $refreshed);
+		$this->assertCount(expectedCount: 2, haystack: $this->sent);
 	}//end testASaveTouchingTwoSectionsRefreshesBoth()
 
 	/**
@@ -289,8 +289,8 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testASaveOnlyTouchesTheSectionsItNamed(): void {
-		$this->assertSame([], $this->service()->recordFromSave(saved: ['advice_reminder_days' => '7']));
-		$this->assertSame([], $this->sent);
+		$this->assertSame(expected: [], actual: $this->service()->recordFromSave(saved: ['advice_reminder_days' => '7']));
+		$this->assertSame(expected: [], actual: $this->sent);
 	}//end testASaveOnlyTouchesTheSectionsItNamed()
 
 	/**
@@ -300,7 +300,7 @@ class IntegrationStatusServiceTest extends TestCase {
 	 */
 	public function testEverySaveMappedKeyIsADeclaredConnection(): void {
 		foreach (array_keys(IntegrationStatusService::SAVE_REQUIRED_KEYS) as $key) {
-			$this->assertContains($key, IntegrationStatusService::KEYS);
+			$this->assertContains(needle: $key, haystack: IntegrationStatusService::KEYS);
 		}
 	}//end testEverySaveMappedKeyIsADeclaredConnection()
 
@@ -312,8 +312,8 @@ class IntegrationStatusServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testProbedConnectionsAreNotDrivenBySaves(): void {
-		$this->assertArrayNotHasKey('stuf', IntegrationStatusService::SAVE_REQUIRED_KEYS);
-		$this->assertArrayNotHasKey('mailbox', IntegrationStatusService::SAVE_REQUIRED_KEYS);
-		$this->assertArrayNotHasKey('store', IntegrationStatusService::SAVE_REQUIRED_KEYS);
+		$this->assertArrayNotHasKey(key: 'stuf', array: IntegrationStatusService::SAVE_REQUIRED_KEYS);
+		$this->assertArrayNotHasKey(key: 'mailbox', array: IntegrationStatusService::SAVE_REQUIRED_KEYS);
+		$this->assertArrayNotHasKey(key: 'store', array: IntegrationStatusService::SAVE_REQUIRED_KEYS);
 	}//end testProbedConnectionsAreNotDrivenBySaves()
 }//end class

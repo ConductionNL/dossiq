@@ -349,12 +349,12 @@ class AdapterHonestyTest extends TestCase {
 		foreach ($expected as $key => $configKey) {
 			$adapter = ($this->declaredConnection(key: $key)['adapter'] ?? []);
 
-			$this->assertSame($configKey, ($adapter['configKey'] ?? null), $key . ' must name the key the registrar reads');
-			$this->assertStringContainsStringIgnoringCase('mock', (string)($adapter['simulatedMessage'] ?? ''));
-			$this->assertContains($key, IntegrationStatusService::KEYS);
+			$this->assertSame(expected: $configKey, actual: ($adapter['configKey'] ?? null), message: $key . ' must name the key the registrar reads');
+			$this->assertStringContainsStringIgnoringCase(needle: 'mock', haystack: (string)($adapter['simulatedMessage'] ?? ''));
+			$this->assertContains(needle: $key, haystack: IntegrationStatusService::KEYS);
 		}
 
-		$this->assertContains('simulated', IntegrationStatusService::STATUSES);
+		$this->assertContains(needle: 'simulated', haystack: IntegrationStatusService::STATUSES);
 	}//end testAnUnconfiguredAdapterSeamReadsAsSimulated()
 
 	/**
@@ -375,13 +375,13 @@ class AdapterHonestyTest extends TestCase {
 		$message = (string)($this->declaredConnection(key: 'templates')['adapter']['simulatedMessage'] ?? '');
 
 		$this->assertStringContainsString(
-			FilinqTemplateEngineAdapter::class,
-			$message,
-			'the row must name the adapter an admin is supposed to paste'
+			needle: FilinqTemplateEngineAdapter::class,
+			haystack: $message,
+			message: 'the row must name the adapter an admin is supposed to paste'
 		);
 		$this->assertTrue(
-			is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
-			'the named class must implement the seam, or ConfiguredAdapter will refuse it'
+			condition: is_a(FilinqTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class, true),
+			message: 'the named class must implement the seam, or ConfiguredAdapter will refuse it'
 		);
 	}//end testTheTemplatesRowNamesAnAdapterThatCanServeTheSeam()
 
@@ -394,7 +394,7 @@ class AdapterHonestyTest extends TestCase {
 	 */
 	private function declaredConnection(string $key): array {
 		$raw = file_get_contents(__DIR__ . '/../../../lib/Settings/connections.json');
-		$this->assertIsString($raw);
+		$this->assertIsString(actual: $raw);
 		$declaration = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
 
 		foreach ($declaration['connections'] as $connection) {
@@ -403,6 +403,6 @@ class AdapterHonestyTest extends TestCase {
 			}
 		}
 
-		$this->fail('connections.json declares no ' . $key);
+		$this->fail(message: 'connections.json declares no ' . $key);
 	}//end declaredConnection()
 }//end class

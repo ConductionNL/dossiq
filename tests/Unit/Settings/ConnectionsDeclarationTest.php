@@ -72,10 +72,10 @@ class ConnectionsDeclarationTest extends TestCase {
 	 */
 	private function declaration(): array {
 		$raw = file_get_contents($this->root() . '/lib/Settings/connections.json');
-		$this->assertIsString($raw, 'lib/Settings/connections.json must exist');
+		$this->assertIsString(actual: $raw, message: 'lib/Settings/connections.json must exist');
 
 		$decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-		$this->assertIsArray($decoded);
+		$this->assertIsArray(actual: $decoded);
 
 		return $decoded;
 	}//end declaration()
@@ -105,9 +105,9 @@ class ConnectionsDeclarationTest extends TestCase {
 		$declaration = $this->declaration();
 		$infoXml = simplexml_load_file($this->root() . '/appinfo/info.xml');
 
-		$this->assertNotFalse($infoXml);
-		$this->assertSame((string)$infoXml->id, $declaration['app']);
-		$this->assertSame(['app', 'connections'], array_keys($declaration));
+		$this->assertNotFalse(condition: $infoXml);
+		$this->assertSame(expected: (string)$infoXml->id, actual: $declaration['app']);
+		$this->assertSame(expected: ['app', 'connections'], actual: array_keys($declaration));
 	}//end testTheFileNamesThisApp()
 
 	/**
@@ -121,8 +121,8 @@ class ConnectionsDeclarationTest extends TestCase {
 	public function testTheTwelveKeysAreTheOnesTheServiceAccepts(): void {
 		$keys = array_column($this->declaration()['connections'], 'key');
 
-		$this->assertSame(IntegrationStatusService::KEYS, $keys);
-		$this->assertCount(12, $keys);
+		$this->assertSame(expected: IntegrationStatusService::KEYS, actual: $keys);
+		$this->assertCount(expectedCount: 12, haystack: $keys);
 	}//end testTheTwelveKeysAreTheOnesTheServiceAccepts()
 
 	/**
@@ -135,11 +135,15 @@ class ConnectionsDeclarationTest extends TestCase {
 		foreach ($this->declaration()['connections'] as $connection) {
 			$key = (string)$connection['key'];
 
-			$this->assertSame([], array_diff(array_keys($connection), self::ALLOWED_FIELDS), $key . ' carries a field D2 does not allow');
-			$this->assertMatchesRegularExpression('/^[a-z0-9]+(-[a-z0-9]+)*$/', $key);
-			$this->assertNotSame('', trim((string)($connection['title'] ?? '')), $key . ' has no title');
-			$this->assertIsInt($connection['order']);
-			$this->assertGreaterThan($previousOrder, $connection['order'], $key . ' breaks the page order');
+			$this->assertSame(
+				expected: [],
+				actual: array_diff(array_keys($connection), self::ALLOWED_FIELDS),
+				message: $key . ' carries a field D2 does not allow'
+			);
+			$this->assertMatchesRegularExpression(pattern: '/^[a-z0-9]+(-[a-z0-9]+)*$/', string: $key);
+			$this->assertNotSame(expected: '', actual: trim((string)($connection['title'] ?? '')), message: $key . ' has no title');
+			$this->assertIsInt(actual: $connection['order']);
+			$this->assertGreaterThan(expected: $previousOrder, actual: $connection['order'], message: $key . ' breaks the page order');
 			$previousOrder = $connection['order'];
 		}
 	}//end testEveryEntryHasTheShapeIntegriqValidates()
@@ -152,8 +156,8 @@ class ConnectionsDeclarationTest extends TestCase {
 	public function testNoTextCarriesAnEmDash(): void {
 		$raw = (string)file_get_contents($this->root() . '/lib/Settings/connections.json');
 
-		$this->assertStringNotContainsString("\u{2014}", $raw);
-		$this->assertStringNotContainsString(' -- ', $raw);
+		$this->assertStringNotContainsString(needle: "\u{2014}", haystack: $raw);
+		$this->assertStringNotContainsString(needle: ' -- ', haystack: $raw);
 	}//end testNoTextCarriesAnEmDash()
 
 	/**
@@ -174,14 +178,18 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 
 			$url = (string)$connection['settingsUrl'];
-			$this->assertStringStartsWith('/settings/admin/dossiq#section-', $url, $connection['key']);
+			$this->assertStringStartsWith(prefix: '/settings/admin/dossiq#section-', string: $url, message: $connection['key']);
 			$anchor = substr($url, strpos($url, '#') + 1);
-			$this->assertStringContainsString('id="' . $anchor . '"', $adminRoot, $connection['key'] . ' links to a missing section');
+			$this->assertStringContainsString(
+				needle: 'id="' . $anchor . '"',
+				haystack: $adminRoot,
+				message: $connection['key'] . ' links to a missing section'
+			);
 			$linked++;
 		}
 
-		$this->assertSame(7, $linked);
-		$this->assertStringNotContainsString('id="section-pdok"', $adminRoot);
+		$this->assertSame(expected: 7, actual: $linked);
+		$this->assertStringNotContainsString(needle: 'id="section-pdok"', haystack: $adminRoot);
 	}//end testEverySettingsLinkPointsAtAnExistingSection()
 
 	/**
@@ -207,7 +215,7 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(IntegrationStatusService::SAVE_REQUIRED_KEYS, $declared);
+		$this->assertSame(expected: IntegrationStatusService::SAVE_REQUIRED_KEYS, actual: $declared);
 	}//end testTheSaveMapMatchesTheDeclaredConfigKeys()
 
 	/**
@@ -222,8 +230,8 @@ class ConnectionsDeclarationTest extends TestCase {
 		$byKey = $this->connectionsByKey();
 
 		foreach (['stuf', 'mailbox', 'store'] as $key) {
-			$this->assertArrayNotHasKey('requiredConfig', $byKey[$key]);
-			$this->assertArrayNotHasKey('adapter', $byKey[$key]);
+			$this->assertArrayNotHasKey(key: 'requiredConfig', array: $byKey[$key]);
+			$this->assertArrayNotHasKey(key: 'adapter', array: $byKey[$key]);
 		}
 	}//end testProbedConnectionsArriveAsReports()
 
@@ -241,9 +249,9 @@ class ConnectionsDeclarationTest extends TestCase {
 			static fn (array $connection): bool => ($connection['available'] ?? true) === false
 		);
 
-		$this->assertSame(['kvk'], array_column($unavailable, 'key'));
+		$this->assertSame(expected: ['kvk'], actual: array_column($unavailable, 'key'));
 		$message = (string)$this->connectionsByKey()['kvk']['unavailableMessage'];
-		$this->assertMatchesRegularExpression('/built and bound/i', $message);
-		$this->assertDoesNotMatchRegularExpression('/not built/i', $message);
+		$this->assertMatchesRegularExpression(pattern: '/built and bound/i', string: $message);
+		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
 }//end class
