@@ -259,11 +259,11 @@ class UnreadTriggerService {
 				. 'the case type behaves as if it had named nothing.';
 		}
 
-		if ($this->triggersFor(caseType: $caseType) === self::DEFAULTS && $unknown === []) {
-			return $warnings;
-		}
-
-		if (in_array('status', $declared, true) === false) {
+		// The EFFECTIVE triggers, never the declared names. A case type whose
+		// whole declaration was typos falls back to the default, which does
+		// watch the status, and warning that it does not would send somebody
+		// looking for a second fault that is not there.
+		if (in_array('status', $this->triggersFor(caseType: $caseType), true) === false) {
 			$warnings[] = 'A case of this type does not read unread when its status moves. '
 				. 'A handler watching the list will not see it change.';
 		}

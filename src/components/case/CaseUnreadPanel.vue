@@ -64,7 +64,7 @@
 <script>
 import { showError } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton } from '@nextcloud/vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import { fetchReadState, markRead, markUnread } from '../../services/readStateApi.js'
 
 /**
@@ -157,7 +157,7 @@ export default {
 				return t('dossiq', 'New since you last looked:')
 			}
 
-			return t('dossiq', 'This case changed since you last looked.')
+			return t('dossiq', 'You had not seen this case yet.')
 		},
 
 		/** The label of the put-it-back gesture. */

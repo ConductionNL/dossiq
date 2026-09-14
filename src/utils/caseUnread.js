@@ -56,7 +56,7 @@ export async function markCaseUnread({ item }) {
 
 	try {
 		await markUnread(caseId)
-		showSuccess(t('dossiq', 'This case reads unread again.'))
+		showSuccess(t('dossiq', 'You will see this as unread again.'))
 		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
@@ -86,7 +86,7 @@ export async function markCaseRead({ item }) {
 
 	try {
 		await markRead(caseId)
-		showSuccess(t('dossiq', 'This case reads read.'))
+		showSuccess(t('dossiq', 'You have marked this case read.'))
 		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
