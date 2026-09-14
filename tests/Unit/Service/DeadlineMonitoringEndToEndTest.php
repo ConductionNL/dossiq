@@ -102,9 +102,11 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
 			new DeadlineEscalationService(
-				$this->termService,
-				$this->createMock(CasePriorityRaiseService::class),
-				$logger
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
 			),
 			$this->calcService,
 			$settings,

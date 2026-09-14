@@ -78,9 +78,11 @@ class TermijnTimerFiredListenerTest extends TestCase {
 		$this->listener = new TermijnTimerFiredListener(
 			$this->termService,
 			new DeadlineEscalationService(
-				$this->termService,
-				$this->createMock(CasePriorityRaiseService::class),
-				$logger
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
 			),
 			new DwangsomCalculationService($settings, $logger),
 			$settings,

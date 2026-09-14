@@ -137,7 +137,8 @@
                                         "medium",
                                         "high"
                                     ],
-                                    "title": "Impact"
+                                    "title": "Impact",
+                                    "description": "The impact half of the pair this cell answers for."
                                 },
                                 "urgency": {
                                     "type": "string",
@@ -146,7 +147,8 @@
                                         "medium",
                                         "high"
                                     ],
-                                    "title": "Urgency"
+                                    "title": "Urgency",
+                                    "description": "The urgency half of the pair this cell answers for."
                                 },
                                 "priority": {
                                     "type": "string",
@@ -156,7 +158,8 @@
                                         "high",
                                         "urgent"
                                     ],
-                                    "title": "Priority"
+                                    "title": "Priority",
+                                    "description": "The priority a case of this type takes for that pair. Leave a cell undeclared and the instance default answers it."
                                 }
                             },
                             "required": [
