@@ -46,19 +46,20 @@ use OCP\Settings\IDelegatedSettings;
  */
 class EmailSettings implements IDelegatedSettings {
 	/**
-	 * Shared-mailbox IMAP + poller config keys this section manages.
+	 * Intake mailbox and poller config keys this section manages.
 	 *
-	 * Mirrors EmailTemplateController::IMAP_KEYS. The password key is
-	 * stored sensitive and never delegated as a readable value.
+	 * Mirrors EmailTemplateController::IMAP_KEYS. There is no password key any
+	 * more: Nextcloud Mail holds the account and the credential, so a delegated
+	 * admin here picks an account and names a folder and never sees a secret.
 	 *
 	 * @var string[]
 	 */
 	private const MANAGED_KEYS = [
-		'email_imap_host',
-		'email_imap_port',
-		'email_imap_encryption',
-		'email_imap_username',
+		'email_mail_account_id',
 		'email_imap_folder',
+		'email_intake_blocklist',
+		'email_intake_junk_rules',
+		'email_intake_role',
 		'email_transport',
 		'email_poll_interval',
 		'email_poll_batch_size',
@@ -143,9 +144,10 @@ class EmailSettings implements IDelegatedSettings {
 	/**
 	 * App config keys an authorized (delegated) admin may manage.
 	 *
-	 * The sensitive `email_imap_password` is intentionally excluded from the
-	 * delegatable set — it is written via the controller with the sensitive
-	 * flag and never surfaced as a readable delegated value.
+	 * There is no sensitive key left to exclude. dossiq used to store a
+	 * mailbox password here and hold it out of the delegatable set; Nextcloud
+	 * Mail owns the account and the credential now, so what a delegated admin
+	 * manages is an account id, a folder name and the intake policy knobs.
 	 *
 	 * @return array<string,string[]> Map of appId to allowed config keys.
 	 *

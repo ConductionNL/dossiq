@@ -72,6 +72,8 @@ class SchemaSlugMap {
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
 		'customerContact' => 'customer_contact_schema',
+		// One row per message the mailbox processed (inbound-mail-filters).
+		'mailIntakeEntry' => 'mail_intake_entry_schema',
 		'decisionDocument' => 'decision_document_schema',
 		'dispatch' => 'dispatch_schema',
 		'document' => 'document_schema',
