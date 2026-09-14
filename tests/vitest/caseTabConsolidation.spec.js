@@ -228,12 +228,20 @@ describe('the surfaces that read in exactly one chrome', () => {
 		},
 	)
 
-	it('leaves the sidebar the three tabs that have no strip counterpart', () => {
-		// History, Sharing and Tags duplicate nothing, so they stay. Asserted
-		// exactly: a later change that empties the sidebar, or refills it, has to
-		// say so here rather than drift.
+	it('leaves the sidebar the tabs that have no strip counterpart', () => {
+		// History, Access, Sharing and Tags duplicate nothing, so they stay.
+		// Asserted exactly: a later change that empties the sidebar, or refills
+		// it, has to say so here rather than drift.
+		//
+		// `access` arrived with case-grants-name-their-source: who holds which
+		// right on this case and where each grant came from, read from
+		// OpenRegister. It is saying so here, which is what this assertion is
+		// for. It has no strip counterpart and duplicates nothing: the strip
+		// carries what has HAPPENED to the case, and this carries who may act
+		// on it.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
+			'access',
 			'sharing',
 			'tags',
 		])
