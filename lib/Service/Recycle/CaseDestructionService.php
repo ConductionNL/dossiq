@@ -153,6 +153,11 @@ class CaseDestructionService {
 	 *
 	 * @throws RuntimeException One of {@see self::REFUSALS}.
 	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The flag is the waiver
+	 * itself, not a mode switch: destroying inside the recovery window is the
+	 * SAME act with the window explicitly set aside, and a second method would
+	 * duplicate the role check, both clocks and the record to express it.
+	 *
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
 	public function destroy(string $caseId, bool $waiveWindow = false): array {
@@ -172,7 +177,7 @@ class CaseDestructionService {
 
 		$scope = $this->destroyScope(entity: $entity);
 		$record = $this->record(entity: $entity, scope: $scope, window: $window, waived: $waiveWindow);
-		$this->purge(caseId: $caseId, entity: $entity);
+		$this->purge(caseId: $caseId);
 
 		return [
 			'success' => true,
@@ -413,13 +418,12 @@ class CaseDestructionService {
 	 * over-recorded destruction rather than an unrecorded one.
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param object $entity OpenRegister's object entity.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When OpenRegister is not available.
 	 */
-	private function purge(string $caseId, object $entity): void {
+	private function purge(string $caseId): void {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('openregister_unavailable');
@@ -479,12 +483,20 @@ class CaseDestructionService {
 			return [];
 		}
 
+		// The catch LOGS and does not answer. An empty case type means "no
+		// destroying role is declared", which refuses; so does an unreadable
+		// one, but the two are different facts and the log says which happened.
+		$caseType = [];
 		try {
-			return $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId);
+			$caseType = $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: could not read the case type of a deleted case: ' . $e->getMessage());
-			return [];
+			$this->logger->warning(
+				'Dossiq: the case type of a deleted case could not be read, so nothing may destroy it',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
 		}
+
+		return $caseType;
 	}//end caseType()
 
 	/**

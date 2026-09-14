@@ -42,7 +42,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Recycle;
 
 use DateTime;
-use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
@@ -92,25 +91,16 @@ class CaseRecycleService {
 	public const PAGE_SIZE = 50;
 
 	/**
-	 * The retention OpenRegister falls back to when nothing states one.
-	 *
-	 * Mirrors `DeletionWindowService::DEFAULT_RETENTION_DAYS`. It is the
-	 * fallback for a row deleted before that service shipped, which carries a
-	 * `purgeDate` and no `destroyableFrom`.
-	 *
-	 * @var int
-	 */
-	public const DEFAULT_RETENTION_DAYS = 30;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus app config.
+	 * @param DeletionWindowReader $windowReader Reads the marker and the window off a row.
 	 * @param IUserSession $userSession The session, for the actor on a restore.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly DeletionWindowReader $windowReader,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -132,6 +122,11 @@ class CaseRecycleService {
 	 * @param bool $isAdmin Whether the caller is an administrator.
 	 *
 	 * @return array{results: array<int, array<string, mixed>>, total: int}
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The flag is the caller's
+	 * authority, resolved once by the controller and handed down. Reading it
+	 * here instead would put an IGroupManager in a class whose whole job is to
+	 * read OpenRegister, and would make the scoping untestable without one.
 	 *
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
@@ -198,17 +193,25 @@ class CaseRecycleService {
 			return null;
 		}
 
+		// The catch LOGS and does not answer: a store that could not be read is
+		// a different fact from a case that is not there, and a bare `return
+		// null` in the catch makes the two indistinguishable downstream.
+		$case = null;
 		try {
-			return $this->findObjectAsArray(
+			$case = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
 				id: $caseId
 			);
 		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: could not read case ' . $caseId . ': ' . $e->getMessage());
-			return null;
+			$this->logger->warning(
+				'Dossiq: the case behind the retention clocks could not be read',
+				['caseId' => $caseId, 'error' => $e->getMessage()]
+			);
 		}
+
+		return $case;
 	}//end liveCase()
 
 	/**
@@ -233,7 +236,7 @@ class CaseRecycleService {
 			throw new RuntimeException('case_not_deleted');
 		}
 
-		$window = $this->window(entity: $entity);
+		$window = $this->windowReader->windowFor(entity: $entity);
 		$mapper = $this->requireMapper();
 		$mapper->restoreObject(uuid: $caseId);
 		$this->recordRestore(entity: $entity, window: $window);
@@ -260,93 +263,29 @@ class CaseRecycleService {
 			return null;
 		}
 
+		// A miss is what the mapper RAISES rather than returns, so the catch is
+		// the read-miss path. It logs and answers nothing here; the single
+		// answer below covers a miss, a row of another schema and a row that
+		// is not in the recycle state, which are the same answer to a caller.
+		$entity = null;
 		try {
 			$entity = $mapper->find(identifier: $caseId, register: null, schema: null, includeDeleted: true);
 		} catch (Throwable $e) {
-			$this->logger->info('Dossiq: no deleted case behind ' . $caseId . ': ' . $e->getMessage());
-			return null;
+			$this->logger->info(
+				'Dossiq: no deleted case behind this id',
+				['caseId' => $caseId, 'error' => $e->getMessage()]
+			);
 		}
 
-		if ($this->isCase(entity: $entity) === false || $this->isSoftDeleted(entity: $entity) === false) {
+		if ($entity === null
+			|| $this->isCase(entity: $entity) === false
+			|| $this->windowReader->isSoftDeleted(entity: $entity) === false
+		) {
 			return null;
 		}
 
 		return $entity;
 	}//end findDeleted()
-
-	/**
-	 * The published window of one deleted entity.
-	 *
-	 * OpenRegister's `DeletionWindowService` is asked first, because it is the
-	 * single definition of the window and it knows which rule set the
-	 * retention. A row deleted before that service shipped carries only a
-	 * `purgeDate`, so the fallback reads that and says the default applied.
-	 *
-	 * @param object $entity OpenRegister's object entity.
-	 *
-	 * @return array<string, mixed>|null The window, or null when the row carries none.
-	 *
-	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
-	 */
-	public function window(object $entity): ?array {
-		$service = $this->settingsService->getOpenRegisterClass(
-			class: 'OCA\\OpenRegister\\Service\\Deletion\\DeletionWindowService'
-		);
-
-		if ($service !== null && method_exists($service, 'windowFor') === true) {
-			try {
-				$window = $service->windowFor(object: $entity, schema: null);
-				if ($window !== null && method_exists($window, 'toArray') === true) {
-					return $window->toArray();
-				}
-			} catch (Throwable $e) {
-				$this->logger->info('Dossiq: OpenRegister could not state the window: ' . $e->getMessage());
-			}
-		}
-
-		return $this->windowFromMarker(entity: $entity);
-	}//end window()
-
-	/**
-	 * The window read straight off the deletion marker.
-	 *
-	 * @param object $entity OpenRegister's object entity.
-	 *
-	 * @return array<string, mixed>|null The window, or null.
-	 */
-	private function windowFromMarker(object $entity): ?array {
-		$marker = $this->marker(entity: $entity);
-		$endsOn = trim((string)($marker['destroyableFrom'] ?? ($marker['purgeDate'] ?? '')));
-		if ($endsOn === '') {
-			return null;
-		}
-
-		try {
-			$ends = new DateTimeImmutable(substr($endsOn, 0, 10));
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		$today = new DateTimeImmutable('today');
-		$remaining = 0;
-		if ($ends > $today) {
-			$remaining = (int)$today->diff($ends)->days;
-		}
-
-		$retention = ($marker['retentionPeriod'] ?? null);
-		if (is_numeric($retention) === false || (int)$retention < 1) {
-			$retention = self::DEFAULT_RETENTION_DAYS;
-		}
-
-		return [
-			'deletedAt' => trim((string)($marker['deletedAt'] ?? ($marker['deleted'] ?? ''))),
-			'destroyableFrom' => $ends->format(DATE_ATOM),
-			'daysRemaining' => $remaining,
-			'retentionDays' => (int)$retention,
-			'retentionSource' => 'default',
-			'lapsed' => ($remaining === 0),
-		];
-	}//end windowFromMarker()
 
 	/**
 	 * One row of the deleted lens.
@@ -356,9 +295,9 @@ class CaseRecycleService {
 	 * @return array<string, mixed> The row.
 	 */
 	private function row(object $entity): array {
-		$payload = $this->payload(entity: $entity);
-		$marker = $this->marker(entity: $entity);
-		$window = $this->window(entity: $entity);
+		$payload = $this->windowReader->payload(entity: $entity);
+		$marker = $this->windowReader->marker(entity: $entity);
+		$window = $this->windowReader->windowFor(entity: $entity);
 
 		return [
 			'id' => (string)$entity->getUuid(),
@@ -432,6 +371,22 @@ class CaseRecycleService {
 	}//end requireMapper()
 
 	/**
+	 * The published recovery window of one deleted entity.
+	 *
+	 * A pass-through to {@see DeletionWindowReader}, kept on this class
+	 * because it is the one every caller already holds.
+	 *
+	 * @param object $entity OpenRegister's object entity.
+	 *
+	 * @return array<string, mixed>|null The window, or null when the row carries none.
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function window(object $entity): ?array {
+		return $this->windowReader->windowFor(entity: $entity);
+	}//end window()
+
+	/**
 	 * Whether this caller may see one deleted case in the lens.
 	 *
 	 * Fails closed at every branch: an unresolved caller, a row with no
@@ -454,12 +409,12 @@ class CaseRecycleService {
 			return false;
 		}
 
-		$marker = $this->marker(entity: $entity);
+		$marker = $this->windowReader->marker(entity: $entity);
 		if (trim((string)($marker['deletedBy'] ?? '')) === $userId) {
 			return true;
 		}
 
-		$payload = $this->payload(entity: $entity);
+		$payload = $this->windowReader->payload(entity: $entity);
 
 		return (trim((string)($payload['assignee'] ?? '')) === $userId);
 	}//end maySee()
@@ -484,56 +439,4 @@ class CaseRecycleService {
 		return ((string)$entity->getSchema() === $expected);
 	}//end isCase()
 
-	/**
-	 * Whether the entity is in the recycle state.
-	 *
-	 * @param object $entity OpenRegister's object entity.
-	 *
-	 * @return bool True when soft-deleted.
-	 */
-	private function isSoftDeleted(object $entity): bool {
-		if (method_exists($entity, 'isSoftDeleted') === true) {
-			return ($entity->isSoftDeleted() === true);
-		}
-
-		return ($this->marker(entity: $entity) !== []);
-	}//end isSoftDeleted()
-
-	/**
-	 * The deletion marker of an entity.
-	 *
-	 * @param object $entity OpenRegister's object entity.
-	 *
-	 * @return array<string, mixed> The marker, or an empty array.
-	 */
-	private function marker(object $entity): array {
-		if (method_exists($entity, 'getDeleted') === false) {
-			return [];
-		}
-
-		$marker = $entity->getDeleted();
-		if (is_array($marker) === false) {
-			return [];
-		}
-
-		return $marker;
-	}//end marker()
-
-	/**
-	 * The payload of an entity.
-	 *
-	 * @param object $entity OpenRegister's object entity.
-	 *
-	 * @return array<string, mixed> The payload.
-	 */
-	private function payload(object $entity): array {
-		if (method_exists($entity, 'getObject') === true) {
-			$payload = $entity->getObject();
-			if (is_array($payload) === true) {
-				return $payload;
-			}
-		}
-
-		return [];
-	}//end payload()
 }//end class

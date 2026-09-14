@@ -140,25 +140,22 @@ class RetentionClocks {
 			return null;
 		}
 
-		try {
-			$end = $closed->add(new DateInterval('P' . (string)$months . 'M'));
+		// No try/catch: $months is an int of at least 1 by the time it gets
+		// here, so the interval string is always well formed. A catch here
+		// would answer null for a failure that cannot happen and hide the one
+		// that could.
+		$end = $closed->add(new DateInterval('P' . (string)$months . 'M'));
 
-			// A month is not thirty days. Six months from 31 March is 30
-			// September, and PHP's own addition rolls it forward to 1 October
-			// because September has no thirty-first. A retention date that
-			// silently lands in the next month is the kind of error nobody
-			// looks for, so the roll-over is clamped back to the month end.
-			if ((int)$end->format('d') !== (int)$closed->format('d')) {
-				$end = $end->modify('last day of previous month');
-			}
-
-			return $end->format('Y-m-d');
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not count the lawful-purpose clock: ' . $e->getMessage()
-			);
-			return null;
+		// A month is not thirty days. Six months from 31 March is 30
+		// September, and PHP's own addition rolls it forward to 1 October
+		// because September has no thirty-first. A retention date that
+		// silently lands in the next month is the kind of error nobody looks
+		// for, so the roll-over is clamped back to the month end.
+		if ((int)$end->format('d') !== (int)$closed->format('d')) {
+			$end = $end->modify('last day of previous month');
 		}
+
+		return $end->format('Y-m-d');
 	}//end lawfulPurposeEndDate()
 
 	/**
@@ -261,13 +258,18 @@ class RetentionClocks {
 			return null;
 		}
 
+		// The catch LOGS and does not answer. A `return null` here would say
+		// "this case type states no retention", which is a different fact from
+		// "the case type could not be read", and the reader cannot tell them
+		// apart afterwards.
+		$caseType = [];
 		try {
 			$caseType = $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: could not read the case type for the lawful-purpose clock: ' . $e->getMessage()
+			$this->logger->warning(
+				'Dossiq: the case type behind the lawful-purpose clock could not be read',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
 			);
-			return null;
 		}
 
 		$months = ($caseType[self::CASE_TYPE_RETENTION] ?? null);
@@ -300,6 +302,11 @@ class RetentionClocks {
 	 * @param string $value The raw value.
 	 *
 	 * @return DateTimeImmutable|null The date, or null.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `DateTimeImmutable::createFromFormat`
+	 * ANSWERS false on a value that is not a date, where the constructor
+	 * throws. A value to branch on is what keeps this method from swallowing
+	 * an exception, which is the pattern `ServiceCatchReturnsNullTest` counts.
 	 */
 	private function date(string $value): ?DateTimeImmutable {
 		$raw = trim($value);
@@ -307,10 +314,14 @@ class RetentionClocks {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable(substr($raw, 0, 10));
-		} catch (Throwable $e) {
+		// `createFromFormat` ANSWERS false rather than throwing, so the failure
+		// is a value this method can reason about instead of an exception it
+		// would have to swallow.
+		$date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($raw, 0, 10));
+		if ($date === false) {
 			return null;
 		}
+
+		return $date;
 	}//end date()
 }//end class

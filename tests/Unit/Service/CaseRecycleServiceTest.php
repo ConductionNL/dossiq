@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
+use OCA\Dossiq\Service\Recycle\DeletionWindowReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -109,10 +110,16 @@ class CaseRecycleServiceTest extends TestCase {
 	 * @return CaseRecycleService
 	 */
 	private function service(): CaseRecycleService {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
 		return new CaseRecycleService(
 			settingsService: $this->settingsService,
+			windowReader: new DeletionWindowReader(
+				settingsService: $this->settingsService,
+				logger: $logger
+			),
 			userSession: $this->userSession,
-			logger: $this->createMock(originalClassName: LoggerInterface::class)
+			logger: $logger
 		);
 	}//end service()
 
