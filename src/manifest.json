@@ -378,9 +378,15 @@
 			"label": "Integrations",
 			"icon": "PowerPlugOutline",
 			"route": "Integrations",
+			"query": {
+				"app": "dossiq"
+			},
 			"section": "settings",
 			"order": 99,
-			"permission": "admin"
+			"permission": "admin",
+			"visibleIf": {
+				"appInstalled": "integriq"
+			}
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
@@ -4670,16 +4676,30 @@
 			"type": "index",
 			"title": "Integrations",
 			"permission": "admin",
+			"requiresApp": {
+				"id": "integriq",
+				"name": "Integriq"
+			},
 			"config": {
-				"register": "dossiq",
-				"schema": "dossiqIntegration",
+				"register": "integriq",
+				"schema": "app_connection",
 				"showViewAction": false,
+				"showAdd": false,
+				"_registryNote": "The rows are integriq's, not dossiq's (adopt-connection-registry, hydra connection-registry D8). Dossiq declares its twelve connections in lib/Settings/connections.json, integriq syncs them into its `app_connection` schema and works out each status. The `app=dossiq` preset is NOT here: it is the menu entry's `query`, which ADR-097 decision 5 names as the way to scope an index page, and the index page merges the route query into the fetch as a bare filter key. A deep link without the query lists every app's rows, which the admin-only schema already lets an admin see on integriq's overview. `showAdd` is false because a row nothing declared has nothing to check (D9); Add integration leaves for integriq's overview through the `openIntegriqConnections` handler, since a header action's `navigate` only pushes a route name inside this app.",
+				"headerActions": [
+					{
+						"id": "add-integration",
+						"label": "Add integration",
+						"icon": "PowerPlugOutline",
+						"handler": "openIntegriqConnections"
+					}
+				],
 				"defaultSort": {
 					"field": "order",
 					"direction": "asc"
 				},
-				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021 — the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget — and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns and the seed are the page.",
-				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text — which is exactly what REQ-ADMIN-019 asks for on the BRP and KvK rows: no Open settings offered.",
+				"_typeNote": "The change's design (D2) asked for `type: \"settings\"`. The installed @conduction/nextcloud-vue dist cannot host this page there, and the reason is worth writing down rather than rediscovering. A `settings` section's `widgets[]` resolves ONLY against BUILTIN_SETTINGS_WIDGETS (`version-info`, `register-mapping`) and the `component` discriminator; `object-list` is a DASHBOARD widget (`registerDashboardWidget('object-list', …)`), so it would resolve to nothing, log one console warn and render an empty section. CnSettingsPage also takes no page-level `widgets[]` prop, so the uniform grid is not a way in either. Task 2.2 named this exact outcome and the interim it licenses: an `index` page over the config schema, never a `custom` page (the ADR-100 ratchet). The cost is REQ-ADMIN-021, the Required apps section, which needs `CnLeafDependencySettings` through a `type: \"component\"` widget, and that requirement stays red until a settings section can host a list. Nothing here needs to change when it can: the columns are the page, and the rows come from integriq's registry either way.",
+				"_openSettingsNote": "Open settings is a COLUMN with the built-in `link` widget, not a row action, because a row action cannot carry a per-row URL or a per-row visibility. `type: \"navigate\"` takes one literal `target` for the whole column and pushes it through vue-router, which cannot reach /settings/admin/dossiq at all; `handler` reaches the row but CnRowActions' `visible` predicate is a FUNCTION, which JSON cannot carry, and the action schema is additionalProperties:false so the key would be rejected anyway. The `link` widget substitutes `{settingsUrl}` from the row and, when that resolves to the empty string, `linkHref` is falsy and the cell falls through to plain text, which is exactly what REQ-ADMIN-019 asks for on the BRP, KvK, PDOK, Berichtenbox and Document templates rows: no Open settings offered. Integriq copies `settingsUrl` from lib/Settings/connections.json, where those five rows omit it.",
 				"columns": [
 					{
 						"key": "title",
@@ -4688,7 +4708,7 @@
 					{
 						"key": "status",
 						"label": "Status",
-						"formatter": "integrationStatus"
+						"formatter": "connectionStatus"
 					},
 					{
 						"key": "statusMessage",
@@ -4703,7 +4723,7 @@
 						"key": "settingsUrl",
 						"label": "Settings",
 						"sortable": false,
-						"formatter": "integrationSettingsLabel",
+						"formatter": "connectionSettingsLabel",
 						"widget": "link",
 						"widgetProps": {
 							"href": "{settingsUrl}"

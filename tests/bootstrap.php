@@ -456,12 +456,14 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 }
 
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// The connection-registry events (adopt-connection-registry) ride the same loop:
+// IntegrationStatusService sends them by name, exactly like the delivery seam.
 // PublicationService dispatches DeliveryRequestedEvent and
 // DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
