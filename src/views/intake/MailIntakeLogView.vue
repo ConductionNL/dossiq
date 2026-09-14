@@ -63,16 +63,16 @@
 				<table v-else class="intake-log__table" data-testid="intake-log-table">
 					<thead>
 						<tr>
-							<th>{{ t('dossiq', 'Sender') }}</th>
-							<th>{{ t('dossiq', 'Subject') }}</th>
-							<th>{{ t('dossiq', 'Deciding filter') }}</th>
-							<th>{{ t('dossiq', 'SPF') }}</th>
-							<th>{{ t('dossiq', 'DKIM') }}</th>
-							<th>{{ t('dossiq', 'DMARC') }}</th>
-							<th>{{ t('dossiq', 'Threading') }}</th>
-							<th>{{ t('dossiq', 'Outcome') }}</th>
-							<th>{{ t('dossiq', 'Reason') }}</th>
-							<th />
+							<th scope="col">{{ t('dossiq', 'Sender') }}</th>
+							<th scope="col">{{ t('dossiq', 'Subject') }}</th>
+							<th scope="col">{{ t('dossiq', 'Deciding filter') }}</th>
+							<th scope="col">{{ t('dossiq', 'SPF') }}</th>
+							<th scope="col">{{ t('dossiq', 'DKIM') }}</th>
+							<th scope="col">{{ t('dossiq', 'DMARC') }}</th>
+							<th scope="col">{{ t('dossiq', 'Threading') }}</th>
+							<th scope="col">{{ t('dossiq', 'Outcome') }}</th>
+							<th scope="col">{{ t('dossiq', 'Reason') }}</th>
+							<th scope="col" />
 						</tr>
 					</thead>
 					<tbody>

@@ -21,6 +21,7 @@
 			"route": "/mail-intake-log",
 			"type": "custom",
 			"component": "MailIntakeLogView",
+			"_note": "Deliberately type custom and not index. An index page reads the generic OpenRegister object endpoint, which applies the register's permissions rather than the intake role, and every entry here holds the raw original of a message somebody sent the gemeente. The role check that guards those originals lives in MailIntakeController, so the page reads the dossiq endpoint instead. It is also not a plain list: a row carries four authentication results that have to be told apart from each other, and two acts, release and not junk, that no index row offers.",
 			"title": "Mail intake log",
 			"config": {
 				"documentationUrl": "https://procest.conduction.nl"

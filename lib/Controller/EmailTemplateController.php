@@ -33,6 +33,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -80,16 +81,6 @@ class EmailTemplateController extends Controller {
 	];
 
 	/**
-	 * Masked sensitive keys.
-	 *
-	 * EMPTY, AND THAT IS THE POINT. The one sensitive value this surface ever
-	 * held was the mailbox password, and dossiq no longer has one to mask.
-	 *
-	 * @var array<int, string>
-	 */
-	private const SENSITIVE_KEYS = [];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
@@ -100,6 +91,7 @@ class EmailTemplateController extends Controller {
 	 * @param IGroupManager $groupManager Group manager (admin check on config writes).
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
 	 * @param MailGatewayInterface $mailGateway The mail gateway (the accounts intake can read).
+	 * @param SenderBlocklist $blocklist Who may not open a case by mail, normalised as it is stored.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -110,6 +102,7 @@ class EmailTemplateController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly MailGatewayInterface $mailGateway,
+		private readonly SenderBlocklist $blocklist,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -273,12 +266,7 @@ class EmailTemplateController extends Controller {
 
 		$values = [];
 		foreach (self::IMAP_KEYS as $key) {
-			$raw = $this->appConfig->getValueString(Application::APP_ID, $key, '');
-			$isSensitive = in_array($key, self::SENSITIVE_KEYS, true);
-			$values[$key] = $raw;
-			if ($isSensitive === true && $raw !== '') {
-				$values[$key] = '***';
-			}
+			$values[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
 		}
 
 		return new JSONResponse($values);
@@ -287,9 +275,9 @@ class EmailTemplateController extends Controller {
 	/**
 	 * Persist IMAP / poller settings.
 	 *
-	 * Sensitive keys (e.g. `email_imap_password`) are stored via
-	 * `setValueString` with the `sensitive` flag so they are masked in
-	 * `occ config:list`.
+	 * None of these is a credential any more. Nextcloud Mail holds the account
+	 * and the password, so this surface stores which account intake reads,
+	 * which folder, and the policy values around it.
 	 *
 	 * ADMIN-ONLY. Under `@NoAdminRequired` this wrote INSTANCE-WIDE app config
 	 * — `email_imap_host`, `email_imap_user` and the shared-mailbox password —
@@ -317,21 +305,24 @@ class EmailTemplateController extends Controller {
 				continue;
 			}
 
-			$sensitive = in_array($key, self::SENSITIVE_KEYS, true);
-			// Treat `***` as "unchanged" so admins editing other fields don't blank the password.
-			if ($sensitive === true && $value === '***') {
+			// 🔴 THE BLOCK LIST IS WRITTEN BY THE CLASS THAT READS IT. `blocks()`
+			// compares an entry against a normalised address, so a list stored
+			// as an administrator typed it — `Spammer@Voorbeeld.NL `, with the
+			// capitals and the trailing space — matches nothing and the surface
+			// still shows the address as blocked. Normalising on the way in is
+			// the only place that can be true for every reader.
+			if ($key === SenderBlocklist::BLOCKLIST_KEY) {
+				$this->blocklist->replace(entries: explode(',', (string)$value));
 				continue;
 			}
 
-			// Sensitive keys (the shared-mailbox password) are stored with the
-			// sensitive flag so they are masked in `occ config:list` and the API.
-			$this->appConfig->setValueString(
-				Application::APP_ID,
-				$key,
-				(string)$value,
-				false,
-				$sensitive,
-			);
+			// 🔴 NOTHING HERE IS SENSITIVE ANY MORE, AND THE MASKING IS GONE WITH
+			// IT. This surface held exactly one secret, the shared-mailbox
+			// password, and Nextcloud Mail holds the account now. The `***`
+			// placeholder that meant "unchanged" went with it: a form that still
+			// understood it would accept three asterisks as a value for a key
+			// that is no longer a credential.
+			$this->appConfig->setValueString(Application::APP_ID, $key, (string)$value);
 		}//end foreach
 
 		return new JSONResponse(['saved' => true]);

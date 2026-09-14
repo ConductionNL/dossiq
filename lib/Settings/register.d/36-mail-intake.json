@@ -1,5 +1,12 @@
 {
     "components": {
+        "registers": {
+        	"dossiq": {
+        		"schemas": [
+        			"mailIntakeEntry"
+        		]
+        	}
+        },
         "schemas": {
             "mailIntakeEntry": {
                 "title": "Mail intake entry",
