@@ -302,6 +302,51 @@ class WorkingDayCalculatorTest extends TestCase {
 	}//end testCountWorkingDaysReturnsZeroForAnInvertedRange()
 
 	/**
+	 * The Algemene termijnenwet art. 1 roll on dossiq's own list: a term
+	 * ending on Tweede Kerstdag 2026, a Saturday, runs to the Monday. This is
+	 * the FALLBACK; the engine calendar answers whenever OpenRegister is
+	 * installed.
+	 *
+	 * @return void
+	 */
+	public function testNextWorkingDayRollsOffAHolidayWeekend(): void {
+		$calculator = new WorkingDayCalculator();
+
+		self::assertSame(
+			'2026-12-28',
+			$calculator->nextWorkingDay(date: new DateTimeImmutable('2026-12-26'))->format('Y-m-d')
+		);
+	}
+
+	/**
+	 * Koningsdag 2026 falls on a Monday, so a roll that only knew about
+	 * weekends would leave a term on it.
+	 *
+	 * @return void
+	 */
+	public function testNextWorkingDayRollsOffAWeekdayHoliday(): void {
+		$calculator = new WorkingDayCalculator();
+
+		self::assertSame(
+			'2026-04-28',
+			$calculator->nextWorkingDay(date: new DateTimeImmutable('2026-04-27'))->format('Y-m-d')
+		);
+	}
+
+	/**
+	 * A date already on a working day is returned unchanged, so the roll never
+	 * lengthens a term that does not need it, and the time of day survives.
+	 *
+	 * @return void
+	 */
+	public function testNextWorkingDayLeavesAnOrdinaryDayAlone(): void {
+		$calculator = new WorkingDayCalculator();
+		$date = new DateTimeImmutable('2026-04-28T14:30:00+02:00');
+
+		self::assertSame($date->format('c'), $calculator->nextWorkingDay(date: $date)->format('c'));
+	}
+
+	/**
 	 * The fixed national holidays, and Koningsdag falling on a weekday.
 	 *
 	 * @return void
