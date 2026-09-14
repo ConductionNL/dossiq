@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
 use OCA\Dossiq\Service\SubstitutionAuditService;
 use OCA\Dossiq\Service\SubstitutionService;
@@ -58,6 +59,7 @@ class SubstitutionController extends Controller {
 	 * @param SubstitutionService $substitutionService Substitution domain logic.
 	 * @param SubstitutionAuditService $auditService Capacity audit.
 	 * @param SubstitutionAccessGuard $accessGuard Authorization + lookups.
+	 * @param CaseReassignmentService $reassignmentService Builds the caseload selection.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
@@ -68,6 +70,7 @@ class SubstitutionController extends Controller {
 		private readonly SubstitutionService $substitutionService,
 		private readonly SubstitutionAuditService $auditService,
 		private readonly SubstitutionAccessGuard $accessGuard,
+		private readonly CaseReassignmentService $reassignmentService,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -137,6 +140,57 @@ class SubstitutionController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
 	}//end create()
+
+	/**
+	 * Release a departed or absent handler's caseload, as one bulk job.
+	 *
+	 * Coordinator-only, and refused without a written reason: moving four
+	 * hundred statutory cases with nothing recorded about why is an audit
+	 * finding waiting to happen (D-3).
+	 *
+	 * This controller iterates over no case. It builds the selection and hands
+	 * it to the same bulk job the Cases page uses; what comes back is the
+	 * PREVIEWED job, which a coordinator reads and then commits through
+	 * OpenRegister's own commit route (D-6).
+	 *
+	 * @return JSONResponse The previewed job, and what happened to the tasks.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	#[NoAdminRequired]
+	public function releaseCaseload(): JSONResponse {
+		$actorId = $this->accessGuard->currentUid();
+		if ($actorId === '') {
+			return $this->accessGuard->forbidden(message: 'Not authenticated');
+		}
+
+		if ($this->accessGuard->isCoordinator(userId: $actorId) === false) {
+			return $this->accessGuard->forbidden(message: 'Only a coordinator may release a caseload');
+		}
+
+		$caseType = trim((string)$this->request->getParam('caseType', ''));
+
+		try {
+			$released = $this->reassignmentService->releaseCaseload(
+				fromUser: (string)$this->request->getParam('fromUser', ''),
+				toUser: (string)$this->request->getParam('toUser', ''),
+				justification: (string)$this->request->getParam('justification', ''),
+				filter: (($caseType === '') ? null : ['caseType' => $caseType]),
+				actorId: $actorId,
+			);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		} catch (\Throwable $e) {
+			$this->logger->error('Caseload release failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(
+				['error' => 'The caseload could not be released'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}//end try
+
+		return new JSONResponse($released, Http::STATUS_CREATED);
+	}//end releaseCaseload()
 
 	/**
 	 * Revoke a substitution.

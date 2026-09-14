@@ -78,6 +78,20 @@ class ListenerRegistrar {
 			);
 		}
 
+		// Cluster 52: dossiq declares what a bulk act does to ONE case and
+		// writes no loop. The job record, the rehearsal, the progress, the
+		// per-row outcome, the cancel and the retry are OpenRegister's
+		// (ADR-022). Guarded on the event class for the same reason the flow
+		// node listener above is: `::class` is a compile-time string that does
+		// not autoload, so an instance without OpenRegister still boots and
+		// simply offers no bulk actions.
+		if (class_exists(\OCA\OpenRegister\Event\BulkActionRegistrationEvent::class) === true) {
+			$context->registerEventListener(
+				\OCA\OpenRegister\Event\BulkActionRegistrationEvent::class,
+				\OCA\Dossiq\Listener\BulkActionRegistrationListener::class
+			);
+		}
+
 		// ADR-041 delivery seam: integriq concludes a besluit-publication
 		// delivery this app requested (PublicationService) with a terminal
 		// DeliveryConcludedEvent; the listener projects the outcome onto the
