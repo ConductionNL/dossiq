@@ -7,14 +7,16 @@ C-case-core-42, C-intake-2 and C-case-core-5. Decision D6 admits all three
 `must` candidates on relevance. The acts that move a case through the
 engine wait on openregister#3679, the provider write half.
 
-- [ ] 1.1 Read `statusType.hiddenInLists` in the working list, the open
-  counts and the dashboard tiles; leave search, the case page and an
-  explicit status filter alone (D-4).
+- [ ] 1.1 Filter `case.statusHiddenInLists` on every Cases lens, the Queue
+  page, My Work, the open counts and the dashboard tiles, not only the
+  All chip; leave search, the case page and an explicit status filter
+  alone (D-4).
   - `tests/vitest/hiddenStatusList.spec.js`
   - `@spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md`
 - [ ] 1.2 `tests/unit/Architecture/DeclaredDisplayFlagHasReaderTest.php`:
-  every declared display flag has a reader or a reason-bearing allowlist
-  entry, failing in both directions (D-4).
+  every declared display flag has a reader directly or through a declared
+  calculation, or a reason-bearing allowlist entry, failing in both
+  directions (D-4).
 - [ ] 2.1 One lifecycle menu on `CaseDetail`, drawn from
   `CaseActionProvider`, with the header actions folded into it and a
   refused act shown, disabled and carrying the guard's sentence (D-1).

@@ -1,26 +1,33 @@
 ## ADDED Requirements
 
-### Requirement: A hidden status drops its cases out of the working list (REQ-LIFE-01)
+### Requirement: A hidden status is hidden everywhere work is counted (REQ-LIFE-01)
 
-`statusType.hiddenInLists` SHALL be read by the working list, the open
-counts and the dashboard tiles, and cases in a hidden status SHALL NOT
-appear in them. A hidden status SHALL NOT remove a case from search, from
-its own page, or from a list a person explicitly filtered onto that
-status.
+`statusType.hiddenInLists`, through the calculated
+`case.statusHiddenInLists`, SHALL be honoured by every lens of the Cases
+index, the Queue page, My Work, the open counts and the dashboard tiles.
+It SHALL NOT remove a case from search, from its own page, or from a list
+a person explicitly filtered onto that status.
 
-#### Scenario: a completed case leaves the working list without a filter
+#### Scenario: the Overdue chip honours it too
 @e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
 
-- **GIVEN** a status with `hiddenInLists` true holding three cases
-- **WHEN** a handler opens the working list
+- **GIVEN** three overdue cases in a status marked hidden
+- **WHEN** a handler opens the Overdue lens
 - **THEN** those three cases SHALL NOT be listed
 
 #### Scenario: the counts agree with the list
 @e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
 
 - **GIVEN** cases in a hidden status
-- **WHEN** the open count is read
+- **WHEN** the open count and the dashboard tiles are read
 - **THEN** they SHALL NOT be counted
+
+#### Scenario: My Work and the Queue honour it
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case assigned to a handler in a hidden status
+- **WHEN** that handler opens My Work and the Queue
+- **THEN** the case SHALL appear in neither
 
 #### Scenario: a hidden case is still findable
 @e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
@@ -36,18 +43,26 @@ status.
 - **WHEN** a handler filters the list onto that status
 - **THEN** its cases SHALL be listed
 
-### Requirement: Every declared display flag has a reader (REQ-LIFE-02)
+### Requirement: Every declared display flag has a reader, directly or through a calculation (REQ-LIFE-02)
 
 Every display flag declared on a dossiq schema SHALL be read by at least
-one query, store or component, or SHALL carry an entry in a reason-bearing
-allowlist. A structural test SHALL fail when a declared flag has no reader
-and no allowlist entry, and SHALL fail when an allowlisted flag gains a
-reader without its entry being removed.
+one query, store or component, either directly or through a property
+declared as calculated from it, or SHALL carry an entry in a
+reason-bearing allowlist. A structural test SHALL follow the declared
+calculation rather than matching the flag's name. It SHALL fail when a
+declared flag has no reader and no allowlist entry, and SHALL fail when an
+allowlisted flag gains a reader without its entry being removed.
+
+#### Scenario: a flag read through its calculated mirror passes
+
+- **GIVEN** a flag no code names directly
+- **WHEN** a property calculated from it is filtered on
+- **THEN** the structural test SHALL pass
 
 #### Scenario: a control nobody reads fails the build
 
 - **GIVEN** a new display flag on a schema
-- **WHEN** nothing reads it and it is not allowlisted
+- **WHEN** nothing reads it, nothing is calculated from it, and it is not allowlisted
 - **THEN** the structural test SHALL fail
 - **AND** it SHALL name the flag and the schema
 

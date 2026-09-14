@@ -46,15 +46,30 @@ journal rather than a flag, and the transition POST is refused by
 OpenRegister today because its provider mode is read-only
 (openregister#3679).
 
-**C-case-core-21's flag already ships, and nothing reads it.**
-`statusType` carries `hiddenInLists`. `src/views/settings/components/StatusTypeForm.vue:98`
-edits it, `src/utils/statusTypeForm.js:67` defaults it to false, and
-`lib/Settings/register.d/46-demo-cases-english.json` seeds it true on four
-Completed statuses. A grep of `lib/` and `src/` finds no list, query or
-store that reads it. So an administrator can switch it on, four shipped
-statuses already have it on, and no case has ever dropped out of a list
-because of it. The rating `no` is right about the behaviour and hides the
-worse fact: the control exists and is dark.
+**C-case-core-21 is substantially shipped, and the first read of it was
+wrong.** A grep for `hiddenInLists` finds it only in
+`src/views/settings/components/StatusTypeForm.vue:98`,
+`src/utils/statusTypeForm.js:67` and the demo seeds, which reads like a
+control nobody honours. It is not. `case.statusHiddenInLists` is a
+calculated mirror of it, computed by OpenRegister from the linked status
+type (`lib/Settings/dossiq_register.json:1697`), and the Cases index
+filters `statusHiddenInLists: false` on its All lens
+(`src/manifest.json:1180`), asserted by
+`tests/vitest/caseTypeAuthoringManifest.spec.js:154`.
+
+So the flag works, under a second name, on one lens of one page. What is
+left is narrow and worth stating exactly: the Overdue and Due this week
+chips carry no such filter, and the manifest's own note says so ("It
+carries no `statusHiddenInLists` of its own, matching its sibling Overdue
+rather than All"); the dashboard tiles, the open counts, the Queue page
+and My Work do not filter on it either. A status marked hidden therefore
+empties one list and leaves the same cases in the counts beside it.
+
+The first reading of this candidate is recorded because the mistake is
+the useful part: the flag's reader carries a different name from the
+flag, so a search for the declared name answered about something adjacent
+and said dark. That is why REQ-LIFE-02 below traces calculations rather
+than matching names.
 
 ## The candidates
 
@@ -126,9 +141,10 @@ cluster.
   and which phases were skipped.
 - A close with a preset outcome is one act, and the reason is still
   recorded.
-- `statusType.hiddenInLists` is read. Cases in a hidden status drop out of
-  the working list, the counts and the tiles, and a test fails if any
-  declared display flag is read by nothing.
+- `statusType.hiddenInLists`, through its calculated mirror
+  `case.statusHiddenInLists`, is honoured everywhere work is counted or
+  listed, not only on the Cases All lens: the other chips, the Queue page,
+  My Work, the open counts and the dashboard tiles.
 - A case type declares whether its status is owned by the process. Where
   it is, no hand-set status is accepted.
 - A case type declares an auto-close period of silence, and the product
@@ -210,10 +226,11 @@ widget), `src/components/` (the lifecycle dialog), the `case`,
 
 - **C-case-core-31 is rated `no` and dossiq has most of the verbs.** The
   gap is one menu and one gate, not the acts. Sized accordingly.
-- **C-case-core-21 is rated `no` and the flag ships.** The true finding is
-  a control an administrator can set that nothing reads, on four seeded
-  statuses. That is worse than absence and it is why the structural test
-  is in this change.
+- **C-case-core-21 is rated `no` and most of it ships.** The flag is
+  honoured on the Cases All lens through the calculated
+  `case.statusHiddenInLists`. The remaining gap is the other lenses, the
+  Queue page, My Work, the counts and the tiles, which is a handful of
+  filters rather than a mechanism. Sized accordingly.
 
 ## Out of scope
 

@@ -51,19 +51,27 @@ preset, and the lane's own clause is the warning: "and for a Dutch besluit
 the form is the point". So the preset fills the outcome and the reason is
 still recorded; it never skips the record.
 
-## D-4. A declared display flag that nothing reads is a defect, and a test says so
+## D-4. A flag's reader may carry a different name, so the test traces the calculation
 
-`statusType.hiddenInLists` is editable, defaulted, seeded true on four
-statuses, and read by nothing. An administrator who sets it gets silence.
+`statusType.hiddenInLists` is honoured, through the calculated
+`case.statusHiddenInLists`, on the Cases All lens. A search for the
+declared name finds a form field, a default and four seeds, and reads as
+dark. It is not dark; it is mirrored.
 
-Making it work is one query change. Stopping the next one is a structural
-test: every display flag declared on a dossiq schema is read by at least
-one query, store or component, or it is in a reason-bearing allowlist. A
-flag with no reader is the same class as a requirement with no trigger,
-which is what `ontvangstbevestiging` found.
+Two things follow. The narrow one: the mirror is filtered in one place,
+so the same hidden cases still fill the Overdue chip, the Queue page, My
+Work, the open counts and the dashboard tiles. Hidden has to mean hidden
+everywhere work is counted, or an administrator gets a list and a count
+that disagree.
 
-Hidden means out of the working list, out of the counts, out of the
-tiles. It never means out of search or out of the case's own page: a case
+The wider one is the test. A structural test that matches flag names
+would have called `hiddenInLists` a defect and been wrong. So it follows
+the declared calculation: a flag has a reader when something reads it, or
+reads a property calculated from it. A flag with neither is in a
+reason-bearing allowlist or it fails, and an allowlisted flag that gains a
+reader fails too, so the number can only go down deliberately.
+
+Hidden never means out of search or off the case's own page. A case
 somebody cannot find is a different and worse bug.
 
 ## D-5. Process-owned status is a declaration, not a code path
