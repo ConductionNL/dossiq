@@ -1,0 +1,230 @@
+{
+  "_note": "ontvangstbevestiging (Awb 4:3a). The acknowledgement of receipt is DECLARED on the case type and never drawn into a workflow (design D-1): a case type that forgets a workflow step breaks a statutory duty silently, and a declaration cannot be forgotten by omission because it carries a default. The case gains the record of what was sent and the state of the duty, so 'did we confirm receipt' is answered from the case rather than from a server log (design D-8). A fragment rather than an edit to dossiq_register.json, per ADR-037, because three dossiq lanes build against this file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "acknowledgement": {
+            "type": "object",
+            "title": "Acknowledgement of receipt",
+            "description": "When a case of this type owes the sender an acknowledgement of receipt, and how it is sent. Awb 4:3a owes one to every electronically submitted message, so the default is on and the default channel list is every electronic intake channel. A case typed at the balie owes nothing unless this declaration says so.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "title": "Send an acknowledgement of receipt",
+                "description": "Off only where the law does not ask for one. Turning it off warns on publication and names Awb 4:3a."
+              },
+              "statutory": {
+                "type": "boolean",
+                "default": true,
+                "title": "Statutory",
+                "description": "Marks this as the Awb 4:3a duty rather than a courtesy, so it cannot be removed unnoticed."
+              },
+              "intakeChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "balie",
+                    "phone",
+                    "email",
+                    "post",
+                    "website",
+                    "other",
+                    "zgw-api"
+                  ]
+                },
+                "default": [
+                  "email",
+                  "website",
+                  "zgw-api"
+                ],
+                "title": "Intake channels that owe one",
+                "description": "The values of case.intakeChannel that owe an acknowledgement. The default is every electronic channel: mail, the portal and the API."
+              },
+              "defaultChannel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "portal",
+                  "post"
+                ],
+                "default": "email",
+                "title": "Default channel",
+                "description": "The channel used when the citizen recorded no choice of their own."
+              },
+              "contentOnPlatform": {
+                "type": "boolean",
+                "default": false,
+                "title": "Content stays on the platform",
+                "description": "On, the e-mail says a message is waiting and carries no case content. The Berichtenbox pattern, decided once per case type rather than per template."
+              },
+              "language": {
+                "type": "string",
+                "default": "nl",
+                "title": "Language",
+                "description": "The language the acknowledgement is written in. Dutch unless this case type declares another."
+              }
+            }
+          },
+          "notificationMoments": {
+            "type": "array",
+            "title": "Automatic messages",
+            "description": "The moments at which the applicant is told something without a handler acting. The entry for case-received carries the statutory flag and is the Awb 4:3a acknowledgement. Asking the applicant for something is its own moment, distinct from a status change, because informing and chasing are not the same message.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "moment": {
+                  "type": "string",
+                  "enum": [
+                    "case-received",
+                    "case-incomplete",
+                    "status-changed",
+                    "case-decided"
+                  ],
+                  "title": "Moment",
+                  "description": "Which moment this entry describes. case-received is the Awb 4:3a acknowledgement of receipt."
+                },
+                "template": {
+                  "type": "string",
+                  "title": "Template",
+                  "description": "The template rendered at this moment."
+                },
+                "statutory": {
+                  "type": "boolean",
+                  "default": false,
+                  "title": "Statutory",
+                  "description": "Marks the entry as a legal duty rather than a courtesy, so removing it warns on publication."
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "title": "Enabled",
+                  "description": "Off stops this moment sending, without removing what it was for."
+                }
+              }
+            }
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "acknowledgementDuty": {
+            "type": "object",
+            "title": "Acknowledgement of receipt",
+            "description": "Whether this case owes an acknowledgement of receipt, and whether it was met. A failed send is a state here rather than a line in the application log, because somebody has to perform the duty by hand once the retries run out.",
+            "properties": {
+              "required": {
+                "type": "boolean",
+                "title": "Owed",
+                "description": "Whether this case owes an acknowledgement of receipt at all."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "not-required",
+                  "pending",
+                  "met",
+                  "unmet"
+                ],
+                "title": "Status",
+                "facetable": true,
+                "description": "Where the duty stands: not owed, still being sent, met, or spent every retry without going out."
+              },
+              "channel": {
+                "type": "string",
+                "title": "Channel",
+                "description": "The channel the acknowledgement went out through."
+              },
+              "recipient": {
+                "type": "string",
+                "title": "Recipient",
+                "description": "The address it went to."
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Sent at",
+                "description": "When it went out."
+              },
+              "attempts": {
+                "type": "integer",
+                "title": "Attempts",
+                "description": "How many attempts have been made, so a handler can tell a first failure from a spent budget."
+              },
+              "lastError": {
+                "type": "string",
+                "title": "Last failure",
+                "description": "What went wrong on the last attempt, in one sentence a handler can act on."
+              },
+              "metBy": {
+                "type": "string",
+                "title": "Recorded by",
+                "description": "Who recorded that receipt was confirmed another way."
+              },
+              "metAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Recorded at",
+                "description": "When they recorded it."
+              },
+              "metHow": {
+                "type": "string",
+                "title": "Met another way",
+                "description": "How receipt was confirmed, in the recorder's own words."
+              }
+            }
+          },
+          "outboundCommunications": {
+            "type": "array",
+            "title": "Outbound communications",
+            "description": "What this case sent the applicant on its own, one entry per message: the moment, the channel, the recipient and the version of the template it was rendered from. Cluster 23's outbound log renders these rather than keeping a second set.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "moment": {
+                  "type": "string",
+                  "title": "Moment",
+                  "description": "Which declared moment this message was sent at."
+                },
+                "channel": {
+                  "type": "string",
+                  "title": "Channel",
+                  "description": "The channel it went out through."
+                },
+                "recipient": {
+                  "type": "string",
+                  "title": "Recipient",
+                  "description": "The address it went to."
+                },
+                "template": {
+                  "type": "string",
+                  "title": "Template",
+                  "description": "The template it was rendered from."
+                },
+                "templateVersion": {
+                  "type": "string",
+                  "title": "Template version",
+                  "description": "The version of that template, so a message queried a year later reads back against the wording that was sent."
+                },
+                "sentAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Sent at",
+                  "description": "When it went out."
+                },
+                "contentWithheld": {
+                  "type": "boolean",
+                  "title": "Content withheld",
+                  "description": "Whether the case content stayed on the platform and the message only said one was waiting."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

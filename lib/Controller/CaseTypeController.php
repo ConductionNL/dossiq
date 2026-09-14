@@ -163,17 +163,27 @@ class CaseTypeController extends Controller {
 	 * authenticated user to enumerate what is wrong with every case type in
 	 * the install.
 	 *
+	 * The warnings ride along beside the findings. They do not refuse
+	 * publication, so a person is told that this case type stops confirming
+	 * receipt under Awb 4:3a while still being allowed to publish it. A duty
+	 * that comes off quietly is the failure this prevents.
+	 *
 	 * @param string $id The case type id.
 	 *
-	 * @return JSONResponse `{findings: string[]}`.
+	 * @return JSONResponse `{findings: string[], warnings: string[]}`.
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
 	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function validatePublish(string $id): JSONResponse {
-		return new JSONResponse(['findings' => $this->publishService->validate(caseTypeId: $id)]);
+		return new JSONResponse(
+			[
+				'findings' => $this->publishService->validate(caseTypeId: $id),
+				'warnings' => $this->publishService->warnings(caseTypeId: $id),
+			]
+		);
 	}//end validatePublish()
 
 }//end class
