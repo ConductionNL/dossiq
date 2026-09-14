@@ -3771,6 +3771,7 @@ OC.L10N.register(
         "Not available": "Niet beschikbaar",
         "Not checked yet": "Nog niet gecontroleerd",
         "Open settings": "Instellingen openen",
+        "Add integration": "Integratie toevoegen",
         "Specified, not built yet": "Gespecificeerd, nog niet gebouwd",
         "Status message": "Statusbericht",
         "The name of the connection as an admin knows it.": "De naam van de koppeling zoals een beheerder die kent.",
@@ -3994,7 +3995,24 @@ OC.L10N.register(
         "Ends": "Eindigt",
         "Repeat": "Herhaling",
         "Stop series": "Reeks stoppen",
-        "Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.": "Kies een herhaling om een reeks te plannen, bijvoorbeeld een jaarlijkse vergunningscontrole. Een reeks die op de 31e valt, schuift naar de laatste dag van een kortere maand."
+        "Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.": "Kies een herhaling om een reeks te plannen, bijvoorbeeld een jaarlijkse vergunningscontrole. Een reeks die op de 31e valt, schuift naar de laatste dag van een kortere maand.",
+        "You cannot delete this case yet.": "Je kunt deze zaak nog niet verwijderen.",
+        "A statutory term on this case is still running.": "Er loopt nog een wettelijke termijn op deze zaak.",
+        "This case still has sub-cases.": "Deze zaak heeft nog deelzaken.",
+        "A legal hold is on this case.": "Op deze zaak staat een juridische blokkade.",
+        "The retention period of this case has not ended.": "De bewaartermijn van deze zaak is nog niet verstreken.",
+        "Resolve this first, then delete the case.": "Los dat eerst op en verwijder de zaak daarna.",
+        "Claim": "Oppakken",
+        "Release": "Teruggeven",
+        "You are now handling this case.": "Je behandelt deze zaak nu.",
+        "The case is back in the queue.": "De zaak staat weer in de wachtrij.",
+        "You are not signed in.": "Je bent niet ingelogd.",
+        "Someone else is already handling this case.": "Iemand anders behandelt deze zaak al.",
+        "You are already handling this case.": "Je behandelt deze zaak al.",
+        "Nobody is handling this case.": "Niemand behandelt deze zaak.",
+        "You can only release a case you handle yourself.": "Je kunt alleen een zaak teruggeven die je zelf behandelt.",
+        "The case could not be read.": "De zaak kon niet gelezen worden.",
+        "The assignment could not be changed.": "De toewijzing kon niet gewijzigd worden."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -344,3 +344,109 @@ change that already covers the area.
 | Q10.12 | humaniq | `humaniq/openspec/specs/hours-leaf/spec.md` | place the leaf on a case type or a programme where overhead is booked; re-rate |
 | Q13.22 | nextcloud | `none` | write it down where a security officer looks |
 | Q9.15 | hermiq | `none` | every case action is already a curated tool (hermiq-ai-tooling); a typed command line would parse onto them |
+
+## Discovery wave 1
+
+A second source of record sits beside the gap register: the round 4
+discovery sweep, `procest/_round4/discovery/` in
+ConductionNL/market-intelligence, written 2026-09-14. Thirty-six systems
+read, 1,117 raw findings, 631 consolidated candidates, 70 capability
+clusters in `build-plan.md`, 22 decisions in `decisions.md`, and a depth
+study of case-type configurability in `casetype-configurability.md`.
+Ruben answered all 22 decisions on 2026-09-14 and lifted the build hold.
+
+The ownership rule moves 536 of the 631 candidates out of dossiq. dossiq
+keeps 95 and 20 are recorded and not built. The one number to carry into a
+meeting: dossiq is **71 of 180** on the domain-neutral rows, seventh of
+twenty-six driven columns, against OTOBO and Odoo at 78 and xxllnc Zaken
+at 125.
+
+### The nine changes this wave opens
+
+| change | cluster | candidates | size | decision | what dossiq owns |
+|---|---|---|---|---|---|
+| `casetype-field-vocabulary` | depth study CT-1, rows A1, A2, A3, A5, A9, A11, A12, A13, B7, B10, plus the A4 defect and the B2 exposure | none, it is rated from the depth study | M | D3, D2 | the `propertyType` enum and the `x-openregister-extends-form.map`, both dossiq's file |
+| `ontvangstbevestiging` | 32 "Acknowledgement of receipt" | C-intake-23 (matrix hole), C-communication-54, C-communication-62, C-communication-55, C-communication-32 | M | D12, D16 | the trigger, the record and the failure mode. Statutory: Awb 4:3a |
+| `inbound-mail-filters` | 25 "Mail intake that can be trusted" | C-intake-1, C-intake-11, C-intake-19, C-intake-29, C-intake-31, C-intake-26, C-intake-48 | M | D12 | the filter pipeline, the verdicts, the policy and the log. Awb 2:3 |
+| `case-priority-impact-urgency` | 15 and 42 | C-search-6, C-deadlines-15 | M | D14 | impact, urgency, the matrix and the derived value |
+| `case-page-and-list-as-a-place` | 58 "The case page and the list as a place" | C-search-30, C-search-25, C-search-4, C-search-19, C-configuration-55, C-configuration-27 | M | none | the declarations on three pages. No component |
+| `case-recycle-window` | 39 "Delete, restore and destroy" | C-case-core-11 (matrix hole), C-access-and-privacy-65, C-access-and-privacy-50, C-documents-20, C-access-and-privacy-14 | M | D10 | the guard in front, the destroying role, the two clocks apart |
+| `case-grants-name-their-source` | 11 and 54 | C-access-and-privacy-45 (matrix hole), C-access-and-privacy-62 (matrix hole), C-access-and-privacy-46, C-access-and-privacy-47 | M | D22 | the declaration, the refusal that names its rule, the access panel |
+| `bulk-actions-report-progress` | 52 "Bulk action as a background job" | C-case-core-1 (matrix hole), C-case-core-2, C-case-core-4, C-case-core-45, C-reporting-30, C-case-core-3, C-search-17, C-configuration-20 | M | none | the hand-off, the skip list, the justification, the version guard |
+| `unread-state-on-the-case` | 62 "Per-user unread state" | C-search-1, C-case-core-26, C-communication-15, C-communication-6, C-communication-18, C-communication-61 | M | none | what counts as a change, and where the badge sits |
+
+### Three consumer halves that already exist and are not opened twice
+
+The wave 1 openregister list names seven things. Three of dossiq's halves
+are already open on `development` and are named here rather than
+duplicated:
+
+| openregister wave 1 item | dossiq's half, already open |
+|---|---|
+| the rules engine, D3, `field-rules-by-state`, `lifecycle-declarative-conditions` and `calc-engine-scalar-functions` | `field-rules-declared` |
+| the code lists, `property-code-list-from-concept-scheme` | `code-lists-from-concepts` |
+| the calendar feed, D11, `calendar-provider` and `integration-calendar` | `terms-on-the-engine-calendar` and `every-term-on-the-engine-calendar` |
+
+`case-delete-guard` is the fourth of its kind. It stays as it is and
+`case-recycle-window` sits behind it, per D10's answer of both.
+
+### Slugs to be specified in openregister, wave 1
+
+Four of this wave's dossiq changes wait on an openregister change with no
+artefact on that repo's `development` yet. Each proposal records the slug
+once the openregister lane opens it. `build-plan.md`'s own proposed names
+are given so the two lanes converge:
+
+| dossiq change | openregister half | proposed slug |
+|---|---|---|
+| `case-recycle-window` | the recycle state and the purge, beside `object-archive-state` and the shipped `retention-management` | to be specified, wave 1 |
+| `bulk-actions-report-progress` | the bulk job with preview and per-row outcome | `bulk-action-jobs` |
+| `unread-state-on-the-case` | the per-user read state | `object-read-state` |
+| `casetype-field-vocabulary` | the property source key, `x-openregister-property-source` | to be specified, wave 1, asked for by name in integriq's `registry-backed-field-source` |
+
+`case-grants-name-their-source` is the exception: both its openregister
+halves exist, `permission-provenance-and-deny` and
+`rbac-inherits-to-children`.
+
+### What the decisions changed from the file's own recommendations
+
+Three of the 22 were answered against the recommendation, and two of them
+land in this wave.
+
+- **D12 went to Nextcloud Mail, not integriq.** The file recommended that
+  integriq hold the account, the token and the alias domains. Ruben
+  answered that Nextcloud Mail owns the mail account, because the OAuth
+  2.0 flow is already Nextcloud Mail's. integriq opens no mail-account
+  change. dossiq's `inbound-mail-filters` reads the account Nextcloud Mail
+  already holds and keeps the filter pipeline and the sender
+  authentication, which were always dossiq's under D12 either way.
+- **D6 is relevance-led.** Every `must` candidate enters the corpus
+  whatever its passer count, so a `must` cluster is not skipped for having
+  one passer. That matters most in `inbound-mail-filters`, where two of
+  five `must` candidates carry documented passers only, and in
+  `bulk-actions-report-progress`, where four of five have one driven
+  passer each.
+- **D17 is answered for a broad market.** The product serves MKB as well
+  as municipalities, so the 20 candidates the lanes rated `not` are not
+  disqualified: a `not` for a gemeente can be a `could` for an MKB buyer.
+  None of the 20 falls in any of this wave's clusters, which every
+  proposal states so nobody has to re-derive it.
+
+### Two ratings this wave corrects
+
+Read against `development` while writing the proposals, in the same spirit
+as the re-read above.
+
+| candidate | the lane said | what the tree says |
+|---|---|---|
+| C-intake-23 | `no`, "zero hits for an intake acknowledgement" | the text, the renderer and the requirement all exist (`lib/Settings/templates/ontvangstbevestiging.json`, `TermijnNotificationService.php:45,187`, `burger-notifications` REQ-TERM-008). Nothing triggers it: the only caller is a queued job and nothing enqueues one on case creation. The row stays a gap, for a different reason |
+| C-search-6 | `partial`, "a value in a demo seed with nothing behind it" | `case.priority` is a schema field (`dossiq_register.json:1798`), `facetable`, written as the literal `normal` by three services. The field exists; the derivation and the sort do not |
+
+### Later waves
+
+Wave 2 is the intake form as an object, portal identity, the archiving
+process, publication and the national indexes, the party model, saved
+views and the working list. Wave 3 is agenda and rostering in humaniq, the
+project above the cases in pipelinq, the assistant in hermiq, the
+statutory gateways in integriq, tenancy and the layout per case type. Each
+dossiq change is added to the wave table above in the PR that opens it.

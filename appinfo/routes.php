@@ -372,6 +372,17 @@ $extra = [
     ['name' => 'caseLifecycle#extend',  'url' => '/api/case/{caseId}/extend',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
 
+        // Claim and release (case-claim-action, row 2.4). Who holds a case is
+        // one field, and OpenRegister would take that write straight from the
+        // browser; what the browser cannot do is refuse a claim on a case
+        // somebody else took a second earlier. So the read-compare-write lives
+        // here, beside the other gestures over the same subject. All three are
+        // literal segments after `{caseId}`, so none collides with the
+        // lifecycle, transition or actions routes around them.
+    ['name' => 'caseAssignment#state',   'url' => '/api/case/{caseId}/assignment', 'verb' => 'GET'],
+    ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
+    ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
+
         // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up
         // case for a later date — once, or as a series that comes round again

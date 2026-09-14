@@ -3768,6 +3768,7 @@
         "Not available": "Not available",
         "Not checked yet": "Not checked yet",
         "Open settings": "Open settings",
+        "Add integration": "Add integration",
         "Specified, not built yet": "Specified, not built yet",
         "Status message": "Status message",
         "The name of the connection as an admin knows it.": "The name of the connection as an admin knows it.",
@@ -3993,7 +3994,13 @@
         "{count} opened so far": "{count} opened so far",
         "Pick how often the follow-up comes back.": "Pick how often the follow-up comes back.",
         "Give the series an end date or a number, not both.": "Give the series an end date or a number, not both.",
-        "The series could not be stopped.": "The series could not be stopped."
+        "The series could not be stopped.": "The series could not be stopped.",
+        "You cannot delete this case yet.": "You cannot delete this case yet.",
+        "A statutory term on this case is still running.": "A statutory term on this case is still running.",
+        "This case still has sub-cases.": "This case still has sub-cases.",
+        "A legal hold is on this case.": "A legal hold is on this case.",
+        "The retention period of this case has not ended.": "The retention period of this case has not ended.",
+        "Resolve this first, then delete the case.": "Resolve this first, then delete the case."
     },
     "plurals": ""
 }

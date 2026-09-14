@@ -187,6 +187,50 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	}//end setSchema()
 
 	/**
+	 * Retention metadata, as the real entity's `retention` json column holds it.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $retention = [];
+
+	/**
+	 * Set the retention metadata.
+	 *
+	 * @param array<string, mixed>|null $retention Retention details.
+	 *
+	 * @return void
+	 */
+	public function setRetention(?array $retention): void {
+		$this->retention = $retention;
+	}//end setRetention()
+
+	/**
+	 * Get the retention metadata.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function getRetention(): ?array {
+		return $this->retention;
+	}//end getRetention()
+
+	/**
+	 * Whether an active legal hold keeps this record from being destroyed.
+	 *
+	 * Mirrors the real `ObjectEntity::hasActiveLegalHold()` line for line: it
+	 * is OpenRegister's SINGLE definition of held, and a stub that answered it
+	 * differently would let a guard pass here and refuse in production. A
+	 * RELEASED hold leaves the `legalHold` key in place with `active: false`,
+	 * so the presence of the key is not the question.
+	 *
+	 * @return bool True when the record carries an active legal hold.
+	 */
+	public function hasActiveLegalHold(): bool {
+		$retention = ($this->getRetention() ?? []);
+
+		return ((($retention['legalHold'] ?? [])['active'] ?? false) === true);
+	}//end hasActiveLegalHold()
+
+	/**
 	 * Minimal stand-in for the real ObjectEntity::jsonSerialize() — merges
 	 * the raw object data with an `@self.schema` (and `@self.id`) envelope,
 	 * matching the fields dossiq listeners actually read.
@@ -198,6 +242,9 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 		$data['@self'] = [
 			'schema' => $this->schema,
 			'id' => $this->uuid,
+			// The real getObjectArray() puts the retention column in `@self`,
+			// which is where a reader without the entity in hand finds it.
+			'retention' => $this->retention,
 			'deleted' => $this->deleted,
 		];
 

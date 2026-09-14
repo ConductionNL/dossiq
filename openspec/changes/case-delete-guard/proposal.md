@@ -51,6 +51,9 @@ and its legal hold, both shipped.
 ## Capabilities
 
 - Modified: `case-management`: a case is deleted only when nothing holds it.
+- Modified: `deelzaak-support`: the sub-case deletion protection is removed. Its
+  unlink-then-delete flow decided, in the client, a question the guard now
+  answers at the store, and the two rules disagreed about the same delete.
 
 ## Impact
 
