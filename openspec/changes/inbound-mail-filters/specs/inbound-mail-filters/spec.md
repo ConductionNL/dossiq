@@ -276,3 +276,86 @@ to mark a message as junk or as not junk, and that SHALL be recorded.
 - **WHEN** the intake role marks it as not junk
 - **THEN** it SHALL re-enter the pipeline
 - **AND** the correction SHALL be recorded
+
+### Requirement: Outbound mail leaves through the same account, with no dossiq credential (REQ-IMF-11)
+
+Every message dossiq sends about a case SHALL leave through a Nextcloud
+Mail account an administrator selected, using that account's own
+authentication. dossiq SHALL NOT store an SMTP password, SHALL NOT
+implement an OAuth 2.0 flow for sending, and SHALL NOT open its own SMTP
+connection. Upgrading SHALL delete any stored outbound mail credential. A
+sent message SHALL be filed in the account's sent folder. Where the
+account cannot be reached, sending SHALL report unavailable and SHALL NOT
+silently drop the message.
+
+#### Scenario: nothing in dossiq holds a sending password
+@e2e tests/e2e/inbound-mail-filters.spec.ts
+
+- **GIVEN** the dossiq mail settings
+- **WHEN** an administrator opens them
+- **THEN** no outbound password field SHALL be offered
+
+#### Scenario: a case mail goes out on the account's own authentication
+@e2e tests/e2e/inbound-mail-filters.spec.ts
+
+- **GIVEN** a selected Nextcloud Mail account on a modern authentication grant
+- **WHEN** dossiq sends a message about a case
+- **THEN** it SHALL be sent through that account
+- **AND** dossiq SHALL NOT have performed an authentication of its own
+
+#### Scenario: sent mail is filed in the mailbox
+@e2e tests/e2e/inbound-mail-filters.spec.ts
+
+- **GIVEN** a message dossiq sent about a case
+- **WHEN** the account's sent folder is read
+- **THEN** the message SHALL be in it
+
+#### Scenario: the stored SMTP credential is deleted on upgrade
+
+- **GIVEN** an instance carrying a stored outbound mail credential
+- **WHEN** the upgrade runs
+- **THEN** the value SHALL be removed
+
+#### Scenario: an unreachable account does not lose the message
+
+- **GIVEN** an account dossiq cannot reach
+- **WHEN** a case message is sent
+- **THEN** sending SHALL report unavailable
+- **AND** the message SHALL stay queued and visible on the case
+
+### Requirement: A team's mail carries that team's sender identity (REQ-IMF-12)
+
+A case type SHALL be able to declare which mail account a team's case
+messages leave from, so a message about a bezwaar can carry Juridische
+Zaken as its sender rather than one instance-wide address. The declared
+account SHALL be one an administrator selected in Nextcloud Mail. Where
+the declared account does not resolve, publishing the case type SHALL be
+refused, naming the account. dossiq SHALL NOT set a From address that no
+selected account holds.
+
+#### Scenario: a bezwaar goes out from Juridische Zaken
+@e2e tests/e2e/inbound-mail-filters.spec.ts
+
+- **GIVEN** a case type declaring the Juridische Zaken account
+- **WHEN** dossiq sends a message about a case of that type
+- **THEN** it SHALL be sent from that account
+
+#### Scenario: a case type with no declaration uses the default account
+@e2e tests/e2e/inbound-mail-filters.spec.ts
+
+- **GIVEN** a case type declaring no account
+- **WHEN** a message about it is sent
+- **THEN** the instance default account SHALL be used
+
+#### Scenario: an unresolvable account refuses publication
+
+- **GIVEN** a case type declaring an account that does not resolve
+- **WHEN** it is published
+- **THEN** publication SHALL refuse
+- **AND** it SHALL name the account
+
+#### Scenario: dossiq does not forge a sender
+
+- **GIVEN** a From address no selected account holds
+- **WHEN** dossiq is asked to send from it
+- **THEN** it SHALL be refused

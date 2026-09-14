@@ -79,6 +79,43 @@ sender-authentication half stays with dossiq too, because refusing,
 quarantining or accepting is a policy decision per case type and not a
 transport one.
 
+## Cluster 28, read against this change (wave 4)
+
+The wave 4 lane checked whether cluster 28's two `must` candidates are
+already answered here, rather than opening a change D12 declined. They are
+not both answered, so this change gains two sibling requirements instead.
+
+| candidate | relevance | answered here | by |
+|---|---|---|---|
+| C-intake-45 | must | yes | REQ-IMF-01. dossiq reads the account Nextcloud Mail holds, stores no mailbox password, implements no OAuth 2.0 flow, and deletes `email_imap_password` on upgrade |
+| C-integrations-42 | must | half | REQ-IMF-01 answers the mailbox. The candidate is "the mailbox **and the outbound mail** authenticate with OAuth2", and nothing here said anything about sending. **REQ-IMF-11** now does |
+| C-intake-37 | should | no | several alias domains on one instance. Nextcloud Mail holds the accounts, so a second account with a second domain is an account selection, not a dossiq feature. Recorded, not built |
+| C-configuration-63 | should | partly | mail configured per mailbox rather than per instance. REQ-IMF-12 gives a case type its own sending account, which is the half dossiq owns; which accounts exist stays Nextcloud Mail's |
+| C-integrations-8 | could | half | "move fetched mail, file sent mail". REQ-IMF-03 already moves a fetched message. REQ-IMF-11 files sent mail in the account's sent folder |
+
+The evidence, verbatim from the lane
+(`_round4/discovery/candidates.json`):
+
+- C-integrations-42, `integrations.tsv:20`: "znuny: OAuth2 token
+  management (AdminOAuth2TokenManagement.pm, System/OAuth2Token.pm,
+  OAuth2TokenConfig.pm, Email/MSGraph.pm, six console commands)". Six
+  driven passers, the widest in cluster 28, and a matrix hole. Its clause:
+  "M365 basic auth is gone".
+- C-intake-45, `intake.tsv:49`: "easy-redmine: IT service management, How
+  to Set Up OAuth 2.0 Login for Mailboxes". The lane's note: "The
+  mail-on-OAuth2 blocker: a municipality on Exchange Online cannot give a
+  password, so a password-only IMAP client cannot be connected at all".
+
+REQ-IMF-12 also carries the dossiq half of **integriq
+`outbound-sender-identity-and-deliverability`** (integriq#2012, round 4
+cluster 61): the sender identity per team, declared on the case type.
+integriq owns the record of what was sent and from whom, and the
+deliverability of it; dossiq declares which selected account a case type
+sends from and refuses to name a From address no account holds. The
+register's own line for cluster 61 says the same: integriq's
+`outbound-communication-log` "adds the sender identity as one more field
+on its record when the cluster lands".
+
 ## What dossiq consumes from Nextcloud Mail
 
 Read against `nextcloud/mail` on `main`. None of it is `OCP`, so it is
