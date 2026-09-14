@@ -20,7 +20,7 @@
  *
  * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
  */
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -87,7 +87,7 @@ describe('no type is offered that the engine cannot check', () => {
 		const unknown = offeredTypes.filter(
 			(type) =>
 				!vocabularyTypes.includes(type)
-				&& !Object.prototype.hasOwnProperty.call(LEGACY_TYPE_ALIASES, type),
+				&& !Object.hasOwn(LEGACY_TYPE_ALIASES, type),
 		)
 		expect(unknown).toEqual([])
 	})
@@ -134,7 +134,7 @@ describe('the extends-form map forwards nothing nobody defines', () => {
 		const unknown = Object.keys(map).filter(
 			(role) =>
 				!vocabularyKeys.includes(role)
-				&& !Object.prototype.hasOwnProperty.call(RENDERER_ROLES, role),
+				&& !Object.hasOwn(RENDERER_ROLES, role),
 		)
 		expect(unknown).toEqual([])
 	})

@@ -152,7 +152,7 @@ export async function fetchPropertyVocabulary(options = {}) {
 					notice: '',
 				}
 			}
-		} catch (e) {
+		} catch {
 			// An OpenRegister without the endpoint answers 404, and one that is
 			// not installed answers nothing. Both mean the same here: author
 			// against the snapshot and say so.
@@ -242,7 +242,7 @@ export function resolveStoredType(vocabulary, stored) {
 	if (typeNames(vocabulary).includes(type)) {
 		return { known: true, legacy: false, type, replacement: null }
 	}
-	if (Object.prototype.hasOwnProperty.call(LEGACY_TYPE_ALIASES, type)) {
+	if (Object.hasOwn(LEGACY_TYPE_ALIASES, type)) {
 		return {
 			known: true,
 			legacy: true,

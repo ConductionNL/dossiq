@@ -36,8 +36,15 @@ vi.mock('../../src/store/modules/object.js', () => ({
 	}),
 }))
 
-const stub = (name, tag = 'div') =>
-	defineComponent({
+/**
+ * A stand-in for one Nextcloud component.
+ *
+ * @param {string} name The component name.
+ * @param {string} tag The element it renders.
+ * @return {object} The stub component.
+ */
+function stub(name, tag = 'div') {
+	return defineComponent({
 		name,
 		props: ['modelValue', 'label', 'error', 'type', 'variant', 'disabled', 'helperText'],
 		emits: ['update:modelValue'],
@@ -53,6 +60,7 @@ const stub = (name, tag = 'div') =>
 			)
 		},
 	})
+}
 
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: stub('NcButton', 'button'),

@@ -543,7 +543,7 @@ export default {
 			}
 			try {
 				this.set('calculation', JSON.parse(text))
-			} catch (e) {
+			} catch {
 				this.calculationError = t(
 					'dossiq',
 					'A calculation is written as JSON. OpenRegister evaluates it.',
