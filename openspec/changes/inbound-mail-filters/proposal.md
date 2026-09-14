@@ -108,7 +108,10 @@ The evidence, verbatim from the lane
 
 REQ-IMF-12 also carries the dossiq half of **integriq
 `outbound-sender-identity-and-deliverability`** (integriq#2012, round 4
-cluster 61): the sender identity per team, declared on the case type.
+cluster 61, candidate C-communication-44, `communication.tsv`: "znuny:
+Outbound mail profiles and sendmail config (AdminSendmailConfig.pm, the
+Outbound Email Profiles screen)"): the sender identity per team, declared
+on the case type.
 integriq owns the record of what was sent and from whom, and the
 deliverability of it; dossiq declares which selected account a case type
 sends from and refuses to name a From address no account holds. The
