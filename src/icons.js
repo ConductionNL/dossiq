@@ -36,6 +36,7 @@ import Archive from 'vue-material-design-icons/Archive.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
+import BellBadgeOutline from 'vue-material-design-icons/BellBadgeOutline.vue'
 import BellCogOutline from 'vue-material-design-icons/BellCogOutline.vue'
 import BellPlusOutline from 'vue-material-design-icons/BellPlusOutline.vue'
 import BellRing from 'vue-material-design-icons/BellRing.vue'
@@ -91,6 +92,8 @@ import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue
 import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
+import EmailMarkAsUnread from 'vue-material-design-icons/EmailMarkAsUnread.vue'
+import EmailOpenOutline from 'vue-material-design-icons/EmailOpenOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EmoticonSad from 'vue-material-design-icons/EmoticonSad.vue'
@@ -224,6 +227,7 @@ export default {
 	ArrowUpBoldCircle,
 	BadgeAccountOutline,
 	BankTransfer,
+	BellBadgeOutline,
 	BellCogOutline,
 	BellPlusOutline,
 	BellRing,
@@ -278,6 +282,8 @@ export default {
 	Domain,
 	Earth,
 	EmailAlert,
+	EmailMarkAsUnread,
+	EmailOpenOutline,
 	EmailOutline,
 	EmailSearchOutline,
 	EmoticonSad,

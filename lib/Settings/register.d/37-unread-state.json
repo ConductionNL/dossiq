@@ -1,0 +1,48 @@
+{
+  "_note": "unread-state-on-the-case. OpenRegister owns the per-user read state (openregister#3734, `object-read-state`): unread is the ABSENCE of a row in `openregister_object_read_state`, a substantive write drops every row for that object except the author's, and `_unread=true` is resolved inside the query so the page, the total and the facets agree. dossiq stores none of it and declares two things here. ONE, on `case`, `x-openregister-read-state` names the changes that are news. Without the block every non-computed property counts, so one nightly recalculation or one bulk correction marks four hundred cases unread overnight and the badge stops being read. `files` is always a sub-resource whether it is declared or not, because OpenRegister owns the object's folder; it is written out anyway so the Documents badge is visible to a reader of this file. Notes and communications are NOT sub-resources: `kind: \"property\"` counts entries of an array-valued property ON THE CASE, and a dossiq note and a contactmoment are separate register objects pointing back at the case, so a declaration for either would be dropped rather than badged. TWO, on `caseType`, `unreadTriggers` is the authoring surface for the same question, read by \\OCA\\Dossiq\\Service\\UnreadTriggerService. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "case": {
+        "x-openregister-read-state": {
+          "properties": [
+            "status",
+            "assignee",
+            "deadline",
+            "result"
+          ],
+          "subResources": {
+            "files": {
+              "kind": "files"
+            }
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "unreadTriggers": {
+            "type": "array",
+            "title": "What makes a case unread",
+            "description": "The changes that make a case of this type unread again for the people who have already seen it. Leave it empty for the default: the status moved, a document arrived, somebody wrote. A change that is not named here is a technical touch and lights up nothing, which is what keeps a bulk correction from marking four hundred cases unread overnight.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "status",
+                "documents",
+                "messages",
+                "assignee",
+                "deadline",
+                "result"
+              ]
+            },
+            "default": [
+              "status",
+              "documents",
+              "messages"
+            ],
+            "visible": true
+          }
+        }
+      }
+    }
+  }
+}
