@@ -764,7 +764,7 @@
                     },
                     "ref": {
                         "type": "string",
-                        "title": "Reference",
+                        "title": "Reference to another object",
                         "description": "The schema a reference points at, by slug. This is how a field holds another case or a catalogued object instead of text."
                     },
                     "calculation": {

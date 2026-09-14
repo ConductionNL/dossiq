@@ -205,7 +205,7 @@
 			<div class="pd-fields__row">
 				<NcTextField
 					:modelValue="value.ref || ''"
-					:label="t('dossiq', 'Reference')"
+					:label="t('dossiq', 'Reference to another object')"
 					class="pd-fields__field"
 					@update:modelValue="(v) => set('ref', v)" />
 			</div>

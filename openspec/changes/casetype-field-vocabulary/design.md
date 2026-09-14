@@ -75,3 +75,53 @@ notice is gone.
 `x-openregister-property-source` is openregister's key, resolved by
 integriq. This change forwards it so a case type can declare it. dossiq
 resolves nothing and ships no adapter, per D2.
+
+## D-9. The help text is the key the renderer already has a role for
+
+The proposal asked for a `helpText` key. The case form is rendered by
+`propertiesFromDefinitions` in `@conduction/nextcloud-vue`, and it reads
+exactly two text roles off a definition: `description`, which becomes the
+sentence under the input, and `definition`, which it falls back to when the
+first is empty. Three dossiq fields into two roles does not go.
+
+So `description` is the help text, relabelled as help in the tab and
+described as help in the schema, and `definition` keeps the field's own
+documentation. B10's clause is that neither field is labelled as help, and
+that is fixed by labelling one, not by adding a third.
+
+## D-10. `itemsType` is `items`, because the vocabulary's key takes a shape
+
+The vocabulary's `items` key carries a sub-schema, `{"type": "string"}`, not
+a type name. A definition storing the name alone would forward `items:
+"string"`, which is malformed, and nothing on the path would say so. The
+tab asks for the entry type and stores the shape.
+
+## D-11. The map reads role to field, and the two definitions of it disagree
+
+dossiq's `x-openregister-extends-form.map` is written as role to definition
+field: `"title": "name"` means "the title comes from the definition's name".
+That is the direction the shipped consumer reads, `propertiesFromDefinitions`
+in `@conduction/nextcloud-vue`, which iterates `[target, source]`.
+
+OpenRegister's new `ExtendingFormDeclaration` reads it the other way, as form
+field to vocabulary key, and validates the right-hand side. Read that way,
+dossiq's map forwards `name`, `propertyType`, `enumValues`, `isRequired` and
+`defaultValue`, five keys the vocabulary does not hold, and every one of them
+would be refused by name.
+
+The map is not flipped here. The renderer is the half that runs, and flipping
+would break every case type on every instance to satisfy a validator that has
+not merged. It is reported instead, and dossiq's contract test checks the side
+the renderer reads.
+
+## D-12. A key the platform has not published is carried, not forwarded
+
+`x-openregister-property-source` is the name integriq's
+`registry-backed-field-source` asked OpenRegister for, and OpenRegister has
+not shipped it. A form may only forward a key the vocabulary holds, so
+forwarding it now would put dossiq in exactly the position this change exists
+to end: a key in our file that nothing on the other side defines.
+
+The definition carries the administrator's answer regardless, and the contract
+test fails the day the vocabulary does hold the key. That failure is the
+reminder to move it into the map, which is cheaper than a note nobody reads.
