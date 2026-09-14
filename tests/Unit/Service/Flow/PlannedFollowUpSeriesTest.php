@@ -41,6 +41,7 @@ use RuntimeException;
  * A planned follow-up that repeats.
  *
  * @covers \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
+ * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
  */
 class PlannedFollowUpSeriesTest extends TestCase {
 

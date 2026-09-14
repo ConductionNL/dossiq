@@ -32,6 +32,7 @@ use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\Flow\PlannedFollowUpDocument;
+use OCA\Dossiq\Service\Flow\PlannedSeriesLedger;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -42,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * One planned flow, stubbed, swept.
  *
  * @covers \OCA\Dossiq\Service\Flow\CaseFlowActions
+ * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
  */
 class PlannedFollowUpSweepTest extends TestCase {
 
@@ -336,12 +338,16 @@ class PlannedFollowUpSweepTest extends TestCase {
 			}
 		);
 
+		$settings = $this->createMock(SettingsService::class);
+		$document = new PlannedFollowUpDocument();
+		$logger = $this->createMock(LoggerInterface::class);
+
 		return new CaseFlowActions(
 			$container,
-			$this->createMock(SettingsService::class),
-			new PlannedFollowUpDocument(),
-			$appConfig,
-			$this->createMock(LoggerInterface::class),
+			$settings,
+			$document,
+			new PlannedSeriesLedger($container, $settings, $document, $appConfig, $logger),
+			$logger,
 		);
 	}//end serviceFor()
 }//end class

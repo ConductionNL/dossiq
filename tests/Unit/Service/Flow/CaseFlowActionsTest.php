@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Flow;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
 use OCA\Dossiq\Service\Flow\PlannedFollowUpDocument;
+use OCA\Dossiq\Service\Flow\PlannedSeriesLedger;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +44,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Flow\CaseFlowActions
  * @covers \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument
+ * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesCalendar
+ * @covers \OCA\Dossiq\Service\Flow\PlannedSeriesLedger
  */
 class CaseFlowActionsTest extends TestCase {
 
@@ -63,12 +66,22 @@ class CaseFlowActionsTest extends TestCase {
 			}
 		);
 
+		$settings = $this->createMock(SettingsService::class);
+		$document = new PlannedFollowUpDocument();
+		$logger = $this->createMock(LoggerInterface::class);
+
 		return new CaseFlowActions(
 			$container,
-			$this->createMock(SettingsService::class),
-			new PlannedFollowUpDocument(),
-			$this->createMock(IAppConfig::class),
-			$this->createMock(LoggerInterface::class),
+			$settings,
+			$document,
+			new PlannedSeriesLedger(
+				$container,
+				$settings,
+				$document,
+				$this->createMock(IAppConfig::class),
+				$logger,
+			),
+			$logger,
 		);
 	}//end service()
 
