@@ -187,13 +187,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
-		// An empty uid means OpenRegister had no session user to name. Handing
-		// that on as null lets the engine resolve the caller from IUserSession
-		// itself, which is the same identity the write path would use.
-		$caller = null;
-		if ($userId !== '') {
-			$caller = $userId;
-		}
+		$caller = $this->callerOf(userId: $userId);
 
 		try {
 			$available = $this->transitionEngine->getAvailableTransitions(
@@ -242,12 +236,33 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		// the gateway answers null and the list is published exactly as it was
 		// before this change. Falling closed on an absent authority would lock
 		// every handler out of every case the day the app is disabled.
-		if ($this->refusedByOpenRegister(caseId: $caseId, userId: $caller) === true) {
+		if ($this->grants->refusesTheWrite(caseId: $caseId, userId: $caller) === true) {
 			return [];
 		}
 
 		return $actions;
 	}//end availableActions()
+
+	/**
+	 * The uid to resolve the caller by, or null to let the session decide.
+	 *
+	 * An empty uid means OpenRegister had no session user to name. Handing
+	 * that on as null lets the engine resolve the caller from IUserSession
+	 * itself, which is the same identity the write path would use.
+	 *
+	 * @param string $userId The uid OpenRegister passed, possibly empty.
+	 *
+	 * @return string|null The uid, or null when there was none.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function callerOf(string $userId): ?string {
+		if ($userId === '') {
+			return null;
+		}
+
+		return $userId;
+	}//end callerOf()
 
 	/**
 	 * Map every transition the engine answered onto OpenRegister's shape.
@@ -278,51 +293,6 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 
 		return $actions;
 	}//end publishAll()
-
-	/**
-	 * Whether OpenRegister refuses this caller the write a move needs.
-	 *
-	 * Reads `granted` off OpenRegister's own provenance record for the write
-	 * verb and logs the rule that decided, verbatim, so the refusal is
-	 * traceable to the rule rather than to an empty screen. Nothing is merged
-	 * and nothing is stored: D-5 forbids a copy of an access decision, because
-	 * a copy is a second decision that nobody updates.
-	 *
-	 * @param string      $caseId The case uuid.
-	 * @param string|null $userId The caller, null when the session decides.
-	 *
-	 * @return bool True only when OpenRegister itself said no.
-	 *
-	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
-	 */
-	private function refusedByOpenRegister(string $caseId, ?string $userId): bool {
-		$action = OpenRegisterGrantsGateway::WRITE_ACTION;
-
-		$provenance = $this->grants->provenanceForCase(
-			caseId: $caseId,
-			actions: [$action],
-			userId: $userId,
-		);
-		if ($provenance === null) {
-			return false;
-		}
-
-		$record = ($provenance[$action] ?? null);
-		if (is_array($record) === false) {
-			return false;
-		}
-
-		if ($this->grants->refuses(record: $record) !== true) {
-			return false;
-		}
-
-		$this->logger->info(
-			'Dossiq case lifecycle provider: OpenRegister refuses this caller the case, so no move is offered',
-			['caseId' => $caseId, 'action' => $action, 'provenance' => $record],
-		);
-
-		return true;
-	}//end refusedByOpenRegister()
 
 	/**
 	 * Take one of the moves this provider offered.

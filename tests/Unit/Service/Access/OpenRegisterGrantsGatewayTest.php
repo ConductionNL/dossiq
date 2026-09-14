@@ -261,6 +261,82 @@ class OpenRegisterGrantsGatewayTest extends TestCase {
 	}//end testTheAnswerIsHandedOnVerbatim()
 
 	/**
+	 * `refusesTheWrite()` answers true only when OpenRegister itself said no.
+	 *
+	 * 🔴 THE THREE FALSES ARE THE POINT, NOT THE TRUE. An absent OpenRegister,
+	 * a build without the provenance reader and a throwing evaluator all answer
+	 * false, because the caller empties a case's action list on true. A gateway
+	 * that answered true on an absence would offer no move on any case, on any
+	 * instance that has not upgraded, and the only evidence on a handler's
+	 * screen would be a timeline with nothing on it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testOnlyOpenRegistersOwnRefusalIsARefusal(): void {
+		self::assertFalse(
+			$this->gateway(installed: false)->refusesTheWrite(caseId: self::CASE_ID),
+			'An absent OpenRegister must not read as a refusal.',
+		);
+
+		$schemaMapper = new class {
+			/**
+			 * Answers a schema.
+			 *
+			 * @param string $slug The slug.
+			 *
+			 * @return object The schema stand-in.
+			 */
+			public function find(string $slug): object {
+				return new \stdClass();
+			}
+		};
+
+		// A LIST, not a keyed array: PHP casts the array keys true and false to
+		// 1 and 0, and the anonymous class takes a bool.
+		foreach ([true, false] as $granted) {
+			$evaluator = new class($granted) {
+				/**
+				 * Constructor.
+				 *
+				 * @param bool $granted The verdict to answer with.
+				 */
+				public function __construct(private readonly bool $granted) {
+				}
+
+				/**
+				 * Answers the dictated verdict.
+				 *
+				 * @param mixed $schema  Ignored.
+				 * @param mixed $actions Ignored.
+				 * @param mixed $userId  Ignored.
+				 * @param mixed $object  Ignored.
+				 *
+				 * @return array<string, mixed> The provenance.
+				 */
+				public function provenanceFor($schema = null, $actions = [], $userId = null, $object = null): array {
+					return ['update' => ['action' => 'update', 'granted' => $this->granted, 'source' => 'role']];
+				}
+			};
+
+			$gateway = $this->gateway(
+				installed: true,
+				services: [
+					'OCA\OpenRegister\Service\Object\PermissionHandler' => $evaluator,
+					'OCA\OpenRegister\Db\SchemaMapper' => $schemaMapper,
+				],
+			);
+
+			self::assertSame(
+				($granted === false),
+				$gateway->refusesTheWrite(caseId: self::CASE_ID),
+				sprintf('A grant of %s must answer %s.', var_export($granted, true), var_export(($granted === false), true)),
+			);
+		}
+	}//end testOnlyOpenRegistersOwnRefusalIsARefusal()
+
+	/**
 	 * A record with no verdict answers null, so nobody reads a missing key as a no.
 	 *
 	 * @return void

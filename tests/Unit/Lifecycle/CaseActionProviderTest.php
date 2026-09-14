@@ -29,6 +29,9 @@ namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\SettingsService;
+use OCP\App\IAppManager;
+use Psr\Container\ContainerInterface;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -563,10 +566,12 @@ class CaseActionProviderTest extends TestCase {
 	/**
 	 * A gateway answering the provenance we dictate.
 	 *
-	 * 🔑 `createMock` and NOT a double with added methods: a double that adds a
-	 * method the real class lacks can only ever pass, and `refuses()` here is
-	 * the REAL method reading the record, so a change to how the verdict is
-	 * read reddens these tests.
+	 * 🔑 `onlyMethods` AND NOT `addMethods`: a double that adds a method the
+	 * real class lacks can only ever pass, so the double would survive the
+	 * gateway being renamed out from under it. Only `provenanceForCase()` is
+	 * dictated; `refusesTheWrite()` and `refuses()` are the REAL methods
+	 * reading the record, so a change to how the verdict is read reddens these
+	 * tests rather than sliding past them.
 	 *
 	 * @param array<string, array<string, mixed>>|null $provenance What OpenRegister answers.
 	 *
@@ -574,7 +579,14 @@ class CaseActionProviderTest extends TestCase {
 	 */
 	private function grantsAnswering(?array $provenance): OpenRegisterGrantsGateway {
 		$gateway = $this->getMockBuilder(OpenRegisterGrantsGateway::class)
-			->disableOriginalConstructor()
+			->setConstructorArgs(
+				[
+					$this->createMock(IAppManager::class),
+					$this->createMock(ContainerInterface::class),
+					$this->createMock(SettingsService::class),
+					$this->createMock(LoggerInterface::class),
+				]
+			)
 			->onlyMethods(['provenanceForCase'])
 			->getMock();
 		$gateway->method('provenanceForCase')->willReturn($provenance);

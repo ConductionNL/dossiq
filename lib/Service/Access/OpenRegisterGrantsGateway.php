@@ -190,6 +190,60 @@ class OpenRegisterGrantsGateway {
 	}//end refuses()
 
 	/**
+	 * Whether OpenRegister refuses this caller the write a move needs.
+	 *
+	 * The one question a caller actually has, answered in the one class that
+	 * may ask it. It lives here rather than in the caller for two reasons. The
+	 * interpretation of OpenRegister's record belongs beside the code that
+	 * fetched it, so there is one place to read when the record's shape
+	 * changes. And a caller that had to assemble the answer from
+	 * `provenanceForCase()` and `refuses()` itself would be doing the reading
+	 * OpenRegister already did, one step closer to the second evaluator D-1
+	 * forbids.
+	 *
+	 * 🔑 IT ANSWERS `true` ONLY WHEN OPENREGISTER ITSELF SAID NO. Every other
+	 * outcome, including "OpenRegister could not be asked", is `false`.
+	 * Reading an absence as a refusal would lock every handler out of every
+	 * case on an instance that has not upgraded to openregister#3726, which is
+	 * a worse failure than the one this change is about. The authorization
+	 * that still runs in that case is OpenRegister's own, at the object API,
+	 * which dossiq never bypasses.
+	 *
+	 * The record is logged verbatim rather than summarised, so the refusal is
+	 * traceable to the rule instead of to an empty screen (D-5).
+	 *
+	 * @param string      $caseId The case uuid.
+	 * @param string|null $userId The caller, null when the session decides.
+	 *
+	 * @return bool True only when OpenRegister refused the write.
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function refusesTheWrite(string $caseId, ?string $userId = null): bool {
+		$provenance = $this->provenanceForCase(
+			caseId: $caseId,
+			actions: [self::WRITE_ACTION],
+			userId: $userId,
+		);
+
+		$record = null;
+		if ($provenance !== null && is_array($provenance[self::WRITE_ACTION] ?? null) === true) {
+			$record = $provenance[self::WRITE_ACTION];
+		}
+
+		if ($this->refuses(record: $record) !== true) {
+			return false;
+		}
+
+		$this->logger->info(
+			'Dossiq grants gateway: OpenRegister refuses this caller the write on a case',
+			['caseId' => $caseId, 'action' => self::WRITE_ACTION, 'provenance' => $record],
+		);
+
+		return true;
+	}//end refusesTheWrite()
+
+	/**
 	 * Resolve OpenRegister's RBAC evaluator, or null.
 	 *
 	 * @return object|null The evaluator when it is there and carries the method.
