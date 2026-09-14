@@ -1,0 +1,183 @@
+{
+  "_note": "ontvangstbevestiging (Awb 4:3a). The acknowledgement of receipt is DECLARED on the case type and never drawn into a workflow (design D-1): a case type that forgets a workflow step breaks a statutory duty silently, and a declaration cannot be forgotten by omission because it carries a default. The case gains the record of what was sent and the state of the duty, so 'did we confirm receipt' is answered from the case rather than from a server log (design D-8). A fragment rather than an edit to dossiq_register.json, per ADR-037, because three dossiq lanes build against this file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "acknowledgement": {
+            "type": "object",
+            "title": "Acknowledgement of receipt",
+            "description": "When a case of this type owes the sender an acknowledgement of receipt, and how it is sent. Awb 4:3a owes one to every electronically submitted message, so the default is on and the default channel list is every electronic intake channel. A case typed at the balie owes nothing unless this declaration says so.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "title": "Send an acknowledgement of receipt",
+                "description": "Off only where the law does not ask for one. Turning it off warns on publication and names Awb 4:3a."
+              },
+              "statutory": {
+                "type": "boolean",
+                "default": true,
+                "title": "Statutory",
+                "description": "Marks this as the Awb 4:3a duty rather than a courtesy, so it cannot be removed unnoticed."
+              },
+              "intakeChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["manual", "balie", "phone", "email", "post", "website", "other", "zgw-api"]
+                },
+                "default": ["email", "website", "zgw-api"],
+                "title": "Intake channels that owe one",
+                "description": "The values of case.intakeChannel that owe an acknowledgement. The default is every electronic channel: mail, the portal and the API."
+              },
+              "defaultChannel": {
+                "type": "string",
+                "enum": ["email", "portal", "post"],
+                "default": "email",
+                "title": "Default channel",
+                "description": "The channel used when the citizen recorded no choice of their own."
+              },
+              "contentOnPlatform": {
+                "type": "boolean",
+                "default": false,
+                "title": "Content stays on the platform",
+                "description": "On, the e-mail says a message is waiting and carries no case content. The Berichtenbox pattern, decided once per case type rather than per template."
+              },
+              "language": {
+                "type": "string",
+                "default": "nl",
+                "title": "Language",
+                "description": "The language the acknowledgement is written in. Dutch unless this case type declares another."
+              }
+            }
+          },
+          "notificationMoments": {
+            "type": "array",
+            "title": "Automatic messages",
+            "description": "The moments at which the applicant is told something without a handler acting. The entry for case-received carries the statutory flag and is the Awb 4:3a acknowledgement. Asking the applicant for something is its own moment, distinct from a status change, because informing and chasing are not the same message.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "moment": {
+                  "type": "string",
+                  "enum": ["case-received", "case-incomplete", "status-changed", "case-decided"],
+                  "title": "Moment"
+                },
+                "template": {
+                  "type": "string",
+                  "title": "Template",
+                  "description": "The template rendered at this moment."
+                },
+                "statutory": {
+                  "type": "boolean",
+                  "default": false,
+                  "title": "Statutory"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "title": "Enabled"
+                }
+              }
+            }
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "acknowledgementDuty": {
+            "type": "object",
+            "title": "Acknowledgement of receipt",
+            "description": "Whether this case owes an acknowledgement of receipt, and whether it was met. A failed send is a state here rather than a line in the application log, because somebody has to perform the duty by hand once the retries run out.",
+            "properties": {
+              "required": {
+                "type": "boolean",
+                "title": "Owed"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["not-required", "pending", "met", "unmet"],
+                "title": "Status",
+                "facetable": true
+              },
+              "channel": {
+                "type": "string",
+                "title": "Channel"
+              },
+              "recipient": {
+                "type": "string",
+                "title": "Recipient"
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Sent at"
+              },
+              "attempts": {
+                "type": "integer",
+                "title": "Attempts"
+              },
+              "lastError": {
+                "type": "string",
+                "title": "Last failure"
+              },
+              "metBy": {
+                "type": "string",
+                "title": "Recorded by"
+              },
+              "metAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Recorded at"
+              },
+              "metHow": {
+                "type": "string",
+                "title": "Met another way"
+              }
+            }
+          },
+          "outboundCommunications": {
+            "type": "array",
+            "title": "Outbound communications",
+            "description": "What this case sent the applicant on its own, one entry per message: the moment, the channel, the recipient and the version of the template it was rendered from. Cluster 23's outbound log renders these rather than keeping a second set.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "moment": {
+                  "type": "string",
+                  "title": "Moment"
+                },
+                "channel": {
+                  "type": "string",
+                  "title": "Channel"
+                },
+                "recipient": {
+                  "type": "string",
+                  "title": "Recipient"
+                },
+                "template": {
+                  "type": "string",
+                  "title": "Template"
+                },
+                "templateVersion": {
+                  "type": "string",
+                  "title": "Template version"
+                },
+                "sentAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Sent at"
+                },
+                "contentWithheld": {
+                  "type": "boolean",
+                  "title": "Content withheld"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

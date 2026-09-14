@@ -86,6 +86,30 @@ class PortalContributionProvider {
 	private const REGISTER = 'dossiq';
 
 	/**
+	 * The case fields a citizen may see.
+	 *
+	 * 🔴 THE ONE LIST, AND THE REASON IT IS A CONSTANT. The portal projects a
+	 * case down to these fields, and the ontvangstbevestiging quotes a case
+	 * back to the same person. Written twice, the two lists agree on the day
+	 * they are written and diverge silently afterwards, and the first time
+	 * anyone notices the divergence is a data-protection incident rather than a
+	 * bug. So the acknowledgement reads this constant through
+	 * {@see self::citizenCaseFields()} instead of keeping a second one.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CITIZEN_CASE_FIELDS = [
+		'identifier',
+		'title',
+		'caseType',
+		'status',
+		'result',
+		'startDate',
+		'endDate',
+		'deadline',
+	];
+
+	/**
 	 * The audiences this provider contributes to (contract v2, preferred).
 	 *
 	 * The registry probes for this method first. Dossiq serves suppliers, the
@@ -112,6 +136,20 @@ class PortalContributionProvider {
 	public function getAudience(): string {
 		return 'supplier';
 	}//end getAudience()
+
+	/**
+	 * The case fields a citizen may see, for a surface that quotes a case back.
+	 *
+	 * The ontvangstbevestiging names what was received, so it reads this rather
+	 * than deciding for itself what a citizen may be shown.
+	 *
+	 * @return array<int, string> The field names.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	public function citizenCaseFields(): array {
+		return self::CITIZEN_CASE_FIELDS;
+	}//end citizenCaseFields()
 
 	/**
 	 * Build the declarative portal manifest for one resolved subject.
@@ -244,16 +282,7 @@ class PortalContributionProvider {
 					'label' => 'Mijn zaken',
 					'listable' => true,
 					'minTrust' => 'low',
-					'fields' => [
-						'identifier',
-						'title',
-						'caseType',
-						'status',
-						'result',
-						'startDate',
-						'endDate',
-						'deadline',
-					],
+					'fields' => self::CITIZEN_CASE_FIELDS,
 				],
 				[
 					'id' => 'berichten',
