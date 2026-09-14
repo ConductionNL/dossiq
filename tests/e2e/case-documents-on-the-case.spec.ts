@@ -80,6 +80,29 @@ function davPath(caseId: string, name: string): string {
 }
 
 /**
+ * Give a case its own folder, the way opening its Files tab does.
+ *
+ * A case seeded through the object API has no folder: OpenRegister creates
+ * one the first time something asks for the object's files, and until then
+ * the path this spec writes to answers 404. The Files tab asks on render, so
+ * a handler never sees this; a spec that goes straight to WebDAV must ask
+ * first, or it measures the absent folder rather than the projection.
+ *
+ * @param caseId The case uuid.
+ * @return Nothing; the folder exists when it resolves.
+ */
+async function materialiseFolder(caseId: string): Promise<void> {
+	const res = await api.get(
+		`/index.php/apps/openregister/api/objects/${REGISTER}/case/${caseId}/files`,
+		{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+	)
+	expect(
+		res.ok(),
+		`the case's folder must be created, got ${res.status()}`,
+	).toBeTruthy()
+}
+
+/**
  * The case's dossier as the app lists it.
  *
  * @param caseId The case uuid.
@@ -99,7 +122,18 @@ async function dossierOf(caseId: string): Promise<any[]> {
 test.describe('Documents live on the case', () => {
 	test.describe.configure({ mode: 'serial' })
 
+	// 🔴 A BROWSER TEST NEEDS MORE THAN THE CONFIG'S 30s DEFAULT. Two tests here
+	// open a case page, and one page load is budgeted `PAGE_LOAD_MS` = 45s
+	// (helpers/nav.ts): more than the whole test had. Both then died as
+	// `Test timeout of 30000ms exceeded` inside `page.goto`, naming nothing,
+	// which is exactly the failure nav.ts#journeyBudget documents. Every other
+	// browser spec in this suite sets this; this one did not.
+	test.setTimeout(180_000)
+
 	test.beforeAll(async ({ playwright, baseURL }) => {
+		// The describe's budget governs TESTS, not hooks: a hook gets the
+		// config default unless it sets its own.
+		test.setTimeout(120_000)
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
 		registerFolder = await registerFolderName()
@@ -126,6 +160,10 @@ test.describe('Documents live on the case', () => {
 			startDate: new Date().toISOString().slice(0, 10),
 		})
 		caseB = objectId(b)
+
+		// Both cases need their folder before anything can be dropped into it.
+		await materialiseFolder(caseA)
+		await materialiseFolder(caseB)
 	})
 
 	test.afterAll(async () => {
@@ -151,6 +189,17 @@ test.describe('Documents live on the case', () => {
 	test('a file dropped into the case folder is a document with derived defaults', async () => {
 		// Over WebDAV, the way the Files tab's browser uploads: no dialog, no
 		// metadata, just the file in the folder.
+		// The folder is there (materialiseFolder ran in beforeAll): a 404 here
+		// would mean the case never got one, not that the projection failed.
+		const folder = await api.fetch(davPath(caseA, ''), {
+			method: 'PROPFIND',
+			headers: { requesttoken: token, Depth: '0' },
+		})
+		expect(
+			folder.status(),
+			`the case folder must exist before the drop, got ${folder.status()}`,
+		).toBeLessThan(400)
+
 		const put = await api.put(davPath(caseA, FILE_NAME), {
 			headers: {
 				requesttoken: token,
@@ -232,7 +281,31 @@ test.describe('Documents live on the case', () => {
 			{ timeout: 15_000 },
 		)
 		await expect(page.getByTestId('document-properties-missing')).toHaveCount(0)
-		const title = page.locator('.dossier-metadata-dialog input').first()
+		// 🔴 NOT `.dossier-metadata-dialog input` FIRST. The first input in this
+		// dialog is the Document type NcSelect's own search box
+		// (`role="combobox"`, `type="search"`); the title is the fourth field
+		// down. Filling the first one typed the new title into a combobox
+		// search, left the record's title as it was, and the PATCH that
+		// followed carried `"title":"…-drop"` — a save that changed nothing,
+		// reported as the projection failing to store it.
+		const title = page
+			.locator('.dossier-metadata-dialog')
+			.getByRole('textbox', { name: /^(Title|Titel)$/ })
+		// 🔴 NEITHER GATE ABOVE MEANS THE FORM HOLDS THE RECORD YET. The
+		// dialog renders at once and `created()` starts `loadRecord()`; when
+		// that resolves it writes every field from the record, the title
+		// included, over whatever is in the form. The file name is a prop, so
+		// it is there before the fetch, and `document-properties-missing`
+		// renders only once the fetch has come back empty-handed, so its
+		// absence is equally true before the fetch. Measured on the trace of
+		// this test: the title input was `""`, took the typed value, and
+		// reverted to the record's title 237 ms later, and the PATCH that
+		// followed carried the OLD title. So wait for the value the record
+		// puts in the field; anything typed earlier is typed into a field
+		// that is about to be overwritten.
+		await expect(title).toHaveValue(FILE_NAME.replace(/\.pdf$/, ''), {
+			timeout: 15_000,
+		})
 		await title.fill(`${RUN_PREFIX} Aanvraagformulier, herzien`)
 		await page.getByTestId('document-properties-save').click()
 
@@ -273,6 +346,15 @@ test.describe('Documents live on the case', () => {
 				data: {},
 			},
 		)
+		// 🔴 A 500 HERE IS USUALLY ANOTHER APP, NOT THIS ONE. Measured
+		// 2026-09-14 on the shared instance: dossiq creates the join and then
+		// zaakafhandelapp's ZGWLogicService::createOio() throws on it
+		// ("Argument #1 ($objectUrl) must be of type string, null given"), so
+		// the response is 500 while the join exists. That checkout is 41
+		// commits stale and its own #665 fixes it. The assertion stays strict
+		// on purpose: the endpoint must answer 2xx, and a 500 from a
+		// listener is a real failure of the request even when the write
+		// landed. Read the server log before reading this as dossiq's bug.
 		expect(
 			link.ok(),
 			`the join must be created, got ${link.status()}`,

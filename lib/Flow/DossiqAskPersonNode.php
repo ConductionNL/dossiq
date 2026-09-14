@@ -572,6 +572,12 @@ class DossiqAskPersonNode implements IFlowNode {
      * genuinely its own: an unassigned flow task can be resumed by anybody,
      * which is not true of a task a transition creates.
      *
+     * And the resolver's third step reaches here for free: an ask on a case
+     * that HAS a handler no longer refuses when the declaration named nobody,
+     * because the case handler is who the ask belongs to. What is left to
+     * refuse is the case that names no handler at all, which is the run that
+     * genuinely has nobody to ask.
+     *
      * @param array $config The step configuration.
      * @param array $items  The input items; the first carries the case.
      *
