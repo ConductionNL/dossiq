@@ -144,6 +144,7 @@ class SubstitutedWorkResolver {
 		$subId = (string)($sub['id'] ?? ($sub['uuid'] ?? ''));
 		$scope = (string)($sub['scope'] ?? 'all');
 		$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
+		$until = $this->routedUntil(sub: $sub);
 
 		$cases = $this->searchObjectsAsArrays(
 			objectService: $objectService,
@@ -168,7 +169,7 @@ class SubstitutedWorkResolver {
 			}
 
 			$seen[$id] = true;
-			$case['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
+			$case['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId, 'until' => $until];
 			$collected[] = $case;
 		}//end foreach
 
@@ -200,6 +201,7 @@ class SubstitutedWorkResolver {
 		$subId = (string)($sub['id'] ?? ($sub['uuid'] ?? ''));
 		$scope = (string)($sub['scope'] ?? 'all');
 		$scopeRefs = array_map('strval', (array)($sub['scopeRefs'] ?? []));
+		$until = $this->routedUntil(sub: $sub);
 
 		$collected = [];
 		foreach ($this->engineTasks->openForAssignee(actor: $absentee) as $task) {
@@ -213,12 +215,36 @@ class SubstitutedWorkResolver {
 			}
 
 			$seen[$id] = true;
-			$task['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
+			$task['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId, 'until' => $until];
 			$collected[] = $task;
 		}//end foreach
 
 		return $collected;
 	}//end collectTasks()
+
+	/**
+	 * The day this substitution stops routing work, as the marker prints it.
+	 *
+	 * The typed `endDate`, unless an approved humaniq leave set a different
+	 * one: `SubstitutionService` stamps the effective end on `_activeUntil`
+	 * when it resolves the substitution as active, so the marker on My work
+	 * names the day the work actually goes back rather than a date the leave
+	 * has already overtaken.
+	 *
+	 * @param array<string, mixed> $sub The substitution record.
+	 *
+	 * @return string The end date (`Y-m-d`), or '' when the record has none.
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
+	private function routedUntil(array $sub): string {
+		$effective = (string)($sub['_activeUntil'] ?? '');
+		if ($effective !== '') {
+			return $effective;
+		}
+
+		return (string)($sub['endDate'] ?? '');
+	}//end routedUntil()
 
 	/**
 	 * Whether a case falls within a substitution scope.

@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Substitution\HumaniqLeaveReader;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -65,6 +66,7 @@ class SubstitutionService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param SubstitutionValidator $validator Create-input validation + overlap detection.
 	 * @param SubstitutedWorkResolver $workResolver Resolver for the work a substitution routes.
+	 * @param HumaniqLeaveReader $leaveReader Reads humaniq's approved leave for the absentee.
 	 *
 	 * @return void
 	 */
@@ -73,6 +75,7 @@ class SubstitutionService {
 		private readonly LoggerInterface $logger,
 		private readonly SubstitutionValidator $validator,
 		private readonly SubstitutedWorkResolver $workResolver,
+		private readonly HumaniqLeaveReader $leaveReader,
 	) {
 	}//end __construct()
 
@@ -191,16 +194,22 @@ class SubstitutionService {
 	/**
 	 * Resolve the substitutions that are active for a substitute on a date.
 	 *
-	 * A substitution is active when status == active AND start <= date <= end.
-	 * Records whose endDate has passed are lazily marked `ended` (best-effort
+	 * A substitution is active when status == active AND the reference date
+	 * falls inside its period. The period is the absentee's approved humaniq
+	 * leave when one covers that day, and the record's own typed dates
+	 * otherwise ({@see self::activeRowOn()}). Records whose typed endDate has
+	 * passed with no leave behind it are lazily marked `ended` (best-effort
 	 * persistence) and excluded. Results are cached per request.
+	 *
+	 * Each returned record carries `_activeUntil`: the day the routing stops,
+	 * which is what My work prints on the marker.
 	 *
 	 * @param string $userId The waarnemer (substitute) user id.
 	 * @param DateTimeImmutable|null $date Reference date; defaults to today.
 	 *
 	 * @return array<int, array<string, mixed>> The active substitution records.
 	 *
-	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
 	 */
 	public function getActiveSubstitutionsFor(string $userId, ?DateTimeImmutable $date = null): array {
 		$userId = trim($userId);
@@ -229,15 +238,15 @@ class SubstitutionService {
 
 		$active = [];
 		foreach ($rows as $row) {
-			$isActive = $this->isRowActiveOn(
+			$resolved = $this->activeRowOn(
 				row: $row,
 				refDay: $refDay,
 				objectService: $objectService,
 				register: $register,
 				schema: $schema
 			);
-			if ($isActive === true) {
-				$active[] = $row;
+			if ($resolved !== null) {
+				$active[] = $resolved;
 			}
 		}
 
@@ -247,10 +256,19 @@ class SubstitutionService {
 	}//end getActiveSubstitutionsFor()
 
 	/**
-	 * Whether one substitution row is active on the reference day.
+	 * One substitution row as it applies on the reference day, or null.
 	 *
-	 * Applies the lazy-expiry side effect: a row whose endDate has passed while
-	 * still marked `active` is best-effort persisted as `ended` and excluded.
+	 * The period is the absentee's approved humaniq leave when there is one
+	 * covering the day, and the row's own typed dates otherwise. Statutory
+	 * terms do not pause for leave, so a substitution that was typed to end
+	 * before the leave did would hand the work back to somebody who is still
+	 * away, and the cases would sit unseen until they breached.
+	 *
+	 * A row that applies is returned with `_activeUntil` stamped: the day the
+	 * routing actually stops, which the My work marker prints.
+	 *
+	 * Applies the lazy-expiry side effect: a row past its typed end with no
+	 * leave to extend it is best-effort persisted as `ended` and excluded.
 	 *
 	 * @param array<string, mixed> $row The substitution row.
 	 * @param string $refDay Reference day (Y-m-d).
@@ -258,49 +276,61 @@ class SubstitutionService {
 	 * @param string $register Register id.
 	 * @param string $schema Substitution schema id.
 	 *
-	 * @return bool True when the row is active on the reference day.
+	 * @return array<string, mixed>|null The applicable row, or null.
 	 *
-	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
 	 */
-	private function isRowActiveOn(
+	private function activeRowOn(
 		array $row,
 		string $refDay,
 		object $objectService,
 		string $register,
 		string $schema,
-	): bool {
+	): ?array {
 		$status = (string)($row['status'] ?? '');
-		if ($status === 'revoked') {
-			return false;
+		// `revoked` and the lazily persisted `ended` both land here: a
+		// substitution that is not active routes nothing, and leave does not
+		// revive one somebody deliberately ended.
+		if ($status !== 'active') {
+			return null;
 		}
 
 		$start = (string)($row['startDate'] ?? '');
 		$end = (string)($row['endDate'] ?? '');
 
-		// Lazy expiry: past endDate -> ended, excluded.
-		if ($end !== '' && $refDay > $end) {
-			if ($status === 'active') {
-				$this->markEnded(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					row: $row
-				);
-			}
+		// The leave, when humaniq knows of one, sets the period outright. It is
+		// read before the typed dates are applied, because the case it exists
+		// for is exactly the one the typed dates would have excluded.
+		$leave = $this->leaveReader->approvedLeaveCovering(
+			userId: (string)($row['absentee'] ?? ''),
+			day: $refDay
+		);
+		if ($leave !== null) {
+			$row['_activeUntil'] = $leave['endDate'];
 
-			return false;
+			return $row;
 		}
 
-		if ($status !== 'active') {
-			return false;
+		// Lazy expiry: past endDate and no leave behind it -> ended, excluded.
+		if ($end !== '' && $refDay > $end) {
+			$this->markEnded(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				row: $row
+			);
+
+			return null;
 		}
 
 		if ($start !== '' && $refDay < $start) {
-			return false;
+			return null;
 		}
 
-		return true;
-	}//end isRowActiveOn()
+		$row['_activeUntil'] = $end;
+
+		return $row;
+	}//end activeRowOn()
 
 	/**
 	 * Resolve the substituted open cases and tasks routed to a waarnemer.
