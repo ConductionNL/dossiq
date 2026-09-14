@@ -1210,12 +1210,22 @@ class ZrcController extends ZgwController {
 	 * Deletes: statussen, resultaten, rollen, zaakeigenschappen,
 	 * zaakinformatieobjecten (+ OIO sync), zaakobjecten.
 	 *
+	 * A refusal from the case delete guard is translated here to 409
+	 * (REQ-CM-35, ADR-105). StaticAccess is suppressed rather than decomposed:
+	 * `CaseHeldException::fromHookErrors()` is that exception's named
+	 * constructor, and it is static because recognising the refusal body IS
+	 * the act of deciding whether there is an exception to build. Injecting a
+	 * collaborator to hold one `match` on an array key would move the rule
+	 * away from the class that defines the key, which is the duplication this
+	 * factory exists to prevent.
+	 *
 	 * @param string $uuid The zaak UUID to delete
 	 *
 	 * @return JSONResponse
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @SuppressWarnings(PHPMD.StaticAccess) CaseHeldException::fromHookErrors() is a named constructor; see the note above.
 	 */
 	private function destroyCase(string $uuid): JSONResponse {
 		// C4: Require zaken.verwijderen scope for all zaak deletions.
