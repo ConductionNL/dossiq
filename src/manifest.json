@@ -245,6 +245,13 @@
 			"order": 30
 		},
 		{
+			"id": "CasesDeletedMenu",
+			"label": "Deleted cases",
+			"icon": "DeleteClockOutline",
+			"route": "CasesDeleted",
+			"order": 33
+		},
+		{
 			"id": "CaseObjectsMenu",
 			"label": "Objects",
 			"icon": "CubeOutline",
@@ -1282,6 +1289,14 @@
 				},
 				"documentationUrl": "https://procest.conduction.nl"
 			}
+		},
+		{
+			"id": "CasesDeleted",
+			"route": "/cases/deleted",
+			"type": "custom",
+			"title": "Deleted cases",
+			"component": "DeletedCasesView",
+			"_note": "case-recycle-window 1.2, the deleted lens. NOT a quickFilter chip beside All, Mine and Closed, and the reason is mechanical rather than stylistic: those chips are filters on the objects endpoint, and that endpoint excludes soft-deleted rows by design. A chip spelling `deleted: true` would send a filter OpenRegister answers with the empty set, which reads exactly like a working lens over an empty trash. The deleted rows live behind their own door, so the lens is its own place and a component that fetches from dossiq's /api/cases/deleted, which reads OpenRegister's trash and attaches the window. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
 		{
 			"id": "CaseDetail",
