@@ -109,7 +109,7 @@ test.describe('Every statutory term lands on a working day', () => {
 			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 			data: body,
 		})
-		let decoded: any = null
+		let decoded: any
 		try {
 			decoded = await res.json()
 		} catch {
