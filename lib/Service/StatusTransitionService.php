@@ -208,6 +208,7 @@ class StatusTransitionService {
 	 *                          closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	public function execute(
 		string $caseId,
@@ -322,7 +323,7 @@ class StatusTransitionService {
 	 *
 	 * @return array<int, array{type: string, error: string}> The failures, in dispatch order.
 	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	private function failedActions(array $dispatched, string $caseId): array {
 		$failed = [];
@@ -375,7 +376,7 @@ class StatusTransitionService {
 	 *
 	 * @return string `ok`, or `partial` when an action the status asked for did not run.
 	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	private function outcome(array $failedActions): string {
 		if ($failedActions === []) {
@@ -661,6 +662,7 @@ class StatusTransitionService {
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);

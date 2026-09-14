@@ -148,6 +148,7 @@ class BulkStatusTransitionService {
 	 * @throws RuntimeException When the id count is 0, the cap is exceeded, or transitionId is empty
 	 *
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
 	 */
 	public function execute(array $caseIds, string $transitionId, ?string $comment): array {
 		$this->validateRequest(caseIds: $caseIds, transitionId: $transitionId);
