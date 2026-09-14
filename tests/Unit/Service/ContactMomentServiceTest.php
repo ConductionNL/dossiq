@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -62,6 +63,8 @@ interface ContactMomentObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ContactMomentService
  */
 class ContactMomentServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The mocked settings service.
@@ -118,6 +121,7 @@ class ContactMomentServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
 			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 

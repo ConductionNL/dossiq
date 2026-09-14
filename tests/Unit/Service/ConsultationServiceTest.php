@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Consultation\ConsultationRepository;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -103,6 +104,8 @@ interface ConsultationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
  */
 class ConsultationServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * Mocked SettingsService.
@@ -152,6 +155,7 @@ class ConsultationServiceTest extends TestCase {
 			adviceDelegation: $this->adviceDelegation,
 			repository: $repository,
 			dependencyGraph: new ConsultationDependencyGraph($repository),
+			dates: $this->caseDates(),
 		);
 
 	}//end setUp()

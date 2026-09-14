@@ -109,11 +109,13 @@ class WorkQueueService {
 	 * @param SettingsService $settingsService Settings service (register/schema config + ObjectService).
 	 * @param EngineTaskInbox $engineTasks     The engine's inbox reader.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly EngineTaskInbox $engineTasks,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -265,7 +267,7 @@ class WorkQueueService {
 		$tier = self::TIER_NORMAL;
 		$deadlineComponent = 0.0;
 
-		$deadlineDate = $this->parseDateOnly(value: $deadline);
+		$deadlineDate = $this->dates->tryParse($this->dates->toCalendarDateOrNull($deadline));
 		if ($deadlineDate !== null) {
 			$daysUntilDeadline = $this->businessDaysBetween(today: $today, target: $deadlineDate);
 			$tier = $this->tierFor(daysUntilDeadline: $daysUntilDeadline);
@@ -276,7 +278,7 @@ class WorkQueueService {
 		$priorityComponent = (self::PRIORITY_WEIGHT[$priorityKey] ?? self::DEFAULT_PRIORITY_WEIGHT);
 
 		$ageComponent = 0.0;
-		$referenceParsed = $this->parseDateOnly(value: $referenceDate);
+		$referenceParsed = $this->dates->tryParse($this->dates->toCalendarDateOrNull($referenceDate));
 		if ($referenceParsed !== null && $referenceParsed <= $today) {
 			$ageDays = (int)$today->diff($referenceParsed)->days;
 			$ageComponent = (min($ageDays, self::MAX_AGE_DAYS) * self::AGE_WEIGHT_PER_DAY);
@@ -534,25 +536,4 @@ class WorkQueueService {
 		return ($count * $direction);
 	}//end businessDaysBetween()
 
-	/**
-	 * Parse a date string into a date-only DateTimeImmutable, or null when
-	 * empty/unparseable.
-	 *
-	 * @param string|null $value The raw date/date-time string.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function parseDateOnly(?string $value): ?DateTimeImmutable {
-		if ($value === null || $value === '') {
-			return null;
-		}
-
-		try {
-			$parsed = new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return null;
-		}
-
-		return new DateTimeImmutable($parsed->format('Y-m-d'));
-	}//end parseDateOnly()
 }//end class

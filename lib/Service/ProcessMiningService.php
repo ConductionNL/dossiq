@@ -67,6 +67,7 @@ class ProcessMiningService {
 	 * @param DwellTimeAnalyzer $dwellTimeAnalyzer Dwell-interval reconstruction + bottleneck ranking.
 	 * @param TransitionMatrixBuilder $transitionBuilder Transition matrix + rework detection.
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 *
 	 * @return void
 	 */
@@ -75,6 +76,7 @@ class ProcessMiningService {
 		private readonly DwellTimeAnalyzer $dwellTimeAnalyzer,
 		private readonly TransitionMatrixBuilder $transitionBuilder,
 		private readonly ThroughputTrendCalculator $throughputCalculator,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -89,11 +91,11 @@ class ProcessMiningService {
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
 	 */
 	public function getReport(array $params): array {
-		$to = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
 		$from = $to->sub(new DateInterval('P12M'));
 		$fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
 		if ($fromParam !== null) {
-			$from = $this->parseDate(value: $fromParam, fallback: $to->sub(new DateInterval('P12M')));
+			$from = ($this->dates->tryParse($fromParam) ?? $to->sub(new DateInterval('P12M')));
 		}
 
 		$caseTypeFilter = $this->nonEmptyStringParam(params: $params, key: 'caseType');
@@ -383,26 +385,7 @@ class ProcessMiningService {
 			return null;
 		}
 
-		return $this->parseDate(value: $raw, fallback: null);
+		return $this->dates->tryParse($raw);
 	}//end extractTimestamp()
 
-	/**
-	 * Parse a date/datetime string; return `$fallback` on empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function parseDate(mixed $value, ?DateTimeImmutable $fallback): ?DateTimeImmutable {
-		if (is_string($value) === false || $value === '') {
-			return $fallback;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return $fallback;
-		}
-	}//end parseDate()
 }//end class

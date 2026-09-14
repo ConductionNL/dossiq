@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnService
  */
 class TermijnTimerFiredListenerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
 	private TermijnTimerFiredListener $listener;
@@ -84,7 +87,11 @@ class TermijnTimerFiredListenerTest extends TestCase {
 				),
 				logger: $logger
 			),
-			new DwangsomCalculationService($settings, $logger),
+			new DwangsomCalculationService(
+				settingsService: $settings,
+				logger: $logger,
+				dates: $this->caseDates(),
+			),
 			$settings,
 			$logger
 		);

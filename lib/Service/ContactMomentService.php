@@ -60,11 +60,13 @@ class ContactMomentService {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param IUserSession $userSession The session, for the handling employee default.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -90,7 +92,7 @@ class ContactMomentService {
 
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
 
-		$now = date('c');
+		$now = $this->dates->nowAsMoment();
 
 		$record = [
 			'notificationChannel' => (string)$data['notificationChannel'],
@@ -327,7 +329,7 @@ class ContactMomentService {
 				'interactionId' => $interactionId,
 				'employee' => $employeeName,
 				'summary' => $summary,
-				'timestamp' => date('c'),
+				'timestamp' => $this->dates->nowAsMoment(),
 			];
 
 			$objectService->saveObject(object: ['activity' => $activity], register: $register, schema: $caseSchema, uuid: $caseId);
