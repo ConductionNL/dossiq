@@ -71,12 +71,17 @@ the triage.
   refusals-carry-a-status --strict`.
 - [x] 5.1 Merge `development` before the PR, and re-seed the allowlist
   with whatever it brought.
-  - One new site arrived with #2719:
-    `Substitution/HumaniqLeaveReader::readLeave#1`. It logs at warning
-    naming the HR app, and the caller falls back to the typed
-    substitution dates, so it is a **degradation**. The ceiling goes
-    203 to 204 for that one site and nothing else: **204 sites in 120
-    files, 72 of them logging nothing**.
+  - Four new sites arrived, and one moved. #2719 added
+    `Substitution/HumaniqLeaveReader::readLeave#1`, a **degradation**:
+    it logs at warning naming the HR app, and the caller falls back to
+    the typed substitution dates. #2732 split `Flow/CaseFlowActions`
+    and added `Flow/PlannedSeriesLedger::optional#1` (degradation),
+    `::plannedFlows#1` and `::rowsOf#1` (read-miss), which is where
+    `CaseFlowActions::plannedFlows` went, so that entry is removed
+    rather than kept.
+  - The ceiling goes 203 to 206 for those four and nothing else:
+    **206 sites in 121 files, 49 degradation, 157 read-miss, 72 of
+    them logging nothing**.
   - The four phpmd threshold findings the change added were each one
     unit over, and each was duplication: `TranslatesRefusals`,
     `ReadsJsonRequests` and `RefusesWhenIndeterminate` now hold the one
