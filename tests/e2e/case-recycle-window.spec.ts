@@ -123,7 +123,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 	// page is `CasesDeleted` (src/views/cases/DeletedCasesView.vue), a custom
 	// page on dossiq's history-mode router, so the URL is a PATH: `#/cases/deleted`
 	// would render the Dashboard under this assertion.
-	test('the deleted lens renders the case and its date on the page', async ({ page }) => {
+	test('CasesDeleted (DeletedCasesView) renders the case and the date its window ends', async ({ page }) => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} shown in the lens`,
 			caseType: caseTypeId,
