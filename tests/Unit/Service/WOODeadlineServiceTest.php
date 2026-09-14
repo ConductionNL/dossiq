@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\Notification\IManager as INotificationManager;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -63,6 +64,8 @@ interface WOODeadlineObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  */
 class WOODeadlineServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -98,6 +101,7 @@ class WOODeadlineServiceTest extends TestCase {
 			$this->settingsService,
 			$this->notificationManager,
 			$this->logger,
+			$this->caseDates(),
 		);
 	}//end setUp()
 
@@ -116,16 +120,30 @@ class WOODeadlineServiceTest extends TestCase {
 	}//end testCalculateReturns28DayDeadline()
 
 	/**
-	 * Calculate throws InvalidArgumentException for invalid date.
+	 * Calculate refuses a date it cannot read, and names the field.
+	 *
+	 * The refusal used to say "Invalid receiptDate"; it now says which field
+	 * and what a readable value looks like, because the handler reading it is
+	 * the one who has to fix it.
 	 *
 	 * @return void
 	 */
 	public function testCalculateThrowsForInvalidDate(): void {
 		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessageMatches('/invalid/i');
+		$this->expectExceptionMessageMatches(regularExpression: '/receiptDate/');
 
 		$this->service->calculate('not-a-date');
 	}//end testCalculateThrowsForInvalidDate()
+
+	/**
+	 * A d-m-Y value is refused rather than read as a day PHP happens to accept.
+	 *
+	 * @return void
+	 */
+	public function testCalculateRefusesADayMonthYearValue(): void {
+		$this->expectException(exception: \InvalidArgumentException::class);
+		$this->service->calculate('31-01-2028');
+	}//end testCalculateRefusesADayMonthYearValue()
 
 	/**
 	 * ExtendDeadline throws when extension already applied.

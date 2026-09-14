@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -88,6 +89,8 @@ interface ComplaintObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class ComplaintServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -117,6 +120,7 @@ class ComplaintServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 

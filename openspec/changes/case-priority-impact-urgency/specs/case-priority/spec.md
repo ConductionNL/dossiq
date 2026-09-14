@@ -43,6 +43,7 @@ priority directly.
 - **THEN** the two derived priorities SHALL differ per their matrices
 
 #### Scenario: a case type with no matrix still derives a priority
+@e2e exclude no browser can see which matrix answered; proven by tests/Unit/Service/PriorityDerivationTest.php::testACaseTypeWithNoMatrixStillDerivesAPriority
 
 - **GIVEN** a case type declaring no matrix
 - **WHEN** a case is created
@@ -100,6 +101,7 @@ and SHALL NOT implement a rules engine.
 - **THEN** the priority SHALL NOT fall
 
 #### Scenario: dossiq ships no engine for the rule
+@e2e exclude an absence in the tree has no screen; proven by tests/Unit/Service/PriorityRaiseRuleTest.php::testTheDeclarationNamesOpenRegisterAsTheEngine
 
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for a rule evaluator behind this rule
@@ -120,6 +122,7 @@ NOT hardcode a colour in a component.
 - **THEN** the cases SHALL be ordered by the declared order
 
 #### Scenario: the colour is a token, not a hex value
+@e2e exclude the browser resolves a token to a computed hue, so the declaration is read directly by tests/vitest/caseListPriority.spec.js 'every declared colour is a palette token, never a hex value'
 
 - **GIVEN** the declared priority values
 - **WHEN** their colours are read
@@ -140,6 +143,7 @@ SHALL NOT be called a priority.
 - **THEN** the escalation SHALL report that case priority
 
 #### Scenario: nothing else in the tree is called a case priority
+@e2e exclude a naming claim about the tree has no screen; proven by tests/Unit/Service/DeadlineEscalationServiceTest.php::testTheTwoVocabulariesStayDistinct
 
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for a second field named priority on a case

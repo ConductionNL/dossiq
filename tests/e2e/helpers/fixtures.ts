@@ -651,7 +651,13 @@ export async function seedCase(
 ): Promise<any> {
 	return createObject(api, token, 'case', {
 		identifier: `${RUN_PREFIX}-${Math.floor(Math.random() * 1e4)}`,
-		priority: 'normal',
+		// THE TWO FACTS, NOT THE DERIVED VALUE. `case.priority` is derived from
+		// impact and urgency on every save, so a fixture that seeded a priority
+		// directly would have it silently replaced and would stop meaning
+		// anything. medium + medium derives `normal`, which is what this seeded
+		// before. See openspec/changes/case-priority-impact-urgency.
+		impact: 'medium',
+		urgency: 'medium',
 		intakeChannel: 'manual',
 		...fields,
 	})

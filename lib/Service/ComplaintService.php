@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -86,11 +85,13 @@ class ComplaintService {
 	 * @param LoggerInterface $logger Logger
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the Awb deadlines
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -125,7 +126,6 @@ class ComplaintService {
 		// Generate klachtnummer.
 		$data['complaintNumber'] = $this->generateComplaintNumber();
 		$data['status'] = 'received';
-		$data['priority'] = $data['priority'] ?? 'normal';
 		$data['postponementPossible'] = true;
 
 		// Compute Awb deadlines.
@@ -298,7 +298,8 @@ class ComplaintService {
 			throw new RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
 		}
 
-		$currentDeadline = $complaint['afhandelDeadline'] ?? date('Y-m-d');
+		$currentDeadline = ($this->dates->toCalendarDateOrNull($complaint['afhandelDeadline'] ?? null)
+			?? $this->dates->todayAsCalendarDate());
 		$newDeadline = $this->addCalendarWeeks(startDate: $currentDeadline, weeks: self::AWB_VERDAGING_WEEKS);
 
 		$updateData = [
@@ -354,17 +355,16 @@ class ComplaintService {
 	public function getDeadlineAlerts(int $warningDays = 3): array {
 		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
 		$all = $this->listComplaints(filters: ['status' => $activeStatuses]);
-		$today = new DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$overdue = [];
 		$warning = [];
 
 		foreach ($all as $complaint) {
-			$deadline = $complaint['afhandelDeadline'] ?? null;
-			if ($deadline === null) {
+			$deadlineDate = $this->dates->tryParse($complaint['afhandelDeadline'] ?? null);
+			if ($deadlineDate === null) {
 				continue;
 			}
 
-			$deadlineDate = new DateTimeImmutable($deadline);
 			$diff = (int)$today->diff($deadlineDate)->days;
 			$isPast = $today > $deadlineDate;
 
@@ -389,8 +389,8 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addWorkingDays(string $startDate, int $days): string {
-		$start = new DateTimeImmutable($startDate);
-		return $this->workingDays->addWorkingDays(start: $start, days: $days)->format('Y-m-d');
+		$start = $this->dates->parse($startDate, 'receiptDate');
+		return $this->dates->formatCalendarDate($this->workingDays->addWorkingDays(start: $start, days: $days));
 	}//end addWorkingDays()
 
 	/**
@@ -404,9 +404,8 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addCalendarWeeks(string $startDate, int $weeks): string {
-		$date = new DateTimeImmutable($startDate);
-		$date = $date->modify('+' . $weeks . ' weeks');
-		return $date->format('Y-m-d');
+		$date = $this->dates->parse($startDate, 'receiptDate')->modify('+' . $weeks . ' weeks');
+		return $this->dates->formatCalendarDate($date);
 	}//end addCalendarWeeks()
 
 	/**
@@ -430,7 +429,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	private function generateComplaintNumber(): string {
-		$year = date('Y');
+		$year = $this->dates->now()->format('Y');
 		$objectService = $this->settingsService->getObjectService();
 
 		if ($objectService === null) {

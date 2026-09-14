@@ -38,7 +38,9 @@ Closed: 2.7, 2.12, 2.15, 3.3, 3.10, 5.1, 9.10, 11.21, 11.22, 12.15, 12.17,
 
 ## The changes
 
-Thirty-three changes. Size S is a placement, a declaration or one action;
+Forty-three changes: thirty-three from the register and the discovery
+wave, and ten more for the pending proposals of 2026-09-14, indexed in
+their own section below. Size S is a placement, a declaration or one action;
 M a handful of tasks; L a new mechanism. "Consumes from" names the app
 and its spec or change; "to be specified" means the register's slug has
 no artefact on that app's `development` yet.
@@ -156,6 +158,68 @@ default was missing. Q1.16 the embedded intake form: the half reads
 integriq under ADR-091 §6, and the change is now open there. dossiq's
 half is unchanged: declare the `caseObject` types as objecttypes and
 delete the controller answering today.
+
+
+### The thirty pending-proposal rows owned by dossiq, opened 2026-09-14
+
+Wave 4 of the parity programme entered the 104 dossiq rows that had no
+corpus provenance as pending proposals, under decision D1
+(`procest/_round4/compare/proposed-rows-dossiq-2026-09-10.md` in
+ConductionNL/market-intelligence). Thirty of them are dossiq's own and are
+closed here: three by changes already open, twenty-seven by ten new ones.
+
+**What the competitor evidence is, for all thirty.** Twenty-nine of them are
+D1 rows whose competitor columns are all `unread`. The batch file says why
+in as many words: "Every competitor column is `unread`, and none of them is
+`no`. ... `no` is a reading of a product somebody opened, and filling these
+cells with it would fabricate thirty readings per row." Every proposal below
+quotes that rather than claiming a competitor. The exception is Q8.23, which
+came from batch 12 and carries a read `best`: no competitor scores yes, Huly
+0.7.426 administers a `PublicHoliday` object nothing outside HR reads, and
+Tuleap CE 17.5 has a weekday mask and no holiday object at all.
+
+| change | rows | size | consumes from |
+|---|---|---|---|
+| `aanvullingsverzoek-as-a-record` | 1.17 | S | openregister `flow-business-timers` (shipped); dossiq `pause-reason-with-chasing` (open) |
+| `splitting-a-case-and-its-incidents` | 2.35, 2.45 | M | openregister relations and audit trail (shipped); `relation-types-with-inverses` (to be specified, row 2.26) |
+| `custody-and-handover-of-a-case` | 2.37, 2.38, 13.28 | M | openregister organisation, audit trail, engine tasks (shipped); `row-field-level-security` (spec); `share-scope-on-an-object` (to be specified in openregister) |
+| `markers-and-assessments-on-the-case` | 2.36, 2.40, 2.44 | M | openregister `row-field-level-security` (spec); `lifecycle-declarative-conditions` (to be specified in openregister) |
+| `what-a-status-declares` | 2.43, 2.46, 8.25, 10.18 | M | openregister `flow-business-timers` (shipped); `working-calendar-admin` (to be specified, row 8.12); `lifecycle-declarative-conditions` (to be specified) |
+| `what-a-transition-declares` | 2.39, 3.30, 11.41, 13.26 | M | openregister engine tasks, timers, RBAC and audit trail (shipped); `lifecycle-declarative-conditions` (to be specified) |
+| `routing-by-weight-position-and-area` | 3.25, 11.35 | M | openregister organisation and RBAC, `flow-business-timers` (shipped); integriq `pdok-geo-boundaries` (to be specified in integriq) |
+| `task-dependencies-and-the-next-planned-action` | 3.27, 3.28, 3.29 | M | openregister engine tasks, `flow-business-timers`, RBAC (shipped); `working-calendar-admin` (to be specified, row 8.12) |
+| `term-configuration-beyond-the-case-type` | 8.24, 8.29, 8.30 | M | openregister `flow-business-timers` and organisation (shipped); `working-calendar-admin` (to be specified); dossiq `case-priority-impact-urgency` (open) |
+| `the-social-domain-plan-and-its-grounds` | 5.18, 14.1 | L | openregister objects and relations, audit trail (shipped); `row-field-level-security` (spec); `cross-register-existence-query` (to be specified in openregister) |
+
+Sizes: 1 S, 8 M, 1 L.
+
+**Three rows an open change already carries, by substance.** Each was read
+before it was claimed, proposal and specs both.
+
+| row | change | the requirement that carries it |
+|---|---|---|
+| 2.34 | `case-priority-impact-urgency` | REQ-PRI-02, "Priority is derived from a matrix the case type declares", with the instance default the row's administered-per-case-type half asks for |
+| 7.8 | `frozen-beschikking-and-numbered-successor` | REQ-BES-012, "A correction is a numbered successor, never an edit", which adds the pointer at the record replaced and the successor number the ledger note names as the only missing part |
+| Q8.23 | `every-term-on-the-engine-calendar` | REQ-TERM-018, "Every statutory term computes on the engine calendar", with REQ-TERM-019 for the audit of the 37 files and REQ-TERM-020 for the structural test |
+
+**Four candidates that did not survive the reading.** The closing lane
+matched these by name, and by substance they answer a different question, so
+the rows stay with the new changes above.
+
+| row | candidate | why it does not carry the row |
+|---|---|---|
+| 1.17 | `pause-reason-with-chasing` | it types the pause and chases the applicant; the row asks for the request itself as a listable record, which its REQ-TERM-011 and REQ-TERM-012 do not write |
+| 10.18 | `dwell-time-on-the-working-calendar` | it decides which clock the process mining page counts on; the row asks for the number to be held on the case as a column and a filter |
+| 2.40 | `sensitive-fields-declared` | it declares the BSN and the special categories behind an extra group; it declares no risk assessment, which is the subject of the row |
+| 3.27 | `dependent-term-follows-predecessor` | its REQ-RCL-10 and REQ-RCL-11 move a term when another case's term moves; the row is about items inside one case's timeline |
+
+`planned-case-series`, `case-reminder-as-task`, `citizen-status-labels`,
+`case-grants-name-their-source`, `intake-says-when-the-term-starts`,
+`ontvangstbevestiging`, `case-claim-action`, `case-merge`,
+`status-capacity-limit`, `counting-mode-per-term` and
+`unread-state-on-the-case` were read for the same reason and carry none of
+these rows either. Each is named in the proposal of the change that took the
+row, with the sentence that separates them.
 
 
 ## Build order
@@ -450,3 +514,104 @@ views and the working list. Wave 3 is agenda and rostering in humaniq, the
 project above the cases in pipelinq, the assistant in hermiq, the
 statutory gateways in integriq, tenancy and the layout per case type. Each
 dossiq change is added to the wave table above in the PR that opens it.
+
+## Discovery wave 4
+
+The last OpenSpec wave of the programme: the discovery clusters dossiq
+owns that still carried no change. Source of record
+`procest/_gaps/gap-register.json` v4, `discovery.candidates`, every
+candidate with owner `dossiq` and no `has_change`, grouped by cluster: 69
+candidates over eight clusters, plus cluster 28 checked against an
+existing change. Decision D6 is relevance-led, so every `must` enters and
+a `should` or `could` enters when relevant.
+
+### The nine changes this wave opens
+
+| change | cluster | candidates | size | what dossiq owns | consumes from |
+|---|---|---|---|---|---|
+| `starter-content-and-templates` | 3 "What a new instance starts with", first half | C-configuration-3 (matrix hole), C-configuration-94, C-configuration-5, C-configuration-12, C-configuration-23, C-configuration-24, C-configuration-30, C-configuration-70, C-intake-17, C-access-and-privacy-77 | M | the seed, its version, the copies, the retirement, the template library, the connection test | buildiq for the form block and the free text block (to be specified), portaliq for the portal tiles |
+| `first-run-and-the-tour` | 3, second half | C-configuration-43, C-configuration-96 | S | the readiness items and the tour declaration | nextcloud-vue `CnSetupWizard` (shipped), buildiq for the tour runner (to be specified) |
+| `phase-terms-and-the-internal-target` | 18 "The term model" | C-deadlines-12, C-deadlines-17, C-deadlines-18, C-deadlines-20, C-deadlines-1, C-deadlines-4, C-deadlines-9, C-deadlines-13, C-deadlines-21, C-deadlines-5, C-reporting-20 | M | the phase term, the planned end, the internal target, the chain split, the declared lengths | openregister `working-calendar-admin` and `flow-business-timers`, through `terms-on-the-engine-calendar` (shipped); nextcloud-vue `index-columns-per-scope` for the list column |
+| `lifecycle-acts-on-the-case` | 24 "Lifecycle acts as separate acts" | C-case-core-21, C-case-core-31, C-case-core-40 (matrix hole), C-case-core-29, C-case-core-7, C-case-core-35, C-case-core-41, C-case-core-42, C-intake-2, C-case-core-5 | M | one menu, four ending acts, the early close, incompleteness, the draft, hold | openregister's lifecycle engine; the write half is refused today, openregister#3679 |
+| `intake-triage-and-refusal` | 35 "Intake routing, refusal and triage" | C-intake-8, C-intake-42, C-case-core-10, C-intake-5, C-intake-22, C-intake-33 | M | what must be answered before a case exists, the narrowing, the refusal outcome, the sleep, the fan-out | openregister `relation-types-with-inverses` and buildiq `forms-per-case-type` (both to be specified) |
+| `handing-a-case-over` | 36 "Handing a case to another team" | C-case-core-44 (matrix hole), C-case-core-46 (matrix hole), C-case-core-34, C-access-and-privacy-56 | M | the internal handover, the second seat, the external home, the leaver handover | openregister rbac (shipped), integriq `zgw-connectors-for-dossiq`, humaniq for an offboarding signal (to be specified) |
+| `task-as-a-first-class-record` | 53 "The task as a first-class record" | C-tasks-and-phases-10, C-tasks-and-phases-11, C-tasks-and-phases-13, C-tasks-and-phases-14, C-configuration-56, C-tasks-and-phases-16, C-tasks-and-phases-2 | M | the per-task configuration, the always-available acts, the declared effects, completion in place | openregister's task engine and `flow-task-forms`; the claim act and the task number to be specified; nextcloud-vue `working-list-row-actions` |
+| `one-personal-queue` | 64 "One personal queue" | C-tasks-and-phases-26, C-deadlines-2, C-tasks-and-phases-27, C-tasks-and-phases-5, C-tasks-and-phases-22 | M | the queue source contract, the queue, the digest, the end of day, the personal stage | humaniq `hours-leaf` and `leave-management`, openregister `notification-routing-per-group-and-scope`, nextcloud-vue `notification-preferences-ui` |
+| `live-conversation-on-the-case` | 70 "Talking to the citizen live" | C-communication-31, C-case-core-6, C-communication-25 | M | the conversation on any case, its record, the capture, the major declaration | Nextcloud Talk, and hermiq for the assistant per D13 |
+
+Cluster 3 is two changes because it is two nouns and the build plan splits
+them itself: "extend dossiq `lib/Settings/vth-templates/` and
+`TenantSeedService`; buildiq owns the walkthrough". What ships in the box
+waits on nothing; being walked through a first run waits on buildiq.
+
+### Cluster 28, answered by an existing change rather than a new one
+
+D12 put the mail account in Nextcloud Mail, so the cluster was
+deliberately not opened. Checked against dossiq `inbound-mail-filters`:
+C-intake-45 is answered by REQ-IMF-01, and C-integrations-42 was answered
+only for the mailbox, never for sending. That change gains two sibling
+requirements rather than a change of its own: **REQ-IMF-11**, outbound
+mail leaving through the same account with no dossiq credential and filed
+in its sent folder, and **REQ-IMF-12**, a sender identity per team
+declared on the case type.
+
+### Three consumer halves of other apps' wave 4 changes
+
+| change | consumes | candidates |
+|---|---|---|
+| `decision-outcomes-on-the-case` | decidiq `the-decision-as-a-walked-process` (decidiq#1316), cluster 22 | C-decisions-1, C-decisions-13, C-decisions-25 |
+| `widget-roles-declared` | launchpad `dashboards-and-who-may-see-them` (launchpad#637), cluster 12, ledger row 10.1 | C-reporting-22 |
+| `fees-and-payments-on-the-case` | shillinq `fees-payments-and-the-contract-register` (shillinq#1608), cluster 55, ledger rows 1.11 and 12.12 | C-intake-44, C-intake-7, C-deadlines-10, C-parties-and-contacts-1 |
+
+The fourth, integriq `outbound-sender-identity-and-deliverability`
+(integriq#2012, cluster 61, candidate C-communication-44), is a sibling
+requirement on `inbound-mail-filters` rather than a change, because its
+noun is outbound mail and REQ-IMF-12 is where that already sits.
+
+### Changes this wave asks another repo to open
+
+Each is named in the proposal that needs it, under "Needs a change in
+<app>", and none has an artefact on that repo's `development`.
+
+| app | what is missing | asked for by |
+|---|---|---|
+| openregister | the lifecycle provider write half; openregister#3679 is an issue, not a change | `lifecycle-acts-on-the-case` |
+| openregister | candidate users and groups on an engine task, with a claim act | `task-as-a-first-class-record` |
+| openregister | a task's own number and its own lock | `task-as-a-first-class-record` |
+| openregister | `relation-types-with-inverses`, the register's row 2.26 slug | `intake-triage-and-refusal` |
+| buildiq | the reusable form block and the free text block | `starter-content-and-templates` |
+| buildiq | the tour runner: per surface, per person, a broken step reported | `first-run-and-the-tour` |
+| buildiq | `forms-per-case-type`, the register's row Q1.15 slug | `intake-triage-and-refusal` |
+| nextcloud-vue | a progress and days-left column type for a list | `phase-terms-and-the-internal-target` |
+| humaniq | an offboarding signal; `leave-management` covers leave, not uitdiensttreding | `handing-a-case-over` |
+
+### Ratings this wave corrects
+
+Read against `development` at `172d364f` while writing the proposals.
+
+| candidate | the lane said | what the tree says |
+|---|---|---|
+| C-case-core-21 | `no`, a status marked not visible | the flag is honoured, under a second name. `case.statusHiddenInLists` is calculated from `statusType.hiddenInLists` and the Cases All lens filters it (`src/manifest.json:1180`, asserted at `tests/vitest/caseTypeAuthoringManifest.spec.js:154`). The gap is the other lenses, the Queue page, My Work, the counts and the tiles. Searching for the declared flag name finds only a form field and reads dark, which is why REQ-LIFE-02 traces calculations rather than names |
+| C-case-core-31 | `no`, "dossiq renders no lifecycle action at all on a case" | `CaseDetail` carries Suspend, Resume, Extend term, Reopen, Copy case, Start and Plan follow-up as header actions, and `CaseActionProvider` publishes the transition set. The gap is one menu and one gate, not the acts |
+| C-case-core-44 | `partial`, "reassign changes the assignee, not the owning team" | `CaseTransferService` performs the whole act with a reason, an acceptance, a rejection and a custody trail, for another **organisation**. The gap is the organisation boundary |
+| C-deadlines-18 | `partial` | `caseType.suspensionAllowed` and `extensionAllowed` are declared and enforced at `CaseLifecycleService.php:114` and `:116`. Only the length in days is missing: `extensionPeriod` is read by the ZGW mapping and by nothing that moves a deadline |
+| C-communication-31 | `no` by one lane, `partial` by another | `HearingService.php:89` creates a Talk room through `OCP\Talk\IBroker`, schedules it, records attendance and files minutes, for the bezwaar hoorzitting only. Generalising it is the work |
+| C-intake-8 | `partial` | `case` already carries `intakeChannel`, `communicationChannel` and `confidentiality`; `required` is `["title", "caseType"]`. The fields exist and nothing asks for them |
+| C-configuration-94 | `must`, `yes` | confirmed and wider than the lane read: six case types under `lib/Settings/vth-templates/` and six seed files loaded by `SeedDataService` and `TenantSeedService` |
+
+### Recorded, not built
+
+Seven members enter the corpus under D6 and D17 and no requirement is
+written for them. Each carries its reason in its change's proposal.
+
+| candidates | why |
+|---|---|
+| C-configuration-60, C-configuration-76, C-configuration-79, C-configuration-83, C-configuration-102, C-configuration-103 | vendor-model and positioning claims rather than behaviour. One is the lane's own words: "Positioning claim, no testable behaviour named". Two the lane already rated not applicable to an open source fleet |
+| C-tasks-and-phases-37 | planning a personal day into hourly slots. The lane's own clause argues against it for this market: "a caseworker with fourteen open zaken plans by term, not by hour" |
+
+### Halves declined, with the reason
+
+| candidate | half declined | why |
+|---|---|---|
+| C-deadlines-21 | bundling the vocabularies onto one queue object | its three separately clocked targets are built, as the same second clock as C-deadlines-9. dossiq holds its vocabularies on the case type and in OpenRegister code lists, and moving them onto a queue would undo `code-lists-from-concepts`. The lane says the same: "Its distinctive half is the bundling, not the second clock" |
+| C-intake-37 | several mail alias domains on one instance | Nextcloud Mail holds the accounts under D12, so a second domain is an account selection rather than a dossiq feature |

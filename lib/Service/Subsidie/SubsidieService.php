@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
@@ -93,10 +94,13 @@ class SubsidieService {
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -141,14 +145,17 @@ class SubsidieService {
 	 *
 	 * @param DateTimeImmutable $registration The registration date.
 	 * @param int $weken The regeling term in weeks.
+	 * @param array<string, mixed> $definitie The term definition, when one is known.
 	 *
-	 * @return DateTimeImmutable The decision deadline.
+	 * @return DateTimeImmutable The decision deadline, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
-	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken): DateTimeImmutable {
+	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken, array $definitie = []): DateTimeImmutable {
 		$weken = max(1, $weken);
-		return $registration->add(new DateInterval('P' . ($weken * 7) . 'D'));
+		$deadline = $registration->add(new DateInterval('P' . ($weken * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $deadline, definitie: $definitie) ?? $deadline);
 	}//end computeBeslistermijn()
 
 	/**

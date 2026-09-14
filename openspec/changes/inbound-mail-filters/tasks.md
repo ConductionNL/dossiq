@@ -60,3 +60,21 @@ Waits on nothing: Nextcloud Mail already holds the account and the OAuth
   quarantined bezwaar released by hand, an unmappable message in the
   inbox, and the log found by sender;
   `openspec validate inbound-mail-filters --strict`.
+- [ ] 8.1 Outbound mail leaves through the selected Nextcloud Mail
+  account, with no dossiq SMTP password, no dossiq OAuth flow and no
+  dossiq SMTP connection; the stored outbound credential is deleted on
+  upgrade (wave 4, C-integrations-42, REQ-IMF-11).
+  - `tests/unit/Service/Email/OutboundThroughMailAccountTest.php`
+  - `@spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md`
+- [ ] 8.2 File sent mail in the account's sent folder, and report
+  unavailable rather than dropping a message when the account cannot be
+  reached (wave 4, C-integrations-8, REQ-IMF-11).
+- [ ] 8.3 `caseType`: declare the sending account, so a team's mail
+  carries that team's sender identity; refuse publication on an
+  unresolvable account and refuse a From address no selected account holds
+  (wave 4, C-configuration-63 and integriq
+  `outbound-sender-identity-and-deliverability` integriq#2012, REQ-IMF-12).
+  - `tests/unit/Service/Email/SenderIdentityPerCaseTypeTest.php`
+- [ ] 8.4 Extend `tests/e2e/inbound-mail-filters.spec.ts`: no outbound
+  password field, a case mail sent on the account's own authentication and
+  filed in its sent folder, and a bezwaar going out from Juridische Zaken.
