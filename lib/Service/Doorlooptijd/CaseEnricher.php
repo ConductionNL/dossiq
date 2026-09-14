@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -51,12 +52,15 @@ class CaseEnricher {
 	 *
 	 * @param LoggerInterface $logger Logger, for unparseable caseType durations.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -233,7 +237,13 @@ class CaseEnricher {
 
 		try {
 			$start = new DateTimeImmutable($startDate);
-			return $start->add(new DateInterval($processingDeadline))->format('Y-m-d');
+
+			// The dashboard mirrors a term the citizen is answered by, so it
+			// rolls with it. A derived date that disagreed with the term on
+			// screen would be worse than no date at all.
+			$end = $start->add(new DateInterval($processingDeadline));
+
+			return ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'Could not derive deadline from processingDeadline',

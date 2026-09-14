@@ -67,6 +67,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -79,6 +80,7 @@ import {
 	canConfirmTransition,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -152,6 +154,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/status-transition-engine/spec.md
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -160,7 +163,7 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				await axios.post(
+				const { data } = await axios.post(
 					generateUrl(
 						`/apps/dossiq/api/case/${encodeURIComponent(this.caseId)}/transition`,
 					),
@@ -170,6 +173,15 @@ export default {
 						resultTypeId: this.result?.id ?? '',
 					}),
 				)
+				// A 200 IS NOT THE SAME AS EVERYTHING HAVING HAPPENED, and the
+				// response body was discarded here. The status moves before any
+				// automatic action runs, so the move can succeed while the work
+				// the phase asks for does not arrive. The engine now answers
+				// `partial` and names what failed; saying nothing left a handler
+				// looking at a case that had moved and a checklist that was
+				// simply absent, with no way to tell that from a phase that asks
+				// for no work at all.
+				this.warnAboutFailedActions(data)
 				// The strip, the stepper and the record itself all re-read on
 				// this signal, so one transition moves the whole page.
 				emit(PAGE_REFRESH, {})
@@ -180,6 +192,24 @@ export default {
 				)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Tell the handler when the case moved without all of its work.
+		 *
+		 * A warning rather than an error, and the dialog still closes: the move
+		 * itself happened and is recorded, so holding the dialog open would
+		 * offer a retry of something that is already done.
+		 *
+		 * @param {object} data The transition response body.
+		 * @return {void}
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 */
+		warnAboutFailedActions(data) {
+			const warning = failedActionsWarning(data)
+			if (warning !== '') {
+				showWarning(warning)
 			}
 		},
 	},

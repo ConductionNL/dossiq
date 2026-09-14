@@ -321,6 +321,12 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 // load order relative to the stub block below does not matter.
 require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 
+// Shared engine-calendar fake for the Algemene termijnenwet roll. Mirrors the
+// REAL WorkingCalendarService::resolve() and SlaCalculator::add() signatures,
+// so a term site that drifts off the engine's contract fails here instead of
+// agreeing with itself.
+require_once __DIR__ . '/Unit/Fixtures/WorkingCalendarEngineFake.php';
+
 // Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
 // store behaviours a hand-written mock hides — a save drops what the schema
 // does not declare, and a filter on an undeclared property matches zero rows —

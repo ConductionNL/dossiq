@@ -55,10 +55,13 @@ class DwangsomUitbetalingService {
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -100,8 +103,10 @@ class DwangsomUitbetalingService {
 		);
 
 		$receiptDate = ($receiptDate ?? $this->dates->now());
+		// Awb 4:17: the day the payment is late after, so it rolls (Awt art. 1).
+		$raw = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days');
 		$uiterlijk = $this->dates->formatCalendarDate(
-			$receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')
+			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
 		);
 
 		$row = [

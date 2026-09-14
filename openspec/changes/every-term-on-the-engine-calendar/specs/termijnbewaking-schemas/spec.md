@@ -37,6 +37,7 @@ only the day it lands on SHALL be rolled.
 - **AND** the same SHALL hold when an unused remainder is taken off
 
 #### Scenario: A term without the roll is unchanged
+@e2e exclude `rollToWorkingDay` is not on a definition until `terms-on-the-engine-calendar` lands, so the off half of every fixture pair is a unit case; TermijnTimerRollTest and BezwaarTermijnSchedulerTest
 
 - **GIVEN** a definition with `rollToWorkingDay` false
 - **WHEN** any of the three paths computes a date
@@ -74,6 +75,7 @@ be accepted.
 - **THEN** it SHALL fail naming the file and the line
 
 #### Scenario: An allowlisted file passes and says why
+@e2e exclude structural, over the repository's own source; EveryTermOnTheCalendarTest
 
 - **GIVEN** a statutory path allowlisted with a reason and a named change
 - **WHEN** the test runs

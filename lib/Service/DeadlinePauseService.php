@@ -43,7 +43,8 @@ class DeadlinePauseService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
-	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
+	 * @param TermijnTimerService|null $timerService Engine timer mapping and the
+	 *        working-calendar bridge (optional while the engine rolls out).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -90,7 +91,13 @@ class DeadlinePauseService {
 
 		$now = new DateTimeImmutable();
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $now->format('Y-m-d')));
-		$newEnd = $current->modify('+' . $durationDays . ' days')->format('Y-m-d');
+
+		// REQ-TOT-002 keeps the arithmetic here, as case data. What moves is
+		// only the day it lands on: `endDateCurrent` is the date a handler is
+		// judged on, so Algemene termijnenwet art. 1 applies to it and the
+		// administered calendar decides, not this service.
+		$credited = $current->modify('+' . $durationDays . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $credited) ?? $credited)->format('Y-m-d');
 		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		// Opschorting maps onto the engine: suspend the beslistermijn timer
@@ -167,9 +174,11 @@ class DeadlinePauseService {
 		$consumed = max(0, min($durationDays, $diff));
 		$unused = $durationDays - $consumed;
 
-		// Pull back the unused portion of einddatumActueel.
+		// Pull back the unused portion of einddatumActueel, then let the
+		// administered calendar decide the day it lands on (Awt art. 1).
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
-		$newEnd = $current->modify('-' . $unused . ' days')->format('Y-m-d');
+		$remaining = $current->modify('-' . $unused . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $remaining) ?? $remaining)->format('Y-m-d');
 
 		// Resume the engine timer: it re-projects the fire moment from the
 		// unconsumed remainder (AWB 4:15), landing on the same date the

@@ -78,12 +78,15 @@ class WOODeadlineService {
 	 * @param INotificationManager $notificationManager Nextcloud notification manager
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -100,7 +103,12 @@ class WOODeadlineService {
 	 */
 	public function calculate(string $receiptDate): array {
 		$receipt = $this->dates->parse($receiptDate, 'receiptDate');
-		$deadline = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
+
+		// Woo art. 4.4 names the term; Algemene termijnenwet art. 1 decides the
+		// day it lands on, and the organisation's calendar says which days
+		// those are.
+		$raw = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
+		$deadline = ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw);
 
 		return [
 			'expectedResolution' => $this->dates->formatCalendarDate($deadline),
@@ -171,7 +179,8 @@ class WOODeadlineService {
 		}
 
 		$deadline = $this->dates->parse((string)$currentDeadline, 'expectedResolution');
-		$newDeadline = $deadline->modify('+' . self::EXTENSION_PERIOD_DAYS . ' days');
+		$extended = $deadline->modify('+' . self::EXTENSION_PERIOD_DAYS . ' days');
+		$newDeadline = ($this->timerService?->rollTermEndFor(date: $extended) ?? $extended);
 
 		$updateData = array_merge(
 			$caseData,
