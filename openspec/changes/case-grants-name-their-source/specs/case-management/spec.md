@@ -15,6 +15,7 @@ summarise the provenance into a value of its own.
 - **THEN** each holder SHALL be listed with the source of their grant
 
 #### Scenario: dossiq computes nothing
+@e2e exclude a structural scan of lib/, not a journey: the class whose existence it forbids has no page to open. tests/Unit/Architecture/NoSecondPermissionEvaluatorTest.php
 
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for an effective-permission evaluator
@@ -56,6 +57,7 @@ of the declaration and SHALL NOT be folded into a role name.
 - **THEN** the confidential ones SHALL NOT be listed
 
 #### Scenario: no role name carries a confidentiality level
+@e2e exclude the declared role vocabulary is read from the shipped register definitions, which no browser reaches. tests/Unit/Settings/CaseTypeRightsMatrixTest.php
 
 - **GIVEN** the declared roles
 - **WHEN** their names are read

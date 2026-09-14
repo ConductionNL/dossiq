@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Lifecycle;
 
+use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -133,13 +134,16 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 *
 	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
+	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $transitionEngine,
 		private readonly CaseResultWriter $resultWriter,
+		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -183,13 +187,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
-		// An empty uid means OpenRegister had no session user to name. Handing
-		// that on as null lets the engine resolve the caller from IUserSession
-		// itself, which is the same identity the write path would use.
-		$caller = null;
-		if ($userId !== '') {
-			$caller = $userId;
-		}
+		$caller = $this->callerOf(userId: $userId);
 
 		try {
 			$available = $this->transitionEngine->getAvailableTransitions(
@@ -221,8 +219,68 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
+		$actions = $this->publishAll(transitions: (array)($available['transitions'] ?? []));
+
+		// OpenRegister's grants, beside dossiq's own guards (REQ-CGP-02).
+		//
+		// The two authorities answer different questions and neither replaces
+		// the other: dossiq's guards say whether this MOVE is allowed from
+		// here, OpenRegister's grants say whether this CALLER may write this
+		// object at all. A case a reader may not write offers them no move,
+		// whatever the workflow says, so a refusal from OpenRegister empties
+		// the list rather than greying it: the requirement is that an action
+		// they may not take is not offered.
+		//
+		// 🔑 The verdict is OpenRegister's, read and not derived. When it
+		// cannot be had — the app is absent, or predates openregister#3726 —
+		// the gateway answers null and the list is published exactly as it was
+		// before this change. Falling closed on an absent authority would lock
+		// every handler out of every case the day the app is disabled.
+		if ($this->grants->refusesTheWrite(caseId: $caseId, userId: $caller) === true) {
+			return [];
+		}
+
+		return $actions;
+	}//end availableActions()
+
+	/**
+	 * The uid to resolve the caller by, or null to let the session decide.
+	 *
+	 * An empty uid means OpenRegister had no session user to name. Handing
+	 * that on as null lets the engine resolve the caller from IUserSession
+	 * itself, which is the same identity the write path would use.
+	 *
+	 * @param string $userId The uid OpenRegister passed, possibly empty.
+	 *
+	 * @return string|null The uid, or null when there was none.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function callerOf(string $userId): ?string {
+		if ($userId === '') {
+			return null;
+		}
+
+		return $userId;
+	}//end callerOf()
+
+	/**
+	 * Map every transition the engine answered onto OpenRegister's shape.
+	 *
+	 * Extracted from `availableActions()` rather than inlined: with the grant
+	 * read beside it the method crossed phpmd's complexity thresholds, and a
+	 * suppression would have been the wrong answer to a method that had simply
+	 * grown two jobs.
+	 *
+	 * @param array<int, mixed> $transitions The engine's `transitions` list.
+	 *
+	 * @return list<array<string, mixed>> The publishable actions, in order.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function publishAll(array $transitions): array {
 		$actions = [];
-		foreach ((array)($available['transitions'] ?? []) as $transition) {
+		foreach ($transitions as $transition) {
 			if (is_array($transition) === false) {
 				continue;
 			}
@@ -234,7 +292,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		}
 
 		return $actions;
-	}//end availableActions()
+	}//end publishAll()
 
 	/**
 	 * Take one of the moves this provider offered.
