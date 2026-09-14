@@ -87,6 +87,9 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // can reach it without importing every page this file mounts.
 // @spec openspec/changes/case-claim-action/specs/case-management/spec.md
 import { claimCase } from './utils/caseClaim.js'
+// Mark a case read or unread from a list row (unread-state-on-the-case).
+// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with dossiq's offline schema mapping in src/main.js. The custom
@@ -273,6 +276,13 @@ export default {
 	// token-resolving write, so a declarative claim would either do nothing or
 	// store the literal string `@me`.
 	claimCase,
+	// The Queue's and Cases' `mark-unread` and `mark-read` row actions
+	// (unread-state-on-the-case, tasks 1.2). Function handlers for the same
+	// reason `claimCase` is one: the row dispatcher knows only `navigate`,
+	// `open-page` and a handler NAME, so a declarative `api-call` here would
+	// render a menu item that does nothing when clicked.
+	markCaseRead,
+	markCaseUnread,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an

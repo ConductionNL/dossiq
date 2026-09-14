@@ -37,6 +37,9 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
+// What is new on this case since the handler last looked, and where.
+// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -627,6 +630,22 @@ const registry = {
 	// `register` and `schema` from the page, which is exactly the prop set
 	// CaseNotesTab takes from the sidebar. A `type: "custom"` widget would
 	// resolve through a page slot that only grid items get.
+	// --- What is new on this case, and where (unread-state-on-the-case). ---
+	//
+	// A LAYOUT grid item rather than a tab child, and a widget TYPE rather than
+	// `type: "custom"`: CnDetailPage renders a grid item through its
+	// `widget-<id>` slot when the app supplies one and falls back to
+	// CnDetailWidgetHost otherwise, and that host resolves a renderer from
+	// `cnRegistry[widget.type]`. dossiq supplies no per-widget slots, so the
+	// type is the key that has to answer.
+	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	'case-unread': {
+		// @custom-widget-ratchet exclude the per-user read state is not a field of the case and no declarative widget reads it: `@self.unreadCounts` is attached on the render path, the count per panel comes from OpenRegister's read-state endpoint, and the gesture that clears one is a PUT carrying a sub-resource. Deleted the day CnTabsWidget takes a badge per tab and emits its tab change, which is where this belongs (nextcloud-vue, clusters 58 and 15)
+		kind: 'widget',
+		component: CaseUnreadPanel,
+		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
 	'case-notes-pane': {
 		kind: 'widget',
 		component: CaseNotesTab,
