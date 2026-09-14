@@ -348,6 +348,29 @@ The register's own order (`procest/_gaps/README.md`), which the dossiq umbrella 
 
 The ledger's own first pick, the schema-only registrations (Q11.31), is sixth: right, a privacy argument, and larger than the eight cells the matrix named once the re-read counted 27.
 
+## What the discovery sweep found after this page
+
+This page measures dossiq against a list we wrote. A second sweep asked the opposite question: what do thirty-six other systems have that the list never thought to ask. It is written up on [competitor discovery, September 2026](competitor-discovery-2026-09.md), and its corpus is `procest/_round4/discovery/` beside the files cited above.
+
+The short version. Thirty-six product surfaces were walked item by item, 2,010 items in the 34 lanes that state a count. Those raised 1,008 distinct raw candidates, which `consolidate-discovery.py` reduced to **631 consolidated candidates** in **70 clusters**. 183 are a `must` for a gemeente and dossiq fails 431 of the 631.
+
+**Read the 631 as candidates, not as rows.** A candidate is a question the sweep found worth asking. It is not in the matrix, it has no column read across the corpus, and it has no ledger id. The counting rule above still holds: 225 rows and 48 pending proposals. Decision D6 on the discovery page proposes the bar a candidate has to clear before it becomes a row, and until that is taken, no number on this page moves because of a candidate. What the sweep does show about the matrix itself is the **47 matrix holes**: a `must` with two or more driven passers and no row in the corpus able to hold it.
+
+### The four ledger cells the depth study moved
+
+The case-type depth study (`procest/_round4/discovery/casetype-configurability.md`) read dossiq's tree rather than the matrix, and four cells changed. Three ran in dossiq's favour and one against.
+
+| row | capability | was | is | why |
+|---|---|---|---|---|
+| 2.7 | Configurable status vocabulary with colour and order | partial | **yes** | `statusType.colour` is a twelve-value NL Design System enum and `src/views/settings/tabs/StatusesTab.vue:47` renders the swatch. The note said "no colour". |
+| 3.3 | Checklist items per phase | partial | **yes** | `statusType.checklist[]` carries a title and a required flag, `lib/Service/Transitions/StatusChecklistGuard.php` enforces it on every transition, and `StatusTypeForm.vue:118` authors it. |
+| 2.3 | Case type versioning with draft, publish, activate | partial | **yes**, with a caveat | `caseType` carries `version`, `previousVersion` and `supersededBy`, and `lib/Service/CaseTypePublishService.php` publishes and retires. The caveat: a new version drops `workflowDefinition` (`DerivedCaseTypePayload.php:115`), so the process model is re-authored every time. |
+| 11.2 | Config as code, import and export of case types | yes | **no** | The export is a declared placeholder. |
+
+Row 11.2 is the one that runs the other way, and it is the hollow-green shape this programme keeps finding. `lib/Service/CaseDefinitionExportService.php:268` says so in its own comment: a placeholder that returns structured placeholders instead of querying OpenRegister. All six components return empty arrays, behind three live admin-authorised routes. `POST /api/case-definitions/{id}/export` answers 200 with a structurally valid, empty package, so a test that checks the response shape passes. A municipality that exports a case type gets nothing, and is told nothing.
+
+Two further defects turned up on the way, neither of them a ledger row. `propertyDefinition.requiredAtStatus` is authored in `PropertiesTab.vue:155`, stored in the schema and read by no backend code, because it is not in the `x-openregister-extends-form.map`. And `WorkflowEditor` does not honour `lifecycleStatus: published`, which the schema's own description calls immutable: the canvas, node create, drag and delete and the whole `TransitionConfigPanel` stay editable on a published template.
+
 ## Where to check a cell
 
 Every system's code, documentation, API and issue tracker links, and the corpus directory that holds its column, are on [competitor sources](competitor-sources.md), generated from the ledger's sources register. The comparison pages that seeded the candidate set are listed there too. For the numbers on this page, the files to open are `procest/_round4/compare/twenty-six-system-tally.md` (the ranking), `statutory-rows.md` (the 26), `open-core-batch10.md` to `open-core-batch12.md` (the eleventh to fourteenth shapes), `deadline-engines-batch9.md`, `deadline-engines-batch11.md` and `deadline-engines-batch12.md` (the two engines that agree, the field with three writers, and the calendar the engine cannot see), `deadline-engines.md` (the 30.4%) and `procest/_gaps/README.md` (the counts by owner and the five), all in `ConductionNL/market-intelligence` on `development`.
