@@ -227,6 +227,23 @@
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension Period"
                     },
+                    "destructionRole": {
+                        "type": "string",
+                        "description": "The group whose members may destroy a deleted case of this type. Destroying is a second act after deleting, and it cannot be undone, so the right is named per case type: a melding and a bezwaar do not need the same seniority behind it. A case type that names no group refuses every destruction except an administrator's, which is the same answer OpenRegister's own destroy right gives.",
+                        "title": "Destroying role"
+                    },
+                    "recoveryWindowDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days a deleted case of this type can still be recovered. OpenRegister keeps the recycle state and the window, and dossiq refuses a destruction while this many days have not passed. Leave it empty to use the window the instance already applies.",
+                        "title": "Recovery window in days"
+                    },
+                    "lawfulPurposeRetention": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many months the personal data in a case of this type still has a lawful purpose after the case closes (AVG art. 5.1e). This is not the Archiefwet period: that one comes from the selectielijst through the result type, and the two are kept apart on purpose.",
+                        "title": "Lawful purpose retention in months"
+                    },
                     "publicationRequired": {
                         "type": "boolean",
                         "default": false,
@@ -417,6 +434,65 @@
                         "$ref": "caseType",
                         "description": "The version that replaced this one, written the moment that version is published. A version with this filled in keeps running its own cases and is no longer offered for new ones. Empty means this is the version in use.",
                         "title": "Superseded by",
+                        "facetable": true
+                    },
+                    "rightsMatrix": {
+                        "type": "array",
+                        "title": "Rights",
+                        "description": "Who may do what with cases of this type, as a matrix of department by role, separately per confidentiality level. Confidentiality is an AXIS of this declaration and is never folded into a role name: a role per level per department is the combinatorial explosion every mandate matrix eventually becomes. Declared here and evaluated in OpenRegister, which owns the grant, its provenance and the deny. dossiq computes no effective permission from these rows.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "department",
+                                "role",
+                                "confidentiality",
+                                "actions"
+                            ],
+                            "properties": {
+                                "department": {
+                                    "type": "string",
+                                    "title": "Department",
+                                    "description": "The department the right is granted to. Matches organisatieRol.department.",
+                                    "maxLength": 255
+                                },
+                                "role": {
+                                    "type": "string",
+                                    "title": "Role",
+                                    "description": "The organisational role the right is granted to, an organisatieRol id or its roleName. A role name never encodes a confidentiality level; that is what the axis beside it is for.",
+                                    "maxLength": 255
+                                },
+                                "confidentiality": {
+                                    "type": "string",
+                                    "title": "Confidentiality",
+                                    "description": "The confidentiality level this row grants at. The same vocabulary the case and the case type use, so a row and a case can be compared without a translation table.",
+                                    "enum": [
+                                        "openbaar",
+                                        "beperkt_openbaar",
+                                        "intern",
+                                        "zaakvertrouwelijk",
+                                        "vertrouwelijk",
+                                        "confidentieel",
+                                        "geheim",
+                                        "zeer_geheim"
+                                    ]
+                                },
+                                "actions": {
+                                    "type": "array",
+                                    "title": "Actions",
+                                    "description": "The verbs granted, in OpenRegister's vocabulary. GET /apps/openregister/api/permissions publishes the grantable set; a verb outside it is refused at save time and names itself.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "caseTypeGroup": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseTypeGroup",
+                        "title": "Case type group",
+                        "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
                     }
                 }
@@ -1019,7 +1095,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.19.0",
+                "version": "1.20.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2161,6 +2237,12 @@
                         "format": "date",
                         "description": "Date when the archive action should be executed",
                         "title": "Archive action date"
+                    },
+                    "lawfulPurposeEndDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The day the personal data in this case stops having a lawful purpose (AVG art. 5.1e). Counted from the case's end date and the case type's own retention, never from the archive action date. The two clocks disagree on purpose, and a case that carries one date answers whichever question it was built for and gets the other one wrong.",
+                        "title": "Lawful purpose ends"
                     },
                     "archiveStatus": {
                         "type": "string",

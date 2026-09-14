@@ -87,6 +87,7 @@ import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
+import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
@@ -298,6 +299,7 @@ export default {
 	FileEyeOutline,
 	FileSign,
 	FileTreeOutline,
+	DeleteClockOutline,
 	FlagCheckered,
 	FlagOutline,
 	FolderAccountOutline,
