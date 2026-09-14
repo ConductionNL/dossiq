@@ -225,17 +225,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
-		$actions = [];
-		foreach ((array)($available['transitions'] ?? []) as $transition) {
-			if (is_array($transition) === false) {
-				continue;
-			}
-
-			$action = $this->publish(transition: $transition);
-			if ($action !== null) {
-				$actions[] = $action;
-			}
-		}
+		$actions = $this->publishAll(transitions: (array)($available['transitions'] ?? []));
 
 		// OpenRegister's grants, beside dossiq's own guards (REQ-CGP-02).
 		//
@@ -258,6 +248,36 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 
 		return $actions;
 	}//end availableActions()
+
+	/**
+	 * Map every transition the engine answered onto OpenRegister's shape.
+	 *
+	 * Extracted from `availableActions()` rather than inlined: with the grant
+	 * read beside it the method crossed phpmd's complexity thresholds, and a
+	 * suppression would have been the wrong answer to a method that had simply
+	 * grown two jobs.
+	 *
+	 * @param array<int, mixed> $transitions The engine's `transitions` list.
+	 *
+	 * @return list<array<string, mixed>> The publishable actions, in order.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function publishAll(array $transitions): array {
+		$actions = [];
+		foreach ($transitions as $transition) {
+			if (is_array($transition) === false) {
+				continue;
+			}
+
+			$action = $this->publish(transition: $transition);
+			if ($action !== null) {
+				$actions[] = $action;
+			}
+		}
+
+		return $actions;
+	}//end publishAll()
 
 	/**
 	 * Whether OpenRegister refuses this caller the write a move needs.
