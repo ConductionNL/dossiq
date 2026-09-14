@@ -622,16 +622,21 @@ and the ADR-006 200/503 contract are unchanged.
 - **Health checks**: `database` (critical), `openregister` (critical), `filesystem`
   (degraded), under `statusCodePolicy: adr006`. The health JSON now also carries
   an `app` field (engine-added).
-- **Metrics**: `dossiq_cases_total{status,case_type}`, `dossiq_cases_overdue_total`,
-  `dossiq_cases_created_today`, `dossiq_tasks_total{status}`,
-  `dossiq_tasks_overdue_total` — all declared as portable `objectCount`
-  descriptors on register `dossiq`, schemas `case` / `task`. The implicit
+- **Metrics**: `dossiq_cases_total{status,case_type}`, `dossiq_cases_overdue_total`
+  and `dossiq_cases_created_today`, declared as portable `objectCount`
+  descriptors on register `dossiq`, schema `case`. The implicit
   `dossiq_info` / `dossiq_up` gauges are emitted by the engine. Per-metric
   `cacheTtl` (30s / 60s) via the distributed cache replaces the previous
   controller-local APCu cache (same TTLs, now shared across PHP workers).
+- **No task metrics.** `dossiq_tasks_total` and `dossiq_tasks_overdue_total`
+  were removed with the `caseTask` schema (remove-casetask). An `objectCount`
+  descriptor counts register objects, and tasks now live in OpenRegister's task
+  engine, outside the register. A counter over a deleted schema reports 0 for
+  ever. OpenRegister exports task counts itself (openregister#3597); point a
+  dashboard or alert that read the old series at those.
 
 **Operator note**: the schema resolution is now anchored on the OpenRegister
-schema slugs (`case`, `task`) rather than a SQL title match. The metric values
+schema slug (`case`; `task` until remove-casetask) rather than a SQL title match. The metric values
 are equivalent to the previous exact `s.title = 'Case'` / `'Task'` query; if any
 historic deployment ran the earlier `title LIKE '%aak%'` / `'%taak%'` variant,
 the `dossiq_cases_*` / `dossiq_tasks_*` series will correct to count the real

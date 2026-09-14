@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Loads `lib/Settings/case_flow_seed_data.json` into OpenRegister.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class CaseFlowSeedDataRepairStep implements IRepairStep {
 
@@ -93,7 +93,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function getName(): string {
 		return 'Seed the case type, statuses and demo cases for the Dossiq case flow';
@@ -106,7 +106,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -162,7 +162,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return array<string, string>|null The names, or null when unconfigured.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function schemas(): ?array {
 		$resolved = [
@@ -188,7 +188,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return array<string, mixed>|null The seed, or null when unreadable.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function loadSeed(IOutput $output): ?array {
 		if (is_readable(self::SEED_PATH) === false) {
@@ -215,7 +215,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return array<string,int> Counts of what was created.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function seed(object $objectService, array $schemas, array $data, IOutput $output): array {
 		$counts = ['caseTypes' => 0, 'statuses' => 0, 'cases' => 0, 'skipped' => 0];
@@ -265,7 +265,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function seedOne(
 		object $objectService,
@@ -332,7 +332,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return integer How many were created.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function seedStatuses(object $objectService, array $schemas, string $caseTypeId, array $statusTypes): int {
 		$present = array_flip($this->statuses->statusesOf(caseTypeId: $caseTypeId));
@@ -375,7 +375,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return integer How many cases were created.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function seedCases(
 		object $objectService,
@@ -439,7 +439,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *
 	 * @return string The id, or ''.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function idOf(mixed $value): string {
 		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {

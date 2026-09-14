@@ -158,24 +158,43 @@ describe('the Objects tab on the case page', () => {
 		expect(caseWidget('case-objects').content.rowRoute).toBeUndefined()
 	})
 
-	it('shares the last tab of the strip with Locations', () => {
-		// It used to be pinned immediately after Locations, which was where it
-		// was appended rather than a claim about what it is. It sits WITH
-		// Locations now, in the last tab of a six-tab strip, and that is a
-		// claim: a caseObject and a case-location are both registry objects the
-		// case is about, which is why the fold that brought the strip down from
-		// fourteen tabs put them together rather than putting Locations under
-		// Related.
+	it('is a section of the Related tab, and the last one', () => {
+		// It shared a tab with Locations until 2026-09-13, on the claim that a
+		// caseObject and a case-location are both registry objects the case is
+		// about. Locations is a map on the Data tab now, because
+		// `case-location` already carries latitude and longitude and the list
+		// was a table of coordinates nobody could picture. That left the tab
+		// holding one collection, so the objects moved to Related: an object
+		// linked to a case is a relation like any other.
 		const where = panels.caseTabOf('case-objects')
 		expect(where, 'case-objects is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('Objects and locations')
+		expect(where.tab).toBe('Related')
 		expect(where.label).toBe('Objects')
 
-		expect(panels.caseTabOf('case-locaties').tab).toBe(where.tab)
+		// Last of Related's sections, after the cases. The two case collections
+		// are what a handler opens Related for; the objects are the tail.
+		const sections = panels
+			.caseWidget('case-related-panel')
+			.content.sections.map((section) => section.widget.id)
+		expect(sections.at(-1)).toBe('case-objects')
 
-		// And still last, which is the half that fails if a later change
-		// quietly promotes it into the lead band.
-		expect(panelTabs().at(-1).label).toBe('Objects and locations')
+		// And the tab it came from is gone rather than left standing empty.
+		expect(panelTabs().map((tab) => tab.label)).not.toContain(
+			'Objects and locations',
+		)
+	})
+
+	it('leaves the locations to the map, not to a list nobody deleted', () => {
+		// Retiring a surface has two halves and only the first one is visible:
+		// the map exists, AND the list it replaced is gone. A `case-locaties`
+		// object-list left behind anywhere would print the same rows in a
+		// second place, which is the duplication REQ-CDV-17 exists to stop.
+		expect(panels.caseWidget('case-locaties')).toBeUndefined()
+
+		const map = panels.caseWidget('case-location-map')
+		expect(map, 'the locations map is not on the page').toBeTruthy()
+		expect(map.type).toBe('case-location-map')
+		expect(panels.caseTabOf('case-location-map').tab).toBe('Data')
 	})
 
 	it('stays out of layout, or the strip would render it twice', () => {

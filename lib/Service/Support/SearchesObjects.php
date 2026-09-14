@@ -40,6 +40,8 @@
 
 namespace OCA\Dossiq\Service\Support;
 
+use RuntimeException;
+
 /**
  * Trait providing the canonical OpenRegister object-search bridge.
  *
@@ -194,6 +196,104 @@ trait SearchesObjects {
 
 		return null;
 	}//end saveObjectAsArray()
+
+	/**
+	 * Write only these fields onto a stored object, and return it as an array.
+	 *
+	 * `saveObject()` with a uuid is PUT-semantic: the payload IS the new
+	 * object. A property it leaves out is written back as null, and with hard
+	 * validation on (OpenRegister's default) a payload missing a required
+	 * property is refused. So a save of `['status' => ...]` alone does not
+	 * change a status; it fails, or it wipes the rest of the record.
+	 *
+	 * This is the PATCH seam for a caller that owns a few fields:
+	 *
+	 *  - `patchObject()` when the installed OpenRegister has it, which reads,
+	 *    merges and saves under one roof, with validation, audit trail and
+	 *    events still applied;
+	 *  - otherwise a fresh read with the changes merged on top, saved whole.
+	 *    The `@self` metadata block and the id stay out of that payload, so a
+	 *    save never re-applies the owner, organisation or folder it read.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param int|string           $register      Register id, UUID or slug.
+	 * @param int|string           $schema        Schema id, UUID or slug.
+	 * @param string               $id            The stored object's uuid.
+	 * @param array<string, mixed> $changes       The fields to write, and nothing else.
+	 *
+	 * @return array<string, mixed>|null The stored object, or null if it cannot be represented as one.
+	 *
+	 * @throws RuntimeException When the object cannot be read on the fallback path,
+	 *                           or the service offers no seam that writes partially.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	protected function patchObjectAsArray(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		string $id,
+		array $changes,
+	): ?array {
+		if (method_exists($objectService, 'patchObject') === true) {
+			return $this->objectToArrayOrNull(
+				value: $objectService->patchObject(
+					objectId: $id,
+					data: $changes,
+					register: $register,
+					schema: $schema
+				)
+			);
+		}
+
+		if (method_exists($objectService, 'find') === false) {
+			// Neither seam: a partial payload would replace the object, and
+			// saving one is exactly the defect this method exists to remove.
+			throw new RuntimeException('object_service_cannot_write_partially');
+		}
+
+		$stored = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $id
+		);
+		if ($stored === null) {
+			throw new RuntimeException('object_not_found_for_partial_write');
+		}
+
+		unset($stored['@self'], $stored['id']);
+
+		return $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			object: array_merge($stored, $changes),
+			uuid: $id
+		);
+	}//end patchObjectAsArray()
+
+	/**
+	 * Coerce an ObjectService write result to an array.
+	 *
+	 * @param mixed $value The raw result.
+	 *
+	 * @return array<string, mixed>|null The object data, or null when uncoercible.
+	 */
+	private function objectToArrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialized = $value->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return null;
+	}//end objectToArrayOrNull()
 
 	/**
 	 * Run a callable through `ObjectService::runAsSystem()` when available,

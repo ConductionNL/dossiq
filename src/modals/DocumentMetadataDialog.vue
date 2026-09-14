@@ -1,11 +1,35 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcModal v-if="open" size="normal" @close="$emit('close')">
+	<NcModal size="normal" @close="$emit('close')">
 		<div class="dossier-metadata-dialog">
 			<h2 class="dossier-metadata-dialog__title">
-				{{ t('dossiq', 'Document metadata') }}
+				{{
+					isEdit
+						? t('dossiq', 'Document properties')
+						: t('dossiq', 'Document metadata')
+				}}
 			</h2>
+
+			<!-- Edit mode: opened from a file row of the Files tab, on the
+			     record that file already has. -->
+			<p
+				v-if="isEdit"
+				class="dossier-metadata-dialog__file-name"
+				data-testid="document-properties-file">
+				{{ fileName }}
+			</p>
+			<p
+				v-if="isEdit && recordMissing"
+				class="dossier-metadata-dialog__missing"
+				data-testid="document-properties-missing">
+				{{
+					t(
+						'dossiq',
+						'This file has no document record yet; saving creates one.',
+					)
+				}}
+			</p>
 
 			<ul v-if="files.length > 0" class="dossier-metadata-dialog__files">
 				<li
@@ -74,10 +98,11 @@
 					{{ t('dossiq', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!canSubmit || uploading"
+					data-testid="document-properties-save"
 					@click="submit">
-					{{ t('dossiq', 'Upload') }}
+					{{ isEdit ? t('dossiq', 'Save') : t('dossiq', 'Upload') }}
 				</NcButton>
 			</div>
 		</div>
@@ -85,6 +110,10 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { emit } from '@nextcloud/event-bus'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcModal,
@@ -93,7 +122,11 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
-import { DEFAULT_DIRECTION, DOCUMENT_DIRECTIONS } from '../utils/dossierHelpers.js'
+import {
+	classificationOptions as buildClassificationOptions,
+	DEFAULT_DIRECTION,
+	DOCUMENT_DIRECTIONS,
+} from '../utils/dossierHelpers.js'
 
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
@@ -101,7 +134,17 @@ import { DEFAULT_DIRECTION, DOCUMENT_DIRECTIONS } from '../utils/dossierHelpers.
  * an optional description, shared across all dropped/selected files, and
  * surfaces a per-file upload progress bar.
  *
+ * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
+ * swap): opened as a manifest `open-modal` `dropZone`/upload action, which
+ * hands it the dropped/picked `File[]` as `props.files` and resolves no
+ * other tokens — so, like BeschikkingComposerDialog, this dialog owns
+ * fetching the type catalog and performing the upload itself, rather than
+ * relying on a parent tab component to do it and pass the results down as
+ * props. `caseId` is read the same defensive way: the prop when it does not
+ * still hold the unresolved `@objectId` token, the route otherwise.
+ *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 export default {
 	name: 'DocumentMetadataDialog',
@@ -115,34 +158,31 @@ export default {
 	},
 
 	props: {
-		open: {
-			type: Boolean,
-			default: false,
-		},
-
 		files: {
 			type: Array,
 			default: () => [],
 		},
 
-		types: {
-			type: Array,
-			default: () => [],
+		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
+		caseId: {
+			type: String,
+			default: '',
 		},
 
-		progress: {
-			type: Object,
-			default: () => ({}),
+		/**
+		 * The Nextcloud file id of an EXISTING file on the case: the Files
+		 * tab's Document properties action opens the dialog on that file's
+		 * record (documents-live-on-the-case). Zero means an upload.
+		 */
+		fileId: {
+			type: [Number, String],
+			default: 0,
 		},
 
-		errors: {
-			type: Object,
-			default: () => ({}),
-		},
-
-		uploading: {
-			type: Boolean,
-			default: false,
+		/** The existing file's name, shown in edit mode. */
+		fileName: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -155,6 +195,13 @@ export default {
 			keywords: [],
 			title: '',
 			description: '',
+			types: [],
+			uploading: false,
+			progress: {},
+			errors: {},
+			// Edit mode: the record the file already has, or null.
+			record: null,
+			recordMissing: false,
 		}
 	},
 
@@ -175,28 +222,32 @@ export default {
 		},
 
 		/**
-		 * Confidentiality dropdown options (ordered lowest to highest).
+		 * Confidentiality dropdown options (ordered lowest to highest), shared
+		 * with the bulk confidentiality-change dialog.
 		 *
 		 * @return {Array} The classification options.
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		classificationOptions() {
-			return [
-				{ id: 'openbaar', label: this.t('dossiq', 'Public') },
-				{
-					id: 'beperkt_openbaar',
-					label: this.t('dossiq', 'Limited public'),
-				},
-				{ id: 'intern', label: this.t('dossiq', 'Internal') },
-				{
-					id: 'zaakvertrouwelijk',
-					label: this.t('dossiq', 'Case-confidential'),
-				},
-				{ id: 'vertrouwelijk', label: this.t('dossiq', 'Confidential') },
-				{ id: 'confidentieel', label: this.t('dossiq', 'Restricted') },
-				{ id: 'geheim', label: this.t('dossiq', 'Secret') },
-				{ id: 'zeer_geheim', label: this.t('dossiq', 'Top secret') },
-			]
+			return buildClassificationOptions(this.t.bind(this))
+		},
+
+		/**
+		 * The case this dialog files documents on.
+		 *
+		 * An `open-modal` action's `props` are forwarded verbatim, so a prop
+		 * still holding an `@` token is not a case id — the route is (mirrors
+		 * BeschikkingComposerDialog.resolvedCaseId).
+		 *
+		 * @return {string} The case id, or empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		resolvedCaseId() {
+			const fromProp = this.caseId || ''
+			if (fromProp !== '' && !fromProp.startsWith('@')) {
+				return fromProp
+			}
+			return (this.$route && this.$route.params && this.$route.params.id) || ''
 		},
 
 		/**
@@ -251,6 +302,17 @@ export default {
 		canSubmit() {
 			return this.selectedType !== '' && this.selectedClassification !== ''
 		},
+
+		/**
+		 * Whether the dialog edits an existing file's record rather than
+		 * uploading new files.
+		 *
+		 * @return {boolean} True with a file id.
+		 * @spec openspec/specs/document-projection/spec.md
+		 */
+		isEdit() {
+			return Number(this.fileId) > 0
+		},
 	},
 
 	watch: {
@@ -280,17 +342,143 @@ export default {
 		},
 	},
 
+	/**
+	 * A mounted dialog is an open one: the registry mounts this component
+	 * when the Files tab's Document properties action (or any other
+	 * `open-modal` action) names it, with the action's props and nothing
+	 * else, and unmounts it on close. So the type catalog and, on a file,
+	 * its record load here rather than behind an `open` prop nobody sets
+	 * (measured 2026-09-13: a false `open` default left the modal
+	 * unrendered with no warning anywhere).
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	created() {
+		this.fetchTypes()
+		if (this.isEdit) {
+			this.loadRecord()
+		}
+	},
+
 	methods: {
 		/**
-		 * Emit the collected shared metadata for upload.
+		 * Fetch the informatieobjecttype catalog for the type picker.
 		 *
-		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
 		 */
-		submit() {
-			if (!this.canSubmit) {
+		async fetchTypes() {
+			try {
+				const url = generateUrl(
+					'/apps/openregister/api/objects/dossiq/informatieobjecttype?_limit=200',
+				)
+				const { data } = await axios.get(url)
+				this.types = data.results || data.objects || data || []
+			} catch {
+				this.types = []
+			}
+		},
+
+		/**
+		 * Edit mode: read the record the file has and fill the form from it.
+		 *
+		 * The case's dossier list is the one endpoint that carries every
+		 * record with its `fileId`; the projection listener may not have run
+		 * yet for a file dropped a moment ago, in which case the form starts
+		 * from the defaults and saving creates the record.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-projection/spec.md
+		 */
+		async loadRecord() {
+			this.record = null
+			this.recordMissing = false
+			if (this.resolvedCaseId === '') {
 				return
 			}
-			this.$emit('submit', {
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+				)
+				const { data } = await axios.get(url)
+				const rows = Array.isArray(data?.informatieobjecten)
+					? data.informatieobjecten
+					: []
+				const record =
+					rows.find((row) => Number(row.fileId) === Number(this.fileId))
+					|| null
+				this.record = record
+				this.recordMissing = record === null
+				if (record === null) {
+					if (this.title === '') {
+						this.title = this.fileName.replace(/\.[^.]+$/, '')
+					}
+					return
+				}
+				this.selectedType = String(record.informatieobjecttype || '')
+				this.selectedClassification = String(
+					record.vertrouwelijkheidaanduiding || '',
+				)
+				this.selectedDirection = String(
+					record.direction || DEFAULT_DIRECTION,
+				)
+				this.keywords = Array.isArray(record.keywords)
+					? [...record.keywords]
+					: []
+				this.title = String(record.title || '')
+				this.description = String(record.description || '')
+			} catch {
+				this.recordMissing = true
+			}
+		},
+
+		/**
+		 * Edit mode: save the form onto the file's record.
+		 *
+		 * Only a record that exists is patched. A file without one yet (the
+		 * projection listener has not run for it) cannot be saved from here;
+		 * the dialog says so, and the record appears on the next write.
+		 *
+		 * @param {object} metadata The form as metadata.
+		 * @return {Promise<boolean>} True when saved.
+		 * @spec openspec/specs/document-projection/spec.md
+		 */
+		async saveRecord(metadata) {
+			if (this.record === null) {
+				return false
+			}
+			const id = this.record.id || this.record['@self']?.id || ''
+			if (id === '') {
+				return false
+			}
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/informatieobjecten/${encodeURIComponent(id)}`,
+				)
+				await axios.patch(url, metadata)
+				return true
+			} catch {
+				return false
+			}
+		},
+
+		/**
+		 * Upload every pending file with the shared metadata, per-file
+		 * progress, then close and signal the page to refetch.
+		 *
+		 * Self-sufficient (see the class doc comment): this used to be an
+		 * emitted `submit` event a parent `DossierTab` turned into the POSTs
+		 * below; there is no such parent once this dialog is opened as a
+		 * manifest `open-modal` action, so it makes the request itself.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async submit() {
+			if (!this.canSubmit || this.resolvedCaseId === '') {
+				return
+			}
+			const metadata = {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
 				// The schema default, spelled out rather than left to the
@@ -300,7 +488,67 @@ export default {
 				keywords: this.normalisedKeywords,
 				title: this.title,
 				description: this.description,
-			})
+			}
+			this.uploading = true
+			this.progress = {}
+			this.errors = {}
+			if (this.isEdit) {
+				const saved = await this.saveRecord(metadata)
+				this.uploading = false
+				if (saved) {
+					showSuccess(this.t('dossiq', 'Document properties saved'))
+					emit('cn:page:refresh')
+					this.$emit('submit', metadata)
+					this.$emit('close')
+				} else {
+					showError(
+						this.t('dossiq', 'Document properties could not be saved'),
+					)
+				}
+				return
+			}
+			let anySuccess = false
+			for (let index = 0; index < this.files.length; index++) {
+				const file = this.files[index]
+				const form = new FormData()
+				form.append('files', file)
+				form.append('metadata', JSON.stringify(metadata))
+				try {
+					this.progress = { ...this.progress, [index]: 0 }
+					const url = generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+					)
+					await axios.post(url, form, {
+						headers: { 'Content-Type': 'multipart/form-data' },
+						onUploadProgress: (event) => {
+							if (event.total) {
+								this.progress = {
+									...this.progress,
+									[index]: Math.round(
+										(event.loaded / event.total) * 100,
+									),
+								}
+							}
+						},
+					})
+					this.progress = { ...this.progress, [index]: 100 }
+					anySuccess = true
+				} catch {
+					this.errors = { ...this.errors, [index]: true }
+				}
+			}
+			this.uploading = false
+			if (anySuccess) {
+				showSuccess(this.t('dossiq', 'Documents uploaded'))
+				// The widget fetched its rows before this upload landed; without
+				// this signal the new document is on the server and invisible on
+				// screen until something else happens to refetch.
+				emit('cn:page:refresh')
+				this.$emit('submit', metadata)
+				this.$emit('close')
+			} else {
+				showError(this.t('dossiq', 'Upload failed'))
+			}
 		},
 	},
 }
@@ -316,6 +564,16 @@ export default {
 
 .dossier-metadata-dialog__title {
 	margin: 0 0 8px;
+}
+
+.dossier-metadata-dialog__file-name {
+	font-weight: bold;
+	margin: 0;
+}
+
+.dossier-metadata-dialog__missing {
+	color: var(--color-text-maxcontrast);
+	margin: 0;
 }
 
 .dossier-metadata-dialog__files {

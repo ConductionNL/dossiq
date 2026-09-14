@@ -82,6 +82,8 @@ The case detail view SHALL display a "Sub-cases" section
 - **WHEN** user views a case whose case type has an empty `subCaseTypes` array
 - **THEN** the "Sub-cases" section MUST NOT be rendered
 
+@e2e exclude Not implemented, so nothing can observe it passing. A manifest widget has no conditional-visibility key, so `case-sub-cases` renders on every case detail; a case typed with an empty `subCaseTypes` shows the section's empty state instead of no section. `deelzaak-support.spec.ts` cited this scenario on an assertion reading `expect(hasTable || hasEmpty).toBeTruthy()`, which passes precisely when the requirement is violated. Restore the citation once the renderer supports conditional visibility (see the note below).
+
 > **NOT YET IMPLEMENTED, and recorded here rather than quietly dropped.** The
 > two scenarios above are satisfied by the `case-sub-cases` object-list widget
 > added to `CaseDetail`; this third one is not. A manifest widget has no

@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
-use OCA\Dossiq\Middleware\QuotaEnforcementMiddleware;
 use OCA\Dossiq\Middleware\TenantClaimValidationMiddleware;
 use OCA\Dossiq\Middleware\TenantContextMiddleware;
 use OCA\Dossiq\Middleware\TenantIsolationMiddleware;
@@ -69,8 +68,14 @@ class MiddlewareRegistrar {
 		// HTTP verb (and URL hints like /transition) to a matrix action key
 		// and blocks the request on deny.
 		$context->registerMiddleware(class: MandateValidationMiddleware::class);
-		// SaaS chain (member 09): per-request quota enforcement (case creation +
-		// API calls). Runs last in the SaaS chain.
-		$context->registerMiddleware(class: QuotaEnforcementMiddleware::class);
+		// SaaS chain member 09, per-request quota enforcement, is deliberately
+		// absent. OpenRegister's TenantQuotaMiddleware counts requests against
+		// Organisation.requestQuota on OpenRegister's routes, and dossiq's
+		// frontend reads and writes through those routes. Counting the same
+		// limit again here let a tenant spend the whole allowance twice, once
+		// on each app's routes, and neither response said so. One limit, one
+		// counter. What dossiq gives up with it is named in the retirement
+		// commit: its own routes now carry no request quota, and nothing
+		// increments cases_per_month or active_users either.
 	}//end register()
 }//end class

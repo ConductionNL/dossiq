@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
+use OCA\Dossiq\Service\OrganisationQuotaLimits;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -36,6 +37,7 @@ class TenantQuotaServiceTest extends TestCase {
 			appManager: $this->createMock(IAppManager::class),
 			container: $this->createMock(ContainerInterface::class),
 			logger: $this->createMock(LoggerInterface::class),
+			organisationLimits: $this->createMock(OrganisationQuotaLimits::class),
 		);
 	}
 

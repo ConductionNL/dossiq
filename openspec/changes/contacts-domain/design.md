@@ -31,7 +31,7 @@ nextcloud-vue 2.40.0 `CnIndexPage` takes one `schema` and an optional
 picking a folder filters the page's schema by `filterField`. Nothing in the
 vocabulary lets a folder swap the schema. `type: detail` pages take one
 schema. `object-list` widgets resolve `@objectId` in `filter`, and
-`open-form` header actions prefill through `props`, as `log-hours` does.
+`open-form` header actions prefill through `props`, as `link-object` does.
 
 ADR-032 kind: **config**. A menu entry, three pages, a schema property and
 column edits. The two things that would need code (a per-folder schema and a
@@ -111,7 +111,7 @@ timeline Zaaksysteem shows. On `ContactDetail` the card masks
 `citizenServiceNumber` for a protected person the way `requester-on-the-case`
 D4 does; the same override applies, nothing new.
 
-### D3: header actions prefill through `props`, as `log-hours` does
+### D3: header actions prefill through `props`, as `link-object` does
 
 `new-case-for-contact`: `open-form`, register `dossiq`, schema `case`,
 `props: {"requester": "@objectId"}`, label New case, icon `FolderPlusOutline`,

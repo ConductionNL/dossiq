@@ -175,6 +175,12 @@ class StatusTransitionService {
 			$result['transitions'][] = [
 				'id' => (string)($transition['id'] ?? ''),
 				'label' => (string)($transition['label'] ?? ''),
+				// Additive, and empty for every template shipped today: the
+				// documented StatusTransition shape carries no `description`.
+				// It is published so a template that does write one reaches
+				// CaseActionProvider, which has no other sight of the
+				// transition definition.
+				'description' => (string)($transition['description'] ?? ''),
 				'toStatus' => (string)($transition['toStatus'] ?? ''),
 				'guardsPassed' => count($failed) === 0,
 				'failedGuards' => $failed,
@@ -349,7 +355,7 @@ class StatusTransitionService {
 		// the transition itself does with them — a notification that lists the
 		// case's open tasks is otherwise sent one dispatch too early.
 		$actions = array_merge(
-			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case),
+			$this->statusChecklist->actionsFor(statusTypeId: $toStatus, case: $case, actor: $userId),
 			$this->specReader->extractActions(transition: $transition),
 		);
 		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
@@ -605,7 +611,7 @@ class StatusTransitionService {
 		// into it, so an admin's move brings the tasks too. Only the checklist
 		// actions run here: there is no transition whose actions could.
 		$dispatched = $this->sideEffectDispatcher->dispatch(
-			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case),
+			actions: $this->statusChecklist->actionsFor(statusTypeId: $toStatusId, case: $case, actor: $userId),
 			case: $case,
 			transitionContext: [
 				'fromStatus' => $currentId,

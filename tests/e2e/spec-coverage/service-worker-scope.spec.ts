@@ -25,6 +25,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { journeyBudget, PAGE_LOAD } from '../helpers/nav.ts'
 
 /**
  * Resolve the scope of dossiq's active service worker.
@@ -56,10 +57,10 @@ async function activeWorkerScope(page: Page, timeout = 20_000): Promise<string> 
  * @param page The page under test.
  */
 async function openControlled(page: Page): Promise<void> {
-	await page.goto('/index.php/apps/dossiq/dashboard')
+	await page.goto('/index.php/apps/dossiq/dashboard', PAGE_LOAD)
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 	const scope = await activeWorkerScope(page)
-	await page.goto(scope)
+	await page.goto(scope, PAGE_LOAD)
 	await page.waitForFunction(
 		() => navigator.serviceWorker.controller !== null,
 		undefined,
@@ -68,7 +69,11 @@ async function openControlled(page: Page): Promise<void> {
 }
 
 test.describe('mobiel-inspectie-offline service worker', () => {
-	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
+	// @e2e exclude No surviving scenario states the worker script's CSP. It used
+	// to cite mobiel-inspectie-offline's "Download daily schedule" scenario,
+	// whose day sync, progress indicator and IndexedDB storage were removed with
+	// the mobile-inspection frontend (062d9dede); that scenario is now excluded
+	// in the spec. This test still guards property 2 in the header.
 	test('the worker script is served with a connect-src it can actually use', async ({
 		request,
 	}) => {
@@ -89,10 +94,18 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 		expect(csp).toContain('https://service.pdok.nl')
 	})
 
-	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
+	// @e2e exclude No surviving scenario states that a claimed request reaches
+	// the server. The day-sync scenario this cited is excluded in the spec: the
+	// /api/sync routes it downloads from were removed in 062d9dede, so this test
+	// proves the worker's pass-through (any `basic` answer, a 404 included),
+	// never a download.
 	test('a request the worker CLAIMS still reaches the server', async ({
 		page,
 	}) => {
+		// `openControlled` makes two page loads and waits up to 55s besides
+		// (the login check, the worker activating, the worker taking control),
+		// so the budget holds all of it. See `journeyBudget`.
+		test.setTimeout(journeyBudget(2, 60_000))
 		await openControlled(page)
 		// `/apps/dossiq/api/sync/...` is the one same-origin prefix the worker
 		// answers itself (network-first). Under the old script CSP the worker's

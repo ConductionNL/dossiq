@@ -307,22 +307,63 @@ class CaseTypeResolver {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function assertNoCycle(string $caseTypeId, string $parentCaseTypeId): void {
-		if ($this->wouldCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parentCaseTypeId) === false) {
+		$names = $this->cycleFor(caseTypeId: $caseTypeId, parentCaseTypeId: $parentCaseTypeId);
+		if ($names === []) {
 			return;
-		}
-
-		$names = [$this->titleOf(caseTypeId: $caseTypeId)];
-		foreach ($this->chainFor(caseTypeId: $parentCaseTypeId) as $ancestor) {
-			$names[] = (string)($ancestor['title'] ?? $this->store->rowId(row: $ancestor));
-			if ($this->store->rowId(row: $ancestor) === trim($caseTypeId)) {
-				break;
-			}
 		}
 
 		throw new RuntimeException(
 			'A case type cannot inherit from itself: ' . implode(' -> ', $names)
 		);
 	}//end assertNoCycle()
+
+	/**
+	 * The loop naming a parent would close, as the titles a person reads.
+	 *
+	 * Shared by the publish path ({@see self::assertNoCycle()}) and the save
+	 * path (`CaseTypeParentCycleListener`), so the two refuse the same chains
+	 * and name them the same way.
+	 *
+	 * @param string $caseTypeId       The type being saved.
+	 * @param string $parentCaseTypeId The parent it wants.
+	 * @param string $selfTitle        The title the type is being saved with,
+	 *                                 when the caller has it. A new type has no
+	 *                                 stored row to read its title from.
+	 *
+	 * @return array<int, string> The titles from the type round to itself, or
+	 *                            an empty array when there is no loop.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	public function cycleFor(string $caseTypeId, string $parentCaseTypeId, string $selfTitle = ''): array {
+		if ($this->wouldCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parentCaseTypeId) === false) {
+			return [];
+		}
+
+		$title = trim($selfTitle);
+		if ($title === '') {
+			$title = $this->titleOf(caseTypeId: $caseTypeId);
+		}
+
+		$names = [$title];
+		foreach ($this->chainFor(caseTypeId: $parentCaseTypeId) as $ancestor) {
+			if ($this->store->rowId(row: $ancestor) === trim($caseTypeId)) {
+				// The loop closes on the type itself: name it by the title it
+				// is being saved with, not by the stored one.
+				$names[] = $title;
+				break;
+			}
+
+			$names[] = (string)($ancestor['title'] ?? $this->store->rowId(row: $ancestor));
+		}
+
+		if (count($names) === 1) {
+			// A type named as its own parent: the loop is one link long.
+			$names[] = $title;
+		}
+
+		return $names;
+	}//end cycleFor()
 
 	/**
 	 * Rows of one schema for the whole chain, the nearest declaration winning.

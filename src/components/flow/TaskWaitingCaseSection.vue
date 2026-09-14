@@ -16,7 +16,7 @@
 
   Self-fetching from the route task id, same pattern as InitiatorSection.
 
-  @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<div
@@ -64,7 +64,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -80,17 +80,17 @@ export default {
 			return useEngineTaskStore()
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		waitingCaseId() {
 			return waitingCaseIdFrom(this.task)
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		caseRoute() {
 			return caseRouteFor(this.waitingCaseId)
 		},
 
-		/** @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		caseLabel() {
 			return this.caseTitle || t('dossiq', 'Open the case')
 		},
@@ -99,7 +99,7 @@ export default {
 	/**
 	 * Resolve the stores, then load the task and its waiting case.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	async mounted() {
 		// CnAppRoot mounts manifest slot widgets before App.vue's
@@ -118,7 +118,7 @@ export default {
 		 * fact of the task, the title is only a nicer label for the link.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
 			const taskId = this.$route?.params?.id

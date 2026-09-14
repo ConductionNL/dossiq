@@ -373,11 +373,12 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 
 		if ($newId !== '') {
 			try {
-				$objectService->saveObject(
-					object: ['workflowDefinition' => $newId],
+				$this->patchObjectAsArray(
+					objectService: $objectService,
 					register: $register,
 					schema: $caseTypeSchema,
-					uuid: (string)$caseTypeId,
+					id: (string)$caseTypeId,
+					changes: ['workflowDefinition' => $newId],
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(

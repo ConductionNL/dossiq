@@ -17,7 +17,14 @@
  * resulting pair must appear in the query. A new table added with a bare
  * `viewAllRoute` fails here, which is the point.
  *
+ * dashboard-my-work-split (2026-09-13) moved `my-work` / `deadlines` /
+ * `open-cases` off the Dashboard page onto the My Work landing page
+ * (`MyWorkHome`, route `/`). The invariant this file checks is a property of
+ * the widget, not of which page hosts it, so both pages are read here rather
+ * than only `Dashboard`.
+ *
  * @spec openspec/specs/dashboard/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'
@@ -42,18 +49,27 @@ function flattenFilter(filter) {
 	return out
 }
 
-const dashboard = manifest.pages.find((p) => p.id === 'Dashboard')
-const tables = dashboard.config.widgets.filter(
+const dashboardPageIds = ['Dashboard', 'MyWorkHome']
+const dashboardWidgets = manifest.pages
+	.filter((p) => dashboardPageIds.includes(p.id))
+	.flatMap((p) => p.config.widgets)
+const tables = dashboardWidgets.filter(
 	(w) => w.type === 'object-table' && w.content && w.content.viewAllRoute,
 )
 
 describe('dashboard object-table viewAllRoute', () => {
 	it('has tables to check', () => {
-		// Four since `dashboard-tiles` merged `my-tasks` + `task-reminders`
+		// Four after `dashboard-tiles` merged `my-tasks` + `task-reminders`
 		// into `my-work` and `overdue-cases` + `deadline-alerts` into
-		// `deadlines`. The floor guards against the list emptying out and
-		// this file passing over nothing at all.
-		expect(tables.length).toBeGreaterThanOrEqual(4)
+		// `deadlines`. Three since remove-casetask 2.3 moved `my-work` onto
+		// the task engine: an engine task has no register and no schema, so
+		// the tile is no longer an `object-table` and this file's premise,
+		// that the route query reproduces `source.filter`, does not apply to
+		// it. Its own View all is asserted in `dashboardWorkTables.spec.js`.
+		// The floor guards against the list emptying out and this file
+		// passing over nothing at all.
+		expect(tables.length).toBeGreaterThanOrEqual(3)
+		expect(tables.map((w) => w.id)).not.toContain('my-work')
 	})
 
 	for (const widget of tables) {

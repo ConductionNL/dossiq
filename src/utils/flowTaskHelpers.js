@@ -26,7 +26,7 @@
  *
  * @param {object|null|undefined} task The task object as the store returns it.
  * @return {string|null} The case id, or null when no case is waiting.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function waitingCaseIdFrom(task) {
 	if (!task || typeof task !== 'object') {
@@ -74,8 +74,8 @@ export function taskCaseRef(task) {
  *
  * @param {string|object|null|undefined} ref The task's case reference.
  * @return {string|null} The case id, or null when unreadable.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function caseIdFrom(ref) {
 	if (typeof ref === 'string') {
@@ -96,7 +96,7 @@ export function caseIdFrom(ref) {
  *
  * @param {string} caseId The case id.
  * @return {string} The vue-router path for the manifest CaseDetail page.
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function caseRouteFor(caseId) {
 	return `/cases/${encodeURIComponent(caseId)}`

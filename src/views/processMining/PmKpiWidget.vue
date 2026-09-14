@@ -47,7 +47,7 @@
 			<NcNoteCard v-if="kpiSummary.overallReworkPercent >= 20" type="warning">
 				{{
 					t(
-						'procest',
+						'dossiq',
 						'{percent}% of recorded transitions revisit a status the case had already left. A high rework rate usually means guard conditions or handler routing need a closer look.',
 						{ percent: kpiSummary.overallReworkPercent },
 					)

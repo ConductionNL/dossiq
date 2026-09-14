@@ -122,3 +122,81 @@ export const CnRelatedObjectsWidget = {
 		)
 	},
 }
+
+/**
+ * Stand-in for `CnDataTable`.
+ *
+ * Reproduces the contract a host actually depends on, and nothing else:
+ * one row element per `rows` entry, one cell per `columns` entry read by
+ * `col.key`, the `rowClass(row)` function applied to the row, the
+ * `emptyText` shown in place of the body when there are no rows, the
+ * `#footer` slot, and the `row-click` event carrying the clicked row.
+ *
+ * 🔴 THE EVENT IS `row-click`, NOT `rowClick`. Vue 3 resolves a camelCase
+ * listener against a kebab-case emit (`componentEmits` retries with
+ * `camelize`), so a host writing `@rowClick` is correct and a stub emitting
+ * `rowClick` would ALSO satisfy it. Emitting the real name is what keeps
+ * that from being an accident.
+ */
+export const CnDataTable = {
+	name: 'CnDataTable',
+	props: {
+		rows: { type: Array, default: () => [] },
+		columns: { type: Array, default: () => [] },
+		loading: { type: Boolean, default: false },
+		rowClass: { type: Function, default: null },
+		cellClass: { type: Function, default: null },
+		emptyText: { type: String, default: '' },
+		borderless: { type: Boolean, default: false },
+		hideHeader: { type: Boolean, default: false },
+	},
+	emits: ['row-click'],
+	render() {
+		const head = this.hideHeader
+			? null
+			: h('thead', {}, [
+					h(
+						'tr',
+						{},
+						this.columns.map((col) =>
+							h('th', { key: col.key }, String(col.label ?? col.key)),
+						),
+					),
+				])
+
+		const body = this.rows.length
+			? h(
+					'tbody',
+					{},
+					this.rows.map((row, index) =>
+						h(
+							'tr',
+							{
+								key: row.id ?? index,
+								class: this.rowClass
+									? this.rowClass(row)
+									: undefined,
+								onClick: () => this.$emit('row-click', row),
+							},
+							this.columns.map((col) =>
+								h(
+									'td',
+									{ key: col.key, class: col.cellClass },
+									String(row[col.key] ?? ''),
+								),
+							),
+						),
+					),
+				)
+			: h('tbody', {}, [
+					h('tr', { class: 'cn-data-table__empty' }, [
+						h('td', {}, String(this.emptyText)),
+					]),
+				])
+
+		return h('div', { 'data-testid': 'cn-data-table' }, [
+			h('table', {}, [head, body]),
+			this.$slots.footer ? this.$slots.footer() : null,
+		])
+	},
+}

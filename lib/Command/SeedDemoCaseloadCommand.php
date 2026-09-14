@@ -135,7 +135,7 @@ class SeedDemoCaseloadCommand extends Command {
 
 		if ($buckets['tasksOpen'] === 0) {
 			$output->writeln('');
-			$output->writeln('<error>No open tasks landed. Check that task_schema points inside the dossiq register.</error>');
+			$output->writeln('<error>No open tasks landed. Demo tasks go to OpenRegister\'s task engine, so check that OpenRegister is enabled.</error>');
 			return Command::FAILURE;
 		}
 

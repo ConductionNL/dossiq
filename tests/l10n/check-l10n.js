@@ -192,7 +192,7 @@ for (const file of files) {
 // (spdx, change, adr), never rendered, and translating it would be nonsense.
 // ---------------------------------------------------------------------------
 const MANIFEST_TEXT_FIELDS = new Set([
-	'title', 'body', 'caseTask', 'label', 'description',
+	'title', 'body', 'task', 'label', 'description',
 	'emptyText', 'placeholder', 'subtitle', 'helpText',
 ])
 

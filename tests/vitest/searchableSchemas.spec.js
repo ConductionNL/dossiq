@@ -21,17 +21,19 @@ const REGISTER_PATH = path.resolve(
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = [
-	'case',
-	'caseTask',
-	'objectionProceeding',
-	'beroep',
-]
+// 🔴 `caseTask` IS NOT HERE ANY MORE, AND THAT IS A LOSS, NOT A TIDY-UP.
+// remove-casetask deleted the schema, so there is nothing left for unified
+// search to index and nothing for a deepLink to resolve. An engine task has no
+// unified-search provider at all today: the engine keeps its tasks in its own
+// table, outside the object index this opt-in feeds. That gap belongs to
+// OpenRegister, and `/tasks/:id` is asserted below so the page is ready the
+// day a provider exists.
+const EXPECTED_SEARCHABLE_SLUGS = ['case', 'objectionProceeding', 'beroep']
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
 describe('searchable schema opt-in (register JSON)', () => {
-	it('flags exactly case, task, bezwaar, beroep as searchable', () => {
+	it('flags exactly case, bezwaar, beroep as searchable', () => {
 		const register = loadJson(REGISTER_PATH)
 		const schemas = register.components.schemas
 
@@ -64,20 +66,17 @@ describe('deep links cover all searchable schemas', () => {
 
 		const expectedTemplates = {
 			case: '/apps/dossiq/cases/{uuid}',
-			caseTask: '/apps/dossiq/tasks/{uuid}',
 			// The KEY is the schema slug and moves with it; the URL is a published
-			// ROUTE and deliberately does not — a route resolves at request time,
-			// so breaking one fails silently. That holds for `caseTask` above as
-			// much as for `objectionProceeding`: #1845 renamed the slug and left
-			// both of these maps, and the manifest's own `deepLinks` entry,
-			// keyed on `task`.
+			// ROUTE and deliberately does not: a route resolves at request time,
+			// so breaking one fails silently. #1845 renamed the slug and left both
+			// of these maps, and the manifest's own `deepLinks` entry, keyed on
+			// `task`.
 			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
 			beroep: '/apps/dossiq/beroepen/{uuid}',
 		}
 
 		const expectedRoutes = {
 			case: '/cases/:id',
-			caseTask: '/tasks/:id',
 			objectionProceeding: '/bezwaren/:id',
 			beroep: '/beroepen/:id',
 		}
@@ -96,6 +95,18 @@ describe('deep links cover all searchable schemas', () => {
 				`manifest has no page route "${expectedRoutes[slug]}" for schema "${slug}"`,
 			).toContain(expectedRoutes[slug])
 		})
+
+		// The task page survived the schema. Its route is what every
+		// notification and bookmark holds, so it is asserted on its own now
+		// that no deepLink entry covers it.
+		expect(
+			pageRoutes,
+			'the task page route must survive the schema it used to bind',
+		).toContain('/tasks/:id')
+		expect(
+			deepLinksBySlug.caseTask,
+			'a deepLink on a deleted schema resolves nothing and must not be re-added',
+		).toBeUndefined()
 	})
 })
 

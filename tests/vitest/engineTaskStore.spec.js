@@ -27,17 +27,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
 const post = vi.fn()
+const patch = vi.fn()
+const del = vi.fn()
 
-vi.mock('@nextcloud/axios', () => ({ default: { get, post } }))
+vi.mock('@nextcloud/axios', () => ({
+	default: { get, post, patch, delete: del },
+}))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (u) => u }))
 
-const { useEngineTaskStore, isTerminal, TERMINAL_STATES } =
-	await import('../../src/store/modules/engineTask.js')
+const {
+	useEngineTaskStore,
+	isTerminal,
+	TERMINAL_STATES,
+	asTaskRow,
+	signedDaysUntilDue,
+} = await import('../../src/store/modules/engineTask.js')
 
 beforeEach(() => {
 	setActivePinia(createPinia())
 	get.mockReset()
 	post.mockReset()
+	patch.mockReset()
+	del.mockReset()
 })
 
 describe('isTerminal', () => {
@@ -65,6 +76,38 @@ describe('isTerminal', () => {
 	})
 })
 
+describe('signedDaysUntilDue', () => {
+	/**
+	 * The engine reports the two directions in two fields and never both.
+	 * `TaskInboxService::row()` attaches `daysUntilDue` (counts down, null
+	 * once the deadline has passed) and `daysOverdue` (counts up, null
+	 * before it). A "days left" column reads one signed number.
+	 */
+	it('reads a countdown straight through', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: 4, daysOverdue: null })).toBe(4)
+	})
+
+	it('reads an overdue count as a negative number', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: null, daysOverdue: 9 })).toBe(-9)
+	})
+
+	it('answers null when the task has no deadline at all', () => {
+		expect(signedDaysUntilDue({ daysUntilDue: null, daysOverdue: null })).toBe(
+			null,
+		)
+		expect(signedDaysUntilDue({})).toBe(null)
+		expect(signedDaysUntilDue(null)).toBe(null)
+	})
+
+	it('keeps zero days a plain zero, never a negative zero', () => {
+		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
+		// less than a day would be rendered as due today and coloured red.
+		const zero = signedDaysUntilDue({ daysUntilDue: null, daysOverdue: 0 })
+		expect(zero).toBe(0)
+		expect(Object.is(zero, -0)).toBe(false)
+	})
+})
+
 describe('useEngineTaskStore', () => {
 	it('lists tasks and records the datastore total, not the page size', async () => {
 		get.mockResolvedValue({ data: { results: [{ uuid: 'a' }], total: 42 } })
@@ -72,7 +115,9 @@ describe('useEngineTaskStore', () => {
 
 		const rows = await store.list({ limit: 1 })
 
-		expect(rows).toEqual([{ uuid: 'a' }])
+		// `id` comes along because the read path maps engine rows into the
+		// names the components read; the row itself is otherwise untouched.
+		expect(rows).toEqual([{ uuid: 'a', id: 'a' }])
 		// 42, not 1: a page of one out of forty-two is not a total of one.
 		expect(store.total).toBe(42)
 	})
@@ -225,5 +270,257 @@ describe('useEngineTaskStore', () => {
 
 		expect(get).not.toHaveBeenCalled()
 		expect(post).not.toHaveBeenCalled()
+	})
+})
+
+/**
+ * The task leaves (remove-casetask 2.1).
+ *
+ * The notes, appointment and history leaves are read through this store
+ * rather than through a service module of their own, because this file is
+ * dossiq's whole seam onto the engine. What has to hold about them is a
+ * property the four actions above do NOT have, and it is the reason they
+ * are separate actions rather than more of the same:
+ *
+ *   a leaf read must not write the shared `error`, `task` or `loading`.
+ *
+ * A leaf is read while the task is on screen. Writing the shared error
+ * would make an unreadable notes list look like an unreadable TASK, and the
+ * page would replace a perfectly good record with a failure screen.
+ *
+ * @spec openspec/specs/task-management/spec.md
+ */
+describe('the task leaves', () => {
+	it('reads a leaf off the task uuid and unwraps the envelope', async () => {
+		get.mockResolvedValue({ data: { results: [{ id: 1 }], total: 1 } })
+		const store = useEngineTaskStore()
+
+		const outcome = await store.readLeaf('t1', 'notes')
+
+		expect(get).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes',
+		)
+		expect(outcome).toEqual({ results: [{ id: 1 }], error: null })
+	})
+
+	it('leaves the task state alone when a leaf read fails', async () => {
+		const store = useEngineTaskStore()
+		get.mockResolvedValueOnce({ data: { uuid: 't1', state: 'active' } })
+		await store.fetch('t1')
+
+		get.mockRejectedValueOnce({ response: { data: { error: 'No such task' } } })
+		const outcome = await store.readLeaf('t1', 'notes')
+
+		expect(outcome).toEqual({ results: [], error: 'No such task' })
+		// The task the page is rendering is untouched, and so is the error
+		// the page reports lifecycle refusals through. The shape asserted is
+		// what `fetch()` put there, `asTaskRow` mapping included: an exact
+		// object rather than a couple of fields, so a leaf read that wrote
+		// ANY key onto the task fails this.
+		expect(store.task).toEqual({
+			uuid: 't1',
+			state: 'active',
+			id: 't1',
+			status: 'active',
+		})
+		expect(store.error).toBeNull()
+	})
+
+	it('posts a note as `message` and answers with the created note', async () => {
+		post.mockResolvedValue({ data: { id: 7, message: 'hello' } })
+		const store = useEngineTaskStore()
+
+		const outcome = await store.writeNote('t1', '  hello  ')
+
+		expect(post).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes',
+			{ message: 'hello' },
+		)
+		expect(outcome).toEqual({ note: { id: 7, message: 'hello' }, error: null })
+	})
+
+	it('keeps the server refusal message when a note is rejected', async () => {
+		post.mockRejectedValue({
+			response: { data: { error: 'Note message is required' } },
+		})
+		const store = useEngineTaskStore()
+
+		expect(await store.writeNote('t1', 'x')).toEqual({
+			note: null,
+			error: 'Note message is required',
+		})
+		expect(store.error).toBeNull()
+	})
+
+	it('deletes a note by id', async () => {
+		del.mockResolvedValue({ data: { success: true } })
+		const store = useEngineTaskStore()
+
+		expect(await store.removeNote('t1', 7)).toEqual({
+			removed: true,
+			error: null,
+		})
+		expect(del).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/notes/7',
+		)
+	})
+
+	it('toggles a checklist item with a PATCH and the flag in the query', async () => {
+		// The engine registers `task#checkItem` as a PATCH with `checked` as
+		// a request parameter, not as a verb POST with a body. A POST here
+		// would 405 and the box would silently never move.
+		patch.mockResolvedValue({ data: { uuid: 't1', state: 'active' } })
+		const store = useEngineTaskStore()
+
+		await store.checkItem('t1', 'a', true)
+
+		expect(patch).toHaveBeenCalledWith(
+			'/apps/openregister/api/flow-tasks/t1/checklist/a',
+			null,
+			{ params: { checked: 'true' } },
+		)
+	})
+
+	it('never calls the engine for a blank id on any leaf', async () => {
+		const store = useEngineTaskStore()
+
+		expect(await store.readLeaf('', 'notes')).toEqual({
+			results: [],
+			error: null,
+		})
+		expect(await store.readLeaf('t1', '')).toEqual({
+			results: [],
+			error: null,
+		})
+		expect(await store.writeNote('t1', '   ')).toEqual({
+			note: null,
+			error: null,
+		})
+		expect(await store.removeNote('t1', '')).toEqual({
+			removed: false,
+			error: null,
+		})
+		expect(await store.checkItem('t1', '', true)).toBeNull()
+
+		expect(get).not.toHaveBeenCalled()
+		expect(post).not.toHaveBeenCalled()
+		expect(patch).not.toHaveBeenCalled()
+		expect(del).not.toHaveBeenCalled()
+	})
+})
+
+describe('the read path speaks the register vocabulary', () => {
+	/**
+	 * 🔴 THE WRITE PATH MAPPED AND THE READ PATH DID NOT.
+	 *
+	 * `create()` has translated `dueDate` to the engine's `dueAt` since the
+	 * first day. Rows came back raw, so every component asking for
+	 * `row.dueDate` got `undefined` and rendered its empty state: a task due
+	 * today showed "No due date" on the case pane. Nothing failed, because
+	 * a task without a deadline is a legitimate thing, so the surface looked
+	 * correct while telling a handler the opposite of the truth.
+	 */
+	it('gives a row the names the components read', () => {
+		const row = asTaskRow({
+			uuid: 'task-1',
+			state: 'active',
+			dueAt: '2026-09-10T00:00:00+00:00',
+			objectUuid: 'case-9',
+		})
+
+		expect(row.id).toBe('task-1')
+		expect(row.status).toBe('active')
+		expect(row.dueDate).toBe('2026-09-10T00:00:00+00:00')
+		expect(row.case).toBe('case-9')
+	})
+
+	it('keeps the engine names alongside, because isTerminal reads state', () => {
+		const row = asTaskRow({
+			uuid: 'task-1',
+			state: 'completed',
+			isTerminal: true,
+		})
+
+		expect(row.uuid).toBe('task-1')
+		expect(row.state).toBe('completed')
+		expect(isTerminal(row)).toBe(true)
+	})
+
+	/**
+	 * 🔴 THE ROW ALREADY HAD AN `id`, SO THE `id` MAPPING NEVER FIRED.
+	 *
+	 * `Task::jsonSerialize()` emits `id` (the database primary key) beside
+	 * `uuid`, so the original `row.id ?? row.uuid` took the number on every
+	 * real row and the uuid on none of them. The test above could not see
+	 * it: its fixture carries no `id`, which is the shape that agrees with
+	 * the reader rather than the shape the API returns.
+	 *
+	 * What it cost: `/tasks/:id` and every `/api/flow-tasks/{uuid}/…` verb
+	 * take the uuid, so three surfaces built a deep link to `…/tasks/153`
+	 * that resolves to nothing. No error, no empty state, just a dead row.
+	 */
+	it('takes the identity from uuid even when the numeric id sits beside it', () => {
+		const row = asTaskRow({
+			id: 153,
+			uuid: '232e2433-26a5-45f9-a71f-d9a3f2cdfddf',
+			state: 'active',
+		})
+
+		expect(row.id).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
+		expect(row.uuid).toBe('232e2433-26a5-45f9-a71f-d9a3f2cdfddf')
+	})
+
+	it('falls back to the numeric id only when there is no uuid', () => {
+		// Not a shape the engine returns, but the fallback is what keeps a
+		// row read before the cutover resolving to something.
+		expect(asTaskRow({ id: 153, state: 'active' }).id).toBe(153)
+	})
+
+	it('does not invent a deadline for a task that has none', () => {
+		const row = asTaskRow({ uuid: 'task-1', state: 'active' })
+
+		// `not.toHaveProperty`, not `toBeUndefined`: the latter passes
+		// whether the key is absent or present-and-undefined, so it could
+		// not tell "no deadline" from "we wrote undefined onto every row".
+		expect(row).not.toHaveProperty('dueDate')
+		expect(row).not.toHaveProperty('case')
+	})
+
+	it('maps every row a list returns', async () => {
+		get.mockResolvedValue({
+			data: {
+				results: [
+					{
+						uuid: 'task-1',
+						state: 'active',
+						dueAt: '2026-09-10T00:00:00+00:00',
+					},
+					{ uuid: 'task-2', state: 'available' },
+				],
+				total: 2,
+			},
+		})
+
+		const rows = await useEngineTaskStore().list({ scope: 'all' })
+
+		expect(rows[0].dueDate).toBe('2026-09-10T00:00:00+00:00')
+		expect(rows[0].status).toBe('active')
+		expect(rows[1].status).toBe('available')
+	})
+
+	it('maps the single task a fetch returns', async () => {
+		get.mockResolvedValue({
+			data: {
+				uuid: 'task-1',
+				state: 'active',
+				dueAt: '2026-09-11T00:00:00+00:00',
+				objectUuid: 'case-4',
+			},
+		})
+
+		const task = await useEngineTaskStore().fetch('task-1')
+
+		expect(task.dueDate).toBe('2026-09-11T00:00:00+00:00')
+		expect(task.case).toBe('case-4')
 	})
 })

@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -59,6 +60,7 @@ class TenantOnboardingService {
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TenantBillingService $billingService Billing-event emitter.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly TenantSaasService $tenantSaasService,
@@ -66,6 +68,7 @@ class TenantOnboardingService {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly TenantBillingService $billingService,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -115,9 +118,7 @@ class TenantOnboardingService {
 	 *
 	 * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
 	 *
-	 * @spec exclude phpstan dead-code cleanup only — removed an unreachable `$total === 0`
-	 *       branch (self::STEPS is non-empty, so max() is always >= 1) and normalised an
-	 *       IAppManager return; no behavioural or contractual change.
+	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function getProgress(string $tenantId): array {
 		$objectService = $this->getObjectService();
@@ -149,19 +150,34 @@ class TenantOnboardingService {
 			$rows = [];
 		}
 
+		// `findAll()` returns ObjectEntity objects. Indexing one as an array is
+		// an Error, and this loop sits outside the catch above, so the progress
+		// endpoint answered 500 for every tenant that had any step at all.
+		// Each row is read as an array first; a row that carries nothing
+		// readable is dropped rather than counted as a step with no status.
+		$steps = [];
+		foreach ($rows as $row) {
+			$step = $this->rowNormaliser->normalise(row: $row)['data'];
+			if ($step === []) {
+				continue;
+			}
+
+			$steps[] = $step;
+		}
+
 		$completed = 0;
-		foreach ($rows as $r) {
-			if ((string)($r['status'] ?? '') === 'completed') {
+		foreach ($steps as $step) {
+			if ((string)($step['status'] ?? '') === 'completed') {
 				$completed++;
 			}
 		}
 
 		// STEPS is non-empty, so $total is always >= 1 and the division is safe.
-		$total = max(count(self::STEPS), count($rows));
+		$total = max(count(self::STEPS), count($steps));
 		$fraction = ($completed / $total);
 
 		return [
-			'steps' => array_values($rows),
+			'steps' => $steps,
 			'completed' => $completed,
 			'total' => $total,
 			'fraction' => round($fraction, 2),
@@ -210,12 +226,22 @@ class TenantOnboardingService {
 				return null;
 			}
 
-			$task = $rows[0];
+			// `findAll()` returns ObjectEntity objects, so this used to assign
+			// into an object, throw, and be caught below as "step not found" —
+			// no step could ever be completed. The row is read as an array
+			// first, and its uuid comes off the row itself, so the step is
+			// written back in place instead of creating a second task.
+			$row = $this->rowNormaliser->normalise(row: $rows[0]);
+			$task = $row['data'];
+			if ($task === []) {
+				return null;
+			}
+
 			$task['status'] = 'completed';
 			$task['completedBy'] = $completedBy;
 			$task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 
-			$uuid = (string)($task['uuid'] ?? $task['id'] ?? '');
+			$uuid = $row['uuid'];
 			$uuidArg = null;
 			if ($uuid !== '') {
 				$uuidArg = $uuid;

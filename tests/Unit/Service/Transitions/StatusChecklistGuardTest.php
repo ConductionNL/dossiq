@@ -28,15 +28,27 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\StatusChecklistGuard
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ *
+ * 🔑 `StatusChecklist` IS USED FOR REAL, NOT MOCKED, by
+ * `testACompletedEngineTaskSatisfiesItsRequiredItem` and its sibling. That is
+ * the point of those two: a mocked checklist reported green right through the
+ * bug they exist to catch. Undeclared, the strict-coverage run marks them
+ * risky and phpunit exits 1 while printing OK, which reddened all six matrix
+ * cells on development.
+ *
+ * @uses \OCA\Dossiq\Service\Transitions\StatusChecklist
  */
 class StatusChecklistGuardTest extends TestCase {
 	/**
@@ -163,6 +175,99 @@ class StatusChecklistGuardTest extends TestCase {
 		$guard = new StatusChecklistGuard($checklist, $this->l10n());
 		$guard->evaluate(guardConfig: [], case: ['id' => 'c', 'status' => 'st-intake'], userId: 'u');
 	}//end testTheGuardReadsTheStatusTheCaseIsIn()
+
+	/**
+	 * A completed ENGINE task satisfies its required item, end to end.
+	 *
+	 * 🔴 THE ONE TEST IN THIS FILE THAT DOES NOT MOCK `StatusChecklist`, and
+	 * the reason the defect it pins shipped. Every other case here hands the
+	 * guard a double whose `tasksFor()` answers whatever the case needs, which
+	 * proves the guard's arithmetic and nothing about where the tasks come
+	 * from. `CreateTaskHandler` moved its write to the task engine (#2363) and
+	 * `StatusChecklist::tasksFor()` went on searching the `caseTask` register
+	 * schema, so on a real instance it answered an empty list for every case:
+	 * a handler ticked the task off, `completedTitles()` saw nothing, and the
+	 * case could not leave its phase. A mocked checklist reported green
+	 * throughout.
+	 *
+	 * So this one wires the real reader over a fake ENGINE inbox. Point the
+	 * reader back at the register and it goes red.
+	 *
+	 * @return void
+	 */
+	public function testACompletedEngineTaskSatisfiesItsRequiredItem(): void {
+		$guard = new StatusChecklistGuard(
+			$this->realChecklist(
+				items: [['title' => 'Check the objection is on time', 'required' => true]],
+				engineTasks: [
+					[
+						'id' => 'task-1',
+						'title' => 'Check the objection is on time',
+						'status' => 'completed',
+						'case' => 'c',
+						'workflowStepId' => 'st-intake',
+					],
+				],
+			),
+			$this->l10n()
+		);
+
+		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c', 'status' => 'st-intake'], userId: 'jan');
+
+		self::assertTrue($result->passed, (string)$result->failureMessage);
+	}//end testACompletedEngineTaskSatisfiesItsRequiredItem()
+
+	/**
+	 * A completed task from ANOTHER status does not satisfy this one's item.
+	 *
+	 * The engine has no `workflowStepId` filter, so the narrowing happens in
+	 * `StatusChecklist`. A narrowing that let another phase's task through
+	 * would open the case's progress on work this phase never asked for.
+	 *
+	 * @return void
+	 */
+	public function testACompletedTaskFromAnotherStatusDoesNotSatisfyTheItem(): void {
+		$guard = new StatusChecklistGuard(
+			$this->realChecklist(
+				items: [['title' => 'Check the objection is on time', 'required' => true]],
+				engineTasks: [
+					[
+						'id' => 'task-1',
+						'title' => 'Check the objection is on time',
+						'status' => 'completed',
+						'case' => 'c',
+						'workflowStepId' => 'st-decision',
+					],
+				],
+			),
+			$this->l10n()
+		);
+
+		self::assertFalse(
+			$guard->evaluate(guardConfig: [], case: ['id' => 'c', 'status' => 'st-intake'], userId: 'jan')->passed
+		);
+	}//end testACompletedTaskFromAnotherStatusDoesNotSatisfyTheItem()
+
+	/**
+	 * The real `StatusChecklist`, over a fake engine inbox.
+	 *
+	 * @param array<int, array<string, mixed>> $items       The status's checklist items, as stored.
+	 * @param array<int, array<string, mixed>> $engineTasks The tasks the engine holds for the case.
+	 *
+	 * @return StatusChecklist The reader.
+	 */
+	private function realChecklist(array $items, array $engineTasks): StatusChecklist {
+		$inbox = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$inbox->method('forCase')->willReturn($engineTasks);
+		$inbox->method('lastError')->willReturn('');
+
+		$lookup = $this->createMock(StatusTypeLookup::class);
+		$lookup->method('rowFor')->willReturn(['checklist' => $items]);
+
+		return new StatusChecklist($lookup, $inbox, new NullLogger());
+	}//end realChecklist()
 
 	/**
 	 * Build the guard over a fixed item list and task list.

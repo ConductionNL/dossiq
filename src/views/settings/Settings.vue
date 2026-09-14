@@ -26,13 +26,6 @@
 					@update:modelValue="(v) => (form.case_schema = v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('dossiq', 'Task schema') }}</label>
-				<NcTextField
-					:modelValue="form.task_schema"
-					:label="t('dossiq', 'Task schema')"
-					@update:modelValue="(v) => (form.task_schema = v)" />
-			</div>
-			<div class="form-group">
 				<label>{{ t('dossiq', 'Status schema') }}</label>
 				<NcTextField
 					:modelValue="form.status_schema"
@@ -100,7 +93,6 @@ export default {
 			form: {
 				register: '',
 				case_schema: '',
-				task_schema: '',
 				status_schema: '',
 				role_schema: '',
 				result_schema: '',

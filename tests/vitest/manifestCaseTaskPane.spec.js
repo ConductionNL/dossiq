@@ -19,7 +19,7 @@
  * key that answers it, the component identifier that key binds, the import
  * that binds that identifier to a path, and the file at that path.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import fs from 'fs'
@@ -56,8 +56,24 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * returns to `type: "roadmap"`; the manifest `_note` on that page says so
  * too. Anything else that moves this number is a change that owes an
  * explanation here.
+ *
+ * Moved 11 -> 12 on 2026-09-10 by `TaskDetail` (remove-casetask 2.1), and
+ * this one had no choice either. A `type: "detail"` page binds a register
+ * and a schema, the schema it bound is the one remove-casetask deletes, and
+ * CnDetailPage has no `entitySource` mode to point at the task engine
+ * instead (checked against the installed @conduction/nextcloud-vue 2.46.0).
+ * The Tasks INDEX did have that choice and took it: it stayed
+ * `type: "index"` and gained `entitySource: "tasks"`, which is why only one
+ * of the two pages spends a unit here.
+ *
+ * The unit comes back when the library grows a detail-side entity source.
+ * Note that hydra gate 69 has no exemption for this: its custom-page ratchet
+ * compares the head count with the base and fires on any growth, with no
+ * `_note` escape of the kind rule (b) offers. So this PR reds that gate by
+ * exactly one finding, deliberately.
  */
 const CUSTOM_PAGE_COUNT_BEFORE = 11
+const CUSTOM_PAGE_COUNT_AFTER = 12
 
 /**
  * One page as the manifest declares it.
@@ -140,9 +156,12 @@ describe('the case-tasks widget after the retype', () => {
 		// The content is what the widget goes back to reading the day
 		// CnObjectListWidget grows a lifecycle column. Dropping a key here
 		// would make the swap back a second change rather than a revert.
+		//
+		// `register` and `schema` ARE dropped, and their absence is asserted
+		// below. The component has read the task engine since dossiq#2357 and
+		// ignored both, so the pair named a schema that no longer exists and
+		// claimed a binding the widget never made.
 		expect(pane.content).toMatchObject({
-			register: 'dossiq',
-			schema: 'caseTask',
 			filter: { case: '@objectId' },
 			sort: { field: 'dueDate', dir: 'asc' },
 			rowRoute: 'TaskDetail',
@@ -151,6 +170,8 @@ describe('the case-tasks widget after the retype', () => {
 		})
 		expect(Array.isArray(pane.content.columns)).toBe(true)
 		expect(typeof pane.content.emptyText).toBe('string')
+		expect(pane.content.register).toBeUndefined()
+		expect(pane.content.schema).toBeUndefined()
 	})
 
 	it('stays inside the tabs strip and out of the layout', () => {
@@ -172,16 +193,26 @@ describe('the case-tasks widget after the retype', () => {
 		).toBe(false)
 	})
 
-	it('adds no page and retypes none', () => {
+	it('adds no page, and spends exactly one ratchet unit on the retype', () => {
 		const pages = manifest().pages
-		expect(pages.filter((entry) => entry.type === 'custom')).toHaveLength(
-			CUSTOM_PAGE_COUNT_BEFORE,
-		)
-		// The pane is a WIDGET on the case page. The retype it could have been
-		// given instead is a page of its own, which is the thing this asserts:
-		// no page renders the case's tasks, and the two pages over `caseTask`
-		// are the index and the task detail that existed before.
+		// The pane still adds and retypes nothing: it is a WIDGET on the case
+		// page. The one unit above the pre-pane count belongs to TaskDetail,
+		// and to nothing else.
+		const custom = pages.filter((entry) => entry.type === 'custom')
+		expect(custom).toHaveLength(CUSTOM_PAGE_COUNT_AFTER)
+		expect(CUSTOM_PAGE_COUNT_AFTER - CUSTOM_PAGE_COUNT_BEFORE).toBe(1)
+		expect(custom.map((entry) => entry.id)).toContain('TaskDetail')
+
+		// The retype the pane could have been given instead is a page of its
+		// own, which is the thing this asserts: no page renders the case's
+		// tasks.
 		expect(pages.some((entry) => entry.id === 'CaseTasks')).toBe(false)
+
+		// NO page binds `caseTask` any more. The Tasks index moved to
+		// `entitySource: "tasks"` and reads the engine's inbox; TaskDetail
+		// became `type: "custom"` over TaskDetailView and reads the engine
+		// too. Both bind no schema at all, which is what remove-casetask
+		// needs before the schema can be deleted.
 		expect(
 			pages
 				.filter(
@@ -189,7 +220,7 @@ describe('the case-tasks widget after the retype', () => {
 				)
 				.map((entry) => entry.id)
 				.sort(),
-		).toEqual(['TaskDetail', 'Tasks'])
+		).toEqual([])
 	})
 
 	it('names an icon src/icons.js registers', () => {
@@ -202,89 +233,126 @@ describe('the case-tasks widget after the retype', () => {
 	})
 })
 
-describe('the TaskCaseCard registry binding', () => {
-	it('is keyed by component name, for the page slot on TaskDetail', () => {
-		const entry = registryEntry('TaskCaseCard')
-		expect(entry).toContain("kind: 'widget'")
-		expect(entry).toContain('component: TaskCaseCard')
-		expect(entry).toContain('_note:')
-		expect(entry).toMatch(/@custom-widget-ratchet exclude \S+ \S+/)
+describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
+	it('keeps its route and its id, so every existing link still resolves', () => {
+		// This is the whole constraint of task 2.1 and the only one that can
+		// break a bookmark. Notifications and bookmarks point at
+		// /apps/dossiq/tasks/{uuid} and the SPA resolves it by ROUTE. A route
+		// resolves at request time, so a change here fails silently for
+		// everyone holding an old link.
+		const detail = page('TaskDetail')
+		expect(detail).toBeDefined()
+		expect(detail.route).toBe('/tasks/:id')
 	})
 
-	it('imports the component from a file that exists', () => {
-		const match = registrySource().match(/^import TaskCaseCard from '(.+)'$/m)
-		expect(match, 'TaskCaseCard must be imported').not.toBeNull()
+	it('publishes no deepLinks entry, because a deep link needs a schema', () => {
+		// 🔴 THE ENTRY IS GONE AND ITS ABSENCE IS THE ASSERTION.
+		// `deepLinks` is keyed on `registerSlug` + `schemaSlug`, and it feeds
+		// exactly one consumer: OpenRegister's schema-scoped unified search,
+		// which resolves a hit on an OBJECT of that schema to a URL.
+		// remove-casetask deleted the schema, so the entry addressed a schema
+		// nothing declares and could match no object. Keeping it would have
+		// published a link nothing can ever produce.
+		//
+		// The cost is real and is recorded rather than papered over: an engine
+		// task has NO unified-search provider today. That is an OpenRegister
+		// gap, not a dossiq one. The engine's tasks live in their own table,
+		// outside the object index the search reads, and no `deepLinks` shape
+		// addresses them. The route above is unchanged, so the moment such a
+		// shape exists this page is ready for it.
+		const taskLinks = manifest().deepLinks.filter(
+			(entry) =>
+				entry.schemaSlug === 'caseTask'
+				|| entry.urlTemplate === '/apps/dossiq/tasks/{uuid}',
+		)
+		expect(taskLinks).toEqual([])
+	})
+
+	it('is a custom page bound to a component the registry answers', () => {
+		// `type: "custom"` with no `component` is the one shape the manifest
+		// schema rejects outright; a `component` no registry key answers is
+		// the shape that renders a console warning and an empty page, which
+		// is the failure this catches.
+		const detail = page('TaskDetail')
+		expect(detail.type).toBe('custom')
+		expect(detail.component).toBe('TaskDetailView')
+
+		const entry = registryEntry('TaskDetailView')
+		expect(entry).toContain("kind: 'page'")
+		expect(entry).toContain('component: TaskDetailView')
+		expect(entry).toContain('_note:')
+
+		const match = registrySource().match(/^import TaskDetailView from '(.+)'$/m)
+		expect(match, 'TaskDetailView must be imported').not.toBeNull()
 		expect(
 			fs.existsSync(path.join(ROOT, 'src', match[1].replace(/^\.\//, ''))),
 		).toBe(true)
 	})
-})
 
-describe('the task-case widget on TaskDetail', () => {
-	it('is a custom widget resolved through the page slot', () => {
-		const card = widget('TaskDetail', 'task-case')
-		expect(card).toBeDefined()
-		expect(card.type).toBe('custom')
-		expect(page('TaskDetail').slots['widget-task-case']).toBe('TaskCaseCard')
-		// A `custom` widget with no slot entry renders nothing and says
-		// nothing, on this path exactly as on the tab path.
-		expect(page('TaskDetail').slots['widget-task-waiting-case']).toBe(
+	it('binds no register and no schema, which is the point of the retype', () => {
+		// A detail page binds a register and a schema, and the schema was
+		// `caseTask`. The engine is not an OpenRegister object, so there is
+		// nothing to bind and binding anything would put the object store
+		// back in the read path.
+		const config = page('TaskDetail').config ?? {}
+		expect(config).not.toHaveProperty('register')
+		expect(config).not.toHaveProperty('schema')
+		expect(page('TaskDetail')).not.toHaveProperty('slots')
+	})
+
+	it('mounts every widget the detail page carried', () => {
+		// The widgets are no longer manifest entries, so the check moves to
+		// the component that renders them. All five are here: the case card,
+		// the waiting-case section, the notes and appointment leaves and the
+		// history that used to be a sidebar tab.
+		const view = fs.readFileSync(
+			path.join(ROOT, 'src/views/tasks/TaskDetailView.vue'),
+			'utf8',
+		)
+		for (const child of [
+			'TaskCaseCard',
 			'TaskWaitingCaseSection',
+			'TaskNotesLeaf',
+			'TaskEventsLeaf',
+			'TaskAuditLeaf',
+		]) {
+			expect(view, `${child} must be mounted`).toContain(`<${child}`)
+		}
+	})
+
+	it('drives the lifecycle with the engine verbs, not CnLifecycleActions', () => {
+		// 🔴 The mistake this pins down has been made once already, on the
+		// case pane. CnLifecycleActions asks OpenRegister for an OBJECT's
+		// available transitions (/api/objects/{uuid}/available-actions); an
+		// engine task is not an object, so it 404s and no button renders. It
+		// only shows in a browser, because every unit test stubs the
+		// component away.
+		const view = fs.readFileSync(
+			path.join(ROOT, 'src/views/tasks/TaskDetailView.vue'),
+			'utf8',
 		)
+		//
+		// Matched on the IMPORT and the TAG, not on the bare name: the
+		// component's own header comment explains at length why the strip is
+		// not used, and a substring check would fail on the explanation.
+		expect(view).not.toMatch(/^import .*CnLifecycleActions/m)
+		expect(view).not.toContain('<CnLifecycleActions')
+		expect(view).toContain('engineTasks.invoke(')
 	})
 
-	it('sits above the Data widget and draws no title', () => {
-		const layout = page('TaskDetail').config.layout
-		const item = (id) => layout.find((entry) => entry.widgetId === id)
-		// A widget-<id> slot is rendered per GRID item, so a layout entry is
-		// not decoration here: without one the component never mounts.
-		expect(item('task-case')).toBeDefined()
-		expect(item('task-case').gridY).toBeLessThan(item('task-data').gridY)
-		// An empty titled box on every task with no case is the clutter the
-		// null render exists to avoid.
-		expect(item('task-case').showTitle).toBe(false)
-	})
-
-	it('hides the case row from the Data widget, so the case is stated once', () => {
-		// The card resolves `case` to a title and a link. Leaving the raw
-		// $ref row in the grid below shows the same relationship twice, and
-		// the second one shows it as a uuid.
-		const data = widget('TaskDetail', 'task-data')
-		expect(data.content.overrides.case.hidden).toBe(true)
-	})
-
-	it('carries the notes and appointment leaves, side by side below the task', () => {
-		const notes = widget('TaskDetail', 'task-notes')
-		const calendar = widget('TaskDetail', 'task-calendar')
-		expect(notes.type).toBe('integration')
-		expect(notes.integrationId).toBe('notes')
-		expect(calendar.type).toBe('integration')
-		expect(calendar.integrationId).toBe('calendar')
-
-		const layout = page('TaskDetail').config.layout
-		const item = (id) => layout.find((entry) => entry.widgetId === id)
-		// Below the task data, and beside each other rather than stacked.
-		expect(item('task-notes').gridY).toBeGreaterThan(item('task-data').gridY)
-		expect(item('task-calendar').gridY).toBe(item('task-notes').gridY)
-		expect(item('task-notes').gridWidth + item('task-calendar').gridWidth).toBe(
-			12,
-		)
-		// These two DO draw a title: unlike the case card they render their
-		// own empty state, so a titled empty box is the correct affordance.
-		expect(item('task-notes').showTitle).toBe(true)
-		expect(item('task-calendar').showTitle).toBe(true)
-	})
-
-	it('does not disturb the flow waiting section', () => {
-		const waiting = widget('TaskDetail', 'task-waiting-case')
-		expect(waiting.type).toBe('custom')
-		expect(waiting.icon).toBe('CheckboxMarkedCircleOutline')
-	})
-
-	it('names an icon src/icons.js registers', () => {
-		const icons = fs.readFileSync(ICONS_PATH, 'utf8')
-		expect(icons).toContain(
-			"import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'",
-		)
+	it('leaves the two card components in place, as plain children', () => {
+		// They are no longer registry entries: nothing in the manifest names
+		// them any more, and a registry key no manifest resolves is dead
+		// configuration. The FILES stay, because the page still mounts them.
+		expect(registrySource()).not.toMatch(/^\tTaskCaseCard: \{/m)
+		expect(registrySource()).not.toMatch(/^\tTaskWaitingCaseSection: \{/m)
+		expect(
+			fs.existsSync(path.join(ROOT, 'src/components/tasks/TaskCaseCard.vue')),
+		).toBe(true)
+		expect(
+			fs.existsSync(
+				path.join(ROOT, 'src/components/flow/TaskWaitingCaseSection.vue'),
+			),
+		).toBe(true)
 	})
 })

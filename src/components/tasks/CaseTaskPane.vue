@@ -41,7 +41,7 @@
   own widgets. No page is added or retyped either way, so the ADR-100 page
   ratchet is untouched.
 
-  @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+  @spec openspec/specs/task-management/spec.md
 -->
 <template>
 	<div class="case-task-pane" data-testid="case-task-pane">
@@ -171,7 +171,7 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		engineTasks() {
 			return useEngineTaskStore()
 		},
@@ -180,29 +180,29 @@ export default {
 		 * The task the pane acts on: the first open one.
 		 *
 		 * @return {object|null} The task row, or null when none is open.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		currentTask() {
 			return this.tasks[0] ?? null
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentTaskId() {
 			return taskIdOf(this.currentTask)
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentTitle() {
 			return this.titleOf(this.currentTask)
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentAssignee() {
 			const assignee = String(this.currentTask?.assignee ?? '').trim()
 			return assignee === '' ? t('dossiq', 'Unassigned') : assignee
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		currentDue() {
 			return this.formatDate(this.currentTask?.dueDate)
 		},
@@ -211,7 +211,7 @@ export default {
 		 * The open tasks after the one in the pane, listed underneath.
 		 *
 		 * @return {object[]} The remaining rows.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		remainingTasks() {
 			return this.tasks.slice(1)
@@ -224,7 +224,7 @@ export default {
 		 * shows for the same task.
 		 *
 		 * @return {{field: string}} The lifecycle config.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		/**
 		 * The verbs offered on the current task.
@@ -256,7 +256,7 @@ export default {
 			return { field: 'status' }
 		},
 
-		/** @spec openspec/changes/task-on-the-case/specs/task-management/spec.md */
+		/** @spec openspec/specs/task-management/spec.md */
 		viewAllRoute() {
 			return viewAllRouteFor(this.objectId, this.content)
 		},
@@ -273,7 +273,7 @@ export default {
 			 * resolved and query a type the store has not registered.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+			 * @spec openspec/specs/task-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -290,7 +290,7 @@ export default {
 	 * TaskWaitingCaseSection and InitiatorSection do.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	async mounted() {
 		await initializeStores()
@@ -308,7 +308,7 @@ export default {
 		 *
 		 * @param {object|null} task The task row.
 		 * @return {string} The title.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		titleOf(task) {
 			const title = String(task?.title ?? '').trim()
@@ -321,7 +321,7 @@ export default {
 		 *
 		 * @param {string|null|undefined} value The ISO date-time.
 		 * @return {string} The formatted date.
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		formatDate(value) {
 			const raw = String(value ?? '').trim()
@@ -343,7 +343,7 @@ export default {
 		 * buttons is the one state worse than an empty pane.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async load() {
 			const caseId = String(this.objectId ?? '').trim()
@@ -376,7 +376,7 @@ export default {
 		 *
 		 * @param {{action: string, to: string, object: object}} payload The event.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async onTransitioned(payload) {
 			const finished = isFinalStatus(payload?.to)
@@ -439,7 +439,7 @@ export default {
 		 * the follow-up issue this change files.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		watchLifecycleError() {
 			this.$watch(
@@ -453,7 +453,7 @@ export default {
 		 *
 		 * @param {string|null|undefined} message The message.
 		 * @return {void}
-		 * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		report(message) {
 			const text = String(message ?? '').trim()

@@ -73,7 +73,7 @@ Fast-forward through artifact creation - generate everything needed to start imp
    |------|----------------------|
    | `openspec/changes/<name>/context-brief.md` | **Specter intelligence brief** — full features, user stories, stakeholders, schemas, standards, ADRs. This is the PRIMARY input when present — read it fully and use its data for all artifacts |
    | `openspec/architecture/` | Check for repo-specific ADRs that constrain or inform the implementation approach |
-   | `.claude/openspec/architecture/` | Check company-wide ADRs (always apply) |
+   | `hydra/openspec/architecture/` | Company-wide ADRs, in the hydra repo (always apply). App repos carry no copies. |
    | `docs/ARCHITECTURE.md` | Understand app-specific technology decisions and data model |
    | `docs/FEATURES.md` | Confirm the feature tier and roadmap phase for what is being built |
 

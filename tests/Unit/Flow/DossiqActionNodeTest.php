@@ -138,7 +138,7 @@ class DossiqActionNodeTest extends TestCase {
      *
      * @return void
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function testCaseChangesAreStampedOntoTheOutgoingItem(): void {
         $this->handler->method('handle')->willReturn(

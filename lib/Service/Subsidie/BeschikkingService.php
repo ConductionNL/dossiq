@@ -176,12 +176,12 @@ class BeschikkingService {
 		];
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $patch,
-				uuid: (string)$decisionId
+				id: (string)$decisionId,
+				changes: $patch
 			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: sign beschikking failed: ' . $e->getMessage());
@@ -232,12 +232,12 @@ class BeschikkingService {
 		];
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $patch,
-				uuid: (string)$decisionId
+				id: (string)$decisionId,
+				changes: $patch
 			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: publish beschikking failed: ' . $e->getMessage());

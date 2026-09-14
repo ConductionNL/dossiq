@@ -73,7 +73,7 @@ protected person's number SHALL stay masked on the card as REQ-ID-3 requires.
 - **THEN** you SHALL land on that person's contact page
 
 #### Scenario: The Requester column links once a column can pick its route
-@e2e exclude blocked on nextcloud-vue: a column link whose route is chosen by a sibling field; until then the column is text and the initiator card carries the link
+@e2e tests/e2e/contacts-domain.spec.ts
 
 - **GIVEN** the Cases index with the Requester column
 - **WHEN** you follow a requester name

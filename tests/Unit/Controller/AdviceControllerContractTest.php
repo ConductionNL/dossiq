@@ -11,9 +11,11 @@
  *    anonymous caller, while `dispatchReminder` answers a plain 401 JSON body —
  *    a client cannot handle both the same way, so the shape of each refusal is
  *    asserted rather than "some error came back";
- *  - `getForCase` is the only one of the three behind `CaseAccessGuard`, and it
- *    must consult it with the CASE uuid from the route and the SESSION user —
- *    passing the wrong id or a different user is the realistic defect;
+ *  - `getForCase` and, since #799, `createForCase` are both behind
+ *    `CaseAccessGuard`, and each must consult it with the CASE uuid from the
+ *    route and the SESSION user — passing the wrong id or a different user is
+ *    the realistic defect. `createForCase` asks for MUTATION access because it
+ *    writes and notifies; `getForCase` asks for READ access;
  *  - `createForCase` writes `requestedBy`, `caseRef` and `status` server-side.
  *    A body that claims all three must not win: identity supplied by the
  *    requester is not identity;
@@ -431,6 +433,7 @@ class AdviceControllerContractTest extends TestCase {
 	 */
 	public function testCreateForCaseOverridesCaseRefRequestedByAndStatusFromTheBody(): void {
 		$this->authenticate();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 
 		$body = json_encode(
 			[
@@ -474,6 +477,7 @@ class AdviceControllerContractTest extends TestCase {
 	 */
 	public function testCreateForCaseReturns500WhenTheServiceFails(): void {
 		$this->authenticate();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->adviceService->method('requestAdvice')
 			->willThrowException(new RuntimeException('OpenRegister is not available'));
 
@@ -482,6 +486,52 @@ class AdviceControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertArrayHasKey('error', $response->getData());
 	}//end testCreateForCaseReturns500WhenTheServiceFails()
+
+	/**
+	 * createForCase refuses an authenticated account that does not handle the
+	 * case, and writes nothing (#799).
+	 *
+	 * Until then this endpoint had no per-case check at all, so any signed-in
+	 * account could attach an advice request to any case uuid, name any
+	 * `advisor`, and trigger the adviseur notification that goes with it.
+	 *
+	 * @return void
+	 */
+	public function testCreateForCaseRefusesAnAccountThatDoesNotHandleTheCase(): void {
+		$this->authenticate();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
+		$this->adviceService->expects($this->never())->method('requestAdvice');
+
+		$response = $this->bodylessController()->createForCase(id: 'someone-elses-case');
+
+		$this->assertSame(
+			Http::STATUS_FORBIDDEN,
+			$response->getStatus(),
+			'An account that does not handle the case must not create advice on it.'
+		);
+	}//end testCreateForCaseRefusesAnAccountThatDoesNotHandleTheCase()
+
+	/**
+	 * createForCase asks the guard about the CASE uuid from the route and the
+	 * SESSION user — not about anything the body offered.
+	 *
+	 * @return void
+	 */
+	public function testCreateForCaseConsultsTheGuardWithTheRouteIdAndSessionUser(): void {
+		$user = $this->authenticate();
+
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseMutationAccess')
+			->with('case-1', $user)
+			->willReturn(false);
+
+		$body = json_encode(['caseRef' => 'some-other-case', 'requestedBy' => 'mallory']);
+		$controller = $this->controller(request: new AdviceControllerRequestStub(content: (string)$body));
+
+		$response = $controller->createForCase(id: 'case-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testCreateForCaseConsultsTheGuardWithTheRouteIdAndSessionUser()
 
 	/**
 	 * getForCase refuses an anonymous caller by throwing, before the guard or

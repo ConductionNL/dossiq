@@ -285,12 +285,12 @@ class BeroepService {
 		$requests[] = $entry;
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $appealSchema,
-				object: ['fileInspectionRequests' => $requests],
-				uuid: (string)$appealId
+				id: (string)$appealId,
+				changes: ['fileInspectionRequests' => $requests]
 			) ?? array_merge($current, ['fileInspectionRequests' => $requests]));
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -402,12 +402,12 @@ class BeroepService {
 		}
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $appealSchema,
-				object: $patch,
-				uuid: (string)$appealId
+				id: (string)$appealId,
+				changes: $patch
 			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error(

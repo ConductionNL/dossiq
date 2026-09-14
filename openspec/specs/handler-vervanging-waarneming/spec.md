@@ -67,6 +67,8 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Waarnemer sees substituted work in My Work
 
+@e2e exclude the My Work integration this scenario describes has no call site. `fetchSubstitutedWork()` in `src/services/substitutionApi.js` is never called, and every helper in `src/utils/substitutionHelpers.js` — `buildSubstitutedMap`, `mergeSubstitutedCases`, `substitutedFor` and the show/hide filter — is imported by nothing; neither `src/views/MyWorkCards.vue` nor `src/views/widgets/MyWorkWidget.vue` mentions substitution at all. So My Work shows the reader their own work only, nothing is marked "waargenomen voor" and there is no control to filter by. `handler-vervanging-waarneming.spec.ts` cited this scenario on a test asserting an Urgency button and the absence of a 500, with the toggle click inside an `if` that stood down when the toggle was absent, which it always is. The routing half of the requirement, that the resolver hands the substitute the absentee's in-scope work and withholds the rest, is covered against the `#scope-limited-substitution-only-routes-matching-items` scenario. Restore a citation here when a My Work surface reads the resolver.
+
 - **GIVEN** an active substitution where Marieke covers Jan with scope `all`
 - **WHEN** Marieke opens My Work
 - **THEN** she MUST see her own cases and tasks unchanged
@@ -110,6 +112,8 @@ While a substitution is active (status `active` and today within the period), th
 Every mutation a substitute performs on a case or task that is in their werkvoorraad by virtue of an active substitution SHALL record the acting user, the absentee on whose behalf they acted, and the substitution id, and SHALL be rendered in the case timeline as acting "namens".
 
 #### Scenario: Timeline shows the substituted capacity
+
+@e2e exclude no call-site produces a capacity stamp yet — `SubstitutionAuditService::stampIfSubstituted()` has zero callers in `lib/`, which is the retrofit this spec's own status paragraph records as deferred, so a substitute completing a task writes no `actedOnBehalfOf` entry and no "namens" timeline line exists to read. The query side of the stamp is covered by `tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts` against the `#all-actions-under-a-substitution-are-queryable` scenario. Restore a citation here when the stamp is wired into the case and task mutation paths.
 
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** Marieke completes a task on one of Jan's substituted cases

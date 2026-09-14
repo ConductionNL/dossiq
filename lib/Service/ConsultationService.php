@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -42,6 +43,9 @@ use RuntimeException;
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
  */
 class ConsultationService {
+
+	use SearchesObjects;
+
 	/**
 	 * Valid consultation statuses.
 	 */
@@ -237,7 +241,7 @@ class ConsultationService {
 			$updateData['closedAt'] = date('Y-m-d\TH:i:s');
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$consultationId);
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
 
 		$this->logger->info(
 			'Consultation ' . $consultationId . ' status updated to ' . $newStatus,
@@ -287,7 +291,7 @@ class ConsultationService {
 			$updateData['terms'] = $response['terms'];
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$consultationId);
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
 
 		$this->logger->info(
 			'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
@@ -410,7 +414,7 @@ class ConsultationService {
 			'extensionApproved' => false,
 		];
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$consultationId);
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
 
 		$this->logger->info(
 			'Extension requested for consultation ' . $consultationId,
@@ -454,7 +458,7 @@ class ConsultationService {
 			'extensionApproved' => true,
 		];
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$consultationId);
+		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
 
 		$this->logger->info(
 			'Extension approved for consultation ' . $consultationId . ', new deadline: ' . $newDeadline,
@@ -530,11 +534,12 @@ class ConsultationService {
 			);
 
 			if ($consultationId !== '') {
-				$objectService->saveObject(
-					object: ['decisionRef' => $decisionRef],
+				$this->patchObjectAsArray(
+					objectService: $objectService,
 					register: $register,
 					schema: $schema,
-					uuid: $consultationId,
+					id: $consultationId,
+					changes: ['decisionRef' => $decisionRef],
 				);
 			}
 		} catch (\RuntimeException $e) {

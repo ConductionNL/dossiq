@@ -45,6 +45,7 @@ import {
 	clickHeaderAction,
 	dismissSupportDialog,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 } from './helpers/nav.ts'
 
 /** The fields the Add party form asks a handler to fill. */
@@ -78,6 +79,16 @@ const DELEGATE_UNTIL = '2026-07-31T00:00:00+00:00'
  */
 const MINE_MARKER = `${RUN_PREFIX}-mine`
 
+/**
+ * The same trick for the Team facet test, for a second reason. OpenRegister
+ * caches a facet response per query for an hour (`FacetHandler`). Since
+ * openregister#3560 an object write invalidates it, but an instance on an
+ * OpenRegister without that fix serves the unfiltered Cases index a Team facet
+ * computed before this run assigned anything, measured on a dev rig. A query
+ * no earlier request has made is computed fresh on either.
+ */
+const TEAM_MARKER = `${RUN_PREFIX}-team`
+
 /** The user the E2E session is signed in as, read from the instance. */
 let currentUser = ''
 
@@ -99,8 +110,6 @@ let emptyCaseId = ''
 let formCaseId = ''
 /** A case that gets a team. */
 let teamCaseId = ''
-/** A task on that case, which gets a team of its own. */
-let teamTaskId = ''
 
 /**
  * Seed one role through the object API.
@@ -145,11 +154,11 @@ async function seedRole(
  * @param id   The case id to open.
  */
 async function openPartiesTab(page: Page, id: string) {
-	await page.goto(`/apps/${REGISTER}/cases/${id}`)
+	await page.goto(`/apps/${REGISTER}/cases/${id}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// The SECTION, not the whole open panel. Now that the strip is folded
 	// instead of fourteen, a tab carries two collections, so an assertion made
 	// against the panel root can be satisfied by the wrong half of it. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
@@ -181,7 +190,15 @@ async function openIndex(
 ): Promise<void> {
 	const qs = new URLSearchParams(query).toString()
 	for (const base of [`/apps/${REGISTER}`, `/index.php/apps/${REGISTER}`]) {
-		await page.goto(`${base}${route}?${qs}`)
+		// `domcontentloaded`, NOT the default `load`. Nextcloud's notification
+		// poll keeps the network busy, so the load event waits for something
+		// that does not settle on a loaded rig: every test in this file died
+		// here at load average 50 while the page itself rendered. The SPA
+		// mounts after DOM ready and the list assertion below proves the mount.
+		await page.goto(`${base}${route}?${qs}`, {
+			...PAGE_LOAD,
+			waitUntil: 'domcontentloaded',
+		})
 		await dismissSupportDialog(page)
 		if (new URL(page.url()).pathname.endsWith(route)) {
 			await expect(
@@ -320,28 +337,15 @@ test.describe('Case detail — the Parties tab', () => {
 			handlerTypeId,
 			OTHER_PARTICIPANT,
 		)
-
-		const task = await createObject(api, token, 'caseTask', {
-			title: `${RUN_PREFIX} Parties task`,
-			case: teamCaseId,
-			assignee: currentUser,
-			status: 'available',
-		})
-		teamTaskId = objectId(task)
 	})
 
 	test.afterAll(async () => {
 		if (!api) return
-		// Roles, role types, the task and the team. The cases are archival and
+		// Roles, role types and the team. The cases are archival and
 		// cannot be removed by a user; they carry the family prefix, so
 		// global-setup's residue sweep takes them before the next run rather
 		// than this teardown failing on a 403 it was never going to win.
-		await cleanupRunObjects(api, token, [
-			'role',
-			'caseTask',
-			'roleType',
-			'organisatieRol',
-		])
+		await cleanupRunObjects(api, token, ['role', 'roleType', 'organisatieRol'])
 		await api.dispose()
 	})
 
@@ -379,12 +383,18 @@ test.describe('Case detail — the Parties tab', () => {
 		await expect(widget.getByText(OTHER_PARTICIPANT)).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/roles-decisions/spec.md#parties-visible-on-the-case
-	// @e2e roles-decisions::parties-visible-on-the-case
+	// No citation, on purpose. This test used to carry
+	// `roles-decisions::parties-visible-on-the-case` twice, and it never opens
+	// the tab or reads a row, so it stayed green on a Parties list that showed
+	// nothing (e2e-citation-integrity, audit group 3). The scenario is proven
+	// by the test above, which opens the tab and reads both parties with their
+	// delegation. What this one guards, which tabs the strip carries, is not a
+	// clause of that scenario, so the citation came off rather than being
+	// copied onto a second test that proves the same rows.
 	test('the Parties tab sits in the strip and the retired Contacts tab does not', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		const strip = page.locator('.cn-tabs-widget')
 		await expect(strip).toBeVisible({ timeout: 30_000 })
@@ -439,12 +449,17 @@ test.describe('Case detail — the Parties tab', () => {
 		})
 	})
 
-	// @e2e openspec/specs/roles-decisions/spec.md#add-a-party-with-the-case-prefilled
-	// @e2e roles-decisions::add-a-party-with-the-case-prefilled
+	// No citation, on purpose. `add-a-party-with-the-case-prefilled` has two
+	// THENs and both are about the SAVED row: it shows up in the list, and it
+	// references the case. This test saves nothing, so it could not fail on
+	// either (e2e-citation-integrity, audit group 3). The test below saves a
+	// party and reads the stored `case` back, and that is where the scenario
+	// is proven. This one guards the field list REQ-ROLE-008 names, which no
+	// scenario states.
 	test('the Add party form asks for the party fields and never for the case', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -474,7 +489,7 @@ test.describe('Case detail — the Parties tab', () => {
 	test('a party added from the case carries that case and shows up in the tab', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -540,22 +555,100 @@ test.describe('Case detail — the Parties tab', () => {
 	test.describe('the team on a case and on a task', () => {
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
-		test('the case page offers a Team field beside the assignee', async ({
+		//
+		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
+		// citation is unverified. Each line names the break and the assertion
+		// that must redden; restore after.
+		//   src/manifest.json `case-core` include: drop "assignedGroup"
+		//     -> "the Data panel offers a Team field"
+		//   src/manifest.json Cases Team column: key "assignedGroup.roleName" -> "assignedGroup.x"
+		//     -> "the Team column must show the team picked on the case page, by name"
+		test('a team picked on the case page is stored and shows in the Team column', async ({
 			page,
 		}) => {
-			await page.goto(`/apps/${REGISTER}/cases/${teamCaseId}`)
+			// The scenario's WHEN, done the way a handler does it: on the case
+			// page, not over the API. This test used to assert only that the word
+			// Team appeared somewhere in the Data panel, which a label with a
+			// broken editor, or an editor that saves nothing, both satisfy.
+			await page.goto(`/apps/${REGISTER}/cases/${teamCaseId}`, {
+				...PAGE_LOAD,
+				waitUntil: 'domcontentloaded',
+			})
 			await dismissSupportDialog(page)
 			// `case-core` is the strip's `Data` tab, not a laid-out widget, so
-			// it carries no `aria-label` — the same trap `openPartiesTab`
-			// above documents for `case-roles`.
+			// it carries no `aria-label`, the same trap `openPartiesTab` above
+			// documents for `case-roles`.
 			const core = await openCasePanel(page, 'data')
 
 			// `Team` is the same word in both languages (it is in
-			// tests/l10n/language-neutral-keys.json), so this is safe to assert
-			// bare. The field is what makes the assignment possible at all: the
-			// property can exist on the schema and still be invisible, because
-			// `case-core` names the fields it renders.
-			await expect(core).toContainText('Team', { timeout: 15_000 })
+			// tests/l10n/language-neutral-keys.json), so it is safe to match
+			// bare.
+			const cell = core.locator('.cn-object-data-widget__cell').filter({
+				has: page.locator('.cn-object-data-widget__label', {
+					hasText: /^Team$/,
+				}),
+			})
+			await expect(cell, 'the Data panel offers a Team field').toHaveCount(1, {
+				timeout: 15_000,
+			})
+			await cell.locator('.cn-object-data-widget__value').click()
+			const editor = core.locator('.cn-object-data-widget__editor')
+			await expect(editor).toBeVisible({ timeout: 15_000 })
+
+			await editor.getByRole('combobox').first().click()
+			// The options are the `organisatieRol` rows. They are matched on the
+			// team's name OR its uuid: `organisatieRol` declares no name field,
+			// so OpenRegister names each row by its uuid and the picker lists
+			// uuids (reported with this change). The scenario's THENs are about
+			// what is STORED and what the index shows, and those are asserted
+			// below either way.
+			await page
+				.getByRole('option')
+				.filter({ hasText: new RegExp(`${teamName}|${teamId}`) })
+				.first()
+				.click({ timeout: 30_000 })
+			// Choosing the option IS the save: a relation field commits on
+			// selection and closes its editor, so there is no confirm button to
+			// press. Whether it saved is read off the stored case below, which
+			// is also what fails if a later widget version starts to need one.
+
+			// The stored reference, not the rendered label.
+			await expect
+				.poll(
+					async () => {
+						const stored = await showObject(api, 'case', teamCaseId)
+						const group = stored.assignedGroup
+						return String(
+							typeof group === 'object' && group !== null
+								? objectId(group)
+								: (group ?? ''),
+						)
+					},
+					{
+						message:
+							'the team picked on the case page must be stored on the case',
+						timeout: 30_000,
+					},
+				)
+				.toBe(teamId)
+			expect(
+				String((await showObject(api, 'case', teamCaseId)).assignee),
+				'picking a team must not clear the personal assignee',
+			).toBe(currentUser)
+
+			// THEN: the Cases index shows the team's NAME in the Team column.
+			const stored = await showObject(api, 'case', teamCaseId)
+			await openIndex(page, '/cases', {
+				identifier: String(stored.identifier),
+			})
+			const row = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties team`,
+			})
+			await expect(row).toHaveCount(1, { timeout: 30_000 })
+			await expect(
+				row,
+				'the Team column must show the team picked on the case page, by name',
+			).toContainText(teamName, { timeout: 20_000 })
 		})
 
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
@@ -591,52 +684,170 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeVisible()
 		})
 
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
-		test('the Cases sidebar offers a Team facet', async ({ page }) => {
-			await openIndex(page, '/cases', { competentAuthority: MINE_MARKER })
-
-			// The index sidebar starts COLLAPSED on this route, so the facet is in
-			// the DOM but hidden; assert it is wired up rather than requiring the
-			// sidebar to be open, the way the sibling pages.spec does for search.
-			//
-			// The facet's OPTIONS are the stored values, which for a reference
-			// property are uuids until the platform renders label fields for them
-			// (the same interim the role-type column carries). What this asserts
-			// is that the property is offered as a facet at all — the half that a
-			// missing `facetable: true` silently removes.
-			await expect(
-				page
-					.locator('.cn-index-sidebar__filter-label')
-					.filter({ hasText: /^Team$/ })
-					.first(),
-			).toBeAttached({ timeout: 20_000 })
-		})
-
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-task-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-task-to-a-team
-		test('a task with a team shows it on its row and keeps its assignee', async ({
+		// 🔴 NO CITATION, AND THE MEASUREMENT IS WHY. This carried
+		// `role-routing-via-or-rbac#assign-a-case-to-a-team`, whose second
+		// THEN is "the Team facet SHALL list Team Permits with a count of
+		// one". That is a claim about what a reader is SHOWN, and nothing on
+		// this page shows it.
+		//
+		// Measured on the shared instance 2026-09-12, signed in as admin on
+		// the Cases page with the sidebar open: the Team filter opens and its
+		// dropdown holds exactly one entry, "No results". Case type behaves
+		// identically, so it is the binding and not the data. CnIndexPage
+		// passes `:facet-data="resolvedSidebar.facets || {}"`, which is the
+		// MANIFEST's sidebar config; the live facets the store just parsed
+		// never reach `getFilterOptions`. (The `isSelfFetchMode` branch that
+		// DOES read `list.facets` feeds `folderSidebarFacetValues`, the folder
+		// pane, not the filter list.) nextcloud-vue#1110 fixes it upstream and
+		// is not in 2.48.2, the newest published version and the one this app
+		// pins.
+		//
+		// So the citation comes down rather than claiming a rendered list
+		// nobody can see. The scenario keeps its own spec-side pointer at this
+		// file, and its first THEN, the Team column, is proven by the two
+		// tests above.
+		//
+		// (That sentence deliberately does not spell the directive out. The
+		// audit extractor matches the token anywhere in a comment, prose
+		// included, and a line break after it made the target parse as `//`,
+		// so this paragraph was being counted as a broken citation. Prose
+		// about citations should not look like one.)
+		//
+		// The test stays, and proves what IS true: OpenRegister computes the
+		// facet, counts one for this team over two marked cases, and that
+		// count matches what filtering on the team actually returns. Re-cite
+		// it when the sidebar is fed its live facets.
+		//
+		// STILL NOT RUN (the permission is pending): the server-side mutation
+		// for the facet itself. Break, then the assertion that must redden:
+		//   lib/Settings/dossiq_register.json `case.assignedGroup.facetable: false`,
+		//   imported with `version` pinned on both the break and the restore
+		//     -> "the Team facet must list the team with a count of one"
+		test('the Team facet lists the team with a count of one', async ({
 			page,
 		}) => {
-			await updateObject(api, token, 'caseTask', teamTaskId, {
-				assigneeGroup: teamId,
+			// Self-contained rather than relying on the test above having run:
+			// a retry re-runs `beforeAll`, which seeds a fresh case and team.
+			//
+			// TWO cases carry the marker and only one carries the team, so a
+			// count of one is the facet counting cases per team, not the list
+			// being one row long.
+			await updateObject(api, token, 'case', teamCaseId, {
+				assignedGroup: teamId,
+				competentAuthority: TEAM_MARKER,
+			})
+			await updateObject(api, token, 'case', emptyCaseId, {
+				competentAuthority: TEAM_MARKER,
 			})
 
-			const stored = await showObject(api, 'caseTask', teamTaskId)
-			expect(
-				String(stored.assignee),
-				'assigning a team must not clear the personal assignee',
-			).toBe(currentUser)
-
-			await openIndex(page, '/tasks', { case: teamCaseId })
-
-			const row = indexRows(page).filter({
-				hasText: `${RUN_PREFIX} Parties task`,
+			// The facet as OpenRegister computed it for the page. This test
+			// used to assert only that a label reading Team was attached to a
+			// collapsed sidebar, which survives a facet that lists nothing.
+			const buckets: any[] = []
+			page.on('response', async (r) => {
+				if (!r.url().includes(`/objects/${REGISTER}/case?`)) return
+				if (!r.url().includes('_facets')) return
+				try {
+					const body = await r.json()
+					const facet = body?.facets?.assignedGroup
+					buckets.push(...(facet?.data?.buckets ?? facet?.buckets ?? []))
+				} catch {
+					// A body that is not JSON carries no facet.
+				}
 			})
-			await expect(row).toHaveCount(1, { timeout: 30_000 })
-			await expect(row).toContainText(teamName, { timeout: 20_000 })
-			await expect(row).toContainText(currentUser)
+
+			await openIndex(page, '/cases', { competentAuthority: TEAM_MARKER })
+			await expect(
+				indexRows(page),
+				'both marked cases are listed, so the facet is counted over two',
+			).toHaveCount(2, { timeout: 30_000 })
+
+			// OpenRegister answers `results`, and nextcloud-vue's store
+			// normalises that to `count`; the listener sees whichever shape the
+			// page received.
+			await expect
+				.poll(
+					() => {
+						const mine = buckets.find(
+							(b) => String(b.key ?? b.value ?? '') === teamId,
+						)
+						return mine === undefined
+							? null
+							: Number(mine.results ?? mine.count)
+					},
+					{
+						message:
+							'the Team facet must list the team with a count of one',
+						timeout: 30_000,
+					},
+				)
+				.toBe(1)
+
+			// 🔴 AND THE COUNT HAS TO MEAN SOMETHING. A bucket saying 1 is a
+			// number in a payload until the filter it stands for is applied:
+			// the scenario's claim is that picking Team Permits gets you the
+			// one case that has it. So the facet is USED as a filter, over the
+			// same two marked cases, and the list that comes back has to be
+			// exactly the one the bucket counted.
+			await openIndex(page, '/cases', {
+				competentAuthority: TEAM_MARKER,
+				assignedGroup: teamId,
+			})
+			const withTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties team`,
+			})
+			const withoutTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties empty`,
+			})
+			await expect(
+				withTeam,
+				'filtering on the team returns the case that carries it',
+			).toHaveCount(1, { timeout: 30_000 })
+			await expect(
+				withoutTeam,
+				'and not the other marked case, so the count of one is a count',
+			).toHaveCount(0)
+
+			// 🔴 AND THE SIDEBAR SHOWS NONE OF IT. The rendered Team filter is
+			// asserted NOWHERE here because it lists nothing to assert:
+			// `CnIndexPage` passes `:facet-data="resolvedSidebar.facets || {}"`,
+			// which is the MANIFEST's sidebar config and never the live facets
+			// the store just parsed, so `getFilterOptions` falls through to
+			// `filter.options` and every filter in the sidebar renders "No
+			// results" — Team, Case type, Status and the rest alike. Measured
+			// on this instance with the bucket above present in the response,
+			// and re-checked 2026-09-12: nextcloud-vue#1110 fixes it upstream
+			// but the newest published version is 2.48.2, which this app pins
+			// and which still binds `resolvedSidebar.facets`. Two more
+			// presentation defects sit behind it: `organisatieRol` declares no
+			// name field, so OpenRegister labels the bucket with a shortened
+			// uuid rather than Team Permits, and the Team cell on the case
+			// page renders that uuid too.
+			//
+			// So the scenario's "lists Team Permits" half is still NOT proven
+			// on screen, and cannot be until dossiq takes a nextcloud-vue that
+			// feeds the sidebar its live facets. What is proven is that the
+			// facet exists, counts one, and that the one it counts is the one
+			// case the filter returns.
 		})
+
+		// 🔴 REMOVED 2026-09-11: `a task with a team shows it on its row and
+		// keeps its assignee` (remove-casetask 5.1).
+		//
+		// Its subject no longer exists. The test wrote `caseTask.assigneeGroup`
+		// and read a Team column off the Tasks index. dossiq#2408 retyped that
+		// index to OpenRegister's task engine (`entitySource: "tasks"`), and
+		// the engine has no `assigneeGroup` to write or to read: it models a
+		// pool as candidate group LISTS (`candidateGroups`), so there is no
+		// single group a column could bind to and the source ships no Team
+		// column. The scenario's other half — assigning a team to a CASE and
+		// seeing it in the Cases Team column — is untouched and still covered
+		// by the two tests above.
+		//
+		// This leaves `role-routing-via-or-rbac::assign-a-task-to-a-team` with
+		// no browser coverage. Rewriting it against the engine would be a new
+		// claim about candidate pools rather than this one restored, and the
+		// spec has to decide what team routing MEANS on the engine first.
 
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#mine-shows-only-my-cases
 		// @e2e role-routing-via-or-rbac::mine-shows-only-my-cases

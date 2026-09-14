@@ -291,12 +291,12 @@ class DecisionService {
 		}
 
 		try {
-			$saved = ($this->saveObjectAsArray(
+			$saved = ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $decisionSchema,
-				object: $patch,
-				uuid: (string)$decisionId
+				id: (string)$decisionId,
+				changes: $patch
 			) ?? array_merge($current, $patch));
 		} catch (Throwable $e) {
 			$this->logger->error(

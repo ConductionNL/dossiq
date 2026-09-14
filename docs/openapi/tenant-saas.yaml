@@ -34,11 +34,8 @@ components:
         displayName: { type: string, maxLength: 255 }
         legalName: { type: string }
         kvkNumber: { type: string }
-        contractRef: { type: string }
         status: { type: string, enum: [onboarding, active, suspended, terminated] }
         tier: { type: string, enum: [basic, standard, enterprise] }
-        isolationMode: { type: string, enum: [schema, database] }
-        dataResidency: { type: string, enum: [nl, eu] }
         createdAt: { type: string, format: date-time }
         activatedAt: { type: string, format: date-time }
         terminatedAt: { type: string, format: date-time }
@@ -215,4 +212,7 @@ paths:
 #       JWT claim mismatch (TenantClaimValidationMiddleware) or tenant
 #       suspended/terminated (TenantMiddleware)
 # - 404 cross-tenant lookup (TenantIsolationMiddleware search_path)
-# - 429 quota exceeded (QuotaEnforcementMiddleware)
+# - 429 request quota exceeded, answered by OpenRegister's TenantQuotaMiddleware
+#       on OpenRegister's own routes. Dossiq's routes carry no request quota:
+#       QuotaEnforcementMiddleware was retired when the request limit moved
+#       onto Organisation.requestQuota, so that one limit is counted once.

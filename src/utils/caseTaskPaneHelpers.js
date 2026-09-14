@@ -11,7 +11,7 @@
  * task, and where the remaining rows link to are all decisions that can be
  * made from data alone, so they live here.
  *
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 import { TERMINAL_STATES } from '../store/modules/engineTask.js'
@@ -35,7 +35,7 @@ export const FINAL_TASK_STATUSES = TERMINAL_STATES
  *
  * @param {object|null|undefined} row The object row.
  * @return {string} The id, or an empty string when unreadable.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function taskIdOf(row) {
 	if (!row || typeof row !== 'object') {
@@ -56,7 +56,7 @@ export function taskIdOf(row) {
  *
  * @param {string|null|undefined} to The transition's target status.
  * @return {boolean} True when the target status is terminal.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function isFinalStatus(to) {
 	return FINAL_TASK_STATUSES.includes(String(to ?? '').trim())
@@ -73,7 +73,7 @@ export function isFinalStatus(to) {
  * @param {string} objectId The case id.
  * @param {object} [content] The widget content blob (`limit` is honoured).
  * @return {object} Params for `useEngineTaskStore().list(…)`.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function openTasksQuery(objectId, content = {}) {
 	const limit = Number(content?.limit)
@@ -96,7 +96,7 @@ export function openTasksQuery(objectId, content = {}) {
  * @param {object} row The task row.
  * @param {object} [content] The widget content blob (`rowRoute`).
  * @return {{name: string, params: {id: string}}|null} The route, or null.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function taskRouteFor(row, content = {}) {
 	const name = String(content?.rowRoute ?? '').trim()
@@ -115,7 +115,7 @@ export function taskRouteFor(row, content = {}) {
  * @param {string} objectId The case id.
  * @param {object} [content] The widget content blob.
  * @return {{name: string, query: object}|null} The route, or null.
- * @spec openspec/changes/task-on-the-case/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function viewAllRouteFor(objectId, content = {}) {
 	const name = String(content?.viewAllRoute ?? '').trim()

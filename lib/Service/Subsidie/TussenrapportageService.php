@@ -196,12 +196,12 @@ class TussenrapportageService {
 		}
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $patch,
-				uuid: (string)$reportId
+				id: (string)$reportId,
+				changes: $patch
 			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: approveReport failed: ' . $e->getMessage());
@@ -245,12 +245,12 @@ class TussenrapportageService {
 		];
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				object: $patch,
-				uuid: (string)$reportId
+				id: (string)$reportId,
+				changes: $patch
 			) ?? $patch);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq subsidie: partialApprove failed: ' . $e->getMessage());

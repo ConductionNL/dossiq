@@ -307,12 +307,12 @@ class AdvisoryCommitteeService {
 		);
 
 		try {
-			return ($this->saveObjectAsArray(
+			return ($this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $requestSchema,
-				object: $update,
-				uuid: (string)$requestId
+				id: (string)$requestId,
+				changes: $update
 			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -410,11 +410,12 @@ class AdvisoryCommitteeService {
 				],
 			);
 
-			$objectService->saveObject(
-				object: ['auditTrail' => $audit],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $requestSchema,
-				uuid: (string)$requestId
+				id: (string)$requestId,
+				changes: ['auditTrail' => $audit]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -495,11 +496,12 @@ class AdvisoryCommitteeService {
 		);
 
 		try {
-			$objectService->saveObject(
-				object: ['auditTrail' => $audit],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $requestSchema,
-				uuid: (string)$requestId
+				id: (string)$requestId,
+				changes: ['auditTrail' => $audit]
 			);
 		} catch (\Throwable $auditError) {
 			$this->logger->error(

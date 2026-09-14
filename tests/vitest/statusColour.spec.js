@@ -162,4 +162,25 @@ describe('mergeColumnColour', () => {
 	it('lets a later status colour a column an earlier one left unset', () => {
 		expect(mergeColumnColour(mergeColumnColour(null, ''), 'red')).toBe('red')
 	})
+
+	it('lets a chosen hue beat a stored grey, whichever arrives first', () => {
+		// The schema defaults `statusType.colour` to grey, so a status nobody
+		// coloured is STORED as grey and is indistinguishable from a deliberate
+		// one. Letting that grey win the merge made the column's colour depend on
+		// which case type the collection endpoint happened to answer first: the
+		// board drew an authored orange status grey while its own status badge
+		// stayed orange.
+		expect(mergeColumnColour('grey', 'orange')).toBe('orange')
+		expect(mergeColumnColour('orange', 'grey')).toBe('orange')
+	})
+
+	it('stays grey when grey is all any of the merged statuses carry', () => {
+		expect(mergeColumnColour('grey', 'grey')).toBe('grey')
+		expect(mergeColumnColour(null, 'grey')).toBe('grey')
+		expect(mergeColumnColour('grey', '')).toBe('grey')
+	})
+
+	it('treats grey-light as a chosen hue, because nothing defaults to it', () => {
+		expect(mergeColumnColour('grey', 'grey-light')).toBe('grey-light')
+	})
 })

@@ -20,17 +20,28 @@ export function getOriginOptions() {
 	]
 }
 
-/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+/**
+ * The confidentiality levels a case type can carry.
+ *
+ * The ids are the caseType schema's ZGW `vertrouwelijkheidaanduiding` enum,
+ * which OpenRegister enforces. They used to be English (`public`, `internal`,
+ * `secret`), so every save of a level from the General tab was refused and a
+ * stored level never showed as selected. The labels stay English and
+ * translatable; only the stored value changed.
+ *
+ * @return {Array<{id: string, label: string}>} The options, lowest level first.
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+ */
 export function getConfidentialityOptions() {
 	return [
-		{ id: 'public', label: t('dossiq', 'Public') },
-		{ id: 'restricted', label: t('dossiq', 'Restricted') },
-		{ id: 'internal', label: t('dossiq', 'Internal') },
-		{ id: 'case_sensitive', label: t('dossiq', 'Case sensitive') },
-		{ id: 'confidential', label: t('dossiq', 'Confidential') },
-		{ id: 'highly_confidential', label: t('dossiq', 'Highly confidential') },
-		{ id: 'secret', label: t('dossiq', 'Secret') },
-		{ id: 'top_secret', label: t('dossiq', 'Top secret') },
+		{ id: 'openbaar', label: t('dossiq', 'Public') },
+		{ id: 'beperkt_openbaar', label: t('dossiq', 'Restricted') },
+		{ id: 'intern', label: t('dossiq', 'Internal') },
+		{ id: 'zaakvertrouwelijk', label: t('dossiq', 'Case sensitive') },
+		{ id: 'vertrouwelijk', label: t('dossiq', 'Confidential') },
+		{ id: 'confidentieel', label: t('dossiq', 'Highly confidential') },
+		{ id: 'geheim', label: t('dossiq', 'Secret') },
+		{ id: 'zeer_geheim', label: t('dossiq', 'Top secret') },
 	]
 }
 

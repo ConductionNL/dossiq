@@ -14,9 +14,11 @@
  * the inbox service, the row shapes and the key format; the first half never
  * touches them.
  *
- * `EngineTaskGateway::existingKeysFor()` still exists and still answers the
- * same question — it delegates here. That is deliberate: every caller and
- * every test keeps working, so this split carries no blast radius.
+ * The second half is GONE. `existingKeysFor()` and the `task_key` extraction
+ * beside it existed only for the backfill's dedup, and remove-casetask 4.3
+ * retired the backfill: nothing asks the question any more. The key FORMAT is
+ * still written down, in {@see EngineTaskGateway::sourceKey()}, because the
+ * rows the migration already wrote still carry it.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -306,6 +308,15 @@ class EngineTaskInbox {
             'dueDate' => $get($row, 'dueAt', 'getDueAt'),
             'case' => $get($row, 'objectUuid', 'getObjectUuid'),
             'assignee' => $get($row, 'assignee', 'getAssignee'),
+            // Which status asked for this task. The engine spells it the
+            // same way `caseTask` did, so there is nothing to translate,
+            // but it was DROPPED here while the only reader of it still
+            // queried the register. `StatusChecklist` reads it now, and it
+            // is the field that says which phase a checklist task belongs
+            // to: without it every task on the case looks like this
+            // status's, and a required item could be ticked off by a task
+            // some other phase created.
+            'workflowStepId' => $get($row, 'workflowStepId', 'getWorkflowStepId'),
             // NOT through `$get`: the engine stores a typed list of
             // {id, label, description, checked} and casting that to a
             // string gives "Array". `caseTask` held JSON in a string,
@@ -338,76 +349,7 @@ class EngineTaskInbox {
         return $items;
     }//end checklistOf()
 
-    /**
-     * The source keys the engine already holds for one case.
-     *
-     * This is what makes re-running the backfill safe. Without it a second
-     * run doubles every task: measured, 33 rows became 66.
-     *
-     * Queried per CASE rather than per task, because the engine's inbox
-     * criteria filter on `objectUuid` and one query per case is a great deal
-     * cheaper than one per task.
-     *
-     * @param string $caseId The case (object) uuid.
-     * @param string $actor  The acting identity.
-     *
-     * @return array<string, true> The keys already present, as a set.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    public function existingKeysFor(string $caseId, string $actor): array {
-        if (trim($caseId) === '') {
-            return [];
-        }
-
-        // A failed dedup read must not stop the backfill: worst case the
-        // operator sees duplicates and is told, which is better than a
-        // migration that refuses to run.
-        $rows = $this->query()->rows(
-            criteria: [
-                'uid' => $actor,
-                'isAdmin' => true,
-                'scope' => $this->query()->scope('SCOPE_ALL'),
-                'objectUuid' => $caseId,
-            ],
-            limit: 500,
-            failure: [
-                'Dossiq: could not read existing engine tasks for a case; duplicates are possible',
-                ['case' => $caseId],
-            ]
-        );
-
-        $keys = [];
-        foreach ($rows as $row) {
-            $key = $this->keyOf(row: $row);
-            if ($key !== '') {
-                $keys[$key] = true;
-            }
-        }
-
-        return $keys;
-    }//end existingKeysFor()
 
 
-    /**
-     * The external key on one inbox row, in whichever shape it arrives.
-     *
-     * @param mixed $row The row.
-     *
-     * @return string The key, or ''.
-     *
-     * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
-     */
-    private function keyOf(mixed $row): string {
-        if (is_array($row) === true) {
-            return trim((string)($row['key'] ?? $row['taskKey'] ?? ''));
-        }
-
-        if (is_object($row) === true && method_exists($row, 'getTaskKey') === true) {
-            return trim((string)$row->getTaskKey());
-        }
-
-        return '';
-    }//end keyOf()
 
 }//end class

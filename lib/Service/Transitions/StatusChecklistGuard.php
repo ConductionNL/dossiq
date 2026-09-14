@@ -69,7 +69,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param array<string, mixed> $guardConfig Guard configuration (unused: the status carries it).
 	 * @param array<string, mixed> $case        The case being moved.
-	 * @param string               $userId      Current user UID (unused).
+	 * @param string               $userId      Current user UID; the identity the engine read is made as.
 	 *
 	 * @return GuardResult The verdict, naming the first item that is not done.
 	 *
@@ -89,7 +89,7 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 			return new GuardResult(passed: true);
 		}
 
-		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case);
+		$completed = $this->completedTitles(statusTypeId: $statusTypeId, case: $case, actor: $userId);
 
 		$open = [];
 		foreach ($required as $item) {
@@ -114,16 +114,24 @@ class StatusChecklistGuard implements GuardEvaluatorInterface {
 	/**
 	 * The titles of this status's tasks that are at `completed`.
 	 *
+	 * The tasks come off the ENGINE, which is where they have been written
+	 * since #2363. While this read still went to the register the answer was
+	 * always empty, so a required item could never be ticked off and the case
+	 * stayed in its phase however much work had actually been done. The uid is
+	 * threaded through for that read: the engine answers nothing at all to a
+	 * blank identity.
+	 *
 	 * @param string               $statusTypeId The status the case is in.
 	 * @param array<string, mixed> $case         The case.
+	 * @param string               $actor        The acting identity the engine read is made as.
 	 *
 	 * @return array<int, string> The completed titles.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function completedTitles(string $statusTypeId, array $case): array {
+	private function completedTitles(string $statusTypeId, array $case, string $actor): array {
 		$titles = [];
-		foreach ($this->checklist->tasksFor(statusTypeId: $statusTypeId, case: $case) as $task) {
+		foreach ($this->checklist->tasksFor(statusTypeId: $statusTypeId, case: $case, actor: $actor) as $task) {
 			if (strtolower(trim((string)($task['status'] ?? ''))) !== self::COMPLETED) {
 				continue;
 			}

@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Middleware;
 use OCA\Dossiq\Middleware\TenantContextMiddleware;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantProvisioningService;
-use OCA\Dossiq\Service\TenantSaasService;
+use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantSessionService;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -65,14 +65,14 @@ class TenantContextMiddlewareTest extends TestCase {
 		$tenantSession = $this->createMock(TenantSessionService::class);
 		$tenantSession->method('activeTenantId')->willReturn($sessionTenant);
 
-		$saas = $this->createMock(TenantSaasService::class);
-		$saas->method('getById')->willReturnCallback(
+		$resolver = $this->createMock(TenantOrganisationResolver::class);
+		$resolver->method('resolve')->willReturnCallback(
 			static function (string $tenantId) use ($known): ?array {
 				if (in_array($tenantId, $known, true) === false) {
 					return null;
 				}
 
-				return ['uuid' => $tenantId, 'slug' => $tenantId];
+				return ['uuid' => $tenantId, 'id' => $tenantId, 'slug' => $tenantId];
 			}
 		);
 
@@ -84,7 +84,7 @@ class TenantContextMiddlewareTest extends TestCase {
 		$middleware = new TenantContextMiddleware(
 			request: $request,
 			tenantSession: $tenantSession,
-			tenantSaasService: $saas,
+			tenantResolver: $resolver,
 			provisioning: $provisioning,
 			context: $context,
 			logger: $this->createMock(LoggerInterface::class),

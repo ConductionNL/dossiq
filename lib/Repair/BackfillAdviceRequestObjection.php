@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -47,6 +48,9 @@ use Throwable;
  * @spec openspec/changes/page-topology-cleanup/tasks.md
  */
 class BackfillAdviceRequestObjection implements IRepairStep {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -178,11 +182,12 @@ class BackfillAdviceRequestObjection implements IRepairStep {
 		}
 
 		try {
-			$objectService->saveObject(
-				object: ['bezwaar' => $legacy],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				uuid: $uuid,
+				id: $uuid,
+				changes: ['bezwaar' => $legacy],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

@@ -435,7 +435,7 @@ class EmailTemplateController extends Controller {
 	 *
 	 * @param string $caseTypeId Owning caseType id.
 	 *
-	 * @return JSONResponse {created: int} — how many were created on this run.
+	 * @return JSONResponse carrying created, the number created on this run.
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */

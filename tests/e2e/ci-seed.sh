@@ -198,7 +198,20 @@ required = {
     # components.schemas.<key>.slug — every one of these is exercised by
     # tests/e2e/helpers/fixtures.ts (createObject / seedCase / seedStateMachine
     # / ensureCaseType / cleanupRunObjects).
-    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate', 'caseTask',
+    #
+    # `caseTask` IS NOT HERE AND MUST NOT COME BACK. remove-casetask deleted the
+    # schema: the register no longer declares it, so a name in this list would
+    # never resolve. This list is a hard gate, and a name it cannot find exits 1
+    # BEFORE Playwright starts, which reports every spec as NOT RUN. That is the
+    # loudest possible signal attached to the least informative message: "the
+    # suite did not run" says nothing about which surface broke.
+    #
+    # Nothing seeds a task object any more either. `demo-caseload` was the last
+    # spec that did, for two scenarios over OpenRegister CALCULATIONS
+    # (isTerminalStatus, daysUntilDue) that only an object materialises; both
+    # now ask the ENGINE the same two questions, through /api/flow-tasks, which
+    # needs no schema at all.
+    'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate',
                 'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
 }[kind]
 with open(path) as fh:

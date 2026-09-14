@@ -240,7 +240,10 @@ describe('The Related cases tab', () => {
 		const sections = panels
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
-		expect(sections).toEqual(['case-related', 'case-sub-cases'])
+		// Objects joined the Related tab on 2026-09-13, from the retired
+		// Objects and locations tab. Related cases stays FIRST, which is what
+		// this test is about; the list is exact so a silent reorder reddens.
+		expect(sections).toEqual(['case-related', 'case-sub-cases', 'case-objects'])
 	})
 
 	it('stays out of the layout, which would render it twice', () => {

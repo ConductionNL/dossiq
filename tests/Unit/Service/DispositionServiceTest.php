@@ -54,6 +54,18 @@ interface DispositionObjectServiceStub {
 	 * @return array
 	 */
 	public function findObjects(string $register, string $schema, array $filters = []);
+
+	/**
+	 * Merge fields onto a stored object (OpenRegister's PATCH seam).
+	 *
+	 * @param string $objectId The object uuid.
+	 * @param array $data The fields to change.
+	 * @param string|null $register Register id.
+	 * @param string|null $schema Schema id.
+	 *
+	 * @return array
+	 */
+	public function patchObject(string $objectId, array $data, ?string $register = null, ?string $schema = null);
 }//end interface
 
 /**
@@ -188,17 +200,24 @@ class DispositionServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
 		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
 
+		// The approval owns two fields, so it PATCHES them onto the stored
+		// disposition. A bare saveObject() with the uuid replaced the whole
+		// disposition with these two fields, which the schema refuses for the
+		// complaint, opinion and closure date it requires.
+		$objectServiceMock->expects($this->never())->method('saveObject');
 		$objectServiceMock
-			->method('saveObject')
+			->expects($this->once())
+			->method('patchObject')
 			->willReturnCallback(
-				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
-					$this->assertSame('approved', $object['approvalStatus']);
-					$this->assertSame('coordinator-uid', $object['goedkeurder']);
-					return $object;
+				function (string $objectId, array $data) {
+					$this->assertSame('disposition-uuid', $objectId);
+					$this->assertSame(['approvalStatus' => 'approved', 'goedkeurder' => 'coordinator-uid'], $data);
+					return array_merge(['complaint' => 'complaint-uuid', 'opinion' => 'dismissed'], $data);
 				}
 			);
 
 		$result = $this->service->approveDisposition('disposition-uuid', 'coordinator-uid');
+		$this->assertSame('complaint-uuid', $result['complaint'], 'the stored disposition comes back whole');
 		$this->assertSame('approved', $result['approvalStatus']);
 	}//end testApproveDispositionSetsStatusToGoedgekeurd()
 

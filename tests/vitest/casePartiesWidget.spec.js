@@ -16,6 +16,7 @@
  * the on-disk config the importer and the manifest renderer actually read.
  *
  * @spec openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 import fs from 'fs'
@@ -76,36 +77,35 @@ function action(id) {
 }
 
 describe('the Parties widget', () => {
-	it('lists the roles of the open case, sorted by role type', () => {
-		const roles = widget('case-roles')
+	it('shows the people linked to this case, not a table of identifiers', () => {
+		const parties = widget('case-parties')
 
-		expect(roles).toBeTruthy()
-		expect(roles.type).toBe('object-list')
-		expect(roles.content.register).toBe('dossiq')
-		expect(roles.content.schema).toBe('role')
-		expect(roles.content.filter).toEqual({ case: '@objectId' })
-		expect(roles.content.sort).toEqual({ field: 'roleType', dir: 'asc' })
-		expect(roles.content.limit).toBe(50)
-		expect(roles.content.emptyText).toBeTruthy()
+		// people-on-the-case: a party is an OpenRegister person link (a user or
+		// a contact, in a role type), rendered by the contacts integration. The
+		// object-list this replaced showed a roleType uuid and a participant
+		// string nobody could act on, and could offer no way to add anybody.
+		expect(parties).toBeTruthy()
+		expect(parties.type).toBe('integration')
+		expect(parties.integrationId).toBe('contacts')
+		expect(parties.title).toBe('Parties')
 	})
 
-	it('shows the role type, the participant and the delegation window', () => {
-		expect(
-			widget('case-roles').content.columns.map((column) => column.key),
-		).toEqual(['roleType', 'participant', 'delegate', 'delegateUntil'])
-	})
-
-	it('reads only properties the role schema declares', () => {
+	it('still writes the role records the resolver reads', () => {
+		// The link is the fact; the `role` record is its projection, written by
+		// PersonLinkListener. Nothing in the manifest renders `role` any more,
+		// so this is the check that the schema the projection writes still
+		// declares what CaseRoleProjection puts on it.
 		const properties = Object.keys(schema('role').properties)
-		const roles = widget('case-roles')
 
-		for (const key of Object.keys(roles.content.filter)) {
-			expect(properties, `filter key ${key}`).toContain(key)
+		for (const key of [
+			'case',
+			'roleType',
+			'participant',
+			'name',
+			'description',
+		]) {
+			expect(properties, `the projection writes ${key}`).toContain(key)
 		}
-		for (const column of roles.content.columns) {
-			expect(properties, `column ${column.key}`).toContain(column.key)
-		}
-		expect(properties, 'the sort field').toContain(roles.content.sort.field)
 	})
 
 	it('replaces the Contacts tab rather than sitting beside it', () => {
@@ -126,9 +126,9 @@ describe('the Parties widget', () => {
 
 	it('leads the People tab, and is never a layout cell of its own', () => {
 		const detail = page('CaseDetail')
-		const where = panels.caseTabOf('case-roles')
+		const where = panels.caseTabOf('case-parties')
 
-		expect(where, 'case-roles is not reachable from the strip').toBeTruthy()
+		expect(where, 'case-parties is not reachable from the strip').toBeTruthy()
 		expect(where.tab).toBe('People')
 		expect(where.label).toBe('Parties')
 
@@ -137,13 +137,13 @@ describe('the Parties widget', () => {
 		const sections = panels
 			.caseWidget('case-people-panel')
 			.content.sections.map((section) => section.widget.id)
-		expect(sections[0]).toBe('case-roles')
+		expect(sections[0]).toBe('case-parties')
 
 		// A widget rendered by the tabs widget AND placed in `layout` renders
 		// twice, which is why its siblings are absent from `layout` too.
 		expect(
 			(detail.config.layout || []).map((cell) => cell.widgetId),
-		).not.toContain('case-roles')
+		).not.toContain('case-parties')
 	})
 })
 
@@ -229,10 +229,15 @@ describe('the Add party action', () => {
 })
 
 describe('the Team column and the Mine chip', () => {
-	const INDEXES = [
-		['Cases', 'case', 'assignedGroup'],
-		['Tasks', 'caseTask', 'assigneeGroup'],
-	]
+	// ⚠️ TASKS LEFT THIS TABLE, it was not forgotten. The Tasks index is
+	// `entitySource: "tasks"` now: it reads the engine's inbox, declares no
+	// register or schema, and takes its columns from the source. None of the
+	// three assertions below can hold for it, and two of them would have gone
+	// on PASSING while the thing they describe no longer worked — the facet
+	// one especially, because `caseTask.assigneeGroup.facetable` is still
+	// true in a schema the page no longer queries. What the engine list does
+	// instead is asserted in its own describe below.
+	const INDEXES = [['Cases', 'case', 'assignedGroup']]
 
 	it.each(INDEXES)(
 		'%s shows a Team column reading the expanded team name',
@@ -298,6 +303,51 @@ describe('the Team column and the Mine chip', () => {
 	})
 })
 
+describe('the Tasks index after it moved to the engine', () => {
+	it('shows no Team column, because the engine has no single team to show', () => {
+		// `assigneeGroup` was one $ref. The engine models the same idea as
+		// `candidateGroups`, a LIST, so there is nothing to put in a column
+		// that reads one name. Asserted rather than left implicit: the
+		// column disappearing is a visible change and this is where a
+		// reader looks for why.
+		expect(page('Tasks').config.columns).toBeUndefined()
+		expect(page('Tasks').config.extend).toBeUndefined()
+	})
+
+	it('cannot be narrowed by the Team facet any more', () => {
+		// The sidebar's facets come from OpenRegister, for a register and a
+		// schema. The page declares neither, so there is nothing for a facet
+		// to run against.
+		//
+		// This used to also read `schema('caseTask').properties.assigneeGroup
+		// .facetable` and assert it was still true, to show the facet was lost
+		// to the PAGE rather than to the property. remove-casetask deleted the
+		// schema, so the second half is now the stronger claim: no shipped
+		// schema declares a facetable team property a task could be narrowed
+		// by, and the register cannot quietly grow one back.
+		expect(page('Tasks').config.register).toBeUndefined()
+		expect(page('Tasks').config.schema).toBeUndefined()
+		expect(schema('caseTask')).toBeUndefined()
+	})
+
+	it('offers Mine as a scope, and still opens on everything', () => {
+		const chips = page('Tasks').config.quickFilters
+		const mine = chips.find((chip) => chip.label === 'Mine')
+
+		// `assignee: '@me'` became `scope: 'assigned'`. The engine resolves
+		// the caller itself, which is what lets the same lens mean the same
+		// thing for a group assignment as for a personal one.
+		expect(mine.filter.scope).toBe('assigned')
+		expect(mine.filter.assignee).toBeUndefined()
+
+		// Still unfiltered on open, but it has to SAY so now: the endpoint
+		// defaults to the caller's own tasks, so `{}` would no longer mean
+		// everything.
+		const initial = chips.find((chip) => chip.default === true) || chips[0]
+		expect(initial.filter).toEqual({ scope: 'all' })
+	})
+})
+
 describe('the team on the detail forms', () => {
 	it('the case core widget offers the team beside the assignee', () => {
 		// `case-core` names the fields it renders, so a property the schema
@@ -311,11 +361,30 @@ describe('the team on the detail forms', () => {
 		)
 	})
 
-	it('the task widget renders the whole schema, so the team comes for free', () => {
-		const taskData = page('TaskDetail').config.widgets.find(
-			(entry) => entry.id === 'task-data',
+	it('the task page still names the team the task sits with', () => {
+		// This used to read the manifest: TaskDetail was `type: "detail"` and
+		// its `task-data` widget named no `include`, so every property the
+		// schema gained appeared on the page and `assignedGroup` came for
+		// free. remove-casetask 2.1 retyped the page to `custom` and there is
+		// no widget config left to read, so the fact list is the component's
+		// and has to be checked there.
+		//
+		// The FIELD moved with the store. `caseTask` had one `assignedGroup`;
+		// the engine has `candidateGroups`, a list, because a task can be
+		// offered to more than one team. What has not moved is the reason it
+		// is on the page: a handler deciding whether to pick a task up needs
+		// to know whose queue it is in.
+		//
+		// Asserted on the source rather than by mounting, matching the
+		// registry assertions in manifestCaseTaskPane.spec.js. The BEHAVIOUR
+		// (two groups render as one comma-separated row, no groups renders no
+		// row at all) is `tests/vitest/taskDetailView.spec.js`.
+		const view = fs.readFileSync(
+			path.resolve(__dirname, '../../src/views/tasks/TaskDetailView.vue'),
+			'utf8',
 		)
 
-		expect(taskData.content.include).toBeUndefined()
+		expect(view).toContain('candidateGroups')
+		expect(view).toContain("key: 'team'")
 	})
 })

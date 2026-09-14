@@ -171,7 +171,7 @@
 			"from": null,
 			"to": "partial",
 			"cause": "added",
-			"reason": "Round 3 row. Round 3 rated us no and missed the shipped Log hours action and the Hours booked tile. The hours live in humaniq and there is no rate or cost model, so this is partial and not yes."
+			"reason": "Round 3 row. Round 3 rated us no and missed the Hours booked tile, which now books hours and runs a timer against the case. The hours live in humaniq and there is no rate or cost model, so this is partial and not yes."
 		},
 		{
 			"id": "11.25",

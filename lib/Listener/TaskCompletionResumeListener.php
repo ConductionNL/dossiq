@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+ * @spec openspec/specs/task-management/spec.md
  */
 class TaskCompletionResumeListener implements IEventListener {
 	/**
@@ -184,7 +184,7 @@ class TaskCompletionResumeListener implements IEventListener {
 	 *
 	 * @return array|null The task, or null when nothing should be resumed.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/task-management/spec.md
+	 * @spec openspec/specs/task-management/spec.md
 	 */
 	private function completedFlowTask(TaskTerminalEvent $event): ?array {
 		// UNCOMMITTED means the transaction may still roll back. Signalling a

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,13 @@ use Throwable;
 
 /**
  * Mandate-matrix authorisation guard for tenant actions.
+ *
+ * Every lookup here reads `ObjectService::findAll()` rows, and `findAll()`
+ * returns `ObjectEntity` objects, not arrays. Indexing one as an array throws,
+ * and keeping only the rows that are arrays keeps none. So each row goes
+ * through {@see OpenRegisterRowNormaliser} before a property is read off it.
+ * Until that was done, no membership ever resolved, and the role and matrix
+ * lookups threw on the first row they read.
  *
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
@@ -64,11 +72,13 @@ class TenantAuthenticationService {
 	 * @param IAppManager $appManager App manager (for OR availability check).
 	 * @param ContainerInterface $container DI container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
 
@@ -189,7 +199,7 @@ class TenantAuthenticationService {
 			return null;
 		}
 
-		$active = $this->findActiveMandateRow(rows: $rows);
+		$active = $this->findActiveMandateRow(rows: $this->rowsAsArrays(rows: $rows));
 		if ($active === null) {
 			return null;
 		}
@@ -200,11 +210,11 @@ class TenantAuthenticationService {
 	/**
 	 * Pick the mandate row whose effective window contains "now".
 	 *
-	 * @param array<int, mixed> $rows The tenantMandate rows.
+	 * @param array<int, array<string, mixed>> $rows The tenantMandate rows, read as arrays.
 	 *
-	 * @return mixed The active row, or null when none applies.
+	 * @return array<string, mixed>|null The active row, or null when none applies.
 	 */
-	private function findActiveMandateRow(array $rows): mixed {
+	private function findActiveMandateRow(array $rows): ?array {
 		$now = time();
 		foreach ($rows as $row) {
 			$from = strtotime((string)($row['effectiveFrom'] ?? '1970-01-01'));
@@ -279,7 +289,7 @@ class TenantAuthenticationService {
 				]
 			);
 			if (is_array($rows) === true && count($rows) > 0) {
-				$row = $rows[0];
+				$row = $this->rowNormaliser->normalise(row: $rows[0])['data'];
 				$role = (string)($row['role'] ?? '');
 				if ($role !== '') {
 					return $role;
@@ -358,11 +368,7 @@ class TenantAuthenticationService {
 		}
 
 		$tenantIds = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
-			}
-
+		foreach ($this->rowsAsArrays(rows: $rows) as $row) {
 			$tenantId = trim((string)($row['tenantRef'] ?? ''));
 			if ($tenantId === '' || in_array($tenantId, $tenantIds, true) === true) {
 				continue;
@@ -399,6 +405,26 @@ class TenantAuthenticationService {
 		return in_array($tenantId, $this->listTenantsForUser(userId: $userId), true);
 	}//end isMemberOf()
 
+	/**
+	 * Read each findAll() row as an array, whatever shape it arrives in.
+	 *
+	 * A row that carries nothing readable is dropped rather than kept as an
+	 * empty array. Kept, it would read as a mandate with no window, and a
+	 * mandate with no window counts as active: dropping it can only remove a
+	 * membership or a mandate, never add one.
+	 *
+	 * @param array<int, mixed> $rows The raw findAll() rows.
+	 *
+	 * @return array<int, array<string, mixed>> The readable rows as arrays, in order.
+	 */
+	private function rowsAsArrays(array $rows): array {
+		$arrays = array_map(
+			fn (mixed $row): array => $this->rowNormaliser->normalise(row: $row)['data'],
+			$rows
+		);
+
+		return array_values(array_filter($arrays, static fn (array $data): bool => $data !== []));
+	}//end rowsAsArrays()
 
 	/**
 	 * Resolve OR's ObjectService when installed.

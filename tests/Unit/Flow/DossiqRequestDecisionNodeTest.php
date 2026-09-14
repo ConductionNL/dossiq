@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);

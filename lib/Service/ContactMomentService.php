@@ -364,15 +364,16 @@ class ContactMomentService {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'contactmoment_schema');
 
 		try {
-			$updated = $objectService->saveObject(
-				object: [
+			$updated = $this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $interactionId,
+				changes: [
 					'geidentificeerdeBurgerId' => $burgerId,
 					'identificationMethod' => $method,
 					'identificationScore' => round($score, 2),
 				],
-				register: $register,
-				schema: $schema,
-				uuid: $interactionId,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

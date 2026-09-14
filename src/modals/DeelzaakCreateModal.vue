@@ -151,7 +151,11 @@ import {
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
-import { calculateDeadline, generateIdentifier } from '../utils/caseHelpers.js'
+import {
+	calculateDeadline,
+	DEFAULT_CASE_CONFIDENTIALITY,
+	generateIdentifier,
+} from '../utils/caseHelpers.js'
 
 export default {
 	name: 'DeelzaakCreateModal',
@@ -363,7 +367,8 @@ export default {
 						: null,
 
 					confidentiality:
-						this.selectedCaseType.confidentiality || 'public',
+						this.selectedCaseType.confidentiality
+						|| DEFAULT_CASE_CONFIDENTIALITY,
 
 					assignee: this.selectedCaseType.defaultAssignee || null,
 					intakeChannel: 'manual',

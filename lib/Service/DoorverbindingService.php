@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -40,6 +41,9 @@ use Throwable;
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
 class DoorverbindingService {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -238,7 +242,7 @@ class DoorverbindingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		try {
-			$updated = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: $doorverbindingId);
+			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $doorverbindingId, changes: $patch);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: failed to update doorverbinding: ' . $e->getMessage(),

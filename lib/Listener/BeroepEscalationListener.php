@@ -182,11 +182,12 @@ class BeroepEscalationListener implements IEventListener {
 			return;
 		}
 
-		$objectService->saveObject(
-			object: ['dwingendStatus' => $dwingend],
+		$this->patchObjectAsArray(
+			objectService: $objectService,
 			register: $register,
 			schema: $objectionSchema,
-			uuid: (string)$sourceObjectionId
+			id: (string)$sourceObjectionId,
+			changes: ['dwingendStatus' => $dwingend]
 		);
 	}//end deriveDwingendStatus()
 

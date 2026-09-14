@@ -39,11 +39,11 @@ import { expect, test } from '@playwright/test'
 import {
 	captureStorageState,
 	ensureUser,
+	provisioningContext,
 	STORAGE_STATE,
 	storageStatePath,
 } from './helpers/auth.ts'
 import {
-	cleanupRunObjects,
 	createObject,
 	getRequestToken,
 	listObjects,
@@ -159,6 +159,12 @@ const FAR_CASE = `${RUN_PREFIX} deadline far out`
 const MET_CASE = `${RUN_PREFIX} closed on time this month`
 /** One filler title per row, so a failure names the row it could not find. */
 const FILLER_CASE = (n: number) => `${RUN_PREFIX} deadline filler ${n}`
+/** The engine's own table. A flow task is not an OpenRegister object. */
+const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/** Every task this file seeds, so teardown can cancel each one. */
+const seededTaskUuids: string[] = []
+
 const TASK_SOON = `${RUN_PREFIX} task due tomorrow`
 const TASK_MID = `${RUN_PREFIX} task due next week`
 const TASK_LATE = `${RUN_PREFIX} task due next month`
@@ -178,7 +184,12 @@ function isoDay(days: number): string {
 }
 
 /**
- * Open the dashboard from a hard load and settle the support dialog.
+ * Open the team-overview Dashboard (`/dashboard`) from a hard load and settle
+ * the support dialog.
+ *
+ * dashboard-my-work-split moved the app's landing page to My Work
+ * (`openMyWork`, below); the Dashboard now holds only the KPI tiles, the
+ * status/type charts and Stalled Cases, at its own route.
  *
  * A HARD load, deliberately: the widget catalog used to register only inside
  * the lazy detail-page chunk, so the tiles were fine after a client-side visit
@@ -188,6 +199,22 @@ function isoDay(days: number): string {
  * @param page The Playwright page.
  */
 async function openDashboard(page: Page): Promise<void> {
+	await page.goto(`/index.php/apps/${REGISTER}/dashboard`)
+	await dismissSupportDialog(page)
+}
+
+/**
+ * Open My Work — the app's landing page — from a hard load and settle the
+ * support dialog. Carries the My work / Deadlines / Open Cases widgets that
+ * used to sit on the Dashboard; see the file header.
+ *
+ * A HARD load for the same reason `openDashboard` uses one: the widget
+ * catalog and header actions must be exercised on first paint, not after a
+ * client-side navigation.
+ *
+ * @param page The Playwright page.
+ */
+async function openMyWork(page: Page): Promise<void> {
 	await page.goto(`/index.php/apps/${REGISTER}/`)
 	await dismissSupportDialog(page)
 }
@@ -251,10 +278,8 @@ test.describe('Dashboard tiles', () => {
 		})
 		token = await getRequestToken(api)
 
-		// Prove the seeding session is an admin BEFORE anything asks it to
-		// provision an account, the same way the WORK_USER session is proved
-		// below. `ensureUser` documents that it needs an admin context; this
-		// is where that requirement gets checked rather than assumed.
+		// Prove the seeding session is the admin before it seeds anything, the
+		// same way the WORK_USER session is proved below.
 		const seedWhoami = await api.get('/ocs/v2.php/cloud/user?format=json', {
 			headers: { 'OCS-APIRequest': 'true' },
 		})
@@ -264,12 +289,45 @@ test.describe('Dashboard tiles', () => {
 		).toBeTruthy()
 		expect(
 			String((await seedWhoami.json())?.ocs?.data?.id ?? ''),
-			'the seeding session must be the admin, or nothing below can provision',
+			'the seeding session must be the admin, or nothing below can seed',
 		).toBe(process.env.ADMIN_USER ?? 'admin')
 
-		// The account the My work scenarios run as, and its session. See
-		// `WORK_USER` for why they cannot run as the admin.
-		await ensureUser(api, token, WORK_USER, WORK_PASSWORD)
+		// 🔴 PROVISIONING GETS ITS OWN, SESSION-FREE CONTEXT. Creating an
+		// account through the captured admin session is password-confirmation
+		// protected, and that confirmation expires thirty minutes after
+		// `global-setup.ts` logged in. Across 101 runs on 2026-09-10 and 11
+		// this file's first result landed 6.8 to 25.3 minutes into the run, so
+		// it has not failed yet. It would the day the suite grows, a shard
+		// reorders it or a runner is slow enough, and then as `OCS 403 Password
+		// confirmation is required`, which names neither the session nor the
+		// clock. `provisioningContext` sends basic
+		// auth and no session cookie, so there is no confirmation to expire.
+		// See it for the measurement on vth-inspection-result-authz.spec.ts.
+		const provisioning = await provisioningContext(playwright, String(baseURL))
+		try {
+			// Prove the basic-auth context IS the admin before anything asks it
+			// to provision. Without this a wrong or refused credential surfaces
+			// as `ensureUser`'s "could not provision" error, which reads as a
+			// broken provisioning API rather than a failed authentication.
+			const provWhoami = await provisioning.get(
+				'/ocs/v2.php/cloud/user?format=json',
+			)
+			expect(
+				String(
+					(await provWhoami.json().catch(() => ({})))?.ocs?.data?.id ?? '',
+				),
+				'the basic-auth provisioning context must resolve to the admin; got '
+					+ `HTTP ${provWhoami.status()}`,
+			).toBe(process.env.ADMIN_USER ?? 'admin')
+
+			// The account the My work scenarios run as. See `WORK_USER` for why
+			// they cannot run as the admin.
+			await ensureUser(provisioning, '', WORK_USER, WORK_PASSWORD)
+		} finally {
+			await provisioning.dispose()
+		}
+
+		// And its session.
 		await captureStorageState(browser, {
 			baseURL: String(baseURL),
 			user: WORK_USER,
@@ -397,16 +455,39 @@ test.describe('Dashboard tiles', () => {
 			[TASK_MID, isoDay(7)],
 			[TASK_LATE, isoDay(30)],
 		]) {
-			// Assigned to the dedicated account, not to whoever seeded them: it
-			// is `assignee` that `my-work`'s `@me` filter compares against, and
-			// the whole point of that account is that nothing else is on it.
-			await createObject(api, token, 'caseTask', {
-				title,
-				case: onCase,
-				assignee: WORK_USER,
-				status: 'available',
-				dueDate: `${due}T09:00:00+00:00`,
+			// IN THE ENGINE, not as a `caseTask` object. remove-casetask 2.3
+			// moved the tile onto `/api/flow-tasks`, and a fixture writing the
+			// old store would put rows in a table nothing reads: the tile then
+			// shows nothing and the three tests below time out waiting for a
+			// title that was never going to arrive. Three field names change
+			// with the table, `case` to `objectUuid`, `status` to `state` and
+			// `dueDate` to `dueAt`.
+			//
+			// Assigned to the dedicated account, not to whoever seeded them:
+			// the engine scopes `scope: assigned` to the session, and the whole
+			// point of that account is that nothing else is on it.
+			const res = await api.post(FLOW_TASKS_BASE, {
+				headers: {
+					requesttoken: token,
+					'OCS-APIRequest': 'true',
+					'Content-Type': 'application/json',
+				},
+				data: {
+					title,
+					objectUuid: onCase,
+					assignee: WORK_USER,
+					state: 'available',
+					dueAt: `${due}T09:00:00+00:00`,
+					appId: 'dossiq',
+				},
 			})
+			expect(
+				res.status(),
+				`seed task "${title}" -> ${res.status()} ${await res.text()}`,
+			).toBe(201)
+			const created = await res.json()
+			expect(created.uuid, `seeded task "${title}" has no uuid`).toBeTruthy()
+			seededTaskUuids.push(String(created.uuid))
 		}
 
 		// The picker fixtures. The draft one carries the schema default for
@@ -431,12 +512,32 @@ test.describe('Dashboard tiles', () => {
 		// deleting the case type would leave those cases pointing at a type
 		// that is gone. Both carry RUN_PREFIX, so global-setup's residue sweep
 		// takes them before the next run.
-		await cleanupRunObjects(api, token, ['caseTask'])
+		//
+		// One verb at a time, because an engine task is NOT an OpenRegister
+		// object: `cleanupRunObjects` cannot see it however the prefix is
+		// spelled, and the engine publishes no delete. `cancel` is its only
+		// removal verb and it terminates rather than erases. Failures are
+		// swallowed: a task already terminated answers 409 to a second cancel,
+		// and a teardown that throws on that reddens a run whose assertions
+		// all passed.
+		for (const uuid of seededTaskUuids) {
+			try {
+				await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+					headers: {
+						requesttoken: token,
+						'OCS-APIRequest': 'true',
+						'Content-Type': 'application/json',
+					},
+					data: {},
+				})
+			} catch {
+				// Best effort; the next run's residue sweep is the backstop.
+			}
+		}
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-fresh-session-lands-on-the-dashboard
-	// @e2e dashboard::kpi-tiles-render-on-a-fresh-load
+	// @e2e openspec/specs/dashboard/spec.md#a-fresh-load-of-the-dashboard-shows-every-kpi-tile
 	test('every KPI tile shows a number on the first load of a session', async ({
 		page,
 	}) => {
@@ -475,11 +576,10 @@ test.describe('Dashboard tiles', () => {
 		test.use({ storageState: WORK_STATE })
 
 		// @e2e openspec/specs/dashboard/spec.md#scenario-your-tasks-appear-once-with-days-left
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
 		test('My work lists each of your open tasks once, with days left', async ({
 			page,
 		}) => {
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -509,38 +609,92 @@ test.describe('Dashboard tiles', () => {
 			const soon = rows(table).filter({ hasText: TASK_SOON })
 			await expect(soon).toContainText(/1 days remaining|Due today/)
 
-			// The case is named, not its uuid. `case.title` only resolves because
-			// the widget extends `case`; without the extend this cell renders a
-			// 36-character uuid, which is what this pattern refuses.
+			// No uuid anywhere in the row. The tile used to carry a Case
+			// column, and the assertion here was that it named the case rather
+			// than printing its 36-character uuid. remove-casetask 2.3 dropped
+			// that column: the engine answers the case in a `subject` block
+			// that resolves to null on every row today, so the column would be
+			// blank on all of them. The uuid pattern stays, because the Task
+			// column reading a raw identifier is the same failure in a
+			// different cell, and the case name comes back with the column.
 			await expect(soon).not.toContainText(
 				/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/,
 			)
-			await expect(soon).toContainText(OVERDUE_CASE)
 		})
 
-		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-		// @e2e dashboard::one-work-table-with-days-left-and-row-actions
-		test('a My work row opens the task, which is where Pick up and Complete are', async ({
+		// 🔴 THE CITATION THIS CARRIED WAS WITHDRAWN, AND THE TEST RE-AIMED.
+		//
+		// It cited `dashboard#scenario-you-complete-a-task-from-the-row`, a
+		// scenario whose own body reads `@e2e exclude blocked on nextcloud-vue
+		// row actions for object-table`. So the spec says nothing can prove it
+		// yet, and a citation on it said something did. What the body actually
+		// exercises is a row click landing on the task, which is a DIFFERENT
+		// scenario in the same spec, DASH-005d, and one nothing cited: it was
+		// in gate-19's uncovered list on 2026-09-12. Moving the citation turns
+		// a claim on an excluded scenario into coverage of an uncovered one.
+		//
+		// AND THE URL ASSERTION ALONE WAS NOT THE SCENARIO'S THEN. "navigate to
+		// the task detail view" is a view that rendered, not a path that
+		// matched: `asTaskRow` maps `id = row.uuid ?? row.id`, the engine emits
+		// BOTH on every row, and `/tasks/<numeric id>` satisfies
+		// `/\/tasks\/[^/]+$/` exactly as well while the page below it resolves
+		// no task at all. That is not hypothetical; `asTaskRow`'s own comment
+		// records three surfaces that shipped `/apps/dossiq/tasks/153` and went
+		// nowhere without erroring. So the title the detail page prints is read
+		// back, and it has to be the row that was clicked.
+		//
+		// ✅ MUTATION CHECK RUN 2026-09-12, against a private disposable
+		// instance. The break reproduces that defect verbatim: `page.route`
+		// deleted `uuid` from the seeded row in the `/api/flow-tasks` response,
+		// so the row routed by the engine's numeric primary key instead. The
+		// edit was counted, and the count asserted, because a rewrite that
+		// matched nothing would have left the real row routing correctly and
+		// made the green meaningless.
+		//
+		//   red on  "the task detail page must show the task whose row was clicked"
+		//           Expected: "E2EZAAK-… task due tomorrow"
+		//           Received: "Task"
+		//           62 × <h2 data-testid="task-detail-title">Task</h2>
+		//
+		// 🔴 AND THE ASSERTION THIS REPLACED STAYED GREEN UNDER THAT SAME
+		// BREAK. `toHaveURL(/\/tasks\/[^/]+$/)` passed on the numeric id, which
+		// is the whole reason the clause was repaired.
+		//
+		// ⚠️ `task-detail-missing` IS DELIBERATELY NOT ASSERTED. It was, and the
+		// mutation run showed it does not fire: an unresolvable id leaves
+		// `missing` false and the title falling back to the literal "Task", so
+		// the not-there state renders for a confirmed 404 and not for this. An
+		// assertion nobody has watched fail is decoration, and the title clause
+		// catches this break and that one both.
+		//
+		// @e2e openspec/specs/dashboard/spec.md#dash-005d-my-work-item-click-navigates-to-detail
+		test('clicking a My work row opens that task on the task detail page', async ({
 			page,
 		}) => {
-			// Row actions are blocked on nextcloud-vue: the object-table vocabulary
-			// has no `rowActions` key, so the declared interim is the row route.
-			// This test holds the interim, so the day the key lands and the route
-			// is dropped, it says so.
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await rows(table).filter({ hasText: TASK_SOON }).first().click()
 			await expect(page).toHaveURL(/\/tasks\/[^/]+$/, { timeout: 15_000 })
+			// The view, by its own root, and then the task it resolved. Both:
+			// the root alone renders for an id that resolves to nothing, and
+			// the title alone cannot say which page is printing it.
+			await expect(
+				page.locator('[data-testid="task-detail-page"]'),
+				'the row must open the task detail view, not a route that merely matches',
+			).toBeVisible({ timeout: 30_000 })
+			await expect(
+				page.locator('[data-testid="task-detail-title"]'),
+				'the task detail page must show the task whose row was clicked',
+			).toHaveText(TASK_SOON, { timeout: 30_000 })
 		})
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-overdue-and-near-deadline-cases-share-one-table
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('Deadlines holds the overdue and the nearly due, overdue first and in red', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -589,11 +743,10 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/signalering-widgets/spec.md#scenario-closed-cases-stay-out
-	// @e2e signalering-widgets::one-deadlines-table-replaces-the-overdue-and-deadline-alert-tiles
 	test('a closed case stays off Deadlines, however late it was', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).filter({ hasText: CLOSED_CASE })).toHaveCount(0)
@@ -613,13 +766,22 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
-	// @e2e dashboard::view-all-keeps-the-tiles-filter
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// 🔴 THE SIGNALERING CITATION NAMED A SPEC FILE AND NO REQUIREMENT, which
+	// gate-19 reads as "no anchor: cites a whole spec" and credits at nothing.
+	// A spec with forty scenarios in it is not a claim. The scenario this body
+	// proves is `The Deadlines table keeps its own, wider filter`, clause for
+	// clause: follow the tile's View all, land carrying `deadline lte @today+3d`
+	// and `isFinalStatus false`, and not the Overdue chip's narrower filter.
+	// Its own `@e2e` line in the spec still points at
+	// `tests/e2e/case-list-lenses.spec.ts`, which is where this assertion used
+	// to live before the fixture that fills the tile's window moved it here;
+	// that pointer is stale and is not this file's to correct.
+	// @e2e openspec/specs/signalering-widgets/spec.md#the-deadlines-table-keeps-its-own-wider-filter
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 
@@ -688,11 +850,10 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-draft-case-types-are-absent
-	// @e2e dashboard::the-case-type-list-on-new-case-is-sorted-and-filtered
 	test('New case offers the published case type and not the draft', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		await page.getByRole('button', { name: /^(New case|Nieuwe zaak)$/i }).click()
 		const dialog = page.getByRole('dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })

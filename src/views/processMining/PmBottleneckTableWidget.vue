@@ -14,7 +14,7 @@
 		<p class="pm-bottleneck-widget__hint">
 			{{
 				t(
-					'procest',
+					'dossiq',
 					'Ranked by median dwell time × case volume: the statuses most worth investigating first.',
 				)
 			}}

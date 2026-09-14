@@ -27,6 +27,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Substitution\SubstitutionValidator;
 use OCA\Dossiq\Service\SubstitutionService;
 use PHPUnit\Framework\TestCase;
@@ -79,6 +80,13 @@ class SubstitutionServiceTest extends TestCase {
 	private $logger;
 
 	/**
+	 * The engine inbox for the next `makeService()`, or null for an empty one.
+	 *
+	 * @var EngineTaskInbox|null
+	 */
+	private ?EngineTaskInbox $engineTasks = null;
+
+	/**
 	 * Set up fixtures.
 	 *
 	 * @return void
@@ -114,13 +122,48 @@ class SubstitutionServiceTest extends TestCase {
 			}
 		);
 
+		// The absentee's TASKS come from the engine, not the object store.
+		// `$this->engineTasks` is seeded per test by `engineHoldsTasksFor()`;
+		// by default the engine holds nothing, which is what every test that
+		// only cares about cases wants.
+		$engineTasks = ($this->engineTasks ?? $this->engineInbox([]));
+
 		return new SubstitutionService(
 			$this->settingsService,
 			$this->logger,
 			new SubstitutionValidator($this->settingsService),
-			new SubstitutedWorkResolver($this->settingsService)
+			new SubstitutedWorkResolver($this->settingsService, $engineTasks)
 		);
 	}//end makeService()
+
+	/**
+	 * An engine inbox answering with these open tasks, by assignee.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byAssignee The tasks per uid.
+	 *
+	 * @return EngineTaskInbox&\PHPUnit\Framework\MockObject\MockObject The double.
+	 */
+	private function engineInbox(array $byAssignee): EngineTaskInbox {
+		$inbox = $this->getMockBuilder(EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$inbox->method('openForAssignee')->willReturnCallback(
+			static fn (string $actor, int $limit = 200): array => ($byAssignee[$actor] ?? [])
+		);
+
+		return $inbox;
+	}//end engineInbox()
+
+	/**
+	 * Seed the engine for the next `makeService()` call.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byAssignee The tasks per uid.
+	 *
+	 * @return void
+	 */
+	private function engineHoldsTasksFor(array $byAssignee): void {
+		$this->engineTasks = $this->engineInbox($byAssignee);
+	}//end engineHoldsTasksFor()
 
 	/**
 	 * Build a slug-aware ObjectService mock.
@@ -316,6 +359,71 @@ class SubstitutionServiceTest extends TestCase {
 		$this->assertSame('case-a', $work['cases'][0]['id']);
 		$this->assertSame('jan', $work['cases'][0]['_substituted']['absentee']);
 	}//end testGetSubstitutedWorkScopeFilter()
+
+	/**
+	 * 🔴 THE ABSENTEE'S TASKS COME BACK, AND THEY COME FROM THE ENGINE.
+	 *
+	 * This path had NO test at all, which is exactly why it broke in
+	 * silence. `SubstitutedWorkResolver` read `task_schema`, the guard
+	 * `if ($taskSchema !== '')` stayed TRUE the whole time, and the query
+	 * returned steadily fewer rows as each writer moved to the engine,
+	 * until a substitute saw the absentee's cases with no tasks under them.
+	 * Nothing threw and no branch noticed.
+	 *
+	 * @return void
+	 */
+	public function testTheAbsenteesOpenTasksAreRoutedToTheSubstitute(): void {
+		$sub = ['id' => 'sub-4', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'all', 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $reg, string $schema, array $filters) use ($sub) {
+				return ($schema === 'substitution') ? [$sub] : [];
+			}
+		);
+
+		$this->engineHoldsTasksFor([
+			'jan' => [
+				['id' => 't-1', 'title' => 'Meetrapport opvragen', 'case' => 'case-a'],
+				['id' => 't-2', 'title' => 'Bezwaar beoordelen', 'case' => 'case-b'],
+			],
+		]);
+
+		$work = $this->makeService($os)->getSubstitutedWorkFor('marieke', new DateTimeImmutable('2026-07-10'));
+
+		$this->assertCount(2, $work['tasks'], "the substitute must see the absentee's open tasks");
+		$this->assertSame('t-1', $work['tasks'][0]['id']);
+		$this->assertSame('jan', $work['tasks'][0]['_substituted']['absentee']);
+		$this->assertSame('sub-4', $work['tasks'][0]['_substituted']['substitutionId']);
+	}//end testTheAbsenteesOpenTasksAreRoutedToTheSubstitute()
+
+	/**
+	 * A substitution narrowed to named cases carries only those cases' tasks.
+	 *
+	 * @return void
+	 */
+	public function testANarrowedSubstitutionOnlyCarriesItsOwnCasesTasks(): void {
+		$sub = ['id' => 'sub-5', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'cases', 'scopeRefs' => ['case-a'], 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $reg, string $schema, array $filters) use ($sub) {
+				return ($schema === 'substitution') ? [$sub] : [];
+			}
+		);
+
+		$this->engineHoldsTasksFor([
+			'jan' => [
+				['id' => 't-1', 'title' => 'In scope', 'case' => 'case-a'],
+				['id' => 't-2', 'title' => 'Out of scope', 'case' => 'case-b'],
+			],
+		]);
+
+		$work = $this->makeService($os)->getSubstitutedWorkFor('marieke', new DateTimeImmutable('2026-07-10'));
+
+		$this->assertCount(1, $work['tasks']);
+		$this->assertSame('t-1', $work['tasks'][0]['id']);
+	}//end testANarrowedSubstitutionOnlyCarriesItsOwnCasesTasks()
 
 	/**
 	 * resolveActingCapacity returns the covering substitution for a third-party

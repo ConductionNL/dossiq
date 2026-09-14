@@ -16,12 +16,23 @@ anywhere in `lib/Settings/register.d/25-brp-kvk.json`, and a search for a
 seeded person returned that person.
 
 The dossiq register definition therefore SHALL NOT be read as the allow-list
-for unified search. It flags `case`, `caseTask`, `objectionProceeding` and
-`beroep` explicitly, which is a statement of intent and changes nothing at
-runtime; a schema SHALL only be flagged `searchable: false` when it should be
-kept OUT of search, and a schema SHALL NOT be flagged `true` merely to
-document that it is searchable, because the flag only lands on an instance
-behind a schema version bump and a re-import.
+for unified search. It flags `case`, `objectionProceeding` and `beroep`
+explicitly, which is a statement of intent and changes nothing at runtime; a
+schema SHALL only be flagged `searchable: false` when it should be kept OUT of
+search, and a schema SHALL NOT be flagged `true` merely to document that it is
+searchable, because the flag only lands on an instance behind a schema version
+bump and a re-import.
+
+🔴 A task is not on that list any more, and that is a gap rather than a
+tidy-up. `remove-casetask` deleted the `caseTask` schema, so there is no
+object left to index and no `deepLinks` entry left to resolve. Engine tasks
+have no unified-search provider at all today: the engine keeps its tasks in
+its own table, outside the object index this opt-in feeds, and no `deepLinks`
+shape addresses them. dossiq cannot close this, because the shape is
+OpenRegister's to define. The route `/tasks/:id` is unchanged, so the task
+page is ready the day a provider exists, and
+`tests/vitest/searchableSchemas.spec.js` pins the list at three. The gap is
+recorded in `openspec/changes/remove-casetask/tasks.md`.
 
 What decides whether a result is USEFUL is the deep link, not the flag. See
 the next requirement.

@@ -25,28 +25,33 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 use PHPUnit\Framework\TestCase;
 
 /**
- * `case.assignedGroup` and `caseTask.assigneeGroup` are the team a case or a
- * task belongs to, and this file pins the four things about them that fail
- * silently.
+ * `case.assignedGroup` is the team a case belongs to, and this file pins the
+ * four things about it that fail silently.
  *
- * They must reference `organisatieRol`. A Nextcloud group id was considered
+ * IT USED TO COVER `caseTask.assigneeGroup` TOO. remove-casetask deleted that
+ * schema, and the engine has no equivalent to assert from here: it models the
+ * pool as a LIST of candidate groups rather than one `assigneeGroup` $ref, and
+ * that list is OpenRegister's own column, not a property dossiq's descriptor
+ * declares. Asserting it from this file would pin another app's schema.
+ *
+ * It must reference `organisatieRol`. A Nextcloud group id was considered
  * and rejected: `roleType.ncGroupId` already binds a role to a group for
  * AUTHORIZATION, and a second group field on the case would blur assignment
  * with permission. A `$ref` pointing anywhere else, or missing, turns the
  * picker into a free-text box and the facet into a list of raw strings.
  *
- * They must stay OPTIONAL. `role`'s `required` list is what makes the Add
+ * It must stay OPTIONAL. `role`'s `required` list is what makes the Add
  * party form's props matter; adding a team to a case's required list would
  * 400 every case create in the app, including the ones the flows write.
  *
- * They must be FACETABLE. The Team chip on the indexes is blocked on the
+ * It must be FACETABLE. The Team chip on the indexes is blocked on the
  * platform resolving the signed-in handler's `organisatieRol` rows, so the
  * sidebar facet is the only way to narrow a list to a team. A facet is opt-in
  * per property: drop the flag and the sidebar shows nothing, with no error.
  *
- * And the mock register must carry the same two. `DemoDataService` reads it,
- * so a property present in the live register and absent from the mock makes
- * the demo instance disagree with the real one about what a case has.
+ * And the mock register must carry the same property. `DemoDataService` reads
+ * it, so a property present in the live register and absent from the mock
+ * makes the demo instance disagree with the real one about what a case has.
  *
  * @coversNothing
  */
@@ -60,7 +65,7 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	private const ROOT = __DIR__ . '/../../..';
 
 	/**
-	 * The schema the two team properties reference.
+	 * The schema the team property references.
 	 *
 	 * @var string
 	 */
@@ -73,7 +78,6 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	 */
 	private const TEAM_PROPERTIES = [
 		'case' => 'assignedGroup',
-		'caseTask' => 'assigneeGroup',
 	];
 
 	/**
@@ -98,7 +102,7 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	}//end schemas()
 
 	/**
-	 * Every register file that must declare the two team properties.
+	 * Every register file that must declare the team property.
 	 *
 	 * @return array<string, array{0: string}> Data set name => [file name].
 	 */
@@ -110,7 +114,7 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 	}//end registerFileProvider()
 
 	/**
-	 * Both team properties exist, reference organisatieRol and are facetable.
+	 * The team property exists, references organisatieRol and is facetable.
 	 *
 	 * @param string $file The register file to read.
 	 *
@@ -216,12 +220,12 @@ class RegisterSchemaGroupFieldsTest extends TestCase {
 		self::assertContains(
 			self::TEAM_SCHEMA,
 			$declared,
-			sprintf('No shipped fragment declares "%s", so both team pickers would come up empty.', self::TEAM_SCHEMA)
+			sprintf('No shipped fragment declares "%s", so the team picker would come up empty.', self::TEAM_SCHEMA)
 		);
 	}//end testTheReferencedTeamSchemaIsShipped()
 
 	/**
-	 * The personal assignee survives beside the team on both schemas.
+	 * The personal assignee survives beside the team.
 	 *
 	 * The spec is explicit that assigning a team does not clear the personal
 	 * assignee. The way that breaks in a config change is not a line of logic

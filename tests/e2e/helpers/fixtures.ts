@@ -30,7 +30,9 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { occPurge, OccUnavailableError } from './occ.ts'
+import { OWNS_INSTANCE, SHARED_INSTANCE_FLAG } from '../base-url.ts'
+import { occPurge } from './occ.ts'
+import { isStaleResidue, residueMinAgeMs, sweepsAllResidue } from './residue.ts'
 
 /** OpenRegister register slug that owns every dossiq object. */
 export const REGISTER = 'dossiq'
@@ -50,6 +52,87 @@ export const FIXTURE_PREFIX = 'E2EZAAK-'
  * the rows this run created (never another run's or real demo data).
  */
 export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+
+/**
+ * Every object id this run created, by schema. THE delete key for teardown.
+ *
+ * Why a ledger replaced the prefix match
+ * --------------------------------------
+ * Teardown used to find its objects with `JSON.stringify(row).includes(prefix)`
+ * and delete what matched. That reads a row's CONTENT to decide whether to
+ * destroy it, and content is not ownership. Anything carrying the string wins:
+ * a colleague's case whose description quotes a prefix from a bug report, a
+ * demo record seeded from an old run's export, a second suite running the same
+ * family prefix at the same time. On a rig you own the blast radius is a rig
+ * you were going to throw away. On the shared development container it is
+ * somebody else's work.
+ *
+ * `residue.ts` bounds the CROSS-RUN sweep by age, which stops one session
+ * deleting another's live fixtures. This is the other half: a run's own
+ * teardown now deletes ids it recorded, so it cannot reach a row it never
+ * made, at any age.
+ *
+ * The prefix stays in every seeded title, because recognising residue by eye in
+ * a list view is genuinely useful. It is no longer what decides a delete.
+ *
+ * Objects created through the UI rather than through `createObject` are the one
+ * gap, and they close it by calling `trackCreatedObject` with the id the app
+ * navigated to. Anything neither seeded nor tracked is REPORTED by
+ * `cleanupRunObjects` and left in place.
+ */
+const RUN_LEDGER = new Map<string, Set<string>>()
+
+/**
+ * Record an object this run created, so teardown may delete it.
+ *
+ * Call this for anything created through the UI instead of through
+ * `createObject`. The id is usually in the URL the app lands on after a save,
+ * so `trackCreatedFromUrl` is normally the easier call.
+ *
+ * @param schema Schema slug the object belongs to.
+ * @param id     Object id/uuid.
+ * @return The id, so callers can inline the call.
+ */
+export function trackCreatedObject(schema: string, id: string): string {
+	if (id === '') return id
+	const ids = RUN_LEDGER.get(schema) ?? new Set<string>()
+	ids.add(id)
+	RUN_LEDGER.set(schema, ids)
+	return id
+}
+
+/**
+ * Record an object from the URL the app navigated to after creating it.
+ *
+ * Dossiq detail routes end in the object id, for example
+ * `/apps/dossiq/cases/4f1c…`. A UI-created row is therefore trackable, and
+ * tracking it is what keeps it out of the "found but not deleted" report.
+ *
+ * @param schema Schema slug the object belongs to.
+ * @param url    The URL the app is on after the save.
+ * @return The id that was tracked, or the empty string when the URL held none.
+ */
+export function trackCreatedFromUrl(schema: string, url: string): string {
+	const tail =
+		url.split('?')[0].split('#')[0].replace(/\/+$/, '').split('/').pop() ?? ''
+	// A uuid, or OpenRegister's numeric fallback id. Anything else is a route
+	// segment like "new" or "cases", and tracking that would be worse than
+	// tracking nothing.
+	const looksLikeId =
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tail)
+		|| /^\d+$/.test(tail)
+	return looksLikeId ? trackCreatedObject(schema, tail) : ''
+}
+
+/**
+ * The ids this run recorded for one schema.
+ *
+ * @param schema Schema slug.
+ * @return The recorded ids, possibly empty.
+ */
+export function trackedObjects(schema: string): string[] {
+	return [...(RUN_LEDGER.get(schema) ?? [])]
+}
 
 const API_BASE = '/index.php/apps/openregister/api/objects'
 
@@ -73,7 +156,19 @@ const TRASH_BASE = '/index.php/apps/openregister/api/deleted'
 export const FIXTURE_SCHEMAS = [
 	'statusRecord',
 	'caseProperty',
-	'caseTask',
+	// 🔴 `caseTask` IS GONE FROM THIS LIST, and it was here as cleanup order
+	// rather than as a thing most specs made. remove-casetask deleted the
+	// schema and `demo-caseload`, the last spec that created one, now seeds the
+	// engine instead, so nothing this suite writes lands there. A name kept
+	// here would cost a listing round trip per sweep against a schema that
+	// answers nothing: `sweepPrefix` swallows a failed list, so it would be
+	// silent as well as useless.
+	//
+	// One consequence is stated rather than discovered: on an instance
+	// UPGRADED from a version that had the schema, rows earlier runs left
+	// behind are no longer swept, because the import does not delete a schema
+	// it stops declaring. They are orphan rows under an orphan schema and
+	// removing them is an administrative act, not a test fixture's job.
 	'contactmoment',
 	// The things a case is about. Before `case` for the same reason every
 	// other child is: `case` is on a CASCADE, so a case removed first takes
@@ -90,8 +185,8 @@ export const FIXTURE_SCHEMAS = [
 	'role',
 	'case',
 	'roleType',
-	// The team a case or a task names. After `case` and `caseTask` for the
-	// same reason `caseType` is: they reference it.
+	// The team a case names. After `case` for the same reason `caseType` is:
+	// it references it.
 	'organisatieRol',
 	'workflowTemplate',
 	'statusType',
@@ -186,7 +281,11 @@ export async function createObject(
 		res.ok(),
 		`create ${schema} -> ${res.status()} ${await res.text()}`,
 	).toBeTruthy()
-	return unwrapObject(await res.json())
+	const created = unwrapObject(await res.json())
+	// The single funnel every API-seeded object passes through, so this is the
+	// one line that has to run for teardown to know what it owns.
+	trackCreatedObject(schema, objectId(created))
+	return created
 }
 
 /**
@@ -332,34 +431,71 @@ export async function purgeObject(
 ): Promise<boolean> {
 	if (!id) return true
 
-	/**
-	 * Whether the object still answers. An unreadable answer counts as "still
-	 * there": a teardown may only report a clean sweep it actually observed.
-	 */
-	const stillResolves = async (): Promise<boolean> => {
-		for (let attempt = 0; attempt < 2; attempt++) {
-			const check = await api
-				.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
-				.catch(() => null)
-			if (check !== null) return check.status() !== 404
-		}
-		return true
-	}
+	if ((await httpPurge(api, token, schema, id)) === true) return true
 
-	await api
+	await occPurge([id])
+
+	return (await stillResolves(api, schema, id)) === false
+}
+
+/**
+ * Whether an object still answers. An unreadable answer counts as "still
+ * there": a teardown may only report a clean sweep it actually observed.
+ *
+ * @param api    Authenticated request context.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ */
+async function stillResolves(
+	api: APIRequestContext,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	for (let attempt = 0; attempt < 2; attempt++) {
+		const check = await api
+			.get(`${API_BASE}/${REGISTER}/${schema}/${id}`)
+			.catch(() => null)
+		if (check !== null) return check.status() !== 404
+	}
+	return true
+}
+
+/**
+ * The HTTP half of `purgeObject`: delete, then destroy the trashed row.
+ *
+ * Returns `true` only when a re-read says the object is gone. A `403` on the
+ * object delete returns `false` at once, without the trash delete or the
+ * re-read: that is `SCHEMA_ARCHIVAL_IMMUTABLE` (or a permission the CLI does
+ * not need), the row is certainly still there, and both calls were measured
+ * answering `403` and `200` respectively on every archival case, costing two
+ * round trips per row and telling the sweep nothing. The caller hands such
+ * rows to `occPurge` and re-reads them afterwards, so nothing is trusted here
+ * that was not trusted before.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `true` when the object no longer resolves.
+ */
+async function httpPurge(
+	api: APIRequestContext,
+	token: string,
+	schema: string,
+	id: string,
+): Promise<boolean> {
+	const deleted = await api
 		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
 			headers: writeHeaders(token),
 		})
-		.catch(() => undefined)
+		.catch(() => null)
+	if (deleted !== null && deleted.status() === 403) return false
+
 	await api
 		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
 		.catch(() => undefined)
 
-	if ((await stillResolves()) === false) return true
-
-	await occPurge([id])
-
-	return (await stillResolves()) === false
+	return (await stillResolves(api, schema, id)) === false
 }
 
 /**
@@ -733,8 +869,184 @@ export async function updateObject(
 }
 
 /**
- * Find every object of `schema` whose stringified body contains RUN_PREFIX
- * and delete it. Used by afterAll to guarantee no seeded data is left behind.
+ * OpenRegister's task ENGINE. A flow task is not an OpenRegister object, so it
+ * has its own table, its own field names and its own verbs — `/api/objects/…`
+ * cannot see it and `cleanupRunObjects` cannot sweep it.
+ */
+export const FLOW_TASKS_BASE = '/index.php/apps/openregister/api/flow-tasks'
+
+/**
+ * The fields a seeded engine task takes.
+ *
+ * Three names change from the `caseTask` schema this replaced, and they are
+ * the three that silently seed nothing when written the old way: `case`
+ * becomes `objectUuid` (OpenRegister has no case entity — the case IS the
+ * object), `status` becomes `state`, and `dueDate` becomes `dueAt`.
+ */
+export interface FlowTaskSeed {
+	/** The task title. Carry RUN_PREFIX so a row locator can find it. */
+	title: string
+	/** The object the task hangs off — a case uuid, for dossiq. */
+	objectUuid?: string
+	/** The uid the task is assigned to. Omit to leave it in the pool. */
+	assignee?: string
+	/** available | enabled | active. A terminal state needs the verb. */
+	state?: string
+	/** ISO instant. `overdue` is `dueAt < now`, an INSTANT comparison. */
+	dueAt?: string
+	/** low | normal | high | urgent. */
+	priority?: string
+	/** The uids that may claim an unassigned task, i.e. its pool. */
+	candidateUsers?: string[]
+	/** The group ids that may claim an unassigned task. */
+	candidateGroups?: string[]
+}
+
+/** Every engine task this process seeded, newest last, for teardown. */
+const seededFlowTasks: string[] = []
+
+/**
+ * Seed one task IN THE ENGINE and return its uuid.
+ *
+ * 🔴 SEEDING A `caseTask` OBJECT SEEDS SOMETHING NO SURFACE READS. dossiq#2357
+ * moved every task read onto the engine and #2408 moved the Tasks index with
+ * it, so a fixture that still posts `/api/objects/dossiq/caseTask` writes a
+ * different table: the list then shows nothing and the spec times out on a
+ * title that was never going to arrive, which reads as a broken list rather
+ * than as a fixture pointing at the wrong store.
+ *
+ * The uuid is the id. The numeric primary key is one no route accepts.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param seed  The task's fields.
+ */
+export async function seedFlowTask(
+	api: APIRequestContext,
+	token: string,
+	seed: FlowTaskSeed,
+): Promise<string> {
+	const res = await api.post(FLOW_TASKS_BASE, {
+		headers: writeHeaders(token),
+		data: { appId: REGISTER, state: 'available', ...seed },
+	})
+	expect(
+		res.status(),
+		`seed engine task "${seed.title}" -> ${res.status()} ${await res.text()}`,
+	).toBe(201)
+
+	const created = await res.json()
+	const uuid = String(created?.uuid ?? '')
+	expect(uuid, `seeded task "${seed.title}" came back without a uuid`).not.toBe('')
+	// Read back what the engine STORED, not what was asked for. A state the
+	// engine declined would otherwise be discovered by a lens assertion three
+	// screens away from the cause.
+	expect(
+		String(created.state),
+		`seeded task "${seed.title}" did not take the state asked for`,
+	).toBe(String(seed.state ?? 'available'))
+	seededFlowTasks.push(uuid)
+	return uuid
+}
+
+/**
+ * Drive one lifecycle verb on an engine task and assert it was accepted.
+ *
+ * A terminal task cannot be CREATED by an ordinary caller — the engine
+ * refuses a task born closed — so a spec that needs a completed task drives
+ * it there through the verb, which is also the transition a person makes.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @param uuid  The task.
+ * @param verb  claim | complete | cancel | …
+ * @param body  The verb's payload, when it takes one.
+ */
+export async function invokeFlowTask(
+	api: APIRequestContext,
+	token: string,
+	uuid: string,
+	verb: string,
+	body: Record<string, unknown> = {},
+): Promise<any> {
+	const res = await api.post(`${FLOW_TASKS_BASE}/${uuid}/${verb}`, {
+		headers: writeHeaders(token),
+		data: body,
+	})
+	expect(
+		res.ok(),
+		`${verb} task ${uuid} -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	return await res.json()
+}
+
+/**
+ * Read the engine inbox with explicit query parameters.
+ *
+ * @param api    Authenticated request context.
+ * @param params The inbox query, as the endpoint takes it.
+ */
+export async function listFlowTasks(
+	api: APIRequestContext,
+	params: Record<string, string>,
+): Promise<any[]> {
+	const query = new URLSearchParams(params).toString()
+	const res = await api.get(`${FLOW_TASKS_BASE}?${query}`)
+	expect(
+		res.ok(),
+		`list engine tasks (${query}) -> ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
+	const body = await res.json()
+	return Array.isArray(body?.results) ? body.results : []
+}
+
+/**
+ * Cancel every engine task this process seeded.
+ *
+ * `cancel` is the only removal verb the engine publishes — it TERMINATES
+ * rather than erases — and failures are swallowed on purpose: a task a test
+ * already completed answers 409 to a cancel, and a teardown that threw on
+ * that would redden a run whose assertions all passed.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ */
+export async function cleanupFlowTasks(
+	api: APIRequestContext,
+	token: string,
+): Promise<void> {
+	while (seededFlowTasks.length > 0) {
+		const uuid = seededFlowTasks.pop() as string
+		try {
+			await api.post(`${FLOW_TASKS_BASE}/${uuid}/cancel`, {
+				headers: writeHeaders(token),
+				data: {},
+			})
+		} catch {
+			// Best effort; the next run's residue sweep is the backstop.
+		}
+	}
+}
+
+/**
+ * Delete every object THIS RUN CREATED, and nothing else.
+ *
+ * The delete key is the run ledger, not the run prefix. See `RUN_LEDGER` for
+ * why: a prefix match reads a row's content to decide whether to destroy it,
+ * and content is not ownership.
+ *
+ * Two kinds of row qualify, and both are identified by id:
+ *
+ *  1. Ids in the ledger. Everything `createObject` seeded, plus anything a spec
+ *     handed to `trackCreatedObject` after creating it through the UI.
+ *  2. Rows whose `case` or `parentCase` points at a case id in the ledger. The
+ *     transition engine writes `statusRecord` rows itself, carrying the case
+ *     uuid and none of the fixture's text. They are still this run's residue,
+ *     and the link is a foreign key, not a string search.
+ *
+ * Anything else carrying RUN_PREFIX is named by `reportUntracked` and left
+ * alone, which is the honest half: the run says out loud that it produced a row
+ * it cannot prove it owns, rather than deleting on a guess.
  *
  * @param api     Authenticated request context.
  * @param token   CSRF request-token.
@@ -754,16 +1066,38 @@ export async function cleanupRunObjects(
 	// Raised here rather than in playwright.config.ts on purpose: the config
 	// timeout also governs every TEST, and loosening that would hide a genuinely
 	// slow test. This widens only the teardown that is genuinely slow.
+	//
+	// 120 SECONDS IS KEPT, AND THE WORK WAS CUT TO FIT IT INSTEAD. Measured
+	// from the HTML reports, the slowest two teardowns took 88s and 90s on a
+	// green run (34581297676) and 120s-and-cut-off and 118s on a slower runner
+	// (34585313834): within one budget of the limit, so the runner's speed
+	// decided the verdict. Most of that was one `occ` process per archival
+	// case, which `sweepPrefix` now spends once per schema. Each phase is a
+	// named `teardown:` step, so a teardown that still runs out says which
+	// schema it was on.
 	try {
 		test.setTimeout(120_000)
 	} catch {
 		// Called outside a running test/hook. Nothing to extend; carry on.
 	}
 
+	// THE DELETE KEY IS THE LEDGER, NOT THE PREFIX. `sweepPrefix` keeps doing the
+	// walking, the child-first ordering and the one-occ-per-schema batching; it
+	// is simply told which rows are ours by id instead of by string search. Rows
+	// whose `case` or `parentCase` points at one of our cases still go, because
+	// that is a foreign key and not a content match: the transition engine writes
+	// `statusRecord` rows itself, carrying the case uuid and none of our text.
+	const ledger = (schema: string): Set<string> => new Set(trackedObjects(schema))
+	const ourIds = new Set(schemas.flatMap((schema) => trackedObjects(schema)))
+
+	const noticed: string[] = []
 	const survivors = [
-		...(await sweepPrefix(api, token, RUN_PREFIX, schemas)),
-		...(await sweepTrash(api, token, RUN_PREFIX)),
+		...(await sweepPrefix(api, token, RUN_PREFIX, schemas, 0, ledger, noticed)),
+		...(await sweepTrashIds(api, token, ourIds)),
 	]
+
+	await reportUntracked(api, ourIds, noticed)
+
 	if (survivors.length > 0) {
 		throw new Error(
 			'e2e teardown left objects behind, so the next run on this instance '
@@ -773,19 +1107,159 @@ export async function cleanupRunObjects(
 }
 
 /**
- * Remove the residue of EVERY fixture run on this instance.
+ * Name every row that carries this run's prefix and is in no ledger.
+ *
+ * The honest half of an id-scoped teardown. A run that produced a row it cannot
+ * prove it owns says so, by id, instead of deleting on a guess. A spec that
+ * creates through the UI answers this by calling `trackCreatedFromUrl` after
+ * the save.
+ *
+ * @param api     Authenticated request context.
+ * @param ourIds  Ids this run recorded creating.
+ * @param noticed Live rows `sweepPrefix` saw carrying the prefix and did not delete.
+ */
+async function reportUntracked(
+	api: APIRequestContext,
+	ourIds: Set<string>,
+	noticed: string[],
+): Promise<void> {
+	const found = [...noticed]
+
+	// Trashed rows too, named in the run that caused them rather than left for
+	// the next run's residue report to find. One listing, not a second walk of
+	// every schema.
+	for (const label of await findTrashMatches(api, RUN_PREFIX)) {
+		if (ourIds.has(label.replace('deleted/', '')) === false) found.push(label)
+	}
+
+	if (found.length === 0) return
+
+	console.warn(
+		`[dossiq e2e] ${found.length} object(s) carry ${RUN_PREFIX} but this run `
+			+ 'never recorded creating them, so teardown left them in place: '
+			+ `${found.join(', ')}\n`
+			+ 'If a spec created them through the UI, have it call '
+			+ 'trackCreatedFromUrl after the save. Otherwise they belong to somebody '
+			+ 'else and deleting them would have been the bug.',
+	)
+}
+
+/**
+ * Destroy the named ids if they are sitting in the trash.
+ *
+ * A spec that deletes its own object mid-test soft-deletes it: the row leaves
+ * the object API and stays in the trash for good. This finishes the job, by id,
+ * where `sweepTrash` finishes it by prefix.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param ourIds Ids this run created.
+ * @return Trash ids that survived.
+ */
+async function sweepTrashIds(
+	api: APIRequestContext,
+	token: string,
+	ourIds: Set<string>,
+): Promise<string[]> {
+	if (ourIds.size === 0) return []
+
+	const matching = async (): Promise<string[]> => {
+		const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+		if (res === null || res.ok() === false) return []
+		const rows = unwrapList(await res.json().catch(() => ({})))
+		return rows
+			.map((row: any) => objectId(row))
+			.filter((id: string) => id !== '' && ourIds.has(id))
+	}
+
+	for (const id of await matching()) {
+		await api
+			.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
+			.catch(() => undefined)
+	}
+
+	const refused = await matching()
+	if (refused.length > 0) {
+		await occPurge(refused)
+	}
+
+	return (await matching()).map((id) => `deleted/${id}`)
+}
+
+/**
+ * List, without touching, every live row whose body carries `prefix`.
+ *
+ * @param api     Authenticated request context.
+ * @param prefix  Run prefix or family prefix.
+ * @param schemas Schema slugs to look through.
+ * @return `schema/id` labels for what was found.
+ */
+async function findPrefixMatches(
+	api: APIRequestContext,
+	prefix: string,
+	schemas: string[],
+): Promise<string[]> {
+	const found: string[] = []
+	for (const schema of schemas) {
+		for (const row of await listAllObjects(api, schema).catch(() => [])) {
+			const id = objectId(row)
+			if (id !== '' && JSON.stringify(row).includes(prefix)) {
+				found.push(`${schema}/${id}`)
+			}
+		}
+	}
+	return found
+}
+
+/**
+ * List, without touching, every trashed row whose body carries `prefix`.
+ *
+ * @param api    Authenticated request context.
+ * @param prefix Run prefix or family prefix.
+ * @return `deleted/id` labels for what was found.
+ */
+async function findTrashMatches(
+	api: APIRequestContext,
+	prefix: string,
+): Promise<string[]> {
+	const res = await api.get(`${TRASH_BASE}?limit=500`).catch(() => null)
+	if (res === null || res.ok() === false) return []
+	const rows = unwrapList(await res.json().catch(() => ({})))
+	return rows
+		.filter((row: any) => JSON.stringify(row).includes(prefix))
+		.map((row: any) => `deleted/${objectId(row)}`)
+		.filter((label: string) => label !== 'deleted/')
+}
+
+/**
+ * Remove the residue of fixture runs that are no longer running.
  *
  * Called once from `global-setup.ts`, before any spec has run. Per-spec
  * teardown can only sweep its own `RUN_PREFIX`; a run that was interrupted
  * (Ctrl-C, a crashed worker, a `globalTimeout`) never reaches its teardown at
- * all, and its objects then belong to no future run's prefix. Sweeping the
- * family prefix up front is what makes a second suite run on one rig start
- * from the same state as the first.
+ * all, and its objects then belong to no future run's prefix. This is what
+ * collects them.
  *
- * Deliberately NOT an afterAll: the suite runs single-worker and owns its
- * instance (see `base-url.ts`, which refuses a default target for exactly this
- * reason), so a clean slate at the start is safe, where a family-wide sweep at
- * the end could tear down a concurrently running sibling suite.
+ * 🔴 IT USED TO REMOVE EVERY `E2EZAAK-` OBJECT, on the stated premise that
+ * "the suite runs single-worker and owns its instance". On the shared
+ * developer instance it does not: several sessions run this suite against the
+ * same Nextcloud, the family prefix is common to all of them, and one run's
+ * setup deleted another session's case type, statuses and workflow template
+ * between that session's `beforeAll` and its first assertion. The victim saw
+ * "No status types defined" on a case type it had just seeded.
+ *
+ * So the sweep is now bounded by AGE (`residue.ts`): a live row is removed only
+ * when its own `updated`/`created` stamp is older than
+ * `DOSSIQ_E2E_RESIDUE_MIN_AGE_MINUTES` (default 120, well past the suite's 38
+ * minute `globalTimeout`), which no running suite's fixtures can be. A crashed
+ * run's leftovers therefore still go, one sweep after they age out, without
+ * anybody passing a flag.
+ *
+ * The TRASH is left alone unless the instance is declared the caller's own
+ * (`DOSSIQ_E2E_SWEEP_ALL_RESIDUE=1`, which also drops the age bound). A
+ * trashed row carries no timestamp OpenRegister will return (`@self.created`
+ * and `updated` are null there), and a row nobody can date may belong to a run
+ * that trashed it a second ago.
  *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
@@ -795,9 +1269,45 @@ export async function sweepFixtureResidue(
 	api: APIRequestContext,
 	token: string,
 ): Promise<string[]> {
+	// 🔴 ON A SHARED INSTANCE THIS SWEEP DELETES NOTHING. It is the one place
+	// left that finds rows by content, and it has to be: residue from a crashed
+	// run belongs to no ledger, so the prefix is all there is to recognise it by.
+	// The age bound below keeps that safe between sessions of THIS suite. It
+	// cannot make it safe against everything else on a shared box, where an aged
+	// row may be a colleague's demo data rather than anybody's leftover. So under
+	// the explicit shared flag the sweep lists what it found and leaves it, and
+	// DOSSIQ_E2E_SWEEP_ALL_RESIDUE does not override that: a flag that says "this
+	// rig is mine" cannot outrank one that says "this rig is shared".
+	if (OWNS_INSTANCE === false) {
+		const found = [
+			...(await findPrefixMatches(api, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
+			...(await findTrashMatches(api, FIXTURE_PREFIX)),
+		]
+		if (found.length > 0) {
+			console.warn(
+				`[dossiq e2e] ${found.length} row(s) on this instance carry `
+					+ `${FIXTURE_PREFIX}: ${found.join(', ')}\n`
+					+ `Nothing was deleted. ${SHARED_INSTANCE_FLAG} is set, so the suite `
+					+ "cannot tell your leftovers from a colleague's.\n"
+					+ 'Check the list, then remove the rows you recognise with '
+					+ '`occ openregister:objects:purge <uuid> --force --apply`.',
+			)
+		}
+		return []
+	}
+
+	const minAgeMs = residueMinAgeMs()
+	const includeTrash = sweepsAllResidue()
+
 	return [
-		...(await sweepPrefix(api, token, FIXTURE_PREFIX, [...FIXTURE_SCHEMAS])),
-		...(await sweepTrash(api, token, FIXTURE_PREFIX)),
+		...(await sweepPrefix(
+			api,
+			token,
+			FIXTURE_PREFIX,
+			[...FIXTURE_SCHEMAS],
+			minAgeMs,
+		)),
+		...(includeTrash ? await sweepTrash(api, token, FIXTURE_PREFIX) : []),
 	]
 }
 
@@ -858,10 +1368,17 @@ async function sweepTrash(
  * none of the fixture's text, so `JSON.stringify(row).includes(prefix)` never
  * matches it. Those rows outlived every previous teardown.
  *
- * @param api     Authenticated request context.
- * @param token   CSRF request-token.
- * @param prefix  Run prefix or family prefix.
- * @param schemas Schema slugs to sweep, child-first.
+ * `minAgeMs` bounds the sweep to rows that are nobody's live fixture (see
+ * `sweepFixtureResidue`). It is zero for a run's own teardown, which removes
+ * what it seeded however fresh. A child row of a case that IS removed goes
+ * with it whatever its own age, because it would otherwise be left pointing
+ * at a case that no longer exists.
+ *
+ * @param api      Authenticated request context.
+ * @param token    CSRF request-token.
+ * @param prefix   Run prefix or family prefix.
+ * @param schemas  Schema slugs to sweep, child-first.
+ * @param minAgeMs How old a prefixed row must be to be removed; 0 for all.
  * @return Ids that still resolve after the sweep.
  */
 async function sweepPrefix(
@@ -869,46 +1386,140 @@ async function sweepPrefix(
 	token: string,
 	prefix: string,
 	schemas: string[],
+	minAgeMs = 0,
+	/**
+	 * When given, THIS is the delete key and the prefix is not consulted at all:
+	 * only ids the run recorded creating are removed. `cleanupRunObjects` passes
+	 * it; the cross-run residue sweep cannot, because residue belongs to no
+	 * ledger, and that is the sweep `minAgeMs` bounds instead.
+	 */
+	ledger?: (schema: string) => Set<string>,
+	/**
+	 * Filled with `schema/id` for every row that carries `prefix` and is NOT in
+	 * the ledger, so the caller can name them without walking the instance a
+	 * second time. Teardown already runs at 88 to 90 seconds of its 120 second
+	 * budget (#2543), so a second listing pass would not be a report, it would be
+	 * a suite-wide `"afterAll" hook timeout`.
+	 */
+	noticed?: string[],
 ): Promise<string[]> {
 	const survivors: string[] = []
 
+	/**
+	 * Whether this row is one this sweep may destroy.
+	 *
+	 * @param schema The schema being swept.
+	 * @param row    The row.
+	 * @return True when the row is in scope.
+	 */
+	const owns = (schema: string, row: any): boolean => {
+		if (ledger !== undefined) return ledger(schema).has(objectId(row))
+		return JSON.stringify(row).includes(prefix) && isStaleResidue(row, minAgeMs)
+	}
+
 	// Case ids first, so the child sweep below knows what to orphan-hunt for.
+	// The listing is kept and reused when the loop reaches `case` itself: the
+	// rows removed in between are children, so it is still exact, and it saves
+	// paging through every case on the instance a second time.
+	let caseRows: any[] | null = null
 	const caseIds = new Set<string>()
 	if (schemas.includes('case') === true) {
-		for (const row of await listAllObjects(api, 'case').catch(() => [])) {
-			if (JSON.stringify(row).includes(prefix)) caseIds.add(objectId(row))
+		caseRows = await listAllObjects(api, 'case').catch(() => null)
+		for (const row of caseRows ?? []) {
+			if (owns('case', row)) caseIds.add(objectId(row))
 		}
 	}
 
 	for (const schema of schemas) {
 		let rows: any[]
 		try {
-			rows = await listAllObjects(api, schema)
+			rows =
+				schema === 'case' && caseRows !== null
+					? caseRows
+					: await listAllObjects(api, schema)
 		} catch {
 			continue
 		}
 
+		const matched: string[] = []
 		for (const row of rows) {
 			const id = objectId(row)
 			if (id === '') continue
-			const matchesPrefix = JSON.stringify(row).includes(prefix)
+			const matchesPrefix = owns(schema, row)
 			const matchesCase =
 				caseIds.has(String(row.case ?? '')) === true
 				|| caseIds.has(String(row.parentCase ?? '')) === true
-			if (matchesPrefix === false && matchesCase === false) continue
+			if (matchesPrefix === false && matchesCase === false) {
+				// Carries the prefix, is nobody's recorded creation, and is not a child
+				// of one of our cases. Named by the caller, never deleted. The check
+				// sits AFTER `matchesCase` on purpose: a row the app wrote against our
+				// case can quote the case title, so testing it earlier reported a row
+				// as left in place in the same breath as deleting it.
+				if (noticed !== undefined && JSON.stringify(row).includes(prefix)) {
+					noticed.push(`${schema}/${id}`)
+				}
+				continue
+			}
+			matched.push(id)
+		}
+		if (matched.length === 0) continue
+
+		// 🔴 ONE `occ` PER SCHEMA, NOT ONE PER ROW. Every archival row used to
+		// cost its own `occ openregister:objects:purge` process, and each one
+		// boots Nextcloud: measured in the trace of case-list-lenses' teardown
+		// on run 34585313834, 17 cases took 75 of the hook's 120 seconds, 1.3
+		// to 3.9 seconds of that per case in the spawn alone. Across 106 E2E
+		// jobs on 2026-09-10 and 11, `"afterAll" hook timeout of 120000ms` was
+		// logged 50 times in 31 of them, and each time the failure was pinned
+		// on whichever test happened to finish last in the file. `occPurge` has always taken a list, so the rows the HTTP pair
+		// cannot remove are collected and handed over in ONE call per schema.
+		// Per schema rather than per sweep, so the child-first order above
+		// still holds across schemas.
+		await teardownStep(`remove ${matched.length} ${schema} row(s)`, async () => {
+			const refused: string[] = []
+			for (const id of matched) {
+				if ((await httpPurge(api, token, schema, id)) === false) {
+					refused.push(id)
+				}
+			}
+			if (refused.length === 0) return
 
 			// An OccUnavailableError is NOT a survivor: it means no row can be
 			// removed at all, so it must abort here rather than be reported once
 			// per fixture as though each one had individually resisted.
-			const gone = await purgeObject(api, token, schema, id).catch(
-				(error: unknown) => {
-					if (error instanceof OccUnavailableError) throw error
-					return false
-				},
+			await teardownStep(
+				`occ purge of ${refused.length} ${schema} row(s) in one call`,
+				() => occPurge(refused),
 			)
-			if (gone === false) survivors.push(`${schema}/${id}`)
-		}
+
+			// NO status is trusted, exit code included: each row is re-read.
+			for (const id of refused) {
+				if ((await stillResolves(api, schema, id)) === true) {
+					survivors.push(`${schema}/${id}`)
+				}
+			}
+		})
 	}
 
 	return survivors
+}
+
+/**
+ * Run a teardown phase as a named `test.step`, so the report and the trace
+ * say which phase a slow or timed-out teardown was in, rather than only that
+ * the hook ran out of time.
+ *
+ * `sweepFixtureResidue` also reaches here from `global-setup.ts`, where there
+ * is no test and `test.step` throws, so the body then simply runs.
+ *
+ * @param title What the phase does, as the report should show it.
+ * @param body  The phase.
+ */
+async function teardownStep<T>(title: string, body: () => Promise<T>): Promise<T> {
+	try {
+		test.info()
+	} catch {
+		return body()
+	}
+	return test.step(`teardown: ${title}`, body)
 }

@@ -52,7 +52,14 @@ function sidebarTabs(id) {
 const OTHER_SIDEBARS = {
 	BezwaarDetail: 2,
 	BezwaarDecisionDetail: 2,
-	TaskDetail: 2,
+	// TaskDetail is NOT in this map any more. remove-casetask 2.1 retyped it
+	// to `type: "custom"`, and CnPageRenderer mounts a custom page's
+	// component and nothing else: it reads no `config.sidebar`, so a sidebar
+	// declared there would render nowhere. Its History tab moved into the
+	// page body (TaskAuditLeaf, over the engine's own audit endpoint); its
+	// version-history tab is gone, because an engine task is not an
+	// OpenRegister object and nothing writes a version of it, so the tab was
+	// an always-empty drawer.
 	AdviceDetail: 2,
 	WmsLayerDetail: 2,
 	TenantDetail: 2,
@@ -107,6 +114,11 @@ describe('CaseDetail — the timeline is not also a body tab (task 4.1)', () => 
 		// The whole of row A05 is that the case keeps ONE history. A body
 		// panel over the same audit log beside a sidebar tab with filters is
 		// two views of one log again.
+		//
+		// ⚠️ THE NAME IS RESERVED, AND IT WAS NEARLY TAKEN. The page does carry
+		// a stage stepper titled Timeline, and it is declared as `case-stages`
+		// precisely so this guard keeps meaning what it says. That widget is
+		// where the case is in its process, not what has happened to it.
 		const config = caseDetail().config
 		expect(config.widgets.map((widget) => widget.id)).not.toContain(
 			'case-timeline',

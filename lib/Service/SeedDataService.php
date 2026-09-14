@@ -517,16 +517,32 @@ class SeedDataService {
 				],
 			);
 
-			if (is_array($results) === true && count($results) > 0) {
-				return $results[0];
+			if (is_array($results) === false) {
+				return null;
 			}
 
-			// Handle paginated result format.
-			if (is_array($results) === true
-				&& isset($results['results']) === true
+			// PAGINATED SHAPE FIRST, and that order is the fix.
+			//
+			// With the plain-list branch first, `count($results) > 0` is also
+			// true for `['results' => [...]]`, since one key is still one
+			// element, so it returned `$results[0]`, an offset that shape does
+			// not have. PHP 8 warns and hands back null, so this method
+			// answered "not found" for every paginated response and the branch
+			// below could never run.
+			//
+			// Psalm had this the whole time: with the list branch taken, it
+			// narrowed `$results` to the empty array and reported
+			// EmptyArrayAccess on `$results['results']`. The blanket
+			// suppression is what kept it quiet.
+			if (isset($results['results']) === true
+				&& is_array($results['results']) === true
 				&& count($results['results']) > 0
 			) {
 				return $results['results'][0];
+			}
+
+			if (count($results) > 0) {
+				return $results[0];
 			}
 
 			return null;

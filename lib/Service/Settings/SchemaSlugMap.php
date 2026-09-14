@@ -46,9 +46,15 @@ class SchemaSlugMap {
 	 * @var array<string, string>
 	 */
 	public const SLUG_TO_CONFIG_KEY = [
-		'catalog' => 'catalogus_schema',
+		// NOT 'catalog': opencatalogi owns that slug, and slugs are global on a
+		// shared OpenRegister, so both definitions would resolve to each other.
+		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
-		'caseTask' => 'task_schema',
+		// `caseTask` is gone. remove-casetask deleted the schema from both
+		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
+		// resolve a slug the register no longer declares, once per import. The
+		// `task_schema` appconfig key survives as an inert row; see
+		// {@see ConfigKeys::ALL}.
 		'status' => 'status_schema',
 		'statusRecord' => 'status_record_schema',
 		'role' => 'role_schema',

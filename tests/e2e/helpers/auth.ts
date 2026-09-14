@@ -32,6 +32,72 @@ export function storageStatePath(uid: string): string {
 }
 
 /**
+ * A request context that provisions accounts WITHOUT a session.
+ *
+ * 🔴 PROVISIONING THROUGH THE ADMIN'S CAPTURED SESSION IS TIME-BOMBED, and the
+ * bomb goes off silently until a suite grows past half an hour. Nextcloud gates
+ * sensitive admin actions behind a password confirmation that expires thirty
+ * minutes after login, and `global-setup.ts` captures the admin session ONCE at
+ * the start of the run. MEASURED on run 34588078558: the admin session was
+ * captured at 10:16, `vth-inspection-result-authz.spec.ts` reached its
+ * `beforeAll` 36 minutes later, and `ensureUser` came back with
+ *
+ *     HTTP 403, OCS 403 Password confirmation is required
+ *
+ * which names neither the session nor the clock. Nothing was wrong with the
+ * account, the credentials or the API.
+ *
+ * The failure is a function of WHERE a spec sorts in the run, so a spec that
+ * provisions can pass for months and then break because an unrelated spec was
+ * added ahead of it. `dashboard-tiles.spec.ts` provisions through this too.
+ * `integrations-page.spec.ts` provisions no account at all: its non-admin
+ * comes from `ci-seed.sh`, for this same reason.
+ *
+ * Basic auth removes the clock rather than racing it. Password confirmation is
+ * a property of a SESSION, and a request that carries no session cookie has no
+ * confirmation to expire. It also needs no CSRF token, for the reason
+ * `ensureUser` documents below: `OCS-APIRequest` short-circuits the CSRF check
+ * for exactly the requests that carry no session.
+ *
+ * The header is set explicitly rather than through Playwright's
+ * `httpCredentials`, which by default waits to be challenged with a 401. OCS
+ * answers an unauthenticated call with a 200 carrying an OCS status instead, so
+ * the challenge never arrives and the credentials are never sent.
+ *
+ * @param playwright The Playwright module (from the test fixture).
+ * @param baseURL    The instance under test.
+ * @return A request context authenticated as the admin, with no session.
+ */
+export async function provisioningContext(
+	playwright: { request: { newContext: (o: any) => Promise<APIRequestContext> } },
+	baseURL: string,
+): Promise<APIRequestContext> {
+	const user = process.env.ADMIN_USER ?? 'admin'
+	const password = process.env.ADMIN_PASSWORD ?? 'admin'
+	const basic = Buffer.from(`${user}:${password}`).toString('base64')
+
+	return playwright.request.newContext({
+		baseURL,
+		// 🔴 AN EXPLICIT EMPTY JAR, OR THE ADMIN'S SESSION RIDES ALONG.
+		// Inside a test, Playwright fills every option a `request.newContext`
+		// call leaves out from the project's `use` block
+		// (`runBeforeCreateRequestContext` in @playwright/test 1.63), and that
+		// block names the admin's captured `storageState`. So without this line
+		// the context sent the stale session cookie AND the basic credentials,
+		// and Nextcloud answered from the session. Measured on proof run
+		// 34603140073: with the password here replaced by one the instance
+		// refuses, whoami still answered `admin` and provisioning still
+		// succeeded, so the whoami check could not tell the two apart and the
+		// "no session" this helper promises was not true.
+		storageState: { cookies: [], origins: [] },
+		extraHTTPHeaders: {
+			Authorization: `Basic ${basic}`,
+			'OCS-APIRequest': 'true',
+		},
+	})
+}
+
+/**
  * Create a Nextcloud account if it is not already there.
  *
  * Over the OCS provisioning API rather than `occ`, deliberately. `occ` is

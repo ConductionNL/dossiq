@@ -83,17 +83,22 @@ class StufFieldMappingService {
 	/**
 	 * Confidentiality enum mapping: StUF value -> internal value.
 	 *
+	 * The internal values are the case schema's ZGW vertrouwelijkheidaanduiding
+	 * enum, which is Dutch by statute (dossiq#1841). They used to be English,
+	 * which that enum refuses, and the reverse lookup then missed every stored
+	 * level and upper-cased it instead, sending `BEPERKT_OPENBAAR`.
+	 *
 	 * @var array<string, string>
 	 */
 	private const CONFIDENTIALITY_MAP = [
-		'OPENBAAR' => 'public',
-		'BEPERKT OPENBAAR' => 'restricted',
-		'INTERN' => 'internal',
-		'ZAAKVERTROUWELIJK' => 'case_sensitive',
-		'VERTROUWELIJK' => 'confidential',
-		'CONFIDENTIEEL' => 'highly_confidential',
-		'GEHEIM' => 'secret',
-		'ZEER GEHEIM' => 'top_secret',
+		'OPENBAAR' => 'openbaar',
+		'BEPERKT OPENBAAR' => 'beperkt_openbaar',
+		'INTERN' => 'intern',
+		'ZAAKVERTROUWELIJK' => 'zaakvertrouwelijk',
+		'VERTROUWELIJK' => 'vertrouwelijk',
+		'CONFIDENTIEEL' => 'confidentieel',
+		'GEHEIM' => 'geheim',
+		'ZEER GEHEIM' => 'zeer_geheim',
 	];
 
 	/**

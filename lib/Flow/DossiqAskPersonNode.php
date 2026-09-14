@@ -72,7 +72,7 @@ use UnexpectedValueException;
  * two asks had the second read the answer given to the first.
  *
  * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One over the threshold, and
  *     every dependency is load-bearing: the node speaks OpenRegister's whole
@@ -150,7 +150,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return void
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function __construct(
         private readonly AssigneeResolver $assignees,
@@ -172,7 +172,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return string The namespaced node id.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getId(): string {
         return 'dossiq.askPerson';
@@ -185,7 +185,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return string The translated name.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getDisplayName(): string {
         return $this->l10n->t('Ask a person');
@@ -198,7 +198,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return string The translated description.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getDescription(): string {
         return $this->l10n->t('Create a task for somebody and pause the case until they complete it.');
@@ -211,7 +211,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return string The icon name.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function getIcon(): string {
         return 'account-question';
@@ -226,7 +226,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return boolean True when available in this scope.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function isAvailableForScope(int $scope): bool {
         return in_array($scope, [IManager::SCOPE_ADMIN, IManager::SCOPE_USER], true);
@@ -243,7 +243,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @throws UnexpectedValueException When the question or the assignee is missing.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
         if (trim((string) ($config['question'] ?? '')) === '') {
@@ -285,7 +285,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *                          gone, or the ask was withdrawn.
      *
      * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function execute(array $items, array $config, array $context): array {
         $this->validateConfig(config: $config);
@@ -513,7 +513,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @throws RuntimeException When there is no case to attach a task to.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function caseIdFrom(array $items): string {
         $case  = [];
@@ -580,7 +580,7 @@ class DossiqAskPersonNode implements IFlowNode {
      * @throws RuntimeException When neither the assignee nor its declared
      *                          fallback resolves to a principal.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function renderedAssignee(array $config, array $items): string {
         $case  = [];
@@ -621,7 +621,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @return array The task to persist.
      *
-     * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function buildTask(string $caseId, string $assignee, array $config, array $context, FlowNodeResumeState $resume): array {
         $task = [

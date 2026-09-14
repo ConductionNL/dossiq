@@ -77,6 +77,103 @@ export function isTerminal(task) {
 	return TERMINAL_STATES.includes(String(task.state ?? '').trim())
 }
 
+/**
+ * The signed distance to a task's deadline, in whole days.
+ *
+ * The engine reports the two directions in two fields and never both.
+ * `TaskInboxService::row()` attaches a projection per row: `daysUntilDue`
+ * counts down and is null once the deadline has passed, `daysOverdue`
+ * counts up and is null before it. A "days left" column reads one signed
+ * number, with an overdue task carrying a negative one, so the two are
+ * folded here rather than in each widget.
+ *
+ * Derived on the server, never stored, so this reads the projection and
+ * does not recompute it from `dueAt`. A second clock in the client would
+ * disagree with the badge the engine already decided.
+ *
+ * @param {object|null|undefined} task The engine row.
+ * @return {number|null} Days left, negative when overdue, null with no deadline.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function signedDaysUntilDue(task) {
+	if (!task || typeof task !== 'object') {
+		return null
+	}
+
+	if (typeof task.daysOverdue === 'number') {
+		// `-0` prints as "0" but fails a `< 0` test, so a task overdue by
+		// less than a day stays a plain zero rather than a negative one.
+		return task.daysOverdue === 0 ? 0 : -task.daysOverdue
+	}
+
+	if (typeof task.daysUntilDue === 'number') {
+		return task.daysUntilDue
+	}
+
+	return null
+}
+
+/**
+ * One engine row in the vocabulary dossiq's components read.
+ *
+ * 🔴 THE WRITE PATH MAPPED AND THE READ PATH DID NOT, and the result was a
+ * task due today rendering "No due date" on the case pane. `create()` has
+ * translated `dueDate` to the engine's `dueAt` since the first day; rows
+ * came back raw, so every consumer that asked for `row.dueDate` got
+ * `undefined` and rendered its empty state. Nothing failed: an absent
+ * deadline is a legitimate value, so the surfaces looked correct.
+ *
+ * Mapped HERE rather than in each component, for the same reason
+ * `EngineTaskInbox::asArray()` does it in one place on the server: five
+ * surfaces read these rows, and a sixth is coming.
+ *
+ * The engine's own keys are KEPT alongside, not replaced. `isTerminal()`
+ * reads `state`, the row-click handlers read `uuid`, and the task page
+ * needs both spellings while it still talks to two stores.
+ *
+ * @param {object} row The engine row.
+ * @return {object} The row, plus the register's names for the same values.
+ * @spec openspec/changes/remove-casetask/tasks.md
+ */
+export function asTaskRow(row) {
+	if (!row || typeof row !== 'object') {
+		return row
+	}
+
+	// Only keys that resolve to something are added. Writing
+	// `dueDate: undefined` onto every row would make a task with no deadline
+	// carry the key anyway, which reads as "we looked and there is one" to
+	// anything doing `'dueDate' in row` and shows up in every diff.
+	// 🔴 `uuid` WINS OVER `id`, AND THE OTHER THREE TAKE THE REGISTER NAME
+	// FIRST. Every engine row carries BOTH: `Task::jsonSerialize()` emits
+	// `id` (the database primary key) beside `uuid`, so `row.id ?? row.uuid`
+	// never once reached the uuid and this mapping was a no-op on real data.
+	// No route or verb accepts the numeric key: `/tasks/:id` and every
+	// `/api/flow-tasks/{uuid}/…` verb take the uuid, so three surfaces
+	// (MyTasksWidget, TaskRemindersWidget, CaseTasksTab) built a deep link
+	// like `/apps/dossiq/tasks/153` that resolves to nothing. It answered no
+	// error, it just went nowhere. `taskIdOf()` in `caseTaskPaneHelpers.js`
+	// already reads uuid first, and this is the same precedence in the one
+	// place every reader goes through.
+	//
+	// The other three keep `row.<registerName> ?? row.<engineName>`: unlike
+	// `id`, none of them is emitted by the engine at all, so the register
+	// name is only ever present on a row that already carries it.
+	const mapped = { ...row }
+	for (const [name, value] of [
+		['id', row.uuid ?? row.id],
+		['status', row.status ?? row.state],
+		['dueDate', row.dueDate ?? row.dueAt],
+		['case', row.case ?? row.objectUuid],
+	]) {
+		if (value !== undefined && value !== null) {
+			mapped[name] = value
+		}
+	}
+
+	return mapped
+}
+
 export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 	state: () => ({
 		/** @type {Array<object>} The rows of the most recent list. */
@@ -112,7 +209,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(generateUrl(FLOW_TASKS_URL), {
 					params,
 				})
-				this.tasks = response.data?.results ?? []
+				this.tasks = (response.data?.results ?? []).map(asTaskRow)
 				this.total = Number(response.data?.total ?? this.tasks.length) || 0
 				return this.tasks
 			} catch (error) {
@@ -171,7 +268,9 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				const response = await axios.get(
 					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}`),
 				)
-				this.task = response.data?.results ?? response.data ?? null
+				this.task = asTaskRow(
+					response.data?.results ?? response.data ?? null,
+				)
 				return this.task
 			} catch (error) {
 				this.error = error?.message || String(error)
@@ -293,6 +392,173 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				return null
 			} finally {
 				this.loading = false
+			}
+		},
+
+		/**
+		 * Toggle one checklist item on a task.
+		 *
+		 * A PATCH rather than a verb POST, and the flag rides the query
+		 * string, because that is the route the engine registers
+		 * (`task#checkItem`, `PATCH /flow-tasks/{uuid}/checklist/{itemId}`).
+		 * Kept beside `invoke()` rather than folded into it: `invoke` builds
+		 * a two-segment verb URL and posts a body, and widening it to carry
+		 * a third segment and a method would make every caller pass three
+		 * arguments to say nothing.
+		 *
+		 * @param {string} uuid The engine task uuid.
+		 * @param {string} itemId The checklist item id.
+		 * @param {boolean} checked The new state.
+		 * @return {Promise<object|null>} The updated task, or null on refusal.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async checkItem(uuid, itemId, checked) {
+			const id = String(uuid ?? '').trim()
+			const item = String(itemId ?? '').trim()
+			if (id === '' || item === '') {
+				return null
+			}
+
+			this.loading = true
+			this.error = null
+			try {
+				const url = generateUrl(
+					`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/checklist/${encodeURIComponent(item)}`,
+				)
+				const response = await axios.patch(url, null, {
+					params: { checked: checked === true ? 'true' : 'false' },
+				})
+				this.task = response.data?.results ?? response.data ?? null
+				return this.task
+			} catch (error) {
+				this.error =
+					error?.response?.data?.message || error?.message || String(error)
+				return null
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Read one of a task's leaves.
+		 *
+		 * 🔴 THESE DO NOT TOUCH `task`, `tasks`, `loading` OR `error`. A leaf
+		 * is read while the task itself is on screen, so writing the shared
+		 * error would make an unreadable notes list look like an unreadable
+		 * TASK, and the page would replace a perfectly good record with a
+		 * failure. The outcome is returned instead, and each leaf reports its
+		 * own.
+		 *
+		 * They live here rather than in a service module because this file is
+		 * dossiq's whole seam onto the engine: a second module calling
+		 * `/api/flow-tasks/...` is the duplicate read this migration exists to
+		 * remove.
+		 *
+		 * @param {string} uuid The engine task uuid.
+		 * @param {string} leaf The leaf path segment: `notes`, `events` or `audit`.
+		 * @return {Promise<{results: Array<object>, error: string|null}>} The rows, or the failure.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async readLeaf(uuid, leaf) {
+			const id = String(uuid ?? '').trim()
+			const name = String(leaf ?? '').trim()
+			if (id === '' || name === '') {
+				return { results: [], error: null }
+			}
+
+			try {
+				const response = await axios.get(
+					generateUrl(
+						`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(name)}`,
+					),
+				)
+				const rows = response.data?.results ?? response.data ?? []
+				return {
+					results: Array.isArray(rows) === true ? rows : [],
+					error: null,
+				}
+			} catch (error) {
+				return {
+					results: [],
+					error:
+						error?.response?.data?.error
+						|| error?.response?.data?.message
+						|| error?.message
+						|| String(error),
+				}
+			}
+		},
+
+		/**
+		 * Write a note onto a task.
+		 *
+		 * The endpoint takes one field, `message`, and answers with the
+		 * created note bare rather than in a `results` envelope. Both are the
+		 * controller's contract, not a guess:
+		 * `TaskNotesController::create()` refuses an empty or whitespace-only
+		 * message with a 400 naming the field.
+		 *
+		 * @param {string} uuid The engine task uuid.
+		 * @param {string} message The note text.
+		 * @return {Promise<{note: object|null, error: string|null}>} The note, or the failure.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async writeNote(uuid, message) {
+			const id = String(uuid ?? '').trim()
+			const text = String(message ?? '').trim()
+			if (id === '' || text === '') {
+				return { note: null, error: null }
+			}
+
+			try {
+				const response = await axios.post(
+					generateUrl(`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/notes`),
+					{ message: text },
+				)
+				return { note: response.data ?? null, error: null }
+			} catch (error) {
+				return {
+					note: null,
+					error:
+						error?.response?.data?.error
+						|| error?.response?.data?.message
+						|| error?.message
+						|| String(error),
+				}
+			}
+		},
+
+		/**
+		 * Remove a note from a task.
+		 *
+		 * @param {string} uuid The engine task uuid.
+		 * @param {string|number} noteId The note's id.
+		 * @return {Promise<{removed: boolean, error: string|null}>} The outcome.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async removeNote(uuid, noteId) {
+			const id = String(uuid ?? '').trim()
+			const note = String(noteId ?? '').trim()
+			if (id === '' || note === '') {
+				return { removed: false, error: null }
+			}
+
+			try {
+				await axios.delete(
+					generateUrl(
+						`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/notes/${encodeURIComponent(note)}`,
+					),
+				)
+				return { removed: true, error: null }
+			} catch (error) {
+				return {
+					removed: false,
+					error:
+						error?.response?.data?.error
+						|| error?.response?.data?.message
+						|| error?.message
+						|| String(error),
+				}
 			}
 		},
 	},

@@ -781,10 +781,29 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15b: General tab content
 
+@e2e exclude Three of the fields this scenario enumerates cannot be honestly
+asserted today, and one of them is a defect rather than a gap. `serviceTarget`
+IS rendered by `GeneralTab.vue` and DOES take input, but it is declared in no
+schema, so OpenRegister discards it on save while the page reports success:
+measured 2026-09-12, a write of `serviceTarget: "P14D"` came back absent from a
+fresh read while `suspensionAllowed` on the same write survived. See #2592. A
+test asserting the field renders would pass and would certify data loss, which
+is worse than no test. `suspensionAllowed` is in the schema but `GeneralTab`
+renders no control for it, and `isDraft` (the published/draft status this
+scenario names) has no control on this tab either. The exclusion is protective,
+not stale: the rendered control a later reader will see is exactly the problem.
+
 - GIVEN the admin on the "General" tab
 - THEN the tab MUST display editable fields for: title, description, purpose, trigger, subject, processing deadline (with ISO 8601 helper), service target, extension allowed (with conditional period), suspension allowed, origin, confidentiality, publication required (with conditional text), valid from, valid until, status (published/draft)
 
 #### Scenario CT-15c: Statuses tab content
+
+@e2e exclude The ordered list, the drag handles, the order number, the name,
+the isFinal checkbox and the Add control all ship. `notifyInitiator`, with its
+conditional text field, does not exist: it is absent from the `statusType`
+schema and from `StatusesTab.vue`. Asserting only the clauses that happen to
+pass would be the shape this programme exists to remove, so the scenario is
+excluded whole until the field is built or the clause is dropped.
 
 - GIVEN the admin on the "Statuses" tab
 - THEN the tab MUST display an ordered list of status types with drag handles
@@ -807,12 +826,24 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15f: Properties tab content (V1)
 
+@e2e exclude Wording drift only, and recorded rather than repaired so nobody
+re-opens it: every clause ships. The scenario says "format" and
+`PropertiesTab.vue` labels the control Type while binding the `format` field,
+so the requirement holds and the label does not match it. Worth one rename in
+whichever direction the product prefers; not worth a test asserting a label.
+
 - GIVEN the admin on the "Properties" tab
 - THEN the tab MUST display a list of property definitions
 - AND each property MUST show: name, format, max length (if set), required at status (if set)
 - AND an "Add" button MUST be available
 
 #### Scenario CT-15g: Docs tab content (V1)
+
+@e2e exclude The Docs tab ships and lists document types with a name and an
+Add control, but `direction` (incoming/internal/outgoing) exists in neither the
+`documentType` schema nor `DocumentTypesTab.vue`. The tab instead shows
+Category and Confidentiality, which this scenario does not mention, so the
+requirement and the surface have drifted apart in both directions.
 
 - GIVEN the admin on the "Docs" tab
 - THEN the tab MUST display a list of document types
@@ -933,6 +964,19 @@ leave cases in a hidden status out unless you ask for closed cases.
 - **WHEN** you open the Workflow board for that type
 - **THEN** the In behandeling column header SHALL render in the orange token
 
+#### Scenario: A coloured status shows on the case
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status In behandeling of a type has the colour orange
+- **WHEN** you open a case currently in that status
+- **THEN** the case's status badge SHALL render in the orange token
+
+> **Added 2026-09-12.** REQ-CT-19 has always said "the status badge on the case
+> AND the Workflow board column", and only the board half had a scenario. The
+> case half had a test and nothing for it to cite, so it was anchorless and
+> credited nothing. The badge is where a handler actually reads the status, so
+> the half without a scenario was the half that matters most.
+
 #### Scenario: A hidden status keeps its cases out of the list
 @e2e tests/e2e/case-type-authoring-extras.spec.ts
 
@@ -961,15 +1005,23 @@ parent's. A chain that returns to itself SHALL be refused on save.
 - **THEN** its Statuses tab SHALL list the four statuses marked Inherited
 
 #### Scenario: A child overrides one deadline
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** Bezwaar has a processing deadline of 12 weeks
 - **AND** Bezwaar (verkort) sets its own deadline to 6 weeks
 - **WHEN** you file a case of Bezwaar (verkort)
 - **THEN** the case's deadline SHALL be 6 weeks after its start date
 
+#### Scenario: A child inherits a deadline it does not declare
+@e2e tests/e2e/case-type-parent-chain.spec.ts
+
+- **GIVEN** Bezwaar has a processing deadline of 12 weeks
+- **AND** Bezwaar (standaard) names Bezwaar as its parent and sets no deadline of its own
+- **WHEN** you file a case of Bezwaar (standaard)
+- **THEN** the case's deadline SHALL be 12 weeks after its start date
+
 #### Scenario: A cycle is refused
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-parent-chain.spec.ts
 
 - **GIVEN** Bezwaar (verkort) names Bezwaar as its parent
 - **WHEN** you set Bezwaar's parent to Bezwaar (verkort) and save
@@ -988,7 +1040,7 @@ back any property the schema does not declare.
 **Feature tier**: MVP
 
 #### Scenario: A functional administrator gives a status a colour and a role
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a case type with a status called In behandeling
 - **WHEN** the administrator edits it, picks the colour orange and the role in progress, and saves
@@ -996,7 +1048,7 @@ back any property the schema does not declare.
 - **AND** a flow addressing the in-progress role SHALL resolve to this status
 
 #### Scenario: A status asks for a checklist
-@e2e tests/e2e/case-type-authoring-extras.spec.ts
+@e2e tests/e2e/case-type-status-authoring.spec.ts
 
 - **GIVEN** a status being edited
 - **WHEN** the administrator adds the checklist item Check identity and marks it required
@@ -1110,6 +1162,59 @@ repair step SHALL report the counts it converted rather than reporting success.
 - **WHEN** a handler opens `/subsidieregelingen`
 - **THEN** no scheme index SHALL render, tested on the page's own create control rather than a heading
 - **AND** the page SHALL NOT show a server error
+
+### Requirement: Creating a case type asks the twelve authoring fields, in two columns (REQ-CT-24)
+
+The Add control on the Case types index SHALL open a form scoped to the fields
+an author fills when naming a new blueprint, laid out in two columns at large
+dialog width.
+
+The form SHALL ask for `title`, `identifier`, `category`, `handlingModel`,
+`confidentiality`, `processingDeadline`, `validFrom`, `isDraft`,
+`parentCaseType`, `description`, `purpose` and `trigger`, and SHALL NOT ask for
+the other twenty-nine properties the `caseType` schema declares. Every field it
+omits SHALL remain editable on the case type's own detail page, so narrowing the
+create form takes nothing away.
+
+The form SHALL open on `title`. Not one of the schema's properties carries an
+`order`, so the field sort falls through to alphabetical and an unordered form
+opens on `category` with `title` in tenth place.
+
+`description`, `purpose` and `trigger` SHALL render as multi-line fields and
+SHALL span both columns. The schema declares all three as plain strings with no
+`maxLength`, which resolves to a single-line input for what is a paragraph.
+
+The form SHALL NOT ask for `initialStatus`. It is a reference to a `statusType`
+filtered by `caseType`, and at create time the case type has no id and therefore
+no statuses, so the picker would fetch unfiltered and offer every other type's
+statuses. A type's statuses are authored on its detail page, once it exists.
+
+#### Scenario: The create form asks the twelve authoring fields and not the rest
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the Add control on the Case types index
+- **THEN** the form SHALL ask for each of the twelve authoring fields
+- **AND** it SHALL NOT ask for the versioning, relation, privacy or specialist coding fields
+
+#### Scenario: The form opens on the title rather than alphabetically
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the first field SHALL be the title
+- **AND** the fields SHALL follow the declared authoring order rather than an alphabetical one
+
+#### Scenario: The fields are laid out in two columns
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** the single-line fields SHALL occupy exactly two columns, measured from their rendered positions rather than from a class name
+- **AND** the three prose fields SHALL each span the full width of the form
+
+#### Scenario: The starting status is not asked for at create time
+@e2e tests/e2e/case-type-create-form.spec.ts
+
+- **WHEN** an author opens the create form
+- **THEN** it SHALL NOT offer a starting status field
 
 ## UI References
 

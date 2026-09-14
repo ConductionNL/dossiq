@@ -37,14 +37,17 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	cleanupFlowTasks,
 	cleanupRunObjects,
-	createObject,
 	getRequestToken,
+	invokeFlowTask,
+	listFlowTasks,
 	listObjects,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedFlowTask,
 	seedStateMachine,
 	showObject,
 	updateObject,
@@ -52,6 +55,7 @@ import {
 import {
 	dateTokenPattern,
 	dismissSupportDialog,
+	PAGE_LOAD,
 	tickCheckbox,
 } from './helpers/nav.ts'
 
@@ -77,7 +81,15 @@ let statusReceived = ''
 let statusDone = ''
 
 const cases: Record<string, string> = {}
+/** Engine task uuids, by the key this spec refers to them by. */
 const tasks: Record<string, string> = {}
+/**
+ * Whether the instance's OpenRegister answers the `dueAfter`/`dueBefore`
+ * inbox predicates. Probed in `beforeAll` against the live endpoint rather
+ * than read off a version string, so the window scenarios start running by
+ * themselves the moment the instance gains them.
+ */
+let dueWindowSupported = false
 
 /**
  * A `YYYY-MM-DD` date `offset` days from today, in local time.
@@ -90,6 +102,34 @@ function day(offset: number): string {
 	const month = String(d.getMonth() + 1).padStart(2, '0')
 	const date = String(d.getDate()).padStart(2, '0')
 	return `${d.getFullYear()}-${month}-${date}`
+}
+
+/**
+ * An ISO instant `offset` days from today at `hour`:`minute` LOCAL time.
+ *
+ * 🔴 THE ENGINE COMPARES INSTANTS, NOT DATE STRINGS. `caseTask.dueDate` was
+ * matched against `@today` lexically, so `2026-09-10T09:00` sorted after the
+ * bare date `2026-09-10` and a task due at nine this morning counted as due
+ * TODAY all day long. OpenRegister's engine derives `overdue` as
+ * `dueAt < now` on real instants (`TaskTemporalProjection`), so that same
+ * nine-o'clock task is genuinely late from 09:01. Every dated fixture below
+ * therefore states the time it means.
+ *
+ * @param offset Days ahead; negative for the past.
+ * @param hour   Local hour of day.
+ * @param minute Local minute.
+ */
+function instant(offset: number, hour: number, minute = 0): string {
+	const now = new Date()
+	return new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate() + offset,
+		hour,
+		minute,
+		0,
+		0,
+	).toISOString()
 }
 
 /**
@@ -131,7 +171,7 @@ async function seed(key: string, fields: Record<string, unknown>): Promise<strin
  * @param url  Where to go.
  */
 async function visit(page: Page, url: string): Promise<void> {
-	await page.goto(url)
+	await page.goto(url, PAGE_LOAD)
 	await dismissSupportDialog(page)
 }
 
@@ -267,6 +307,53 @@ async function narrowToThisRun(page: Page): Promise<void> {
  * @param page    The page.
  * @param present The key of a row the active lens must show.
  */
+/**
+ * Record every task-inbox request the page makes, from now on.
+ *
+ * The Tasks index is a NAMED source, so its predicates never reach the URL
+ * the way the Cases index's do: they go straight onto the engine's own
+ * endpoint. Reading them off the wire is therefore the only way to say what
+ * a chip asked for, as opposed to what came back.
+ *
+ * @param page The page, hooked before the navigation that triggers the load.
+ *
+ * @return The captured query strings, newest last.
+ */
+function inboxQueries(page: Page): URLSearchParams[] {
+	const seen: URLSearchParams[] = []
+	page.on('request', (request) => {
+		const url = request.url()
+		if (url.includes('/api/flow-tasks') === true) {
+			seen.push(new URL(url).searchParams)
+		}
+	})
+	return seen
+}
+
+/**
+ * The first captured inbox request carrying `key`, once one arrives.
+ *
+ * Polled rather than read once: a chip click re-fetches asynchronously, and
+ * the page has already made its own unfiltered load before the click.
+ *
+ * @param seen The array `inboxQueries` returned.
+ * @param key  The predicate the lens under test must send.
+ *
+ * @return That request's query string.
+ */
+async function firstQueryWith(
+	seen: URLSearchParams[],
+	key: string,
+): Promise<URLSearchParams> {
+	await expect
+		.poll(() => seen.some((query) => query.get(key) !== null), {
+			message: `no task-inbox request carried \`${key}\``,
+			timeout: 30_000,
+		})
+		.toBe(true)
+	return seen.find((query) => query.get(key) !== null) as URLSearchParams
+}
+
 async function listSettled(page: Page, present: string): Promise<void> {
 	await expect(row(page, present).first()).toBeVisible({ timeout: 30_000 })
 }
@@ -275,6 +362,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test.setTimeout(300_000)
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
+		// 🔴 THE DESCRIBE'S `test.setTimeout` DOES NOT REACH THIS HOOK.
+		// It sets the budget for TESTS; a hook keeps the 30s default until
+		// `test.setTimeout` is called inside it. This hook seeds a state
+		// machine, six cases and six engine tasks and then probes the due
+		// window, which is past 30s on a loaded instance: measured
+		// 2026-09-12, every test in this file failed as `"beforeAll" hook
+		// timeout of 30000ms exceeded` and the file read as a broken lens
+		// suite rather than as a hook that ran out of time.
+		test.setTimeout(300_000)
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
 
@@ -349,51 +445,118 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		// The tasks the six chips on the Tasks index have to tell apart.
 		//
-		// The four dated ones carry a FULL ISO instant, not a bare date,
-		// because `caseTask.dueDate` is `format: date-time` while
-		// `case.deadline` is `format: date`, and the two windows are compared
-		// the same way. OpenRegister casts only numeric columns, so
-		// `dueDate[lt]=2026-09-08` is a string comparison, and
-		// `2026-09-08T09:00:00+00:00` sorts AFTER the bare `2026-09-08`. That
-		// is what makes a task due at nine this morning due TODAY rather than
-		// overdue, and `task-due-today` is here to hold that boundary rather
-		// than leave it to a reader to re-derive from the collation rules.
-		for (const [key, fields] of Object.entries({
-			'task-mine': { assignee: ME, status: 'active' },
-			'task-other': { assignee: OTHER, status: 'active' },
-			'task-unclaimed': { status: 'active' },
-			'task-done': { status: 'completed' },
-			'task-overdue': {
-				assignee: OTHER,
-				status: 'active',
-				dueDate: `${day(-2)}T09:00:00+00:00`,
-			},
-			'task-due-today': {
-				assignee: OTHER,
-				status: 'active',
-				dueDate: `${day(0)}T09:00:00+00:00`,
-			},
-			'task-this-week': {
-				assignee: OTHER,
-				status: 'active',
-				dueDate: `${day(2)}T09:00:00+00:00`,
-			},
-			'task-next-month': {
-				assignee: OTHER,
-				status: 'active',
-				dueDate: `${day(30)}T09:00:00+00:00`,
-			},
+		// 🔴 ENGINE ROWS, NOT OBJECTS. dossiq#2408 retyped this index to
+		// `entitySource: "tasks"`, OpenRegister's task engine. A fixture that
+		// posts `/api/objects/dossiq/caseTask` writes a table no surface reads,
+		// so every lens below waited out its timeout on a row that was never
+		// going to arrive — a failure that reads as a broken list rather than
+		// as a fixture pointing at the wrong store.
+		//
+		// Three field names travel with the table (`case` → `objectUuid`,
+		// `status` → `state`, `dueDate` → `dueAt`) and one MEANING does: see
+		// `instant()` for why the "due later today" fixture is the end of the
+		// day rather than nine in the morning.
+		const laterToday = instant(0, 23, 59)
+		expect(
+			new Date(laterToday).getTime(),
+			'the "due later today" fixture must still be in the future; this spec '
+				+ 'cannot be started in the last minute of the day',
+		).toBeGreaterThan(Date.now())
+
+		tasks['task-mine'] = await seedFlowTask(api, token, {
+			title: `${RUN_PREFIX} task-mine`,
+			objectUuid: cases['mine-open'],
+			assignee: ME,
+			state: 'active',
+		})
+		tasks['task-other'] = await seedFlowTask(api, token, {
+			title: `${RUN_PREFIX} task-other`,
+			objectUuid: cases['mine-open'],
+			assignee: OTHER,
+			state: 'active',
+		})
+		// Pooled is TWO facts, not one: no assignee AND the caller in the
+		// candidate pool. The engine's `scope=pooled` is an EXISTS over the
+		// candidate index, so a task left merely unassigned is in nobody's
+		// pool and the Unclaimed lens would correctly not show it.
+		tasks['task-unclaimed'] = await seedFlowTask(api, token, {
+			title: `${RUN_PREFIX} task-unclaimed`,
+			objectUuid: cases['mine-open'],
+			state: 'available',
+			candidateUsers: [ME],
+		})
+		// Completed through the VERB. The engine refuses a task born terminal
+		// ("it reaches that state through a lifecycle verb"), and driving it
+		// there is also the transition a person makes.
+		tasks['task-done'] = await seedFlowTask(api, token, {
+			title: `${RUN_PREFIX} task-done`,
+			objectUuid: cases['mine-open'],
+			assignee: ME,
+			state: 'active',
+		})
+		await invokeFlowTask(api, token, tasks['task-done'], 'complete')
+
+		for (const [key, dueAt] of Object.entries({
+			'task-overdue': instant(-2, 9),
+			'task-due-today': laterToday,
+			'task-this-week': instant(2, 9),
+			'task-next-month': instant(30, 9),
 		})) {
-			const created = await createObject(api, token, 'caseTask', {
+			tasks[key] = await seedFlowTask(api, token, {
 				title: `${RUN_PREFIX} ${key}`,
-				case: cases['mine-open'],
-				...fields,
+				objectUuid: cases['mine-open'],
+				assignee: OTHER,
+				state: 'active',
+				dueAt,
 			})
-			tasks[key] = objectId(created)
 		}
+
+		// The completion has to have LANDED before a Closed or a Mine lens is
+		// read: `isTerminal` is what those two chips filter on, and a read-back
+		// here names the cause once instead of leaving two browser scenarios to
+		// time out on a row whose state never changed.
+		const closed = await listFlowTasks(api, {
+			scope: 'all',
+			isTerminal: 'true',
+			// Anchored on the case every task above hangs off, so an API read
+			// here is exact rather than page one of the instance's inbox.
+			objectUuid: cases['mine-open'],
+			limit: '200',
+		})
+		expect(
+			closed.map((t: any) => String(t.uuid)),
+			'the completed task must be terminal in the engine',
+		).toContain(tasks['task-done'])
+
+		// Does this OpenRegister answer the due-window predicates at all?
+		// They arrived in openregister 2.1.4 (openregister#3581); an older
+		// instance DROPS them silently — Nextcloud hands a controller only the
+		// parameters it declares — and the window then answers everything
+		// non-terminal. Probed by behaviour rather than by version string: a
+		// task due in thirty days coming back inside a seven-day window is the
+		// filter not being applied.
+		const probeWindow = await listFlowTasks(api, {
+			scope: 'all',
+			isTerminal: 'false',
+			dueAfter: instant(0, 0),
+			dueBefore: instant(7, 0),
+			objectUuid: cases['mine-open'],
+			limit: '200',
+		})
+		const probeUuids = probeWindow.map((t: any) => String(t.uuid))
+		expect(
+			probeUuids,
+			'a task due in two days is inside a seven-day window on every version',
+		).toContain(tasks['task-this-week'])
+		dueWindowSupported = probeUuids.includes(tasks['task-next-month']) === false
 	})
 
 	test.afterAll(async () => {
+		// The engine tasks first, and separately: a flow task is not an
+		// OpenRegister object, so `cleanupRunObjects` cannot see it however
+		// the prefix is spelled, and the engine publishes no delete — cancel
+		// terminates rather than erases.
+		await cleanupFlowTasks(api, token)
 		await cleanupRunObjects(api, token)
 		await api.dispose()
 	})
@@ -402,7 +565,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// my-work — Lenses on the Cases index
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#all-is-the-lens-you-land-on-mine-is-one-click-away
 	test('All is the lens you land on, and Mine is one click away', async ({
 		page,
 	}) => {
@@ -422,7 +585,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'other-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#unclaimed-shows-what-nobody-has-picked-up
 	test('Unclaimed shows what nobody has picked up, and the Queue agrees', async ({
 		page,
 	}) => {
@@ -444,7 +607,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#all-shows-every-open-and-closed-case
 	test("All shows the other person's case and the closed one", async ({
 		page,
 	}) => {
@@ -459,7 +622,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		})
 	})
 
-	// @e2e openspec/specs/my-work/spec.md
+	// @e2e openspec/specs/my-work/spec.md#chips-replace-each-other
 	test('choosing a chip replaces the previous one rather than stacking', async ({
 		page,
 	}) => {
@@ -487,7 +650,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// case-management — open work by default, closed work on request
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-closed-case-leaves-mine
 	test('a closed case leaves Mine', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -497,7 +660,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-closed')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#closed-shows-the-closed-case
 	test('Closed shows the closed case and not the open one', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -511,7 +674,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// signalering-widgets — the countdown Deadline column
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#days-left-on-each-row
 	test('the Deadline cell counts the days left', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -525,7 +688,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(cell).not.toHaveClass(/is-overdue/)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#past-due-reads-red
 	test('a past deadline reads as overdue, and carries the overdue class', async ({
 		page,
 	}) => {
@@ -543,7 +706,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(cell).toHaveClass(/is-overdue/)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#overdue-shows-only-open-cases-past-their-deadline
 	test('Overdue shows the open overdue case only', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
@@ -554,7 +717,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#due-this-week-shows-the-case-due-in-three-days-and-neither-neighbour
 	test('Due this week shows the case due in three days and neither neighbour', async ({
 		page,
 	}) => {
@@ -573,7 +736,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'mine-overdue')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// @e2e openspec/specs/signalering-widgets/spec.md#the-overdue-tile-keeps-its-filter
 	test('the Overdue stat tile links to exactly the Overdue chip filter', async ({
 		page,
 	}) => {
@@ -599,9 +762,18 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 	// ---------------------------------------------------------------------
 	// task-management — the same six chips on Tasks
+	//
+	// The Tasks index is the ENGINE's inbox since dossiq#2408
+	// (`entitySource: "tasks"`), so what each chip means changed underneath
+	// even though the six labels did not: the lenses send `scope`,
+	// `isTerminal`, `overdue` and the two due-window predicates rather than
+	// object filters over a `caseTask` schema. `scope` is set explicitly on
+	// every one of them, because the endpoint defaults to `scope=assigned`
+	// and a lens that left it off would quietly mean "my closed tasks" where
+	// this list has always meant "closed tasks".
 	// ---------------------------------------------------------------------
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#all-is-the-default-lens-on-tasks-mine-is-one-click-away
 	test('the Tasks index lands on All and offers Mine', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
@@ -610,34 +782,40 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await listSettled(page, 'task-other')
 
 		await chip(page, CHIPS.mine).click()
+		// Both halves. Mine is `scope=assigned&isTerminal=false`, and a lens
+		// that answered nothing at all would satisfy the absence on its own.
 		await listSettled(page, 'task-mine')
 		await expect(row(page, 'task-other')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#unclaimed-shows-tasks-nobody-holds
 	test('Unclaimed on Tasks shows the open task nobody holds', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
 		await chip(page, CHIPS.unclaimed).click()
 		await listSettled(page, 'task-unclaimed')
+		// `scope=pooled` is "unassigned AND I am in its candidate pool", so a
+		// task somebody holds is out whoever that somebody is.
 		await expect(row(page, 'task-done')).toHaveCount(0)
 		await expect(row(page, 'task-mine')).toHaveCount(0)
+		await expect(row(page, 'task-other')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#all-shows-every-task
 	test('All on Tasks shows the completed task too', async ({ page }) => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
 		await chip(page, CHIPS.all).click()
 		await listSettled(page, 'task-other')
+		// `scope=all` with no `isTerminal`, so a finished task is still here.
 		await expect(row(page, 'task-done').first()).toBeVisible({
 			timeout: 30_000,
 		})
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#closed-shows-the-completed-task
 	test('Closed on Tasks shows the completed task and not the open one', async ({
 		page,
 	}) => {
@@ -649,7 +827,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-mine')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#a-task-due-later-today-is-not-overdue
 	test('Overdue on Tasks leaves out the task due later today', async ({
 		page,
 	}) => {
@@ -658,19 +836,28 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 
 		await chip(page, CHIPS.overdue).click()
 		await listSettled(page, 'task-overdue')
-		// The boundary, and the reason this file seeds a task due at nine
-		// this morning at all: `dueDate` is an instant and `@today` is a
-		// date, so a string comparison puts today's instants AFTER the date.
-		// A task due later today is not late yet, and if the comparison ever
-		// changes shape this is the assertion that says so.
+		// The boundary, and the reason this file seeds a task due at the end
+		// of today at all. The engine derives `overdue` as `dueAt < now` on
+		// INSTANTS, so "later today" is genuinely not late yet, and if that
+		// derivation is ever replaced by a date comparison this is the
+		// assertion that says so.
 		await expect(row(page, 'task-due-today')).toHaveCount(0)
 		await expect(row(page, 'task-next-month')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#due-this-week-holds-both-edges-of-the-window
 	test('Due this week on Tasks holds both edges of the window', async ({
 		page,
 	}) => {
+		test.skip(
+			dueWindowSupported === false,
+			'the Due this week lens sends dueAfter/dueBefore, which openregister '
+				+ 'answers from 2.1.4 (openregister#3581). An older instance drops '
+				+ 'them silently and the lens returns everything non-terminal, so '
+				+ 'the window cannot be observed here. Probed against the live '
+				+ 'endpoint in beforeAll, not read off a version string.',
+		)
+
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
@@ -685,7 +872,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await expect(row(page, 'task-next-month')).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
+	// @e2e openspec/specs/task-management/spec.md#the-task-list-shows-a-priority-column
 	test('the task row shows the priority REQ-TASK-004 has always asked for', async ({
 		page,
 	}) => {
@@ -700,51 +887,172 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/task-management/spec.md
-	test('the task due windows narrow the collection, edges included', async () => {
-		// The browser scenarios above prove the chips are wired to these
-		// windows; this proves the windows themselves, against the API and
-		// without pagination in the way. `_limit` is 200 and the filter is
-		// narrow, so what comes back is this run's tasks and whatever else
-		// genuinely falls in the window.
-		const week = await listObjects(api, 'caseTask', {
-			assignee: OTHER,
-			isTerminalStatus: 'false',
-			'dueDate[gte]': day(0),
-			'dueDate[lt]': day(7),
-		})
-		const weekTitles = week.map((t: any) => String(t.title ?? ''))
-		expect(
-			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
-			'a task due later today is inside the week',
-		).toBe(true)
-		expect(
-			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-this-week`)),
-			'a task due in two days is inside the week',
-		).toBe(true)
-		expect(
-			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
-			'a task due two days ago is not',
-		).toBe(false)
-		expect(
-			weekTitles.some((t) => t.includes(`${RUN_PREFIX} task-next-month`)),
-			'a task due in thirty days is not',
-		).toBe(false)
+	// 🔴 NO CITATION, AND THAT IS HALF THE REPAIR. This test and the one
+	// below it carried an anchorless `openspec/specs/task-management/spec.md`
+	// citation, read as verified on 2026-09-11 and as partial on 2026-09-12,
+	// and the downgrade is right. Both called OpenRegister's flow-task
+	// endpoint directly and asserted the ENGINE's own `dueAfter`, `dueBefore`
+	// and `overdue` semantics, so a citation naming this app's spec file
+	// credited an upstream contract.
+	//
+	// There is no scenario to re-anchor onto either: `task-management` has no
+	// requirement about window boundaries, and its two overdue requirements
+	// both carry a reason-bearing `@e2e exclude` for visual indicators
+	// covered by `taskHelpers.js` unit tests. So the claim comes down rather
+	// than moving.
+	//
+	// THE OTHER HALF: THE TEST NOW PROVES DOSSIQ'S SIDE TOO. What was wrong
+	// was not only the citation. A lens that sent the wrong predicates, or
+	// none, left every assertion here green, so the file's own six chips
+	// rested on row assertions alone. The request the Due this week chip
+	// actually makes is captured before the engine's answer is read, which
+	// makes the two halves one claim: the lens asks for the window, and the
+	// window means what the chips' row assertions above read.
+	test('the Due this week lens sends the window, and the engine honours both edges', async ({
+		page,
+	}) => {
+		// 🔴 THE SKIP MOVED OFF THE TEST AND ONTO THE HALF IT BELONGS TO.
+		// `dueAfter`/`dueBefore` are answered by openregister from 2.1.4
+		// (openregister#3581) and an older instance DROPS them silently, so
+		// the engine's edges cannot be observed everywhere. What the lens
+		// ASKS FOR can, on every instance, and that is the half this app
+		// owns: skipping the whole test on an old engine used to take
+		// dossiq's own claim down with openregister's. Probed by behaviour in
+		// `beforeAll`, never off a version string.
+		const asked = inboxQueries(page)
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await chip(page, CHIPS.dueThisWeek).click()
 
-		const late = await listObjects(api, 'caseTask', {
-			assignee: OTHER,
-			isTerminalStatus: 'false',
-			'dueDate[lt]': day(0),
-		})
-		const lateTitles = late.map((t: any) => String(t.title ?? ''))
+		// 🔴 THE REQUEST FIRST, THE ROW AFTER. See the Overdue test below for
+		// what this ordering is for: a break to the lens widens the list past
+		// its 25-row page, the seeded row falls off it, and the mutation then
+		// reddens a row wait rather than the predicate the citation is about.
+		// This test's mutation happened to survive that in the near edge, and
+		// surviving by luck is not a property worth keeping.
+		const windowed = await firstQueryWith(asked, 'dueAfter')
 		expect(
-			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-overdue`)),
-			'a task due two days ago is overdue',
-		).toBe(true)
+			windowed.get('dueBefore'),
+			'the lens sends both edges, not just the near one',
+		).not.toBeNull()
+		// `scope` is set explicitly on every lens because the endpoint
+		// defaults to `assigned`; a Due this week that left it off would
+		// quietly mean "my work due this week".
+		expect(windowed.get('scope'), 'over every task, not just mine').toBe('all')
+		expect(windowed.get('isTerminal'), 'and not the finished ones').toBe('false')
+		const after = new Date(String(windowed.get('dueAfter'))).getTime()
+		const before = new Date(String(windowed.get('dueBefore'))).getTime()
+		expect(Number.isFinite(after) && Number.isFinite(before)).toBe(true)
+		const days = (before - after) / 86_400_000
 		expect(
-			lateTitles.some((t) => t.includes(`${RUN_PREFIX} task-due-today`)),
-			'a task due later today is not overdue',
-		).toBe(false)
+			days,
+			`the window the chip asks for is a week, not ${days} days`,
+		).toBeGreaterThan(6)
+		expect(days).toBeLessThan(8)
+
+		// On an engine that drops the predicates the lens answers everything
+		// non-terminal, so the seeded row is there either way; this is a
+		// "the list has answered" signal and nothing more.
+		await listSettled(page, 'task-this-week')
+
+		// AND THE ENGINE'S OWN EDGES, where this instance answers them, with
+		// pagination out of the way — every task this file seeds hangs off
+		// one case, so `objectUuid` narrows the read to exactly them.
+		if (dueWindowSupported === false) {
+			test.info().annotations.push({
+				type: 'half-skipped',
+				description:
+					'This openregister drops dueAfter/dueBefore (pre-2.1.4, '
+					+ 'openregister#3581), so the edges below cannot be observed. The '
+					+ 'lens assertions above ran.',
+			})
+			return
+		}
+
+		const inWindow = (
+			await listFlowTasks(api, {
+				scope: 'all',
+				isTerminal: 'false',
+				dueAfter: instant(0, 0),
+				dueBefore: instant(7, 0),
+				objectUuid: cases['mine-open'],
+				limit: '200',
+			})
+		).map((t: any) => String(t.uuid))
+
+		expect(inWindow, 'a task due later today is inside the week').toContain(
+			tasks['task-due-today'],
+		)
+		expect(inWindow, 'a task due in two days is inside the week').toContain(
+			tasks['task-this-week'],
+		)
+		expect(inWindow, 'a task due two days ago is not').not.toContain(
+			tasks['task-overdue'],
+		)
+		expect(inWindow, 'a task due in thirty days is not').not.toContain(
+			tasks['task-next-month'],
+		)
+	})
+
+	// No citation, for the reason written above its sibling. Same repair to
+	// the body: the Overdue chip's own request is read before the engine's
+	// answer, because a broken chip used to survive this test untouched.
+	test('the Overdue lens asks for the projection, and a task due later today is not late', async ({
+		page,
+	}) => {
+		const asked = inboxQueries(page)
+		await visit(page, TASKS_URL)
+		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await chip(page, CHIPS.overdue).click()
+
+		// 🔴 THE REQUEST IS READ BEFORE ANY ROW IS WAITED FOR, AND THE ORDER
+		// IS THE POINT. A mutation check on this test twice reddened
+		// `listSettled` instead of the assertion below, because ANY break to
+		// this lens widens the result set: `scope=all` alone is 69 tasks and
+		// `scope=all&isTerminal=false` is 27, both past the 25-row page, so
+		// the seeded row falls off page one and the test fails before it ever
+		// reads the predicate. A red on a setup line looks exactly like a
+		// proof and is just as empty. What this test claims is about the
+		// REQUEST, which exists the moment the chip is clicked, so it is
+		// asserted first and the row is waited for afterwards.
+		const asksLate = await firstQueryWith(asked, 'overdue')
+		expect(asksLate.get('overdue'), 'the lens asks the engine, not a date').toBe(
+			'true',
+		)
+		expect(asksLate.get('scope'), 'over every task, not just mine').toBe('all')
+		// 🔴 AND NO DATE WINDOW. `overdue` is `dueAt < now` on instants,
+		// derived by the engine; a lens that expressed it as `dueBefore=@today`
+		// would answer a DIFFERENT question — everything due before midnight,
+		// including the task due at 17:00 today — and would still look like a
+		// plausible Overdue list.
+		expect(
+			asksLate.get('dueBefore'),
+			'the Overdue lens must not express lateness as a date window',
+		).toBeNull()
+
+		// And the list answered, which is what makes the API assertions below
+		// about a page a reader could be looking at.
+		await listSettled(page, 'task-overdue')
+
+		// The other side of the same boundary, and deliberately NOT gated on
+		// the due-window predicates: `overdue` is the engine's own derived
+		// projection and every version answers it, so this half of the
+		// claim keeps running where the window half cannot.
+		const late = (
+			await listFlowTasks(api, {
+				scope: 'all',
+				overdue: 'true',
+				objectUuid: cases['mine-open'],
+				limit: '200',
+			})
+		).map((t: any) => String(t.uuid))
+
+		expect(late, 'a task due two days ago is overdue').toContain(
+			tasks['task-overdue'],
+		)
+		expect(late, 'a task due later today is not overdue').not.toContain(
+			tasks['task-due-today'],
+		)
 	})
 
 	// ---------------------------------------------------------------------
@@ -783,6 +1091,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR, AND THE MISSING HALF IS NAMED RATHER THAN GLOSSED.
+	// `#transition-moves-the-selection-with-a-reason` ends "AND each case
+	// SHALL show the new status ON ITS PAGE". This reads the STORED status of
+	// both cases, which is a stronger fact about the engine and a weaker one
+	// about the surface: a case page that rendered no status at all would
+	// leave every assertion here green. Anchoring would credit that clause to
+	// a test that cannot see it. To close this, open one of the two cases and
+	// assert the status on the page, then anchor.
 	test('Transition moves the selection, with a reason', async ({ page }) => {
 		const dialog = await openBulkAction(page, ['bulk-a', 'bulk-b'], 'transition')
 
@@ -819,7 +1136,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	// @e2e openspec/specs/case-bulk-status-transition/spec.md#no-reason-no-execute
 	test('no reason, no execute', async ({ page }) => {
 		const dialog = await openBulkAction(page, ['suspend-me'], 'suspend')
 
@@ -837,6 +1154,14 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR. `#suspend-and-resume-through-the-term` says "the
+	// CASE PAGE SHALL show the term as paused with that reason", and both
+	// halves here are read off the case's stored journal instead. The comment
+	// below is right that the journal is what the page reads, which is
+	// exactly why the page is worth asserting separately: a term widget that
+	// stopped rendering would not redden a line of this. To close this, open
+	// the case and assert the paused and running states, then anchor.
 	test('Suspend then Resume, each with its reason', async ({ page }) => {
 		const suspend = await openBulkAction(page, ['suspend-me'], 'suspend')
 		await suspend
@@ -884,6 +1209,15 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	})
 
 	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	//
+	// 🔴 STILL NO ANCHOR. `#extend-term-writes-the-new-end-date` has three
+	// clauses and this proves one of them on the surface it names: the dialog
+	// reporting 1 of 1. The other two, "the case page SHALL show the extended
+	// term with that reason" and "the DEADLINE COLUMN SHALL be unchanged",
+	// are both read off the stored object here. The deadline one is the
+	// sharper miss: the claim is about a column a reader sees, and the
+	// assertion is about a field. To close this, assert the case page and the
+	// Deadline cell of the row, then anchor.
 	test('Extend term writes the new end date, and leaves the Deadline column alone', async ({
 		page,
 	}) => {
@@ -921,7 +1255,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		expect(String(after.deadline ?? '')).toBe(String(before.deadline ?? ''))
 	})
 
-	// @e2e openspec/specs/case-bulk-status-transition/spec.md
+	// @e2e openspec/specs/case-bulk-status-transition/spec.md#the-index-offers-the-five-bulk-actions
 	test('the Cases list offers all five bulk actions on a selection', async ({
 		page,
 	}) => {
@@ -947,7 +1281,14 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// No citation, on purpose. This test used to cite
+	// openspec/specs/case-management/spec.md with no anchor, which names a
+	// file and credits no scenario. The requirement it is about, REQ-CM-32 Deadline
+	// before, has one scenario, and that scenario is excluded on the spec because
+	// the sidebar control it drives does not exist (see the comment below).
+	// A query against the object API cannot prove a control, so the test
+	// stays as a guard on the query path the Overdue tiles use, uncited
+	// (e2e-citation-integrity, audit group 3).
 	test('the deadline query narrows the list, which is what the sidebar filter would drive', async () => {
 		// The Deadline before SIDEBAR filter is blocked: nextcloud-vue 2.41's
 		// index sidebar derives its filters from schema `facetable`

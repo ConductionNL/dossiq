@@ -98,7 +98,7 @@ Read all of the following in parallel:
 3. `{APP_DIR}/openspec/app-config.json` — app identity, goals, features list (if present)
 
 **Company-wide Architectural Design Rules:**
-4. All ADR files in `{APPS_EXTRA}/.claude/openspec/architecture/` — the constraints every Conduction app must follow (API conventions, NL Design, i18n requirements, test coverage, screenshots, etc.). These are **read as auditing context only** — never link to them from app docs.
+4. All ADR files in `{APPS_EXTRA}/hydra/openspec/architecture/` — the constraints every Conduction app must follow (API conventions, NL Design, i18n requirements, test coverage, screenshots, etc.). These are **read as auditing context only** — never link to them from app docs.
 
 **App-specific ADRs** (if present):
 5. All ADR files in `{APP_DIR}/openspec/architecture/` — app-level overrides or additions to company-wide rules.

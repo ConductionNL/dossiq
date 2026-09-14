@@ -556,6 +556,11 @@ $extra = [
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#testImap',       'url' => '/api/settings/email/test-imap',                                 'verb' => 'POST'],
+    // Email-to-case matching (email-case-matching): each user's own settings, and the instance's.
+    ['name' => 'caseEmailMatch#getSettings',   'url' => '/api/settings/email-case-matching',                             'verb' => 'GET'],
+    ['name' => 'caseEmailMatch#saveSettings',  'url' => '/api/settings/email-case-matching',                             'verb' => 'PUT'],
+    ['name' => 'caseEmailMatch#getInstanceSettings',  'url' => '/api/settings/email-case-matching/instance',     'verb' => 'GET'],
+    ['name' => 'caseEmailMatch#saveInstanceSettings', 'url' => '/api/settings/email-case-matching/instance',     'verb' => 'PUT'],
 
         // ── Template (workflow step templates) ──────────────────────────
     ['name' => 'template#index',    'url' => '/api/templates',           'verb' => 'GET'],
@@ -758,6 +763,12 @@ $extra = [
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
     ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'GET'],
     ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'POST'],
+        // documents-live-on-the-case: the documents joined to this case whose file
+        // lives in another case's folder, as the Files tab's linked rows.
+    ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
+    // people-on-the-case: who can be asked for a file, and the asking.
+    ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
+    ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
         // Generate document: renders a library template over the case and
         // files the result as an informatieobject + join, through the same

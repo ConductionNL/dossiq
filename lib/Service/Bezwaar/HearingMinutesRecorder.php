@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -44,6 +45,9 @@ use Throwable;
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 class HearingMinutesRecorder {
+
+	use SearchesObjects;
+
 	/**
 	 * Constructor.
 	 *
@@ -106,11 +110,12 @@ class HearingMinutesRecorder {
 		);
 
 		try {
-			$objectService->saveObject(
-				object: ['auditTrail' => $audit],
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				uuid: (string)$sessionId
+				id: (string)$sessionId,
+				changes: ['auditTrail' => $audit]
 			);
 		} catch (Throwable $auditError) {
 			$this->logger->error(

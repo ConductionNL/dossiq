@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Reads what the case-flow seed has already created.
  *
- * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 class CaseFlowSeedIndex {
 	/**
@@ -59,7 +59,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<string,mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTypeByTitle(array $schemas, string $title): ?array {
 		$rows = $this->rows(
@@ -85,7 +85,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return string[] The titles.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function caseTitlesFor(array $schemas, string $caseTypeId): array {
 		$titles = [];
@@ -116,7 +116,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<int, array<string,mixed>> The rows.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function rows(array $query): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -140,7 +140,7 @@ class CaseFlowSeedIndex {
 	 *
 	 * @return array<int, array<string,mixed>> The rows.
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	private function normalise(mixed $value): array {
 		if (is_array($value) === true && isset($value['results']) === true) {

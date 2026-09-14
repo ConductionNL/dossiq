@@ -48,6 +48,7 @@ import {
 	clickHeaderAction,
 	dismissSupportDialog,
 	openHeaderActionsMenu,
+	PAGE_LOAD,
 } from './helpers/nav.ts'
 
 /** The fields the Link object form asks a handler to fill. */
@@ -120,11 +121,11 @@ async function seedObject(
  * @param id   The case id to open.
  */
 async function openObjectsTab(page: Page, id: string) {
-	await page.goto(`/apps/${REGISTER}/cases/${id}`)
+	await page.goto(`/apps/${REGISTER}/cases/${id}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// The SECTION, not the whole open panel. Now that the strip is folded
 	// instead of fourteen, a tab carries two collections, so an assertion made
 	// against the panel root can be satisfied by the wrong half of it. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
@@ -154,7 +155,10 @@ async function openIndex(
 ): Promise<void> {
 	const qs = new URLSearchParams(query).toString()
 	for (const base of [`/apps/${REGISTER}`, `/index.php/apps/${REGISTER}`]) {
-		await page.goto(qs === '' ? `${base}${route}` : `${base}${route}?${qs}`)
+		await page.goto(
+			qs === '' ? `${base}${route}` : `${base}${route}?${qs}`,
+			PAGE_LOAD,
+		)
 		await dismissSupportDialog(page)
 		if (new URL(page.url()).pathname.endsWith(route)) {
 			await expect(
@@ -320,11 +324,11 @@ test.describe('Case objects', () => {
 		).toBe(true)
 
 		// The tab is present rather than hidden, and the way out of the empty
-		// state is on the page rather than behind it. The tab is named for both
-		// collections it holds since the strip came down to six.
+		// state is on the page rather than behind it. Objects is a section of
+		// Related since 2026-09-13, so Related is the tab that must be there.
 		await expect(
 			page.locator('.cn-tabs-widget').getByRole('tab', {
-				name: 'Objects and locations',
+				name: 'Related',
 				exact: true,
 			}),
 		).toBeVisible({ timeout: 15_000 })
@@ -334,12 +338,18 @@ test.describe('Case objects', () => {
 		})
 	})
 
-	// @e2e openspec/specs/case-management/spec.md#a-linked-object-shows-up-in-the-tab
-	// @e2e case-management::a-linked-object-shows-up-in-the-tab
+	// No citation, on purpose. This test used to carry
+	// `case-management::a-linked-object-shows-up-in-the-tab` twice, and that
+	// scenario's THENs are the saved row in the Objects tab and the stored
+	// `case` on it. This test saves nothing, so it could not fail on either
+	// (e2e-citation-integrity, audit group 3). The test below links an object,
+	// reads the stored `case` back and finds the row in the tab, and that is
+	// where the scenario is proven. This one guards the field list REQ-CM-29
+	// names, which no scenario states.
 	test('the Link object form asks for the object fields and never for the case', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -369,7 +379,7 @@ test.describe('Case objects', () => {
 	test('an object linked from the case carries that case and shows up in the tab', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -431,7 +441,7 @@ test.describe('Case objects', () => {
 	}) => {
 		const refusedId = `${RUN_PREFIX}-refused-object`
 
-		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`)
+		await page.goto(`/apps/${REGISTER}/cases/${formCaseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,

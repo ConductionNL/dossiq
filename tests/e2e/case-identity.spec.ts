@@ -51,6 +51,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { PAGE_LOAD } from './helpers/nav.ts'
 
 /** The processing deadline this run's case type declares. */
 const PROCESSING_DEADLINE = 'P56D'
@@ -123,7 +124,7 @@ async function highestNumberOfYear(year: string): Promise<number> {
  * @param caseId The case to open.
  */
 async function openCase(page: Page, caseId: string): Promise<void> {
-	await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 }
 
@@ -138,6 +139,33 @@ async function openSidebar(page: Page): Promise<Locator> {
 	const sidebar = page.locator('.app-sidebar')
 	await expect(sidebar).toBeVisible({ timeout: 15_000 })
 	return sidebar
+}
+
+/**
+ * Open the object metadata panel and return the dialog.
+ *
+ * There is no page widget for it. CnObjectDataWidget puts a Metadata item in
+ * its overflow Actions menu, and the panel opens from there, which is the
+ * whole point: `@self` facts are read on demand rather than taking permanent
+ * space on the detail page.
+ *
+ * @param page The Playwright page.
+ */
+async function openMetadataPanel(page: Page): Promise<Locator> {
+	// The terms card is a data widget, so it carries the actions menu. Scoping
+	// to it rather than to the page matters: several widgets on this page carry
+	// an actions menu and a bare menu locator is a strict mode violation.
+	const terms = page.locator('[aria-label="case-terms"]')
+	await expect(terms).toBeVisible({ timeout: 30_000 })
+	await terms.getByRole('button', { name: /actions/i }).click()
+
+	await page.getByRole('menuitem', { name: /^(Metadata|Metagegevens)$/ }).click()
+
+	const dialog = page
+		.getByRole('dialog')
+		.filter({ hasText: /Metadata|Metagegevens/ })
+	await expect(dialog).toBeVisible({ timeout: 15_000 })
+	return dialog
 }
 
 test.describe('Case identity', () => {
@@ -177,11 +205,12 @@ test.describe('Case identity', () => {
 				startDate: '2026-03-02',
 				legalBasis: LEGAL_BASIS,
 				archiveNomination: ARCHIVE_NOMINATION,
-				// archiveActionDate is deliberately absent: REQ-CM-27's second
-				// scenario is that the row is there and empty, not hidden. That
-				// scenario is currently RED and its test is parked on
-				// nextcloud-vue#1062, so keep this absent — it is the fixture
-				// the test needs the day the row comes back.
+				// archiveActionDate is deliberately absent, for the parked
+				// "Empty fields stay visible" test at the end of this file.
+				// Leaving it out no longer yields an empty date, though:
+				// OpenRegister derives `_retention.disposalDate` from the case
+				// schema's retention default instead. That test says why it
+				// therefore stays parked.
 			}),
 		)
 
@@ -218,7 +247,7 @@ test.describe('Case identity', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-case-posted-to-the-api-gets-a-number-too
 	test('a case posted to the API is numbered in the year of its start date', async () => {
 		const filed = await createObject(api, token, 'case', {
 			title: `${RUN_PREFIX} api filed case`,
@@ -237,7 +266,7 @@ test.describe('Case identity', () => {
 		).toBe('2026')
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#an-existing-number-stays
 	test('an existing number survives an edit to the case', async () => {
 		await updateObject(api, token, 'case', legacyCaseId, {
 			title: `${RUN_PREFIX} legacy numbered case, retitled`,
@@ -247,13 +276,13 @@ test.describe('Case identity', () => {
 		expect(stored.identifier).toBe(LEGACY_IDENTIFIER)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#a-case-filed-from-the-form-gets-the-next-number
 	test('the New case form asks for no number, and the case gets the next one', async ({
 		page,
 	}) => {
 		const before = await highestNumberOfYear(String(new Date().getFullYear()))
 
-		await page.goto(`/apps/${REGISTER}/`)
+		await page.goto(`/apps/${REGISTER}/`, PAGE_LOAD)
 		await expect(page).not.toHaveURL(/login/, { timeout: 15_000 })
 		await page.getByRole('button', { name: 'New case', exact: true }).click()
 
@@ -313,7 +342,7 @@ test.describe('Case identity', () => {
 		).toContainText(String(filed.identifier), { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#you-add-a-tag-on-the-case
 	test('a tag added in the sidebar is on the case after a reload', async ({
 		page,
 	}) => {
@@ -399,7 +428,7 @@ test.describe('Case identity', () => {
 		).toContainText(TYPED_TAG, { timeout: 20_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#you-filter-the-list-on-a-tag
 	test('the Cases index filters on a tag, and offers the filter', async ({
 		page,
 	}) => {
@@ -408,6 +437,7 @@ test.describe('Case identity', () => {
 		// than the widget that requests it.
 		await page.goto(
 			`/apps/${REGISTER}/cases?tags=${encodeURIComponent(FILTER_TAG)}`,
+			PAGE_LOAD,
 		)
 		await expect(page.locator('.cn-index-page')).toBeVisible({ timeout: 30_000 })
 
@@ -423,6 +453,17 @@ test.describe('Case identity', () => {
 				'an untagged case must not survive the filter',
 			).toHaveCount(0)
 		}
+
+		// The scenario says the list holds the two tagged cases ONLY, and
+		// naming three untagged cases that must be absent is not the same
+		// claim: a filter that let a fourth case through would satisfy every
+		// assertion above. The tag is RUN_PREFIX-scoped, so exactly two cases
+		// on the instance carry it and the count is a fact rather than a
+		// guess about what else the register holds.
+		await expect(
+			page.locator('[data-testid="cn-object-row"]'),
+			'the filtered list holds the two tagged cases and nothing else',
+		).toHaveCount(2, { timeout: 20_000 })
 
 		// And the filter is reachable without hand-writing a URL: `tags` is
 		// `facetable`, so the index sidebar builds a Tags control from the
@@ -448,7 +489,7 @@ test.describe('Case identity', () => {
 		).toBeVisible({ timeout: 15_000 })
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
+	// @e2e openspec/specs/case-management/spec.md#the-blocks-read-the-type-and-the-case
 	test('the case shows its lead time, legal basis and archive nomination', async ({
 		page,
 	}) => {
@@ -471,64 +512,110 @@ test.describe('Case identity', () => {
 		await expect(terms).toContainText(PROCESSING_DEADLINE)
 		await expect(terms).toContainText(LEGAL_BASIS)
 
-		// The archival half moved out into its own card (dossiq#2322). The
-		// page no longer reads dossiq's `archiveNomination` off the record: it
-		// reads the abstract decision OpenRegister resolves into
-		// `@self._retention`, so the same card answers for any object. Two
-		// consequences this assertion has to respect:
+		// The archival half has no card on this page at all any more. It is
+		// read from `@self._retention`, the abstract decision OpenRegister
+		// resolves for any object, and it surfaces in the object metadata
+		// panel under its own Archiving category beside every other `@self`
+		// fact. Three consequences this assertion has to respect:
 		//
-		//  - the widget is a `metadata` one, so the block is `case-archival`
-		//    and not `case-terms`;
-		//  - the stored ZGW code is translated on the way out, so
-		//    `blijvend_bewaren` arrives as the phrase an archivist would say.
-		//    The raw code stays in the pattern because an unrecognised
-		//    nomination falls back to it rather than being hidden.
-		const archival = page.locator('[aria-label="case-archival"]')
-		await expect(archival).toBeVisible({ timeout: 30_000 })
-		await expect(archival).toContainText(/keep permanently|blijvend[ _]bewaren/i)
+		//  - the panel opens on demand from a data widget's overflow Actions
+		//    menu, so there is nothing to assert until it is opened;
+		//  - the archival keys are MDTO concepts in English since
+		//    openregister#3584, so the stored `blijvend_bewaren` resolves to
+		//    `retain_permanently` before the panel ever sees it;
+		//  - that code is then translated on the way out, so it arrives as the
+		//    phrase an archivist would say. The raw codes stay in the pattern
+		//    because an unrecognised appraisal falls back to the stored value
+		//    rather than being hidden.
+		const metadata = await openMetadataPanel(page)
+
+		await expect(
+			metadata.getByText(/^(Archiving|Archivering)$/),
+			'the panel groups the archival facts under their own heading',
+		).toBeVisible({ timeout: 15_000 })
+
+		// 🔴 THE LAST CLAUSE ACCEPTED THE THING IT FORBIDS. The scenario ends
+		// "SHALL name the nomination as the phrase it stands for, not the
+		// stored code", and this alternation carried `blijvend[ _]bewaren`,
+		// which is the stored code: `ARCHIVE_NOMINATION` is exactly what the
+		// fixture writes onto the case. A panel printing the raw register
+		// value satisfied the assertion, so the one clause that distinguishes
+		// a resolved nomination from an unresolved one could not fail.
+		//
+		// Both halves are asserted on the appraisal ROW rather than on the
+		// whole panel, because another row may legitimately carry the source
+		// value and a panel-wide negative would blame this clause for it.
+		const appraisal = metadata
+			.locator('.cn-detail-grid__item')
+			.filter({ hasText: /Appraisal|Waardering/ })
+		await expect(appraisal).toHaveCount(1)
+		await expect(
+			appraisal,
+			'the nomination reads as the phrase it stands for',
+		).toContainText(/keep permanently|retain[ _]permanently/i)
+		await expect(
+			appraisal,
+			'and not as the code the case stores',
+		).not.toContainText(ARCHIVE_NOMINATION)
 	})
 
-	// @e2e openspec/specs/case-management/spec.md
-	test.fixme('an empty archive action date is shown empty, not hidden', async ({
+	// @e2e openspec/specs/case-management/spec.md#an-archival-fact-the-case-does-not-carry-stays-visible
+	test('an archival fact the case does not carry is shown empty, not hidden', async ({
 		page,
 	}) => {
-		// PARKED ON ConductionNL/nextcloud-vue#1062, and the requirement is
-		// still right — it is the surface underneath it that cannot express it
-		// any more.
+		// THIS REPLACES "an empty archive action date is shown empty, not
+		// hidden", which was parked and could never have passed. Both halves
+		// of that were measured on 2026-09-11 against a purpose-built stack,
+		// so the next reader does not have to measure them again.
 		//
-		// An absent destruction date is itself what a records officer looks
-		// for, so the row has to be present and blank. While the archival
-		// fields lived in the `case-terms` data widget, `hideEmpty: false`
-		// said exactly that, and this test was the assertion that would catch
-		// it being turned on.
+		// WHY THE OLD SCENARIO WAS UNREACHABLE. "A case with no archive action
+		// date" does not exist in this register. `case` declares
+		// `x-openregister-archival` with a retention default of P10Y
+		// (lib/Settings/dossiq_register.json), so OpenRegister resolves
+		// `@self._retention.disposalDate` to the start date plus ten years for
+		// a case with no `archiveActionDate`, and to the `archiveActionDate`
+		// itself when there is one. The row is therefore ALWAYS populated. The
+		// requirement was not wrong, it was aimed at a field that is never
+		// blank here; REQ-CM-27 now states the guarantee over any archival
+		// fact instead.
 		//
-		// dossiq#2322 moved them onto `@self._retention` and
-		// CnObjectMetadataWidget, which is the right move — it ends the
-		// per-app duplication of ZGW field names — but the guarantee had
-		// nowhere to land. Measured on the installed 2.44.0, both layers drop
-		// the row and neither offers a way to ask for it:
+		// WHAT IS GENUINELY ABSENT. `recordState` resolves to null on every
+		// case, because nothing writes an archiefstatus until something
+		// actually happens to the record. So Record state is the fact this
+		// case does not carry, and it is the one that proves the guarantee.
 		//
-		//  - OpenRegister's ArchivalDecisionResolver returns only the keys it
-		//    could establish, so this case's `_retention` is
-		//    `{ nomination: 'blijvend_bewaren' }` with no `actionDate` key;
-		//  - CnObjectMetadataWidget then does `if (raw === undefined || raw
-		//    === null) continue` over its archival defs, and its props are
-		//    title / icon / objectData / layout / columns / labelWidth /
-		//    extraItems / include / exclude / collapsible / collapsed /
-		//    emptyLabel. There is no showEmpty.
+		// WHY THIS TEST CAN FAIL, which is the point of it existing:
 		//
-		// So the card renders one row of the seven `case-archival` names, and
-		// Archive action date is absent rather than blank. The body below is
-		// kept and pointed at the new card so unfixming is one word once
-		// #1062 lands a `showEmpty` (or honours an explicit `include`).
+		//  - on @conduction/nextcloud-vue 2.46.0 the Archiving section had 13
+		//    rows and NO Record state row at all, because the widget dropped
+		//    any archival key whose value was null;
+		//  - on 2.47.0 (nextcloud-vue#1084) it has 14, and the Record state
+		//    value div carries `cn-detail-grid__value--empty`.
+		//
+		// The assertion is on that MODIFIER, not on the text. A row reading
+		// "-" and a row reading a real value are both one row, and the whole
+		// guarantee is that this one is present AND blank.
 		await openCase(page, termsCaseId)
+		const metadata = await openMetadataPanel(page)
 
-		const archival = page.locator('[aria-label="case-archival"]')
-		await expect(archival).toBeVisible({ timeout: 30_000 })
-
-		const row = archival
+		// Both languages: #1084 also made the widget translate its archival
+		// labels, which it did not do before, so an English-only pattern would
+		// pass here and fail on a Dutch instance.
+		const row = metadata
 			.locator('.cn-detail-grid__item')
-			.filter({ hasText: /Archive action date|Datum archiefactie/ })
+			.filter({ hasText: /Record state|Archiefstatus/ })
+
 		await expect(row).toHaveCount(1)
+		await expect(row.locator('.cn-detail-grid__value--empty')).toHaveCount(1)
+
+		// The populated neighbour, so a panel that rendered nothing at all
+		// cannot satisfy this test by being uniformly blank.
+		const appraisal = metadata
+			.locator('.cn-detail-grid__item')
+			.filter({ hasText: /Appraisal|Waardering/ })
+		await expect(appraisal).toHaveCount(1)
+		await expect(appraisal.locator('.cn-detail-grid__value--empty')).toHaveCount(
+			0,
+		)
 	})
 })

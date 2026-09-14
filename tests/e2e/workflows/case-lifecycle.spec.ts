@@ -43,6 +43,7 @@ import { expect, request, test } from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth.ts'
 import {
 	cleanupRunObjects,
+	createObject,
 	executeTransition,
 	getAvailableTransitions,
 	getRequestToken,
@@ -63,15 +64,21 @@ let sm: StateMachine
 
 test.describe('Case lifecycle — state machine', () => {
 	test.describe.configure({ mode: 'serial' })
+	// A board load reads every statusType, caseType and case on the instance;
+	// on a loaded rig that alone can take most of the default 30s.
+	test.slow()
 
 	test.beforeAll(async ({ baseURL }) => {
+		// Six writes (caseType, three statusTypes, template) and a token fetch;
+		// on a loaded rig that alone can exceed the default hook budget.
+		test.setTimeout(120_000)
 		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
 		token = await getRequestToken(api)
 		sm = await seedStateMachine(api, token)
 	})
 
 	test.afterAll(async () => {
-		// Child-first cleanup across every fixture schema: the statusRecords the
+		// Child-first cleanup: the statusRecords the
 		// transition engine wrote against this run's cases, then the cases, then
 		// the seeded machine (template, statusTypes, caseType).
 		//
@@ -79,7 +86,17 @@ test.describe('Case lifecycle — state machine', () => {
 		// `case` schema is archival and refused the delete — which left the
 		// cases pointing at statusTypes that no longer resolved. `purgeObject`
 		// removes the cases for real, so the machine can go with them.
-		await cleanupRunObjects(api, token)
+		//
+		// Only the schemas this file writes, in that order. A sweep over every
+		// fixture schema plus the trash overran the 120s hook budget on a loaded
+		// rig, and a teardown that times out is one that leaves rows behind.
+		await cleanupRunObjects(api, token, [
+			'statusRecord',
+			'case',
+			'workflowTemplate',
+			'statusType',
+			'caseType',
+		])
 		await api.dispose()
 	})
 
@@ -94,15 +111,19 @@ test.describe('Case lifecycle — state machine', () => {
 		// top-level sidebar link — navTo('Workflow Board') matches nothing and
 		// strands on the Dashboard. Reach it by a bare deep-link (bare paths
 		// resolve; /index.php-prefixed ones reset to the Dashboard).
-		await page.goto('/index.php/apps/dossiq/workflow-board')
+		await page.goto('/index.php/apps/dossiq/workflow-board', {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
 		await dismissSupportDialog(page)
 		await expect(
 			page.getByRole('heading', { name: 'Workflow Board' }).first(),
-		).toBeVisible({ timeout: 15000 })
-		// The board fetches statusType + case objects on mount.
+		).toBeVisible({ timeout: 30000 })
+		// The board fetches every statusType, caseType and up to 500 cases on
+		// mount, which on a loaded rig takes well over 15s.
 		await expect(
 			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15000 })
+		).toBeVisible({ timeout: 30000 })
 	}
 
 	// @e2e exclude No scenario states that the available-transitions
@@ -185,44 +206,83 @@ test.describe('Case lifecycle — state machine', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006a-board-columns-reflect-status-types
-	test('the workflow board renders a column per status type with real case rows', async ({
+	test('the workflow board renders one column per non-final status type, in order, with its case count', async ({
 		page,
 	}) => {
-		// Seed two cases in different statuses so two columns are populated.
-		const a = await seedCase(api, token, {
-			title: `${RUN_PREFIX} Board A`,
-			caseType: sm.caseTypeId,
-			status: sm.statusReceived,
-		})
-		const b = await seedCase(api, token, {
-			title: `${RUN_PREFIX} Board B`,
-			caseType: sm.caseTypeId,
-			status: sm.statusInProgress,
-		})
-		objectId(a)
-		objectId(b)
+		// The scenario's own GIVEN: three non-final status types, Ontvangen (1),
+		// In behandeling (2) and Besluitvorming (3), here plus the final one the
+		// board must leave out. They get a workflow of their own so the column
+		// names are unique to this test and the counts are exactly what it seeds.
+		//
+		// Created OUT of order on purpose. If they were created 1, 2, 3, a board
+		// that forgot to sort would still render them 1, 2, 3 from creation order,
+		// and the order assertion below could not fail.
+		//
+		// Eight writes and a full board load: more than `test.slow()` allows on
+		// a loaded rig.
+		test.setTimeout(180_000)
+		const board = `${RUN_PREFIX} Bord`
+		const boardType = objectId(
+			await createObject(api, token, 'caseType', {
+				title: `${board} zaaktype`,
+				identifier: `${RUN_PREFIX.toLowerCase()}-bord`,
+				description: 'Throwaway caseType for the board-columns scenario.',
+				isDraft: false,
+			}),
+		)
+		const status = async (
+			name: string,
+			order: number,
+			isFinal: boolean,
+		): Promise<string> =>
+			objectId(
+				await createObject(api, token, 'statusType', {
+					name: `${board} ${name}`,
+					caseType: boardType,
+					order,
+					isFinal,
+				}),
+			)
+		const decision = await status('Besluitvorming', 3, false)
+		const received = await status('Ontvangen', 1, false)
+		await status('Afgehandeld', 4, true)
+		const handling = await status('In behandeling', 2, false)
+
+		// Two cases received, one in handling, none in decision.
+		for (const [title, statusId] of [
+			['A', received],
+			['B', received],
+			['C', handling],
+		] as const) {
+			await seedCase(api, token, {
+				title: `${board} zaak ${title}`,
+				caseType: boardType,
+				status: statusId,
+			})
+		}
+		expect(decision).not.toBe('')
 
 		await openBoard(page)
-		// Columns: the non-final statusTypes render as headers (Ontvangen,
-		// In behandeling). The final "Handled" is not a board column.
+		const ours = page
+			.locator('.board-column')
+			.filter({ has: page.locator('.board-column__name', { hasText: board }) })
+		await expect(ours.first()).toBeVisible({ timeout: 15000 })
+
+		// THREE columns, IN ORDER, and the final status is not one of them.
 		await expect(
-			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
-		).toBeVisible()
+			ours.locator('.board-column__name'),
+			'one column per non-final status type, in status order',
+		).toHaveText([
+			`${board} Ontvangen`,
+			`${board} In behandeling`,
+			`${board} Besluitvorming`,
+		])
+
+		// Each header shows the count of cases in that status.
 		await expect(
-			page.getByText(`${RUN_PREFIX} In behandeling`, { exact: false }).first(),
-		).toBeVisible()
-		// And both seeded cases appear as real rows (the statusType/caseType
-		// registry config is what makes these rows materialise — empty config
-		// would render the "No workflow statuses configured" empty state).
-		await expect(
-			page.getByText('No workflow statuses configured', { exact: false }),
-		).toHaveCount(0)
-		await expect(
-			page.getByText(`${RUN_PREFIX} Board A`, { exact: false }).first(),
-		).toBeVisible({ timeout: 15000 })
-		await expect(
-			page.getByText(`${RUN_PREFIX} Board B`, { exact: false }).first(),
-		).toBeVisible()
+			ours.locator('.board-column__count'),
+			'each column header counts the cases in that status',
+		).toHaveText(['2', '1', '0'])
 	})
 
 	// The guarded transition engine + history + guard-blocking. The engine is

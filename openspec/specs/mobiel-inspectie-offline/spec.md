@@ -22,6 +22,14 @@ The system SHALL allow inspectors to synchronize their daily schedule to local s
 
 #### Scenario: Download daily schedule with cases and checklists
 
+@e2e exclude The day sync this scenario describes no longer exists in dossiq.
+062d9dede removed the mobile-inspection frontend together with the DailySync,
+Sync and Inspection backend, so there is no "Dag synchroniseren" action, no
+progress indicator, no `ready_offline` flag and no /api/sync route to drive.
+The service worker in public/service-worker.js survives, and
+tests/e2e/spec-coverage/service-worker-scope.spec.ts still guards its CSP and
+its pass-through, but neither proves a download.
+
 - **GIVEN** an inspector opens the mobiel-inspectie PWA at the office with active network connection
 - **WHEN** they tap "Dag synchroniseren" (Synchronize day)
 - **THEN** the system SHALL download:

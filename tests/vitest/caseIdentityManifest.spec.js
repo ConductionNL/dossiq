@@ -18,6 +18,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -57,13 +58,19 @@ function iconIsRegistered(name) {
 }
 
 /**
- * One widget of the CaseDetail page.
+ * One widget of the CaseDetail page, wherever it lives.
+ *
+ * Through the shared helper rather than a `find` over `config.widgets`: a
+ * widget that moves INTO a tab becomes a section of a `case-sections` group
+ * and disappears from the top level, so a top-level lookup returns undefined
+ * and every assertion below reads as "the widget was deleted". `case-core`
+ * made that move when the Data tab gained the locations map.
  *
  * @param {string} id The widget id.
  * @return {object|undefined} The widget entry.
  */
 function widget(id) {
-	return caseDetail().config.widgets.find((entry) => entry.id === id)
+	return panels.caseWidget(id)
 }
 
 describe('CaseDetail: the case number', () => {
@@ -126,10 +133,10 @@ describe('CaseDetail: tags', () => {
 
 describe('CaseDetail: terms and archive', () => {
 	it('shows the lead time, the legal basis and the payment data', () => {
-		// The ARCHIVAL half moved out to `case-archival`. A data widget builds
-		// its fields from the schema's own properties and reads them off the top
-		// level of the record, so it cannot bind `@self._retention` — which is
-		// where the archival answer now lives for every app, not just this one.
+		// The ARCHIVAL half is not here. A data widget builds its fields from
+		// the schema's own properties and reads them off the top level of the
+		// record, so it cannot bind `@self._retention`, which is where the
+		// archival answer now lives for every app, not just this one.
 		const terms = widget('case-terms')
 		expect(terms.type).toBe('data')
 		expect(terms.content.include).toEqual([
@@ -140,34 +147,46 @@ describe('CaseDetail: terms and archive', () => {
 		])
 	})
 
-	it('reads the archival constraints from the abstract @self._retention', () => {
-		// The point of the move: one shape any app can ask an object for, rather
-		// than each app reading its own field names. `type: metadata` is
-		// nextcloud-vue's CnObjectMetadataWidget and `include` names keys of the
-		// resolved decision.
-		const archival = widget('case-archival')
-		expect(archival.type).toBe('metadata')
-		expect(archival.content.include).toEqual([
-			'nomination',
-			'period',
-			'actionDate',
-			'status',
-			'basis',
-			'source',
-			'legalHold',
-		])
+	it('has no archiving card of its own any more', () => {
+		// The card duplicated a category the object metadata panel already
+		// groups. It also had to name the `@self._retention` keys in an
+		// `include` list, which meant every rename in OpenRegister's resolver
+		// silently blanked the card here: it did exactly that when #3584 moved
+		// the keys to MDTO concepts. Reading the panel instead removes the
+		// second copy of the list, so there is nothing left to fall behind.
+		expect(widget('case-archival')).toBeUndefined()
 	})
 
-	it('keeps the legal hold in the list, because it overrides the rest', () => {
-		// A destruction date shown without an active hold beside it is actively
-		// misleading: the hold is what stops the destruction.
-		expect(widget('case-archival').content.include).toContain('legalHold')
+	it('keeps the metadata panel, which is where archiving is read now', () => {
+		// The sidebar's metadata panel is CnObjectMetadataWidget over the whole
+		// `@self` block, Archiving among its categories. Turning it off would
+		// take the archival answer off the page entirely.
+		expect(caseDetail().config.sidebar.showMetadata).toBe(true)
 	})
 
-	it('says so when no archiving rule applies, instead of showing blank rows', () => {
-		expect(widget('case-archival').content.emptyLabel).toBe(
-			'No archiving rule applies to this case yet.',
-		)
+	it('leaves no hole in the grid: every cell rests on a cell above it', () => {
+		// ADR-062: the grid is packed. Dropping a card without reclaiming its
+		// rows is the half of the change a manifest edit forgets, and it shows
+		// up as a hole where the card was. The bottom edge alone does not catch
+		// it, and the page is no longer two columns of equal height (the layout
+		// was laid out by hand in Buildiq edit mode and copied here), so the
+		// check is local: every cell that is not on row 0 starts exactly where
+		// some cell that shares a column with it ends.
+		const layout = caseDetail().config.layout
+		for (const cell of layout) {
+			if (cell.gridY === 0) continue
+			const rests = layout.some(
+				(above) =>
+					above !== cell
+					&& above.gridY + above.gridHeight === cell.gridY
+					&& above.gridX < cell.gridX + cell.gridWidth
+					&& cell.gridX < above.gridX + above.gridWidth,
+			)
+			expect(
+				rests,
+				`${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`,
+			).toBe(true)
+		}
 	})
 
 	it('keeps an empty row visible instead of hiding it', () => {

@@ -111,6 +111,8 @@ class SubsidieRegisterExporter {
 		$limit = max(1, $limit);
 		$offset = max(0, $offset);
 		$total = count($entries);
+		// The array_values() that used to wrap `$page` below was a no-op:
+		// array_slice() without $preserve_keys already renumbers from 0.
 		$page = array_slice($entries, $offset, $limit);
 
 		return [
@@ -119,7 +121,7 @@ class SubsidieRegisterExporter {
 			'total' => $total,
 			'limit' => $limit,
 			'offset' => $offset,
-			'results' => array_values($page),
+			'results' => $page,
 		];
 	}//end buildFeed()
 }//end class

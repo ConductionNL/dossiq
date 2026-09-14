@@ -98,6 +98,65 @@ class TenantSaasRegisterSchemasTest extends TestCase {
 	}//end testSevenTenantSchemasDeclared()
 
 	/**
+	 * The five satellites reference the OpenRegister Organisation.
+	 *
+	 * Both halves of this matter and both are load bearing.
+	 *
+	 * The `$ref` is what moved: each satellite now hangs off
+	 * `nc-organisation`, OpenRegister's projection of the entity, instead of
+	 * dossiq's own `tenant` schema.
+	 *
+	 * The property NAME did not move, and that is the part worth a test. Every
+	 * scoping query this subsystem makes filters on `tenantRef`, and a filter
+	 * on a property the schema lacks returns no rows rather than an error. A
+	 * rename that missed one call site would therefore fail closed for
+	 * membership, role and mandate, and OPEN for quota, where no row reads as
+	 * "allow". Nothing would raise.
+	 *
+	 * @return void
+	 */
+	public function testTheFiveSatellitesReferenceTheOrganisation(): void {
+		$satellites = [
+			'tenantConfiguration',
+			'tenantQuota',
+			'tenantUser',
+			'tenantMandate',
+			'tenantBillingEvent',
+		];
+
+		foreach ([$this->register, $this->mockRegister()] as $index => $payload) {
+			$schemas = ($payload['components']['schemas'] ?? []);
+			foreach ($satellites as $slug) {
+				$property = ($schemas[$slug]['properties']['tenantRef'] ?? null);
+				$this->assertIsArray(
+					$property,
+					"Schema {$slug} must still declare the property named tenantRef (register {$index})"
+				);
+				$this->assertSame(
+					'nc-organisation',
+					($property['$ref'] ?? null),
+					"Schema {$slug} tenantRef must reference nc-organisation (register {$index})"
+				);
+			}
+		}
+	}//end testTheFiveSatellitesReferenceTheOrganisation()
+
+	/**
+	 * The mock register, decoded.
+	 *
+	 * @return array<string,mixed> The payload.
+	 */
+	private function mockRegister(): array {
+		$path = (__DIR__ . '/../../../lib/Settings/dossiq_mock_register.json');
+		$this->assertFileExists($path);
+
+		$payload = json_decode((string)file_get_contents($path), true);
+		$this->assertIsArray($payload);
+
+		return $payload;
+	}//end mockRegister()
+
+	/**
 	 * TenantBillingEvent is marked insert-only (billing immutability).
 	 *
 	 * @return void

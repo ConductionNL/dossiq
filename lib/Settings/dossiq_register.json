@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.0 restricts `dossiqIntegration` reads to admins; see that schema's own description for what was open and why the block names all four actions.",
-        "version": "0.19.0"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.1 gives `informatieobject.status` and `informatieobject.direction` the `x-enum-labels` they never had, so a Status or Direction cell reads Draft and Incoming, translated per session, rather than the stored codes `draft` and `incoming`. The number moves for a fragment-only change on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a change confined to `register.d/` and this number left alone reaches a fresh CI install and no existing instance at all.",
+        "version": "0.19.1"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.7.0",
+                "version": "1.10.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -27,6 +27,17 @@
                     "title"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
+                    "versionDate": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Versiedatum",
+                        "description": "Date this version of the case type took effect. ZGW sends it as versiedatum on every zaaktype write."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255,
@@ -170,11 +181,10 @@
                     "productsOrServices": {
                         "type": "array",
                         "title": "Products or Services",
-                        "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "description": "Products/services (fees) that apply to this case type. An entry is either a Pipelinq product uuid (ADR-003), where the charge on a concrete case is a Pipelinq financial transaction, or the product URL a ZGW client sent as productenOfDiensten. The items constraint was format uuid, which made the ZTC zaaktypen endpoint refuse every conformant ZGW body, since that field is a list of URLs.",
                         "x-external-register": "pipelinq",
                         "items": {
-                            "type": "string",
-                            "format": "uuid"
+                            "type": "string"
                         }
                     },
                     "selectionListProcessType": {
@@ -226,6 +236,12 @@
                         "type": "string",
                         "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
                         "title": "Default assignee"
+                    },
+                    "defaultInformatieobjecttype": {
+                        "type": "string",
+                        "title": "Default document type",
+                        "maxLength": 255,
+                        "description": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001."
                     },
                     "workflowDefinition": {
                         "type": "string",
@@ -662,7 +678,7 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document Type",
@@ -672,6 +688,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -746,7 +767,7 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision Type",
@@ -756,6 +777,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -956,6 +982,14 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": {
+                            "from": "caseType",
+                            "field": "initialStatus"
+                        },
+                        "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+                    },
                     "objectNameField": "title",
                     "objectDescriptionField": "description",
                     "tmloDefaults": {
@@ -1636,7 +1670,7 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. The case type sets the first one, through the x-openregister-prefill block on caseType. Moves between statuses belong to dossiq's StatusTransitionService. Every case type carries its own workflow template, so the routes are data rather than schema. OpenRegister reads them through the provider this schema's x-openregister-lifecycle block names. So available-actions answers a case's real transitions. The write path validates against that same reader. x-relation-filter scopes the picker to the case type's own statuses.",
                         "title": "Status",
                         "facetable": true,
                         "order": 4
@@ -2085,361 +2119,6 @@
                     }
                 },
                 "searchable": true
-            },
-            "caseTask": {
-                "slug": "caseTask",
-                "x-openregister-notifications": {
-                    "taskAssigned": {
-                        "trigger": {
-                            "type": "created"
-                        },
-                        "enabled": true,
-                        "channels": [
-                            "nc-notification"
-                        ],
-                        "recipients": [
-                            {
-                                "kind": "field",
-                                "field": "assignee"
-                            }
-                        ],
-                        "subject": {
-                            "nl": "Taak \"{{title}}\" aan je toegewezen",
-                            "en": "Task \"{{title}}\" assigned to you"
-                        }
-                    }
-                },
-                "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.4.0",
-                "x-schema-org": "schema:Action",
-                "x-zgw-equivalent": "Taak",
-                "title": "Task",
-                "description": "A task within a case",
-                "type": "object",
-                "required": [
-                    "title",
-                    "case"
-                ],
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "maxLength": 255,
-                        "description": "Title of this task",
-                        "title": "Title"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Detailed description of this task",
-                        "visible": false,
-                        "title": "Description"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "available",
-                            "active",
-                            "completed",
-                            "terminated",
-                            "disabled"
-                        ],
-                        "default": "available",
-                        "description": "Task status (CMMN HumanTask lifecycle)",
-                        "title": "Status",
-                        "facetable": true
-                    },
-                    "isTerminalStatus": {
-                        "type": "boolean",
-                        "readOnly": true,
-                        "default": false,
-                        "description": "Whether the task sits at a terminal status (completed/terminated/disabled). Computed declaratively by OpenRegister (x-openregister-calculations.isTerminalStatus); filter isTerminalStatus=false for open tasks.",
-                        "title": "Is Terminal Status",
-                        "facetable": true,
-                        "visible": false
-                    },
-                    "case": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "case",
-                        "onDelete": "CASCADE",
-                        "description": "Reference to the parent case",
-                        "title": "Case"
-                    },
-                    "assignee": {
-                        "type": "string",
-                        "description": "Nextcloud user ID of the assigned user",
-                        "title": "Assignee",
-                        "facetable": true
-                    },
-                    "assigneeGroup": {
-                        "type": "string",
-                        "format": "uuid",
-                        "$ref": "organisatieRol",
-                        "description": "The team this task belongs to. Setting it never clears the personal assignee.",
-                        "title": "Team",
-                        "facetable": true
-                    },
-                    "dueDate": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "Due date for this task",
-                        "title": "Due Date"
-                    },
-                    "priority": {
-                        "type": "string",
-                        "enum": [
-                            "low",
-                            "normal",
-                            "high",
-                            "urgent"
-                        ],
-                        "default": "normal",
-                        "description": "Task priority",
-                        "title": "Priority",
-                        "facetable": true
-                    },
-                    "completedDate": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "Date the task was completed",
-                        "visible": false,
-                        "title": "Completed Date"
-                    },
-                    "workflowStepId": {
-                        "type": "string",
-                        "description": "UUID of the workflow step that generated this task",
-                        "visible": false,
-                        "title": "Workflow Step ID"
-                    },
-                    "checklist": {
-                        "type": "string",
-                        "description": "JSON-encoded array of checklist items ({id, label, checked})",
-                        "visible": false,
-                        "title": "Checklist"
-                    },
-                    "flowRun": {
-                        "type": "string",
-                        "description": "UUID of the suspended flow run this task is the answer to. Completing the task resumes that run. Distinct from workflowStepId, which names a step in a flow DEFINITION: two cases running the same flow share a workflowStepId and must never resume one another.",
-                        "visible": false,
-                        "title": "Flow Run"
-                    },
-                    "flowNode": {
-                        "type": "string",
-                        "description": "Id of the node within the flow that asked this question. Required alongside flowRun because a run accumulates one awaiting slot PER NODE, so the run alone cannot say which question this task answers.",
-                        "visible": false,
-                        "title": "Flow Node"
-                    },
-                    "blocksCase": {
-                        "type": "boolean",
-                        "description": "Set when a case flow is waiting on this task. Derived: see x-openregister-calculations.",
-                        "title": "Blocks a case",
-                        "facetable": true
-                    }
-                },
-                "searchable": true,
-                "configuration": {
-                    "linkedTypes": [
-                        "notes",
-                        "calendar"
-                    ],
-                    "x-openregister-calculations": {
-                        "isTerminalStatus": {
-                            "type": "boolean",
-                            "materialise": true,
-                            "description": "True when the task status is terminal (completed/terminated/disabled: mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
-                            "expression": {
-                                "or": [
-                                    {
-                                        "eq": [
-                                            {
-                                                "prop": "status"
-                                            },
-                                            "completed"
-                                        ]
-                                    },
-                                    {
-                                        "eq": [
-                                            {
-                                                "prop": "status"
-                                            },
-                                            "terminated"
-                                        ]
-                                    },
-                                    {
-                                        "eq": [
-                                            {
-                                                "prop": "status"
-                                            },
-                                            "disabled"
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        "daysUntilDue": {
-                            "type": "integer",
-                            "materialise": false,
-                            "description": "Signed whole days from today until dueDate (negative = overdue, null = no dueDate). Virtual (materialise:false): time-dependent, computed at read time when the request passes _extend=calculations. Both operands are floored to date granularity (dueDate is date-time) to match day-based reminder semantics.",
-                            "expression": {
-                                "dateDiff": {
-                                    "from": {
-                                        "formatDate": [
-                                            {
-                                                "now": []
-                                            },
-                                            "Y-m-d"
-                                        ]
-                                    },
-                                    "to": {
-                                        "formatDate": [
-                                            {
-                                                "prop": "dueDate"
-                                            },
-                                            "Y-m-d"
-                                        ]
-                                    },
-                                    "unit": "days"
-                                }
-                            }
-                        },
-                        "daysOverdue": {
-                            "type": "integer",
-                            "materialise": false,
-                            "description": "Whole days past dueDate; null when there is no dueDate or the task is not overdue (due today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
-                            "expression": {
-                                "if": [
-                                    {
-                                        "gt": [
-                                            {
-                                                "dateDiff": {
-                                                    "from": {
-                                                        "formatDate": [
-                                                            {
-                                                                "prop": "dueDate"
-                                                            },
-                                                            "Y-m-d"
-                                                        ]
-                                                    },
-                                                    "to": {
-                                                        "formatDate": [
-                                                            {
-                                                                "now": []
-                                                            },
-                                                            "Y-m-d"
-                                                        ]
-                                                    },
-                                                    "unit": "days"
-                                                }
-                                            },
-                                            0
-                                        ]
-                                    },
-                                    {
-                                        "dateDiff": {
-                                            "from": {
-                                                "formatDate": [
-                                                    {
-                                                        "prop": "dueDate"
-                                                    },
-                                                    "Y-m-d"
-                                                ]
-                                            },
-                                            "to": {
-                                                "formatDate": [
-                                                    {
-                                                        "now": []
-                                                    },
-                                                    "Y-m-d"
-                                                ]
-                                            },
-                                            "unit": "days"
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    },
-                    "x-openregister-lifecycle": {
-                        "field": "status",
-                        "initial": "available",
-                        "final": [
-                            "completed",
-                            "terminated",
-                            "disabled"
-                        ],
-                        "transitions": {
-                            "activate": {
-                                "from": [
-                                    "available"
-                                ],
-                                "to": "active",
-                                "description": "Pick up the task."
-                            },
-                            "complete": {
-                                "from": [
-                                    "active"
-                                ],
-                                "to": "completed",
-                                "description": "Mark task as completed."
-                            },
-                            "terminate": {
-                                "from": [
-                                    "available",
-                                    "active"
-                                ],
-                                "to": "terminated",
-                                "description": "Terminate the task."
-                            },
-                            "disable": {
-                                "from": [
-                                    "available",
-                                    "active"
-                                ],
-                                "to": "disabled",
-                                "description": "Disable the task."
-                            }
-                        }
-                    }
-                },
-                "x-openregister-calculations": {
-                    "blocksCase": {
-                        "type": "boolean",
-                        "materialise": true,
-                        "description": "Whether a case flow is currently WAITING on this task. True when the task records the run that created it and has not yet been answered. This is the half of the relationship a person cannot otherwise see: `case` already says which case the task belongs to, but not that the case has stopped and is waiting for them. Materialised so a work queue can filter on it server-side: a client-side filter over server-paged rows silently drops what it never fetched. Declarative per ADR-031: this is derived state, not a service.",
-                        "expression": {
-                            "and": [
-                                {
-                                    "ne": [
-                                        {
-                                            "coalesce": [
-                                                {
-                                                    "prop": "flowRun"
-                                                },
-                                                ""
-                                            ]
-                                        },
-                                        ""
-                                    ]
-                                },
-                                {
-                                    "ne": [
-                                        {
-                                            "prop": "status"
-                                        },
-                                        "completed"
-                                    ]
-                                },
-                                {
-                                    "ne": [
-                                        {
-                                            "prop": "status"
-                                        },
-                                        "terminated"
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                }
             },
             "role": {
                 "slug": "role",
@@ -8170,8 +7849,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "Reference to the parent Organisation in OpenRegister",
                         "title": "Tenant Reference"
                     },
                     "branding": {
@@ -8260,8 +7939,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "Reference to the parent Organisation in OpenRegister",
                         "title": "Tenant Reference"
                     },
                     "quotaType": {
@@ -8277,7 +7956,7 @@
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Hard limit value (NULL = unlimited)",
+                        "description": "Hard limit value (NULL = unlimited). Only for cases_per_month and active_users: the limits for storage_gb and api_calls_per_hour live on the Organisation, as storageQuota and requestQuota, and are read from there",
                         "title": "Limit"
                     },
                     "currentUsage": {
@@ -8326,8 +8005,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "Reference to the parent Organisation in OpenRegister",
                         "title": "Tenant Reference"
                     },
                     "userRef": {
@@ -8337,7 +8016,7 @@
                     },
                     "role": {
                         "type": "string",
-                        "description": "Role within the tenant (admin, manager, behandelaar, viewer, ...)",
+                        "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the three roles TenantProvisioningService creates and the only three the mandate matrix recognises; a member holding any other value is refused on every write.",
                         "title": "Role"
                     },
                     "joinedAt": {
@@ -8384,8 +8063,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "Reference to the parent Organisation in OpenRegister",
                         "title": "Tenant Reference"
                     },
                     "mandateMatrixRef": {
@@ -8434,8 +8113,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "Reference to the parent Organisation in OpenRegister",
                         "title": "Tenant Reference"
                     },
                     "eventType": {
@@ -9476,6 +9155,7 @@
                 "icon": "PowerPlugOutline",
                 "version": "1.2.0",
                 "title": "Integration",
+                "x-openregister-catalogue": true,
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, and the authorization block is load-bearing rather than decorative. OpenRegister treats an ABSENT block as open. Without one, GET /apps/openregister/api/objects/dossiq/dossiqIntegration answered every row to every authenticated account, measured at ten rows to an account in no groups. The Integrations page is admin-only and #2307 added a router guard, but a router guard stops the page and not the data. All four actions are named on purpose. Once the block is non-empty, OpenRegister fails an unlisted action closed, so naming only read would have moved the write posture too. Every writer is already admin-gated behind AuthorizedAdminSetting, so naming admins on create, update and delete matches what the code does today.",
                 "authorization": {
                     "read": [
@@ -9589,7 +9269,6 @@
                     "documentType",
                     "decisionType",
                     "case",
-                    "caseTask",
                     "role",
                     "result",
                     "statusRecord",

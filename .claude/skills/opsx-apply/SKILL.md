@@ -61,7 +61,7 @@ Implement tasks from an OpenSpec change.
    | Location | What | Priority |
    |----------|------|----------|
    | `openspec/changes/<name>/context-brief.md` | Specter intelligence brief — features, user stories, stakeholders, schemas, standards. Contains market research data that informed the spec. | Load if present — provides domain context for implementation decisions |
-   | `.claude/openspec/architecture/adr-*.md` | Company-wide ADRs (13 Conduction-wide decisions: data layer, API patterns, frontend, security, i18n, testing, etc.) | **Always load — these are non-negotiable** |
+   | `hydra/openspec/architecture/adr-*.md` | Company-wide ADRs, in the hydra repo. App repos do NOT carry copies: the local set drifted (a stale `adr-004` said `fetch()` where hydra said `axios`, causing a real reviewer false alarm on decidesk#71) and it silently omitted ADR-022 entirely. | **Always load — these are non-negotiable** |
    | `openspec/architecture/adr-*.md` | Repo-specific ADRs (app's data model, workflows, standards compliance, security model) | Always load if present |
    | `docs/ARCHITECTURE.md` | App-specific technology decisions and component structure | Load if present |
 

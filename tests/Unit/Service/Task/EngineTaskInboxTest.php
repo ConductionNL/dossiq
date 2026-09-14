@@ -208,6 +208,7 @@ class EngineTaskInboxTest extends TestCase {
 							'dueAt'      => '2026-09-15T00:00:00+00:00',
 							'objectUuid' => 'case-9',
 							'assignee'   => 'user:admin',
+							'workflowStepId' => 'st-intake',
 							'checklist'  => [['id' => 'i-1', 'label' => 'Stuk 1', 'checked' => false]],
 						],
 					],
@@ -225,6 +226,12 @@ class EngineTaskInboxTest extends TestCase {
 					'dueDate'  => '2026-09-15T00:00:00+00:00',
 					'case'     => 'case-9',
 					'assignee' => 'user:admin',
+					// Which status asked for the task. It is carried because
+					// `StatusChecklist` narrows a case's tasks to one phase on
+					// it, and the engine has no criteria argument to do that
+					// narrowing server-side. Dropping it here is what left the
+					// checklist reader querying the register instead.
+					'workflowStepId' => 'st-intake',
 					// A TYPED list, not a string. `caseTask` held JSON in a
 					// string and the checklist guard had to decode it; the
 					// engine refuses a string at write time, so this arrives

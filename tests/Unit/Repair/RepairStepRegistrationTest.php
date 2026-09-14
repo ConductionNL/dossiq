@@ -71,6 +71,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RealignLhsActorTypeVocabulary' => 'repairs rows an earlier rename touched',
 		'RealignStatutoryVocabulary' => 'repairs rows an earlier rename touched; a fresh install never acquires them',
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
+		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
 		'MigrateSubsidieRegelingToCaseType' => 'moves existing subsidieRegeling rows onto case types',
 		'MigrateAiOversightToHermiq' => 'replays existing audit history into hermiq',

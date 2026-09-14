@@ -34,7 +34,7 @@ Continue working on a change by creating the next artifact.
    |------|----------------------|
    | `openspec/changes/<name>/context-brief.md` | **Specter intelligence brief** — features, user stories, stakeholders, journeys, schemas. Primary input when present — read fully |
    | `openspec/architecture/` | Repo-specific ADRs — ADR-000 is always the data model |
-   | `.claude/openspec/architecture/` | Check company-wide ADRs (always apply) |
+   | `hydra/openspec/architecture/` | Company-wide ADRs, in the hydra repo (always apply). App repos carry no copies. |
    | `docs/ARCHITECTURE.md` | Understand app-specific technology decisions and data model |
    | `docs/FEATURES.md` | Confirm the feature tier and roadmap phase for what is being built |
 

@@ -223,7 +223,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testAConcludedDecisionResumesTheRunThatAskedForIt(): void {
 		$signals = [];
@@ -250,7 +250,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testAnUnrelatedDecisionLeavesTheRunSuspended(): void {
 		$signals = [];
@@ -270,7 +270,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testOnlyTheRunNamingTheRefIsResumed(): void {
 		$signals = [];
@@ -297,7 +297,7 @@ class DecisionConcludedListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-flow-human-steps/specs/case-flow-human-steps/spec.md
+	 * @spec openspec/specs/case-flow-human-steps/spec.md
 	 */
 	public function testWithoutFlowCollaboratorsNothingIsResumedAndNothingRaises(): void {
 		$listener = $this->listenerForDecision(

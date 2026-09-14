@@ -151,7 +151,21 @@ class InformatieobjectStatusLifecycle {
 			$updateData['lockedOn'] = date('Y-m-d\TH:i:s');
 		}
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
+		// THE TRANSITION'S FIELDS, APPLIED TO THE STORED DOCUMENT. This used to
+		// hand `$updateData` straight to `saveObject()` with the uuid, but that
+		// save is PUT-semantic: the payload IS the new object. Every property it
+		// left out was dropped, and because four of them are required
+		// OpenRegister refused the write, so no document status change ever
+		// completed and the bulk run failed every document it was given.
+		// patchObjectAsArray() is the app's partial-write seam: `patchObject()`
+		// where OpenRegister has it, a fresh read-then-save where it does not.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $infoSchema,
+			id: $infoObjectId,
+			changes: $updateData,
+		);
 
 		$this->logger->info(
 			'Dossiq dossier: informatieobject ' . $infoObjectId . ' transitioned ' . $currentStatus . ' -> ' . $newStatus,

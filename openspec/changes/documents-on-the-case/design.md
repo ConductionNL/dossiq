@@ -28,7 +28,7 @@ serves the library; `BeschikkingComposerDialog.vue` composes a
 conceptbeschikking from a template and the case data.
 
 Pages touched, by manifest id: `CaseDetail` (widget `case-panels`, type
-`tabs`; `headerActions` with `log-hours`). nextcloud-vue 2.40.0
+`tabs`; `headerActions` with `link-object`). nextcloud-vue 2.40.0
 `actionsDispatcher.js` handles `handler`, `open-modal`, `open-page`,
 `navigate`, `export`, `open-form`, `refresh`, `api-call`, `agent`, `toggle`
 and `object-op`. It does not handle `run-action`; the `run-action` type

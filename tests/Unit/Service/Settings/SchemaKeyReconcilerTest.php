@@ -15,6 +15,15 @@
  * wrote to a foreign schema. Nothing threw. The Tasks page simply stayed empty,
  * which reads as "no data" instead of "wrong schema".
  *
+ * 🔴 THE TESTS NOW DRIVE `case`, NOT THE SLUG FROM THE INCIDENT. remove-casetask
+ * deleted the task schema and took `caseTask` out of
+ * {@see SchemaSlugMap::SLUG_TO_CONFIG_KEY}, so a reconcile over that slug writes
+ * nothing at all. Left as it was, the first two tests failed and the third
+ * PASSED VACUOUSLY, because "the key was not written again" is also true of a
+ * key nothing writes. `case` is the same shape of risk and is still mapped: the
+ * slug is one of the most common in the fleet, and the ids below are the ones
+ * the incident was measured with.
+ *
  * The second test is the guard rail on the fix: Dossiq deliberately points
  * `appointment`, `location` and `catalog` at schemas owned by OTHER apps, and
  * those slugs are unique instance-wide. A register-scoped lookup finds nothing
@@ -51,12 +60,12 @@ use Psr\Log\NullLogger;
  */
 final class SchemaKeyReconcilerTest extends TestCase {
 	/**
-	 * The three `task` rows observed on the dev instance, in the order the
+	 * The three same-slug rows observed on the dev instance, in the order the
 	 * unscoped lookup returned them. Only 173 belongs to Dossiq's register.
 	 *
 	 * @var array<string, int>
 	 */
-	private const TASK_ROWS = [
+	private const COLLIDING_ROWS = [
 		'foreign-internetaak' => 52,
 		'foreign-duplicate' => 146,
 		'dossiq' => 173,
@@ -90,16 +99,16 @@ final class SchemaKeyReconcilerTest extends TestCase {
 			registerSchemaIds: [165, 166, 172, 173],
 			// The unscoped lookup answers with the FOREIGN row, exactly as the
 			// live instance did. If the fix regresses, this is what gets written.
-			globalBySlug: ['caseTask' => self::TASK_ROWS['foreign-internetaak']],
-			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
+			globalBySlug: ['case' => self::COLLIDING_ROWS['foreign-internetaak']],
+			scopedBySlug: ['case' => self::COLLIDING_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();
 
 		$this->assertSame(
-			(string)self::TASK_ROWS['dossiq'],
-			$this->written['task_schema'] ?? '',
-			'task_schema must resolve to the task schema inside Dossiq register 23, not to the foreign row 52.'
+			(string)self::COLLIDING_ROWS['dossiq'],
+			$this->written['case_schema'] ?? '',
+			'case_schema must resolve to the schema inside Dossiq register 23, not to the foreign row 52.'
 		);
 	}
 
@@ -141,15 +150,15 @@ final class SchemaKeyReconcilerTest extends TestCase {
 		$reconciler = $this->reconciler(
 			appConfig: $appConfig,
 			registerSchemaIds: [],
-			globalBySlug: ['caseTask' => self::TASK_ROWS['foreign-internetaak']],
-			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
+			globalBySlug: ['case' => self::COLLIDING_ROWS['foreign-internetaak']],
+			scopedBySlug: ['case' => self::COLLIDING_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();
 
 		$this->assertSame(
-			(string)self::TASK_ROWS['foreign-internetaak'],
-			$this->written['task_schema'] ?? '',
+			(string)self::COLLIDING_ROWS['foreign-internetaak'],
+			$this->written['case_schema'] ?? '',
 			'Without a configured register there is nothing to scope to, so the unscoped answer stands.'
 		);
 	}
@@ -161,20 +170,20 @@ final class SchemaKeyReconcilerTest extends TestCase {
 	 */
 	public function testAlreadyCorrectKeyIsNotRewritten(): void {
 		$appConfig = $this->appConfigSpy(
-			['register' => '23', 'task_schema' => (string)self::TASK_ROWS['dossiq']]
+			['register' => '23', 'case_schema' => (string)self::COLLIDING_ROWS['dossiq']]
 		);
 
 		$reconciler = $this->reconciler(
 			appConfig: $appConfig,
 			registerSchemaIds: [173],
 			globalBySlug: [],
-			scopedBySlug: ['caseTask' => self::TASK_ROWS['dossiq']],
+			scopedBySlug: ['case' => self::COLLIDING_ROWS['dossiq']],
 		);
 
 		$reconciler->reconcile();
 
 		$this->assertArrayNotHasKey(
-			'task_schema',
+			'case_schema',
 			$this->written,
 			'A key already holding the correct id must not be written again.'
 		);

@@ -15,6 +15,14 @@
  * that only asserted "findAll was called" would have passed against the
  * broken code too.
  *
+ * It died a second time, for a second reason, with the suite green again.
+ * `findAll()` returns `ObjectEntity` objects, and the scan kept only the rows
+ * that were arrays, so it kept none: no decision ever counted as decided, and
+ * every bezwaar entering "Decision on objection" was reverted, including the
+ * ones decidesk had just decided. The fixtures here were arrays, the one shape
+ * production never hands over. So every row that decides an outcome below is
+ * an `ObjectEntity`, built the way `findAll()` returns it.
+ *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Listener
  *
@@ -46,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for BezwaarDecisionListener.
  *
  * @covers \OCA\Dossiq\Listener\BezwaarDecisionListener
+ *
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class BezwaarDecisionListenerTest extends TestCase {
 
@@ -113,7 +123,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * OpenRegister declares it, so a positional three-argument call from the
 	 * listener is a TypeError here just as it is in production.
 	 *
-	 * @param array<int, array<string, mixed>> $decisions Rows findAll should return.
+	 * @param array<int, mixed> $decisions Rows findAll should return: ObjectEntity objects, as OpenRegister returns them.
 	 *
 	 * @return object The doubled service.
 	 */
@@ -125,7 +135,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 			 * Constructor.
 			 *
 			 * @param BezwaarDecisionListenerTest $test The owning test case.
-			 * @param array<int, array<string, mixed>> $decisions Rows to return.
+			 * @param array<int, mixed> $decisions Rows to return.
 			 */
 			public function __construct(
 				private BezwaarDecisionListenerTest $test,
@@ -138,7 +148,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 			 *
 			 * @param array<string, mixed> $config The find configuration.
 			 *
-			 * @return array<int, array<string, mixed>>
+			 * @return array<int, mixed>
 			 */
 			public function findAll(array $config = []): array {
 				$this->test->recordFindAll(config: $config);
@@ -148,24 +158,30 @@ class BezwaarDecisionListenerTest extends TestCase {
 			/**
 			 * Capture a revert write.
 			 *
-			 * @param array<string, mixed> $object The patch payload.
+			 * The revert owns one field, so it PATCHES it. It used to hand
+			 * `saveObject()` the status alone with the uuid, which replaces
+			 * the bezwaar and is refused for the case and receipt date it
+			 * drops; this double's saveObject() was the only witness, and it
+			 * accepted the partial payload as if it merged.
+			 *
+			 * @param string $objectId The object uuid.
+			 * @param array<string, mixed> $data The fields to change.
 			 * @param string $register The register slug.
 			 * @param string $schema The schema slug.
-			 * @param string $uuid The object uuid.
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, string $uuid): array {
+			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
 				$this->test->recordSave(
 					save: [
-						'object' => $object,
+						'object' => $data,
 						'register' => $register,
 						'schema' => $schema,
-						'uuid' => $uuid,
+						'uuid' => $objectId,
 					]
 				);
-				return $object;
-			}//end saveObject()
+				return $data;
+			}//end patchObject()
 		};
 	}//end objectService()
 
@@ -190,6 +206,22 @@ class BezwaarDecisionListenerTest extends TestCase {
 	public function recordSave(array $save): void {
 		$this->capturedSave = $save;
 	}//end recordSave()
+
+	/**
+	 * A bezwaarDecision row in the shape `findAll()` returns it.
+	 *
+	 * @param array<string, mixed> $object The decision's properties.
+	 * @param string $uuid The decision's uuid.
+	 *
+	 * @return ObjectEntity The row.
+	 */
+	private function decisionRow(array $object, string $uuid = 'decision-1'): ObjectEntity {
+		$row = new ObjectEntity();
+		$row->setUuid($uuid);
+		$row->setObject(array_merge(['objectionProceeding' => 'bezwaar-1'], $object));
+
+		return $row;
+	}//end decisionRow()
 
 	/**
 	 * Build an ObjectUpdatedEvent carrying the given payloads.
@@ -243,7 +275,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testProbeCallsFindAllWithASingleConfigArray(): void {
-		$listener = $this->listener($this->objectService([['status' => 'published']]));
+		$listener = $this->listener($this->objectService([$this->decisionRow(['status' => 'published'])]));
 
 		$listener->handle(
 			$this->event(
@@ -274,7 +306,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testProbeIsBounded(): void {
-		$listener = $this->listener($this->objectService([['status' => 'published']]));
+		$listener = $this->listener($this->objectService([$this->decisionRow(['status' => 'published'])]));
 
 		$listener->handle(
 			$this->event(
@@ -298,7 +330,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testRevertsWhenNoDecidedDecisionExists(): void {
-		$listener = $this->listener($this->objectService([['status' => 'draft']]));
+		$listener = $this->listener($this->objectService([$this->decisionRow(['status' => 'draft'])]));
 
 		$listener->handle(
 			$this->event(
@@ -317,10 +349,17 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * A decision delegated to decidesk carries a decisionRef rather than the
 	 * legacy local `status: published`, and must also satisfy the guard.
 	 *
+	 * This is the live path. `Bezwaar\DecisionService::publish()` writes the
+	 * decisionRef with status `awaiting-decidesk`, and the bezwaar moves into
+	 * "Decision on objection" once decidesk concludes. The row arrives as an
+	 * `ObjectEntity`, and before the scan read it as one this test failed:
+	 * the guard saw no decision and reverted the bezwaar.
+	 *
 	 * @return void
 	 */
 	public function testDecisionRefSatisfiesTheGuard(): void {
-		$listener = $this->listener($this->objectService([['decisionRef' => 'besluit-9']]));
+		$row = $this->decisionRow(['status' => 'awaiting-decidesk', 'decisionRef' => 'besluit-9']);
+		$listener = $this->listener($this->objectService([$row]));
 
 		$listener->handle(
 			$this->event(
@@ -333,6 +372,50 @@ class BezwaarDecisionListenerTest extends TestCase {
 	}//end testDecisionRefSatisfiesTheGuard()
 
 	/**
+	 * A legacy decision published locally, before decisions went to decidesk,
+	 * carries `status: published` and must satisfy the guard.
+	 *
+	 * @return void
+	 */
+	public function testPublishedDecisionSatisfiesTheGuard(): void {
+		$listener = $this->listener($this->objectService([$this->decisionRow(['status' => 'published'])]));
+
+		$listener->handle(
+			$this->event(
+				$this->objectionOnProtectedStatus(),
+				['status' => 'In handling']
+			)
+		);
+
+		$this->assertNull($this->capturedSave, 'a published bezwaarDecision must not be reverted');
+	}//end testPublishedDecisionSatisfiesTheGuard()
+
+	/**
+	 * One decided row among undecided ones is enough.
+	 *
+	 * The scan must look at every row it was given, not only the first, and a
+	 * draft sitting in front of the decided row must not end it.
+	 *
+	 * @return void
+	 */
+	public function testADecidedRowBehindADraftSatisfiesTheGuard(): void {
+		$rows = [
+			$this->decisionRow(['status' => 'draft'], 'decision-1'),
+			$this->decisionRow(['status' => 'awaiting-decidesk', 'decisionRef' => 'besluit-9'], 'decision-2'),
+		];
+		$listener = $this->listener($this->objectService($rows));
+
+		$listener->handle(
+			$this->event(
+				$this->objectionOnProtectedStatus(),
+				['status' => 'In handling']
+			)
+		);
+
+		$this->assertNull($this->capturedSave, 'a decided row behind a draft must not be missed');
+	}//end testADecidedRowBehindADraftSatisfiesTheGuard()
+
+	/**
 	 * A FULL page means the bound, not the data, ended the scan. Reverting on
 	 * an incomplete scan would block a legitimate transition, so the guard
 	 * fails open.
@@ -340,7 +423,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsOpenWhenTheProbeHitsItsBound(): void {
-		$undecided = array_fill(0, 100, ['status' => 'draft']);
+		$undecided = array_fill(0, 100, $this->decisionRow(['status' => 'draft']));
 		$listener = $this->listener($this->objectService($undecided));
 
 		$listener->handle(

@@ -243,6 +243,14 @@ It MUST import from `@conduction/nextcloud-vue` (ADR-004) and route all user-vis
 
 #### Scenario: Composer is the leaf / NC Mail, not a dossiq component
 
+@e2e exclude The NC Mail draft this scenario requires is not built. The case
+email tab's draft action calls POST /api/cases/{caseId}/email-templates/{templateId}/draft,
+and EmailTemplateService::prefillDraft only returns the rendered subject and body:
+nothing in lib/ creates an NC Mail draft or returns the `draftUrl` the tab would
+open, so the compose flow opens nothing to assert. The test that cited this
+scenario checked admin-settings buttons instead. Cite it again once the Mail
+draft handoff lands.
+
 - **GIVEN** a handler clicks "Verstuur email" on a case
 - **WHEN** the compose flow opens
 - **THEN** it MUST open an NC Mail draft (optionally prefilled from a template), NOT a dossiq-authored `EmailComposer.vue`

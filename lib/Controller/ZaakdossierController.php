@@ -264,6 +264,9 @@ class ZaakdossierController extends Controller {
 			'description' => $this->request->getParam('description') ?? $this->request->getParam('beschrijving'),
 			'informatieobjecttype' => $this->request->getParam('informatieobjecttype'),
 			'vertrouwelijkheidaanduiding' => $this->request->getParam('vertrouwelijkheidaanduiding'),
+			// The Files tab's Document properties dialog edits these two as well.
+			'direction' => $this->request->getParam('direction'),
+			'keywords' => $this->request->getParam('keywords'),
 		];
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 

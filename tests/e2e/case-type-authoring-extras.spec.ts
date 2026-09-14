@@ -321,7 +321,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-CT-19: a status has a colour and a list visibility ─────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-coloured-status-shows-on-the-board
 	// Scenario: A coloured status shows on the board
 	test('a coloured status draws its board column in that colour', async ({
 		page,
@@ -330,8 +330,15 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await dismissSupportDialog(page)
 
 		// The board merges every non-final status sharing a NAME into one
-		// column, and the seeded names carry RUN_PREFIX, so this column is
-		// this spec's own and no other run can colour it.
+		// column. RUN_PREFIX keeps another RUN out of this column, but not
+		// another SPEC: it is per process, and a Playwright worker runs several
+		// spec files in one process, so `seedStateMachine` in fixtures.ts seeds
+		// its own `<prefix> In behandeling` under the same prefix. That status
+		// names no colour and the schema stores the default grey for it, which
+		// is why `mergeColumnColour` has to take a chosen hue over grey rather
+		// than the first row the API answers with: before it did, this column
+		// came out grey whenever the fixture machine happened to be created
+		// first, and green on the retry that reseeded from an empty worker.
 		const column = page
 			.locator('.board-column')
 			.filter({ hasText: `${RUN_PREFIX} In behandeling` })
@@ -342,7 +349,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toHaveAttribute('data-colour', 'orange')
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-hidden-status-keeps-its-cases-out-of-the-list
 	// Scenario: A hidden status keeps its cases out of the list
 	test('a hidden status keeps its cases off the list, and Closed brings them back', async ({
 		page,
@@ -374,9 +381,14 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/case-types/spec.md
-	// The badge half of the same requirement: the case page draws the status
-	// in its own colour, which is where a handler actually reads it.
+	// @e2e case-types::a-coloured-status-shows-on-the-case
+	//
+	// The badge half of REQ-CT-19: "the status badge on the case AND the
+	// Workflow board column SHALL render in that colour". Only the board half
+	// had a scenario, so this test had nothing to cite and credited nothing.
+	// The scenario was written rather than the citation bent onto the board
+	// one, which this test does not drive: the SHALL was already there with
+	// nothing checkable attached to half of it.
 	test('the case page draws the current status in its status’s colour', async ({
 		page,
 	}) => {
@@ -388,16 +400,25 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		await page.goto(`/apps/${REGISTER}/cases/${objectId(openCase)}`)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByTestId('case-current-status')).toHaveAttribute(
-			'data-colour',
-			'orange',
+		// 🔴 THE COLOUR SURVIVES, THE TOKEN DOES NOT, and this assertion says
+		// which. CaseHeaderRow carried the authored palette NAME on a
+		// `data-colour` attribute, read only by this test; the visible variant
+		// came from `isFinal`. The identity row is a configured `stat` tile
+		// now, and its badge takes ONE axis: `objectField.resolve.variantField`
+		// is `colour`, so the authored hue is what paints the pill, mapped
+		// through `variantMap` onto the six variants CnStatusBadge accepts.
+		// Orange maps to `warning`. What is gone is the exact
+		// `var(--nl-color-orange)` token and the six `-light` tints, which fold
+		// onto their full hue. That loss is in the PR that made this change.
+		await expect(page.getByTestId('cn-stat-widget-badge')).toHaveClass(
+			/cn-status-badge--warning/,
 			{ timeout: 30_000 },
 		)
 	})
 
 	// ── REQ-CT-20: a type derives from a parent ────────────────────────────
 
-	// @e2e openspec/specs/case-types/spec.md
+	// @e2e case-types::a-child-shows-its-parents-statuses
 	// Scenario: A child shows its parent's statuses
 	test('a child that declares nothing shows its parent’s four statuses, marked Inherited', async ({
 		page,
@@ -422,7 +443,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	})
 
 	// @e2e openspec/specs/case-types/spec.md
-	// Scenario: A child overrides one deadline
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS. `case-types::a-child-overrides-one-deadline`
+	// ends "WHEN you file a case of Bezwaar (verkort), THEN the CASE's deadline
+	// SHALL be 6 weeks after its start date". This test reads the BLUEPRINT and
+	// asserts the case TYPE resolves `P6W` over its parent's `P12W`. That is
+	// the input to the rule, not the rule's outcome: a case whose deadline was
+	// computed from the parent anyway, or not computed at all, satisfies every
+	// assertion here.
+	//
+	// The comment below argues the case deadline follows from the type's
+	// stored value, and it does, through OpenRegister at save time. But the
+	// scenario is about the step this test does not take. File a case and read
+	// its deadline, then anchor.
 	test('a child’s own deadline beats its parent’s', async () => {
 		// Through the API rather than through the page: the deadline a case
 		// gets is computed by OpenRegister at save time from the case TYPE's
@@ -449,61 +482,104 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(blueprint.parents[0].processingDeadline).toBe('P12W')
 	})
 
+	// NOT cited to case-types::a-cycle-is-refused. That scenario is about the
+	// save a PERSON makes, in the Edit dialog, and is cited where that is
+	// driven: case-type-parent-chain.spec.ts. This one sends the same save
+	// through the object API, the path a script or an import takes.
 	// @e2e openspec/specs/case-types/spec.md
 	// Scenario: A cycle is refused
 	test('a parent that descends from the type is refused, and the message names the cycle', async () => {
-		// The refusal lives in CaseTypeResolver::assertNoCycle, which the
-		// publish path calls; the round trip asserted here is that the
-		// blueprint of a cycle STOPS rather than looping the request forever,
-		// which is what a reader of a mis-saved chain actually meets.
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: child.caseType,
-		})
-
-		const res = await api.get(
-			`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
-			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+		// Since CaseTypeParentCycleListener the loop is refused ON SAVE, on
+		// every write path. This is the one a script or an import uses,
+		// OpenRegister's object API; the Edit dialog a person uses is
+		// case-type-parent-chain.spec.ts, which is where the scenario is
+		// cited. What this keeps from its old self is the other half: the
+		// refusal leaves the stored chain as it was, so the blueprint still
+		// reads as a finite chain.
+		const current = await showObject(api, 'caseType', parent.caseType)
+		const refused = await api.put(
+			`/index.php/apps/openregister/api/objects/${REGISTER}/caseType/${parent.caseType}`,
+			{
+				headers: {
+					requesttoken: token,
+					'OCS-APIRequest': 'true',
+					'Content-Type': 'application/json',
+				},
+				data: { ...current, parentCaseType: child.caseType },
+			},
 		)
-		// With the status and the body in the message, because a bare
-		// `toBeTruthy()` here reported only "expected true, got false" and
-		// said nothing about the 412 that caused it.
-		expect(
-			res.ok(),
-			`blueprint -> ${res.status()} ${await res.text()}`,
-		).toBeTruthy()
+		try {
+			expect(refused.status(), await refused.text()).toBe(422)
+			// The loop, by the titles this spec seeded, in either locale.
+			expect(String((await refused.json()).error)).toContain(
+				`${RUN_PREFIX} Bezwaar -> ${RUN_PREFIX} Bezwaar (verkort) -> ${RUN_PREFIX} Bezwaar`,
+			)
 
-		const blueprint = await res.json()
-		// Three levels at most, and never the same type twice.
-		const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
-			objectId(row),
-		)
-		expect(new Set(ids).size).toBe(ids.length)
+			const stored = await showObject(api, 'caseType', parent.caseType)
+			expect(String(stored.parentCaseType ?? '')).toBe('')
 
-		// Put the parent back, so the tests that follow read an ordinary chain.
-		await updateObject(api, token, 'caseType', parent.caseType, {
-			parentCaseType: null,
-		})
-		const restored = await showObject(api, 'caseType', parent.caseType)
-		expect(String(restored.parentCaseType ?? '')).toBe('')
+			const res = await api.get(
+				`/index.php/apps/${REGISTER}/api/case-types/${parent.caseType}/blueprint`,
+				{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
+			)
+			// With the status and the body in the message, because a bare
+			// `toBeTruthy()` here reported only "expected true, got false" and
+			// said nothing about the 412 that caused it.
+			expect(
+				res.ok(),
+				`blueprint -> ${res.status()} ${await res.text()}`,
+			).toBeTruthy()
+
+			const blueprint = await res.json()
+			// Three levels at most, and never the same type twice.
+			const ids = [blueprint.caseType, ...blueprint.parents].map((row: any) =>
+				objectId(row),
+			)
+			expect(new Set(ids).size).toBe(ids.length)
+		} finally {
+			// Only when the guard let the loop through: put the parent back so
+			// the tests that follow read an ordinary chain, and the failure
+			// above stays the one that is reported.
+			if (refused.ok()) {
+				await updateObject(api, token, 'caseType', parent.caseType, {
+					parentCaseType: null,
+				})
+			}
+		}
 	})
 
 	// ── REQ-PDM-01 / REQ-PDM-02: folders and shared attributes ─────────────
 
-	// @e2e openspec/specs/property-definition-management/spec.md
-	// Scenario: A folder narrows the index
-	// 🔴 PARKED ON OpenRegister#3560. The cause is a stale facet, NOT the page
-	// size, and not anything in this app or in the library.
+	// @e2e property-definition-management::a-folder-narrows-the-index
 	//
-	// `FacetHandler::getFacetsForObjects()` caches the whole facet response for
-	// an hour and no object write invalidates it. CnFolderSidebar builds the
-	// folder pane from that facet, so a category created today gets no folder
-	// today. On CI an earlier worker warmed the facet and deleted its rows in
-	// teardown; the retry worker seeded its own category, opened the page inside
-	// the hour, and was handed the dead category instead of its own.
+	// The citation named the spec FILE and the scenario sat in prose on the
+	// next line, so gate-19 credited it to nothing. The test proves the
+	// scenario in BOTH directions, which is what makes the anchor honest: the
+	// two types in the category are visible AND the one outside it is gone
+	// (count 0). "The index SHALL list the two only" needs the second half;
+	// a folder that narrowed nothing would still show the two that belong.
+	// UNPARKED. This was `test.fixme` on OpenRegister#3560, and that cause is
+	// fixed in the OpenRegister this suite runs against.
 	//
-	// THE TEN-SECOND PROOF, if you ever need to re-establish this. One live
-	// instance, same request, same instant, one parameter that changes only the
-	// cache key:
+	// The cause was a stale facet, not the page size and not anything in this
+	// app or in the library. `FacetHandler::getFacetsForObjects()` cached the
+	// whole facet response for an hour and no object write invalidated it.
+	// CnFolderSidebar builds the folder pane from that facet, so a category
+	// created today got no folder today. On CI an earlier worker warmed the
+	// facet and deleted its rows in teardown; the retry worker seeded its own
+	// category, opened the page inside the hour, and was handed the dead
+	// category instead of its own.
+	//
+	// openregister#3563 (merged into `development` on 2026-09-10, e08a0d72)
+	// folds a per register and schema version counter into the facet cache
+	// key and bumps it on every object create, update, delete and transition.
+	// dossiq's CI installs openregister from `development` (`additional-apps`
+	// in .github/workflows/code-quality.yml), so the category this spec seeds
+	// in `beforeAll` invalidates the facet the page then reads.
+	//
+	// IF THIS GOES RED AGAIN, check the facet before the test. One instance,
+	// same request, same instant, one parameter that changes only the cache
+	// key:
 	//
 	//   create a case type with a category nothing else uses
 	//     -> total 24 becomes 25, buckets UNCHANGED
@@ -511,35 +587,24 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	//     -> the same 25 rows, and the new bucket is there
 	//
 	// If two otherwise identical requests disagree, it is the cache, not the
-	// data. Clearing it with `DELETE /api/settings/cache?type=facet` then makes
-	// the original request agree.
+	// data. openregister#3563 turned that proof into
+	// `testAddingASortParameterNoLongerChangesTheBucketList`.
 	//
-	// ⚠️ I first wrote the page-size explanation here, and it was wrong. The
-	// manifest's own `_folderSidebarNote` says `field` derives the folders from
-	// the distinct values of the loaded rows. That stopped being true at
-	// nextcloud-vue 2.42.0 (#1036), which prefers the facet with pagination
-	// stripped. A docblock outlived its truth and sent me, and two sessions
-	// before me, back to the same wrong theory. That note is corrected in the
-	// same change as this comment, so the two now agree.
+	// And not the page size, which was the first theory here and was wrong.
+	// Since nextcloud-vue 2.42.0 (#1036) the pane is built from the facet with
+	// pagination stripped, not from the loaded rows. #2170's retry confirmed
+	// it: it sorted this run's rows onto page one and still found no folder.
 	//
 	// 🔑 THE SIBLING THAT PASSES, PASSES BY NARROWING. `case-objects.spec.ts`
-	// clicks a folder in the same component and is green, because it opens its
-	// index filtered by a fresh case uuid: that filter is part of the cache key,
-	// so its facet can never be warm. Do not read it as evidence the pane works.
-	//
-	// 🔑 #2170's retry is the independent confirmation. It sorted this run's
-	// rows onto page one, got them, and still found no folder. Rows present,
-	// facet stale. So do not retry a sort, and note that `_order` IS read back
-	// by `parseSortKeysFromQuery`, contrary to what #2210 recorded.
+	// clicks a folder in the same component and was green throughout, because
+	// it opens its index filtered by a fresh case uuid: that filter is part of
+	// the cache key, so its facet could never be warm. Do not read it as
+	// evidence for this test, in either direction.
 	//
 	// ⚠️ DO NOT MAKE THIS PASS BY CLEARING THE CACHE FROM THE TEST.
 	// `DELETE /api/settings/cache?type=facet` is an admin action a page reader
 	// cannot take, so a test that arranges it asserts the arrangement.
-	//
-	// This is a live product defect, not a test artefact: an administrator who
-	// gives a case type a new category gets no folder for it until the hour is
-	// out. Restore this by deleting the `fixme` once OpenRegister#3560 lands.
-	test.fixme('picking a folder narrows the Case types index to that category', async ({
+	test('picking a folder narrows the Case types index to that category', async ({
 		page,
 	}) => {
 		// The precondition is checked through the API, not off page one of the
@@ -598,8 +663,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-AVG-01: the personal data block ────────────────────────────────
 
-	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md
-	// Scenario: The block reads back what you saved
+	// @e2e avg-verwerkingenlogging::the-block-reads-back-what-you-saved
+	//
+	// The scenario's THEN names three values, `naw`, `bsn` and `public_task`,
+	// and the fixture seeds all three: `personalDataCategories: ['naw','bsn']`
+	// and `legalBasis: 'public_task'`. Only two were asserted, so the first
+	// category could have been dropped by the widget and this stayed green.
+	// `naw` is asserted below, which is what makes the anchor honest.
+	//
+	// ⚠️ `naw` is a three-character substring check, in the same loose
+	// `toContainText` form as its siblings, so it is the weakest of the three:
+	// any word on the page containing those letters satisfies it. The stronger
+	// form reads the categories out of the block itself rather than the whole
+	// detail page, and wants an instance to pin the selector.
 	test('the personal data block reads back the categories and the basis', async ({
 		page,
 	}) => {
@@ -611,6 +687,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		// like success in a screenshot.
 		const detail = page.locator('.cn-detail-page')
 		await expect(detail).toContainText('public_task', { timeout: 30_000 })
+		await expect(detail).toContainText('naw')
 		await expect(detail).toContainText('bsn')
 		await expect(detail).toContainText('behandelen-bezwaarschrift')
 	})
@@ -618,7 +695,21 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	// ── REQ-WIE-01: export, import, duplicate ──────────────────────────────
 
 	// @e2e openspec/specs/workflow-import-export/spec.md
-	// Scenario: Export downloads the bundle
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS. The obvious target is
+	// `workflow-import-export::export-downloads-the-bundle`, whose THEN is
+	// "a download SHALL start whose name carries the type's identifier". This
+	// test asserts the filename ends in `.zip` and nothing about the
+	// identifier, so it cannot tell the type's own bundle from any other
+	// type's. Its own comment already says asserting that something
+	// downloaded would pass on an empty error blob; `/\.zip$/` is barely more
+	// than that.
+	//
+	// Anchoring here would credit the identifier clause to a test that cannot
+	// see it break. The repair is to assert the name carries the identifier
+	// and then anchor, which needs a run to establish whether the endpoint
+	// names the file by uuid, title or slug. Guessing that from source is how
+	// a test gets written that reddens on a working build.
 	test('Export starts a download whose name carries the type’s identifier', async ({
 		page,
 	}) => {
@@ -634,7 +725,19 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	})
 
 	// @e2e openspec/specs/workflow-import-export/spec.md
-	// Scenario: Duplicate opens the copy
+	//
+	// 🔴 DELIBERATELY STILL ANCHORLESS, for the narrower of two reasons. The
+	// scenario says you land on a type TITLED `Bezwaar (kopie)` with the same
+	// statuses. The landing is proven well: the URL is asserted NOT to be the
+	// original, which is the half an api-call refresh would have passed.
+	//
+	// What is missing is the title. Nothing here reads the copy's name, so a
+	// Duplicate that lands on a correctly-structured copy called anything at
+	// all satisfies every assertion. The status check is a COUNT of 2 as
+	// well, so it holds for two differently-named statuses.
+	//
+	// Assert the title and read the status names, then anchor. Both are cheap
+	// on an instance and neither is safe to write blind.
 	test('Duplicate lands you on the copy, with the same statuses', async ({
 		page,
 	}) => {
@@ -666,8 +769,11 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 
 	// ── REQ-ZV-01: publish with a validation check and a change note ───────
 
-	// @e2e openspec/specs/zaaktype-versioning/spec.md
-	// Scenario: A draft with findings is not published
+	// @e2e zaaktype-versioning::a-draft-with-findings-is-not-published
+	//
+	// Both clauses of the scenario are asserted: the page lists the finding
+	// (`case-type-publish-findings` visible) and the type stays a draft, read
+	// back off the STORED object rather than off the dialog that refused.
 	test('a draft with findings lists them and stays a draft', async ({ page }) => {
 		await openCaseType(page, incomplete.caseType)
 
@@ -688,8 +794,11 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 		expect(stored.isDraft).toBe(true)
 	})
 
-	// @e2e openspec/specs/zaaktype-versioning/spec.md
-	// Scenario: A valid draft is published
+	// @e2e zaaktype-versioning::a-valid-draft-is-published
+	//
+	// Both clauses: the type is no longer a draft, read off the stored
+	// object, and the change note reaches the version, asserted on the stored
+	// template AND on the page a reader actually looks at.
 	test('a valid draft is published with its change note, and the version says so', async ({
 		page,
 	}) => {

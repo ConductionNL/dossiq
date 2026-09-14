@@ -35,13 +35,18 @@ describe('manifest detail pages', () => {
 		expect(manifest.pages.find((p) => p.id === 'TaskNew')).toBeUndefined()
 	})
 
-	it('the Tasks index resolves the case reference it shows', () => {
+	it('the Tasks index shows the case as a resolved name, not a uuid', () => {
+		// The DEFECT this guards is unchanged: a row showing a truncated
+		// uuid where the case should be reads as broken data. What changed
+		// is who resolves it. `extend: ['case']` asked OpenRegister to
+		// expand a $ref on the fetch; the engine's inbox resolves the
+		// anchoring object itself and hands the row a `subjectLabel`, so
+		// there is nothing for the page to extend and no nested column key
+		// to get wrong.
 		const tasks = manifest.pages.find((p) => p.id === 'Tasks')
-		expect(tasks.config.extend).toContain('case')
-		const caseColumn = tasks.config.columns.find(
-			(c) => typeof c === 'object' && c.key === 'case.title',
-		)
-		expect(caseColumn, 'a column reading the expanded case title').toBeTruthy()
-		expect(tasks.config.columns).not.toContain('case')
+
+		expect(tasks.config.entitySource).toBe('tasks')
+		expect(tasks.config.extend).toBeUndefined()
+		expect(tasks.config.columns).toBeUndefined()
 	})
 })
