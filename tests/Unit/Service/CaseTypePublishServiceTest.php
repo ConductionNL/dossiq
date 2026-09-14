@@ -147,7 +147,7 @@ class CaseTypePublishServiceTest extends TestCase {
 
 		return new CaseTypePublishService(
 			settingsService: $settings,
-			caseTypeResolver: new CaseTypeResolver($store),
+			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
 			acknowledgement: new CaseTypeAcknowledgement(),
 			logger: new NullLogger(),
