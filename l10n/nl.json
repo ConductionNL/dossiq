@@ -4029,6 +4029,18 @@
         "Default impact": "Standaard impact",
         "Default urgency": "Standaard urgentie",
         "Priority matrix": "Prioriteitsmatrix",
-        "Priority set by hand, not derived": "Prioriteit met de hand gezet, niet afgeleid"
+        "Priority set by hand, not derived": "Prioriteit met de hand gezet, niet afgeleid",
+        "You moved the case, but {count} automatic action did not run. Its status record shows which.": "U hebt de zaak verplaatst, maar {count} automatische actie is niet uitgevoerd. De statusregistratie laat zien welke.",
+        "You moved the case, but {count} automatic actions did not run. Its status record shows which.": "U hebt de zaak verplaatst, maar {count} automatische acties zijn niet uitgevoerd. De statusregistratie laat zien welke.",
+        "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
+            "U hebt de zaak verplaatst, maar {count} automatische actie is niet uitgevoerd. De statusregistratie laat zien welke.",
+            "U hebt de zaak verplaatst, maar {count} automatische acties zijn niet uitgevoerd. De statusregistratie laat zien welke."
+        ],
+        "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} zaak is verplaatst, maar niet al haar automatische acties zijn uitgevoerd. De statusregistratie laat zien welke.",
+        "{count} cases moved without all of their automatic actions. Their status records show which.": "{count} zaken zijn verplaatst, maar niet al hun automatische acties zijn uitgevoerd. De statusregistraties laten zien welke.",
+        "_{count} case moved without all of its automatic actions. Its status record shows which._::_{count} cases moved without all of their automatic actions. Their status records show which._": [
+            "{count} zaak is verplaatst, maar niet al haar automatische acties zijn uitgevoerd. De statusregistratie laat zien welke.",
+            "{count} zaken zijn verplaatst, maar niet al hun automatische acties zijn uitgevoerd. De statusregistraties laten zien welke."
+        ]
     }
 }

@@ -113,7 +113,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { showError } from '@nextcloud/dialogs'
+import { showError, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
@@ -133,6 +133,7 @@ import {
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
+import { failedActionsWarning } from '../../utils/transitionOutcome.js'
 
 export default {
 	name: 'WorkflowBoard',
@@ -474,6 +475,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
 		async onDrop(caseId, newColumn) {
 			this.draggedCaseId = null
@@ -555,12 +557,21 @@ export default {
 					return
 				}
 
-				await axios.post(
+				const { data } = await axios.post(
 					generateUrl(
 						`/apps/dossiq/api/case/${encodeURIComponent(caseId)}/transition`,
 					),
 					buildTransitionPayload({ transitionId: transition.id }),
 				)
+
+				// The move happened, so the card stays where it was dropped. An
+				// action that failed after it is said out loud: a card in its new
+				// column with no checklist behind it looks the same as a phase
+				// that asks for no work.
+				const warning = failedActionsWarning(data)
+				if (warning !== '') {
+					showWarning(warning)
+				}
 
 				// The engine writes more than the status: a statusRecord, and
 				// whatever actions the transition dispatches. Re-read the board

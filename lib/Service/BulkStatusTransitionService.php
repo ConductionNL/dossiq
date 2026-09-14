@@ -148,6 +148,7 @@ class BulkStatusTransitionService {
 	 * @throws RuntimeException When the id count is 0, the cap is exceeded, or transitionId is empty
 	 *
 	 * @spec openspec/specs/case-bulk-status-transition/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
 	 */
 	public function execute(array $caseIds, string $transitionId, ?string $comment): array {
 		$this->validateRequest(caseIds: $caseIds, transitionId: $transitionId);
@@ -171,6 +172,13 @@ class BulkStatusTransitionService {
 				$results[$caseId] = [
 					'status' => 'succeeded',
 					'statusRecord' => $outcome['statusRecord'],
+					// Carried, not counted. The move succeeded, so the summary
+					// counter is right; what it cannot say is that the phase's
+					// work did not arrive with it. Left out of the enum on
+					// purpose: a new per-case status value would change what
+					// every existing reader of this response means by
+					// 'succeeded', where an extra key only adds to it.
+					'failedActions' => ($outcome['failedActions'] ?? []),
 				];
 			} catch (GuardFailedException $e) {
 				$failed++;
