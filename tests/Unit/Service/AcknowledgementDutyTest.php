@@ -363,7 +363,7 @@ class AcknowledgementDutyTest extends TestCase {
 		$service = $this->service();
 		$service->recordFailedAttempt(caseId: $caseId, sentence: 'SMTP refused', attempt: 3);
 
-		$duty = $service->recordMetAnotherWay(caseId: $caseId, how: 'Confirmed by post', by: 'ruben');
+		$duty = $service->recordMetAnotherWay(caseId: $caseId, how: 'Confirmed by post', recordedBy: 'ruben');
 
 		self::assertSame(expected: AcknowledgementService::STATUS_MET, actual: $duty['status']);
 		self::assertSame(expected: 'ruben', actual: $duty['metBy']);
@@ -381,7 +381,7 @@ class AcknowledgementDutyTest extends TestCase {
 		$caseId = $this->seedCase();
 
 		$this->expectException(exception: RefusedException::class);
-		$this->service()->recordMetAnotherWay(caseId: $caseId, how: '  ', by: 'ruben');
+		$this->service()->recordMetAnotherWay(caseId: $caseId, how: '  ', recordedBy: 'ruben');
 	}//end testClearingTheDutyWithoutSayingHowIsRefused()
 
 	/**

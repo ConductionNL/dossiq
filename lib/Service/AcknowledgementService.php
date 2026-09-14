@@ -47,6 +47,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -56,10 +57,17 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One acknowledgement needs the
+ * declaration on the case type, the statutory term, the notifier, the contact
+ * directory, the portal's field list and the field writer. Splitting the class
+ * to lower the count would spread one statutory duty over several files, which
+ * is the thing this change exists to stop.
+ *
  * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
  */
 class AcknowledgementService {
 
+	use RefusesWhenIndeterminate;
 	use SearchesObjects;
 
 	/**
@@ -120,6 +128,11 @@ class AcknowledgementService {
 	 * @param PortalContributionProvider  $portal            The one list of case fields a citizen may see.
 	 * @param CaseFieldWriter             $writer            Partial writes to the stored case.
 	 * @param LoggerInterface             $logger            The logger.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten collaborators, each
+	 * injected rather than reached for, which is what makes the acknowledgement
+	 * testable without a running register. Bundling them into a parameter object
+	 * would hide the dependency list rather than shorten it.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -154,9 +167,10 @@ class AcknowledgementService {
 	public function acknowledge(string $caseId, int $attempt = 1): array {
 		$case = $this->readCase(caseId: $caseId);
 		if ($case === null) {
-			throw RefusedException::indeterminate(
-				rule: 'acknowledgement-case-unreadable',
+			throw new RefusedException(
+				rule: 'acknowledgement-register-not-configured',
 				sentence: 'We could not read the case, so receipt could not be confirmed.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 
@@ -289,7 +303,7 @@ class AcknowledgementService {
 	 *
 	 * @param string $caseId The case UUID.
 	 * @param string $how    How receipt was confirmed, in the recorder's words.
-	 * @param string $by     The user id of the person recording it.
+	 * @param string $recordedBy The user id of the person recording it.
 	 *
 	 * @return array<string, mixed> The duty as it now reads.
 	 *
@@ -297,12 +311,13 @@ class AcknowledgementService {
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
-	public function recordMetAnotherWay(string $caseId, string $how, string $by): array {
+	public function recordMetAnotherWay(string $caseId, string $how, string $recordedBy): array {
 		$case = $this->readCase(caseId: $caseId);
 		if ($case === null) {
-			throw RefusedException::indeterminate(
-				rule: 'acknowledgement-case-unreadable',
+			throw new RefusedException(
+				rule: 'acknowledgement-register-not-configured',
 				sentence: 'We could not read the case, so nothing was recorded.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 
@@ -319,7 +334,7 @@ class AcknowledgementService {
 		$duty = [
 			'required' => true,
 			'status' => self::STATUS_MET,
-			'metBy' => $by,
+			'metBy' => $recordedBy,
 			'metAt' => $metAt,
 			'metHow' => $how,
 		];
@@ -540,7 +555,9 @@ class AcknowledgementService {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array<string, mixed>|null The case row, or null.
+	 * @return array<string, mixed>|null The case row, or null when the register is not configured.
+	 *
+	 * @throws RefusedException When the register is configured but the read fails.
 	 */
 	private function readCase(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -551,21 +568,21 @@ class AcknowledgementService {
 			return null;
 		}
 
-		try {
-			return $this->findObjectAsArray(
+		// 🔴 A READ THAT THREW IS NOT A CASE WITHOUT A DUTY. Answering null here
+		// made "the register is down" and "this case owes no acknowledgement"
+		// the same sentence, and the second one closes a statutory duty. The
+		// refusal carries 503, which is neither yes nor no.
+		return $this->readOrRefuse(
+			read: fn (): ?array => $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
 				id: $caseId,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq acknowledgement: case {case} could not be read',
-				['case' => $caseId, 'reason' => $e->getMessage()],
-			);
-
-			return null;
-		}
+			),
+			what: 'case ' . $caseId . ' for its acknowledgement of receipt',
+			rule: 'acknowledgement-case-unreadable',
+			sentence: 'We could not read the case, so we cannot say whether receipt was confirmed.',
+		);
 	}//end readCase()
 
 	/**

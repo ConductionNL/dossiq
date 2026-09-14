@@ -252,57 +252,19 @@ class TermijnNotificationService {
 		// flag render "no statutory period applies" beside the date itself.
 		$hasTerm = ($end !== '' && $end !== '–');
 
-		// The Berichtenbox pattern: say a message is waiting, and keep the
-		// content where it is. Not a second template — the same message with
-		// its content withheld, decided once per case type.
 		if (($context['contentWithheld'] ?? false) === true) {
-			if ($english === true) {
-				return [
-					'subject' => 'A message about your application is waiting for you',
-					'body' => "Dear applicant,\n\n"
-						. "We have received your application and a message about it is waiting for you.\n"
-						. "Sign in to the citizen portal to read it.\n\n"
-						. 'Kind regards',
-				];
-			}
-
-			return [
-				'subject' => 'Er staat een bericht over uw aanvraag voor u klaar',
-				'body' => "Beste aanvrager,\n\n"
-					. "Wij hebben uw aanvraag ontvangen en er staat een bericht voor u klaar.\n"
-					. "Log in op het burgerportaal om het te lezen.\n\n"
-					. 'Met vriendelijke groet',
-			];
-		}//end if
+			return $this->acknowledgementWaiting(english: $english);
+		}
 
 		if ($english === true) {
-			$term = "No statutory decision period applies to this application.\n";
-			if ($hasTerm === true) {
-				$term = 'We decide on your application by ' . $end . ' at the latest. '
-					. "If we need more time, we tell you before that date.\n";
-			}
-
-			$about = '';
-			if ($subjectOf !== '') {
-				$about = ' about ' . $subjectOf;
-			}
-
-			$where = '';
-			if ($contact !== '') {
-				$where = 'Questions go to ' . $contact . ".\n";
-			}
-
-			return [
-				'subject' => 'Acknowledgement of receipt for case ' . $case,
-				'body' => "Dear applicant,\n\n"
-					. 'We have received your application' . $about
-					. ' and registered it under reference ' . $case . ".\n"
-					. $term
-					. "You can follow this case in the citizen portal.\n"
-					. $where
-					. "\nKind regards",
-			];
-		}//end if
+			return $this->acknowledgementInEnglish(
+				case: $case,
+				end: $end,
+				hasTerm: $hasTerm,
+				subjectOf: $subjectOf,
+				contact: $contact,
+			);
+		}
 
 		$termijn = "Op deze aanvraag geldt geen wettelijke beslistermijn.\n";
 		if ($hasTerm === true) {
@@ -331,4 +293,90 @@ class TermijnNotificationService {
 				. "\nMet vriendelijke groet",
 		];
 	}//end acknowledgement()
+
+	/**
+	 * The acknowledgement in English.
+	 *
+	 * Split from its Dutch twin so neither has to be read through the other.
+	 * They are two letters, not one letter with branches.
+	 *
+	 * @param string  $case      The case kenmerk.
+	 * @param string  $end       The end date of the statutory term.
+	 * @param boolean $hasTerm   Whether a statutory term applies at all.
+	 * @param string  $subjectOf What the application is about, when it is known.
+	 * @param string  $contact   Who to contact, when the case type names somebody.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function acknowledgementInEnglish(
+		string $case,
+		string $end,
+		bool $hasTerm,
+		string $subjectOf,
+		string $contact,
+	): array {
+		$term = "No statutory decision period applies to this application.\n";
+		if ($hasTerm === true) {
+			$term = 'We decide on your application by ' . $end . ' at the latest. '
+				. "If we need more time, we tell you before that date.\n";
+		}
+
+		$about = '';
+		if ($subjectOf !== '') {
+			$about = ' about ' . $subjectOf;
+		}
+
+		$where = '';
+		if ($contact !== '') {
+			$where = 'Questions go to ' . $contact . ".\n";
+		}
+
+		return [
+			'subject' => 'Acknowledgement of receipt for case ' . $case,
+			'body' => "Dear applicant,\n\n"
+				. 'We have received your application' . $about
+				. ' and registered it under reference ' . $case . ".\n"
+				. $term
+				. "You can follow this case in the citizen portal.\n"
+				. $where
+				. "\nKind regards",
+		];
+	}//end acknowledgementInEnglish()
+
+	/**
+	 * The acknowledgement that carries no case content.
+	 *
+	 * The Berichtenbox pattern: say a message is waiting and keep the content
+	 * where it is. This is not a second template. It is the same message with
+	 * its content withheld, decided once per case type rather than per message,
+	 * because a municipality that rules personal data out of e-mail rules it out
+	 * everywhere.
+	 *
+	 * @param boolean $english Whether the case type declares English.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function acknowledgementWaiting(bool $english): array {
+		if ($english === true) {
+			return [
+				'subject' => 'A message about your application is waiting for you',
+				'body' => "Dear applicant,\n\n"
+					. "We have received your application and a message about it is waiting for you.\n"
+					. "Sign in to the citizen portal to read it.\n\n"
+					. 'Kind regards',
+			];
+		}
+
+		return [
+			'subject' => 'Er staat een bericht over uw aanvraag voor u klaar',
+			'body' => "Beste aanvrager,\n\n"
+				. "Wij hebben uw aanvraag ontvangen en er staat een bericht voor u klaar.\n"
+				. "Log in op het burgerportaal om het te lezen.\n\n"
+				. 'Met vriendelijke groet',
+		];
+	}//end acknowledgementWaiting()
 }//end class

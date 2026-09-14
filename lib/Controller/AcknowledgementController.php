@@ -112,7 +112,19 @@ class AcknowledgementController extends Controller {
 			);
 		}
 
-		return new JSONResponse(['duty' => $this->acknowledgement->dutyFor(caseId: $caseId)]);
+		try {
+			$duty = $this->acknowledgement->dutyFor(caseId: $caseId);
+		} catch (RefusedException $e) {
+			// 🔴 AN UNREADABLE CASE IS NOT A CASE WITHOUT A DUTY. An empty answer
+			// here reads on the page as "receipt was never owed", which closes a
+			// statutory question the app could not actually answer.
+			return new JSONResponse(
+				['error' => $e->getRule(), 'message' => $e->getSentence()],
+				$e->getStatus()
+			);
+		}
+
+		return new JSONResponse(['duty' => $duty]);
 	}//end duty()
 
 	/**
@@ -147,7 +159,7 @@ class AcknowledgementController extends Controller {
 			$duty = $this->acknowledgement->recordMetAnotherWay(
 				caseId: $caseId,
 				how: (string)$this->request->getParam('how', ''),
-				by: $user->getUID(),
+				recordedBy: $user->getUID(),
 			);
 		} catch (RefusedException $e) {
 			// The rule slug and the sentence, never the exception message:

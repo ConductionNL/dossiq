@@ -192,6 +192,37 @@ class AcknowledgementControllerContractTest extends TestCase {
 	}//end testDutyAnswersTheRecordedAcknowledgement()
 
 	/**
+	 * A case that could not be read refuses, rather than reading as a case
+	 * that never owed an acknowledgement.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	public function testDutyRefusesWhenTheCaseCannotBeRead(): void {
+		$this->guard->method('hasCaseReadAccess')->willReturn(true);
+		$this->acknowledgement->method('dutyFor')
+			->willThrowException(
+				new RefusedException(
+					rule: 'acknowledgement-case-unreadable',
+					sentence: 'We could not read the case, so we cannot say whether receipt was confirmed.',
+					status: RefusedException::STATUS_INDETERMINATE,
+				)
+			);
+
+		$response = $this->controller()->duty(caseId: 'case-1');
+
+		$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $response->getStatus());
+		$this->assertSame(
+			expected: [
+				'error' => 'acknowledgement-case-unreadable',
+				'message' => 'We could not read the case, so we cannot say whether receipt was confirmed.',
+			],
+			actual: $response->getData()
+		);
+	}//end testDutyRefusesWhenTheCaseCannotBeRead()
+
+	/**
 	 * Clearing the duty needs mutation access, not merely read access.
 	 *
 	 * @return void
