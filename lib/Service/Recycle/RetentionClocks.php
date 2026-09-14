@@ -141,7 +141,18 @@ class RetentionClocks {
 		}
 
 		try {
-			return $closed->add(new DateInterval('P' . (string)$months . 'M'))->format('Y-m-d');
+			$end = $closed->add(new DateInterval('P' . (string)$months . 'M'));
+
+			// A month is not thirty days. Six months from 31 March is 30
+			// September, and PHP's own addition rolls it forward to 1 October
+			// because September has no thirty-first. A retention date that
+			// silently lands in the next month is the kind of error nobody
+			// looks for, so the roll-over is clamped back to the month end.
+			if ((int)$end->format('d') !== (int)$closed->format('d')) {
+				$end = $end->modify('last day of previous month');
+			}
+
+			return $end->format('Y-m-d');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: could not count the lawful-purpose clock: ' . $e->getMessage()
