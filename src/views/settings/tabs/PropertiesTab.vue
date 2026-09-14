@@ -24,7 +24,7 @@
 						<template v-if="editingId !== pd.id">
 							<span class="property-row__name">{{ pd.name }}</span>
 							<span class="property-row__format">{{
-								pd.propertyType || 'string'
+								typeSummary(pd)
 							}}</span>
 							<span v-if="pd.maxLength" class="property-row__max">
 								{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
@@ -62,115 +62,14 @@
 
 						<template v-else>
 							<div class="property-row__edit-form">
-								<div class="edit-row">
-									<NcTextField
-										:modelValue="editForm.name"
-										:label="t('dossiq', 'Name')"
-										:error="!!editError"
-										class="edit-field"
-										@update:modelValue="
-											(v) => (editForm.name = v)
-										" />
-								</div>
-								<div class="edit-row">
-									<NcTextField
-										:modelValue="editForm.definition"
-										:label="t('dossiq', 'Definition')"
-										class="edit-field"
-										@update:modelValue="
-											(v) => (editForm.definition = v)
-										" />
-								</div>
-								<div class="edit-row">
-									<div class="edit-field">
-										<label class="field-label">{{
-											t('dossiq', 'Type')
-										}}</label>
-										<select
-											:value="editForm.propertyType"
-											class="format-select"
-											@change="
-												editForm.propertyType =
-													$event.target.value
-											">
-											<option value="string">
-												{{ t('dossiq', 'Text') }}
-											</option>
-											<option value="number">
-												{{ t('dossiq', 'Number') }}
-											</option>
-											<option value="boolean">
-												{{ t('dossiq', 'Yes or no') }}
-											</option>
-											<option value="date">
-												{{ t('dossiq', 'Date') }}
-											</option>
-											<option value="email">
-												{{ t('dossiq', 'Email address') }}
-											</option>
-											<option value="url">
-												{{ t('dossiq', 'Link') }}
-											</option>
-											<option value="enum">
-												{{
-													t('dossiq', 'Choice from a list')
-												}}
-											</option>
-											<option value="json">
-												{{ t('dossiq', 'Structured data') }}
-											</option>
-										</select>
-									</div>
-									<NcTextField
-										:modelValue="
-											editForm.maxLength
-												? String(editForm.maxLength)
-												: ''
-										"
-										:label="t('dossiq', 'Max length')"
-										type="number"
-										class="edit-field edit-field--small"
-										@update:modelValue="
-											(v) =>
-												(editForm.maxLength =
-													parseInt(v, 10) || null)
-										" />
-								</div>
-								<div class="edit-row">
-									<NcCheckboxRadioSwitch
-										:modelValue="!!editForm.isRequired"
-										type="switch"
-										class="edit-field"
-										@update:modelValue="
-											(v) => (editForm.isRequired = v)
-										">
-										{{ t('dossiq', 'Always required') }}
-									</NcCheckboxRadioSwitch>
-								</div>
-								<div class="edit-row">
-									<div class="edit-field">
-										<label class="field-label">{{
-											t('dossiq', 'Required from status')
-										}}</label>
-										<select
-											:value="editForm.requiredAtStatus || ''"
-											class="format-select"
-											@change="
-												editForm.requiredAtStatus =
-													$event.target.value || null
-											">
-											<option value="">
-												{{ t('dossiq', 'Optional') }}
-											</option>
-											<option
-												v-for="st in statusTypes"
-												:key="st.id"
-												:value="st.id">
-												{{ st.name }}
-											</option>
-										</select>
-									</div>
-								</div>
+								<PropertyDefinitionFields
+									:value="editForm"
+									:vocabulary="vocabulary"
+									:vocabularySource="vocabularySource"
+									:statusTypes="statusTypes"
+									:nameError="editError"
+									idPrefix="pd-edit"
+									@update="applyEdit" />
 								<span v-if="editError" class="field-error">{{
 									editError
 								}}</span>
@@ -195,108 +94,16 @@
 				</p>
 
 				<div class="properties-tab__add">
-					<h4>{{ t('dossiq', 'Add Property Definition') }}</h4>
+					<h4>{{ t('dossiq', 'Add property definition') }}</h4>
 					<div class="add-form">
-						<div class="add-form__row">
-							<NcTextField
-								:modelValue="newForm.name"
-								:label="t('dossiq', 'Name *')"
-								class="add-form__field"
-								@update:modelValue="(v) => (newForm.name = v)" />
-						</div>
-						<div class="add-form__row">
-							<NcTextField
-								:modelValue="newForm.definition"
-								:label="t('dossiq', 'Definition')"
-								class="add-form__field"
-								@update:modelValue="
-									(v) => (newForm.definition = v)
-								" />
-						</div>
-						<div class="add-form__row">
-							<div class="add-form__field">
-								<label class="field-label">{{
-									t('dossiq', 'Type')
-								}}</label>
-								<select
-									:value="newForm.propertyType"
-									class="format-select"
-									@change="
-										newForm.propertyType = $event.target.value
-									">
-									<option value="string">
-										{{ t('dossiq', 'Text') }}
-									</option>
-									<option value="number">
-										{{ t('dossiq', 'Number') }}
-									</option>
-									<option value="boolean">
-										{{ t('dossiq', 'Yes or no') }}
-									</option>
-									<option value="date">
-										{{ t('dossiq', 'Date') }}
-									</option>
-									<option value="email">
-										{{ t('dossiq', 'Email address') }}
-									</option>
-									<option value="url">
-										{{ t('dossiq', 'Link') }}
-									</option>
-									<option value="enum">
-										{{ t('dossiq', 'Choice from a list') }}
-									</option>
-									<option value="json">
-										{{ t('dossiq', 'Structured data') }}
-									</option>
-								</select>
-							</div>
-							<NcTextField
-								:modelValue="
-									newForm.maxLength
-										? String(newForm.maxLength)
-										: ''
-								"
-								:label="t('dossiq', 'Max length')"
-								type="number"
-								class="add-form__field add-form__field--small"
-								@update:modelValue="
-									(v) =>
-										(newForm.maxLength = parseInt(v, 10) || null)
-								" />
-						</div>
-						<div class="add-form__row">
-							<NcCheckboxRadioSwitch
-								:modelValue="!!newForm.isRequired"
-								type="switch"
-								class="add-form__field"
-								@update:modelValue="(v) => (newForm.isRequired = v)">
-								{{ t('dossiq', 'Always required') }}
-							</NcCheckboxRadioSwitch>
-						</div>
-						<div class="add-form__row">
-							<div class="add-form__field">
-								<label class="field-label">{{
-									t('dossiq', 'Required from status')
-								}}</label>
-								<select
-									:value="newForm.requiredAtStatus || ''"
-									class="format-select"
-									@change="
-										newForm.requiredAtStatus =
-											$event.target.value || null
-									">
-									<option value="">
-										{{ t('dossiq', 'Optional') }}
-									</option>
-									<option
-										v-for="st in statusTypes"
-										:key="st.id"
-										:value="st.id">
-										{{ st.name }}
-									</option>
-								</select>
-							</div>
-						</div>
+						<PropertyDefinitionFields
+							:value="newForm"
+							:vocabulary="vocabulary"
+							:vocabularySource="vocabularySource"
+							:statusTypes="statusTypes"
+							:nameError="addError"
+							idPrefix="pd-add"
+							@update="applyNew" />
 						<span v-if="addError" class="field-error">{{
 							addError
 						}}</span>
@@ -318,25 +125,68 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcCheckboxRadioSwitch,
-	NcLoadingIcon,
-	NcTextField,
-} from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import PropertyDefinitionFields from '../../../components/PropertyDefinitionFields.vue'
+import {
+	fetchPropertyVocabulary,
+	resolveStoredType,
+} from '../../../services/propertyVocabulary.js'
+import { VOCABULARY_SNAPSHOT } from '../../../services/propertyVocabularySnapshot.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+
+/**
+ * An empty definition, with every key the vocabulary lets a case type declare.
+ *
+ * @return {object} A blank form.
+ */
+function blankForm() {
+	return {
+		name: '',
+		definition: '',
+		description: '',
+		propertyType: 'string',
+		format: '',
+		pattern: '',
+		maxLength: null,
+		minimum: null,
+		maximum: null,
+		items: null,
+		ref: '',
+		calculation: null,
+		propertySource: '',
+		enumValues: [],
+		isRequired: false,
+		requiredAtStatus: null,
+	}
+}
+
+/**
+ * The definition as it is saved, without the form's own state.
+ *
+ * `choiceList` says whether the administrator wants a choice list. It is a
+ * switch, not a property of the definition, and OpenRegister drops an
+ * undeclared key without a word, so it is stripped here where that is visible.
+ *
+ * @param {object} form The form being saved.
+ * @return {object} The definition to save.
+ * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+ */
+function payload(form) {
+	const out = { ...form }
+	delete out.choiceList
+	return out
+}
 
 export default {
 	name: 'PropertiesTab',
 	components: {
 		NcButton,
-		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
-		NcTextField,
 		PencilIcon,
 		DeleteIcon,
+		PropertyDefinitionFields,
 	},
 
 	props: {
@@ -350,15 +200,9 @@ export default {
 			statusTypes: [],
 			loading: false,
 			error: '',
-			newForm: {
-				name: '',
-				definition: '',
-				propertyType: 'string',
-				maxLength: null,
-				isRequired: false,
-				requiredAtStatus: null,
-			},
-
+			vocabulary: VOCABULARY_SNAPSHOT,
+			vocabularySource: 'snapshot',
+			newForm: blankForm(),
 			addError: '',
 			addSaving: false,
 			editingId: null,
@@ -375,14 +219,26 @@ export default {
 		},
 	},
 
-	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+	/** @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md */
 	async mounted() {
+		await this.loadVocabulary()
 		if (!this.isCreate && this.caseTypeId) {
 			await Promise.all([this.fetchPropertyDefs(), this.fetchStatusTypes()])
 		}
 	},
 
 	methods: {
+		/**
+		 * Read the vocabulary this instance authors against.
+		 *
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+		 */
+		async loadVocabulary() {
+			const answer = await fetchPropertyVocabulary()
+			this.vocabulary = answer.vocabulary
+			this.vocabularySource = answer.source
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchPropertyDefs() {
 			this.loading = true
@@ -414,29 +270,79 @@ export default {
 			}
 		},
 
+		/**
+		 * How a definition's type reads in the list.
+		 *
+		 * The format is part of the answer: `string` alone does not tell a
+		 * reader whether the field asks for a date or a paragraph.
+		 *
+		 * @param {object} pd The property definition.
+		 * @return {string} The type, with its format when it has one.
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+		 */
+		typeSummary(pd) {
+			const type = pd.propertyType || 'string'
+			return pd.format ? `${type} · ${pd.format}` : type
+		},
+
+		/**
+		 * Why a save is refused, or an empty string when it is not.
+		 *
+		 * A choice list with no values is the one an administrator could ship
+		 * before: the tab had no input for `enumValues`, so choosing `enum`
+		 * produced a dropdown nobody could fill and nothing said so.
+		 *
+		 * @param {object} form The form being saved.
+		 * @return {string} The refusal.
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+		 */
+		refusal(form) {
+			if (!form.name?.trim()) {
+				return t('dossiq', 'Name is required')
+			}
+			const values = form.enumValues || []
+			const wantsList =
+				form.choiceList === true || form.propertyType === 'enum'
+			if (wantsList && values.length === 0) {
+				return t(
+					'dossiq',
+					'A choice list needs values. Add one per line, or pick another type.',
+				)
+			}
+			return ''
+		},
+
+		/**
+		 * @param {object} update The keys the field set changed.
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+		 */
+		applyNew(update) {
+			this.newForm = { ...this.newForm, ...update }
+		},
+
+		/**
+		 * @param {object} update The keys the field set changed.
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
+		 */
+		applyEdit(update) {
+			this.editForm = { ...this.editForm, ...update }
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async addProperty() {
-			this.addError = ''
-			if (!this.newForm.name?.trim()) {
-				this.addError = t('dossiq', 'Name is required')
+			this.addError = this.refusal(this.newForm)
+			if (this.addError) {
 				return
 			}
 			this.addSaving = true
 			const result = await this.objectStore.saveObject('propertyDefinition', {
-				...this.newForm,
+				...payload(this.newForm),
 				caseType: this.caseTypeId,
 			})
 			this.addSaving = false
 			if (result) {
 				this.propertyDefs.push(result)
-				this.newForm = {
-					name: '',
-					definition: '',
-					propertyType: 'string',
-					maxLength: null,
-					isRequired: false,
-					requiredAtStatus: null,
-				}
+				this.newForm = blankForm()
 			} else {
 				this.addError =
 					this.objectStore.getError('propertyDefinition')
@@ -467,12 +373,29 @@ export default {
 		},
 
 		/**
+		 * Open a definition for editing, unless this instance cannot type it.
+		 *
+		 * A case type authored where the vocabulary is wider carries a type
+		 * this instance does not know. Opening it in a form whose type picker
+		 * cannot hold that value is how the value gets rewritten to text on
+		 * the next save, so the definition is shown and left alone instead.
+		 *
 		 * @param {object} pd The property definition to open for editing.
-		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
 		 */
 		startEdit(pd) {
+			const stored = resolveStoredType(this.vocabulary, pd.propertyType)
+			if (!stored.known) {
+				this.error = t(
+					'dossiq',
+					'{name} has the type {type}, which this instance does not offer. dossiq keeps it as it is.',
+					{ name: pd.name, type: stored.type },
+				)
+				return
+			}
+			this.error = ''
 			this.editingId = pd.id
-			this.editForm = { ...pd }
+			this.editForm = { ...blankForm(), ...pd }
 			this.editError = ''
 		},
 
@@ -485,15 +408,14 @@ export default {
 
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
-			this.editError = ''
-			if (!this.editForm.name?.trim()) {
-				this.editError = t('dossiq', 'Name is required')
+			this.editError = this.refusal(this.editForm)
+			if (this.editError) {
 				return
 			}
 			this.editSaving = true
 			const result = await this.objectStore.saveObject(
 				'propertyDefinition',
-				this.editForm,
+				payload(this.editForm),
 			)
 			this.editSaving = false
 			if (result) {
@@ -601,14 +523,6 @@ export default {
 	width: 100%;
 }
 
-.format-select {
-	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
-}
-
 .edit-row {
 	display: flex;
 	gap: 12px;
@@ -620,22 +534,6 @@ export default {
 	margin-top: 8px;
 }
 
-.edit-field {
-	flex: 1;
-}
-
-.edit-field--small {
-	max-width: 100px;
-}
-
-.field-label {
-	display: block;
-	font-size: 12px;
-	font-weight: 500;
-	margin-bottom: 4px;
-	color: var(--color-text-maxcontrast);
-}
-
 .properties-tab__add {
 	border-top: 2px solid var(--color-border);
 	padding-top: 16px;
@@ -643,21 +541,6 @@ export default {
 
 .properties-tab__add h4 {
 	margin-bottom: 12px;
-}
-
-.add-form__row {
-	display: flex;
-	gap: 12px;
-	margin-bottom: 8px;
-	align-items: center;
-}
-
-.add-form__field {
-	flex: 1;
-}
-
-.add-form__field--small {
-	max-width: 100px;
 }
 
 .properties-tab__empty {

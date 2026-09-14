@@ -659,7 +659,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
@@ -682,8 +682,8 @@
                     },
                     "description": {
                         "type": "string",
-                        "description": "Longer explanation of this property",
-                        "title": "Description"
+                        "description": "The sentence a handler reads under the field while answering it. One line. This is the field's help: the case form renders it beside the input, not as a heading and not as the field's own documentation. Definition carries the short definition for whoever maintains the case type.",
+                        "title": "Help text"
                     },
                     "caseType": {
                         "type": "string",
@@ -697,14 +697,30 @@
                         "enum": [
                             "string",
                             "number",
+                            "integer",
                             "boolean",
+                            "array",
+                            "object",
+                            "null",
+                            "file",
+                            "geo",
+                            "color",
+                            "recurrence",
+                            "NcFile",
+                            "NcMail",
+                            "NcContact",
+                            "NcNote",
+                            "NcTodo",
+                            "NcCalendarEvent",
+                            "NcTalk",
+                            "NcDeck",
                             "date",
                             "url",
                             "email",
                             "enum",
                             "json"
                         ],
-                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative: flattening them to 'string'. Moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
+                        "description": "What kind of answer this field holds. The list is OpenRegister's own property vocabulary, published at /apps/openregister/api/schemas/property-vocabulary and generated from the validator that checks the saved value, so the editor cannot offer a type the engine refuses. The last five values are the ones dossiq used to offer before the vocabulary reached the editor: 'date', 'url' and 'email' are a string with a format, 'enum' is a string with a choice list, and 'json' is an object. They stay accepted so a stored definition keeps working and keeps its value. Nothing rewrites them, the editor offers them only on the definition that already carries one, and each one names its replacement.",
                         "title": "Property Type"
                     },
                     "maxLength": {
@@ -720,6 +736,46 @@
                         },
                         "description": "The allowed values, when propertyType is 'enum'. Ignored for every other type. Without this the 'enum' type would be indistinguishable from 'string' at runtime, which is the flattening it exists to prevent.",
                         "title": "Enum Values"
+                    },
+                    "format": {
+                        "type": "string",
+                        "title": "Format",
+                        "description": "Which kind of text this is, for a string field. OpenRegister publishes the list: date, date-time, email, url, markdown, html, bsn and 27 more. Leave it empty for plain text. Adding a format to a field that already holds answers is breaking, so OpenRegister rechecks every stored value against it."
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "title": "Pattern",
+                        "description": "A regular expression the answer must match. OpenRegister enforces it. dossiq declares it and validates nothing itself."
+                    },
+                    "minimum": {
+                        "type": "number",
+                        "title": "Lowest value",
+                        "description": "The lowest number this field accepts. Only meaningful on a number or integer field."
+                    },
+                    "maximum": {
+                        "type": "number",
+                        "title": "Highest value",
+                        "description": "The highest number this field accepts. Only meaningful on a number or integer field."
+                    },
+                    "items": {
+                        "type": "object",
+                        "title": "List entry",
+                        "description": "What one entry of a list looks like, as {\"type\": \"string\"}. Only used when the type is array. The vocabulary's 'items' key takes a shape rather than a type name, so storing the name alone would forward something malformed."
+                    },
+                    "ref": {
+                        "type": "string",
+                        "title": "Reference",
+                        "description": "The schema a reference points at, by slug. This is how a field holds another case or a catalogued object instead of text."
+                    },
+                    "calculation": {
+                        "type": "object",
+                        "title": "Calculation",
+                        "description": "A JSON expression that derives this answer from other fields, evaluated by OpenRegister. A Twig expression is not accepted: the JSON form is diffable and an auditor can read it a year later, which is the decision this field carries."
+                    },
+                    "propertySource": {
+                        "type": "string",
+                        "title": "Values from a register",
+                        "description": "The register this field's values come from, such as bag. integriq resolves it. dossiq stores the answer and ships no resolver. The case form does not read it yet: OpenRegister owns the key x-openregister-property-source and has not published it, and a form may only forward a key the vocabulary holds."
                     },
                     "isRequired": {
                         "type": "boolean",
@@ -1685,13 +1741,20 @@
                             },
                             "map": {
                                 "title": "name",
-                                "definition": "definition",
                                 "description": "description",
+                                "definition": "definition",
                                 "type": "propertyType",
+                                "format": "format",
+                                "pattern": "pattern",
                                 "maxLength": "maxLength",
+                                "minimum": "minimum",
+                                "maximum": "maximum",
+                                "items": "items",
+                                "$ref": "ref",
                                 "enum": "enumValues",
                                 "required": "isRequired",
-                                "default": "defaultValue"
+                                "default": "defaultValue",
+                                "calculation": "calculation"
                             },
                             "values": {
                                 "mode": "array",
@@ -1699,7 +1762,9 @@
                                 "definitionRef": "propertyDefinition",
                                 "nameKey": "name",
                                 "valueKey": "value"
-                            }
+                            },
+                            "app": "dossiq",
+                            "form": "case type, properties tab"
                         },
                         "order": 1
                     },
