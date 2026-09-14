@@ -26,7 +26,7 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
   three `date('Y-m-d\TH:i:s')` writes gain an offset.
 - [x] 2.5 `AdviceController` through `AdviceService`: `deadline` is parsed
   instead of stored verbatim, and a bad value is refused (D-3).
-- [ ] 2.6 `WOOAssessmentController` through `WOODeadlineService`;
+- [x] 2.6 `WOOAssessmentController` through `WOODeadlineService`;
   `parseIsoDate()` and `requireIsoDate()` retire.
 - [ ] 2.7 `ContactMomentController` through `QuickActionService` and
   `ContactMomentService`: `startDate`, the 42 day deadline and the
