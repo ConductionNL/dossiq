@@ -38,11 +38,11 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Central role-routing engine.
@@ -50,6 +50,8 @@ use Throwable;
  * @spec openspec/changes/role-based-step-routing/tasks.md#T02
  */
 class RoleResolverService {
+	use RefusesWhenIndeterminate;
+
 	/**
 	 * Default strategy name when normalising legacy fields.
 	 */
@@ -297,14 +299,15 @@ class RoleResolverService {
 			return [];
 		}
 
-		try {
-			// OpenRegister's ObjectService::findAll() takes ONE config array.
-			// This call used to pass ($register, $schema, $filters)
-			// positionally, which is a TypeError against `array $config` — and
-			// the catch below turned that TypeError into an empty role list, so
-			// stored case roles were never loaded and rule resolution silently
-			// fell through to its other sources.
-			$records = $objectService->findAll(
+		// OpenRegister's ObjectService::findAll() takes ONE config array. This
+		// call used to pass ($register, $schema, $filters) positionally, which
+		// is a TypeError against `array $config` — and the catch that stood
+		// here turned that TypeError into an empty role list, so stored case
+		// roles were never loaded and rule resolution silently fell through to
+		// its other sources. An empty role list is also how a routing rule
+		// resolves to nobody, which is why the read now refuses instead.
+		$records = $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll(
 				[
 					'filters' => [
 						'register' => $register,
@@ -312,21 +315,11 @@ class RoleResolverService {
 						'case' => $caseId,
 					],
 				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: failed to load roles for case ' . $caseId . ': ' . $e->getMessage(),
-			);
-			// An empty role list is how a routing rule resolves to nobody, so
-			// swallowing the read here made "the register threw" and "this case
-			// has no handler in that role" the same answer.
-			throw new RefusedException(
-				rule: 'case-roles-unreadable',
-				sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			),
+			what: 'the roles on case ' . $caseId,
+			rule: 'case-roles-unreadable',
+			sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
+		);
 
 		$rows = [];
 		foreach ((array)$records as $record) {

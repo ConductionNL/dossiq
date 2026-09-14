@@ -1,12 +1,13 @@
 {
-    "ceiling": 203,
+    "ceiling": 204,
     "measured": "2026-09-13",
     "window": 3,
     "about": [
         "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
         "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
         "The refusal class is deliberately absent: a site where a rule said no is converted to a RefusedException and leaves this file (REQ-QG-CRN-2). Four left it on 2026-09-13, all four in the guard-resolver class hydra gate 8 exists for. Any entry below may turn out to be a refusal when someone reads it; that is what the next batch is for.",
-        "The proposal measured 47 sites over a three-LINE window. This instrument counts three STATEMENTS, because a multi-line logger call in front of the return is the same shape and a line window cannot see it. The same tree reads 90 by lines and 203 by statements."
+        "The proposal measured 47 sites over a three-LINE window. This instrument counts three STATEMENTS, because a multi-line logger call in front of the return is the same shape and a line window cannot see it. The same tree reads 90 by lines and 203 by statements.",
+        "Merging development on 2026-09-14 brought one new site with it: `lib/Service/Substitution/HumaniqLeaveReader.php::readLeave#1`, added by dossiq#2719. The ceiling went 203 to 204 for that one site and nothing else."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -818,6 +819,13 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Dossiq StUF: could not resolve OpenRegister ObjectService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Substitution/HumaniqLeaveReader.php",
+            "method": "readLeave",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`readLeave()` answers `return null` when the humaniq HR app answers badly or is absent; the catch logs at warning (\"Dossiq: could not read humaniq leave for a substitution\") naming the user and the error, and the caller falls back to the typed substitution dates."
         },
         {
             "file": "lib/Service/Substitution/SubstitutedWorkResolver.php",

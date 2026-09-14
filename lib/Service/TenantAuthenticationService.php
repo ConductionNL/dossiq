@@ -29,8 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -49,6 +50,8 @@ use Throwable;
  * @spec openspec/specs/multi-tenancy/spec.md#req-005-tenant-membership-and-status-helpers-for-middleware
  */
 class TenantAuthenticationService {
+	use RefusesWhenIndeterminate;
+
 	/**
 	 * Default deny-everything matrix (fail-closed fallback).
 	 *
@@ -187,12 +190,13 @@ class TenantAuthenticationService {
 			return null;
 		}
 
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema live inside
-			// `filters`; limit/offset are top-level config keys.
-			$rows = $objectService->findAll(
+		// ObjectService::findAll() takes a single $config array — the previous
+		// named-argument form threw "Unknown named parameter $register" and was
+		// swallowed by the catch that stood here, which is how an unreadable
+		// matrix became "not authorised". Register/schema live inside
+		// `filters`; limit/offset are top-level config keys.
+		$rows = $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll(
 				[
 					'filters' => [
 						'register' => TenantSaasService::REGISTER,
@@ -202,19 +206,11 @@ class TenantAuthenticationService {
 					'limit' => 50,
 					'offset' => 0,
 				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: mandate matrix could not be read',
-				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
-			);
-			throw new RefusedException(
-				rule: 'tenant-mandate-matrix-unreadable',
-				sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
+			),
+			what: 'the mandate matrix for tenant ' . $tenantId,
+			rule: 'tenant-mandate-matrix-unreadable',
+			sentence: 'The mandate matrix could not be read, so this action cannot be checked right now.',
+		);
 
 		if (is_array($rows) === false || count($rows) === 0) {
 			return null;

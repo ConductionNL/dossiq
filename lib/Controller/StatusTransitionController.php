@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -54,6 +55,8 @@ use RuntimeException;
  * @spec openspec/changes/status-transition-engine/tasks.md#T11
  */
 class StatusTransitionController extends Controller {
+	use TranslatesRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -433,38 +436,6 @@ class StatusTransitionController extends Controller {
 	 * The gestures a bulk body may name.
 	 */
 	private const GESTURES = [self::GESTURE_TRANSITION, 'suspend', 'resume', 'extend'];
-
-	/**
-	 * Translate a refusal into the response ADR-050 describes.
-	 *
-	 * The rule slug goes in `error`, the sentence the engine authored goes in
-	 * `message`, and the status is the one the rule carries. Before this
-	 * existed, a case refused for being in the wrong status and a case refused
-	 * for a lost optimistic lock both left here as 400 "Could not execute
-	 * transition", which is why nothing downstream could tell them apart.
-	 *
-	 * @param string           $op The endpoint, for the log line.
-	 * @param RefusedException $e  The refusal.
-	 *
-	 * @return JSONResponse The translated refusal.
-	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
-	 */
-	private function refused(string $op, RefusedException $e): JSONResponse {
-		$this->logger->info(
-			'StatusTransitionController: ' . $op . ' refused',
-			['rule' => $e->getRule(), 'status' => $e->getStatus()],
-		);
-
-		return new JSONResponse(
-			[
-				'message' => $e->getSentence(),
-				'error' => $e->getRule(),
-				'code' => $e->getMessage(),
-			],
-			$e->getStatus(),
-		);
-	}//end refused()
 
 	/**
 	 * Read the requested gesture from a decoded request body.

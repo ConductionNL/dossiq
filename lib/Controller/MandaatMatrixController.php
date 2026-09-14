@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\MandaatEscalatieService;
@@ -54,8 +56,9 @@ use Throwable;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class MandaatMatrixController extends Controller {
-
+	use ReadsJsonRequests;
 	use SearchesObjects;
+	use TranslatesRefusals;
 
 	/**
 	 * Case-property keys that carry identity. They are stripped from
@@ -451,32 +454,6 @@ class MandaatMatrixController extends Controller {
 	}//end applicable()
 
 	/**
-	 * Translate a refusal into the response ADR-050 describes.
-	 *
-	 * @param string           $op The endpoint, for the log line.
-	 * @param RefusedException $e  The refusal.
-	 *
-	 * @return JSONResponse The translated refusal.
-	 *
-	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
-	 */
-	private function refused(string $op, RefusedException $e): JSONResponse {
-		$this->logger->warning(
-			'MandaatMatrixController: ' . $op . ' could not be answered',
-			['rule' => $e->getRule(), 'status' => $e->getStatus()],
-		);
-
-		return new JSONResponse(
-			[
-				'message' => $e->getSentence(),
-				'error' => $e->getRule(),
-				'code' => $e->getMessage(),
-			],
-			$e->getStatus(),
-		);
-	}//end refused()
-
-	/**
 	 * Resolve the current user id, or empty string when unauthenticated.
 	 *
 	 * @return string
@@ -489,32 +466,4 @@ class MandaatMatrixController extends Controller {
 
 		return '';
 	}//end currentUserId()
-
-	/**
-	 * Read and decode the JSON request body into an array.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function jsonBody(): array {
-		// OCP\IRequest::getContent() is protected on the concrete OC
-		// request; read raw payload from php://input instead.
-		$raw = (string)file_get_contents('php://input');
-		$body = json_decode($raw, true);
-		if (is_array($body) === true) {
-			return $body;
-		}
-
-		return [];
-	}//end jsonBody()
-
-	/**
-	 * Build a 400 Bad Request JSON response.
-	 *
-	 * @param string $msg Message.
-	 *
-	 * @return JSONResponse
-	 */
-	private function badRequest(string $msg): JSONResponse {
-		return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-	}//end badRequest()
 }//end class
