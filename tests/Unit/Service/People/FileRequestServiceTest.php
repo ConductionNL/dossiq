@@ -25,7 +25,7 @@ use RuntimeException;
 /**
  * A file request is an email share of the case folder, addressed to a party.
  *
- * @spec openspec/changes/people-on-the-case/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+ * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
 class FileRequestServiceTest extends TestCase {
 
