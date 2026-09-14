@@ -5,15 +5,15 @@ Tier: V1. Kind: code. Proposed row 8.22. Reads openregister
 `tenantConfiguration.timezone` answers. Pairs with dossiq
 `terms-on-the-engine-calendar`, which states the zone for term dates.
 
-- [ ] 1.1 `tests/Unit/Architecture/OneDateWritePathTest.php` first, red.
+- [x] 1.1 `tests/Unit/Architecture/OneDateWritePathTest.php` first, red.
   It enumerates the writers and the normalisers, so the count in the
   proposal stops being a number somebody typed (D-1, D-6).
   - `@spec openspec/changes/one-date-write-path/specs/case-management/spec.md`
-- [ ] 1.2 `lib/Service/CaseDateNormaliser.php`: `toCalendarDate()`,
+- [x] 1.2 `lib/Service/CaseDateNormaliser.php`: `toCalendarDate()`,
   `toMoment()`, `parse()`. `parse()` throws on an unreadable value
   (D-2, D-3).
   - `tests/Unit/Service/CaseDateNormaliserTest.php`
-- [ ] 1.3 The zone resolves inside the normaliser: engine calendar first,
+- [x] 1.3 The zone resolves inside the normaliser: engine calendar first,
   `tenantConfiguration.timezone` second, `Europe/Amsterdam` last (D-4,
   D-5).
 - [ ] 2.1 `TermijnController` `hervat`, `verleng` and `voltooi` onto the
