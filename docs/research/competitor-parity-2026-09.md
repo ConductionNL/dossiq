@@ -372,6 +372,8 @@ The register's own order (`procest/_gaps/README.md`), which the dossiq umbrella 
 4. **Refusals carry a status.** Row Q10.14, dossiq, M. The fail-open shape gate 13 exists to catch, and no test asserts the status code beside the state. In the umbrella as `refusals-carry-a-status`, with the re-read's counts: 47 sites in 37 files, 93 of 106 controller suites asserting a status.
 5. **Substituted work reaches My work.** Row 13.17, dossiq, S. The spec `handler-vervanging-waarneming` requires it and `fetchSubstitutedWork()` has no call site, so a case assigned to someone on leave is invisible until it breaches. In the umbrella as `substituted-work-reaches-my-work`, with humaniq's leave as the absence signal.
 
+Two of the five are shipped and three are half shipped. `refusals-carry-a-status` merged as [dossiq#2744](https://github.com/ConductionNL/dossiq/pull/2744) and `substituted-work-reaches-my-work` as [dossiq#2719](https://github.com/ConductionNL/dossiq/pull/2719). The platform halves of the first three merged in openregister: the administered working calendar as [#3714](https://github.com/ConductionNL/openregister/pull/3714), watchers as [#3707](https://github.com/ConductionNL/openregister/pull/3707) and timeline visibility as [#3711](https://github.com/ConductionNL/openregister/pull/3711), with dossiq's own half of the calendar as [#2748](https://github.com/ConductionNL/dossiq/pull/2748). The dossiq halves of watchers and timeline visibility, and the four remaining calendar changes, are still open.
+
 The ledger's own first pick, the schema-only registrations (Q11.31), is sixth: right, a privacy argument, and larger than the eight cells the matrix named once the re-read counted 27.
 
 ## What the discovery sweep found after this page
