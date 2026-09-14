@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.1 gives `informatieobject.status` and `informatieobject.direction` the `x-enum-labels` they never had, so a Status or Direction cell reads Draft and Incoming, translated per session, rather than the stored codes `draft` and `incoming`. The number moves for a fragment-only change on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a change confined to `register.d/` and this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.19.1"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
+        "version": "0.19.2"
     },
     "x-openregister": {
         "type": "application",
@@ -17,11 +17,14 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.10.0",
+                "version": "1.11.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
                 "description": "Case type definition: defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+                "configuration": {
+                    "x-openregister-shareable": true
+                },
                 "type": "object",
                 "required": [
                     "title"
