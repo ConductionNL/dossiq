@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Stuf\StufMessageHandler;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Service\Stuf\StufVaultService;
 use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -49,6 +50,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector
  */
 class StufRegisterContractTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private SchemaAwareStufRegister $register;
 
 	/**
@@ -72,7 +75,7 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseMappingIsIdempotent(): void {
-		$store = new StufCaseMappingStore($this->register);
+		$store = new StufCaseMappingStore(register: $this->register, dates: $this->caseDates());
 		$case = ['id' => 'case-1'];
 		$endpoint = ['id' => 'ep-1'];
 
@@ -105,7 +108,11 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheContactMappingIsFoundAgain(): void {
-		$mapper = new ContactBetrokkeneMapper($this->register, $this->createMock(LoggerInterface::class));
+		$mapper = new ContactBetrokkeneMapper(
+			register: $this->register,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 		$contact = ['id' => 'c-1', 'bsn' => '123456789'];
 		$endpoint = ['id' => 'ep-1'];
 
@@ -139,7 +146,7 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheOutboundAuditRowKeepsItsFields(): void {
-		$handler = new StufMessageHandler($this->register);
+		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
 
 		$row = $handler->logOutbound(
 			endpoint: ['id' => 'ep-1'],
@@ -175,7 +182,7 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testARetryEntryUsesTheDeclaredSubProperties(): void {
-		$handler = new StufMessageHandler($this->register);
+		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
 		$row = $handler->recordRetry(
 			msg: ['id' => 'stuf-msg-1', 'retries' => []],
 			attempt: 1,
@@ -285,11 +292,15 @@ class StufRegisterContractTest extends TestCase {
 		$case = ['id' => 'case-1'];
 		$contact = ['id' => 'c-1', 'bsn' => '123456789'];
 
-		$mappings = new StufCaseMappingStore($this->register);
+		$mappings = new StufCaseMappingStore(register: $this->register, dates: $this->caseDates());
 		$mappings->find(case: $case, endpoint: $endpoint);
 		$mappings->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
 
-		$mapper = new ContactBetrokkeneMapper($this->register, $this->createMock(LoggerInterface::class));
+		$mapper = new ContactBetrokkeneMapper(
+			register: $this->register,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 		$mapper->linkContact(contact: $contact, involvedParty: 'NPS-001', endpoint: $endpoint);
 		$mapper->findOrCreateBetrokkene(
 			contact: $contact,
@@ -297,7 +308,7 @@ class StufRegisterContractTest extends TestCase {
 			lookupCallable: static fn (): string => 'NPS-001'
 		);
 
-		$handler = new StufMessageHandler($this->register);
+		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
 		$outbound = $handler->logOutbound(
 			endpoint: $endpoint,
 			envelopeXml: '<soap/>',

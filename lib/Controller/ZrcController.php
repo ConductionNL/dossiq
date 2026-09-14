@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\CaseHeldException;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
@@ -94,6 +95,7 @@ class ZrcController extends ZgwController {
 	 * @param IRequest $request The incoming request
 	 * @param ZgwService $zgwService The shared ZGW service
 	 * @param IL10N $l10n The localization service
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param CaseRelationService $caseRelationService Typed peer-relation service
 	 * @param ArchivalNominationDeriver $archivalDeriver The one zrc-021 derivation,
 	 *                                                   shared with the in-app closing path
@@ -104,6 +106,7 @@ class ZrcController extends ZgwController {
 		IRequest $request,
 		private readonly ZgwService $zgwService,
 		private readonly IL10N $l10n,
+		private readonly CaseDateNormaliser $dates,
 		private readonly CaseRelationService $caseRelationService,
 		private readonly ArchivalNominationDeriver $archivalDeriver,
 		private readonly DocumentJoinHoming $joinHoming,
@@ -1869,9 +1872,14 @@ class ZrcController extends ZgwController {
 
 			if ($isEindstatus === true) {
 				// Zrc-007a: Set zaak einddatum when eindstatus is created.
-				$dateStatusGezet = $body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? date('Y-m-d'));
-				if (strlen($dateStatusGezet) > 10) {
-					$dateStatusGezet = substr($dateStatusGezet, 0, 10);
+				// The default used to be the server's wall clock and the submitted
+				// value was truncated to ten characters, which read an offset as
+				// part of the day. Both go through the one write path now.
+				$submitted = ($body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? null));
+				if ($submitted === null || $submitted === '') {
+					$dateStatusGezet = $this->dates->todayAsCalendarDate();
+				} else {
+					$dateStatusGezet = $this->dates->toCalendarDate($submitted, 'datumStatusGezet');
 				}
 
 				$caseData['endDate'] = $dateStatusGezet;
@@ -2054,7 +2062,8 @@ class ZrcController extends ZgwController {
 			$caseData = $this->objectToArray(row: $caseObj);
 
 			// Use the zaak endDate as einddatum (may be null if zaak isn't closed yet).
-			$endDate = $caseData['endDate'] ?? date('Y-m-d');
+			$endDate = ($this->dates->toCalendarDateOrNull($caseData['endDate'] ?? null)
+				?? $this->dates->todayAsCalendarDate());
 
 			$caseData = $this->deriveArchiveActionDate(
 				caseData: $caseData,

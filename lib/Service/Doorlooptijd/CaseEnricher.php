@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
@@ -50,6 +51,7 @@ class CaseEnricher {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger Logger, for unparseable caseType durations.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
 	 *
@@ -57,6 +59,7 @@ class CaseEnricher {
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
@@ -125,8 +128,8 @@ class CaseEnricher {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function enrichCase(array $caseData, array $caseTypeByKey, DateTimeImmutable $today): array {
-		$endDate = $this->normaliseDate(value: $caseData['endDate'] ?? null);
-		$startDate = $this->normaliseDate(value: $caseData['startDate'] ?? null);
+		$endDate = $this->dates->toCalendarDateOrNull($caseData['endDate'] ?? null);
+		$startDate = $this->dates->toCalendarDateOrNull($caseData['startDate'] ?? null);
 		$isOpen = ($endDate === null);
 
 		$caseType = null;
@@ -179,7 +182,7 @@ class CaseEnricher {
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function resolveCaseDeadline(mixed $rawDeadline, ?string $startDate, ?array $caseType): ?string {
-		$deadline = $this->normaliseDate(value: $rawDeadline);
+		$deadline = $this->dates->toCalendarDateOrNull($rawDeadline);
 		if ($deadline === null && $startDate !== null && $caseType !== null) {
 			$deadline = $this->deriveDeadline(
 				startDate: $startDate,
@@ -250,24 +253,4 @@ class CaseEnricher {
 		}
 	}//end deriveDeadline()
 
-	/**
-	 * Trim a date or datetime field to `Y-m-d`; return null for empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
-	 */
-	private function normaliseDate(mixed $value): ?string {
-		if (is_string($value) === false || $value === '') {
-			return null;
-		}
-
-		try {
-			return (new DateTimeImmutable($value))->format('Y-m-d');
-		} catch (\Throwable) {
-			return null;
-		}
-	}//end normaliseDate()
 }//end class

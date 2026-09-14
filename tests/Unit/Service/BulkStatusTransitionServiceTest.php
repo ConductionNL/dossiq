@@ -241,6 +241,50 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 	}//end testExecuteHappyPathCallsEngineOncePerCase()
 
 	/**
+	 * A case the engine moved without all of its actions still reports
+	 * `succeeded`, and carries the failed actions beside it.
+	 *
+	 * The per-case status and the summary stay as they were: a new status
+	 * value would change what every reader means by `succeeded`. The case
+	 * whose report names no `failedActions` key carries an empty list, so a
+	 * reader never has to tell "none failed" from "not said".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
+	 */
+	public function testExecuteCarriesEachCasesFailedActions(): void {
+		$failedActions = [['type' => 'createTask', 'error' => 'no_actor']];
+
+		$this->engine->method('execute')->willReturnCallback(
+			static function (string $caseId) use ($failedActions): array {
+				if ($caseId === 'case-2') {
+					return [
+						'status' => 'partial',
+						'statusRecord' => ['id' => 'rec-2'],
+						'dispatchedActions' => [],
+						'failedActions' => $failedActions,
+						'version' => 2,
+					];
+				}
+
+				return ['status' => 'ok', 'statusRecord' => ['id' => 'rec-1'], 'dispatchedActions' => [], 'version' => 2];
+			}
+		);
+
+		$result = $this->service->execute(['case-1', 'case-2'], 'submit', null);
+
+		$this->assertSame(expected: 'succeeded', actual: $result['results']['case-1']['status']);
+		$this->assertSame(expected: [], actual: $result['results']['case-1']['failedActions']);
+		$this->assertSame(expected: 'succeeded', actual: $result['results']['case-2']['status']);
+		$this->assertSame(expected: $failedActions, actual: $result['results']['case-2']['failedActions']);
+		$this->assertSame(
+			expected: ['total' => 2, 'succeeded' => 2, 'failed' => 0, 'error' => 0],
+			actual: $result['summary'],
+		);
+	}//end testExecuteCarriesEachCasesFailedActions()
+
+	/**
 	 * A GuardFailedException on one case is recorded as 'failed' with reasons,
 	 * and does not stop the remaining cases from being processed (partial
 	 * success). Two of three cases succeed, one fails with guard reasons.

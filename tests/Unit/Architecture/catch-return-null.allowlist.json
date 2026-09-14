@@ -7,7 +7,8 @@
         "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
         "The refusal class is deliberately absent: a site where a rule said no is converted to a RefusedException and leaves this file (REQ-QG-CRN-2). Four left it on 2026-09-13, all four in the guard-resolver class hydra gate 8 exists for. Any entry below may turn out to be a refusal when someone reads it; that is what the next batch is for.",
         "The proposal measured 47 sites over a three-LINE window. This instrument counts three STATEMENTS, because a multi-line logger call in front of the return is the same shape and a line window cannot see it. The same tree reads 90 by lines and 203 by statements.",
-        "Merging development on 2026-09-14 brought new sites with it, and moved one. #2719 added `Substitution/HumaniqLeaveReader::readLeave#1`. #2732 split `Flow/CaseFlowActions` and added `Flow/PlannedSeriesLedger::optional#1`, `::plannedFlows#1` and `::rowsOf#1`, which is also where `CaseFlowActions::plannedFlows` went, so that entry is removed here rather than kept. The ceiling went 203 to 206 for those four sites and nothing else."
+        "Merging development on 2026-09-14 brought new sites with it, and moved one. #2719 added `Substitution/HumaniqLeaveReader::readLeave#1`. #2732 split `Flow/CaseFlowActions` and added `Flow/PlannedSeriesLedger::optional#1`, `::plannedFlows#1` and `::rowsOf#1`, which is also where `CaseFlowActions::plannedFlows` went, so that entry is removed here rather than kept. The ceiling went 203 to 206 for those four sites and nothing else.",
+        "2026-09-14, openspec/changes/one-date-write-path: three nulling date parsers left lib/ (CaseEnricher::normaliseDate, TermijnTimerService::dateOrNull, WorkQueueService::parseDateOnly) and three CaseDateNormaliser sites arrived, two zone-resolution degradations and one read-path reader. The ceiling is unchanged at 206; every write path refuses now instead of answering null."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -240,6 +241,27 @@
             "reason": "`fetch()` answers `return null` when the read fails; the catch logs at debug (\"CaseCopyService: object lookup failed\"), so a failed read and an absent record are the same answer."
         },
         {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "engineCalendarZone",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`engineCalendarZone()` answers `return null` when OpenRegister, the working calendar service or the calendar's own zone accessor is absent; the catch logs at debug naming what did not answer, and the zone falls through to the tenant setting and then to Europe/Amsterdam, logged once per request."
+        },
+        {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "tenantZone",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`tenantZone()` answers `return null` when no tenant is bound to the request or its configuration cannot be read; the catch logs at debug and the zone falls through to Europe/Amsterdam, logged once per request."
+        },
+        {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "tryParse",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`tryParse()` is the read-path reader: a stored value that is not an ISO 8601 date answers null so a report can skip the row. Every WRITE path calls `parse()`, which refuses instead, and OneDateWritePathTest holds that line."
+        },
+        {
             "file": "lib/Service/CaseEmailMatchService.php",
             "method": "getEmailLinkService",
             "occurrence": 1,
@@ -406,13 +428,6 @@
             "occurrence": 1,
             "class": "read-miss",
             "reason": "`deriveDeadline()` answers `return null` when the read fails; the catch logs at debug (\"Could not derive deadline from processingDeadline\"), so a failed read and an absent record are the same answer."
-        },
-        {
-            "file": "lib/Service/Doorlooptijd/CaseEnricher.php",
-            "method": "normaliseDate",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`normaliseDate()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/DossierCompiler.php",
@@ -1150,13 +1165,6 @@
             "reason": "`arm()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
         },
         {
-            "file": "lib/Service/TermijnTimerService.php",
-            "method": "dateOrNull",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`dateOrNull()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-        },
-        {
             "file": "lib/Service/Transfer/TransferRegisterGateway.php",
             "method": "federationShareService",
             "occurrence": 1,
@@ -1288,13 +1296,6 @@
             "occurrence": 1,
             "class": "read-miss",
             "reason": "`nearestActiveTermDeadline()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-        },
-        {
-            "file": "lib/Service/WorkQueueService.php",
-            "method": "parseDateOnly",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`parseDateOnly()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",

@@ -294,6 +294,71 @@ describe('BulkTransitionDialog, the three lifecycle modes', () => {
 	})
 })
 
+describe('BulkTransitionDialog, cases that moved without their actions', () => {
+	beforeEach(() => {
+		axios.get.mockReset()
+		axios.post.mockReset()
+		axios.get.mockResolvedValue({
+			data: { transitions: [{ id: 'submit', label: 'Submit' }] },
+		})
+		axios.post.mockResolvedValue(readyPreview(['case-1', 'case-2']))
+	})
+
+	/**
+	 * Open the transition mode, pick the move and a reason, and execute it.
+	 *
+	 * @param {object} results The per-case results the execute answers with.
+	 * @return {Promise<object>} The wrapper.
+	 */
+	async function executeWith(results) {
+		const wrapper = await open('transition', ['case-1', 'case-2'])
+		wrapper
+			.findComponent({ name: 'NcSelect' })
+			.vm.$emit('update:modelValue', { id: 'submit', label: 'Submit' })
+		await flush()
+		await typeReason(wrapper, 'Batch intake')
+		await flush()
+
+		axios.post.mockResolvedValue({ data: { results } })
+		await execute(wrapper).trigger('click')
+		await flush()
+		return wrapper
+	}
+
+	// @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
+	it('says how many moved cases did not get all of their actions', async () => {
+		const wrapper = await executeWith({
+			'case-1': { status: 'succeeded', failedActions: [] },
+			'case-2': {
+				status: 'succeeded',
+				failedActions: [{ type: 'createTask', error: 'no_actor' }],
+			},
+		})
+
+		const summary = wrapper.find('[data-testid="bulk-execute-summary"]')
+		expect(summary.text()).toContain('2 of 2')
+		expect(
+			wrapper.find('[data-testid="bulk-execute-missing-actions"]').text(),
+		).toBe(
+			'1 case moved without all of its automatic actions. Its status record shows which.',
+		)
+	})
+
+	it('adds no line when every case got its actions', async () => {
+		const wrapper = await executeWith({
+			'case-1': { status: 'succeeded', failedActions: [] },
+			'case-2': { status: 'succeeded', failedActions: [] },
+		})
+
+		expect(
+			wrapper.find('[data-testid="bulk-execute-summary"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="bulk-execute-missing-actions"]').exists(),
+		).toBe(false)
+	})
+})
+
 describe('BulkTransitionDialog, the transition mode', () => {
 	beforeEach(() => {
 		axios.get.mockReset()

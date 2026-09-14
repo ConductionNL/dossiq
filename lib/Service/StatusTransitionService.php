@@ -200,13 +200,22 @@ class StatusTransitionService {
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 * @param string|null $resultTypeId ResultType chosen for a closing transition
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 *     version: int,
+	 * }
+	 *         `status` is `ok`, or `partial` when the case moved and an action it
+	 *         should have brought did not run. See `actionOutcome()`.
 	 *
 	 * @throws GuardFailedException When server-side re-evaluation fails any guard
 	 * @throws RuntimeException When case/transition/template are not found, or a
 	 *                          closing transition arrives without a result type
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	public function execute(
 		string $caseId,
@@ -293,13 +302,77 @@ class StatusTransitionService {
 			evaluatedGuards: $eval,
 		);
 
+		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
+
 		return [
-			'status' => 'ok',
+			'status' => $outcome['status'],
 			'statusRecord' => $record,
 			'dispatchedActions' => $dispatched,
+			'failedActions' => $outcome['failedActions'],
 			'version' => $savedVersion,
 		];
 	}//end execute()
+
+	/**
+	 * What to tell the caller happened, and which actions did not.
+	 *
+	 * 🔴 THIS USED TO BE DROPPED ON THE FLOOR, AND THAT IS WHAT MADE A BROKEN
+	 * CHECKLIST INVISIBLE. `SideEffectDispatcher` records `['ok' => false]`
+	 * for every action that failed, and both return sites answered
+	 * `'status' => 'ok'` regardless. On the day every `createTask` was refused
+	 * for want of an acting identity, twelve refusals were written into the
+	 * status record and the API still answered 200 with `ok`: a handler moved
+	 * a case, was told it had worked, and got none of the work the phase asks
+	 * for.
+	 *
+	 * 🔴 A FAILED ACTION DOES NOT ROLL THE TRANSITION BACK, AND SHOULD NOT.
+	 * The status mutation is committed before any side effect runs
+	 * (REQ-STE-5-002) and the statusRecord is already written, so by the time
+	 * an action fails the case HAS moved and its history says so. Undoing that
+	 * would mean deleting an audit record to make a task failure tidy.
+	 *
+	 * So the answer is not an error either. A 5xx would tell the handler the
+	 * move did not happen, which is false. `partial` is the honest third
+	 * answer: the move happened, some of the work it should have brought did
+	 * not, and the caller is told which. The HTTP status stays 200.
+	 *
+	 * @param array<int, array<string, mixed>> $dispatched The dispatcher's result rows.
+	 * @param string                           $caseId     The case, for the log line.
+	 *
+	 * @return array{status: string, failedActions: array<int, array{type: string, error: string}>}
+	 *         `ok` with no failures, or `partial` with the failures in dispatch order.
+	 *
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	 */
+	private function actionOutcome(array $dispatched, string $caseId): array {
+		$outcome = ['status' => 'ok', 'failedActions' => []];
+		foreach ($dispatched as $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			// ABSENT reads as ok, because that is what the key means when a
+			// caller substitutes the dispatcher: the real one always sets it.
+			if (($row['ok'] ?? true) !== false) {
+				continue;
+			}
+
+			$outcome['failedActions'][] = [
+				'type' => (string)($row['type'] ?? ''),
+				'error' => (string)($row['error'] ?? 'action_failed'),
+			];
+		}
+
+		if ($outcome['failedActions'] !== []) {
+			$outcome['status'] = 'partial';
+			$this->logger->warning(
+				'StatusTransitionService: the status moved but {count} of its actions did not run',
+				['count' => count($outcome['failedActions']), 'case' => $caseId, 'failed' => $outcome['failedActions']],
+			);
+		}
+
+		return $outcome;
+	}//end actionOutcome()
 
 	/**
 	 * Write the statusRecord for a transition and run its side effects.
@@ -588,11 +661,17 @@ class StatusTransitionService {
 	 * @param string|null $comment Optional free-form comment
 	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
 	 *
-	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>}
+	 * @return array{
+	 *     status: string,
+	 *     statusRecord: array<string, mixed>,
+	 *     dispatchedActions: array<int, array<string, mixed>>,
+	 *     failedActions: array<int, array{type: string, error: string}>,
+	 * }
 	 *
 	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 	 */
 	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
 		$userId = $this->resolveUserId(explicit: $userId);
@@ -639,7 +718,14 @@ class StatusTransitionService {
 			],
 		);
 
-		return ['status' => 'ok', 'statusRecord' => $record, 'dispatchedActions' => $dispatched];
+		$outcome = $this->actionOutcome(dispatched: $dispatched, caseId: $caseId);
+
+		return [
+			'status' => $outcome['status'],
+			'statusRecord' => $record,
+			'dispatchedActions' => $dispatched,
+			'failedActions' => $outcome['failedActions'],
+		];
 	}//end executeFreeForm()
 
 	/**

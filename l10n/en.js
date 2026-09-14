@@ -4017,7 +4017,26 @@ OC.L10N.register(
         "The case is back in the queue.": "The case is back in the queue.",
         "You are already handling this case.": "You are already handling this case.",
         "You are not signed in.": "You are not signed in.",
-        "You can only release a case you handle yourself.": "You can only release a case you handle yourself."
+        "You can only release a case you handle yourself.": "You can only release a case you handle yourself.",
+        "Impact": "Impact",
+        "Medium": "Medium",
+        "Derived priority": "Derived priority",
+        "Priority override": "Priority override",
+        "Overridden by": "Overridden by",
+        "Overridden at": "Overridden at",
+        "Override reason": "Override reason",
+        "Priority floor": "Priority floor",
+        "Priority raised by": "Priority raised by",
+        "Default impact": "Default impact",
+        "Default urgency": "Default urgency",
+        "Priority matrix": "Priority matrix",
+        "Priority set by hand, not derived": "Priority set by hand, not derived",
+        "You moved the case, but {count} automatic action did not run. Its status record shows which.": "You moved the case, but {count} automatic action did not run. Its status record shows which.",
+        "You moved the case, but {count} automatic actions did not run. Its status record shows which.": "You moved the case, but {count} automatic actions did not run. Its status record shows which.",
+        "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": ["You moved the case, but {count} automatic action did not run. Its status record shows which.","You moved the case, but {count} automatic actions did not run. Its status record shows which."],
+        "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} case moved without all of its automatic actions. Its status record shows which.",
+        "{count} cases moved without all of their automatic actions. Their status records show which.": "{count} cases moved without all of their automatic actions. Their status records show which.",
+        "_{count} case moved without all of its automatic actions. Its status record shows which._::_{count} cases moved without all of their automatic actions. Their status records show which._": ["{count} case moved without all of its automatic actions. Its status record shows which.","{count} cases moved without all of their automatic actions. Their status records show which."]
     },
     "nplurals=2; plural=(n != 1);"
 )
