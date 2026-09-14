@@ -107,6 +107,8 @@ export default {
 		 * The case this strip is about.
 		 *
 		 * @return {string} The case uuid, or the empty string.
+		 *
+		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 		 */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
@@ -140,6 +142,8 @@ export default {
 		 * rather than saying "nothing new" on every case page forever.
 		 *
 		 * @return {boolean} True when there is something to report.
+		 *
+		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 		 */
 		show() {
 			return (this.loaded && (this.entries.length > 0 || this.wasUnread))
@@ -160,7 +164,13 @@ export default {
 			return t('dossiq', 'You had not seen this case yet.')
 		},
 
-		/** The label of the put-it-back gesture. */
+		/**
+		 * The label of the put-it-back gesture.
+		 *
+		 * @return {string} The label in the reader's language.
+		 *
+		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+		 */
 		markUnreadLabel() {
 			return t('dossiq', 'Mark unread')
 		},
