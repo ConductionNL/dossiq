@@ -1717,6 +1717,32 @@
 											"emptyText": "No contact logged on this case yet"
 										}
 									}
+								},
+								{
+									"label": "Receipt confirmation",
+									"widget": {
+										"id": "case-acknowledgement",
+										"type": "data",
+										"title": "Receipt confirmation",
+										"icon": "EmailOutline",
+										"_note": "ontvangstbevestiging REQ-TERM-023 and REQ-TERM-024: whether this case confirmed receipt under Awb 4:3a, when, to whom and by which channel, and the messages it sent on its own. It sits in Communication rather than Data because it IS correspondence, beside the contact a handler logs by hand. A `data` widget and not a bespoke component: both fields are declared on the case schema, so the library renders them from the schema and this change adds no widget to the custom-widget ratchet. Read-only throughout: the duty is written by the acknowledgement service and cleared through the Record receipt confirmed action, never by typing over the field, because a duty a handler can edit silently is the state this feature exists to make visible.",
+										"content": {
+											"title": "Receipt confirmation",
+											"columns": 1,
+											"include": [
+												"acknowledgementDuty",
+												"outboundCommunications"
+											],
+											"overrides": {
+												"acknowledgementDuty": {
+													"editable": false
+												},
+												"outboundCommunications": {
+													"editable": false
+												}
+											}
+										}
+									}
 								}
 							]
 						}
@@ -2213,6 +2239,20 @@
 							"op": "neq",
 							"value": true
 						}
+					},
+					{
+						"id": "case-acknowledgement-met",
+						"type": "api-call",
+						"label": "Record receipt confirmed",
+						"icon": "CheckDecagram",
+						"url": "/apps/dossiq/api/case/@objectId/acknowledgement/met",
+						"method": "POST",
+						"confirm": true,
+						"payload": {
+							"how": "Confirmed outside the app, recorded by the handler"
+						},
+						"successMessage": "Receipt confirmation recorded on this case.",
+						"errorMessage": "The confirmation could not be recorded."
 					},
 					{
 						"id": "copy-case",
