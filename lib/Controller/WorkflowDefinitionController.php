@@ -82,6 +82,22 @@ class WorkflowDefinitionController extends Controller {
 	public function publish(string $id): JSONResponse {
 		$result = $this->service->publish($id);
 		if ($result === null) {
+			// A refused task declaration says WHAT was missing and on WHICH
+			// task. Everything else keeps the message it had, because there
+			// is nothing more specific to say about it here.
+			$refusals = $this->service->lastRefusals();
+			if ($refusals !== []) {
+				return new JSONResponse(
+					[
+						'success' => false,
+						'error' => 'task_declaration_unresolvable',
+						'message' => $refusals[0]['message'],
+						'errors' => $refusals,
+					],
+					422,
+				);
+			}
+
 			return new JSONResponse(
 				['success' => false, 'error' => 'Could not publish workflow definition'],
 				400,
