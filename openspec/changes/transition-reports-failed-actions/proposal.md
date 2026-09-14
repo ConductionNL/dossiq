@@ -67,7 +67,6 @@ report. That is OpenRegister's half.
 `lib/Service/StatusTransitionService.php`,
 `lib/Service/BulkStatusTransitionService.php`,
 `lib/Lifecycle/CaseActionProvider.php`, `src/utils/transitionOutcome.js`,
-`src/utils/bulkTransitionHelpers.js`,
 `src/dialogs/CaseTransitionConfirmDialog.vue`,
 `src/dialogs/BulkTransitionDialog.vue`,
 `src/views/workflow-board/WorkflowBoard.vue`, `l10n/en.*`, `l10n/nl.*`.

@@ -131,6 +131,11 @@
 								)
 							}}
 						</p>
+						<p
+							v-if="executeNotice"
+							data-testid="bulk-execute-missing-actions">
+							{{ executeNotice }}
+						</p>
 						<ul
 							v-if="executeSummary.failed.length > 0"
 							class="bulk-transition-dialog__reasons">
@@ -185,6 +190,7 @@ import {
 	isLifecycleGesture,
 	summarizeResults,
 } from '../utils/bulkTransitionHelpers.js'
+import { bulkFailedActionsNotice } from '../utils/transitionOutcome.js'
 
 export default {
 	name: 'BulkTransitionDialog',
@@ -235,6 +241,7 @@ export default {
 			executing: false,
 			executed: false,
 			executeSummary: null,
+			executeNotice: '',
 			error: null,
 		}
 	},
@@ -418,6 +425,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-bulk-transitions-go-through-the-engine
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
 		 */
 		async onExecute() {
 			if (!this.canExecute) return
@@ -444,6 +452,7 @@ export default {
 					payload,
 				)
 				this.executeSummary = summarizeResults(data?.results || {})
+				this.executeNotice = bulkFailedActionsNotice(data?.results || {})
 				this.executed = true
 			} catch (err) {
 				this.error = err?.response?.data?.error || err.message

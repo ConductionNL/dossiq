@@ -40,7 +40,7 @@ the move itself happened.
 - **AND** a warning SHALL be logged naming the case
 
 #### Scenario: The handler is told how many actions did not run
-@e2e exclude needs a failing action, which the browser cannot provoke; covered by caseTransitionOutcome.spec.js, which mounts the dialog and drives the board handler against a partial answer
+@e2e exclude needs a failing action, which the browser cannot provoke; covered by caseTransitionOutcome.spec.js, which mounts the dialog, and workflowBoardMove.spec.js, which drives the board, both against a partial answer
 
 - **GIVEN** a handler confirms a transition in the case-page dialog
 - **AND** the answer lists two failed actions

@@ -80,6 +80,7 @@ import {
 	canConfirmTransition,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -153,6 +154,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/status-transition-engine/spec.md
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -202,23 +204,13 @@ export default {
 		 *
 		 * @param {object} data The transition response body.
 		 * @return {void}
-		 * @spec openspec/specs/status-transition-engine/spec.md
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
 		warnAboutFailedActions(data) {
-			const failed = Array.isArray(data?.failedActions)
-				? data.failedActions
-				: []
-			if (failed.length === 0) {
-				return
+			const warning = failedActionsWarning(data)
+			if (warning !== '') {
+				showWarning(warning)
 			}
-
-			showWarning(
-				t(
-					'dossiq',
-					'The case moved, but {count} automatic action did not run. Check the case history.',
-					{ count: failed.length },
-				),
-			)
 		},
 	},
 }

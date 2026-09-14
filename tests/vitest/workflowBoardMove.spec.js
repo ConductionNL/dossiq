@@ -31,13 +31,14 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
-const { showError, saveObject, fetchCollection } = vi.hoisted(() => ({
+const { showError, showWarning, saveObject, fetchCollection } = vi.hoisted(() => ({
 	showError: vi.fn(),
+	showWarning: vi.fn(),
 	saveObject: vi.fn(),
 	fetchCollection: vi.fn(),
 }))
 
-vi.mock('@nextcloud/dialogs', () => ({ showError }))
+vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 
 // The board's own children (BoardColumn -> CaseCard) are stubbed at mount,
 // but their MODULES are still evaluated, so every root `@nextcloud/vue`
@@ -182,6 +183,40 @@ describe('moving a case on the workflow board', () => {
 		expect(fromBoard[0]).toBe(fromCasePage[0])
 		expect(fromBoard[1]).toEqual({ transitionId: 't1' })
 		expect(fromBoard[1]).toEqual(fromCasePage[1])
+	})
+
+	// @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	it('keeps the card moved and warns when an action did not run after the move', async () => {
+		const wrapper = await boardWithOffer([OFFERED])
+		axios.post.mockResolvedValue({
+			data: {
+				status: 'partial',
+				failedActions: [{ type: 'createTask', error: 'no_actor' }],
+			},
+		})
+		// The re-read after the move must not overwrite the optimistic card
+		// before the assertion reads it.
+		wrapper.vm.fetchData = vi.fn(async () => {})
+
+		await wrapper.vm.onDrop('case-1', 'In behandeling')
+
+		expect(saveObject).not.toHaveBeenCalled()
+		expect(showError).not.toHaveBeenCalled()
+		expect(showWarning).toHaveBeenCalledWith(
+			'You moved the case, but 1 automatic action did not run. Its status record shows which.',
+		)
+		expect(idsIn(wrapper, 'In behandeling')).toEqual(['case-1'])
+	})
+
+	it('does not warn when every action ran', async () => {
+		const wrapper = await boardWithOffer([OFFERED])
+		axios.post.mockResolvedValue({ data: { status: 'ok', failedActions: [] } })
+		wrapper.vm.fetchData = vi.fn(async () => {})
+
+		await wrapper.vm.onDrop('case-1', 'In behandeling')
+
+		expect(showWarning).not.toHaveBeenCalled()
+		expect(idsIn(wrapper, 'In behandeling')).toEqual(['case-1'])
 	})
 
 	it('puts the card back and names the reason when the engine refuses the move', async () => {

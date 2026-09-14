@@ -17,6 +17,6 @@ Tier: V1. Kind: code. Carried from draft PR #2712.
 - [x] 3.1 PHPUnit: `StatusTransitionServiceFailedActionsTest` (ok and partial,
   both paths), `BulkStatusTransitionServiceTest` (carried and defaulted). Each
   new test watched failing with the change reverted.
-- [x] 3.2 Vitest: `caseTransitionOutcome.spec.js`, the bulk helper and dialog
-  specs.
+- [x] 3.2 Vitest: `caseTransitionOutcome.spec.js`, `workflowBoardMove.spec.js`
+  and `bulkTransitionDialog.spec.js`.
 - [x] 4.1 l10n: the two plural strings in `en` and `nl`, catalogues regenerated.
