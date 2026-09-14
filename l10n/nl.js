@@ -3977,7 +3977,24 @@ OC.L10N.register(
         "Send the request": "Verstuur het verzoek",
         "The request is on its way to {recipient}": "Het verzoek is onderweg naar {recipient}",
         "The parties of this case could not be read": "De partijen van deze zaak konden niet gelezen worden",
-        "The request could not be sent": "Het verzoek kon niet verstuurd worden"
+        "The request could not be sent": "Het verzoek kon niet verstuurd worden",
+        "Once": "Eenmalig",
+        "Every month": "Elke maand",
+        "Every quarter": "Elk kwartaal",
+        "Every half year": "Elk halfjaar",
+        "Every year": "Elk jaar",
+        "Until you stop it": "Totdat je de reeks stopt",
+        "On a date": "Op een datum",
+        "After a number of cases": "Na een aantal zaken",
+        "next on {date}": "volgende op {date}",
+        "{count} opened so far": "{count} tot nu toe geopend",
+        "Pick how often the follow-up comes back.": "Kies hoe vaak de vervolgzaak terugkomt.",
+        "Give the series an end date or a number, not both.": "Geef de reeks een einddatum of een aantal, niet allebei.",
+        "The series could not be stopped.": "De reeks kon niet worden gestopt.",
+        "Ends": "Eindigt",
+        "Repeat": "Herhaling",
+        "Stop series": "Reeks stoppen",
+        "Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.": "Kies een herhaling om een reeks te plannen, bijvoorbeeld een jaarlijkse vergunningscontrole. Een reeks die op de 31e valt, schuift naar de laatste dag van een kortere maand."
     },
     "nplurals=2; plural=(n != 1);"
 )

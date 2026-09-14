@@ -20,9 +20,9 @@ Tier: V1. Kind: config plus two PHP files. Row 1.8.
 
 ## 3. The page
 
-- [ ] 3.1 `src/manifest.json` `#CaseDetail` action `plan-follow-up`: the
+- [x] 3.1 `src/manifest.json` `#CaseDetail` action `plan-follow-up`: the
   recurrence and end fields on the form.
-- [ ] 3.2 `#CaseDetail` Related tab: series row with next occurrence, the
+- [x] 3.2 `#CaseDetail` Related tab: series row with next occurrence, the
   occurrences underneath (filter `handoffSource`), Stop series action.
   - `tests/vitest/caseActionsMenu.spec.js` extended
 

@@ -1730,7 +1730,7 @@
 										"type": "case-related-planned",
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26). A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
 									}
 								},
 								{
@@ -2120,7 +2120,8 @@
 						"type": "open-modal",
 						"label": "Plan follow-up",
 						"icon": "CalendarClock",
-						"target": "CasePlanFollowUpDialog"
+						"target": "CasePlanFollowUpDialog",
+						"_note": "Plan one follow-up case, or a series (planned-case-series, row 1.8). The form lives in CasePlanFollowUpDialog and NOT in this file, because an `open-modal` action carries a target and props only: there is no field vocabulary here to declare a picker with, and the five fields (case type, date, title, Repeat, Ends) are bound to each other -- the end fields appear only once a repeat is chosen, which no `visibleWhen` on a header action can express. What the manifest DOES decide is that the gesture is a modal rather than a `handler`: a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. Repeat is a picker of five tokens (none, monthly, quarterly, halfYearly, yearly), never a cron expression a handler types. The recurrence becomes the scheduled flow\u0027s cron fields in PlannedFollowUpDocument, with `L` in the day field when the chosen day does not exist in every month the series fires in: 31 August plus one month is 30 September, not 1 October."
 					}
 				]
 			},

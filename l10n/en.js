@@ -3977,7 +3977,24 @@ OC.L10N.register(
         "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.": "The party gets a link that only uploads into this case folder. What they send lands in the case as a document.",
         "The request could not be sent": "The request could not be sent",
         "The request is on its way to {recipient}": "The request is on its way to {recipient}",
-        "What do you need from them?": "What do you need from them?"
+        "What do you need from them?": "What do you need from them?",
+        "Ends": "Ends",
+        "Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.": "Pick a repeat to plan a series, for example a yearly permit check. A series that lands on the 31st moves to the last day of a shorter month.",
+        "Repeat": "Repeat",
+        "Stop series": "Stop series",
+        "Once": "Once",
+        "Every month": "Every month",
+        "Every quarter": "Every quarter",
+        "Every half year": "Every half year",
+        "Every year": "Every year",
+        "Until you stop it": "Until you stop it",
+        "On a date": "On a date",
+        "After a number of cases": "After a number of cases",
+        "next on {date}": "next on {date}",
+        "{count} opened so far": "{count} opened so far",
+        "Pick how often the follow-up comes back.": "Pick how often the follow-up comes back.",
+        "Give the series an end date or a number, not both.": "Give the series an end date or a number, not both.",
+        "The series could not be stopped.": "The series could not be stopped."
     },
     "nplurals=2; plural=(n != 1);"
 )
