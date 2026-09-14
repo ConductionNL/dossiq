@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Recycle;
 use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,6 +56,8 @@ use Throwable;
  * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
  */
 class CaseRecycleService {
+
+	use SearchesObjects;
 
 	/**
 	 * OpenRegister's mapper over the per-register magic tables.
@@ -158,22 +161,37 @@ class CaseRecycleService {
 	}//end deletedCases()
 
 	/**
-	 * One deleted case with its window, or null when the id is not one.
+	 * One live case, as an associative array, or null.
+	 *
+	 * The clocks are read off a case that still exists, so this read goes
+	 * through the ordinary object path rather than the deleted one.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array<string, mixed>|null The row, or null.
+	 * @return array<string, mixed>|null The case payload, or null.
 	 *
 	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
 	 */
-	public function deletedCase(string $caseId): ?array {
-		$entity = $this->findDeleted(caseId: $caseId);
-		if ($entity === null) {
+	public function liveCase(string $caseId): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
 			return null;
 		}
 
-		return $this->row(entity: $entity);
-	}//end deletedCase()
+		try {
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $caseId
+			);
+		} catch (Throwable $e) {
+			$this->logger->info('Dossiq: could not read case ' . $caseId . ': ' . $e->getMessage());
+			return null;
+		}
+	}//end liveCase()
 
 	/**
 	 * Restore a deleted case, and record who did it and when.
