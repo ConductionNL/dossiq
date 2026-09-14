@@ -49,6 +49,12 @@ import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
+// --- Mail intake log: a custom page because the intake-role check lives in
+//     MailIntakeController, and an index page would read the generic object
+//     endpoint and show every processed message's original to anyone the
+//     register lets read. ---
+// @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
@@ -288,6 +294,7 @@ export default {
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds
 	// the capability comparison. See the component header.
 	FeaturesRoadmapView,
+	MailIntakeLogView,
 	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
 

@@ -1,0 +1,30 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "inbound-mail-filters",
+		"why-custom": "The intake log holds the original source of every message the mailbox received, and the intake-role check that guards it lives in MailIntakeController. A manifest index page reads the generic OpenRegister object endpoint, which applies the register's own permissions rather than the intake role, so it would show those originals to anyone the register lets read. That is exactly the scenario 'the log is not readable by everyone' forbids, which is why this is a custom page over the dossiq endpoint instead of an index over the schema."
+	},
+	"menu": [
+		{
+			"id": "MailIntakeLogMenu",
+			"label": "Mail intake log",
+			"icon": "EmailSearchOutline",
+			"route": "MailIntakeLog",
+			"section": "footer",
+			"order": 95
+		}
+	],
+	"pages": [
+		{
+			"id": "MailIntakeLog",
+			"route": "/mail-intake-log",
+			"type": "custom",
+			"component": "MailIntakeLogView",
+			"title": "Mail intake log",
+			"config": {
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		}
+	]
+}

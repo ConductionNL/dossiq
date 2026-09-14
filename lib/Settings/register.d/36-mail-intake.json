@@ -169,7 +169,7 @@
                         "type": "string",
                         "enum": ["accept", "quarantine", "refuse"],
                         "default": "quarantine",
-                        "description": "What a failing sender-authentication verdict means for this kind of case. A melding from an unauthenticated sender is a normal Tuesday; a bezwaar from one is a forgery risk. Quarantine is the default because it is the only answer that neither drops a message nor files a forged one."
+                        "description": "What a failing sender-authentication verdict means for this kind of case. A melding from an unauthenticated sender is normal. A bezwaar from one is a forgery risk. Quarantine is the default because it neither drops a message nor files a forged one."
                     }
                 }
             }
