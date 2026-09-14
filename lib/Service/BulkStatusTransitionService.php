@@ -171,6 +171,13 @@ class BulkStatusTransitionService {
 				$results[$caseId] = [
 					'status' => 'succeeded',
 					'statusRecord' => $outcome['statusRecord'],
+					// Carried, not counted. The move succeeded, so the summary
+					// counter is right; what it cannot say is that the phase's
+					// work did not arrive with it. Left out of the enum on
+					// purpose: a new per-case status value would change what
+					// every existing reader of this response means by
+					// 'succeeded', where an extra key only adds to it.
+					'failedActions' => ($outcome['failedActions'] ?? []),
 				];
 			} catch (GuardFailedException $e) {
 				$failed++;
