@@ -257,26 +257,26 @@ import {
  */
 function categoryLabel(category) {
 	switch (category) {
-	case 'text':
-		return t('dossiq', 'Text')
-	case 'numeric':
-		return t('dossiq', 'Numbers')
-	case 'composite':
-		return t('dossiq', 'Lists and nested data')
-	case 'file':
-		return t('dossiq', 'Files')
-	case 'spatial':
-		return t('dossiq', 'Map')
-	case 'presentation':
-		return t('dossiq', 'Colour')
-	case 'temporal':
-		return t('dossiq', 'Repeating')
-	case 'nextcloud':
-		return t('dossiq', 'Nextcloud')
-	case 'legacy':
-		return t('dossiq', 'Old type, kept for this field')
-	default:
-		return category
+		case 'text':
+			return t('dossiq', 'Text')
+		case 'numeric':
+			return t('dossiq', 'Numbers')
+		case 'composite':
+			return t('dossiq', 'Lists and nested data')
+		case 'file':
+			return t('dossiq', 'Files')
+		case 'spatial':
+			return t('dossiq', 'Map')
+		case 'presentation':
+			return t('dossiq', 'Colour')
+		case 'temporal':
+			return t('dossiq', 'Repeating')
+		case 'nextcloud':
+			return t('dossiq', 'Nextcloud')
+		case 'legacy':
+			return t('dossiq', 'Old type, kept for this field')
+		default:
+			return category
 	}
 }
 
@@ -437,9 +437,10 @@ export default {
 		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
 		 */
 		takes(key) {
-			return constraintsForType(this.vocabulary, this.storedType.type).includes(
-				key,
-			)
+			return constraintsForType(
+				this.vocabulary,
+				this.storedType.type,
+			).includes(key)
 		},
 
 		/**

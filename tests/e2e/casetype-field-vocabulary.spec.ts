@@ -193,7 +193,9 @@ test.describe('case type field vocabulary', () => {
 			'choice list needs values',
 		)
 
-		await tab.locator('#pd-add-enum').fill('wekelijks\nmaandelijks\nper kwartaal')
+		await tab
+			.locator('#pd-add-enum')
+			.fill('wekelijks\nmaandelijks\nper kwartaal')
 		await tab.getByRole('button', { name: /^Add$/ }).click()
 		await expect(tab.locator('.property-row', { hasText: name })).toBeVisible({
 			timeout: 30_000,
@@ -284,9 +286,7 @@ test.describe('case type field vocabulary', () => {
 		const row = tab.locator('.property-row', { hasText: name })
 		await expect(row).toContainText('polyline')
 		await row.getByRole('button', { name: new RegExp(`Edit ${name}`) }).click()
-		await expect(tab.locator('.properties-tab__error')).toContainText(
-			'polyline',
-		)
+		await expect(tab.locator('.properties-tab__error')).toContainText('polyline')
 
 		const stored = (
 			await listObjects(request, token, 'propertyDefinition', {

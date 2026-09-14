@@ -46,7 +46,15 @@ vi.mock('../../src/store/modules/object.js', () => ({
 function stub(name, tag = 'div') {
 	return defineComponent({
 		name,
-		props: ['modelValue', 'label', 'error', 'type', 'variant', 'disabled', 'helperText'],
+		props: [
+			'modelValue',
+			'label',
+			'error',
+			'type',
+			'variant',
+			'disabled',
+			'helperText',
+		],
 		emits: ['update:modelValue'],
 		render() {
 			return h(
@@ -68,18 +76,19 @@ vi.mock('@nextcloud/vue', () => ({
 	NcTextField: stub('NcTextField'),
 	NcCheckboxRadioSwitch: stub('NcCheckboxRadioSwitch'),
 }))
-vi.mock('vue-material-design-icons/Delete.vue', () => ({ default: stub('DeleteIcon') }))
-vi.mock('vue-material-design-icons/Pencil.vue', () => ({ default: stub('PencilIcon') }))
+vi.mock('vue-material-design-icons/Delete.vue', () => ({
+	default: stub('DeleteIcon'),
+}))
+vi.mock('vue-material-design-icons/Pencil.vue', () => ({
+	default: stub('PencilIcon'),
+}))
 
-const { resetPropertyVocabulary } = await import(
-	'../../src/services/propertyVocabulary.js'
-)
-const { VOCABULARY_SNAPSHOT } = await import(
-	'../../src/services/propertyVocabularySnapshot.js'
-)
-const { default: PropertiesTab } = await import(
-	'../../src/views/settings/tabs/PropertiesTab.vue'
-)
+const { resetPropertyVocabulary } =
+	await import('../../src/services/propertyVocabulary.js')
+const { VOCABULARY_SNAPSHOT } =
+	await import('../../src/services/propertyVocabularySnapshot.js')
+const { default: PropertiesTab } =
+	await import('../../src/views/settings/tabs/PropertiesTab.vue')
 
 /**
  * A vocabulary answer with the two types this test cares about.
@@ -166,7 +175,9 @@ describe('PropertiesTab', () => {
 	it('reads the instance list, not the built-in copy', async () => {
 		const wrapper = await mountTab()
 		expect(axios.get).toHaveBeenCalledWith(
-			expect.stringContaining('/apps/openregister/api/schemas/property-vocabulary'),
+			expect.stringContaining(
+				'/apps/openregister/api/schemas/property-vocabulary',
+			),
 		)
 		expect(wrapper.find('.pd-fields__notice').exists()).toBe(false)
 	})
@@ -187,9 +198,7 @@ describe('PropertiesTab', () => {
 	it('offers the formats the chosen type takes, and drops them when it does not', async () => {
 		const wrapper = await mountTab()
 		expect(wrapper.find('#pd-add-format').exists()).toBe(true)
-		await wrapper
-			.find('#pd-add-type')
-			.setValue('array')
+		await wrapper.find('#pd-add-type').setValue('array')
 		await flushPromises()
 		expect(wrapper.find('#pd-add-format').exists()).toBe(false)
 		expect(wrapper.vm.newForm.format).toBe(null)

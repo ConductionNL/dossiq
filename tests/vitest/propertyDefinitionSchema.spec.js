@@ -36,8 +36,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const schemas = register.components.schemas
 const propertyDefinition = schemas.propertyDefinition
 const definitionKeys = Object.keys(propertyDefinition.properties)
-const declaration =
-	schemas.case.properties.caseType['x-openregister-extends-form']
+const declaration = schemas.case.properties.caseType['x-openregister-extends-form']
 const map = declaration.map
 const offeredTypes = propertyDefinition.properties.propertyType.enum
 const vocabularyTypes = VOCABULARY_SNAPSHOT.types.map((row) => row.type)
@@ -141,9 +140,7 @@ describe('the extends-form map forwards nothing nobody defines', () => {
 
 	it('states a reason for every role the vocabulary does not name', () => {
 		Object.entries(RENDERER_ROLES).forEach(([role, reason]) => {
-			expect(vocabularyKeys, `${role} is the renderer own`).not.toContain(
-				role,
-			)
+			expect(vocabularyKeys, `${role} is the renderer own`).not.toContain(role)
 			expect(reason.length, `${role} says why`).toBeGreaterThan(20)
 		})
 	})
@@ -174,10 +171,9 @@ describe('the extends-form map forwards nothing nobody defines', () => {
 		]
 		added.forEach((field) => {
 			expect(definitionKeys, `${field} is declared`).toContain(field)
-			expect(
-				Object.values(map),
-				`${field} reaches the case form`,
-			).toContain(field)
+			expect(Object.values(map), `${field} reaches the case form`).toContain(
+				field,
+			)
 		})
 	})
 
@@ -234,7 +230,11 @@ describe('a key the platform has not published is not forwarded', () => {
 					return
 				}
 				const body = readFileSync(full, 'utf8')
-				if (/PropertySourceProvider|resolvePropertySource|suggestFromSource/.test(body)) {
+				if (
+					/PropertySourceProvider|resolvePropertySource|suggestFromSource/.test(
+						body,
+					)
+				) {
 					hits.push(full)
 				}
 			})

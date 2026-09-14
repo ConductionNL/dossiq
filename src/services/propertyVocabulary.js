@@ -88,7 +88,8 @@ export const PENDING_PLATFORM_KEYS = {
  * @type {Object<string, string>}
  */
 export const RENDERER_ROLES = {
-	definition: 'The helper text @conduction/nextcloud-vue falls back to when the description is empty.',
+	definition:
+		'The helper text @conduction/nextcloud-vue falls back to when the description is empty.',
 }
 
 /**
@@ -113,11 +114,13 @@ let cached = null
  * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
  */
 export function isVocabulary(data) {
-	return !!data
+	return (
+		!!data
 		&& Array.isArray(data.types)
 		&& data.types.length > 0
 		&& Array.isArray(data.keys)
 		&& typeof data.types[0].type === 'string'
+	)
 }
 
 /**
