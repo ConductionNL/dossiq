@@ -137,6 +137,30 @@ loses that note, so the reason cannot quietly become invisible.
 - **WHEN** the architecture test scans `lib/` for archiefactiedatum arithmetic
 - **THEN** only the two standing classes SHALL do it
 
+### Requirement: The archive marker on a case is openregister's, not a second field (REQ-ARCH-16)
+
+Where the case page shows whether a case is archived, it SHALL read
+openregister's own marker, `@self.archived`, which carries who archived it, when
+and why. `case.archiveStatus` is ZGW data describing the archive and SHALL NOT
+stand in for the marker. When the two disagree the page SHALL say so rather than
+choose between them, because choosing hides exactly the case somebody has to
+look at.
+
+#### Scenario: the marker is what the page reads
+@e2e tests/e2e/the-case-archives-through-openregister.spec.ts
+
+- **GIVEN** a case openregister holds an archive marker for
+- **WHEN** a handler opens the Archiving tab
+- **THEN** the moment, the person and the reason from the marker SHALL be shown
+
+#### Scenario: a disagreement is reported, not resolved
+- @e2e exclude the two states are set by different writers and cannot both be driven from the browser; asserted by the component test
+
+- **GIVEN** a case whose `archiveStatus` says archived and which carries no marker
+- **WHEN** a handler opens the Archiving tab
+- **THEN** the tab SHALL say the case and openregister do not agree
+- **AND** it SHALL NOT present either as the answer
+
 ### Requirement: The dossier zip stays a convenience, not a transfer (REQ-ARCH-15)
 
 `DossierZipExporter` SHALL keep building a downloadable dossier and SHALL NOT be
