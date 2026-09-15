@@ -70,5 +70,14 @@ class CasePriorityListenerRegistrar {
 				priority: self::DERIVATION_PRIORITY
 			);
 		}
+
+		// The marker derivation registers HERE rather than beside this class in
+		// ListenerRegistrar, because the two are one ordering decision. Both run
+		// pre-persist on the same two events, and the marker derivation sits
+		// BELOW this one deliberately (-300 against -200) so a case type that
+		// reads its impact from the risk assessment has the priority derived
+		// from the assessment in the same save. Registering them in two places
+		// would let somebody change one priority without seeing the other.
+		(new CaseMarkerListenerRegistrar())->register(context: $context);
 	}//end register()
 }//end class

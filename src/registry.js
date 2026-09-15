@@ -23,6 +23,10 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The flag a person raised, the risk the organisation assessed, and the
+// markers the system raised against a named panel.
+// @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -697,6 +701,13 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	'case-attention': {
+		// @custom-widget-ratchet exclude the three facts on this strip cannot be read by a declarative widget: the flag is written through an endpoint that refuses a reasonless act and appends rather than overwriting, the marker set is an array of derived rows each pointing at a panel of THIS page, and the risk assessment is a property OpenRegister filters out entirely for a reader without the extra group, so a field widget would render an empty box that looks like an absent assessment
+		kind: 'widget',
+		component: CaseAttentionPanel,
+		_note: 'CaseDetail: the flag a person raised with a written reason, the risk this organisation assessed and the markers the system raised against a named panel. Three different facts kept apart on purpose. Sits under the unread strip and says the opposite kind of thing: a marker survives opening the panel it points at and goes when the work behind it is done, where the unread badge goes because somebody looked.',
 	},
 
 	'case-notes-pane': {

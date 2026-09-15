@@ -4537,7 +4537,24 @@ OC.L10N.register(
         "{count} working day": "{count} working day",
         "{count} working day in this status": "{count} working day in this status",
         "{count} working days": "{count} working days",
-        "{count} working days in this status": "{count} working days in this status"
+        "{count} working days in this status": "{count} working days in this status",
+        "Assessed high risk": "Assessed high risk",
+        "Assessed risk:": "Assessed risk:",
+        "Attention": "Attention",
+        "Clear the flag": "Clear the flag",
+        "Cleared": "Cleared",
+        "Due for review": "Due for review",
+        "Flag for attention": "Flag for attention",
+        "Flagged as needing attention:": "Flagged as needing attention:",
+        "Needs attention": "Needs attention",
+        "Raised": "Raised",
+        "Why it no longer needs attention": "Why it no longer needs attention",
+        "Why this case needs attention": "Why this case needs attention",
+        "The attention flag could not be changed.": "The attention flag could not be changed.",
+        "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Write down why, and the flag will change. Both raising and clearing keep the reason.",
+        "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
+        "This case is not flagged as needing attention.": "This case is not flagged as needing attention.",
+        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case."
     },
     "nplurals=2; plural=(n != 1);"
 )
