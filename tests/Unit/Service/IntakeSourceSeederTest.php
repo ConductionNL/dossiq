@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Intake\IntakeSourceSeeder;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
@@ -53,11 +54,38 @@ class IntakeSourceSeederTest extends TestCase {
 	 * @return IntakeSourceSeeder The seeder.
 	 */
 	private function seeder(): IntakeSourceSeeder {
+		// PSR-11's own "there is no such service", which is what a container
+		// without OpenRegister raises. Not a bare RuntimeException: the seeder
+		// deliberately catches only the two PSR-11 interfaces, so a wider
+		// exception here would be testing the catch rather than the absence.
+		$absent = new class ('not here') extends RuntimeException implements NotFoundExceptionInterface {
+		};
+
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
-		$container->method('get')->willThrowException(new RuntimeException('not here'));
+		$container->method('get')->willThrowException($absent);
 
 		return new IntakeSourceSeeder(container: $container, logger: new NullLogger());
 	}//end seeder()
+
+	/**
+	 * A defect in OpenRegister's own wiring is not reported as its absence.
+	 *
+	 * The catch names the two PSR-11 interfaces and nothing wider. A
+	 * `\Throwable` there would answer "OpenRegister is not installed" for a
+	 * TypeError in the service's constructor, and the operator would go looking
+	 * for a missing app instead of a broken one.
+	 *
+	 * @return void
+	 */
+	public function testAnUnexpectedErrorIsNotReportedAsAnAbsentOpenRegister(): void {
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('broken wiring'));
+
+		$seeder = new IntakeSourceSeeder(container: $container, logger: new NullLogger());
+
+		$this->expectException(exception: RuntimeException::class);
+		$seeder->seed();
+	}//end testAnUnexpectedErrorIsNotReportedAsAnAbsentOpenRegister()
 
 	/**
 	 * The catalogue names the five channels dossiq handles.
@@ -186,6 +214,35 @@ class IntakeSourceSeederTest extends TestCase {
 
 		$this->fail(message: 'The catalogue declares no channel ' . $slug);
 	}//end catalogueEntry()
+
+	/**
+	 * The writes run under a system identity, or they are refused as Anonymous.
+	 *
+	 * A repair step runs during install and `occ upgrade`, where there is no
+	 * session. OpenRegister then resolves the actor as 'Anonymous', and the
+	 * `intake-source` schema names `admin` for create and update, so every
+	 * write is refused. The refusal is a warning, which does not fail an
+	 * upgrade, so the install would report success over an empty register.
+	 *
+	 * `SeedWriteIdentityTest` sweeps every registered repair step for this and
+	 * caught this seeder before it shipped. This one names the mechanism, so a
+	 * refactor that drops the elevation fails here with the reason rather than
+	 * in a sweep with a file list.
+	 *
+	 * @return void
+	 */
+	public function testEveryWriteRunsUnderASystemIdentity(): void {
+		$source = file_get_contents(
+			__DIR__ . '/../../../lib/Service/Intake/IntakeSourceSeeder.php'
+		);
+
+		$this->assertStringContainsString(
+			needle: '$this->runAsSystemIfAvailable(',
+			haystack: $source,
+			message: 'the seeder writes through OpenRegister without elevating, so every '
+			. 'write is refused as Anonymous and the install still reports success'
+		);
+	}//end testEveryWriteRunsUnderASystemIdentity()
 
 	/**
 	 * Without OpenRegister the seed writes nothing and says so.

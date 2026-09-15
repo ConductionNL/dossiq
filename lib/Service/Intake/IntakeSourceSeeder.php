@@ -42,7 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -54,6 +57,7 @@ use Throwable;
  * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
  */
 class IntakeSourceSeeder {
+	use SearchesObjects;
 
 	/**
 	 * The register OpenRegister holds intake sources in.
@@ -159,6 +163,34 @@ class IntakeSourceSeeder {
 			return $empty;
 		}
 
+		// A REPAIR STEP RUNS WITH NO SESSION, SO OPENREGISTER RESOLVES THE ACTOR
+		// AS 'Anonymous' AND REFUSES EVERY WRITE. The refusal is reported as a
+		// warning, which does not fail an upgrade, so the install would print
+		// "Update successful" over a register holding nothing. The
+		// `intake-source` schema's authorization block names `admin` for create
+		// and update, which Anonymous is not. Elevating here rather than in the
+		// repair step keeps it beside the writes it covers.
+		return $this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): array => $this->upsertAll(
+				objectService: $objectService,
+				register: (string)$register->getId()
+			)
+		);
+	}//end seed()
+
+	/**
+	 * Create what is missing and refresh the rest, one channel at a time.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The intake-sources register id.
+	 *
+	 * @return array{available: bool, created: int, updated: int, refused: array<int, string>}
+	 *                                                                                        What the seed did.
+	 *
+	 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	 */
+	private function upsertAll(object $objectService, string $register): array {
 		$created = 0;
 		$updated = 0;
 		$refused = [];
@@ -168,13 +200,13 @@ class IntakeSourceSeeder {
 			try {
 				$existing = $this->findBySlug(
 					objectService: $objectService,
-					register: (string)$register->getId(),
+					register: $register,
 					slug: $slug
 				);
 
 				if ($existing === null) {
 					$objectService->saveObject(
-						register: (string)$register->getId(),
+						register: $register,
 						schema: self::SCHEMA_SLUG,
 						object: $this->newRow(source: $source)
 					);
@@ -183,7 +215,7 @@ class IntakeSourceSeeder {
 				}
 
 				$objectService->saveObject(
-					register: (string)$register->getId(),
+					register: $register,
 					schema: self::SCHEMA_SLUG,
 					object: $this->refreshedRow(existing: $this->dataOf(object: $existing), source: $source),
 					uuid: $this->uuidOf(object: $existing)
@@ -366,9 +398,15 @@ class IntakeSourceSeeder {
 	 * @return object|null The service, or null when OpenRegister cannot answer.
 	 */
 	private function resolve(string $service): ?object {
+		// PSR-11 DECLARES EXACTLY THESE TWO, AND NOTHING WIDER IS CAUGHT.
+		// A `\Throwable` here would answer "OpenRegister is not installed" for a
+		// TypeError in the service's own constructor, and the seed would then
+		// report an absent register rather than the defect. It is also the
+		// swallowing-catch shape `ServiceCatchReturnsNullTest` measures, and that
+		// ceiling only goes down.
 		try {
 			return $this->container->get($service);
-		} catch (Throwable $e) {
+		} catch (NotFoundExceptionInterface | ContainerExceptionInterface $e) {
 			$this->logger->debug(
 				'Dossiq: could not resolve an OpenRegister service for the intake-source seed',
 				['service' => $service, 'exception' => $e->getMessage()]
