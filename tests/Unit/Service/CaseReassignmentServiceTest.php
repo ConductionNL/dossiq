@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use InvalidArgumentException;
+use OCA\Dossiq\BulkAction\ReassignCasesAction;
+use OCA\Dossiq\Service\Bulk\BulkJobHandoff;
 use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Notification\IManager;
@@ -74,14 +76,22 @@ class CaseReassignmentServiceTest extends TestCase {
 	private $engineTask;
 
 	/**
+	 * The hand-off to OpenRegister's bulk job, which is where the loop went.
+	 *
+	 * @var BulkJobHandoff|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private $handoff;
+
+	/**
 	 * Set up fixtures.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->notificationManager = $this->createMock(IManager::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+		$this->handoff = $this->createMock(originalClassName: BulkJobHandoff::class);
+		$this->notificationManager = $this->createMock(originalClassName: IManager::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->engineTasks = $this->getMockBuilder(EngineTaskInbox::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -157,6 +167,7 @@ class CaseReassignmentServiceTest extends TestCase {
 
 		return new CaseReassignmentService(
 			$this->settingsService,
+			$this->handoff,
 			$this->engineTasks,
 			$this->engineTask,
 			$this->notificationManager,
@@ -171,7 +182,7 @@ class CaseReassignmentServiceTest extends TestCase {
 	 * @return \PHPUnit\Framework\MockObject\MockObject
 	 */
 	private function objectServiceMock() {
-		return $this->createMock(SubstitutionObjectServiceStub::class);
+		return $this->createMock(originalClassName: SubstitutionObjectServiceStub::class);
 	}//end objectServiceMock()
 
 	/**
@@ -202,14 +213,14 @@ class CaseReassignmentServiceTest extends TestCase {
 		// check in `filterOpenTasks`, and keeping a second copy of the three
 		// state names here is exactly what this change removes.
 		$this->engineHoldsOpenTasks(
-			[['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
+			tasks: [['id' => 't1', 'title' => 'Open task', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
 		);
 
-		$preview = $this->makeService($os)->preview('jan');
-		$this->assertCount(1, $preview['cases']);
-		$this->assertSame('c1', $preview['cases'][0]['id']);
-		$this->assertCount(1, $preview['tasks']);
-		$this->assertSame('t1', $preview['tasks'][0]['id']);
+		$preview = $this->makeService(objectService: $os)->preview('jan');
+		$this->assertCount(expectedCount: 1, haystack: $preview['cases']);
+		$this->assertSame(expected: 'c1', actual: $preview['cases'][0]['id']);
+		$this->assertCount(expectedCount: 1, haystack: $preview['tasks']);
+		$this->assertSame(expected: 't1', actual: $preview['tasks'][0]['id']);
 	}//end testPreviewOpenOnlyNonMutating()
 
 	/**
@@ -235,65 +246,136 @@ class CaseReassignmentServiceTest extends TestCase {
 		);
 
 		$this->engineHoldsOpenTasks(
-			[
+			tasks: [
 				['id' => 't1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1'],
 				['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c2'],
 			]
 		);
 
-		$preview = $this->makeService($os)->preview('jan', ['caseType' => 'vth']);
-		$this->assertCount(1, $preview['cases']);
-		$this->assertSame('c1', $preview['cases'][0]['id']);
+		$preview = $this->makeService(objectService: $os)->preview('jan', ['caseType' => 'vth']);
+		$this->assertCount(expectedCount: 1, haystack: $preview['cases']);
+		$this->assertSame(expected: 'c1', actual: $preview['cases'][0]['id']);
 		// Only the task belonging to the in-scope case is included.
-		$this->assertCount(1, $preview['tasks']);
-		$this->assertSame('t1', $preview['tasks'][0]['id']);
+		$this->assertCount(expectedCount: 1, haystack: $preview['tasks']);
+		$this->assertSame(expected: 't1', actual: $preview['tasks'][0]['id']);
 	}//end testFilteredPreview()
 
 	/**
-	 * Self-reassignment is rejected.
+	 * A release hands the CASES to the bulk job, scoped and with the reason.
+	 *
+	 * This is the assertion that carries D-6. The service used to loop here,
+	 * writing each case itself; what it does now is build the selection and
+	 * hand it over. A test that only checked the answer would pass on either,
+	 * so what is asserted is WHAT REACHED THE JOB.
 	 *
 	 * @return void
-	 */
-	public function testSelfReassignmentRejected(): void {
-		$service = $this->makeService($this->objectServiceMock());
-		$this->expectException(InvalidArgumentException::class);
-		$service->execute('jan', 'jan', null, 'coord');
-	}//end testSelfReassignmentRejected()
-
-	/**
-	 * Execute transfers all open items, stamps audit entries with a shared
-	 * batch id, and sends exactly one digest notification.
 	 *
-	 * @return void
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
-	public function testExecuteFullReassignment(): void {
+	public function testReleaseHandsTheCasesToTheJobWithTheReason(): void {
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $reg, string $schema, array $filters) {
-				if ($schema === 'statusType') {
-					return [];
-				}
+			static function (string $reg, string $schema, array $filters) {
 				if ($schema === 'case') {
-					return [['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]']];
+					return [
+						['id' => 'c1', 'title' => 'Case 1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth'],
+						['id' => 'c2', 'title' => 'Case 2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth'],
+					];
 				}
+
 				return [];
 			}
 		);
 
+		$this->engineHoldsOpenTasks(tasks: []);
+
+		$seen = [];
+		$this->handoff->expects($this->once())
+			->method('create')
+			->willReturnCallback(
+				function (string $actionId, array $parameters, array $selection, ?string $justification, string $actorUid) use (&$seen): array {
+					$seen = compact('actionId', 'parameters', 'selection', 'justification', 'actorUid');
+
+					return ['id' => 9, 'state' => 'previewed', 'total' => count($selection['ids'])];
+				}
+			);
+
+		$result = $this->makeService(objectService: $os)->releaseCaseload(
+			fromUser: 'jan',
+			toUser: 'pieter',
+			justification: 'Jan left on 1 October',
+			filter: null,
+			actorId: 'coord',
+		);
+
+		$this->assertSame(expected: ReassignCasesAction::ID, actual: $seen['actionId']);
+		$this->assertSame(expected: ['c1', 'c2'], actual: $seen['selection']['ids']);
+		$this->assertSame(expected: 'pieter', actual: $seen['parameters']['toUser']);
+		$this->assertSame(expected: 'Jan left on 1 October', actual: $seen['parameters']['reason']);
+		$this->assertSame(expected: 'Jan left on 1 October', actual: $seen['justification']);
+		$this->assertSame(expected: 'coord', actual: $seen['actorUid']);
+		$this->assertStringStartsWith(prefix: 'batch-', string: $seen['parameters']['batchId']);
+
+		// Rehearsed, not run. Nothing has moved yet, and the coordinator reads
+		// the job before committing it.
+		$this->assertSame(expected: 'previewed', actual: $result['job']['state']);
+	}//end testReleaseHandsTheCasesToTheJobWithTheReason()
+
+	/**
+	 * The service writes no case itself. A release that still called
+	 * `updateObject` would be the loop back, wearing a job's name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	public function testAReleaseWritesNoCaseItself(): void {
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturnCallback(
+			static function (string $reg, string $schema, array $filters) {
+				if ($schema === 'case') {
+					return [['id' => 'c1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth']];
+				}
+
+				return [];
+			}
+		);
+		$os->expects($this->never())->method('updateObject');
+
+		$this->engineHoldsOpenTasks(tasks: []);
+		$this->handoff->method('create')->willReturn(['id' => 9, 'state' => 'previewed', 'total' => 1]);
+
+		$this->makeService(objectService: $os)->releaseCaseload(
+			fromUser: 'jan',
+			toUser: 'pieter',
+			justification: 'Jan left',
+			filter: null,
+			actorId: 'coord',
+		);
+	}//end testAReleaseWritesNoCaseItself()
+
+	/**
+	 * The departing handler's TASKS move with the request, through the
+	 * engine's own verb, and are not part of the job.
+	 *
+	 * A flow task is the engine's record, not an object in the case register,
+	 * so the job cannot walk it. Leaving the tasks behind until somebody
+	 * commits is the failure the gesture exists to prevent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	public function testTheTasksMoveThroughTheEngineVerb(): void {
+		$os = $this->objectServiceMock();
+		$os->method('searchObjectsBySlug')->willReturn([]);
+
 		$this->engineHoldsOpenTasks(
-			[['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
+			tasks: [['id' => 't1', 'title' => 'Task 1', 'assignee' => 'jan', 'status' => 'active', 'case' => 'c1']]
 		);
 		$this->engineExpectsReassign(taskId: 't1', toUser: 'pieter', actor: 'coord');
 
-		$updated = [];
-		$os->method('updateObject')->willReturnCallback(
-			function (string $r, string $s, string $id, array $payload) use (&$updated) {
-				$updated[$id] = $payload;
-				return $payload;
-			}
-		);
-
-		$notification = $this->createMock(INotification::class);
+		$notification = $this->createMock(originalClassName: INotification::class);
 		$notification->method('setApp')->willReturnSelf();
 		$notification->method('setUser')->willReturnSelf();
 		$notification->method('setDateTime')->willReturnSelf();
@@ -302,76 +384,38 @@ class CaseReassignmentServiceTest extends TestCase {
 		$this->notificationManager->method('createNotification')->willReturn($notification);
 		$this->notificationManager->expects($this->once())->method('notify');
 
-		$result = $this->makeService($os)->execute('jan', 'pieter', null, 'coord');
+		// No cases, so no job: handing an empty selection over would create a
+		// job with nothing in it and present that as a finished preview.
+		$this->handoff->expects($this->never())->method('create');
 
-		$this->assertSame(2, $result['succeeded']);
-		$this->assertSame(0, $result['failed']);
-		$this->assertStringStartsWith('batch-', $result['batchId']);
-		// Case reassigned to pieter, through the register.
-		$this->assertSame('pieter', $updated['c1']['assignee']);
-		// The TASK is not: it goes through the engine's `reassign` verb, so
-		// there is no object write to inspect and the engine writes its own
-		// audit row. `$this->engineTask` is asserted on below.
-		$this->assertArrayNotHasKey('t1', $updated);
-		// Audit entry on the case carries the batch id.
-		$activity = json_decode($updated['c1']['activity'], true);
-		$this->assertSame($result['batchId'], $activity[0]['batchId']);
-		$this->assertSame('jan', $activity[0]['reassignedFrom']);
-		$this->assertSame('coord', $activity[0]['reassignedBy']);
-	}//end testExecuteFullReassignment()
+		$result = $this->makeService(objectService: $os)->releaseCaseload(
+			fromUser: 'jan',
+			toUser: 'pieter',
+			justification: 'Jan left',
+			filter: null,
+			actorId: 'coord',
+		);
+
+		$this->assertSame(expected: [], actual: $result['job']);
+		$this->assertCount(expectedCount: 1, haystack: $result['tasks']);
+		$this->assertTrue(condition: $result['tasks'][0]['success']);
+	}//end testTheTasksMoveThroughTheEngineVerb()
 
 	/**
-	 * A failing item is reported as failed and stays on the original handler.
+	 * A release with no written reason is refused before anything is read.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
-	public function testPartialFailureReported(): void {
-		$os = $this->objectServiceMock();
-		$os->method('searchObjectsBySlug')->willReturnCallback(
-			function (string $reg, string $schema, array $filters) {
-				if ($schema === 'statusType') {
-					return [];
-				}
-				if ($schema === 'case') {
-					return [
-						['id' => 'c1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]'],
-						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth', 'activity' => '[]'],
-					];
-				}
-				if ($schema === 'caseTask') {
-					return [];
-				}
-				return [];
-			}
-		);
-		$os->method('updateObject')->willReturnCallback(
-			function (string $r, string $s, string $id, array $payload) {
-				if ($id === 'c2') {
-					throw new \RuntimeException('concurrent modification');
-				}
-				return $payload;
-			}
-		);
+	public function testAReleaseWithoutAReasonIsRefused(): void {
+		$service = $this->makeService(objectService: $this->objectServiceMock());
 
-		$notification = $this->createMock(INotification::class);
-		$notification->method('setApp')->willReturnSelf();
-		$notification->method('setUser')->willReturnSelf();
-		$notification->method('setDateTime')->willReturnSelf();
-		$notification->method('setObject')->willReturnSelf();
-		$notification->method('setSubject')->willReturnSelf();
-		$this->notificationManager->method('createNotification')->willReturn($notification);
+		$this->handoff->expects($this->never())->method('create');
+		$this->expectException(exception: InvalidArgumentException::class);
 
-		$result = $this->makeService($os)->execute('jan', 'pieter', null, 'coord');
-
-		$this->assertSame(1, $result['succeeded']);
-		$this->assertSame(1, $result['failed']);
-		$byId = [];
-		foreach ($result['results'] as $r) {
-			$byId[$r['id']] = $r['success'];
-		}
-		$this->assertTrue($byId['c1']);
-		$this->assertFalse($byId['c2']);
-	}//end testPartialFailureReported()
+		$service->releaseCaseload(fromUser: 'jan', toUser: 'pieter', justification: '   ', actorId: 'coord');
+	}//end testAReleaseWithoutAReasonIsRefused()
 
 
 

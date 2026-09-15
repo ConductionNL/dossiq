@@ -133,3 +133,167 @@ export function viewAllRouteFor(objectId, content = {}) {
 	}
 	return { name, query }
 }
+
+/**
+ * The number a task is referred to by, or nothing.
+ *
+ * 🔴 IT IS NOT INVENTED. The task engine has no number of its own: dossiq
+ * reads one where the engine grows one, shows the engine's identifier where it
+ * has not, and generates nothing. A dossiq-side task number would be the
+ * schema nobody writes to that `remove-casetask` spent a change deleting, and
+ * a made-up number is worse than none — somebody quotes it in an email and the
+ * engine has never heard of it.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {string} The number, or an empty string when the engine answers none.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function taskNumberOf(row) {
+	if (!row || typeof row !== 'object') {
+		return ''
+	}
+	return String(row.number ?? row.taskNumber ?? '').trim()
+}
+
+/**
+ * How a task is referred to on screen: its number, or the engine's identifier.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {{value: string, isNumber: boolean}} What to show, and whether it is a number.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function taskReferenceOf(row) {
+	const number = taskNumberOf(row)
+	if (number !== '') {
+		return { value: number, isNumber: true }
+	}
+	return { value: taskIdOf(row), isNumber: false }
+}
+
+/**
+ * Whether a task is locked, when the engine says at all.
+ *
+ * Three answers, not two. `true` and `false` are the engine answering; `null`
+ * is the engine having no lock to answer about, which a surface states rather
+ * than rendering as "not locked". An unlocked task and a task whose lock
+ * nobody tracks are different facts, and only the second means a colleague can
+ * be editing it right now with nothing to say so.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {boolean|null} Locked, not locked, or not answered.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function taskLockOf(row) {
+	if (!row || typeof row !== 'object') {
+		return null
+	}
+	const lock = row.locked ?? row.lockedBy ?? row.lock ?? null
+	if (lock === null || lock === undefined || lock === '') {
+		return null
+	}
+	if (typeof lock === 'boolean') {
+		return lock
+	}
+	return true
+}
+
+/**
+ * Whether this task is waiting for somebody to take it.
+ *
+ * A task with candidates and no assignee is offered to a team. A task with no
+ * assignee and no candidates is simply unassigned, which is not the same
+ * thing: nobody was asked.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {boolean} True when it is claimable in principle.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function isUnclaimed(row) {
+	if (!row || typeof row !== 'object') {
+		return false
+	}
+	if (String(row.assignee ?? '').trim() !== '') {
+		return false
+	}
+	return candidatesOf(row).length > 0
+}
+
+/**
+ * Who a task is offered to, groups and users together.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {string[]} The candidate names.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function candidatesOf(row) {
+	const groups = Array.isArray(row?.candidateGroups) ? row.candidateGroups : []
+	const users = Array.isArray(row?.candidateUsers) ? row.candidateUsers : []
+	return [...groups, ...users]
+		.map((name) => String(name ?? '').trim())
+		.filter((name) => name !== '')
+}
+
+/**
+ * The form a task carries, as the engine describes it, or null.
+ *
+ * The engine answers `{kind, state, fields: [{field, required, renderable,
+ * reason}]}` on a task read. A form whose state is not `ready` is shown with
+ * its reason rather than rendered: a broken field list completed anyway is a
+ * verslag with holes in it that reports success.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {object|null} The form, or null when the task carries none.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function taskFormOf(row) {
+	const form = row?.form
+	if (!form || typeof form !== 'object' || !form.kind) {
+		return null
+	}
+	return form
+}
+
+/**
+ * The fields of a task's form that must be answered.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @return {string[]} The required field names, in declared order.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function requiredFieldsOf(row) {
+	const form = taskFormOf(row)
+	if (!form || !Array.isArray(form.fields)) {
+		return []
+	}
+	return form.fields
+		.filter((field) => field?.required === true)
+		.map((field) => String(field?.field ?? '').trim())
+		.filter((name) => name !== '')
+}
+
+/**
+ * The first required field this answer set leaves empty, or ''.
+ *
+ * The same rule the server applies, so the pane can name the field before the
+ * round trip and the two never disagree about what "empty" means. `0` and
+ * `false` are answers: a required amount answered with zero is answered.
+ *
+ * @param {object|null|undefined} row The task row.
+ * @param {object} answers The answers, keyed by field.
+ * @return {string} The field's name, or '' when nothing required is missing.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export function missingRequiredField(row, answers = {}) {
+	for (const field of requiredFieldsOf(row)) {
+		const answer = answers?.[field]
+		const blank =
+			answer === undefined ||
+			answer === null ||
+			(typeof answer === 'string' && answer.trim() === '') ||
+			(Array.isArray(answer) && answer.length === 0)
+		if (blank) {
+			return field
+		}
+	}
+	return ''
+}

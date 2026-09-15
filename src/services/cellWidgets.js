@@ -18,6 +18,7 @@
 
 import CaseStateMarkersCell from '../components/cells/CaseStateMarkersCell.vue'
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
+import DwellDaysCell from '../components/cells/DwellDaysCell.vue'
 import LensedValueCell from '../components/cells/LensedValueCell.vue'
 import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
 import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
@@ -28,6 +29,13 @@ export default {
 	// the deadline, empty when the case has none.
 	// @spec openspec/changes/one-case-list/specs/signalering-widgets/spec.md
 	deadlineCountdown: DeadlineCountdownCell,
+
+	// The Days in status column on the Cases index: how long the case has been
+	// where it is, and a chip when that is longer than the status allows. The
+	// number is held on the case, which is what makes the column sortable on
+	// the server; the flag beside it is its own fact and is NOT the deadline.
+	// @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	dwellDays: DwellDaysCell,
 
 	// The Priority column on the case lists. The column is keyed on
 	// `priorityOrder` so the server sorts it by the declared order rather than

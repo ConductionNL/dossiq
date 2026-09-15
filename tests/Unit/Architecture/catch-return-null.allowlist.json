@@ -1,5 +1,5 @@
 {
-    "ceiling": 223,
+    "ceiling": 222,
     "measured": "2026-09-15",
     "window": 3,
     "about": [
@@ -767,13 +767,6 @@
             "occurrence": 1,
             "class": "read-miss",
             "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: Failed to create seed object\"), so a failed read and an absent record are the same answer."
-        },
-        {
-            "file": "lib/Service/SelectionReassignmentService.php",
-            "method": "readCase",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`readCase()` answers `return null` when the read fails; the catch logs at warning (\"Reassignment could not read a case\"), so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/Settings/SchemaKeyReconciler.php",

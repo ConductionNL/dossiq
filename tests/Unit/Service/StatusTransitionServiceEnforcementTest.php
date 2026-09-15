@@ -62,6 +62,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -82,6 +83,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
  */
 class StatusTransitionServiceEnforcementTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * The NC group the seeded transition is gated on.
@@ -198,6 +201,7 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $resultWriter,
 			statusChecklist: $checklist,
+			declarations: $this->undeclaredStatuses(),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
