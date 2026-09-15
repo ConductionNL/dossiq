@@ -59,6 +59,13 @@ class SeedDataOriginTest extends TestCase {
 	private ShippedConfigurationService $shipped;
 
 	/**
+	 * The hash that says whether an object still is what shipped.
+	 *
+	 * @var ShippedFingerprint
+	 */
+	private ShippedFingerprint $fingerprint;
+
+	/**
 	 * Build the service over a real store.
 	 *
 	 * @return void
@@ -66,7 +73,13 @@ class SeedDataOriginTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->harness = new StarterStoreHarness(test: $this);
-		$this->shipped = new ShippedConfigurationService($this->harness->store, new NullLogger());
+		$this->fingerprint = new ShippedFingerprint();
+		$this->shipped = new ShippedConfigurationService(
+			$this->harness->store,
+			new ShippedSets(),
+			$this->fingerprint,
+			new NullLogger(),
+		);
 	}//end setUp()
 
 	/**
@@ -254,13 +267,15 @@ class SeedDataOriginTest extends TestCase {
 			actual: $this->harness->register->row(schema: 'caseType', uuid: 'ct-1')['processingDeadline']
 		);
 
-		$accepted = $this->shipped->adopt(
+		// The second act, by name. `adopt()` refuses a changed object and
+		// `adoptOverLocalChange()` is the administrator saying they know what
+		// goes, which is a different gesture rather than a flag on the first.
+		$accepted = $this->shipped->adoptOverLocalChange(
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
 			set: ShippedSets::BEZWAAR_BEROEP,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
-			accepted: true,
 		);
 
 		self::assertTrue(condition: $accepted['adopted']);
@@ -345,11 +360,11 @@ class SeedDataOriginTest extends TestCase {
 			'title' => 'Bezwaar',
 		];
 
-		self::assertTrue(condition: ShippedFingerprint::matches(object: $stored, fingerprint: ShippedFingerprint::of(object: $shipped)));
+		self::assertTrue(condition: $this->fingerprint->matches(object: $stored, fingerprint: $this->fingerprint->hashOf(object: $shipped)));
 
 		$stored['processingDeadline'] = 'P8W';
 
-		self::assertFalse(condition: ShippedFingerprint::matches(object: $stored, fingerprint: ShippedFingerprint::of(object: $shipped)));
+		self::assertFalse(condition: $this->fingerprint->matches(object: $stored, fingerprint: $this->fingerprint->hashOf(object: $shipped)));
 	}//end testTheFingerprintIgnoresPlatformFieldsAndNoticesEdits()
 
 	/**
@@ -361,6 +376,6 @@ class SeedDataOriginTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEmptyFingerprintNeverMatches(): void {
-		self::assertFalse(condition: ShippedFingerprint::matches(object: [], fingerprint: ''));
+		self::assertFalse(condition: $this->fingerprint->matches(object: [], fingerprint: ''));
 	}//end testAnEmptyFingerprintNeverMatches()
 }//end class

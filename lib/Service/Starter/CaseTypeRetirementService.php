@@ -77,7 +77,7 @@ class CaseTypeRetirementService {
 			return ['ok' => false, 'reason' => 'not_found', 'state' => ''];
 		}
 
-		$current = $this->state->of(caseType: $caseType);
+		$current = $this->state->stateOf(caseType: $caseType);
 		if ($current === CaseTypeLifecycleState::RETIRED) {
 			return ['ok' => false, 'reason' => 'already_retired', 'state' => $current];
 		}
@@ -115,8 +115,8 @@ class CaseTypeRetirementService {
 			return ['ok' => false, 'reason' => 'not_found', 'state' => ''];
 		}
 
-		if ($this->state->of(caseType: $caseType) !== CaseTypeLifecycleState::RETIRED) {
-			return ['ok' => false, 'reason' => 'not_retired', 'state' => $this->state->of(caseType: $caseType)];
+		if ($this->state->stateOf(caseType: $caseType) !== CaseTypeLifecycleState::RETIRED) {
+			return ['ok' => false, 'reason' => 'not_retired', 'state' => $this->state->stateOf(caseType: $caseType)];
 		}
 
 		$caseType['validUntil'] = null;
@@ -177,6 +177,6 @@ class CaseTypeRetirementService {
 			['caseType' => $caseTypeId, 'act' => $act, 'by' => $caseType['lifecycleActBy']]
 		);
 
-		return ['ok' => true, 'reason' => '', 'state' => $this->state->of(caseType: $saved)];
+		return ['ok' => true, 'reason' => '', 'state' => $this->state->stateOf(caseType: $saved)];
 	}//end record()
 }//end class

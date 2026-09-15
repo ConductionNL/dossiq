@@ -936,9 +936,9 @@ $extra = [
         // The literal `/api/starter/roles` paths sit BEFORE the `{schema}` and
         // `{caseTypeId}` wildcards, per the ordering note at the top of this
         // file: a wildcard declared first swallows the literal.
-    ['name' => 'starterContent#roles',        'url' => '/api/starter/roles',                            'verb' => 'GET'],
-    ['name' => 'starterContent#adoptRoles',   'url' => '/api/starter/roles/adopt',                      'verb' => 'POST'],
-    ['name' => 'starterContent#undoRoles',    'url' => '/api/starter/roles/undo',                       'verb' => 'POST'],
+    ['name' => 'municipalRoleSet#roles',      'url' => '/api/starter/roles',                            'verb' => 'GET'],
+    ['name' => 'municipalRoleSet#adoptRoles', 'url' => '/api/starter/roles/adopt',                      'verb' => 'POST'],
+    ['name' => 'municipalRoleSet#undoRoles',  'url' => '/api/starter/roles/undo',                       'verb' => 'POST'],
     ['name' => 'starterContent#shipped',      'url' => '/api/starter/shipped/{schema}',                 'verb' => 'GET'],
     ['name' => 'starterContent#adoptShipped', 'url' => '/api/starter/shipped/{schema}/{id}/adopt',      'verb' => 'POST'],
     ['name' => 'starterContent#retire',       'url' => '/api/starter/case-types/{caseTypeId}/retire',   'verb' => 'POST'],

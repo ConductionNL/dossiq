@@ -46,10 +46,12 @@ class TenantSeedService {
 	 * Constructor.
 	 *
 	 * @param MunicipalRoleSetService $roleSet The shipped municipal role set.
+	 * @param ShippedSets             $sets    The sets dossiq ships, and their versions.
 	 * @param LoggerInterface         $logger  Logger.
 	 */
 	public function __construct(
 		private readonly MunicipalRoleSetService $roleSet,
+		private readonly ShippedSets $sets,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -67,7 +69,7 @@ class TenantSeedService {
 	public function seedZaaktypeTemplates(string $schemaName, string $tier): array {
 		$templates = $this->resolveTemplatesForTier(tier: $tier);
 		$set = ShippedSets::VTH;
-		$setVersion = ShippedSets::versionOf(set: $set);
+		$setVersion = $this->sets->versionOf(set: $set);
 
 		$this->logger->info(
 			'Dossiq: seeding zaaktype templates into tenant schema',

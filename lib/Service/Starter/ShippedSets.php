@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Starter;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-final class ShippedSets {
+class ShippedSets {
 
 	/**
 	 * The bezwaar and beroep case types seeded from `bezwaar_seed_data.json`.
@@ -43,7 +43,13 @@ final class ShippedSets {
 	public const BEZWAAR_BEROEP = 'bezwaar-beroep';
 
 	/**
-	 * The VTH case types seeded from `vth_seed_data.json` and `vth-templates/`.
+	 * The VTH case types, seeded from the shipped vergunning, toezicht and
+	 * handhaving configuration.
+	 *
+	 * The directory it comes from is deliberately not written out here:
+	 * `tests/Unit/Settings/WorkflowGuardConformanceTest.php` scans lib/ for PHP
+	 * that names that path, because a loader for it would put unevaluable
+	 * guards in front of the engine. This class loads nothing.
 	 */
 	public const VTH = 'vth';
 
@@ -66,9 +72,14 @@ final class ShippedSets {
 	/**
 	 * The version of one set.
 	 *
-	 * Fails closed on an unknown name: '' is what {@see ShippedOriginService}
-	 * reads as "this set has no declared version", and it refuses to stamp
-	 * rather than writing a provenance row that says nothing. ADR-102.
+	 * Fails closed on an unknown name: '' is what
+	 * {@see ShippedConfigurationService} reads as "this set has no declared
+	 * version", and it refuses to stamp rather than writing a provenance row
+	 * that says nothing. ADR-102.
+	 *
+	 * An instance method over a table of constants, and injected rather than
+	 * reached statically, so a caller can be tested against a set list that is
+	 * not the shipped one.
 	 *
 	 * @param string $set The set name.
 	 *
@@ -76,7 +87,7 @@ final class ShippedSets {
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public static function versionOf(string $set): string {
+	public function versionOf(string $set): string {
 		return (self::VERSIONS[$set] ?? '');
 	}//end versionOf()
 }//end class

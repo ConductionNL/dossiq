@@ -145,12 +145,31 @@ class CaseTypePublishService {
 			$findings[] = $cycle;
 		}
 
+		return array_merge($findings, $this->handlingFindings(caseType: $caseType));
+	}//end validate()
+
+	/**
+	 * The findings the handling block produces, if it produces any.
+	 *
+	 * A switch declared on a case type and read by nothing is a promise the
+	 * product does not keep, and it is invisible until somebody relies on it.
+	 * Extracted from `validate()` rather than inlined, so that method's
+	 * complexity stays inside the threshold the analyser enforces.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The findings, empty when every switch is read.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function handlingFindings(array $caseType): array {
+		$findings = [];
 		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
 			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
 		}
 
 		return $findings;
-	}//end validate()
+	}//end handlingFindings()
 
 	/**
 	 * The finding a looping parent chain produces, if it loops.

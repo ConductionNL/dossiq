@@ -226,19 +226,7 @@ class DomainCopyService {
 
 		$copied = 0;
 		foreach ($templates as $template) {
-			$scope = ($template['caseTypes'] ?? []);
-			if (is_array($scope) === false) {
-				continue;
-			}
-
-			$repointed = [];
-			foreach ($scope as $caseTypeId) {
-				$key = (string)$caseTypeId;
-				if (isset($map[$key]) === true) {
-					$repointed[] = $map[$key];
-				}
-			}
-
+			$repointed = $this->repointedScope(template: $template, map: $map);
 			if ($repointed === []) {
 				continue;
 			}
@@ -256,4 +244,32 @@ class DomainCopyService {
 
 		return $copied;
 	}//end copyTemplates()
+
+	/**
+	 * One template's scope, rewritten onto the copied case types.
+	 *
+	 * An empty answer means the template named none of the case types this
+	 * copy carried, so it belongs to another domain and is left alone.
+	 *
+	 * @param array<string, mixed>  $template The template row.
+	 * @param array<string, string> $map      Old case type id to new case type id.
+	 *
+	 * @return array<int, string> The new case type ids the template should name.
+	 */
+	private function repointedScope(array $template, array $map): array {
+		$scope = ($template['caseTypes'] ?? []);
+		if (is_array($scope) === false) {
+			return [];
+		}
+
+		$repointed = [];
+		foreach ($scope as $caseTypeId) {
+			$key = (string)$caseTypeId;
+			if (isset($map[$key]) === true) {
+				$repointed[] = $map[$key];
+			}
+		}
+
+		return $repointed;
+	}//end repointedScope()
 }//end class

@@ -109,12 +109,14 @@ class MunicipalRoleSetService {
 	 *
 	 * @param StarterStore                $store   The OpenRegister seam.
 	 * @param ShippedConfigurationService $shipped The provenance ledger.
+	 * @param ShippedSets                 $sets    The sets dossiq ships, and their versions.
 	 * @param IUserSession                $session Who is acting.
 	 * @param LoggerInterface             $logger  Logger.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
 		private readonly ShippedConfigurationService $shipped,
+		private readonly ShippedSets $sets,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {
@@ -185,7 +187,7 @@ class MunicipalRoleSetService {
 
 		return [
 			'set' => ShippedSets::MUNICIPAL_ROLES,
-			'setVersion' => ShippedSets::versionOf(set: ShippedSets::MUNICIPAL_ROLES),
+			'setVersion' => $this->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
 			'adopted' => ($adoption !== null),
 			'adoptedBy' => (string)(($adoption['adoptedBy'] ?? '')),
 			'adoptedAt' => (string)(($adoption['adoptedAt'] ?? '')),
@@ -237,7 +239,7 @@ class MunicipalRoleSetService {
 			configKey: self::ADOPTIONS,
 			payload: [
 				'set' => ShippedSets::MUNICIPAL_ROLES,
-				'setVersion' => ShippedSets::versionOf(set: ShippedSets::MUNICIPAL_ROLES),
+				'setVersion' => $this->sets->versionOf(set: ShippedSets::MUNICIPAL_ROLES),
 				'adoptedBy' => $this->actor(user: $user),
 				'adoptedAt' => gmdate('c'),
 			],

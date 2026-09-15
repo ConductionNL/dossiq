@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\StarterContentController;
 use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
 use OCA\Dossiq\Service\Starter\DomainCopyService;
-use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCP\AppFramework\Http;
@@ -52,13 +51,6 @@ class StarterContentControllerTest extends TestCase {
 	 * @var ShippedConfigurationService|MockObject
 	 */
 	private ShippedConfigurationService $shipped;
-
-	/**
-	 * The shipped role set.
-	 *
-	 * @var MunicipalRoleSetService|MockObject
-	 */
-	private MunicipalRoleSetService $roleSet;
 
 	/**
 	 * Retire and restore.
@@ -107,10 +99,6 @@ class StarterContentControllerTest extends TestCase {
 			->disableOriginalConstructor()
 			->onlyMethods(['overview', 'adopt'])
 			->getMock();
-		$this->roleSet = $this->getMockBuilder(MunicipalRoleSetService::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['offer', 'adopt', 'undoAdoption'])
-			->getMock();
 		$this->retirement = $this->getMockBuilder(CaseTypeRetirementService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['retire', 'restore'])
@@ -133,7 +121,6 @@ class StarterContentControllerTest extends TestCase {
 			appName: 'dossiq',
 			request: $request,
 			shipped: $this->shipped,
-			roleSet: $this->roleSet,
 			retirement: $this->retirement,
 			domains: $this->domains,
 			steps: $this->steps,
@@ -213,22 +200,6 @@ class StarterContentControllerTest extends TestCase {
 		self::assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
 		self::assertSame(expected: 'changed_locally', actual: $response->getData()['reason']);
 	}//end testAdoptingOverALocalChangeIsAConflict()
-
-	/**
-	 * Undoing an adoption a granted role blocks is a conflict that names the role.
-	 *
-	 * @return void
-	 */
-	public function testUndoingAnAdoptionInUseNamesTheRole(): void {
-		$this->roleSet->method('undoAdoption')->willReturn(
-			['ok' => false, 'reason' => 'role_in_use', 'roleInUse' => 'Behandelaar']
-		);
-
-		$response = $this->controller->undoRoles();
-
-		self::assertSame(expected: Http::STATUS_CONFLICT, actual: $response->getStatus());
-		self::assertSame(expected: 'Behandelaar', actual: $response->getData()['roleInUse']);
-	}//end testUndoingAnAdoptionInUseNamesTheRole()
 
 	/**
 	 * Retiring a case type that is not there is a 404, and retiring one that is
@@ -336,35 +307,4 @@ class StarterContentControllerTest extends TestCase {
 		self::assertSame(expected: 'Bezwaar', actual: $data['items'][0]['title']);
 	}//end testStepUsedByComesBackAsACountedList()
 
-	/**
-	 * The role set offer comes back whole, and an unreachable register is a 503.
-	 *
-	 * @return void
-	 */
-	public function testTheRoleSetOfferComesBackOrAnswersUnavailable(): void {
-		$this->roleSet->method('offer')->willReturnOnConsecutiveCalls(
-			['set' => 'gemeentelijke-rollen', 'adopted' => false, 'roles' => [], 'rolesInUse' => []],
-			null,
-		);
-
-		self::assertSame(
-			expected: 'gemeentelijke-rollen',
-			actual: $this->controller->roles()->getData()['set']
-		);
-		self::assertSame(
-			expected: Http::STATUS_SERVICE_UNAVAILABLE,
-			actual: $this->controller->roles()->getStatus()
-		);
-	}//end testTheRoleSetOfferComesBackOrAnswersUnavailable()
-
-	/**
-	 * Adopting an already adopted set is a conflict.
-	 *
-	 * @return void
-	 */
-	public function testAdoptingAnAlreadyAdoptedRoleSetIsAConflict(): void {
-		$this->roleSet->method('adopt')->willReturn(['ok' => false, 'reason' => 'already_adopted', 'adopted' => 0]);
-
-		self::assertSame(expected: Http::STATUS_CONFLICT, actual: $this->controller->adoptRoles()->getStatus());
-	}//end testAdoptingAnAlreadyAdoptedRoleSetIsAConflict()
 }//end class

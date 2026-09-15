@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Service\Starter;
  *
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
-final class ShippedFingerprint {
+class ShippedFingerprint {
 
 	/**
 	 * The keys the platform writes, which an administrator never typed.
@@ -57,21 +57,24 @@ final class ShippedFingerprint {
 	/**
 	 * The fingerprint of one object.
 	 *
+	 * `hashOf` rather than `of`: a two-letter method name says nothing at the
+	 * call site, and the analyser is right to refuse it.
+	 *
 	 * @param array<string, mixed> $object The object as stored.
 	 *
 	 * @return string A hex sha256 of the object's authored content.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public static function of(array $object): string {
-		$canonical = self::canonical(value: $object);
+	public function hashOf(array $object): string {
+		$canonical = $this->canonical(value: $object);
 		$encoded = json_encode($canonical, (JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 		if ($encoded === false) {
 			$encoded = serialize($canonical);
 		}
 
 		return hash('sha256', $encoded);
-	}//end of()
+	}//end hashOf()
 
 	/**
 	 * Whether an object still hashes to what shipped.
@@ -83,12 +86,12 @@ final class ShippedFingerprint {
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public static function matches(array $object, string $fingerprint): bool {
+	public function matches(array $object, string $fingerprint): bool {
 		if ($fingerprint === '') {
 			return false;
 		}
 
-		return hash_equals($fingerprint, self::of(object: $object));
+		return hash_equals($fingerprint, $this->hashOf(object: $object));
 	}//end matches()
 
 	/**
@@ -102,7 +105,7 @@ final class ShippedFingerprint {
 	 *
 	 * @return mixed The canonical value.
 	 */
-	private static function canonical(mixed $value): mixed {
+	private function canonical(mixed $value): mixed {
 		if (is_array($value) === false) {
 			return $value;
 		}
@@ -113,7 +116,7 @@ final class ShippedFingerprint {
 				continue;
 			}
 
-			$out[$key] = self::canonical(value: $item);
+			$out[$key] = $this->canonical(value: $item);
 		}
 
 		if (array_is_list($out) === false) {

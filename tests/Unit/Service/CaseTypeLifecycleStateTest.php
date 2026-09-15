@@ -68,9 +68,9 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::DRAFT,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
-		self::assertFalse(condition: $this->state->acceptsNewCases(caseType: $caseType, on: $this->today));
+		self::assertFalse(condition: $this->state->acceptsNewCases(caseType: $caseType, onDay: $this->today));
 	}//end testADraftIsADraftEvenInsideItsValidityWindow()
 
 	/**
@@ -83,9 +83,9 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::IN_USE,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
-		self::assertTrue(condition: $this->state->acceptsNewCases(caseType: $caseType, on: $this->today));
+		self::assertTrue(condition: $this->state->acceptsNewCases(caseType: $caseType, onDay: $this->today));
 	}//end testAPublishedTypeWithNoDatesIsInUse()
 
 	/**
@@ -98,7 +98,7 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::RETIRED,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
 	}//end testARegelingThatEndedIsRetired()
 
@@ -115,7 +115,7 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::IN_USE,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
 	}//end testTheLastValidDayStillTakesCases()
 
@@ -129,7 +129,7 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::RETIRED,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
 	}//end testATypeWhoseWindowHasNotOpenedIsRetired()
 
@@ -146,7 +146,7 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::IN_USE,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
 	}//end testADateWithATimeIsReadAsItsDay()
 
@@ -160,7 +160,7 @@ class CaseTypeLifecycleStateTest extends TestCase {
 
 		self::assertSame(
 			expected: CaseTypeLifecycleState::IN_USE,
-			actual: $this->state->of(caseType: $caseType, on: $this->today)
+			actual: $this->state->stateOf(caseType: $caseType, onDay: $this->today)
 		);
 	}//end testAnEmptyDateDoesNotRetireTheType()
 }//end class

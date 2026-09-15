@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
+use OCA\Dossiq\Service\Starter\ShippedFingerprint;
 use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Tests\Support\StarterStoreHarness;
 use OCP\IUser;
@@ -73,7 +74,13 @@ class MunicipalRoleSetTest extends TestCase {
 
 		$this->roleSet = new MunicipalRoleSetService(
 			$this->harness->store,
-			new ShippedConfigurationService($this->harness->store, new NullLogger()),
+			new ShippedConfigurationService(
+				$this->harness->store,
+				new ShippedSets(),
+				new ShippedFingerprint(),
+				new NullLogger(),
+			),
+			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);
@@ -251,7 +258,13 @@ class MunicipalRoleSetTest extends TestCase {
 
 		$service = new MunicipalRoleSetService(
 			$blind->store,
-			new ShippedConfigurationService($blind->store, new NullLogger()),
+			new ShippedConfigurationService(
+				$blind->store,
+				new ShippedSets(),
+				new ShippedFingerprint(),
+				new NullLogger(),
+			),
+			new ShippedSets(),
 			$session,
 			new NullLogger(),
 		);

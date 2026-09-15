@@ -1,5 +1,5 @@
 {
-  "_note": "starter-content-and-templates. What a new instance starts with, declared rather than written by hand. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once. FOUR DECISIONS ARE VISIBLE HERE. ONE, provenance is a ledger row (`shippedOrigin`), not a field on every seeded schema. `caseType.origin` is already the initiator action (indienen, aanvragen), so the name is taken, and a seed writes statusType, roleType, resultType and workflowTemplate rows as well as case types: a field per schema would be six edits and six chances to forget the seventh. One row per seeded object carries the set, the version and the fingerprint of what shipped, so `shipped and untouched`, `shipped and changed here` and `ours` are read by comparing the object against the fingerprint rather than by diffing a whole register. TWO, a template is a flag on the thing itself (`caseType.isTemplate`, `case.isTemplate`), so there is one editor, one permission model and one export, per D-5 of the change design. THREE, the handling switches are ONE declared block on the case type (`caseType.handling`) and every reader reads that block; a switch no reader reads cannot be published, which is what keeps the block from filling with fields that do nothing. FOUR, a reusable process step is REFERENCED, not copied (`reusableStep` + `caseType.reusableSteps`), which is the whole difference between it and a copy: changing the step reaches every case type that points at it.",
+  "_note": "starter-content-and-templates. What a new instance starts with, declared rather than written by hand. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once. FOUR DECISIONS ARE VISIBLE HERE. ONE, provenance is a ledger row (`shippedOrigin`), not a field on every seeded schema. `caseType.origin` is already the initiator action (indienen, aanvragen), so the name is taken, and a seed writes statusType, roleType, resultType and workflowTemplate rows as well as case types: a field per schema would be six edits and six chances to forget the seventh. One row per seeded object carries the set, the version and the fingerprint of what shipped, so `shipped and untouched`, `shipped and changed here` and `ours` are read by comparing the object against the fingerprint rather than by diffing a whole register. TWO, a template is a flag on the thing itself (`caseType.isTemplate`, `case.isTemplate`), so there is one editor, one permission model and one export, per D-5 of the change design. THREE, the handling switches are ONE declared block on the case type (`caseType.handling`) and every reader reads that block; a switch no reader reads cannot be published, which is what keeps the block from filling with fields that do nothing. FOUR, a reusable process step is REFERENCED, not copied (`reusableStep` + `caseType.reusableSteps`), which is the whole difference between it and a copy: changing the step reaches every case type that points at it. FIVE, the four new schemas are also CARRIED by the dossiq register here, not merely defined: OpenRegister refuses every read and write against a schema the register does not list, with \"is not carried by register\", and an in-memory test double cannot see that. tests/Unit/Settings/RegisterSchemaCarriageTest.php is the guard, and it caught exactly this.",
   "components": {
     "schemas": {
       "caseType": {
@@ -339,6 +339,16 @@
             "description": "The fields the template fills in, for example the task title, the group and the lead time. Read by whichever dialog creates the kind."
           }
         }
+      }
+    },
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "shippedOrigin",
+          "starterSetAdoption",
+          "reusableStep",
+          "contentTemplate"
+        ]
       }
     }
   }

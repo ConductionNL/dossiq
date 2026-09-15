@@ -5,9 +5,6 @@
  *
  *  - GET  /api/starter/shipped/{schema}          what shipped, what changed here
  *  - POST /api/starter/shipped/{schema}/{id}/adopt   take the newer version
- *  - GET  /api/starter/roles                     the shipped municipal role set
- *  - POST /api/starter/roles/adopt               take the set into use
- *  - POST /api/starter/roles/undo                put it back, while nothing uses it
  *  - POST /api/starter/case-types/{caseTypeId}/retire   stop taking new cases
  *  - POST /api/starter/case-types/{caseTypeId}/restore  offer it again
  *  - POST /api/starter/domains/{domainId}/copy   stand a domain up from another
@@ -37,7 +34,6 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Starter\CaseTypeRetirementService;
 use OCA\Dossiq\Service\Starter\DomainCopyService;
-use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
 use OCA\Dossiq\Service\Starter\ReusableProcessStepService;
 use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -85,7 +81,6 @@ class StarterContentController extends Controller {
 	 * @param string                      $appName    The app name.
 	 * @param IRequest                    $request    The HTTP request.
 	 * @param ShippedConfigurationService $shipped    What shipped and what changed.
-	 * @param MunicipalRoleSetService     $roleSet    The shipped role set.
 	 * @param CaseTypeRetirementService   $retirement Retire and restore.
 	 * @param DomainCopyService           $domains    The domain copy.
 	 * @param ReusableProcessStepService  $steps      The shared process steps.
@@ -95,7 +90,6 @@ class StarterContentController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly ShippedConfigurationService $shipped,
-		private readonly MunicipalRoleSetService $roleSet,
 		private readonly CaseTypeRetirementService $retirement,
 		private readonly DomainCopyService $domains,
 		private readonly ReusableProcessStepService $steps,
@@ -161,18 +155,30 @@ class StarterContentController extends Controller {
 			$newShipped = [];
 		}
 
-		$accepted = ($this->request->getParam('acceptLocalChangeLoss', false) === true);
+		// Two named acts rather than a flag, because what they do differs by
+		// whether an administrator's own work survives. The caller opts into
+		// the destructive one by name.
+		$overLocalChange = ($this->request->getParam('acceptLocalChangeLoss', false) === true);
 
 		return $this->answered(
-			run: function () use ($schema, $objectsKey, $id, $set, $newShipped, $accepted): JSONResponse {
-				$result = $this->shipped->adopt(
-					targetSchema: $schema,
-					objectsKey: $objectsKey,
-					targetObject: $id,
-					set: $set,
-					newShipped: $newShipped,
-					accepted: $accepted,
-				);
+			run: function () use ($schema, $objectsKey, $id, $set, $newShipped, $overLocalChange): JSONResponse {
+				if ($overLocalChange === true) {
+					$result = $this->shipped->adoptOverLocalChange(
+						targetSchema: $schema,
+						objectsKey: $objectsKey,
+						targetObject: $id,
+						set: $set,
+						newShipped: $newShipped,
+					);
+				} else {
+					$result = $this->shipped->adopt(
+						targetSchema: $schema,
+						objectsKey: $objectsKey,
+						targetObject: $id,
+						set: $set,
+						newShipped: $newShipped,
+					);
+				}
 
 				$status = Http::STATUS_OK;
 				if ($result['adopted'] === false) {
@@ -186,66 +192,6 @@ class StarterContentController extends Controller {
 			}
 		);
 	}//end adoptShipped()
-
-	/**
-	 * The shipped municipal role set, and whether it is in use.
-	 *
-	 * @return JSONResponse The offer.
-	 *
-	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 */
-	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function roles(): JSONResponse {
-		return $this->answered(
-			run: function (): JSONResponse {
-				$offer = $this->roleSet->offer();
-				if ($offer === null) {
-					return new JSONResponse(
-						['error' => 'The register is not available'],
-						Http::STATUS_SERVICE_UNAVAILABLE
-					);
-				}
-
-				return new JSONResponse($offer);
-			}
-		);
-	}//end roles()
-
-	/**
-	 * Take the shipped role set into use.
-	 *
-	 * @return JSONResponse What happened.
-	 *
-	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 */
-	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function adoptRoles(): JSONResponse {
-		return $this->answered(
-			run: function (): JSONResponse {
-				$result = $this->roleSet->adopt();
-
-				return new JSONResponse($result, $this->okOrConflict(result: $result));
-			}
-		);
-	}//end adoptRoles()
-
-	/**
-	 * Put the shipped role set back to dormant.
-	 *
-	 * @return JSONResponse What happened, and which role stopped it when it did not.
-	 *
-	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 */
-	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function undoRoles(): JSONResponse {
-		return $this->answered(
-			run: function (): JSONResponse {
-				$result = $this->roleSet->undoAdoption();
-
-				return new JSONResponse($result, $this->okOrConflict(result: $result));
-			}
-		);
-	}//end undoRoles()
 
 	/**
 	 * Stop a case type taking new cases.
@@ -378,21 +324,6 @@ class StarterContentController extends Controller {
 	private function stateAnswer(array $result): JSONResponse {
 		return new JSONResponse($result, $this->foundOrConflict(result: $result));
 	}//end stateAnswer()
-
-	/**
-	 * 200 when the act was performed, 409 when the state refused it.
-	 *
-	 * @param array{ok: bool} $result The service's answer.
-	 *
-	 * @return integer The HTTP status.
-	 */
-	private function okOrConflict(array $result): int {
-		if ($result['ok'] === true) {
-			return Http::STATUS_OK;
-		}
-
-		return Http::STATUS_CONFLICT;
-	}//end okOrConflict()
 
 	/**
 	 * 200, 404 when the thing is not there, 409 when its state refused the act.

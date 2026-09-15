@@ -68,11 +68,15 @@ class ShippedConfigurationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param StarterStore    $store  The OpenRegister seam.
-	 * @param LoggerInterface $logger Logger.
+	 * @param StarterStore       $store       The OpenRegister seam.
+	 * @param ShippedSets        $sets        The sets dossiq ships, and their versions.
+	 * @param ShippedFingerprint $fingerprint The hash that says whether an object moved.
+	 * @param LoggerInterface    $logger      Logger.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
+		private readonly ShippedSets $sets,
+		private readonly ShippedFingerprint $fingerprint,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -94,7 +98,7 @@ class ShippedConfigurationService {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function stamp(string $set, string $targetSchema, string $targetObject, array $object): bool {
-		$version = ShippedSets::versionOf(set: $set);
+		$version = $this->sets->versionOf(set: $set);
 		if ($version === '' || $targetObject === '' || $targetSchema === '') {
 			// ADR-102: a stamp that cannot name its set is worse than no stamp,
 			// because the screen would report the object as shipped and be
@@ -112,7 +116,7 @@ class ShippedConfigurationService {
 			'setVersion' => $version,
 			'targetSchema' => $targetSchema,
 			'targetObject' => $targetObject,
-			'fingerprint' => ShippedFingerprint::of(object: $object),
+			'fingerprint' => $this->fingerprint->hashOf(object: $object),
 			'seededAt' => gmdate('c'),
 		];
 
@@ -150,7 +154,7 @@ class ShippedConfigurationService {
 			return ['state' => self::STATE_LOCAL, 'set' => '', 'setVersion' => ''];
 		}
 
-		$untouched = ShippedFingerprint::matches(
+		$untouched = $this->fingerprint->matches(
 			object: $object,
 			fingerprint: (string)($row['fingerprint'] ?? ''),
 		);
@@ -194,16 +198,16 @@ class ShippedConfigurationService {
 					'state' => 'removed',
 					'set' => (string)($row['set'] ?? ''),
 					'setVersion' => (string)($row['setVersion'] ?? ''),
-					'latestVersion' => ShippedSets::versionOf(set: (string)($row['set'] ?? '')),
+					'latestVersion' => $this->sets->versionOf(set: (string)($row['set'] ?? '')),
 					'updateAvailable' => false,
 				];
 				continue;
 			}
 
 			$set = (string)($row['set'] ?? '');
-			$latest = ShippedSets::versionOf(set: $set);
+			$latest = $this->sets->versionOf(set: $set);
 			$seeded = (string)($row['setVersion'] ?? '');
-			$untouched = ShippedFingerprint::matches(
+			$untouched = $this->fingerprint->matches(
 				object: $object,
 				fingerprint: (string)($row['fingerprint'] ?? ''),
 			);
@@ -237,7 +241,6 @@ class ShippedConfigurationService {
 	 * @param string               $targetObject The object's id.
 	 * @param string               $set          The set the newer version comes from.
 	 * @param array<string, mixed> $newShipped   The object as the newer set ships it.
-	 * @param boolean              $accepted     Whether a local change may be overwritten.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened, and why not when it did not.
 	 *
@@ -249,7 +252,71 @@ class ShippedConfigurationService {
 		string $targetObject,
 		string $set,
 		array $newShipped,
-		bool $accepted = false,
+	): array {
+		return $this->take(
+			targetSchema: $targetSchema,
+			objectsKey: $objectsKey,
+			targetObject: $targetObject,
+			set: $set,
+			newShipped: $newShipped,
+			overLocalChange: false,
+		);
+	}//end adopt()
+
+	/**
+	 * Take the newer shipped version over a change somebody made here.
+	 *
+	 * 🔑 A SECOND NAMED ACT RATHER THAN A FLAG ON THE FIRST. `adopt($x, true)`
+	 * reads the same at the call site whichever way the boolean goes, and what
+	 * it does differs by whether an administrator's work survives. The two
+	 * gestures are genuinely different and the caller has to pick one by name.
+	 *
+	 * @param string               $targetSchema The object's schema slug.
+	 * @param string               $objectsKey   The app config key naming that schema.
+	 * @param string               $targetObject The object's id.
+	 * @param string               $set          The set the newer version comes from.
+	 * @param array<string, mixed> $newShipped   The object as the newer set ships it.
+	 *
+	 * @return array{adopted: bool, reason: string} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function adoptOverLocalChange(
+		string $targetSchema,
+		string $objectsKey,
+		string $targetObject,
+		string $set,
+		array $newShipped,
+	): array {
+		return $this->take(
+			targetSchema: $targetSchema,
+			objectsKey: $objectsKey,
+			targetObject: $targetObject,
+			set: $set,
+			newShipped: $newShipped,
+			overLocalChange: true,
+		);
+	}//end adoptOverLocalChange()
+
+	/**
+	 * What both adoptions do, with the one difference between them.
+	 *
+	 * @param string               $targetSchema    The object's schema slug.
+	 * @param string               $objectsKey      The app config key naming that schema.
+	 * @param string               $targetObject    The object's id.
+	 * @param string               $set             The set the newer version comes from.
+	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
+	 * @param boolean              $overLocalChange Whether a local change may go.
+	 *
+	 * @return array{adopted: bool, reason: string} What happened.
+	 */
+	private function take(
+		string $targetSchema,
+		string $objectsKey,
+		string $targetObject,
+		string $set,
+		array $newShipped,
+		bool $overLocalChange,
 	): array {
 		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
@@ -266,7 +333,7 @@ class ShippedConfigurationService {
 			return ['adopted' => false, 'reason' => 'not_shipped'];
 		}
 
-		if ($state['state'] === self::STATE_CHANGED && $accepted === false) {
+		if ($state['state'] === self::STATE_CHANGED && $overLocalChange === false) {
 			return ['adopted' => false, 'reason' => 'changed_locally'];
 		}
 
@@ -286,7 +353,7 @@ class ShippedConfigurationService {
 		);
 
 		return ['adopted' => true, 'reason' => ''];
-	}//end adopt()
+	}//end take()
 
 	/**
 	 * Shipped and untouched, or shipped and changed here.

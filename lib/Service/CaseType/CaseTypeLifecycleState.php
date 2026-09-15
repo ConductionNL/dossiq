@@ -60,18 +60,18 @@ final class CaseTypeLifecycleState {
 	 * The state of one case type on a given day.
 	 *
 	 * @param array<string, mixed>   $caseType The case type row.
-	 * @param DateTimeInterface|null $on       The day to judge it on, or null for today.
+	 * @param DateTimeInterface|null $onDay    The day to judge it on, or null for today.
 	 *
 	 * @return string One of draft, in_use or retired.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function of(array $caseType, ?DateTimeInterface $on = null): string {
+	public function stateOf(array $caseType, ?DateTimeInterface $onDay = null): string {
 		if (($caseType['isDraft'] ?? false) === true) {
 			return self::DRAFT;
 		}
 
-		$today = ($on ?? new DateTimeImmutable('today'));
+		$today = ($onDay ?? new DateTimeImmutable('today'));
 		$day = $today->format('Y-m-d');
 
 		$from = $this->day(value: ($caseType['validFrom'] ?? null));
@@ -85,20 +85,20 @@ final class CaseTypeLifecycleState {
 		}
 
 		return self::IN_USE;
-	}//end of()
+	}//end stateOf()
 
 	/**
 	 * Whether a case type will take a new case today.
 	 *
 	 * @param array<string, mixed>   $caseType The case type row.
-	 * @param DateTimeInterface|null $on       The day to judge it on, or null for today.
+	 * @param DateTimeInterface|null $onDay    The day to judge it on, or null for today.
 	 *
 	 * @return boolean True when a handler may start a case of this type.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function acceptsNewCases(array $caseType, ?DateTimeInterface $on = null): bool {
-		return ($this->of(caseType: $caseType, on: $on) === self::IN_USE);
+	public function acceptsNewCases(array $caseType, ?DateTimeInterface $onDay = null): bool {
+		return ($this->stateOf(caseType: $caseType, onDay: $onDay) === self::IN_USE);
 	}//end acceptsNewCases()
 
 	/**

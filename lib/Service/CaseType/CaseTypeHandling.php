@@ -102,14 +102,14 @@ final class CaseTypeHandling {
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function of(array $caseType): array {
+	public function block(array $caseType): array {
 		return [
 			'defaultGroup' => $this->defaultGroup(caseType: $caseType),
 			'defaultHandler' => $this->defaultHandler(caseType: $caseType),
 			'automaticMessages' => $this->automaticMessages(caseType: $caseType),
 			'intakeScreen' => $this->intakeScreen(caseType: $caseType),
 		];
-	}//end of()
+	}//end block()
 
 	/**
 	 * The group a new case of this type goes to.
