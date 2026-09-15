@@ -289,6 +289,7 @@ class ConfigKeys {
 		'email_case_matching_pattern',
 		// Consultation management (consultation-management spec).
 		'consultation_schema',
+		'obligation_schema',
 		'advice_response_schema',
 		'advisory_body_schema',
 		// Consultation behaviour knobs edited by ConsultationSettingsTab.vue.

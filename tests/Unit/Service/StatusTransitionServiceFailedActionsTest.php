@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
@@ -48,6 +49,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  */
 final class StatusTransitionServiceFailedActionsTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -134,6 +136,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			resultWriter: $resultWriter,
 			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
 			declarations: $this->undeclaredStatuses(),
+			transitionDeclarations: $this->undeclaredTransitions(),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()

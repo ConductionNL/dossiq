@@ -42,6 +42,7 @@ use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
@@ -72,6 +73,7 @@ interface ReplayObjectServiceStub {
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -112,6 +114,7 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
 			$this->createMock(StatusChecklist::class),
 			$this->undeclaredStatuses(),
+			$this->undeclaredTransitions(),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 

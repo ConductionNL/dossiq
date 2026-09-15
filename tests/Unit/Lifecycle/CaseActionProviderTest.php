@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCP\IUserSession;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -59,6 +60,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  */
 class CaseActionProviderTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -326,6 +328,7 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			statusChecklist: $this->createMock(StatusChecklist::class),
 			declarations: $this->undeclaredStatuses(),
+			transitionDeclarations: $this->undeclaredTransitions(),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 

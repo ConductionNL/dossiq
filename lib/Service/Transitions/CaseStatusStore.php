@@ -147,6 +147,7 @@ class CaseStatusStore {
 		?string $comment,
 		array $evaluatedGuards,
 		bool $noWorkflowTemplate,
+		string $actor = '',
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -167,6 +168,17 @@ class CaseStatusStore {
 			'dispatchedActions' => [],
 			'noWorkflowTemplate' => $noWorkflowTemplate,
 		];
+
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($actor) !== '') {
+			$payload['actor'] = $actor;
+		}
 		if ($fromStatus !== '') {
 			$payload['fromStatus'] = $fromStatus;
 		}

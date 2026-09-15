@@ -59,6 +59,17 @@ class ObligationService {
 	public const SCHEMA_KEY = 'obligation_schema';
 
 	/**
+	 * The kind the advice request places.
+	 *
+	 * Named here rather than in `ConsultationService` because the transition
+	 * that withholds on it names the same string, and a literal spelled in two
+	 * files is a literal that eventually differs in one of them.
+	 *
+	 * @var string
+	 */
+	public const KIND_ADVICE = 'advice';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settingsService Resolves the object service and schemas.
@@ -210,6 +221,60 @@ class ObligationService {
 
 		return $rows;
 	}//end allFor()
+
+	/**
+	 * The obligation placed by a given object, if there is one.
+	 *
+	 * The advice request needs this to settle its own obligation when it is
+	 * answered, and it looks the obligation up by `source` rather than holding
+	 * the id on the consultation. One direction only: the obligation knows
+	 * what placed it, and nothing that places one has to be changed to carry a
+	 * second identifier.
+	 *
+	 * @param string $source The placing object's id.
+	 *
+	 * @return string The obligation id, or the empty string when there is none.
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 */
+	public function idForSource(string $source): string {
+		if (trim($source) === '') {
+			return '';
+		}
+
+		[$objectService, $register, $schema] = $this->store();
+		if ($objectService === null) {
+			return '';
+		}
+
+		$rows = null;
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['source' => $source],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq obligations: the obligation of a source could not be read',
+				['source' => $source, 'error' => $e->getMessage()],
+			);
+		}
+
+		if (is_array($rows) === false) {
+			return '';
+		}
+
+		foreach ($rows as $row) {
+			$id = (string)(($row['id'] ?? ($row['@self']['id'] ?? '')));
+			if ($id !== '') {
+				return $id;
+			}
+		}
+
+		return '';
+	}//end idForSource()
 
 	/**
 	 * The obligations that withhold a move into one status.
