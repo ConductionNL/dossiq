@@ -482,6 +482,26 @@ if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
 }
 
+// OpenRegister's bulk-action contract. dossiq's four case actions IMPLEMENT the
+// interface and RETURN the result type, so without these stubs they cannot even
+// be loaded in a unit test on a host where OpenRegister is absent. BulkJobMember
+// is here for its four outcome constants, which is all BulkActionResult names.
+if (class_exists('\\OCA\\OpenRegister\\Db\\BulkJobMember') === false) {
+	include_once __DIR__ . '/Stubs/Db/BulkJobMember.php';
+}
+
+if (interface_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionInterface') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionInterface.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionResult') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionResult.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\BulkActionRegistrationEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/BulkActionRegistrationEvent.php';
+}
+
 // OpenRegister's flow-node contract. procest's six action nodes implement it,
 // so without the stub they cannot even be loaded in a unit test on an instance
 // where OpenRegister is absent.

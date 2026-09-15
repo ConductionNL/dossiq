@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SubstitutionController;
+use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
 use OCA\Dossiq\Service\SubstitutionAuditService;
@@ -93,10 +94,10 @@ class SubstitutionControllerContractTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->request = $this->createMock(IRequest::class);
-		$this->substitutionService = $this->createMock(SubstitutionService::class);
-		$this->auditService = $this->createMock(SubstitutionAuditService::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->request = $this->createMock(originalClassName: IRequest::class);
+		$this->substitutionService = $this->createMock(originalClassName: SubstitutionService::class);
+		$this->auditService = $this->createMock(originalClassName: SubstitutionAuditService::class);
+		$this->logger = $this->createMock(originalClassName: LoggerInterface::class);
 	}//end setUp()
 
 	/**
@@ -113,6 +114,7 @@ class SubstitutionControllerContractTest extends TestCase {
 			substitutionService: $this->substitutionService,
 			auditService: $this->auditService,
 			accessGuard: $accessGuard,
+			reassignmentService: $this->createMock(originalClassName: CaseReassignmentService::class),
 			logger: $this->logger,
 		);
 	}//end controller()
@@ -124,13 +126,13 @@ class SubstitutionControllerContractTest extends TestCase {
 	 * @return SubstitutionAccessGuard
 	 */
 	private function realGuardWithoutSession(): SubstitutionAccessGuard {
-		$userSession = $this->createMock(IUserSession::class);
+		$userSession = $this->createMock(originalClassName: IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 
 		return new SubstitutionAccessGuard(
-			settingsService: $this->createMock(SettingsService::class),
+			settingsService: $this->createMock(originalClassName: SettingsService::class),
 			userSession: $userSession,
-			groupManager: $this->createMock(IGroupManager::class),
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
 		);
 	}//end realGuardWithoutSession()
 
@@ -149,10 +151,10 @@ class SubstitutionControllerContractTest extends TestCase {
 		$work = $controller->substitutedWork();
 		$actions = $controller->actions(id: 'verv-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $work->getStatus());
-		$this->assertSame(['error' => 'Not authenticated'], $work->getData());
-		$this->assertSame(Http::STATUS_FORBIDDEN, $actions->getStatus());
-		$this->assertSame(['error' => 'Not authenticated'], $actions->getData());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $work->getStatus());
+		$this->assertSame(expected: ['error' => 'Not authenticated'], actual: $work->getData());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $actions->getStatus());
+		$this->assertSame(expected: ['error' => 'Not authenticated'], actual: $actions->getData());
 	}//end testBothReadEndpointsRefuseASessionLessCallerWith403()
 
 	/**
@@ -161,7 +163,7 @@ class SubstitutionControllerContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testSubstitutedWorkResolvesForTheSessionUidAndNotForAnyInput(): void {
-		$accessGuard = $this->createMock(SubstitutionAccessGuard::class);
+		$accessGuard = $this->createMock(originalClassName: SubstitutionAccessGuard::class);
 		$accessGuard->method('currentUid')->willReturn('waarnemer');
 
 		$work = [['caseId' => 'zaak-1', 'onBehalfOf' => 'afwezige']];
@@ -173,8 +175,8 @@ class SubstitutionControllerContractTest extends TestCase {
 
 		$response = $this->controller($accessGuard)->substitutedWork();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame($work, $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: $work, actual: $response->getData());
 	}//end testSubstitutedWorkResolvesForTheSessionUidAndNotForAnyInput()
 
 	/**
@@ -183,7 +185,7 @@ class SubstitutionControllerContractTest extends TestCase {
 	 * @return void
 	 */
 	public function testActionsReturns404ForAnUnknownSubstitutionWithoutReadingTheAudit(): void {
-		$accessGuard = $this->createMock(SubstitutionAccessGuard::class);
+		$accessGuard = $this->createMock(originalClassName: SubstitutionAccessGuard::class);
 		$accessGuard->method('currentUid')->willReturn('waarnemer');
 		$accessGuard->expects($this->once())->method('find')->with('verv-weg')->willReturn(null);
 
@@ -191,8 +193,8 @@ class SubstitutionControllerContractTest extends TestCase {
 
 		$response = $this->controller($accessGuard)->actions(id: 'verv-weg');
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		$this->assertSame(['error' => 'Substitution not found'], $response->getData());
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'Substitution not found'], actual: $response->getData());
 	}//end testActionsReturns404ForAnUnknownSubstitutionWithoutReadingTheAudit()
 
 	/**
@@ -204,7 +206,7 @@ class SubstitutionControllerContractTest extends TestCase {
 	public function testActionsRefusesAnUnrelatedCallerBeforeReadingTheAuditTrail(): void {
 		$row = ['id' => 'verv-1', 'absentee' => 'afwezige', 'substitute' => 'waarnemer'];
 
-		$accessGuard = $this->createMock(SubstitutionAccessGuard::class);
+		$accessGuard = $this->createMock(originalClassName: SubstitutionAccessGuard::class);
 		$accessGuard->method('currentUid')->willReturn('buitenstaander');
 		$accessGuard->method('find')->willReturn($row);
 		$accessGuard->expects($this->once())
@@ -221,7 +223,7 @@ class SubstitutionControllerContractTest extends TestCase {
 
 		$response = $this->controller($accessGuard)->actions(id: 'verv-1');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testActionsRefusesAnUnrelatedCallerBeforeReadingTheAuditTrail()
 
 	/**
@@ -233,7 +235,7 @@ class SubstitutionControllerContractTest extends TestCase {
 		$row = ['id' => 'verv-1'];
 		$actions = [['caseId' => 'zaak-1', 'capacity' => 'waarnemer', 'at' => '2026-08-01']];
 
-		$accessGuard = $this->createMock(SubstitutionAccessGuard::class);
+		$accessGuard = $this->createMock(originalClassName: SubstitutionAccessGuard::class);
 		$accessGuard->method('currentUid')->willReturn('waarnemer');
 		$accessGuard->method('find')->willReturn($row);
 		$accessGuard->method('mayView')->willReturn(true);
@@ -245,7 +247,7 @@ class SubstitutionControllerContractTest extends TestCase {
 
 		$response = $this->controller($accessGuard)->actions(id: 'verv-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['results' => $actions], $response->getData());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['results' => $actions], actual: $response->getData());
 	}//end testActionsWrapsTheCapacityStampedActionsUnderResults()
 }//end class

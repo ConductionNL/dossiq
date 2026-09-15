@@ -88,11 +88,6 @@
       "count": 5
     }
   },
-  "src/dialogs/BulkTransitionDialog.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    }
-  },
   "src/dialogs/CaseTransferDialog.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 3
