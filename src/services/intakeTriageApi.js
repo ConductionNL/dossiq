@@ -36,6 +36,8 @@ import { normaliseDeclaration } from '../utils/intakeRequirements.js'
  *
  * @param {string} caseTypeId The case type uuid.
  * @return {Promise<object>} The normalised declaration, never null.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export async function fetchIntakeRequirements(caseTypeId) {
 	if (!caseTypeId) {
@@ -64,6 +66,8 @@ export async function fetchIntakeRequirements(caseTypeId) {
  * @param {string} caseId The case uuid.
  * @param {string} reason Why it is refused.
  * @return {Promise<object>} The refusal record.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export async function refuseCase(caseId, reason) {
 	const response = await axios.post(
@@ -78,6 +82,8 @@ export async function refuseCase(caseId, reason) {
  * The triage queue, with its sleeping items already taken out.
  *
  * @return {Promise<object>} `{results, sleeping}`.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export async function fetchTriageQueue() {
 	const response = await axios.get(generateUrl('/apps/dossiq/api/intake/triage'))
@@ -92,6 +98,8 @@ export async function fetchTriageQueue() {
  * @param {string} until   The date it comes back, as YYYY-MM-DD.
  * @param {string} reason  Why nothing is done until then.
  * @return {Promise<object>} The sleep record.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export async function sleepTriageItem(entryId, until, reason) {
 	const response = await axios.post(
@@ -111,6 +119,8 @@ export async function sleepTriageItem(entryId, until, reason) {
  * @param {object} submission   The submitted values every case starts from.
  * @param {string} submissionId The submission's own identifier.
  * @return {Promise<object>} `{created, failed, relationHasNoInverse}`.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export async function fanOutSubmission(caseTypeId, submission, submissionId) {
 	const response = await axios.post(

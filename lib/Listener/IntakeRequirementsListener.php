@@ -130,7 +130,7 @@ class IntakeRequirementsListener implements IEventListener {
 			return;
 		}
 
-		if (is_array($payload) === false || $this->isCaseSchema(object: $payload) === false) {
+		if ($this->isCaseSchema(object: $payload) === false) {
 			return;
 		}
 

@@ -56,6 +56,8 @@ export const CONFIDENTIALITY_VALUES = [
  *
  * @param {object} declaration The answer from the requirements endpoint.
  * @return {object} The same declaration with every key filled in.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function normaliseDeclaration(declaration) {
 	const source = declaration || {}
@@ -96,6 +98,8 @@ export function normaliseDeclaration(declaration) {
  *
  * @param {object} declaration The answer from the requirements endpoint.
  * @return {string[]} The field names, without repeats.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function fieldsToAsk(declaration) {
 	const read = normaliseDeclaration(declaration)
@@ -113,6 +117,8 @@ export function fieldsToAsk(declaration) {
  *
  * @param {object} declaration The answer from the requirements endpoint.
  * @return {boolean} True when a form has to ask something first.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function asksAnything(declaration) {
 	return fieldsToAsk(declaration).length > 0
@@ -124,6 +130,8 @@ export function asksAnything(declaration) {
  * @param {string} field       The case field.
  * @param {object} declaration The answer from the requirements endpoint.
  * @return {string[]} The allowed values, empty when anything goes.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function optionsFor(field, declaration) {
 	const read = normaliseDeclaration(declaration)
@@ -158,6 +166,8 @@ export function optionsFor(field, declaration) {
  * @param {object} values      The case as it would be written.
  * @param {object} declaration The answer from the requirements endpoint.
  * @return {string[]} The unanswered field names, in declared order.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function missingFrom(values, declaration) {
 	const answers = values || {}
@@ -190,6 +200,8 @@ export function missingFrom(values, declaration) {
  * @param {string[]} allowed  The references the case type allows.
  * @param {(option: string|object) => string} identify Reads the reference off one option.
  * @return {Array} The options that survive, in the offered order.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export function narrowOptions(offered, allowed, identify = (option) => option) {
 	const options = offered || []
@@ -209,6 +221,8 @@ export function narrowOptions(offered, allowed, identify = (option) => option) {
  * @param {object}   declaration The answer from the requirements endpoint.
  * @param {(option: string|object) => string} identify Reads the reference off one option.
  * @return {Array} The teams that survive the narrowing.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export function narrowGroups(offered, declaration, identify) {
 	return narrowOptions(
@@ -225,6 +239,8 @@ export function narrowGroups(offered, declaration, identify) {
  * @param {object}   declaration The answer from the requirements endpoint.
  * @param {(option: string|object) => string} identify Reads the reference off one option.
  * @return {Array} The people that survive the narrowing.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 export function narrowUsers(offered, declaration, identify) {
 	return narrowOptions(
@@ -243,6 +259,8 @@ export function narrowUsers(offered, declaration, identify) {
  *
  * @param {object} error The axios error, or the response body.
  * @return {string} One sentence, or '' when the body carries none.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function refusalSentence(error) {
 	// 🔴 THE ENVELOPE ONLY, NEVER THE ERROR ITSELF. Falling back to `error`
@@ -259,6 +277,8 @@ export function refusalSentence(error) {
  *
  * @param {object} error The axios error, or the response body.
  * @return {string} The rule, or '' when the body carries none.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 export function refusalRule(error) {
 	const body = envelopeOf(error)
@@ -275,6 +295,8 @@ export function refusalRule(error) {
  *
  * @param {object} error The axios error, or the response body.
  * @return {object} The envelope, or an empty object.
+ *
+ * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
  */
 function envelopeOf(error) {
 	if (!error || typeof error !== 'object') {
