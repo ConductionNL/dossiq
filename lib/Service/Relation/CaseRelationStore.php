@@ -181,20 +181,50 @@ class CaseRelationStore {
 		}
 
 		try {
-			if ($incoming === true) {
-				$answer = $objectService->getObjectUsedBy($caseUuid);
-			} else {
-				$answer = $objectService->getObjectUses($caseUuid);
-			}
+			$answer = $this->askOpenRegister(
+				objectService: $objectService,
+				caseUuid: $caseUuid,
+				incoming: $incoming
+			);
 		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'CaseRelationService: relation rows unavailable',
+			// A degradation, not a miss: OpenRegister is there and could not
+			// answer. The case page keeps working without its relation groups,
+			// and the warning names what could not be read.
+			$this->logger->warning(
+				'Dossiq: OpenRegister could not answer the relation rows for a case',
 				['uuid' => $caseUuid, 'incoming' => $incoming, 'error' => $e->getMessage()]
 			);
 			return [];
 		}
 
-		$results = ($answer['results'] ?? []);
+		return $this->serialisedRows(results: ($answer['results'] ?? []));
+	}//end relationRows()
+
+	/**
+	 * Ask OpenRegister for one direction's rows.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $caseUuid Case UUID.
+	 * @param bool $incoming Whether to ask for the reverse direction.
+	 *
+	 * @return array<string, mixed> The envelope.
+	 */
+	private function askOpenRegister(object $objectService, string $caseUuid, bool $incoming): array {
+		if ($incoming === true) {
+			return $objectService->getObjectUsedBy($caseUuid);
+		}
+
+		return $objectService->getObjectUses($caseUuid);
+	}//end askOpenRegister()
+
+	/**
+	 * Normalise an envelope's results to plain arrays.
+	 *
+	 * @param mixed $results The envelope's `results`.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function serialisedRows(mixed $results): array {
 		if (is_array($results) === false) {
 			return [];
 		}
@@ -211,7 +241,7 @@ class CaseRelationStore {
 		}
 
 		return $rows;
-	}//end relationRows()
+	}//end serialisedRows()
 
 	/**
 	 * Normalise an OpenRegister lookup result to a plain case array.

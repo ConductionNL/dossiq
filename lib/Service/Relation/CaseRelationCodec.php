@@ -100,45 +100,80 @@ class CaseRelationCodec {
 	public function typedLinks(array $case): array {
 		$links = [];
 		foreach (self::TYPED_PROPERTIES as $property) {
-			$raw = ($case[$property] ?? []);
-			if (is_string($raw) === true && $raw !== '') {
-				$decoded = json_decode($raw, true);
-				if (is_array($decoded) === true) {
-					$raw = $decoded;
-				} else {
-					$raw = [$raw];
-				}
-			}
-
-			if (is_array($raw) === false) {
-				$raw = [];
-			}
-
-			$uuids = [];
-			foreach ($raw as $value) {
-				// A reference list may come back expanded to the referenced
-				// object when the caller asked OpenRegister to extend it, so
-				// read the uuid out of either shape rather than casting an
-				// array to a string.
-				if (is_array($value) === true) {
-					$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-				}
-
-				if (is_string($value) === false) {
-					$value = '';
-				}
-
-				$value = trim($value);
-				if ($value !== '' && in_array($value, $uuids, true) === false) {
-					$uuids[] = $value;
-				}
-			}
-
-			$links[$property] = $uuids;
-		}//end foreach
+			$links[$property] = $this->uuidsOf(raw: ($case[$property] ?? []));
+		}
 
 		return $links;
 	}//end typedLinks()
+
+	/**
+	 * The case uuids in one stored reference list.
+	 *
+	 * A reference list may arrive as a list of uuids, as one JSON-encoded
+	 * string, or expanded to the referenced objects when the caller asked
+	 * OpenRegister to extend it. All three answer the same list here, rather
+	 * than every caller having to know which shape it got.
+	 *
+	 * @param mixed $raw The stored value.
+	 *
+	 * @return array<int, string> The uuids, de-duplicated.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function uuidsOf(mixed $raw): array {
+		$uuids = [];
+		foreach ($this->listOf(raw: $raw) as $value) {
+			$uuid = $this->uuidOf(value: $value);
+			if ($uuid !== '' && in_array($uuid, $uuids, true) === false) {
+				$uuids[] = $uuid;
+			}
+		}
+
+		return $uuids;
+	}//end uuidsOf()
+
+	/**
+	 * The stored value as a list, whatever shape it was written in.
+	 *
+	 * @param mixed $raw The stored value.
+	 *
+	 * @return array<mixed> The list.
+	 */
+	private function listOf(mixed $raw): array {
+		if (is_string($raw) === true && $raw !== '') {
+			$decoded = json_decode($raw, true);
+			if (is_array($decoded) === true) {
+				return $decoded;
+			}
+
+			return [$raw];
+		}
+
+		if (is_array($raw) === false) {
+			return [];
+		}
+
+		return $raw;
+	}//end listOf()
+
+	/**
+	 * One list member's uuid, whether it is a uuid or the expanded object.
+	 *
+	 * @param mixed $value The member.
+	 *
+	 * @return string The uuid, or '' when there is none.
+	 */
+	private function uuidOf(mixed $value): string {
+		if (is_array($value) === true) {
+			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
+		}
+
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return trim($value);
+	}//end uuidOf()
 
 	/**
 	 * The typed lists with one link added, or unchanged when it is already there.

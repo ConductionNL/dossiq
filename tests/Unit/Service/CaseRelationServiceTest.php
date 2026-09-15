@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
+use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -42,6 +43,7 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Dossiq\Service\Relation\CaseRelationLabels
  * @uses \OCA\Dossiq\Service\Relation\CaseRelationStore
  */
 class CaseRelationServiceTest extends TestCase {
@@ -241,10 +243,14 @@ class CaseRelationServiceTest extends TestCase {
 		// mocks: every assertion below is about behaviour they inherited
 		// verbatim from CaseRelationService, and the store is still driven
 		// entirely by the mocked SettingsService above.
+		$relationStore = new CaseRelationStore($this->settingsService, $this->logger);
+		$codec         = new CaseRelationCodec();
+
 		return new CaseRelationService(
-			store: new CaseRelationStore($this->settingsService, $this->logger),
-			codec: new CaseRelationCodec(),
+			store: $relationStore,
+			codec: $codec,
 			hierarchyGuard: new CaseHierarchyOverlapGuard(),
+			labels: new CaseRelationLabels(store: $relationStore, codec: $codec),
 		);
 	}//end makeService()
 

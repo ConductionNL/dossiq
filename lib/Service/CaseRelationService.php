@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Relation\CaseHierarchyOverlapGuard;
 use OCA\Dossiq\Service\Relation\CaseRelationCodec;
+use OCA\Dossiq\Service\Relation\CaseRelationLabels;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 
 /**
@@ -85,11 +86,13 @@ class CaseRelationService {
 	 * @param CaseRelationStore $store OpenRegister reads/writes for case objects.
 	 * @param CaseRelationCodec $codec Relation-list encoding and pair operations.
 	 * @param CaseHierarchyOverlapGuard $hierarchyGuard Hoofdzaak/deelzaak overlap detection.
+	 * @param CaseRelationLabels $labels What each link is called from each side.
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
 		private readonly CaseRelationCodec $codec,
 		private readonly CaseHierarchyOverlapGuard $hierarchyGuard,
+		private readonly CaseRelationLabels $labels,
 	) {
 	}//end __construct()
 
@@ -113,7 +116,7 @@ class CaseRelationService {
 		}
 
 		$stored = $this->codec->decode(case: $case);
-		$rows   = $this->labelledRows(caseId: $caseId, stored: $stored);
+		$rows   = $this->labels->rowsFor(caseId: $caseId, stored: $stored);
 
 		// Anything written before the case schema declared its relation types
 		// lives only in `relatedCases`, on both cases, under one name. It is
@@ -140,114 +143,6 @@ class CaseRelationService {
 
 		return array_values($rows);
 	}//end listRelations()
-
-	/**
-	 * The typed peer relations OpenRegister can name, keyed by target and type.
-	 *
-	 * Both directions are read, and each row keeps `displayLabel` exactly as it
-	 * arrives. It is already the half of the pair that belongs to that
-	 * direction, and picking between `label` and `inverseLabel` here is how a
-	 * reverse panel ends up showing the near name, which is the defect
-	 * openregister#3764 exists to end.
-	 *
-	 * @param string $caseId The case being read.
-	 * @param array<int, array<string, mixed>> $stored The case's own
-	 *        `relatedCases` entries, which carry the clarification.
-	 *
-	 * @return array<string, array<string, mixed>> Rows keyed by target and type.
-	 *
-	 * @spec openspec/specs/related-case-linking/spec.md
-	 */
-	private function labelledRows(string $caseId, array $stored): array {
-		$properties = array_values(CaseRelationCodec::TYPED_PROPERTIES);
-		$rows       = [];
-
-		foreach ([false, true] as $incoming) {
-			foreach ($this->store->relationRows(caseUuid: $caseId, incoming: $incoming) as $row) {
-				$relation = ($row['relation'] ?? null);
-				if (is_array($relation) === false) {
-					continue;
-				}
-
-				$property = (string)($relation['property'] ?? '');
-				if (in_array($property, $properties, true) === false) {
-					continue;
-				}
-
-				$targetId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-				$type     = (string)($relation['type'] ?? '');
-				if ($targetId === '' || $type === '') {
-					continue;
-				}
-
-				$rows[$targetId.'|'.$type] = [
-					'caseId'       => $targetId,
-					'aardRelatie'  => $type,
-					'title'        => (string)($row['title'] ?? ''),
-					'direction'    => ($relation['direction'] ?? null),
-					'label'        => ($relation['label'] ?? null),
-					'inverseLabel' => ($relation['inverseLabel'] ?? null),
-					'displayLabel' => ($relation['displayLabel'] ?? null),
-					'legacy'       => false,
-				];
-
-				$notes = $this->noteFor(
-					stored: $stored,
-					targetId: $targetId,
-					natureRelationship: $type,
-					farSide: $row,
-					caseId: $caseId
-				);
-				if ($notes !== null) {
-					$rows[$targetId.'|'.$type]['notes'] = $notes;
-				}
-			}//end foreach
-		}//end foreach
-
-		return $rows;
-	}//end labelledRows()
-
-	/**
-	 * The clarification written beside one relation, from whichever side wrote it.
-	 *
-	 * A note belongs to the case that declared the link, so an incoming row's
-	 * note is on the far case rather than on this one.
-	 *
-	 * @param array<int, array<string, mixed>> $stored This case's entries.
-	 * @param string $targetId The other case.
-	 * @param string $natureRelationship Relation type.
-	 * @param array<string, mixed> $farSide The other case as serialised by OpenRegister.
-	 * @param string $caseId The case being read.
-	 *
-	 * @return string|null The note.
-	 */
-	private function noteFor(
-		array $stored,
-		string $targetId,
-		string $natureRelationship,
-		array $farSide,
-		string $caseId,
-	): ?string {
-		foreach ($stored as $entry) {
-			if ((string)($entry['caseId'] ?? '') === $targetId
-				&& (string)($entry['aardRelatie'] ?? '') === $natureRelationship
-				&& (string)($entry['notes'] ?? '') !== ''
-			) {
-				return (string)$entry['notes'];
-			}
-		}
-
-		foreach ($this->codec->decode(case: $farSide) as $entry) {
-			if ((string)($entry['caseId'] ?? '') === $caseId
-				&& (string)($entry['aardRelatie'] ?? '') === $natureRelationship
-				&& (string)($entry['notes'] ?? '') !== ''
-			) {
-				return (string)$entry['notes'];
-			}
-		}
-
-		return null;
-	}//end noteFor()
 
 	/**
 	 * Add a typed peer relation to the case that declares it.
@@ -466,33 +361,8 @@ class CaseRelationService {
 			return 0;
 		}
 
-		$deleted = $this->store->fetchCase(caseUuid: $caseId);
-		// Even when the case is already gone we still scan counterparts: the
-		// relation entries on OTHER cases are what must be cleaned up.
-		$counterpartIds = [];
-		if ($deleted !== null) {
-			foreach ($this->codec->decode(case: $deleted) as $relation) {
-				$ref = (string)($relation['caseId'] ?? '');
-				if ($ref !== '' && in_array($ref, $counterpartIds, true) === false) {
-					$counterpartIds[] = $ref;
-				}
-			}
-		}
-
-		// A case that DECLARED a link to this one is not named in this one's
-		// own list any more, because the counterpart write is gone. The mirror
-		// used to make this scan complete by accident; `/used` is what makes it
-		// complete on purpose, and without it a link declared from the far side
-		// would survive the case it points at.
-		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
-			$ref = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			if ($ref !== '' && $ref !== $caseId && in_array($ref, $counterpartIds, true) === false) {
-				$counterpartIds[] = $ref;
-			}
-		}
-
 		$updated = 0;
-		foreach ($counterpartIds as $counterpartId) {
+		foreach ($this->counterpartIdsOf(caseId: $caseId) as $counterpartId) {
 			$counterpart = $this->store->fetchCase(caseUuid: $counterpartId);
 			if ($counterpart === null) {
 				continue;
@@ -520,6 +390,48 @@ class CaseRelationService {
 
 		return $updated;
 	}//end cleanupForDeletedCase()
+
+	/**
+	 * Every case that has to be touched when one case is deleted.
+	 *
+	 * Two sources, and both are needed. This case's own list names what IT
+	 * declared. `/used` names the cases that declared a link TOWARDS it, which
+	 * its own list no longer mentions now that the counterpart write is gone.
+	 * The mirror used to make that half complete by accident; without the
+	 * reverse read a link declared from the far side would survive the case it
+	 * points at.
+	 *
+	 * @param string $caseId The case being deleted.
+	 *
+	 * @return array<int, string> The counterpart uuids, de-duplicated.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function counterpartIdsOf(string $caseId): array {
+		$ids = [];
+
+		// Even when the case is already gone we still scan counterparts: the
+		// relation entries on OTHER cases are what must be cleaned up.
+		$deleted = $this->store->fetchCase(caseUuid: $caseId);
+		if ($deleted !== null) {
+			foreach ($this->codec->decode(case: $deleted) as $relation) {
+				$ids[] = (string)($relation['caseId'] ?? '');
+			}
+		}
+
+		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
+			$ids[] = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+		}
+
+		return array_values(
+			array_unique(
+				array_filter(
+					$ids,
+					static fn (string $ref): bool => ($ref !== '' && $ref !== $caseId)
+				)
+			)
+		);
+	}//end counterpartIdsOf()
 
 	/**
 	 * Promote a direct write to `relatedCases` into typed links (e.g. ZGW inbound).
