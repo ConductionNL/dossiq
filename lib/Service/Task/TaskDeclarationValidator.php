@@ -145,7 +145,7 @@ class TaskDeclarationValidator {
 				path: sprintf('steps[%d].%s', $index, $key),
 				code: 'misplaced_task_key',
 				message: sprintf(
-					'Task "%s" declares "%s" beside its task block instead of inside it, where nothing reads it.',
+					'Task "%s" sets "%s" outside its task block. Nothing reads it there.',
 					$task,
 					$key
 				)
@@ -210,7 +210,7 @@ class TaskDeclarationValidator {
 			self::refusal(
 				path: $path . '.formId',
 				code: 'unresolvable_form',
-				message: sprintf('Task "%s" names an external form without a form id, so no form can be opened.', $task)
+				message: sprintf('Task "%s" names an external form without a form id. Nobody can open it.', $task)
 			),
 		];
 	}//end externalFormRefusals()

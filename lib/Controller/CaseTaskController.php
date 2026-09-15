@@ -363,7 +363,7 @@ class CaseTaskController extends Controller {
 			return new JSONResponse(
 				[
 					'message' => sprintf(
-						'This task is declared to run %s when it is completed, and nothing answers to that. The task stays open.',
+						'Completing this task should run %s, and nothing answers to that name. The task stays open.',
 						$named
 					),
 					'error' => 'unresolvable_effect',

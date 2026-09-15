@@ -73,7 +73,7 @@ class CaseTaskCompletion {
 	 * @param string               $outcome The outcome word recorded on the task.
 	 * @param string               $actor   Who is completing it.
 	 *
-	 * @return array{completed: bool, task: string, case: string} What happened.
+	 * @return array{completed: bool, task: string, case: string, state: string, isTerminal: bool} What happened.
 	 *
 	 * @throws RuntimeException Named refusals: `task_not_found`,
 	 *                          `required_field:<field>`,
@@ -115,6 +115,14 @@ class CaseTaskCompletion {
 			'completed' => true,
 			'task' => (string)($task['id'] ?? $taskId),
 			'case' => (string)($task['objectUuid'] ?? ''),
+			// The engine accepted the completion, so the task IS terminal, and
+			// the answer says so in the engine's own two words. The surface
+			// reads `isTerminal` to decide whether to confirm the task by name,
+			// and a response that omitted it would complete the task and
+			// silently show no confirmation — which reads as a click that did
+			// nothing.
+			'state' => 'completed',
+			'isTerminal' => true,
 		];
 	}//end complete()
 
