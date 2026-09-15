@@ -479,6 +479,18 @@ class CaseRelationService {
 			}
 		}
 
+		// A case that DECLARED a link to this one is not named in this one's
+		// own list any more, because the counterpart write is gone. The mirror
+		// used to make this scan complete by accident; `/used` is what makes it
+		// complete on purpose, and without it a link declared from the far side
+		// would survive the case it points at.
+		foreach ($this->store->relationRows(caseUuid: $caseId, incoming: true) as $row) {
+			$ref = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+			if ($ref !== '' && $ref !== $caseId && in_array($ref, $counterpartIds, true) === false) {
+				$counterpartIds[] = $ref;
+			}
+		}
+
 		$updated = 0;
 		foreach ($counterpartIds as $counterpartId) {
 			$counterpart = $this->store->fetchCase(caseUuid: $counterpartId);
