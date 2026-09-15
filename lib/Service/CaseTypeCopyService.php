@@ -68,6 +68,17 @@ class CaseTypeCopyService {
 	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
 	 * @param LoggerInterface        $logger          Logger.
 	 */
+	/**
+	 * What the copy in progress could not carry.
+	 *
+	 * Held on the instance for the same reason `SeedDataService` holds its
+	 * summary: the refusal becomes visible several frames below the caller that
+	 * reports it.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $notCarried = [];
+
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,
@@ -99,6 +110,52 @@ class CaseTypeCopyService {
 	public function copy(string $caseTypeId): ?array {
 		return $this->derive(caseTypeId: $caseTypeId, asVersion: false);
 	}//end copy()
+
+	/**
+	 * Deep-copy a case type and say what the copy could not carry.
+	 *
+	 * 🔑 A COPY THAT SILENTLY DROPPED A CHILD LOOKS EXACTLY LIKE ONE THAT
+	 * CARRIED EVERYTHING. {@see copy()} already logged a warning per child it
+	 * failed on and then returned the new case type as though nothing had
+	 * happened, so an administrator standing up a case type from a template got
+	 * a green tick and found the missing document types weeks later. This is
+	 * the same act with the tally attached; `copy()` is kept for the callers
+	 * that only want the row.
+	 *
+	 * @param string $caseTypeId The source case type's OpenRegister id.
+	 *
+	 * @return array{caseType: array<string, mixed>|null, complete: bool, notCarried: array<int, string>}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function copyReport(string $caseTypeId): array {
+		$this->notCarried = [];
+		$caseType = $this->derive(caseTypeId: $caseTypeId, asVersion: false);
+		$notCarried = $this->notCarried;
+		$this->notCarried = [];
+
+		return [
+			'caseType' => $caseType,
+			// A copy whose source did not resolve is not a complete copy
+			// either, and reporting `complete: true` with a null case type
+			// would be the worst of both answers.
+			'complete' => ($caseType !== null && $notCarried === []),
+			'notCarried' => $notCarried,
+		];
+	}//end copyReport()
+
+	/**
+	 * Whether a case type is offered as a starting point for a new one.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return boolean True when the case type is marked as a template.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function isTemplate(array $caseType): bool {
+		return (($caseType['isTemplate'] ?? false) === true);
+	}//end isTemplate()
 
 	/**
 	 * Start a new version of a published case type.
@@ -460,6 +517,7 @@ class CaseTypeCopyService {
 					'CaseTypeCopyService: failed to copy child object',
 					['schema' => $schema, 'exception' => $e->getMessage()]
 				);
+				$this->notCarried[] = ($configKey . ':' . (string)($child['name'] ?? ($child['title'] ?? $oldId)));
 				continue;
 			}
 
@@ -505,6 +563,10 @@ class CaseTypeCopyService {
 				'CaseTypeCopyService: failed to list child objects',
 				['schema' => $schema, 'exception' => $e->getMessage()]
 			);
+			// A schema the copy could not even LIST is the worst case for a
+			// silent partial: zero children copied is indistinguishable from a
+			// case type that had none.
+			$this->notCarried[] = $schema;
 			return [];
 		}
 
