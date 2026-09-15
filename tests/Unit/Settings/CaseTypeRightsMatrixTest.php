@@ -201,4 +201,65 @@ class CaseTypeRightsMatrixTest extends TestCase {
 			'A mandate that can only name case types makes a samenwerkingsverband name thirty of them.',
 		);
 	}//end testACaseTypeCanBelongToAGroupThatIsGrantedOnce()
+
+	/**
+	 * A rights row may say when its grant ends, in OpenRegister's own key.
+	 *
+	 * 🔑 THE SPELLING IS THE TEST. OpenRegister reads the end off the entry key
+	 * `until` ({@see GrantConstraints::UNTIL_KEY}, openregister#3750). A row
+	 * declaring `expires`, `endDate` or `validUntil` would need a translation
+	 * step between the declaration and the rule, and a translation step is where
+	 * an end quietly stops arriving: the grant is written, nothing refuses it,
+	 * and nobody finds out until the day it should have expired and did not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testARightsRowMaySayWhenItsGrantEnds(): void {
+		$row = $this->caseType()['properties']['rightsMatrix']['items'];
+
+		self::assertArrayHasKey(
+			key: 'until',
+			array: $row['properties'],
+			message: 'A matrix that cannot declare an end makes every temporary grant permanent.',
+		);
+		self::assertSame(expected: 'string', actual: $row['properties']['until']['type']);
+
+		foreach (['expires', 'endDate', 'validUntil', 'expiry'] as $spelling) {
+			self::assertArrayNotHasKey(
+				key: $spelling,
+				array: $row['properties'],
+				message: "A second spelling of the end is a translation step, and '$spelling' is one.",
+			);
+		}
+	}//end testARightsRowMaySayWhenItsGrantEnds()
+
+	/**
+	 * The end is optional, so a row that grants without one stays valid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+	 */
+	public function testAnEndIsOptionalOnARightsRow(): void {
+		$row = $this->caseType()['properties']['rightsMatrix']['items'];
+
+		self::assertNotContains(
+			needle: 'until',
+			haystack: $row['required'],
+			message: 'A required end makes every existing rights row invalid the day it ships.',
+		);
+
+		// 🔴 NO `format` ON THIS PROPERTY, DELIBERATELY. Adding a `format` to a
+		// shipped OpenRegister property is a breaking change to the schema: an
+		// instance holding rows that do not match refuses to save them from then
+		// on. The format is named in the description and enforced by the reader
+		// that owns it, which is OpenRegister's.
+		self::assertArrayNotHasKey(
+			key: 'format',
+			array: $row['properties']['until'],
+			message: 'Adding a format to a shipped property is breaking; the description carries it instead.',
+		);
+	}//end testAnEndIsOptionalOnARightsRow()
 }//end class

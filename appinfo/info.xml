@@ -183,6 +183,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
              switched off after it has fired rather than left to come round
              again next year. -->
         <job>OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob</job>
+        <!-- A sweep rather than a timer per item: four other acts can end a
+             triage item's life, and a timer armed against an entry that is
+             gone wakes nobody and says nothing. -->
+        <job>OCA\Dossiq\BackgroundJob\TriageWakeJob</job>
     </background-jobs>
 
     <repair-steps>
