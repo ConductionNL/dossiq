@@ -176,6 +176,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
              switched off after it has fired rather than left to come round
              again next year. -->
         <job>OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob</job>
+        <!-- Hourly, not daily: the hour a digest arrives is the reader's own
+             choice, and a job that wakes once a day sends everybody's at
+             whatever hour the runner happened to fire.
+             See openspec/changes/one-personal-queue. -->
+        <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
     </background-jobs>
 
     <repair-steps>

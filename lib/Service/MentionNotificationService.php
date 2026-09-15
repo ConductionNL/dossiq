@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
 use OCP\Notification\IManager;
+use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,10 +45,12 @@ class MentionNotificationService {
 	 * Constructor.
 	 *
 	 * @param IManager $notificationManager The Nextcloud notification manager
+	 * @param MentionQueueRecords $queueRecords The per-person record a queue can wait on
 	 * @param LoggerInterface $logger The logger
 	 */
 	public function __construct(
 		private readonly IManager $notificationManager,
+		private readonly MentionQueueRecords $queueRecords,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -109,6 +112,18 @@ class MentionNotificationService {
 					);
 
 				$this->notificationManager->notify($notification);
+
+				// The bell rings once; the queue waits. A notification a
+				// person clears is gone, and the thing they were called into
+				// is still theirs to deal with, so the mention is also
+				// written down (one-personal-queue, D-2).
+				$this->queueRecords->record(
+					person: $mentionedUserId,
+					actor: ($actorDisplayName === '' ? $actorUserId : $actorDisplayName),
+					subjectType: $objectType,
+					subjectId: $objectId,
+					noteId: $noteId
+				);
 				$notified++;
 			} catch (\Throwable $e) {
 				$this->logger->warning(
