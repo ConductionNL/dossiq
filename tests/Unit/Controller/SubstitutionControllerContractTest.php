@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SubstitutionController;
+use OCA\Dossiq\Service\CaseReassignmentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Substitution\SubstitutionAccessGuard;
 use OCA\Dossiq\Service\SubstitutionAuditService;
@@ -113,6 +114,7 @@ class SubstitutionControllerContractTest extends TestCase {
 			substitutionService: $this->substitutionService,
 			auditService: $this->auditService,
 			accessGuard: $accessGuard,
+			reassignmentService: $this->createMock(CaseReassignmentService::class),
 			logger: $this->logger,
 		);
 	}//end controller()

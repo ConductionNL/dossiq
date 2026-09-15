@@ -90,7 +90,7 @@ class CaseAssigneeWriter {
 			now: (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		);
 
-		return $this->reassignItem(
+		$written = $this->reassignItem(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
@@ -98,6 +98,18 @@ class CaseAssigneeWriter {
 			item: $case,
 			batch: $batch,
 		);
+
+		if ($written === false) {
+			// The job records this case as failed either way. The log is what
+			// lets somebody find out WHICH write failed a week later, when the
+			// only thing left is a member row saying so.
+			$this->logger->warning(
+				'Dossiq: a case in a bulk redistribution was not written',
+				['case' => $caseId, 'toUser' => $toUser, 'batchId' => $batchId],
+			);
+		}
+
+		return $written;
 	}//end reassignOne()
 
 	/**

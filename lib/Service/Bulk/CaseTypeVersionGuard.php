@@ -90,12 +90,15 @@ class CaseTypeVersionGuard {
 			$family = $this->familyOf(caseType: $caseType, caseTypeId: (string)$caseTypeId);
 			$version = (int)($caseType['version'] ?? 1);
 
-			$families[$family]['title'] = (string)($caseType['title'] ?? $family);
-			$families[$family]['counts'][(string)$version] = (($families[$family]['counts'][(string)$version] ?? 0) + $caseCount);
+			if (isset($families[$family]) === false) {
+				$families[$family] = ['title' => (string)($caseType['title'] ?? $family), 'counts' => []];
+			}
+
+			$families[$family]['counts'][$version] = (($families[$family]['counts'][$version] ?? 0) + $caseCount);
 		}
 
 		foreach ($families as $family) {
-			$counts = ($family['counts'] ?? []);
+			$counts = $family['counts'];
 			if (count($counts) < 2) {
 				continue;
 			}
@@ -103,10 +106,19 @@ class CaseTypeVersionGuard {
 			$versions = array_map('intval', array_keys($counts));
 			sort($versions);
 
+			// Keyed by the version as a STRING. The exception hands these
+			// straight to a JSON response, where an integer-keyed PHP array
+			// serialises as a list and the version each count belongs to is
+			// lost.
+			$byVersion = [];
+			foreach ($counts as $version => $count) {
+				$byVersion[(string)$version] = (int)$count;
+			}
+
 			throw new MixedCaseTypeVersionsException(
-				caseTypeTitle: (string)($family['title'] ?? ''),
+				caseTypeTitle: $family['title'],
 				versions: $versions,
-				counts: $counts,
+				counts: $byVersion,
 			);
 		}
 	}//end assertOneVersion()
