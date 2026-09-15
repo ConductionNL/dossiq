@@ -89,6 +89,7 @@ class ProcessMiningService {
 	 * @return array<string, mixed> The structured response body.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
@@ -151,7 +152,6 @@ class ProcessMiningService {
 				// reconstructed from the record chain. Published rather than
 				// recomputed, so the page and a handler's work list answer the
 				// same question with the same number.
-				// @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
 				'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
 					casesById: $group['cases'],
 					now: $now,

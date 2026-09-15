@@ -106,6 +106,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
 | `lib/Service/QuickActionService.php` | 158 | statutory | engine calendar | Awb 9:11: the six week klacht decision term, written on intake from the KCC |
+| `lib/Service/Status/StatusDwellService.php` | 135 | business | `WorkingDayCalculator` | how long a case has sat in one status, a service level and never a term. The BREACH is the engine's: `StatusDwellTimer` arms it in the engine's own `businessDays` unit over the calendar the organisation administers. The count held on the case is the local calculator's, because the engine exposes projection and no count between two dates, so the two can differ by a day on a custom calendar. Closing that needs a count operation in openregister `working-calendar-admin` |
 | `lib/Service/Stuf/StufOutboundTransport.php` | 298 | neither | | not date arithmetic: `IJobList::add()` matched the `->add(` pattern |
 | `lib/Service/Subsidie/BeschikkingService.php` | 82 | statutory | engine calendar | the bezwaartermijn of a subsidy beschikking |
 | `lib/Service/Subsidie/BewijsstukService.php` | 136 | neither | | a record retention period in years |

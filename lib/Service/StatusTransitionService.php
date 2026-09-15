@@ -290,39 +290,13 @@ class StatusTransitionService {
 			currentId: $currentId,
 		);
 
-		// A closing transition carries its result, or it does not happen.
-		//
-		// REQ-STE-12: the question "what came of this case" is asked at the
-		// moment the case closes, not afterwards, and the answer is written in
-		// the SAME save as the status. Refusing here rather than after the
-		// status write is what keeps a closed case from ever existing without
-		// a result: the refusal happens before the mutation, so the case is
-		// untouched.
-		$caseAtSave = $this->applyClosingResult(
-			case: $caseAtSave,
+		[$case, $savedVersion] = $this->writeMove(
+			caseAtSave: $caseAtSave,
 			caseId: $caseId,
 			toStatus: $toStatus,
 			resultTypeId: $resultTypeId,
+			readVersion: $readVersion,
 		);
-
-		// How long the case sat in the status it is leaving, written in the
-		// SAME save as the move. Two saves is two chances for one of them not
-		// to happen, and the one that goes missing is always the bookkeeping.
-		$caseAtSave = $this->declarations->applyStatusChange(case: $caseAtSave, toStatus: $toStatus);
-
-		// Status mutation BEFORE side-effects per REQ-STE-5-002.
-		// Include @self.version so the store can detect a concurrent modification.
-		$caseAtSave['status'] = $toStatus;
-		if (isset($caseAtSave['@self']) === false || is_array($caseAtSave['@self']) === false) {
-			$caseAtSave['@self'] = [];
-		}
-
-		$caseAtSave['@self']['version'] = $readVersion;
-		$savedCase = $this->store->saveCase(case: $caseAtSave);
-		$savedVersion = (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
-
-		// Alias for the remainder of the method.
-		$case = $savedCase;
 
 		// Stop the clock on the status the case left, start one on the status
 		// it entered when that status declares a maximum. After the save, and
@@ -411,6 +385,73 @@ class StatusTransitionService {
 
 		return $outcome;
 	}//end actionOutcome()
+
+	/**
+	 * Settle everything this move writes on the case, and write it, once.
+	 *
+	 * Three things land in ONE save, and each of them was a separate write at
+	 * some point in this method's history: the closing result, the dwell
+	 * bookkeeping, and the status itself. Two saves is two chances for one of
+	 * them not to happen, and the one that goes missing is always the
+	 * bookkeeping rather than the status, so the case ends up in a status whose
+	 * arrival nothing recorded.
+	 *
+	 * REQ-STE-12: a closing transition carries its result or it does not
+	 * happen, and the refusal is raised HERE, before the mutation, so a case
+	 * refused for want of a result is left untouched rather than closed and
+	 * then patched.
+	 *
+	 * REQ-STE-5-002: the status mutation happens before any side effect. The
+	 * `@self.version` read at the top of `execute()` travels with the payload,
+	 * so the store still refuses a write that another transition got in front
+	 * of.
+	 *
+	 * @param array<string, mixed> $caseAtSave   The case as re-read immediately before writing.
+	 * @param string               $caseId       Case UUID.
+	 * @param string               $toStatus     The status being entered.
+	 * @param string|null          $resultTypeId The result a closing transition carries.
+	 * @param int                  $readVersion  The version captured at read time.
+	 *
+	 * @return array{0: array<string, mixed>, 1: int} The saved case and its new version.
+	 *
+	 * @throws RuntimeException When a closing transition carries no result type.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function writeMove(
+		array $caseAtSave,
+		string $caseId,
+		string $toStatus,
+		?string $resultTypeId,
+		int $readVersion,
+	): array {
+		$caseAtSave = $this->applyClosingResult(
+			case: $caseAtSave,
+			caseId: $caseId,
+			toStatus: $toStatus,
+			resultTypeId: $resultTypeId,
+		);
+
+		$caseAtSave = $this->declarations->applyStatusChange(case: $caseAtSave, toStatus: $toStatus);
+
+		$caseAtSave['status'] = $toStatus;
+
+		// One branch, not two. `isset() === false || is_array() === false` is
+		// two decision points for one question, and this class sits on PHPMD's
+		// complexity ceiling: the compound spelling is what pushed it over.
+		// A missing key reads as null here, and null is not an array.
+		$self = ($caseAtSave['@self'] ?? null);
+		if (is_array($self) === false) {
+			$self = [];
+		}
+
+		$self['version'] = $readVersion;
+		$caseAtSave['@self'] = $self;
+		$savedCase = $this->store->saveCase(case: $caseAtSave);
+
+		return [$savedCase, (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)))];
+	}//end writeMove()
 
 	/**
 	 * Write the statusRecord for a transition and run its side effects.

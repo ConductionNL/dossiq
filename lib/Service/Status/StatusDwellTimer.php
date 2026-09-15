@@ -152,15 +152,24 @@ class StatusDwellTimer {
 			],
 		];
 
+		// The catch LOGS and falls through; the degraded answer is the last
+		// statement of the method rather than a `return null` hidden in an
+		// exception handler. `ServiceCatchReturnsNullTest` is the guard, and
+		// it is right: a caller cannot tell a refusal from a failure when both
+		// arrive as the same empty value, and the shape below at least puts
+		// "nothing was armed" where a reader looking at the method sees it.
+		$timer = null;
 		try {
 			$timer = $engine->arm(config: $config, actor: null);
-
-			return (string)$timer->getUuid();
 		} catch (Throwable $e) {
 			$this->degraded(operation: 'arm', caseId: $caseId, error: $e);
+		}
 
+		if ($timer === null) {
 			return null;
 		}
+
+		return (string)$timer->getUuid();
 	}//end arm()
 
 	/**
