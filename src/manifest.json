@@ -1251,6 +1251,13 @@
 						}
 					},
 					{
+						"label": "Handed on",
+						"filter": {
+							"handoverPending": true
+						},
+						"_note": "handing-a-case-over REQ-HAND-02. A case moves to the receiving team the moment it is handed, so the sending team's own lens stops answering for it: `assignedGroup` is already Toezicht. `handoverPending` is what keeps it findable while nobody has picked it up, which is the whole failure this lens exists for. It is a projection of the open casetransfer record and never a second custody trail; the trail itself is on the transfer."
+					},
+					{
 						"label": "Closed",
 						"filter": {
 							"isFinalStatus": true
@@ -1607,6 +1614,31 @@
 									}
 								},
 								{
+									"label": "Handled elsewhere",
+									"widget": {
+										"id": "case-external-home",
+										"type": "data",
+										"title": "Handled elsewhere",
+										"icon": "OpenInNew",
+										"_note": "handing-a-case-over REQ-HAND-04. A case can be homed in a specialist application: the zaak lives centrally and the work happens there. This section is the declaration, and `hideEmpty` is ON because most cases are handled here and an empty block on every one of them would be noise. What it must never become is a place to record work: the lifecycle acts on such a case come back disabled from CaseActionProvider, naming the application, and execute() refuses the same move rather than trusting the flag.",
+										"content": {
+											"title": "Handled elsewhere",
+											"columns": 2,
+											"include": [
+												"externalApplication",
+												"externalIdentifier",
+												"externalUrl"
+											],
+											"hideEmpty": true,
+											"overrides": {
+												"externalUrl": {
+													"widget": "link"
+												}
+											}
+										}
+									}
+								},
+								{
 									"label": "Priority",
 									"widget": {
 										"id": "case-priority",
@@ -1718,6 +1750,45 @@
 						"_note": "The People tab. Who is involved in the case. Contact WITH them was here too, on the reasoning that a contactmoment records a channel, a direction and a summary against a person; it is the Communication tab now, so a handler reaches the case log without opening the party list first. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
 						"content": {
 							"sections": [
+								{
+									"label": "Seats",
+									"widget": {
+										"id": "case-seats",
+										"type": "data",
+										"title": "Seats",
+										"icon": "AccountTieOutline",
+										"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties below with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
+										"content": {
+											"title": "Seats",
+											"columns": 2,
+											"include": [
+												"assignee",
+												"assignedGroup",
+												"handoverPending",
+												"handoverTo"
+											],
+											"hideEmpty": false,
+											"overrides": {
+												"assignee": {
+													"label": "Handler"
+												},
+												"assignedGroup": {
+													"label": "Team"
+												},
+												"handoverPending": {
+													"readOnly": false,
+													"editable": false,
+													"label": "Waiting to be picked up"
+												},
+												"handoverTo": {
+													"readOnly": false,
+													"editable": false,
+													"label": "Handed on to"
+												}
+											}
+										}
+									}
+								},
 								{
 									"label": "Parties",
 									"widget": {
@@ -2339,6 +2410,19 @@
 						},
 						"successMessage": "Receipt confirmation recorded on this case.",
 						"errorMessage": "The confirmation could not be recorded."
+					},
+					{
+						"id": "case-hand-over",
+						"type": "open-modal",
+						"label": "Hand to another team",
+						"icon": "SwapHorizontal",
+						"target": "CaseHandoverDialog",
+						"_note": "handing-a-case-over REQ-HAND-01. A modal rather than an api-call: the act needs a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the one field nobody can default, because getting it wrong either mails a citizen about an internal rearrangement or leaves a doorzending unannounced.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "copy-case",
@@ -4637,6 +4721,7 @@
 								"trigger",
 								"handlingModel",
 								"confidentiality",
+								"coordinatorRequiredBeforeSigning",
 								"isDraft"
 							],
 							"hideEmpty": false
