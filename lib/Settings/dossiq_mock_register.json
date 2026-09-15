@@ -2260,7 +2260,8 @@
                     "case",
                     "location"
                   ],
-                  "title": "Kind"
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
                 },
                 "type": {
                   "type": "string",
@@ -2269,7 +2270,8 @@
                 },
                 "value": {
                   "type": "string",
-                  "title": "Value"
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
                 }
               }
             }
@@ -2283,11 +2285,13 @@
               "properties": {
                 "key": {
                   "type": "string",
-                  "title": "Key"
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
                 },
                 "label": {
                   "type": "string",
-                  "title": "Label"
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
                 },
                 "effect": {
                   "type": "string",
@@ -2296,11 +2300,13 @@
                     "refuse-publication",
                     "refuse-send"
                   ],
-                  "title": "Effect"
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
                 },
                 "note": {
                   "type": "string",
-                  "title": "Note"
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
                 }
               }
             }
@@ -8553,7 +8559,8 @@
                     "case",
                     "location"
                   ],
-                  "title": "Kind"
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
                 },
                 "type": {
                   "type": "string",
@@ -8562,7 +8569,8 @@
                 },
                 "value": {
                   "type": "string",
-                  "title": "Value"
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
                 }
               }
             }
@@ -8576,11 +8584,13 @@
               "properties": {
                 "key": {
                   "type": "string",
-                  "title": "Key"
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
                 },
                 "label": {
                   "type": "string",
-                  "title": "Label"
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
                 },
                 "effect": {
                   "type": "string",
@@ -8589,11 +8599,13 @@
                     "refuse-publication",
                     "refuse-send"
                   ],
-                  "title": "Effect"
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
                 },
                 "note": {
                   "type": "string",
-                  "title": "Note"
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
                 }
               }
             }
