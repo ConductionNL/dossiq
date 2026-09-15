@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\UnreadTriggerService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -150,6 +151,7 @@ class CaseTypePublishServiceTest extends TestCase {
 			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
 			acknowledgement: new CaseTypeAcknowledgement(),
+			unreadTriggers: new UnreadTriggerService(),
 			logger: new NullLogger(),
 		);
 	}//end service()

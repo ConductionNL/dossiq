@@ -86,9 +86,20 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
  */
 const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
 
+/**
+ * The Cases chips, which carry one lens the Tasks list does not.
+ *
+ * Unread is a per-USER lens over OpenRegister's read state, not a field of the
+ * row, so it has no counterpart on a list of tasks and the parallel above is
+ * deliberately left unbroken. It is asserted in its own file,
+ * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
+ * column beside it.
+ */
+const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1)]
+
 describe('Cases index lenses', () => {
-	it('declares the six chips in order', () => {
-		expect(chips('Cases').map((entry) => entry.label)).toEqual(LENSES)
+	it('declares the seven chips in order', () => {
+		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
 	it('marks All as the default chip and nothing else', () => {
@@ -142,8 +153,15 @@ describe('Cases index lenses', () => {
 describe('Tasks index lenses', () => {
 	it('declares the same six labels as Cases, in the same order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
+		// The parity is still asserted, with the one lens a task list cannot
+		// carry taken out rather than the whole comparison dropped: Unread is
+		// a per-USER lens over OpenRegister's read state on the `case` schema,
+		// and a task is a different object with a read state of its own. The
+		// day tasks grow one, this filter is what says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
-			chips('Cases').map((entry) => entry.label),
+			chips('Cases')
+				.map((entry) => entry.label)
+				.filter((label) => label !== 'Unread'),
 		)
 	})
 
