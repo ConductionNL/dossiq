@@ -104,29 +104,62 @@ test.describe('the shipped configuration', () => {
 	})
 
 	test('a shipped object an administrator edited reads as changed here', async ({ request }) => {
+		// 🔑 THIS TEST OWNS BOTH ROWS AND EDITS NEITHER OF THE INSTANCE'S OWN.
+		// The obvious version of this test picks a genuinely seeded case type,
+		// edits it and asserts it now reads "changed here". That leaves a real
+		// shipped case type permanently marked as locally changed, on somebody's
+		// upgrade screen, for a fact nobody here wrote. So the fixture seeds its
+		// own case type AND its own provenance row, which is the same pair the
+		// seed writes, and edits the one it made.
+		const token = await getRequestToken(request)
+
+		const caseType = await createObject(request, token, 'caseType', {
+			title: `${RUN_PREFIX} Shipped fixture`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-shipped-fixture`,
+			description: 'As it shipped.',
+			isDraft: false,
+		})
+		const caseTypeId = objectId(caseType)
+
+		const ledger = await createObject(request, token, 'shippedOrigin', {
+			set: 'bezwaar-beroep',
+			setVersion: '1.0.0',
+			targetSchema: 'caseType',
+			targetObject: caseTypeId,
+			// Deliberately not the real hash of the row. The service compares
+			// the stored object against this value, so a fingerprint that
+			// cannot match is exactly a locally changed object, and this test
+			// is about the reading rather than about the hashing (which
+			// tests/Unit/Service/SeedDataOriginTest.php pins).
+			fingerprint: 'e2e-fingerprint-that-cannot-match',
+			seededAt: new Date().toISOString(),
+		})
+		expect(objectId(ledger), 'the provenance row did not survive the write').toBeTruthy()
+
 		const res = await starterGet(request, '/shipped/caseType')
+		expect([200, 503]).toContain(res.status())
 		if (res.status() !== 200) {
 			test.skip(true, 'OpenRegister is not configured on this instance')
 			return
 		}
 
-		const shipped = (await res.json()).items.filter((row: any) => row.state === 'shipped')
-		if (shipped.length === 0) {
-			test.skip(true, 'nothing has been seeded on this instance')
-			return
-		}
+		const row = (await res.json()).items.find((item: any) => item.targetObject === caseTypeId)
 
-		const token = await getRequestToken(request)
-		const target = shipped[0]
-		await updateObject(request, token, 'caseType', target.targetObject, {
-			description: `${RUN_PREFIX} edited by the starter e2e`,
-		})
-
-		const after = await (await starterGet(request, '/shipped/caseType')).json()
-		const row = after.items.find((item: any) => item.targetObject === target.targetObject)
-
+		expect(row, 'the seeded fixture did not appear on the shipped screen').toBeTruthy()
 		expect(row.state).toBe('changed')
-		expect(row.set).toBe(target.set)
+		expect(row.set).toBe('bezwaar-beroep')
+
+		// And the control: a case type with no provenance row is nobody's but
+		// theirs, so it does not appear on this screen at all. Without it a
+		// screen that listed every case type as "changed" would pass above.
+		const local = await createObject(request, token, 'caseType', {
+			title: `${RUN_PREFIX} Locally authored`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-local`,
+			isDraft: false,
+		})
+		const again = await (await starterGet(request, '/shipped/caseType')).json()
+
+		expect(again.items.some((item: any) => item.targetObject === objectId(local))).toBeFalsy()
 	})
 
 	test('the role set is offered rather than already granted', async ({ request }) => {
