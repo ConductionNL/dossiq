@@ -136,6 +136,10 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+import EndOfDayView from './views/queue/EndOfDayView.vue'
+// One personal queue fed by the declared sources (one-personal-queue).
+// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
@@ -211,6 +215,20 @@ const registry = {
 		kind: 'page',
 		component: CaseListExportAction,
 		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no dossiq-side serialization (ADR-022).',
+	},
+
+	// --- One personal queue, fed by every mechanism (one-personal-queue). ---
+	// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	PersonalQueueView: {
+		kind: 'page',
+		component: PersonalQueueView,
+		_note: 'The page holding everything waiting on the reader. A page and not an index, because it is not a list of one schema: it merges cases, engine tasks, consultations, advice, mentions, covered work and planned calendar items, and no manifest key names a set that spans four stores and a calendar. It hard-codes NO source: every group and its heading come from the declared queue sources the server resolves, which is what keeps a new mechanism from needing a page change.',
+	},
+
+	EndOfDayView: {
+		kind: 'page',
+		component: EndOfDayView,
+		_note: 'The end-of-day screen. Lists the queue candidates OpenRegister says this reader opened today, reading its per-reader read state rather than keeping a second record of who saw what. The time box is humaniq\'s hours leaf, placed per item and absent entirely when humaniq is not installed: a dossiq time field would become a second hours store the day humaniq arrives.',
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---

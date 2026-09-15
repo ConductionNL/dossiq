@@ -32,6 +32,7 @@ person SHALL NOT be able to dismiss an item whose work still stands.
 - **AND** they SHALL be offered to hide its group for today instead
 
 #### Scenario: covering for an absent colleague reaches the queue
+@e2e exclude Needs a second account and an active substitution window. The shared e2e instance signs in as one user, and seeding an absence there routes a real colleague's real work to the test account; the routing itself is covered by `SubstitutionServiceTest` and the queue side by `QueueSourceContractTest::testCoveredWorkIsMarked`.
 
 - **GIVEN** a handler covering for an absent colleague
 - **WHEN** they open their queue
@@ -61,6 +62,7 @@ notification preferences.
 - **THEN** they SHALL receive no message
 
 #### Scenario: the digest is not the assignment notice
+@e2e exclude The two messages are different code paths with no shared browser surface: the notice is the register's `caseAssigned` notification and the digest is the `workDigest` record. Covered by `DailyDigestJobTest::testAPersonWithWaitingWorkGetsOneDigest`, which asserts the digest names the waiting count rather than one case.
 
 - **GIVEN** a case assigned to a handler this morning
 - **WHEN** the digest runs that evening
@@ -68,6 +70,7 @@ notification preferences.
 - **AND** it SHALL NOT be the assignment notice message
 
 #### Scenario: a person switches it off where they switch off everything else
+@e2e exclude Asserting that NO message was sent needs the job to run in the browser's own hour, which a Playwright run cannot arrange. Covered by `DailyDigestJobTest::testAPersonWhoSwitchedItOffGetsNothing`.
 
 - **GIVEN** a handler who disabled the digest in the notification preferences
 - **WHEN** the digest job runs
@@ -103,6 +106,7 @@ SHALL show no time field.
 - **THEN** it SHALL be written through humaniq's hours leaf
 
 #### Scenario: no humaniq, no time field
+@e2e exclude Requires an instance WITHOUT humaniq, and the e2e instance is shared, so uninstalling an app for one spec breaks every other suite on it. Covered by `tests/vitest/endOfDayScreen.spec.js`, "shows the time box only when the leaf is really there".
 
 - **GIVEN** an instance without humaniq
 - **WHEN** the end-of-day screen is opened
@@ -124,6 +128,7 @@ NOT appear in any case report.
 - **THEN** it SHALL appear on their calendar and in their queue
 
 #### Scenario: it is not a case
+@e2e tests/e2e/one-personal-queue.spec.ts
 
 - **GIVEN** a planned item with no case
 - **WHEN** the open case count and the case list are read
@@ -152,6 +157,7 @@ reader.
 - **THEN** the case status SHALL still read In behandeling
 
 #### Scenario: a personal stage is not a report dimension
+@e2e exclude A report cannot group by a field that does not exist on the object, and the stage is stored in the reader's own preferences. Covered structurally by `PersonalStageTest::testTheServiceCannotReachTheObjectStore`, which asserts the service has no register dependency at all.
 
 - **GIVEN** cases carrying personal stages
 - **WHEN** a status report is run

@@ -322,6 +322,19 @@ $extra = [
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
     ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
 
+        // One personal queue, fed by the declared sources (one-personal-queue).
+        // Nothing here takes a user id: every endpoint answers for the caller.
+    ['name' => 'personalQueue#index',              'url' => '/api/personal-queue',                   'verb' => 'GET'],
+    ['name' => 'personalQueue#endOfDay',           'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
+    ['name' => 'personalQueue#setGrouping',        'url' => '/api/personal-queue/grouping',          'verb' => 'POST'],
+    ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
+    ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],
+    ['name' => 'personalQueue#planItem',           'url' => '/api/personal-queue/planned-items',     'verb' => 'POST'],
+    ['name' => 'personalQueue#digestSettings',     'url' => '/api/personal-queue/digest',            'verb' => 'GET'],
+    ['name' => 'personalQueue#saveDigestSettings', 'url' => '/api/personal-queue/digest',            'verb' => 'POST'],
+    ['name' => 'personalQueue#stage',              'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'GET'],
+    ['name' => 'personalQueue#setStage',           'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'POST'],
+
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
