@@ -337,9 +337,17 @@ class CaseTermsService {
 			$byPhases = (int)round((($done / $total) * 100));
 		}
 
+		// A case with no statutory term reads zero days left rather than
+		// nothing. There is no honest number here, and a null would have to be
+		// rendered as something anyway.
+		$daysLeft = 0;
+		if ($statutory !== null) {
+			$daysLeft = (int)($statutory['daysLeft'] ?? 0);
+		}
+
 		return [
 			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
-			'daysLeft' => (int)($statutory['daysLeft'] ?? 0),
+			'daysLeft' => $daysLeft,
 			'phasesDone' => $done,
 			'phasesTotal' => $total,
 			'termConsumed' => $consumed,
