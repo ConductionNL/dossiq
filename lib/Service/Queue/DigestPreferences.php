@@ -41,7 +41,6 @@ namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
-use OCP\Config\Exceptions\TypeConflictException;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -120,7 +119,7 @@ class DigestPreferences {
 					)
 				),
 			];
-		} catch (InvalidArgumentException | TypeConflictException $e) {
+		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the digest settings could not be read: ' . $e->getMessage());
 
 			return ['enabled' => true, 'hour' => self::DEFAULT_HOUR];
@@ -180,7 +179,7 @@ class DigestPreferences {
 	public function lastSentOn(string $userId): string {
 		try {
 			return $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_LAST_SENT, '');
-		} catch (InvalidArgumentException | TypeConflictException $e) {
+		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the last digest day could not be read: ' . $e->getMessage());
 
 			return '';

@@ -373,8 +373,8 @@ class QueueSourceContractTest extends TestCase {
 	public function testAnItemsIdentityIsStable(): void {
 		$item = $this->item('tasks', 'abc');
 
-		self::assertSame('tasks:case:abc', $item->id());
-		self::assertSame($item->id(), $this->item('tasks', 'abc')->id());
+		self::assertSame('tasks:case:abc', $item->identity());
+		self::assertSame($item->identity(), $this->item('tasks', 'abc')->identity());
 	}
 
 	/**

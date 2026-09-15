@@ -42,7 +42,6 @@ namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\AppInfo\Application;
 use InvalidArgumentException;
-use OCP\Config\Exceptions\TypeConflictException;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -120,11 +119,11 @@ class PersonalStageService {
 	public function all(string $userId): array {
 		try {
 			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STAGES, '');
-		} catch (InvalidArgumentException | TypeConflictException $e) {
-			// Exactly what `getValueString` can raise: a malformed identifier,
-			// or a key some earlier version stored as another type. Anything
-			// else is a defect and belongs in the log with a stack trace, not
-			// behind a blanket catch that turns it into "you set no stages".
+		} catch (InvalidArgumentException $e) {
+			// Exactly what `getValueString` declares, and no more. A blanket
+			// `Throwable` here swallowed a programming error as readily as a
+			// malformed identifier and answered "you set no stages" either
+			// way, which is the shape ServiceCatchReturnsNullTest counts.
 			$this->logger->warning('Dossiq: the personal stages could not be read: ' . $e->getMessage());
 			$raw = '';
 		}
@@ -166,9 +165,8 @@ class PersonalStageService {
 		}
 
 		$stages = $this->all(userId: $userId);
-		if ($stage === '') {
-			unset($stages[$caseId]);
-		} else {
+		unset($stages[$caseId]);
+		if ($stage !== '') {
 			$stages[$caseId] = $stage;
 		}
 

@@ -79,9 +79,9 @@ final class QueueItem implements JsonSerializable {
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
 	 */
-	public function id(): string {
+	public function identity(): string {
 		return $this->source . ':' . $this->subjectType . ':' . $this->subjectId;
-	}//end id()
+	}//end identity()
 
 	/**
 	 * Whether this item is somebody else's work the reader is covering.
@@ -103,7 +103,7 @@ final class QueueItem implements JsonSerializable {
 	 */
 	public function jsonSerialize(): array {
 		return [
-			'id' => $this->id(),
+			'id' => $this->identity(),
 			'source' => $this->source,
 			'subjectType' => $this->subjectType,
 			'subjectId' => $this->subjectId,
