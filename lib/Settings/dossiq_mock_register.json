@@ -2366,7 +2366,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.10.0",
+        "version": "1.11.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2691,7 +2691,53 @@
                 }
               }
             }
-          }
+          },
+          "x-openregister-relation-types": [
+            {
+              "key": "deelzaak",
+              "label": {
+                "nl": "deelzaak van",
+                "en": "sub-case of"
+              },
+              "inverseLabel": {
+                "nl": "heeft deelzaak",
+                "en": "has sub-case"
+              }
+            },
+            {
+              "key": "vervolg",
+              "label": {
+                "nl": "vervolg op",
+                "en": "follow-up to"
+              },
+              "inverseLabel": {
+                "nl": "heeft vervolg",
+                "en": "has follow-up"
+              }
+            },
+            {
+              "key": "subject",
+              "label": {
+                "nl": "gaat over",
+                "en": "is about"
+              },
+              "inverseLabel": {
+                "nl": "onderwerp van",
+                "en": "subject of"
+              }
+            },
+            {
+              "key": "bijdrage",
+              "label": {
+                "nl": "draagt bij aan",
+                "en": "contributes to"
+              },
+              "inverseLabel": {
+                "nl": "krijgt bijdrage van",
+                "en": "receives a contribution from"
+              }
+            }
+          ]
         },
         "required": [
           "title",
@@ -2850,7 +2896,14 @@
             "$ref": "case",
             "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": true
+            "visible": true,
+            "x-openregister-relation": {
+              "type": "deelzaak",
+              "inherits": {
+                "confidentiality": "confidentiality",
+                "responsible": "assignee"
+              }
+            }
           },
           "relatedCases": {
             "type": "string",
@@ -3117,6 +3170,48 @@
             "title": "Published at",
             "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
             "visible": false
+          },
+          "followUpCases": {
+            "type": "array",
+            "title": "Follow-up cases",
+            "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "vervolg"
+              }
+            }
+          },
+          "subjectCases": {
+            "type": "array",
+            "title": "Subject cases",
+            "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "subject"
+              }
+            }
+          },
+          "contributingCases": {
+            "type": "array",
+            "title": "Contributing cases",
+            "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "bijdrage"
+              }
+            }
           }
         },
         "searchable": true
