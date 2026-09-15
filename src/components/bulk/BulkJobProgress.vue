@@ -340,6 +340,14 @@ export default {
 		 */
 		job: {
 			immediate: true,
+
+			/**
+			 * Start or stop following, according to where the job now is.
+			 *
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+			 */
 			handler() {
 				if (isFinished(this.job) === true) {
 					this.stopPolling()
