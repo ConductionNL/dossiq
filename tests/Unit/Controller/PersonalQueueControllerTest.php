@@ -253,6 +253,25 @@ class PersonalQueueControllerTest extends TestCase {
 	}//end testAGroupIsHiddenForTodayAndShownAgain()
 
 	/**
+	 * The grouping the reader chose is remembered, and a bad one is not.
+	 *
+	 * @return void
+	 */
+	public function testTheGroupingIsRememberedAndAnUnknownOneIsNot(): void {
+		$this->signIn(uid: 'alice');
+		$this->request->method('getParam')->willReturn('priority');
+		$this->view->expects(self::once())
+			->method('setGroupBy')
+			->with('alice', 'priority')
+			->willReturn('priority');
+
+		$response = $this->controller->setGrouping();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('priority', $response->getData()['groupBy']);
+	}//end testTheGroupingIsRememberedAndAnUnknownOneIsNot()
+
+	/**
 	 * There is no endpoint that removes an item.
 	 *
 	 * The refusal to dismiss is a fact about the surface, not about a guard
