@@ -304,6 +304,25 @@ class CaseStatusStore {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	/**
+	 * The explanation an administrator wrote on a status.
+	 *
+	 * `statusType.description` has existed for as long as the schema has, and
+	 * nothing rendered it: an administrator who wrote one was writing into a
+	 * field nobody read. It travels with the name and the colour because all
+	 * three come off the same row, and a second round trip to fetch a sentence
+	 * the page is already asking about is a request nobody needs.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The description, or the empty string.
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 */
+	public function lookupStatusDescription(string $statusTypeId): string {
+		return trim((string)($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
+	}//end lookupStatusDescription()
+
 	public function lookupStatusColour(string $statusTypeId): string {
 		$colour = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['colour'] ?? '');
 

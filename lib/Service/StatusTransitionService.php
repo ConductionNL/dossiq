@@ -158,6 +158,10 @@ class StatusTransitionService {
 				'statusId' => $currentId,
 				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
 				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+				// What this status MEANS, written by an administrator and
+				// rendered on the case. Published beside the name because both
+				// come off the same row.
+				'statusDescription' => $this->store->lookupStatusDescription(statusTypeId: $currentId),
 				'waitingOn' => $declared['waitingOn'],
 				'dwell' => $declared['dwell'],
 			],

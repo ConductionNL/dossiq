@@ -47,6 +47,25 @@
 		</p>
 
 		<p
+			v-if="statusExplanation"
+			class="case-status-declaration__status-explanation"
+			data-testid="case-status-explanation">
+			{{ statusExplanation }}
+		</p>
+
+		<ul
+			v-if="withheld.length > 0"
+			class="case-status-declaration__withheld"
+			data-testid="case-status-withheld">
+			<li
+				v-for="entry in withheld"
+				:key="entry.id"
+				data-testid="case-status-withheld-entry">
+				{{ sentenceFor(entry) }}
+			</li>
+		</ul>
+
+		<p
 			v-if="waiting"
 			class="case-status-declaration__waiting"
 			data-testid="case-status-waiting">
@@ -75,6 +94,8 @@ import {
 	dwellLabel,
 	isDwellBreached,
 	waitingOnLabel,
+	withheldSentence,
+	withheldTransitions,
 } from '../../utils/statusDeclaration.js'
 
 export default {
@@ -93,6 +114,7 @@ export default {
 			loaded: false,
 			current: {},
 			derivation: null,
+			withheldRaw: [],
 		}
 	},
 
@@ -164,6 +186,36 @@ export default {
 		},
 
 		/**
+		 * The moves this case cannot make yet, and what is in the way.
+		 *
+		 * A withheld move is not missing: it is on the page with its reason in
+		 * its place, which is the difference between a handler learning that
+		 * the list is unreliable and a handler learning what to fetch next.
+		 *
+		 * @return {Array<object>} The entries worth rendering.
+		 *
+		 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+		 */
+		withheld() {
+			return withheldTransitions(this.withheldRaw)
+		},
+
+		/**
+		 * The explanation an administrator wrote on this status.
+		 *
+		 * `statusType.description` has existed for as long as the schema has
+		 * and nothing rendered it, so an administrator who wrote one was
+		 * writing into a field nobody read.
+		 *
+		 * @return {string} The text, or the empty string.
+		 *
+		 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+		 */
+		statusExplanation() {
+			return String(this.current?.statusDescription ?? '').trim()
+		},
+
+		/**
 		 * Whether the strip has anything to say at all.
 		 *
 		 * @return {boolean} True when at least one of the three lines has text.
@@ -173,7 +225,11 @@ export default {
 		show() {
 			return (
 				this.loaded
-				&& (this.reasons !== null || this.waiting !== '' || this.dwellText !== '')
+				&& (this.reasons !== null
+					|| this.waiting !== ''
+					|| this.dwellText !== ''
+					|| this.statusExplanation !== ''
+					|| this.withheld.length > 0)
 			)
 		},
 	},
@@ -196,6 +252,18 @@ export default {
 		 *
 		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 		 */
+		/**
+		 * What one withheld move is waiting on.
+		 *
+		 * @param {object} entry The withheld entry.
+		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+		 */
+		sentenceFor(entry) {
+			return withheldSentence(entry)
+		},
+
 		async load() {
 			if (this.caseId === '') {
 				return
@@ -209,6 +277,7 @@ export default {
 				)
 				this.current = data?.current || {}
 				this.derivation = data?.derivation || null
+				this.withheldRaw = data?.withheld || []
 				this.loaded = true
 			} catch {
 				// Binds nothing, deliberately. An instance whose transition
@@ -249,6 +318,15 @@ export default {
 
 .case-status-declaration__missing::before {
 	content: '• ';
+}
+
+.case-status-declaration__withheld {
+	margin: 0;
+	padding-inline-start: 18px;
+}
+
+.case-status-declaration__status-explanation {
+	color: var(--color-text-maxcontrast);
 }
 
 .case-status-declaration__dwell.is-breached {
