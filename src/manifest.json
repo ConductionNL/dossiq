@@ -1771,16 +1771,6 @@
 						"content": {
 							"sections": [
 								{
-									"label": "Roles",
-									"widget": {
-										"id": "case-party-roles",
-										"type": "case-party-roles",
-										"title": "Roles",
-										"icon": "AccountKeyOutline",
-										"_note": "The party model OpenRegister shipped in #3761, which is the half the Parties section below cannot carry: a melder with no Nextcloud account, a gemachtigde acting for the applicant under Awb 2:1, an organisation naming a parent, and the indicators any of them hold. It reads GET /api/objects/{r}/{s}/{id}/parties, which answers the links grouped by role together with the kinds and roles the case schema declares, so a role renders under its label rather than under its key. The primary party is rendered first and its role group first, because the primary party is the one the case is filed against and a handler opening this tab is looking for that name before any other. TYPE names the registry key rather than \"custom\": a tab child renders through CnTabsWidget, which resolves cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. It sits ABOVE Parties and does not replace it: the contacts integration renders the person links people-on-the-case (#2683) writes, and a party with no account is invisible to it."
-									}
-								},
-								{
 									"label": "Parties",
 									"widget": {
 										"id": "case-parties",
@@ -1789,6 +1779,16 @@
 										"title": "Parties",
 										"icon": "AccountKeyOutline",
 										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
+									}
+								},
+								{
+									"label": "Roles",
+									"widget": {
+										"id": "case-party-roles",
+										"type": "case-party-roles",
+										"title": "Roles",
+										"icon": "AccountKeyOutline",
+										"_note": "The party model OpenRegister shipped in #3761, which is the half the Parties section below cannot carry: a melder with no Nextcloud account, a gemachtigde acting for the applicant under Awb 2:1, an organisation naming a parent, and the indicators any of them hold. It reads GET /api/objects/{r}/{s}/{id}/parties, which answers the links grouped by role together with the kinds and roles the case schema declares, so a role renders under its label rather than under its key. The primary party is rendered first and its role group first, because the primary party is the one the case is filed against and a handler opening this tab is looking for that name before any other. TYPE names the registry key rather than \"custom\": a tab child renders through CnTabsWidget, which resolves cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. It sits BESIDE Parties and does not replace it: the contacts integration renders the person links people-on-the-case (#2683) writes, and a party with no account is invisible to it."
 									}
 								},
 								{
