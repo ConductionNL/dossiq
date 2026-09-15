@@ -108,6 +108,10 @@ class PlannedItemSource implements QueueSource {
 		$items = [];
 		foreach ($this->agenda->upcomingFor(userId: $userId) as $planned) {
 			$startsAt = trim((string)$planned['startsAt']);
+			$day = null;
+			if ($startsAt !== '') {
+				$day = substr($startsAt, 0, 10);
+			}
 
 			$items[] = new QueueItem(
 				source: $this->name(),
@@ -115,7 +119,7 @@ class PlannedItemSource implements QueueSource {
 				subjectId: (string)$planned['uid'],
 				title: (string)$planned['title'],
 				priority: '',
-				dueAt: ($startsAt === '' ? null : substr($startsAt, 0, 10)),
+				dueAt: $day,
 				coveredFor: null,
 				route: ['name' => 'PersonalQueue']
 			);

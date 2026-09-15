@@ -117,9 +117,14 @@ class MentionNotificationService {
 				// person clears is gone, and the thing they were called into
 				// is still theirs to deal with, so the mention is also
 				// written down (one-personal-queue, D-2).
+				$writer = $actorDisplayName;
+				if ($writer === '') {
+					$writer = $actorUserId;
+				}
+
 				$this->queueRecords->record(
 					person: $mentionedUserId,
-					actor: ($actorDisplayName === '' ? $actorUserId : $actorDisplayName),
+					actor: $writer,
 					subjectType: $objectType,
 					subjectId: $objectId,
 					noteId: $noteId

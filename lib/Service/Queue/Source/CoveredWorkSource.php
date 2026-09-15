@@ -142,8 +142,11 @@ class CoveredWorkSource implements QueueSource {
 	 */
 	private function rowsOf(array $work, string $key): array {
 		$rows = ($work[$key] ?? []);
+		if (is_array($rows) === false) {
+			return [];
+		}
 
-		return (is_array($rows) === true ? $rows : []);
+		return $rows;
 	}//end rowsOf()
 
 	/**
@@ -175,7 +178,10 @@ class CoveredWorkSource implements QueueSource {
 			return null;
 		}
 
-		$due = $row[$dateKey] ?? null;
+		$due = null;
+		if (is_string($row[$dateKey] ?? null) === true && trim((string)$row[$dateKey]) !== '') {
+			$due = trim((string)$row[$dateKey]);
+		}
 
 		return new QueueItem(
 			source: $this->name(),
@@ -183,7 +189,7 @@ class CoveredWorkSource implements QueueSource {
 			subjectId: $id,
 			title: (string)($row['title'] ?? $id),
 			priority: (string)($row['priority'] ?? ''),
-			dueAt: ((is_string($due) === true && trim($due) !== '') ? trim($due) : null),
+			dueAt: $due,
 			coveredFor: $absentee,
 			route: ['name' => $route, 'params' => ['id' => $id]]
 		);

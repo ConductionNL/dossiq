@@ -118,14 +118,16 @@ class MentionSource implements QueueSource {
 			}
 
 			$actor = trim((string)($row['actor'] ?? ''));
+			$title = $this->l10n->t('You were mentioned in a note');
+			if ($actor !== '') {
+				$title = $this->l10n->t('%s mentioned you in a note', [$actor]);
+			}
 
 			$items[] = new QueueItem(
 				source: $this->name(),
 				subjectType: 'mention',
 				subjectId: $subjectId,
-				title: ($actor === ''
-					? $this->l10n->t('You were mentioned in a note')
-					: $this->l10n->t('%s mentioned you in a note', [$actor])),
+				title: $title,
 				priority: '',
 				dueAt: null,
 				coveredFor: null,

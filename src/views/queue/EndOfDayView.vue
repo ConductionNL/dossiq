@@ -14,6 +14,8 @@
   - per item and offers no time field of its own. On an instance without
   - humaniq there is no time field at all, rather than a dossiq one that would
   - become a second hours store the day humaniq arrives.
+  -
+  - @visual exclude Every row on this screen is seeded work belonging to the signed-in person, so a baseline would capture one run's fixture data and diff against the next run's. The layout it would guard is a heading, a list and one button per group; what is worth asserting is WHICH rows appear and what closes them, and tests/e2e/one-personal-queue.spec.ts asserts exactly that.
 -->
 <template>
 	<div class="end-of-day">

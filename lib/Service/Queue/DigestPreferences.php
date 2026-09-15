@@ -111,7 +111,12 @@ class DigestPreferences {
 			return [
 				'enabled' => $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, true),
 				'hour' => $this->hourInRange(
-					$this->userConfig->getValueInt($userId, Application::APP_ID, self::PREF_HOUR, self::DEFAULT_HOUR)
+					hour: $this->userConfig->getValueInt(
+						$userId,
+						Application::APP_ID,
+						self::PREF_HOUR,
+						self::DEFAULT_HOUR
+					)
 				),
 			];
 		} catch (Throwable $e) {
@@ -135,7 +140,7 @@ class DigestPreferences {
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function save(string $userId, bool $enabled, int $hour): array {
-		$hour = $this->hourInRange($hour);
+		$hour = $this->hourInRange(hour: $hour);
 		$this->userConfig->setValueBool($userId, Application::APP_ID, self::PREF_ENABLED, $enabled);
 		$this->userConfig->setValueInt($userId, Application::APP_ID, self::PREF_HOUR, $hour);
 

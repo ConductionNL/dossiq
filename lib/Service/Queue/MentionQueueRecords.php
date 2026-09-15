@@ -95,6 +95,10 @@ class MentionQueueRecords {
 			return false;
 		}
 
+		if (trim($subjectType) === '') {
+			$subjectType = 'case';
+		}
+
 		try {
 			$saved = $this->saveObjectAsArray(
 				objectService: $this->objects(),
@@ -103,7 +107,7 @@ class MentionQueueRecords {
 				object: [
 					'person' => $person,
 					'actor' => $actor,
-					'subjectType' => ($subjectType === '' ? 'case' : $subjectType),
+					'subjectType' => $subjectType,
 					'subjectId' => $subjectId,
 					'noteId' => $noteId,
 					'mentionedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),

@@ -13,6 +13,8 @@
   - A source that could not be read is named at the top. It is not folded into
   - the empty state, because "nothing is waiting on you" and "we could not ask"
   - are different sentences and only one of them is a good morning.
+  -
+  - @visual exclude Every row on this screen is seeded work belonging to the signed-in person, so a baseline would capture one run's fixture data and diff against the next run's. The layout it would guard is a heading, a list and one button per group; what is worth asserting is WHICH rows appear and what closes them, and tests/e2e/one-personal-queue.spec.ts asserts exactly that.
 -->
 <template>
 	<div class="personal-queue">

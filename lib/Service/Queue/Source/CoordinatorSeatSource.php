@@ -134,7 +134,9 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 		}
 
 		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
-		$schema = ($schema === '' ? 'case' : $schema);
+		if ($schema === '') {
+			$schema = 'case';
+		}
 
 		$items = [];
 		foreach ($seats as $seat) {

@@ -106,8 +106,12 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 */
 	public function itemsFor(string $userId): array {
 		$schema = trim((string)$this->settings->getConfigValue('case_schema', 'case'));
+		if ($schema === '') {
+			$schema = 'case';
+		}
+
 		$rows = $this->rows(
-			schema: ($schema === '' ? 'case' : $schema),
+			schema: $schema,
 			filters: ['assignee' => $userId, 'isFinalStatus' => false]
 		);
 

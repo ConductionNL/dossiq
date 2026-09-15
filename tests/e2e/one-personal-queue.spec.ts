@@ -174,7 +174,7 @@ test.describe('One personal queue', () => {
 		await navToRoute(page, 'PersonalQueue')
 		await page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link').click()
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		await navToRoute(page, 'EndOfDay')
 		await expect(page.getByTestId(`end-of-day-item-assigned-cases:case:${cases.mine}`))
@@ -186,7 +186,7 @@ test.describe('One personal queue', () => {
 		await navToRoute(page, 'PersonalQueue')
 		await page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link').click()
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		await navToRoute(page, 'EndOfDay')
 		const field = page.getByTestId(`end-of-day-update-assigned-cases:case:${cases.mine}`)

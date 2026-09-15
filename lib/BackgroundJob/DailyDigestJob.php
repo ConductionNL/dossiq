@@ -108,8 +108,14 @@ class DailyDigestJob extends TimedJob {
 		$sent = 0;
 
 		$this->users->callForSeenUsers(
-			function (IUser $user) use ($now, $hour, $today, &$sent): void {
+			function (IUser $user) use ($now, $hour, $today, &$sent): ?bool {
 				$sent += $this->sendOne(userId: $user->getUID(), now: $now, hour: $hour, today: $today);
+
+				// `callForSeenUsers` types its callback as returning bool|null
+				// and stops walking on a literal false. Returning null keeps
+				// the walk going and says so, rather than leaving the return
+				// type to be inferred as void.
+				return null;
 			}
 		);
 

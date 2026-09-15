@@ -175,7 +175,7 @@ class PersonalQueueController extends Controller {
 	/**
 	 * The cases and tasks the caller may close their day on.
 	 *
-	 * dossiq answers WHICH items are candidates. Whether the caller touched
+	 * Dossiq answers WHICH items are candidates. Whether the caller touched
 	 * one today is the register's own per-reader read state, which the screen
 	 * asks for per item; reproducing that answer here would be a second store
 	 * of who has seen what, which `unread-state-on-the-case` exists to stop.

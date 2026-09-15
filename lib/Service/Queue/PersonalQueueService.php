@@ -182,8 +182,11 @@ class PersonalQueueService {
 	private function groupKeyOf(array $item, string $groupBy): string {
 		if ($groupBy === 'priority') {
 			$priority = trim((string)($item['priority'] ?? ''));
+			if ($priority === '') {
+				return 'normal';
+			}
 
-			return ($priority === '' ? 'normal' : $priority);
+			return $priority;
 		}
 
 		if ($groupBy === 'due') {

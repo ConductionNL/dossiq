@@ -62,6 +62,12 @@ export default {
 		}
 	},
 
+	/**
+	 * Read the reader's own digest settings.
+	 *
+	 * @return {Promise<void>} When the read has finished.
+	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 */
 	async mounted() {
 		const settings = await fetchDigestSettings()
 		this.enabled = settings.enabled

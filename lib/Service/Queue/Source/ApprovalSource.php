@@ -123,6 +123,10 @@ class ApprovalSource extends RegisterBackedSource {
 			}
 
 			$case = trim((string)($row['case'] ?? ''));
+			$route = ['name' => 'Cases'];
+			if ($case !== '') {
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'advice']];
+			}
 
 			$items[] = new QueueItem(
 				source: $this->name(),
@@ -132,9 +136,7 @@ class ApprovalSource extends RegisterBackedSource {
 				priority: '',
 				dueAt: $this->dateOf(row: $row, key: 'deadline'),
 				coveredFor: null,
-				route: ($case === ''
-					? ['name' => 'Cases']
-					: ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'advice']])
+				route: $route
 			);
 		}
 

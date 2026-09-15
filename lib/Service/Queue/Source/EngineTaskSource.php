@@ -137,7 +137,11 @@ class EngineTaskSource implements QueueSource {
 				continue;
 			}
 
-			$due = $row['dueAt'] ?? ($row['dueDate'] ?? null);
+			$raw = ($row['dueAt'] ?? ($row['dueDate'] ?? null));
+			$due = null;
+			if (is_string($raw) === true && trim($raw) !== '') {
+				$due = trim($raw);
+			}
 
 			$items[] = new QueueItem(
 				source: $this->name(),
@@ -145,7 +149,7 @@ class EngineTaskSource implements QueueSource {
 				subjectId: $id,
 				title: (string)($row['title'] ?? ($row['name'] ?? $id)),
 				priority: (string)($row['priority'] ?? ''),
-				dueAt: ((is_string($due) === true && trim($due) !== '') ? trim($due) : null),
+				dueAt: $due,
 				coveredFor: null,
 				route: ['name' => 'TaskDetail', 'params' => ['id' => $id]]
 			);

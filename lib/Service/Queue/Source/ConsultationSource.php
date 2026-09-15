@@ -127,6 +127,10 @@ class ConsultationSource extends RegisterBackedSource {
 			}
 
 			$case = trim((string)($row['parentCase'] ?? ''));
+			$route = ['name' => 'Cases'];
+			if ($case !== '') {
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'consultations']];
+			}
 
 			$items[] = new QueueItem(
 				source: $this->name(),
@@ -136,9 +140,7 @@ class ConsultationSource extends RegisterBackedSource {
 				priority: (string)($row['priority'] ?? ''),
 				dueAt: $this->dateOf(row: $row, key: 'latestResponseDate'),
 				coveredFor: null,
-				route: ($case === ''
-					? ['name' => 'Cases']
-					: ['name' => 'CaseDetail', 'params' => ['id' => $case], 'query' => ['tab' => 'consultations']])
+				route: $route
 			);
 		}
 
