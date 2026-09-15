@@ -1,6 +1,10 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Always available": "Always available",
+        "Not possible on this case": "Not possible on this case",
+        "Nothing to do on this case right now": "Nothing to do on this case right now",
+        "What may I do right now": "What may I do right now",
         "Lock": "Lock",
         "Locked": "Locked",
         "Not tracked": "Not tracked",

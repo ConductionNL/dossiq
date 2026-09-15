@@ -1833,6 +1833,17 @@
 						"content": {
 							"sections": [
 								{
+									"label": "What may I do right now",
+									"widget": {
+										"id": "case-acts",
+										"type": "case-acts-pane",
+										"title": "What may I do right now",
+										"icon": "FormatListChecks",
+										"_note": "task-as-a-first-class-record REQ-TASK-041: one administered list with two halves. The acts of the CURRENT PHASE come from OpenRegister's available-actions through dossiq's CaseActionProvider; the ALWAYS-AVAILABLE ones are declared on caseType.alwaysAvailableActs and answered by GET /api/case/{id}/acts. They are rendered together and marked apart. An always-available act is deliberately NOT modelled as a phase that is always active: a phase would appear in the phase strip, count towards the progress figure and be given a phase term, and all three would be wrong. TYPE names the registry key rather than \"custom\" for the same reason case-tasks does: this is a child of the case-panels tabs widget, and CnTabsWidget resolves a tab child through cnRegistry[widget.type], rendering nothing at all when no key answers. TARGET: lifecycle-acts-on-the-case puts ONE lifecycle menu on CaseDetail, at which point this becomes that menu's always-available half and src/components/case/CaseActsPane.vue is deleted.",
+										"content": {}
+									}
+								},
+								{
 									"label": "Tasks",
 									"widget": {
 										"id": "case-tasks",
