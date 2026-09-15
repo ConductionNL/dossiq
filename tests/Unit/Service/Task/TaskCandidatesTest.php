@@ -61,13 +61,13 @@ class TaskCandidatesTest extends TestCase {
 			caseId: 'case-9'
 		);
 
-		$this->assertSame(['Juridische Zaken'], $payload['candidateGroups']);
-		$this->assertSame(['hbakker', 'jdejong'], $payload['candidateUsers']);
+		$this->assertSame(expected: ['Juridische Zaken'], actual: $payload['candidateGroups']);
+		$this->assertSame(expected: ['hbakker', 'jdejong'], actual: $payload['candidateUsers']);
 		// 🔑 NOT FLATTENED ONTO AN ASSIGNEE. A task with candidates and no
 		// assignee is a task waiting to be claimed; writing the first
 		// candidate into `assignee` would hand it to one person and call that
 		// a queue.
-		$this->assertArrayNotHasKey('assignee', $payload);
+		$this->assertArrayNotHasKey(key: 'assignee', array: $payload);
 	}
 
 	/**
@@ -84,7 +84,7 @@ class TaskCandidatesTest extends TestCase {
 			caseId: 'case-9'
 		);
 
-		$this->assertSame(['Juridische Zaken'], $payload['candidateGroups']);
+		$this->assertSame(expected: ['Juridische Zaken'], actual: $payload['candidateGroups']);
 	}
 
 	/**
@@ -104,8 +104,8 @@ class TaskCandidatesTest extends TestCase {
 			caseId: 'case-9'
 		);
 
-		$this->assertSame('fields', $payload['metadata']['form']['kind']);
-		$this->assertSame('sendEmail', $payload['metadata']['dossiq']['effects'][0]['type']);
+		$this->assertSame(expected: 'fields', actual: $payload['metadata']['form']['kind']);
+		$this->assertSame(expected: 'sendEmail', actual: $payload['metadata']['dossiq']['effects'][0]['type']);
 	}
 
 	/**
@@ -128,14 +128,14 @@ class TaskCandidatesTest extends TestCase {
 
 		$gateway = $this->gateway(service: $engine);
 
-		$this->assertTrue($gateway->supportsClaim());
-		$this->assertTrue($gateway->claim(taskId: 'task-1', actor: 'hbakker'));
+		$this->assertTrue(condition: $gateway->supportsClaim());
+		$this->assertTrue(condition: $gateway->claim(taskId: 'task-1', actor: 'hbakker'));
 	}
 
 	/**
 	 * An engine without one is reported as not having one, and refuses by name.
 	 *
-	 * dossiq does NOT fall back to assigning the task to the caller. A surface
+	 * Dossiq does NOT fall back to assigning the task to the caller. A surface
 	 * that presented a claim and silently assigned would be worse than no
 	 * surface: the handler would believe they took it from a pool that never
 	 * existed.
@@ -158,9 +158,9 @@ class TaskCandidatesTest extends TestCase {
 
 		$gateway = $this->gateway(service: $engine);
 
-		$this->assertFalse($gateway->supportsClaim());
-		$this->assertFalse($gateway->claim(taskId: 'task-1', actor: 'hbakker'));
-		$this->assertStringContainsString('claim act', $gateway->lastError());
+		$this->assertFalse(condition: $gateway->supportsClaim());
+		$this->assertFalse(condition: $gateway->claim(taskId: 'task-1', actor: 'hbakker'));
+		$this->assertStringContainsString(needle: 'claim act', haystack: $gateway->lastError());
 	}
 
 	/**
@@ -183,8 +183,8 @@ class TaskCandidatesTest extends TestCase {
 
 		$gateway = $this->gateway(service: $engine);
 
-		$this->assertFalse($gateway->claim(taskId: 'task-1', actor: 'outsider'));
-		$this->assertStringContainsString('candidate pool', $gateway->lastError());
+		$this->assertFalse(condition: $gateway->claim(taskId: 'task-1', actor: 'outsider'));
+		$this->assertStringContainsString(needle: 'candidate pool', haystack: $gateway->lastError());
 	}
 
 	/**
@@ -196,11 +196,11 @@ class TaskCandidatesTest extends TestCase {
 	 * @return EngineTaskGateway The gateway.
 	 */
 	private function gateway(?object $service): EngineTaskGateway {
-		$settings = $this->getMockBuilder(SettingsService::class)->disableOriginalConstructor()->getMock();
+		$settings = $this->getMockBuilder(className: SettingsService::class)->disableOriginalConstructor()->getMock();
 		$settings->method('getConfigValue')->willReturn('1');
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturn($service);
 
 		return new class ($settings, $container, new NullLogger(), $service) extends EngineTaskGateway {
@@ -216,7 +216,7 @@ class TaskCandidatesTest extends TestCase {
 				NullLogger $logger,
 				private readonly ?object $service,
 			) {
-				parent::__construct($settings, $container, $logger);
+				parent::__construct(settings: $settings, container: $container, logger: $logger);
 			}
 
 			/**

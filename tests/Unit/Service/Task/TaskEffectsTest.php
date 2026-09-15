@@ -66,8 +66,8 @@ class TaskEffectsTest extends TestCase {
 
 		// The nameless entry and the string are dropped: neither names a
 		// handler, so neither can be run OR refused by name.
-		$this->assertCount(1, $effects);
-		$this->assertSame('sendEmail', $effects[0]['type']);
+		$this->assertCount(expectedCount: 1, haystack: $effects);
+		$this->assertSame(expected: 'sendEmail', actual: $effects[0]['type']);
 	}
 
 	/**
@@ -76,8 +76,8 @@ class TaskEffectsTest extends TestCase {
 	 * @return void
 	 */
 	public function testATaskWithNoDeclarationDeclaresNothing(): void {
-		$this->assertSame([], $this->effects()->declaredOn(task: ['id' => 'task-1']));
-		$this->assertSame([], $this->effects()->declaredOn(task: ['metadata' => 'nonsense']));
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['id' => 'task-1']));
+		$this->assertSame(expected: [], actual: $this->effects()->declaredOn(task: ['metadata' => 'nonsense']));
 	}
 
 	/**
@@ -98,9 +98,9 @@ class TaskEffectsTest extends TestCase {
 			context: ['caseId' => 'case-1', 'taskId' => 'task-1']
 		);
 
-		$this->assertSame(['sendEmail', 'resumeTerm'], $ran);
-		$this->assertTrue($results[0]['ran']);
-		$this->assertTrue($results[1]['ran']);
+		$this->assertSame(expected: ['sendEmail', 'resumeTerm'], actual: $ran);
+		$this->assertTrue(condition: $results[0]['ran']);
+		$this->assertTrue(condition: $results[1]['ran']);
 	}
 
 	/**
@@ -125,9 +125,9 @@ class TaskEffectsTest extends TestCase {
 			context: []
 		);
 
-		$this->assertSame(['sendEmail', 'resumeTerm'], $ran);
-		$this->assertFalse($results[0]['ran']);
-		$this->assertTrue($results[1]['ran']);
+		$this->assertSame(expected: ['sendEmail', 'resumeTerm'], actual: $ran);
+		$this->assertFalse(condition: $results[0]['ran']);
+		$this->assertTrue(condition: $results[1]['ran']);
 	}
 
 	/**
@@ -139,7 +139,7 @@ class TaskEffectsTest extends TestCase {
 		$missing = $this->effects(handlers: ['sendEmail' => $this->handler(succeeded: true)])
 			->unresolved(effects: [['type' => 'sendEmail'], ['type' => 'teleport'], ['type' => 'teleport']]);
 
-		$this->assertSame(['teleport'], $missing);
+		$this->assertSame(expected: ['teleport'], actual: $missing);
 	}
 
 	/**
@@ -161,16 +161,16 @@ class TaskEffectsTest extends TestCase {
 		];
 
 		$this->assertSame(
-			'verslag',
-			CaseTaskCompletion::missingRequiredField(task: $task, data: ['aanwezigen' => 'drie'])
+			expected: 'verslag',
+			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['aanwezigen' => 'drie'])
 		);
 		$this->assertSame(
-			'verslag',
-			CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => '   '])
+			expected: 'verslag',
+			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => '   '])
 		);
 		$this->assertSame(
-			'',
-			CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => 'Gehoord op 3 maart'])
+			expected: '',
+			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => 'Gehoord op 3 maart'])
 		);
 	}
 
@@ -186,8 +186,8 @@ class TaskEffectsTest extends TestCase {
 	public function testZeroAndFalseAreAnswers(): void {
 		$task = ['metadata' => ['form' => ['fields' => [['field' => 'bedrag', 'required' => true]]]]];
 
-		$this->assertSame('', CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => 0]));
-		$this->assertSame('', CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => false]));
+		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => 0]));
+		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => false]));
 	}
 
 	/**
@@ -196,7 +196,7 @@ class TaskEffectsTest extends TestCase {
 	 * @return void
 	 */
 	public function testATaskWithNoFormAsksForNothing(): void {
-		$this->assertSame('', CaseTaskCompletion::missingRequiredField(task: ['id' => 't'], data: []));
+		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: ['id' => 't'], data: []));
 	}
 
 	/**
@@ -207,7 +207,7 @@ class TaskEffectsTest extends TestCase {
 	 * @return TaskEffects The service.
 	 */
 	private function effects(array $handlers = []): TaskEffects {
-		$registry = $this->createMock(ActionHandlerRegistry::class);
+		$registry = $this->createMock(originalClassName: ActionHandlerRegistry::class);
 		$registry->method('getHandler')->willReturnCallback(
 			static fn (string $type): ?ActionHandlerInterface => ($handlers[$type] ?? null)
 		);
@@ -242,7 +242,12 @@ class TaskEffectsTest extends TestCase {
 			public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 				$this->ran[] = (string)($actionConfig['type'] ?? '');
 
-				return new ActionResult(succeeded: $this->succeeded, error: ($this->succeeded ? null : 'nope'));
+				$error = 'nope';
+				if ($this->succeeded === true) {
+					$error = null;
+				}
+
+				return new ActionResult(succeeded: $this->succeeded, error: $error);
 			}
 		};
 	}

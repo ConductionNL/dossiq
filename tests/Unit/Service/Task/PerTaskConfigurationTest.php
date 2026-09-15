@@ -69,15 +69,15 @@ class PerTaskConfigurationTest extends TestCase {
 			]
 		);
 
-		$this->assertTrue($declaration['enabled']);
-		$this->assertSame(10, $declaration['leadTimeDays']);
+		$this->assertTrue(condition: $declaration['enabled']);
+		$this->assertSame(expected: 10, actual: $declaration['leadTimeDays']);
 		// Repeated and blank names are dropped: a candidate list with the same
 		// team twice offers the task to that team twice in every surface that
 		// counts it.
-		$this->assertSame(['Juridische Zaken'], $declaration['candidateGroups']);
-		$this->assertSame(['hbakker'], $declaration['candidateUsers']);
-		$this->assertSame('fields', $declaration['form']['kind']);
-		$this->assertCount(1, $declaration['effects']);
+		$this->assertSame(expected: ['Juridische Zaken'], actual: $declaration['candidateGroups']);
+		$this->assertSame(expected: ['hbakker'], actual: $declaration['candidateUsers']);
+		$this->assertSame(expected: 'fields', actual: $declaration['form']['kind']);
+		$this->assertCount(expectedCount: 1, haystack: $declaration['effects']);
 	}
 
 	/**
@@ -88,9 +88,9 @@ class PerTaskConfigurationTest extends TestCase {
 	public function testAStepWithNoBlockRunsAsItAlwaysDid(): void {
 		$declaration = TaskDeclaration::of(step: ['title' => 'Toets ontvankelijkheid']);
 
-		$this->assertSame(TaskDeclaration::NONE, $declaration);
-		$this->assertTrue($declaration['enabled']);
-		$this->assertNull($declaration['form']);
+		$this->assertSame(expected: TaskDeclaration::NONE, actual: $declaration);
+		$this->assertTrue(condition: $declaration['enabled']);
+		$this->assertNull(actual: $declaration['form']);
 	}
 
 	/**
@@ -103,7 +103,7 @@ class PerTaskConfigurationTest extends TestCase {
 			step: ['title' => 'Vraag advies', 'task' => ['enabled' => false]]
 		);
 
-		$this->assertFalse($declaration['enabled']);
+		$this->assertFalse(condition: $declaration['enabled']);
 	}
 
 	/**
@@ -121,8 +121,8 @@ class PerTaskConfigurationTest extends TestCase {
 			]
 		);
 
-		$this->assertSame(5, $declaration['leadTimeDays']);
-		$this->assertSame([], $declaration['candidateGroups']);
+		$this->assertSame(expected: 5, actual: $declaration['leadTimeDays']);
+		$this->assertSame(expected: [], actual: $declaration['candidateGroups']);
 	}
 
 	/**
@@ -135,10 +135,10 @@ class PerTaskConfigurationTest extends TestCase {
 			steps: [['title' => 'Vraag advies', 'candidateGroups' => ['Advies'], 'task' => []]]
 		);
 
-		$this->assertCount(1, $refusals);
-		$this->assertSame('misplaced_task_key', $refusals[0]['code']);
-		$this->assertStringContainsString('Vraag advies', $refusals[0]['message']);
-		$this->assertStringContainsString('candidateGroups', $refusals[0]['message']);
+		$this->assertCount(expectedCount: 1, haystack: $refusals);
+		$this->assertSame(expected: 'misplaced_task_key', actual: $refusals[0]['code']);
+		$this->assertStringContainsString(needle: 'Vraag advies', haystack: $refusals[0]['message']);
+		$this->assertStringContainsString(needle: 'candidateGroups', haystack: $refusals[0]['message']);
 	}
 
 	/**
@@ -154,14 +154,14 @@ class PerTaskConfigurationTest extends TestCase {
 			]
 		);
 
-		$this->assertCount(2, $refusals);
-		$this->assertSame('unresolvable_form', $refusals[0]['code']);
-		$this->assertStringContainsString('Hoorzitting', $refusals[0]['message']);
-		$this->assertStringContainsString('wizard', $refusals[0]['message']);
+		$this->assertCount(expectedCount: 2, haystack: $refusals);
+		$this->assertSame(expected: 'unresolvable_form', actual: $refusals[0]['code']);
+		$this->assertStringContainsString(needle: 'Hoorzitting', haystack: $refusals[0]['message']);
+		$this->assertStringContainsString(needle: 'wizard', haystack: $refusals[0]['message']);
 		// The second names the task AND what the form is missing, which is the
 		// half that tells an administrator where to look.
-		$this->assertStringContainsString('Advies', $refusals[1]['message']);
-		$this->assertStringContainsString('schema', $refusals[1]['message']);
+		$this->assertStringContainsString(needle: 'Advies', haystack: $refusals[1]['message']);
+		$this->assertStringContainsString(needle: 'schema', haystack: $refusals[1]['message']);
 	}
 
 	/**
@@ -174,9 +174,9 @@ class PerTaskConfigurationTest extends TestCase {
 			steps: [['title' => 'Hoorzitting', 'task' => ['candidateGroups' => ['Juridische Zaken', 'Geen Team']]]]
 		);
 
-		$this->assertCount(1, $refusals);
-		$this->assertSame('unresolvable_group', $refusals[0]['code']);
-		$this->assertStringContainsString('Geen Team', $refusals[0]['message']);
+		$this->assertCount(expectedCount: 1, haystack: $refusals);
+		$this->assertSame(expected: 'unresolvable_group', actual: $refusals[0]['code']);
+		$this->assertStringContainsString(needle: 'Geen Team', haystack: $refusals[0]['message']);
 	}
 
 	/**
@@ -189,12 +189,12 @@ class PerTaskConfigurationTest extends TestCase {
 			steps: [['title' => 'Hoorzitting', 'task' => ['effects' => [['type' => 'sendEmail'], ['type' => 'teleport']]]]]
 		);
 
-		$this->assertCount(1, $refusals);
-		$this->assertSame('unresolvable_effect', $refusals[0]['code']);
-		$this->assertStringContainsString('teleport', $refusals[0]['message']);
+		$this->assertCount(expectedCount: 1, haystack: $refusals);
+		$this->assertSame(expected: 'unresolvable_effect', actual: $refusals[0]['code']);
+		$this->assertStringContainsString(needle: 'teleport', haystack: $refusals[0]['message']);
 		// The message says what IS available, so the fix does not need the
 		// source of the registry.
-		$this->assertStringContainsString('sendEmail', $refusals[0]['message']);
+		$this->assertStringContainsString(needle: 'sendEmail', haystack: $refusals[0]['message']);
 	}
 
 	/**
@@ -218,7 +218,7 @@ class PerTaskConfigurationTest extends TestCase {
 			]
 		);
 
-		$this->assertSame([], $refusals);
+		$this->assertSame(expected: [], actual: $refusals);
 	}
 
 	/**
@@ -234,9 +234,9 @@ class PerTaskConfigurationTest extends TestCase {
 
 		$found = TaskDeclarationReader::matching(steps: $steps, statusTypeId: 'status-b', title: 'Hoorzitting');
 
-		$this->assertNotNull($found);
-		$this->assertSame(21, TaskDeclaration::of(step: $found)['leadTimeDays']);
-		$this->assertNull(TaskDeclarationReader::matching(steps: $steps, statusTypeId: 'status-a', title: 'Advies'));
+		$this->assertNotNull(actual: $found);
+		$this->assertSame(expected: 21, actual: TaskDeclaration::of(step: $found)['leadTimeDays']);
+		$this->assertNull(actual: TaskDeclarationReader::matching(steps: $steps, statusTypeId: 'status-a', title: 'Advies'));
 	}
 
 	/**
@@ -251,7 +251,7 @@ class PerTaskConfigurationTest extends TestCase {
 			title: 'Hoorzitting'
 		);
 
-		$this->assertNotNull($found);
+		$this->assertNotNull(actual: $found);
 	}
 
 	/**
@@ -265,8 +265,8 @@ class PerTaskConfigurationTest extends TestCase {
 			json: new WorkflowJsonProperty()
 		);
 
-		$this->assertCount(1, $steps);
-		$this->assertSame('Hoorzitting', $steps[0]['title']);
+		$this->assertCount(expectedCount: 1, haystack: $steps);
+		$this->assertSame(expected: 'Hoorzitting', actual: $steps[0]['title']);
 	}
 
 	/**
@@ -277,10 +277,10 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return TaskDeclarationValidator The validator.
 	 */
 	private function validator(array $groups = []): TaskDeclarationValidator {
-		$registry = $this->createMock(ActionHandlerRegistry::class);
+		$registry = $this->createMock(originalClassName: ActionHandlerRegistry::class);
 		$registry->method('getRegisteredTypes')->willReturn(['sendEmail', 'createTask']);
 
-		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager = $this->createMock(originalClassName: IGroupManager::class);
 		$groupManager->method('groupExists')->willReturnCallback(
 			static fn (string $group): bool => in_array($group, $groups, true)
 		);

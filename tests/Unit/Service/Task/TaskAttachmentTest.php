@@ -122,12 +122,12 @@ class TaskAttachmentTest extends TestCase {
 			uploader: 'hbakker'
 		);
 
-		$this->assertCount(1, $held);
-		$this->assertSame('file-7', $held[0]['file']);
-		$this->assertSame('hbakker', $held[0]['uploadedBy']);
+		$this->assertCount(expectedCount: 1, haystack: $held);
+		$this->assertSame(expected: 'file-7', actual: $held[0]['file']);
+		$this->assertSame(expected: 'hbakker', actual: $held[0]['uploadedBy']);
 		// The whole point: no caseDocument was written, so the case's
 		// documents do not contain it and no reader had to learn to filter.
-		$this->assertSame([], $this->store->created);
+		$this->assertSame(expected: [], actual: $this->store->created);
 	}
 
 	/**
@@ -142,8 +142,8 @@ class TaskAttachmentTest extends TestCase {
 
 		$left = $service->release(caseId: 'case-9', taskId: 'task-1', fileId: 'file-7');
 
-		$this->assertCount(1, $left);
-		$this->assertSame('file-8', $left[0]['file']);
+		$this->assertCount(expectedCount: 1, haystack: $left);
+		$this->assertSame(expected: 'file-8', actual: $left[0]['file']);
 	}
 
 	/**
@@ -164,18 +164,18 @@ class TaskAttachmentTest extends TestCase {
 
 		$published = $service->publish(caseId: 'case-9', taskId: 'task-1');
 
-		$this->assertSame(1, $published);
-		$this->assertCount(1, $this->store->created);
-		$this->assertSame('case-9', $this->store->created[0]['case']);
-		$this->assertSame('file-7', $this->store->created[0]['document']);
+		$this->assertSame(expected: 1, actual: $published);
+		$this->assertCount(expectedCount: 1, haystack: $this->store->created);
+		$this->assertSame(expected: 'case-9', actual: $this->store->created[0]['case']);
+		$this->assertSame(expected: 'file-7', actual: $this->store->created[0]['document']);
 		// 🔑 WHICH TASK PRODUCED IT. Without this the document is on the case
 		// and the trail back to the work that produced it is gone.
-		$this->assertSame('task-1', $this->store->created[0]['sourceTask']);
+		$this->assertSame(expected: 'task-1', actual: $this->store->created[0]['sourceTask']);
 
 		// The published file leaves the hold; the other task's does not.
 		$this->assertSame(
-			['file-9'],
-			array_column($this->store->case[TaskAttachmentService::HOLD], 'file')
+			expected: ['file-9'],
+			actual: array_column($this->store->case[TaskAttachmentService::HOLD], 'file')
 		);
 	}
 
@@ -185,8 +185,8 @@ class TaskAttachmentTest extends TestCase {
 	 * @return void
 	 */
 	public function testATaskThatHeldNothingPublishesNothing(): void {
-		$this->assertSame(0, $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
-		$this->assertSame([], $this->store->created);
+		$this->assertSame(expected: 0, actual: $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
+		$this->assertSame(expected: [], actual: $this->store->created);
 	}
 
 	/**
@@ -202,8 +202,8 @@ class TaskAttachmentTest extends TestCase {
 			[['task' => 'task-1', 'file' => 'file-7', 'title' => 'Verslag.pdf']]
 		);
 
-		$this->assertSame(1, $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
-		$this->assertSame('file-7', $this->store->created[0]['document']);
+		$this->assertSame(expected: 1, actual: $this->service()->publish(caseId: 'case-9', taskId: 'task-1'));
+		$this->assertSame(expected: 'file-7', actual: $this->store->created[0]['document']);
 	}
 
 	/**
@@ -212,7 +212,7 @@ class TaskAttachmentTest extends TestCase {
 	 * @return TaskAttachmentService The service.
 	 */
 	private function service(): TaskAttachmentService {
-		$settings = $this->getMockBuilder(SettingsService::class)->disableOriginalConstructor()->getMock();
+		$settings = $this->getMockBuilder(className: SettingsService::class)->disableOriginalConstructor()->getMock();
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturn('dossiq');
 

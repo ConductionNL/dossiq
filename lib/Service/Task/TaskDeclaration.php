@@ -98,7 +98,9 @@ final class TaskDeclaration {
 	 *
 	 * @param array<string, mixed> $step The workflow step.
 	 *
-	 * @return array{enabled: bool, leadTimeDays: int, candidateGroups: array<int, string>, candidateUsers: array<int, string>, form: array<string, mixed>|null, effects: array<int, array<string, mixed>>} The declaration.
+	 * @return array{enabled: bool, leadTimeDays: int, candidateGroups: array<int, string>,
+	 *               candidateUsers: array<int, string>, form: array<string, mixed>|null,
+	 *               effects: array<int, array<string, mixed>>} The declaration.
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */

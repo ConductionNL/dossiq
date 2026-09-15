@@ -80,7 +80,8 @@
 				v-if="formOf(currentTask)"
 				:form="formOf(currentTask)"
 				:answers="answersFor(currentTask)"
-				:test-id="`case-task-pane-form`" />
+				testId="case-task-pane-form"
+				@answer="record(currentTask, $event)" />
 			<div
 				class="case-task-pane__actions"
 				data-testid="case-task-pane-actions">
@@ -134,7 +135,8 @@
 						v-if="formOf(task)"
 						:form="formOf(task)"
 						:answers="answersFor(task)"
-						:test-id="`case-task-pane-form-${taskIdOf(task)}`" />
+						:testId="`case-task-pane-form-${taskIdOf(task)}`"
+						@answer="record(task, $event)" />
 					<span class="case-task-pane__row-actions">
 						<NcButton
 							v-if="mayClaim(task)"
@@ -174,6 +176,7 @@ import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import TaskFormFields from './TaskFormFields.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import {
@@ -189,7 +192,6 @@ import {
 	taskRouteFor,
 	viewAllRouteFor,
 } from '../../utils/caseTaskPaneHelpers.js'
-import TaskFormFields from './TaskFormFields.vue'
 
 export default {
 	name: 'CaseTaskPane',
@@ -403,7 +405,7 @@ export default {
 				this.capabilities = {
 					claim: response?.data?.claim === true,
 				}
-			} catch (error) {
+			} catch {
 				this.capabilities = { claim: false }
 			}
 		},
@@ -497,6 +499,24 @@ export default {
 				this.answers = { ...this.answers, [id]: {} }
 			}
 			return this.answers[id]
+		},
+
+		/**
+		 * Record one answer a task's form emitted.
+		 *
+		 * The child emits rather than writing into the prop, so the answer
+		 * set has exactly one writer. A child mutating the object it was
+		 * handed works until two components share one, and then the bug is a
+		 * value that changed with nothing in the code saying who changed it.
+		 *
+		 * @param {object} task The task the form belongs to.
+		 * @param {{field: string, value: string}} answer What was typed.
+		 * @return {void}
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		record(task, answer) {
+			const answers = this.answersFor(task)
+			answers[String(answer?.field ?? '')] = answer?.value
 		},
 
 		/**

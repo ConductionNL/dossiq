@@ -175,7 +175,7 @@ export default {
 				const body = response?.data ?? {}
 				const rows = Array.isArray(body) ? body : (body[key] ?? body.results ?? [])
 				return Array.isArray(rows) ? rows : []
-			} catch (error) {
+			} catch {
 				return []
 			}
 		},

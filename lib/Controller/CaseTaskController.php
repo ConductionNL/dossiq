@@ -159,14 +159,21 @@ class CaseTaskController extends Controller {
 	#[NoAdminRequired]
 	public function complete(string $taskId): JSONResponse {
 		$data = $this->request->getParam('data', []);
+		if (is_array($data) === false) {
+			$data = [];
+		}
+
 		$outcome = (string)$this->request->getParam('outcome', 'done');
+		if ($outcome === '') {
+			$outcome = 'done';
+		}
 
 		return $this->onTask(
 			taskId: $taskId,
 			run: fn (string $caseId): array => $this->completion->complete(
 				taskId: $taskId,
-				data: (is_array($data) === true ? $data : []),
-				outcome: ($outcome === '' ? 'done' : $outcome),
+				data: $data,
+				outcome: $outcome,
 				actor: $this->currentUid()
 			),
 		);
@@ -258,10 +265,30 @@ class CaseTaskController extends Controller {
 	 * @param string                           $taskId The task.
 	 * @param callable(string): array<string, mixed> $run The gesture, given the case id.
 	 *
-	 * @return JSONResponse The answer, or a refusal.
+	 * @return JSONResponse The answer, or a refusal. An engine that cannot be
+	 *                      read answers 503, which is not the 404 a missing
+	 *                      task answers.
 	 */
 	private function onTask(string $taskId, callable $run): JSONResponse {
-		$task = $this->engineTasks->find(taskId: $taskId);
+		try {
+			$task = $this->engineTasks->find(taskId: $taskId);
+		} catch (\Throwable $e) {
+			// The gateway answers null for a missing task and keeps its own
+			// failures, so reaching here means the ENGINE could not answer at
+			// all. That is a 503 and not a 404: "the task is gone" and "the
+			// engine is down" are different facts, and a client that retries
+			// the first forever on the second is the failure this separates.
+			$this->logger->error(
+				'CaseTaskController: the task engine could not be read',
+				['exception' => $e->getMessage(), 'task' => $taskId],
+			);
+
+			return new JSONResponse(
+				['message' => 'The task engine could not be reached', 'error' => 'storage_unavailable'],
+				Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		}
+
 		if ($task === null) {
 			return new JSONResponse(
 				['message' => 'That task could not be found', 'error' => 'task_not_found'],
@@ -373,8 +400,18 @@ class CaseTaskController extends Controller {
 			);
 		}
 
+		$message = $code;
+		if ($message === '') {
+			$message = 'That could not be done';
+		}
+
+		$error = $reason;
+		if ($error === '') {
+			$error = 'refused';
+		}
+
 		return new JSONResponse(
-			['message' => ($code === '' ? 'That could not be done' : $code), 'error' => ($reason === '' ? 'refused' : $reason)],
+			['message' => $message, 'error' => $error],
 			(self::REFUSAL_STATUS[$reason] ?? Http::STATUS_BAD_REQUEST)
 		);
 	}//end refusal()

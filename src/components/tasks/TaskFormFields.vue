@@ -70,10 +70,10 @@ export default {
 		/**
 		 * The answers so far, keyed by field.
 		 *
-		 * Mutated in place rather than emitted: the pane holds one answer set
-		 * per open task and hands the same object to the completion, so an
-		 * event round trip would be a second copy that can be one keystroke
-		 * behind the one that is sent.
+		 * Read here and written by the parent, which emits back through
+		 * `answer`. The child does not write into it: one shared object with
+		 * two writers is a value that changes with nothing in the code saying
+		 * who changed it.
 		 */
 		answers: {
 			type: Object,
@@ -87,6 +87,7 @@ export default {
 		},
 	},
 
+	emits: ['answer'],
 	computed: {
 		/** @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md */
 		fields() {
@@ -133,7 +134,7 @@ export default {
 		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
 		 */
 		write(field, value) {
-			this.answers[field] = value
+			this.$emit('answer', { field, value })
 		},
 	},
 }

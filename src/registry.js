@@ -23,6 +23,9 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The inline task pane on the case page (task-on-the-case A06).
+// @spec openspec/specs/task-management/spec.md
+import CaseActsPane from './components/case/CaseActsPane.vue'
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
@@ -59,9 +62,6 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-// The inline task pane on the case page (task-on-the-case A06).
-// @spec openspec/specs/task-management/spec.md
-import CaseActsPane from './components/case/CaseActsPane.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
