@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use ReflectionClass;
 use RuntimeException;
 
@@ -61,11 +62,18 @@ class DeadlineExtensionService {
 	 * @param TermijnService $termService TermijnService.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
+	 * @param TermDeclarationReader|null $declarations What the case type declares about
+	 *        extending, so `extensionPeriod` is read by the service that moves the
+	 *        deadline rather than only by the ZGW mapping. Optional so an existing
+	 *        caller that builds this service by hand keeps working; when it is
+	 *        absent the declared ceiling is simply not enforced, which is the
+	 *        behaviour this change replaces rather than a new silence.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly ?TermDeclarationReader $declarations = null,
 	) {
 	}//end __construct()
 
@@ -82,6 +90,7 @@ class DeadlineExtensionService {
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException With validation failures (cited AWB rule).
+	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
@@ -114,6 +123,7 @@ class DeadlineExtensionService {
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException With validation failures (cited AWB rule).
+	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
@@ -144,6 +154,7 @@ class DeadlineExtensionService {
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException With validation failures (cited AWB rule).
+	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
@@ -166,6 +177,8 @@ class DeadlineExtensionService {
 		$current = (string)($instance['endDateCurrent'] ?? '');
 		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
+
+		$this->assertWithinDeclaredPeriod(instance: $instance, days: $daysImpact, mode: $mode);
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
@@ -245,6 +258,53 @@ class DeadlineExtensionService {
 			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
 		}
 	}//end assertExtensionPermitted()
+
+	/**
+	 * Refuse a verlenging longer than the case type declares (REQ-TERM-066).
+	 *
+	 * `caseType.extensionPeriod` existed and nothing read it but the ZGW
+	 * mapping, so any case could be extended by any amount and the Awb does not
+	 * allow that. The refusal names the rule and the declared period, per
+	 * ADR-050, because a handler told only "no" retries with the same number.
+	 *
+	 * The supervisor path (Awb 4:14 lid 3) is separately authorised and passes,
+	 * exactly as it passes the count ceiling: that is what the override is for.
+	 *
+	 * @param array<string, mixed> $instance The instance being extended.
+	 * @param int $days How many days the deadline moves by.
+	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the move is longer than the declared period.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 */
+	private function assertWithinDeclaredPeriod(array $instance, int $days, string $mode): void {
+		if ($mode === self::MODE_SUPERVISOR || $this->declarations === null) {
+			return;
+		}
+
+		$declared = $this->declarations->forCase(caseId: (string)($instance['case'] ?? ''));
+
+		if ($declared['extensionAllowed'] === false) {
+			throw new RefusedException(
+				rule: 'extension-not-allowed',
+				sentence: 'This case type does not allow the term to be extended.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		$period = (int)$declared['extensionPeriodDays'];
+		if ($period > 0 && $days > $period) {
+			throw new RefusedException(
+				rule: 'extension-beyond-declared-period',
+				sentence: 'This case type allows an extension of at most ' . $period
+					. ' days, and you asked for ' . $days . '.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertWithinDeclaredPeriod()
 
 	/**
 	 * Compute the number of days the deadline moves by.

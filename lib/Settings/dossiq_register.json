@@ -89,6 +89,42 @@
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
                         "title": "Processing Deadline"
                     },
+                    "processingDeadlineDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "A fixed closing date for this case type, instead of a lead time. A subsidy round closes on a date, not so many days after each application. Fill this in and every case of this type ends on this day, whenever it came in. A date that has already passed still creates the case, with a term that reads expired.",
+                        "title": "Fixed closing date"
+                    },
+                    "plannedLeadTime": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The working days your team gives itself to finish a case of this type. This is the service norm, not the law. It runs beside the statutory term and is warned on separately, so a case can be late against the plan and on time against the Awb.",
+                        "title": "Planned lead time in days"
+                    },
+                    "internalTargetDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The working days a teamleider steers on, clocked apart from the statutory term. It never appears on a citizen surface and is never quoted in a message to an applicant.",
+                        "title": "Internal target in days"
+                    },
+                    "statutoryWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days before the statutory term ends you want to be warned. Leave it empty and the escalation ladder decides.",
+                        "title": "Warn on the statutory term, days before"
+                    },
+                    "plannedWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days before the planned end you want to be warned. This warning is its own, so passing it says nothing about the statutory term.",
+                        "title": "Warn on the planned end, days before"
+                    },
+                    "chainTermDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "One term for the whole chain of phases, in working days, split over the phases by the share each declares. A phase that overruns shrinks the phases after it. The chain end never moves, so a chain whose phases have eaten it reports zero days left rather than a later date.",
+                        "title": "Chain term in days"
+                    },
                     "initialStatus": {
                         "type": "string",
                         "format": "uuid",
@@ -226,6 +262,12 @@
                         "type": "string",
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension Period"
+                    },
+                    "maxSuspensionDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The longest suspension this case type allows, in days. Awb 4:5 bounds the pause as well as the extension, so a suspension asked for beyond this is refused and the refusal names the maximum. Leave it empty and a suspension is bounded only by suspensionAllowed.",
+                        "title": "Maximum suspension in days"
                     },
                     "destructionRole": {
                         "type": "string",
@@ -545,7 +587,7 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
@@ -588,6 +630,19 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "phaseTermDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days this phase gets, counted on the calendar your organisation administers. An ontvankelijkheidstoets can have its own two weeks inside an eight week term. The clock starts when a case enters this phase and stops when it leaves. A phase that runs over shows as overdue on the case while the case term still reads on time, and it never moves the case term.",
+                        "title": "Phase term in days"
+                    },
+                    "phaseTermShare": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "This phase's share of the chain term, as a percentage. Use it when the case type declares one term for the whole chain and you want it split over the phases. The shares of the phases after an overrunning one are recomputed, and the chain end stays where it was.",
+                        "title": "Share of the chain term, in percent"
                     },
                     "role": {
                         "type": "string",

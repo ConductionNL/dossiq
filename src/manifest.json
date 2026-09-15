@@ -2250,6 +2250,13 @@
 							]
 						},
 						{
+							"id": "terms",
+							"label": "Terms",
+							"icon": "TimerSandFull",
+							"_note": "phase-terms-and-the-internal-target REQ-TERM-060 to REQ-TERM-068: the four clocks on this case, each apart. A gemeente runs the statutory term the applicant was told about, the planned end the team steers on, the internal target a teamleider steers on, and the phase term inside the case term. Collapsing them into one field made a case that is on time for the citizen and six weeks late for the team read green. A `component:` tab and not a `widgets[]` one, for the reason the Access tab gives: a sidebar tab renders either a registered component or a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table), and none of the four can read /api/cases/{id}/terms. The progress figure and the days-left count are the SERVER'S, computed at read time and stored nowhere, so the list column reads the same computation when the library carries a column type for it.",
+							"component": "CaseTermsTab"
+						},
+						{
 							"id": "access",
 							"label": "Access",
 							"icon": "ShieldAccountOutline",

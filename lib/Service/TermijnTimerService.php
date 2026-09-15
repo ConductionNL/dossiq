@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -106,12 +107,18 @@ class TermijnTimerService {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param WorkingDayCalculator|null $fallbackCalendar The documented fallback for
 	 *        an absent engine; built here when the container does not supply one.
+	 * @param TermCalendarGuard|null $calendarGuard Refuses a term whose NAMED calendar
+	 *        does not resolve. The container always supplies it; the parameter is
+	 *        nullable so a test that builds this service by hand and never names a
+	 *        calendar keeps working, which is every such test written before
+	 *        REQ-TERM-060.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?WorkingDayCalculator $fallbackCalendar = null,
+		private readonly ?TermCalendarGuard $calendarGuard = null,
 	) {
 	}//end __construct()
 
@@ -386,6 +393,8 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The first ordinary day on or after the date.
 	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
+	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the flag IS the declared
@@ -417,6 +426,8 @@ class TermijnTimerService {
 	 * @param string|null $organisation The subject's organisation, when any.
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
+	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
 	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
@@ -473,6 +484,18 @@ class TermijnTimerService {
 	): DateTimeImmutable {
 		$calendars = $this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS);
 		$calculator = $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS);
+
+		// A term that NAMES a calendar refuses when that calendar does not
+		// resolve, rather than answering on a different one (REQ-TERM-060). The
+		// decision belongs to the guard, so the rest of this method keeps the
+		// shape `every-term-on-the-engine-calendar` shipped: a term naming no
+		// calendar still falls back, and still says so in the log.
+		$this->calendarGuard?->requireNamedCalendarResolves(
+			calendarSlug: $calendarSlug,
+			organisation: $organisation,
+			calendars: $calendars
+		);
+
 		if ($calendars === null || $calculator === null) {
 			return $this->fallbackRoll(date: $date, because: 'OpenRegister is not installed');
 		}
