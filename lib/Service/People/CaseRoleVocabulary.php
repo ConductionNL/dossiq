@@ -79,13 +79,9 @@ class CaseRoleVocabulary {
 			return -1;
 		}
 
-		$configuration = $schema->getConfiguration();
-		if (is_array($configuration) === false) {
-			$configuration = [];
-		}
-
+		$configuration = $this->configurationOf(stored: $schema);
 		$kinds = $this->parties->kinds();
-		if (($configuration['linkRoles'] ?? null) === $roles && ($configuration['partyKinds'] ?? null) === $kinds) {
+		if ($this->alreadyCarries(configuration: $configuration, roles: $roles, kinds: $kinds) === true) {
 			return count($roles);
 		}
 
@@ -117,6 +113,23 @@ class CaseRoleVocabulary {
 
 		return (array)call_user_func([$stored, 'getConfiguration']);
 	}//end configurationOf()
+
+	/**
+	 * Whether the schema already carries exactly this vocabulary.
+	 *
+	 * Asked before writing, so a sync that changes nothing writes nothing and
+	 * a role type saved twice does not touch the case schema twice.
+	 *
+	 * @param array<string, mixed> $configuration The schema's configuration.
+	 * @param array<int, array<string, string>> $roles The vocabulary.
+	 * @param array<int, array<string, mixed>> $kinds The party kinds.
+	 *
+	 * @return bool True when nothing would change.
+	 */
+	private function alreadyCarries(array $configuration, array $roles, array $kinds): bool {
+		return (($configuration['linkRoles'] ?? null) === $roles
+			&& ($configuration['partyKinds'] ?? null) === $kinds);
+	}//end alreadyCarries()
 
 	/**
 	 * What the write actually achieved.

@@ -139,13 +139,4 @@ class PartyVocabulary {
 			],
 		];
 	}//end roles()
-
-	/**
-	 * The keys of the roles above, in the same order.
-	 *
-	 * @return array<int, string> The role keys.
-	 */
-	public function roleKeys(): array {
-		return array_map(static fn (array $role): string => $role['key'], $this->roles());
-	}//end roleKeys()
 }//end class

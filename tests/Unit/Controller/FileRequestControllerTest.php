@@ -21,6 +21,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -142,7 +143,10 @@ class FileRequestControllerTest extends TestCase {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn($guard);
 
-		return new PartyIndicatorReader(settingsService: $settings);
+		return new PartyIndicatorReader(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
 	}//end indicators()
 
 	/**

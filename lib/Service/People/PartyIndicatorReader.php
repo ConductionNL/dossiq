@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -54,9 +55,11 @@ class PartyIndicatorReader {
 
 	/**
 	 * @param SettingsService $settingsService Resolves OpenRegister's classes.
+	 * @param LoggerInterface $logger Says which read could not be made.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -77,7 +80,12 @@ class PartyIndicatorReader {
 
 		try {
 			$found = $guard->indicatorsForObject($caseId);
-		} catch (Throwable) {
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq parties: OpenRegister could not answer the indicators on a case, so none is '
+				. 'shown and nothing here refuses an act: ' . $e->getMessage(),
+				['caseId' => $caseId]
+			);
 			return [];
 		}
 
@@ -132,7 +140,13 @@ class PartyIndicatorReader {
 
 		try {
 			$label = $guard->sendRefusalFor($partyUuid);
-		} catch (Throwable) {
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq parties: OpenRegister could not say whether a send to a party is refused, so '
+				. 'nothing here refuses it and the refusal OpenRegister makes at the send still '
+				. 'stands: ' . $e->getMessage(),
+				['partyUuid' => $partyUuid]
+			);
 			return null;
 		}
 
@@ -152,6 +166,8 @@ class PartyIndicatorReader {
 	 * @param array<string, mixed> $link The link, as the contacts listing answers it.
 	 *
 	 * @return string The party uuid.
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function partyUuidOf(array $link): string {
 		return trim((string)($link['partyUuid'] ?? ''));

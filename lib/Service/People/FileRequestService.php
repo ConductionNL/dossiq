@@ -66,7 +66,9 @@ class FileRequestService {
 	 *
 	 * @return array<string, mixed> The recipient, the token and when it expires.
 	 *
-	 * @throws RuntimeException 404 when the person is not on the case, 403 when an indicator on them refuses the send, 422 when they have no address or the case has no folder.
+	 * @throws RuntimeException 404 when the person is not on the case, 403 when an
+	 *         indicator on them refuses the send, 422 when they have no address or
+	 *         the case has no folder.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
 	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
