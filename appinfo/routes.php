@@ -870,6 +870,14 @@ $extra = [
         // Awb 4:5: asking the applicant and suspending the term are one act.
     ['name' => 'caseTerms#requestInformation', 'url' => '/api/cases/{caseId}/information-request',          'verb' => 'POST'],
     ['name' => 'caseTerms#receiveInformation', 'url' => '/api/cases/{caseId}/information-request/received', 'verb' => 'POST'],
+
+        // Every aanvullingsverzoek ever sent on this case, and where each one
+        // stands (aanvullingsverzoek-as-a-record, row 1.17). The two writes
+        // above are unchanged URLs on purpose: asking is ONE act that sends
+        // the letter, suspends the term and now writes the record, and a
+        // second endpoint for the record would give the app two paths to a
+        // statutory suspension.
+    ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
     ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).

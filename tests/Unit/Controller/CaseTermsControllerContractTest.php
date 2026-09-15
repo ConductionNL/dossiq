@@ -41,7 +41,8 @@ use OCA\Dossiq\Controller\CaseTermsController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTermsService;
-use OCA\Dossiq\Service\InformationRequestService;
+use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
+use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\OpenWorkloadAgeService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -69,7 +70,14 @@ class CaseTermsControllerContractTest extends TestCase {
 	 *
 	 * @var InformationRequestService&MockObject
 	 */
-	private InformationRequestService $requests;
+	private AanvullingsverzoekService $aanvullingen;
+
+	/**
+	 * The answer, item by item.
+	 *
+	 * @var AanvullingsverzoekResolutionService&MockObject
+	 */
+	private AanvullingsverzoekResolutionService $resolution;
 
 	/**
 	 * The age of what is still standing.
@@ -106,7 +114,8 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->terms = $this->createMock(CaseTermsService::class);
-		$this->requests = $this->createMock(InformationRequestService::class);
+		$this->aanvullingen = $this->createMock(AanvullingsverzoekService::class);
+		$this->resolution = $this->createMock(AanvullingsverzoekResolutionService::class);
 		$this->workload = $this->createMock(OpenWorkloadAgeService::class);
 		$this->guard = $this->createMock(CaseAccessGuard::class);
 		$this->userSession = $this->createMock(IUserSession::class);
@@ -119,11 +128,12 @@ class CaseTermsControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			terms: $this->terms,
-			requests: $this->requests,
 			workload: $this->workload,
 			guard: $this->guard,
 			userSession: $this->userSession,
 			logger: new NullLogger(),
+			aanvullingen: $this->aanvullingen,
+			resolution: $this->resolution,
 		);
 	}//end setUp()
 
@@ -187,7 +197,7 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	public function testAskingForInformationNeedsTheMutationRight(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
-		$this->requests->expects(self::never())->method('ask');
+		$this->aanvullingen->expects(self::never())->method('ask');
 
 		$response = $this->controller->requestInformation(caseId: 'c1');
 
@@ -202,7 +212,7 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	public function testARefusalCarriesItsRuleAndItsStatus(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->requests->method('ask')->willThrowException(
+		$this->aanvullingen->method('ask')->willThrowException(
 			new RefusedException(
 				rule: 'suspension-beyond-declared-maximum',
 				sentence: 'This case type allows a suspension of at most 28 days, and you asked for 60.',
@@ -220,44 +230,50 @@ class CaseTermsControllerContractTest extends TestCase {
 	/**
 	 * A letter that did not go out does not answer 200.
 	 *
+	 * 🔴 THE CONTRACT CHANGED HERE AND THE TEST SAYS HOW. The old service
+	 * answered 200 with `sent: false` on a letter that never went out, and this
+	 * controller turned that into a 502 so it could not be read as a successful
+	 * pause. `AanvullingsverzoekService::ask()` refuses instead, so the failure
+	 * now arrives as a refusal carrying its own status and its own rule slug.
+	 * What has to stay true either way is the only thing that matters: a
+	 * request that was not sent NEVER answers 200.
+	 *
 	 * @return void
 	 */
 	public function testAFailedLetterDoesNotAnswerOk(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->requests->method('ask')->willReturn(
-			[
-				'sent' => false,
-				'suspended' => false,
-				'instance' => [],
-				'record' => null,
-				'error' => 'the transport is unreachable',
-			]
+		$this->aanvullingen->method('ask')->willThrowException(
+			new RefusedException(
+				rule: 'aanvullingsverzoek-not-sent',
+				sentence: 'The request could not be sent, so the term was not suspended and nothing was recorded.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			)
 		);
 
 		$response = $this->controller->requestInformation(caseId: 'c1');
 
-		self::assertSame(
-			Http::STATUS_BAD_GATEWAY,
+		self::assertNotSame(
+			Http::STATUS_OK,
 			$response->getStatus(),
 			'A 200 here is read as a successful pause by whatever renders it next.'
 		);
-		self::assertFalse($response->getData()['suspended']);
+		self::assertSame(RefusedException::STATUS_INDETERMINATE, $response->getStatus());
+		self::assertSame('aanvullingsverzoek-not-sent', $response->getData()['error']);
 	}//end testAFailedLetterDoesNotAnswerOk()
 
 	/**
-	 * A request that went out answers 200 with the suspension on it.
+	 * A request that went out answers 200 with the record on it.
 	 *
 	 * @return void
 	 */
 	public function testARequestThatWentOutAnswersOk(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->requests->method('ask')->willReturn(
+		$this->aanvullingen->method('ask')->willReturn(
 			[
-				'sent' => true,
-				'suspended' => true,
-				'instance' => ['status' => 'paused'],
-				'record' => ['type' => 'information-requested'],
-				'error' => '',
+				'case' => 'c1',
+				'state' => 'open',
+				'missingItems' => [['item' => 'Bankafschrift', 'received' => false]],
+				'hersteltermijn' => '2026-10-01',
 			]
 		);
 
@@ -265,6 +281,9 @@ class CaseTermsControllerContractTest extends TestCase {
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 		self::assertTrue($response->getData()['suspended']);
+		// The record is the point of the change: the answer carries what was
+		// asked, not only that something was asked.
+		self::assertSame('open', $response->getData()['request']['state']);
 	}//end testARequestThatWentOutAnswersOk()
 
 	/**
@@ -274,7 +293,7 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	public function testRecordingTheAanvullingNeedsTheMutationRight(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
-		$this->requests->expects(self::never())->method('receive');
+		$this->resolution->expects(self::never())->method('recordAnswer');
 
 		$response = $this->controller->receiveInformation(caseId: 'c1');
 
@@ -288,14 +307,19 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	public function testTheAanvullingResumesTheTerm(): void {
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->requests->method('receive')->willReturn(
-			['resumed' => true, 'instance' => ['status' => 'lopend'], 'record' => null]
+		$this->resolution->method('recordAnswer')->willReturn(
+			[
+				'case' => 'c1',
+				'state' => 'answered',
+				'answeredBy' => 'handler1',
+				'missingItems' => [['item' => 'Bankafschrift', 'received' => true]],
+			]
 		);
 
 		$response = $this->controller->receiveInformation(caseId: 'c1');
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertTrue($response->getData()['resumed']);
+		self::assertSame('answered', $response->getData()['state']);
 	}//end testTheAanvullingResumesTheTerm()
 
 	/**
@@ -332,11 +356,12 @@ class CaseTermsControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			terms: $this->terms,
-			requests: $this->requests,
 			workload: $this->workload,
 			guard: $this->guard,
 			userSession: $session,
 			logger: new NullLogger(),
+			aanvullingen: $this->aanvullingen,
+			resolution: $this->resolution,
 		);
 
 		self::assertSame(Http::STATUS_UNAUTHORIZED, $controller->index(caseId: 'c1')->getStatus());
