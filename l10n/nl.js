@@ -3229,7 +3229,7 @@ OC.L10N.register(
         "Withdraw": "Intrekken",
         "Withdrawal": "Intrekking",
         "Withdrawn": "Ingetrokken",
-        "Withheld": "Geweigerd",
+        "Withheld": "Afgeschermd",
         "Within Awb deadline": "Binnen Awb-termijn",
         "Within deadline": "Binnen termijn",
         "Within SLA": "Binnen SLA",
@@ -4554,7 +4554,13 @@ OC.L10N.register(
         "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Schrijf op waarom, dan verandert de markering. Zowel het zetten als het opheffen bewaart de reden.",
         "This case is already flagged as needing attention.": "Deze zaak is al gemarkeerd als aandacht nodig.",
         "This case is not flagged as needing attention.": "Deze zaak is niet gemarkeerd als aandacht nodig.",
-        "You cannot change the attention flag on this case.": "Je kunt de aandachtsmarkering op deze zaak niet wijzigen."
+        "You cannot change the attention flag on this case.": "Je kunt de aandachtsmarkering op deze zaak niet wijzigen.",
+        "Object": "Object",
+        "Object status": "Status object",
+        "This value is not shown.": "Deze waarde wordt niet getoond.",
+        "You may not open the linked object, so its value is not shown.": "U mag het gekoppelde object niet openen, daarom wordt de waarde niet getoond.",
+        "Linked Object": "Gekoppeld object",
+        "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.": "Het object waar deze locatie vandaan komt, als de URI die de caseObject-koppeling vasthoudt. Staat die ingevuld, dan erft de locatie het adrespunt of de perceelcontour van het object via x-openregister-geo-inheritance. De herkomst staat op de kaart en wordt niet in dit record gekopieerd."
     },
     "nplurals=2; plural=(n != 1);"
 )

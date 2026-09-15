@@ -79,7 +79,7 @@ describe('the caseObject schema', () => {
 		// OpenRegister compares the incoming schema's `version` with the stored
 		// one and skips the whole schema when they are equal. A property added
 		// at the old version is inert on every existing instance.
-		expect(caseObject().version).toBe('1.1.0')
+		expect(caseObject().version).toBe('1.2.0')
 	})
 
 	it('still requires the case and the object type', () => {
@@ -129,20 +129,26 @@ describe('the Objects tab on the case page', () => {
 		expect(caseWidget('case-objects').type).toBe('object-list')
 	})
 
-	it('shows the object type, identification, description and link', () => {
+	it('shows the object, its type and status, the identification, description and link', () => {
 		expect(columnKeys(caseWidget('case-objects'))).toEqual([
+			'objectTitle',
 			'objectType',
+			'objectStatus',
 			'objectIdentification',
 			'description',
 			'objectUrl',
 		])
 	})
 
-	it('names every column against a property the schema declares', () => {
+	it('names every column against a property or a lens the schema declares', () => {
+		// A column key that is neither is a column of em-dashes on every row,
+		// which is what a mistyped lens name looks like: the widget asks the
+		// row for a key nothing puts there and renders nothing, silently.
+		const lenses = caseObject().configuration['x-openregister-lenses']
 		for (const key of columnKeys(caseWidget('case-objects'))) {
 			expect(
-				caseObject().properties[key],
-				`caseObject has no property ${key}`,
+				caseObject().properties[key] || lenses[key],
+				`caseObject has neither a property nor a lens named ${key}`,
 			).toBeDefined()
 		}
 	})

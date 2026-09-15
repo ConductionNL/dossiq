@@ -2161,6 +2161,7 @@
 										"title": "Objects",
 										"icon": "CubeOutline",
 										"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+										"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
 										"content": {
 											"register": "dossiq",
 											"schema": "caseObject",
@@ -2174,8 +2175,18 @@
 											"limit": 25,
 											"columns": [
 												{
+													"key": "objectTitle",
+													"label": "Object",
+													"widget": "lensedValue"
+												},
+												{
 													"key": "objectType",
 													"label": "Object type"
+												},
+												{
+													"key": "objectStatus",
+													"label": "Object status",
+													"widget": "lensedValue"
 												},
 												{
 													"key": "objectIdentification",
