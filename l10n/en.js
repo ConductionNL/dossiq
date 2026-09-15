@@ -1,6 +1,18 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Lock": "Lock",
+        "Locked": "Locked",
+        "Not tracked": "Not tracked",
+        "No number yet": "No number yet",
+        "{id} (no number yet)": "{id} (no number yet)",
+        "Waiting for someone from {candidates}": "Waiting for someone from {candidates}",
+        "Meant for {candidates}. Nobody can pick it up here yet, so assign it to someone.": "Meant for {candidates}. Nobody can pick it up here yet, so assign it to someone.",
+        "Task {title} is yours": "Task {title} is yours",
+        "Fill in {field} before completing this task": "Fill in {field} before completing this task",
+        "This task is finished in its own form.": "This task is finished in its own form.",
+        "This field cannot be shown here.": "This field cannot be shown here.",
+        "This task asks for a form that cannot be shown.": "This task asks for a form that cannot be shown.",
         "Load example data?": "Load example data?",
         "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.",
         "Load the example data": "Load the example data",

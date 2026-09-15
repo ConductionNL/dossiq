@@ -1,6 +1,18 @@
 OC.L10N.register(
     "dossiq",
     {
+        "Lock": "Slot",
+        "Locked": "Op slot",
+        "Not tracked": "Niet bijgehouden",
+        "No number yet": "Nog geen nummer",
+        "{id} (no number yet)": "{id} (nog geen nummer)",
+        "Waiting for someone from {candidates}": "Wacht op iemand van {candidates}",
+        "Meant for {candidates}. Nobody can pick it up here yet, so assign it to someone.": "Bedoeld voor {candidates}. Niemand kan de taak hier nog oppakken, wijs haar dus toe.",
+        "Task {title} is yours": "Taak {title} is van jou",
+        "Fill in {field} before completing this task": "Vul {field} in voordat je deze taak afrondt",
+        "This task is finished in its own form.": "Je rondt deze taak af in een eigen formulier.",
+        "This field cannot be shown here.": "Dit veld kan hier niet getoond worden.",
+        "This task asks for a form that cannot be shown.": "Deze taak vraagt om een formulier dat niet getoond kan worden.",
         "Load example data?": "Voorbeeldgegevens laden?",
         "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Voorbeeldgegevens vullen de lijsten, detailpagina’s en dashboards, zodat je de app meteen ziet werken. Kies \"Geen\" op een productieomgeving.",
         "Load the example data": "Laad de voorbeeldgegevens",

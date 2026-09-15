@@ -53,6 +53,10 @@
 				{{ currentTitle }}
 			</h4>
 			<dl class="case-task-pane__meta">
+				<dt>{{ t('dossiq', 'Reference') }}</dt>
+				<dd data-testid="case-task-pane-reference">
+					{{ referenceOf(currentTask) }}
+				</dd>
 				<dt>{{ t('dossiq', 'Assignee') }}</dt>
 				<dd data-testid="case-task-pane-assignee">
 					{{ currentAssignee }}
@@ -61,17 +65,40 @@
 				<dd data-testid="case-task-pane-due">
 					{{ currentDue }}
 				</dd>
+				<dt>{{ t('dossiq', 'Lock') }}</dt>
+				<dd data-testid="case-task-pane-lock">
+					{{ lockOf(currentTask) }}
+				</dd>
 			</dl>
+			<p
+				v-if="candidatesFor(currentTask)"
+				class="case-task-pane__candidates"
+				data-testid="case-task-pane-candidates">
+				{{ candidatesFor(currentTask) }}
+			</p>
+			<TaskFormFields
+				v-if="formOf(currentTask)"
+				:form="formOf(currentTask)"
+				:answers="answersFor(currentTask)"
+				:test-id="`case-task-pane-form`" />
 			<div
 				class="case-task-pane__actions"
 				data-testid="case-task-pane-actions">
+				<NcButton
+					v-if="mayClaim(currentTask)"
+					:disabled="busy"
+					variant="secondary"
+					data-testid="case-task-pane-verb-claim"
+					@click="claim(currentTask)">
+					{{ t('dossiq', 'Pick up') }}
+				</NcButton>
 				<NcButton
 					v-for="verb in verbs"
 					:key="verb.name"
 					:disabled="busy"
 					:variant="verb.primary ? 'primary' : 'secondary'"
 					:data-testid="`case-task-pane-verb-${verb.name}`"
-					@click="invoke(verb)">
+					@click="invoke(verb, currentTask)">
 					{{ verb.label }}
 				</NcButton>
 			</div>
@@ -91,7 +118,8 @@
 				<li
 					v-for="task in remainingTasks"
 					:key="taskIdOf(task)"
-					class="case-task-pane__list-item">
+					class="case-task-pane__list-item"
+					:data-testid="`case-task-pane-task-${taskIdOf(task)}`">
 					<router-link
 						v-if="taskRouteFor(task, content)"
 						:to="taskRouteFor(task, content)"
@@ -99,6 +127,33 @@
 						{{ titleOf(task) }}
 					</router-link>
 					<span v-else>{{ titleOf(task) }}</span>
+					<span class="case-task-pane__row-meta">
+						{{ referenceOf(task) }} · {{ formatDate(task.dueDate) }}
+					</span>
+					<TaskFormFields
+						v-if="formOf(task)"
+						:form="formOf(task)"
+						:answers="answersFor(task)"
+						:test-id="`case-task-pane-form-${taskIdOf(task)}`" />
+					<span class="case-task-pane__row-actions">
+						<NcButton
+							v-if="mayClaim(task)"
+							:disabled="busy"
+							variant="tertiary"
+							:data-testid="`case-task-pane-row-claim-${taskIdOf(task)}`"
+							@click="claim(task)">
+							{{ t('dossiq', 'Pick up') }}
+						</NcButton>
+						<NcButton
+							v-for="verb in verbs"
+							:key="verb.name"
+							:disabled="busy"
+							variant="tertiary"
+							:data-testid="`case-task-pane-row-${verb.name}-${taskIdOf(task)}`"
+							@click="invoke(verb, task)">
+							{{ verb.label }}
+						</NcButton>
+					</span>
 				</li>
 			</ul>
 		</div>
@@ -115,23 +170,33 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	candidatesOf,
 	isFinalStatus,
+	isUnclaimed,
+	missingRequiredField,
 	openTasksQuery,
+	taskFormOf,
 	taskIdOf,
+	taskLockOf,
+	taskReferenceOf,
 	taskRouteFor,
 	viewAllRouteFor,
 } from '../../utils/caseTaskPaneHelpers.js'
+import TaskFormFields from './TaskFormFields.vue'
 
 export default {
 	name: 'CaseTaskPane',
 
 	components: {
 		NcButton,
+		TaskFormFields,
 	},
 
 	// CnDetailWidgetHost spreads the widget's whole `content` blob onto the
@@ -167,6 +232,23 @@ export default {
 			 * on every re-render.
 			 */
 			reportedError: '',
+			/**
+			 * One answer set per open task, keyed by task id.
+			 *
+			 * Per TASK, not one shared set, because every open task on the
+			 * case is completable here: a single set would carry one task's
+			 * verslag into the next task's completion.
+			 */
+			answers: {},
+			/**
+			 * What the task engine on this instance answers to.
+			 *
+			 * Asked rather than assumed. The claim affordance is rendered
+			 * only when the engine has a claim act; where it has none, the
+			 * declaration is stated on the case type screen and no button
+			 * that silently assigns is offered here.
+			 */
+			capabilities: { claim: false },
 		}
 	},
 
@@ -294,13 +376,168 @@ export default {
 	 */
 	async mounted() {
 		await initializeStores()
-		await this.load()
+		await Promise.all([this.load(), this.loadCapabilities()])
 		this.watchLifecycleError()
 	},
 
 	methods: {
 		taskIdOf,
 		taskRouteFor,
+
+		/**
+		 * Ask the engine what it can do, once per mount.
+		 *
+		 * A failure leaves the capability off, which renders no claim
+		 * affordance. That is the safe direction: a button that silently
+		 * assigns a task the handler believed they claimed from a pool is
+		 * worse than no button.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		async loadCapabilities() {
+			try {
+				const response = await axios.get(
+					generateUrl('/apps/dossiq/api/case-tasks/capabilities'),
+				)
+				this.capabilities = {
+					claim: response?.data?.claim === true,
+				}
+			} catch (error) {
+				this.capabilities = { claim: false }
+			}
+		},
+
+		/**
+		 * How this task is referred to: its number, or the engine identifier.
+		 *
+		 * A task with no number says so rather than showing a blank, and
+		 * dossiq generates none of its own.
+		 *
+		 * @param {object} task The task row.
+		 * @return {string} What to show.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		referenceOf(task) {
+			const reference = taskReferenceOf(task)
+			if (reference.value === '') {
+				return t('dossiq', 'No number yet')
+			}
+			if (reference.isNumber) {
+				return reference.value
+			}
+			return t('dossiq', '{id} (no number yet)', { id: reference.value })
+		},
+
+		/**
+		 * Whether this task is locked, in the reader's words.
+		 *
+		 * Three answers, not two: the engine tracks no lock on a task today,
+		 * and saying "not locked" where nothing is tracked would tell a
+		 * handler that nobody else is editing it, which nothing here knows.
+		 *
+		 * @param {object} task The task row.
+		 * @return {string} The lock state.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		lockOf(task) {
+			const locked = taskLockOf(task)
+			if (locked === null) {
+				return t('dossiq', 'Not tracked')
+			}
+			return locked ? t('dossiq', 'Locked') : t('dossiq', 'Open')
+		},
+
+		/**
+		 * Who this task is offered to, when it is offered rather than assigned.
+		 *
+		 * @param {object} task The task row.
+		 * @return {string} The sentence, or '' when it has an assignee.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		candidatesFor(task) {
+			if (!isUnclaimed(task)) {
+				return ''
+			}
+			const candidates = candidatesOf(task).join(', ')
+			if (this.capabilities.claim) {
+				return t('dossiq', 'Waiting for someone from {candidates}', { candidates })
+			}
+			// The declaration is honoured by the case type and not yet by the
+			// engine. Said plainly rather than hidden, because a handler
+			// waiting for a team to pick it up would wait forever.
+			return t(
+				'dossiq',
+				'Meant for {candidates}. Nobody can pick it up here yet, so assign it to someone.',
+				{ candidates },
+			)
+		},
+
+		/**
+		 * The form this task carries, or null.
+		 *
+		 * @param {object} task The task row.
+		 * @return {object|null} The form.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		formOf(task) {
+			return taskFormOf(task)
+		},
+
+		/**
+		 * This task's own answer set, created on first use.
+		 *
+		 * @param {object} task The task row.
+		 * @return {object} The answers.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		answersFor(task) {
+			const id = taskIdOf(task)
+			if (!this.answers[id]) {
+				this.answers = { ...this.answers, [id]: {} }
+			}
+			return this.answers[id]
+		},
+
+		/**
+		 * Whether a claim affordance may be offered on this task.
+		 *
+		 * @param {object} task The task row.
+		 * @return {boolean} True when the engine answers a claim act and the
+		 *   task is waiting for one.
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		mayClaim(task) {
+			return this.capabilities.claim === true && isUnclaimed(task)
+		},
+
+		/**
+		 * Take a task that was offered to a team.
+		 *
+		 * @param {object} task The task row.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+		 */
+		async claim(task) {
+			const id = taskIdOf(task)
+			if (id === '' || this.busy === true) {
+				return
+			}
+
+			this.busy = true
+			try {
+				const updated = await this.engineTasks.invoke(id, 'claim')
+				if (updated === null) {
+					this.report(this.engineTasks.error)
+					return
+				}
+
+				await this.load()
+				showSuccess(t('dossiq', 'Task {title} is yours', { title: this.titleOf(task) }))
+			} finally {
+				this.busy = false
+			}
+		},
 
 		/**
 		 * A task's display title, with a fallback so a titleless row is still
@@ -396,20 +633,50 @@ export default {
 		 * the reason ("not the assignee"). A generic failure would throw away
 		 * the only part a handler can act on.
 		 *
+		 * EVERY OPEN TASK, NOT ONLY THE FIRST. The pane used to act on
+		 * `currentTask` alone, so finishing the second task of a case meant
+		 * leaving the page for it — which is the route change this whole
+		 * surface exists to remove. The task is passed in now and defaults to
+		 * the current one, so the existing buttons behave exactly as they did.
+		 *
+		 * A COMPLETION CARRIES THE FORM'S ANSWERS. A required field left
+		 * empty is named here, before the round trip, using the same rule the
+		 * server applies; the server refuses it again for every other client.
+		 *
 		 * @param {{name: string}} verb The verb.
+		 * @param {object} [task] The task to act on; the current one by default.
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/remove-casetask/tasks.md
+		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
 		 */
-		async invoke(verb) {
-			const id = this.currentTaskId
+		async invoke(verb, task = null) {
+			const subject = task ?? this.currentTask
+			const id = taskIdOf(subject)
 			if (id === '' || this.busy === true) {
 				return
 			}
 
+			const title = this.titleOf(subject)
+			const answers = this.answersFor(subject)
+			if (verb.name === 'complete') {
+				const missing = missingRequiredField(subject, answers)
+				if (missing !== '') {
+					showError(
+						t('dossiq', 'Fill in {field} before completing this task', {
+							field: missing,
+						}),
+					)
+					return
+				}
+			}
+
 			this.busy = true
-			const title = this.currentTitle
 			try {
-				const updated = await this.engineTasks.invoke(id, verb.name)
+				const updated = await this.engineTasks.invoke(
+					id,
+					verb.name,
+					verb.name === 'complete' ? { data: answers } : {},
+				)
 				if (updated === null) {
 					this.report(this.engineTasks.error)
 					return
