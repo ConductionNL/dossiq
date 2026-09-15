@@ -4303,7 +4303,12 @@ OC.L10N.register(
         "Slept by": "In slaap gezet door",
         "Who put it to sleep.": "Wie het in slaap heeft gezet.",
         "Slept at": "In slaap gezet op",
-        "When they put it to sleep.": "Wanneer zij het in slaap hebben gezet."
+        "When they put it to sleep.": "Wanneer zij het in slaap hebben gezet.",
+        "Before this case can be opened": "Voordat deze zaak geopend kan worden",
+        "Communication channel": "Communicatiekanaal",
+        "The case could not be opened.": "De zaak kon niet geopend worden.",
+        "This case type asks for a few things before the case exists. Answer them and the case is opened.": "Dit zaaktype vraagt een paar dingen voordat de zaak bestaat. Vul ze in en de zaak wordt geopend.",
+        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "Dit zaaktype rubriceert tegen een schema dat deze omgeving niet kent, dus de zaak kan nog niet geopend worden. Vraag een beheerder het schema toe te voegen."
     },
     "nplurals=2; plural=(n != 1);"
 )

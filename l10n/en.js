@@ -4303,7 +4303,12 @@ OC.L10N.register(
         "Slept by": "Slept by",
         "Who put it to sleep.": "Who put it to sleep.",
         "Slept at": "Slept at",
-        "When they put it to sleep.": "When they put it to sleep."
+        "When they put it to sleep.": "When they put it to sleep.",
+        "Before this case can be opened": "Before this case can be opened",
+        "Communication channel": "Communication channel",
+        "The case could not be opened.": "The case could not be opened.",
+        "This case type asks for a few things before the case exists. Answer them and the case is opened.": "This case type asks for a few things before the case exists. Answer them and the case is opened.",
+        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme."
     },
     "nplurals=2; plural=(n != 1);"
 )
