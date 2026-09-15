@@ -1320,6 +1320,29 @@
 						}
 					},
 					{
+						"label": "Needs attention",
+						"_note": "markers-and-assessments-on-the-case, row 2.36. `needsAttention` is a stored, facetable boolean derived from the flag history on every save, so the chip is a real narrowing of the query rather than a search through tags. Deliberately not `_unread`: that one is per reader and clears because somebody looked, this one is the flag a named person raised and only another named person with a written reason can clear.",
+						"filter": {
+							"needsAttention": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Assessed high risk",
+						"_note": "markers-and-assessments-on-the-case, row 2.40. `riskLevel` carries the same declared read rule as the assessment it mirrors, so for a reader without the `dossiq-risk-assessment` group OpenRegister filters the property out and this chip narrows to nothing. That is the right answer: an empty list says no more than that this reader has nothing to see. There is NO risk column beside it, and that is deliberate rather than missing. A column is declared once for every reader, so a reader without the permission would get a header with nothing under it, which tells them an assessment exists and is most of what the permission was for. The column lands when the list can drop one per reader.",
+						"filter": {
+							"riskLevel": [
+								"high",
+								"critical"
+							],
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
@@ -2215,6 +2238,13 @@
 						"title": "Archiving",
 						"icon": "ArchiveOutline",
 						"_note": "What happens to this case when its business use ends, as openregister decided it (page slot widget-case-archival -> CaseArchivalPanel). Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
+					},
+					{
+						"id": "case-attention",
+						"type": "case-attention",
+						"title": "Attention",
+						"icon": "FlagOutline",
+						"_note": "markers-and-assessments-on-the-case, rows 2.36, 2.40 and 2.44. Three facts on one strip, kept apart on purpose: the flag a person raised with a written reason and cleared with another, both kept; the risk this organisation assessed, behind a permission declared on the property rather than checked in dossiq code; and the markers the system raised against a named panel. It sits UNDER the unread strip because it says the opposite kind of thing. The unread badge is per reader and clears because somebody looked. A marker is about the world, is not per user, and clears when the work behind it is done. Running the two together into one attention count is how a handler loses the ability to tell a colleague's judgement from a failed virus scan, so each gets its own row and its own lead sentence."
 					}
 				],
 				"layout": [
@@ -2273,10 +2303,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "attention-strip",
+						"widgetId": "case-attention",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2285,7 +2324,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2294,7 +2333,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 8,
+						"gridY": 9,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2302,7 +2341,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2311,7 +2350,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
