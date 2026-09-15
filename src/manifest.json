@@ -193,6 +193,13 @@
 			}
 		]
 	},
+	"personalisation": {
+		"enabled": true,
+		"landingPage": "MyWorkHome",
+		"dateDisplay": "absolute",
+		"rememberLastView": true,
+		"pinnedMenu": ["Queue", "MyWork", "Cases"]
+	},
 	"menu": [
 		{
 			"id": "Dashboard",
@@ -1018,6 +1025,11 @@
 			"route": "/queue",
 			"type": "index",
 			"title": "Queue",
+			"splitView": {
+				"enabled": true,
+				"breakpoint": 1024,
+				"paneWidth": "42%"
+			},
 			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
 			"config": {
 				"register": "dossiq",
@@ -1123,6 +1135,12 @@
 			"route": "/cases",
 			"type": "index",
 			"title": "Cases",
+			"splitView": {
+				"enabled": true,
+				"breakpoint": 1024,
+				"paneWidth": "42%"
+			},
+			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
@@ -1251,6 +1269,13 @@
 						}
 					},
 					{
+						"label": "Handed on",
+						"filter": {
+							"handoverPending": true
+						},
+						"_note": "handing-a-case-over REQ-HAND-02. A case moves to the receiving team the moment it is handed, so the sending team's own lens stops answering for it: `assignedGroup` is already Toezicht. `handoverPending` is what keeps it findable while nobody has picked it up, which is the whole failure this lens exists for. It is a projection of the open casetransfer record and never a second custody trail; the trail itself is on the transfer."
+					},
+					{
 						"label": "Closed",
 						"filter": {
 							"isFinalStatus": true
@@ -1364,6 +1389,8 @@
 			"route": "/cases/:id",
 			"type": "detail",
 			"title": "Case",
+			"tabInAddress": true,
+			"referencePreview": true,
 			"actionsComponent": "RequesterProjection",
 			"config": {
 				"register": "dossiq",
@@ -1607,6 +1634,31 @@
 									}
 								},
 								{
+									"label": "Handled elsewhere",
+									"widget": {
+										"id": "case-external-home",
+										"type": "data",
+										"title": "Handled elsewhere",
+										"icon": "OpenInNew",
+										"_note": "handing-a-case-over REQ-HAND-04. A case can be homed in a specialist application: the zaak lives centrally and the work happens there. This section is the declaration, and `hideEmpty` is ON because most cases are handled here and an empty block on every one of them would be noise. What it must never become is a place to record work: the lifecycle acts on such a case come back disabled from CaseActionProvider, naming the application, and execute() refuses the same move rather than trusting the flag.",
+										"content": {
+											"title": "Handled elsewhere",
+											"columns": 2,
+											"include": [
+												"externalApplication",
+												"externalIdentifier",
+												"externalUrl"
+											],
+											"hideEmpty": true,
+											"overrides": {
+												"externalUrl": {
+													"widget": "link"
+												}
+											}
+										}
+									}
+								},
+								{
 									"label": "Priority",
 									"widget": {
 										"id": "case-priority",
@@ -1727,6 +1779,45 @@
 										"title": "Parties",
 										"icon": "AccountKeyOutline",
 										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
+									}
+								},
+								{
+									"label": "Seats",
+									"widget": {
+										"id": "case-seats",
+										"type": "data",
+										"title": "Seats",
+										"icon": "AccountTieOutline",
+										"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties above with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
+										"content": {
+											"title": "Seats",
+											"columns": 2,
+											"include": [
+												"assignee",
+												"assignedGroup",
+												"handoverPending",
+												"handoverTo"
+											],
+											"hideEmpty": false,
+											"overrides": {
+												"assignee": {
+													"label": "Handler"
+												},
+												"assignedGroup": {
+													"label": "Team"
+												},
+												"handoverPending": {
+													"readOnly": false,
+													"editable": false,
+													"label": "Waiting to be picked up"
+												},
+												"handoverTo": {
+													"readOnly": false,
+													"editable": false,
+													"label": "Handed on to"
+												}
+											}
+										}
 									}
 								}
 							]
@@ -2346,6 +2437,18 @@
 						},
 						"successMessage": "Receipt confirmation recorded on this case.",
 						"errorMessage": "The confirmation could not be recorded."
+					},
+					{
+						"id": "case-hand-over",
+						"type": "open-modal",
+						"label": "Hand to another team",
+						"icon": "SwapHorizontal",
+						"target": "CaseHandoverDialog",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "copy-case",
@@ -4644,6 +4747,7 @@
 								"trigger",
 								"handlingModel",
 								"confidentiality",
+								"coordinatorRequiredBeforeSigning",
 								"isDraft"
 							],
 							"hideEmpty": false

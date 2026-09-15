@@ -153,6 +153,7 @@ import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue
 import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
+import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
@@ -344,6 +345,7 @@ export default {
 	NoteTextOutline,
 	OfficeBuilding,
 	OfficeBuildingOutline,
+	OpenInNew,
 	PaperclipCheck,
 	PauseCircleOutline,
 	PercentOutline,

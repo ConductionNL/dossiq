@@ -47,6 +47,7 @@ class TermijnNotificationService {
 		'ingebrekestelling-receipt',
 		'dwangsom-payment',
 		'hersteltermijn-request',
+		'doorzending',
 	];
 
 	/**
@@ -210,6 +211,11 @@ class TermijnNotificationService {
 				$subject = $rendered['subject'];
 				$body = $rendered['body'];
 				break;
+			case 'doorzending':
+				$rendered = $this->doorzending(case: $case, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
+				break;
 			case 'dwangsom-payment':
 				$amountCents = (int)($context['bedragCents'] ?? 0);
 				$amountEur = number_format($amountCents / 100, 2, ',', '.');
@@ -349,6 +355,54 @@ class TermijnNotificationService {
 				. "\nMet vriendelijke groet",
 		];
 	}//end acknowledgement()
+
+	/**
+	 * The doorzending, Awb 2:3.
+	 *
+	 * The applicant is told two things and no more: their case moved, and who
+	 * has it now. What they must NOT be told is that they have to do anything,
+	 * because under Awb 2:3 they do not: sending it on is our duty, not theirs.
+	 * A message that reads like a rejection sends people to the counter with a
+	 * complaint about a case that is being handled.
+	 *
+	 * It carries no deadline. The receiving party owns the term from here, and
+	 * quoting the term we were counting would be a promise made on somebody
+	 * else's behalf.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The render context, carrying the destination.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
+	 */
+	private function doorzending(string $case, string $locale, array $context): array {
+		$destination = trim((string)($context['destination'] ?? ''));
+		if ($destination === '') {
+			$destination = 'de behandelende afdeling';
+		}
+
+		if ($locale === 'en') {
+			return [
+				'subject' => 'Your case ' . $case . ' has moved',
+				'body' => "Dear applicant,\n\n"
+					. 'We passed your case ' . $case . ' on to ' . $destination . ".\n"
+					. "They handle it from here, and you do not need to send anything again.\n"
+					. "You follow the case in the citizen portal.\n"
+					. "\nKind regards",
+			];
+		}
+
+		return [
+			'subject' => 'Uw zaak ' . $case . ' is doorgestuurd',
+			'body' => "Beste aanvrager,\n\n"
+				. 'Wij hebben uw zaak ' . $case . ' doorgestuurd naar ' . $destination . ".\n"
+				. "Zij behandelen de zaak verder. U hoeft niets opnieuw op te sturen.\n"
+				. "U volgt de zaak via het burgerportaal.\n"
+				. "\nMet vriendelijke groet",
+		];
+	}//end doorzending()
 
 	/**
 	 * The acknowledgement in English.
