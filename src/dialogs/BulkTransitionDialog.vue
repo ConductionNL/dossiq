@@ -1,35 +1,33 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
-	One bulk dialog, four gestures — Transition, Suspend, Resume and Extend
-	term. Pick what applies, give a reason, auto-preview the per-case
-	ready/blocked outcome (read-only), then execute it across every selected
-	case. The single-case write paths remain the only write paths:
-	`StatusTransitionService::execute()` for a transition, and
-	`CaseLifecycleService`'s suspend / resume / extend for the other three.
-	This dialog only calls the bulk endpoints, which loop those once per
-	case, so every guard and every automatic action a single case gets, a
-	bulk case gets too. Partial failures are always shown, never silently
-	dropped.
+	One bulk dialog, four gestures: transition, suspend, resume and extend term.
 
-	ONE DIALOG RATHER THAN FOUR, because the preview, the per-case summary
-	and the failure reporting are the part worth keeping equal. Four dialogs
-	would be four places for "8 of 10 succeeded" to be phrased differently,
-	and the whole point of the preview is that a reader can trust it says the
-	same thing every time.
+	WHAT CHANGED, because the shape of this file is the change. It used to
+	preview and then execute against a dossiq endpoint that looped over the
+	selection server-side. Closing the tab mid-run left four hundred statutory
+	cases in a state nobody could read afterwards, and the only record of what
+	was skipped was a summary that vanished with the dialog.
 
-	THE REASON IS REQUIRED IN EVERY MODE, and Execute stays disabled until
-	there is one. Suspending, resuming and extending are statutory acts
-	(Awb 4:5 and 4:14) that someone has to justify later, and doing twenty at
-	once is precisely when the justification goes unwritten. The server
-	refuses a reasonless lifecycle batch as well; the disabled button is the
-	half that says so before the click rather than after it.
+	Now the dialog composes the act, hands it to OpenRegister's bulk job, and
+	renders what the job says. The job owns the walk, the progress, the per-row
+	outcome, the cancel and the retry (D-1). dossiq declares what happens to one
+	case, in lib/BulkAction/.
 
-	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
-	Spec: openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	TWO PHASES, and the seam between them is the rehearsal. Compose the act,
+	read what it would do to every case, then commit. Nothing is written until
+	the commit, so the skip list is read BEFORE the act rather than after it.
+
+	THE REASON IS REQUIRED IN EVERY MODE. Suspending, resuming and extending are
+	statutory acts (Awb 4:5 and 4:14) somebody accounts for later, and doing
+	twenty at once is exactly when the justification goes unwritten. The action
+	declares the requirement and the server enforces it; the disabled button is
+	the half that says so before the click.
+
+	@spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog :name="title" data-testid="bulk-dialog" @closing="onClose">
+	<NcDialog :name="title" data-testid="bulk-dialog" size="large" @closing="onClose">
 		<div class="bulk-transition-dialog">
 			<NcLoadingIcon v-if="loadingTransitions" :size="32" />
 
@@ -38,30 +36,33 @@
 					{{ transitionsError }}
 				</p>
 
-				<template v-else>
+				<template v-else-if="job === null">
+					<BulkSelectionScope
+						:selectedIds="caseIds"
+						:total="matchingTotal"
+						:scope="scope"
+						@update:scope="scope = $event" />
+
 					<NcSelect
 						v-if="isTransition"
 						v-model="selectedTransition"
 						:options="transitionOptions"
-						:placeholder="t('dossiq', 'Select a status transition')"
+						:placeholder="t('dossiq', 'Pick a status transition')"
 						:inputLabel="t('dossiq', 'New status')"
-						:disabled="executed"
 						label="label"
 						trackBy="id" />
 
 					<NcTextArea
 						v-model="reason"
 						data-testid="bulk-reason"
-						:label="t('dossiq', 'Reason (applied to every case)')"
-						:disabled="executed" />
+						:label="t('dossiq', 'Reason, written onto every case')" />
 
 					<NcTextField
 						v-if="mode === 'suspend'"
 						v-model="days"
 						data-testid="bulk-days"
 						type="number"
-						:label="t('dossiq', 'Days the applicant is given')"
-						:disabled="executed" />
+						:label="t('dossiq', 'Days the applicant is given')" />
 
 					<div
 						v-if="mode === 'extend'"
@@ -74,96 +75,37 @@
 							data-testid="bulk-new-deadline"
 							type="date"
 							:value="newEndDate"
-							:disabled="executed"
-							@input="newEndDate = $event.target.value" />
+							@input="newEndDate = $event.target.value">
 					</div>
 
-					<NcLoadingIcon
-						v-if="previewLoading"
-						:size="24"
-						class="bulk-transition-dialog__preview-loading" />
-
-					<div
-						v-else-if="previewSummary"
-						data-testid="bulk-preview-summary"
-						class="bulk-transition-dialog__summary">
-						<p>
-							{{
-								t(
-									'dossiq',
-									'{ready} of {total} cases are ready to transition.',
-									{
-										ready: previewSummary.counts.ready || 0,
-										total: previewSummary.total,
-									},
-								)
-							}}
-						</p>
-						<ul
-							v-if="previewSummary.failed.length > 0"
-							class="bulk-transition-dialog__reasons">
-							<li
-								v-for="item in previewSummary.failed"
-								:key="item.caseId">
-								{{ item.caseId }}: {{ reasonText(item) }}
-							</li>
-						</ul>
-					</div>
-
-					<p v-if="error" class="bulk-transition-dialog__error">
-						{{ error }}
-					</p>
-
-					<div
-						v-if="executeSummary"
-						data-testid="bulk-execute-summary"
-						class="bulk-transition-dialog__summary">
-						<p>
-							{{
-								t(
-									'dossiq',
-									'{succeeded} of {total} cases were transitioned.',
-									{
-										succeeded:
-											executeSummary.counts.succeeded || 0,
-										total: executeSummary.total,
-									},
-								)
-							}}
-						</p>
-						<p
-							v-if="executeNotice"
-							data-testid="bulk-execute-missing-actions">
-							{{ executeNotice }}
-						</p>
-						<ul
-							v-if="executeSummary.failed.length > 0"
-							class="bulk-transition-dialog__reasons">
-							<li
-								v-for="item in executeSummary.failed"
-								:key="item.caseId">
-								{{ item.caseId }}: {{ reasonText(item) }}
-							</li>
-						</ul>
-					</div>
+					<NcNoteCard v-if="refusal" type="error" data-testid="bulk-refusal">
+						{{ refusal }}
+					</NcNoteCard>
 
 					<div class="bulk-transition-dialog__actions">
 						<NcButton
-							v-if="!executed"
-							data-testid="bulk-execute"
-							:disabled="!canExecute"
-							@click="onExecute">
-							{{ t('dossiq', 'Execute') }}
+							variant="primary"
+							data-testid="bulk-rehearse"
+							:disabled="!canRehearse"
+							@click="rehearse">
+							{{ t('dossiq', 'See what would happen') }}
 						</NcButton>
-						<NcButton
-							type="secondary"
-							:disabled="executing"
-							@click="onClose">
-							{{
-								executed
-									? t('dossiq', 'Close')
-									: t('dossiq', 'Cancel')
-							}}
+						<NcButton :disabled="starting" @click="onClose">
+							{{ t('dossiq', 'Cancel') }}
+						</NcButton>
+					</div>
+				</template>
+
+				<template v-else>
+					<BulkJobProgress
+						:job="job"
+						:busy="starting"
+						@update:job="job = $event"
+						@finished="onFinished" />
+
+					<div class="bulk-transition-dialog__actions">
+						<NcButton data-testid="bulk-close" @click="onClose">
+							{{ t('dossiq', 'Close') }}
 						</NcButton>
 					</div>
 				</template>
@@ -179,28 +121,38 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import BulkJobProgress from '../components/bulk/BulkJobProgress.vue'
+import BulkSelectionScope from '../components/bulk/BulkSelectionScope.vue'
 import {
-	buildExecutePayload,
-	buildLifecycleExecutePayload,
-	buildLifecyclePreviewPayload,
-	buildPreviewPayload,
+	ACTION_LIFECYCLE,
+	ACTION_TRANSITION,
+	previewBulkJob,
+	readRefusal,
+} from '../services/bulkJobApi.js'
+import {
 	isLifecycleGesture,
-	summarizeResults,
+	lifecycleParameters,
+	transitionParameters,
 } from '../utils/bulkTransitionHelpers.js'
-import { bulkFailedActionsNotice } from '../utils/transitionOutcome.js'
+import { buildSelection, SCOPE_PAGE } from '../utils/selectionScope.js'
 
 export default {
 	name: 'BulkTransitionDialog',
+
 	components: {
-		NcDialog,
+		BulkJobProgress,
+		BulkSelectionScope,
 		NcButton,
+		NcDialog,
+		NcLoadingIcon,
+		NcNoteCard,
 		NcSelect,
 		NcTextArea,
 		NcTextField,
-		NcLoadingIcon,
 	},
 
 	props: {
@@ -211,12 +163,11 @@ export default {
 		},
 
 		/**
-		 * Which gesture this dialog is running: `transition` (the default,
-		 * and what the workflow board opens), `suspend`, `resume` or
-		 * `extend`. The mode picks the fields, the title, the request
-		 * payload and the phrasing of the summary; everything else — the
-		 * preview, the per-case result list, the partial-failure reporting —
-		 * is deliberately identical across all four.
+		 * Which gesture this dialog is running: `transition` (the default, and
+		 * what the workflow board opens), `suspend`, `resume` or `extend`. The
+		 * mode picks the fields, the title and the job's parameters. The
+		 * rehearsal, the per-case outcome and the skip list are deliberately
+		 * identical across all four.
 		 */
 		mode: {
 			type: String,
@@ -224,9 +175,22 @@ export default {
 			validator: (value) =>
 				['transition', 'suspend', 'resume', 'extend'].includes(value),
 		},
+
+		/** How many cases match the list's current search, when that is known. */
+		matchingTotal: {
+			type: Number,
+			default: 0,
+		},
+
+		/** The list's current filters, for a whole-result selection. */
+		filters: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	emits: ['close', 'completed'],
+
 	data() {
 		return {
 			loadingTransitions: true,
@@ -236,137 +200,115 @@ export default {
 			reason: '',
 			days: '14',
 			newEndDate: '',
-			previewLoading: false,
-			previewSummary: null,
-			executing: false,
-			executed: false,
-			executeSummary: null,
-			executeNotice: '',
-			error: null,
+			scope: SCOPE_PAGE,
+			starting: false,
+			refusal: '',
+			job: null,
 		}
 	},
 
 	computed: {
 		/**
 		 * NcSelect options built from the available transitions of the first
-		 * selected case — columns are homogeneous by design (same status name
-		 * ⇒ same available transitions), so one case represents the column.
+		 * selected case. Columns are homogeneous by design: the same status
+		 * name means the same available transitions, so one case represents
+		 * the column.
 		 *
-		 * @return {Array<{id: string, label: string}>}
+		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		transitionOptions() {
 			return this.transitions.map((tr) => ({
 				id: tr.id,
-				label: tr.label || tr.id,
+				label: (tr.label || tr.id),
 			}))
 		},
 
 		/**
-		 * Whether this dialog is running a status transition.
-		 *
-		 * @return {boolean}
+		 * @return {boolean} Whether this dialog is running a status transition.
 		 */
 		isTransition() {
 			return this.mode === 'transition'
 		},
 
 		/**
-		 * The dialog's title, which names the gesture rather than saying
-		 * "change status" for all four — a Suspend dialog headed "Change
-		 * status" is the kind of thing a reader clicks through and then
-		 * cannot explain afterwards.
+		 * The title names the gesture rather than saying "change status" for
+		 * all four. A suspend dialog headed "change status" is the kind of
+		 * thing a reader clicks through and then cannot explain afterwards.
 		 *
-		 * @return {string}
-		 *
-		 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+		 * @return {string} The title.
 		 */
 		title() {
 			const count = this.caseIds.length
+
 			if (this.mode === 'suspend') {
-				return this.t('dossiq', 'Suspend {count} cases', { count })
+				return t('dossiq', 'Suspend {count} cases', { count })
 			}
 
 			if (this.mode === 'resume') {
-				return this.t('dossiq', 'Resume {count} cases', { count })
+				return t('dossiq', 'Resume {count} cases', { count })
 			}
 
 			if (this.mode === 'extend') {
-				return this.t('dossiq', 'Extend the term of {count} cases', {
-					count,
-				})
+				return t('dossiq', 'Extend the term of {count} cases', { count })
 			}
 
-			return this.t('dossiq', 'Change status for {count} cases', { count })
+			return t('dossiq', 'Change the status of {count} cases', { count })
 		},
 
 		/**
-		 * Execute is enabled once the mode's own fields are filled, the
-		 * preview has come back, and at least one case is ready.
+		 * The rehearsal is offered once the mode's own fields are filled.
 		 *
-		 * The reason gates every mode, including Transition, where it used to
-		 * be an optional comment. Reading back a batch of twenty cases that
-		 * moved for no recorded reason is the failure this prevents.
+		 * The reason gates every mode, including a transition, where it used to
+		 * be an optional comment. Reading back twenty cases that moved for no
+		 * recorded reason is the failure this prevents.
 		 *
-		 * @return {boolean}
-		 *
-		 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+		 * @return {boolean} Whether the act can be rehearsed.
 		 */
-		canExecute() {
-			if (this.executing || !this.previewSummary) return false
-			if (this.reason.trim().length === 0) return false
-			if (this.isTransition && !this.selectedTransition) return false
-			if (this.mode === 'extend' && !this.newEndDate) return false
-			return (this.previewSummary.counts.ready || 0) > 0
-		},
-	},
-
-	watch: {
-		selectedTransition(newVal) {
-			this.previewSummary = null
-			if (newVal) {
-				this.runPreview()
+		canRehearse() {
+			if (this.starting === true || this.reason.trim().length === 0) {
+				return false
 			}
+
+			if (this.isTransition === true && this.selectedTransition === null) {
+				return false
+			}
+
+			return (this.mode !== 'extend' || this.newEndDate !== '')
 		},
 	},
 
 	/**
-	 * Load what the mode needs before the reader can act: the available
-	 * transitions for a transition, the per-case readiness preview for a
-	 * lifecycle gesture, which has nothing to pick.
+	 * Load what the mode needs before the reader can act.
 	 *
-	 * @return {Promise<void>}
+	 * A lifecycle gesture has nothing to pick, so it is ready at once.
 	 *
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	 * @return {Promise<void>} Resolves when the dialog is usable.
 	 */
 	async mounted() {
-		if (this.isTransition) {
-			await this.loadTransitions()
+		if (this.isTransition === false) {
+			this.loadingTransitions = false
 			return
 		}
 
-		// A lifecycle gesture has nothing to pick, so the preview runs on
-		// open: the reader sees which of the selection the gesture applies
-		// to before deciding whether to type a reason at all.
-		this.loadingTransitions = false
-		await this.runPreview()
+		await this.loadTransitions()
 	},
 
 	methods: {
 		t,
+
 		/**
-		 * Load the available transitions for the first selected case — used to
-		 * populate the transition picker (the column's available transitions).
+		 * Load the available transitions of the first selected case, which is
+		 * what fills the picker.
 		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-column-scoped-selection-on-the-workflow-board
+		 * @return {Promise<void>} Resolves when the picker is filled.
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
 			this.transitionsError = null
+
 			const caseId = this.caseIds[0]
 			if (!caseId) {
-				this.transitionsError = this.t('dossiq', 'No cases selected.')
+				this.transitionsError = t('dossiq', 'No cases are selected.')
 				this.loadingTransitions = false
 				return
 			}
@@ -379,111 +321,112 @@ export default {
 							+ '/available-transitions',
 					),
 				)
-				this.transitions = data?.transitions || []
+				this.transitions = (data?.transitions || [])
 			} catch (err) {
-				this.transitionsError = err?.response?.data?.error || err.message
+				this.transitionsError = (err?.response?.data?.error || err.message)
 			} finally {
 				this.loadingTransitions = false
 			}
 		},
 
 		/**
-		 * Run a read-only bulk preview for the currently selected transition.
+		 * Hand the act to the job and read back what it would do.
 		 *
-		 * @return {Promise<void>}
+		 * Nothing is written by this. The job comes back rehearsed, with a row
+		 * per case, and the commit lives in the progress panel underneath.
 		 *
-		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-preview-before-execute
+		 * @return {Promise<void>} Resolves when the job has been rehearsed.
 		 */
-		async runPreview() {
-			this.previewLoading = true
-			this.error = null
+		async rehearse() {
+			this.starting = true
+			this.refusal = ''
+
 			try {
-				const payload = isLifecycleGesture(this.mode)
-					? buildLifecyclePreviewPayload(
-							{ caseIds: this.caseIds },
-							this.mode,
-						)
-					: buildPreviewPayload(
-							{ caseIds: this.caseIds },
-							this.selectedTransition.id,
-						)
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/bulk-transition/preview'),
-					payload,
-				)
-				this.previewSummary = summarizeResults(data?.results || {})
+				this.job = await previewBulkJob({
+					action: (isLifecycleGesture(this.mode) ? ACTION_LIFECYCLE : ACTION_TRANSITION),
+					parameters: this.parameters(),
+					selection: buildSelection({
+						scope: this.scope,
+						selectedIds: this.caseIds,
+						filters: this.filters,
+					}),
+					justification: this.reason.trim(),
+				})
 			} catch (err) {
-				this.error = err?.response?.data?.error || err.message
+				this.refusal = this.refusalSentence(err)
 			} finally {
-				this.previewLoading = false
+				this.starting = false
 			}
 		},
 
 		/**
-		 * Execute the bulk transition and render per-case results.
+		 * The parameters the chosen act needs.
 		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/specs/case-bulk-status-transition/spec.md#requirement-bulk-transitions-go-through-the-engine
-		 * @spec openspec/changes/transition-reports-failed-actions/specs/case-bulk-status-transition/spec.md
+		 * @return {object} The job parameters.
 		 */
-		async onExecute() {
-			if (!this.canExecute) return
-			this.executing = true
-			this.error = null
-			try {
-				const payload = isLifecycleGesture(this.mode)
-					? buildLifecycleExecutePayload(
-							{ caseIds: this.caseIds },
-							this.mode,
-							{
-								reason: this.reason,
-								days: this.days,
-								newEndDate: this.newEndDate,
-							},
-						)
-					: buildExecutePayload(
-							{ caseIds: this.caseIds },
-							this.selectedTransition.id,
-							this.reason,
-						)
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/bulk-transition/execute'),
-					payload,
-				)
-				this.executeSummary = summarizeResults(data?.results || {})
-				this.executeNotice = bulkFailedActionsNotice(data?.results || {})
-				this.executed = true
-			} catch (err) {
-				this.error = err?.response?.data?.error || err.message
-			} finally {
-				this.executing = false
+		parameters() {
+			if (isLifecycleGesture(this.mode) === true) {
+				return lifecycleParameters(this.mode, {
+					reason: this.reason,
+					days: this.days,
+					newEndDate: this.newEndDate,
+				})
 			}
+
+			return transitionParameters(this.selectedTransition.id, this.reason.trim())
 		},
 
 		/**
-		 * Close the dialog — emits `completed` when an execute has run (so the
-		 * board refreshes and clears the selection), otherwise `close`.
+		 * A refusal, in the words a handler can act on.
+		 *
+		 * The ceiling and the case-type-version refusals get their own
+		 * sentence because both are recoverable by changing the selection, and
+		 * "the request was refused" tells nobody which way to change it.
+		 *
+		 * @param {object} err The axios error.
+		 *
+		 * @return {string} What to show.
+		 */
+		refusalSentence(err) {
+			const { reason, message, details } = readRefusal(err)
+
+			if (reason === 'case-type-versions') {
+				return t(
+					'dossiq',
+					'These cases run on {versions} versions of {caseType}. A field means something different on each, so pick one version and try again.',
+					{
+						versions: (details.versions || []).join(' and '),
+						caseType: (details.caseType || ''),
+					},
+				)
+			}
+
+			if (reason === 'ceiling') {
+				return t('dossiq', 'This act takes at most {ceiling} cases at a time, and you selected {count}.', {
+					ceiling: (details.ceiling || 0),
+					count: (details.count || 0),
+				})
+			}
+
+			return (message || err?.message || t('dossiq', 'The act could not be started.'))
+		},
+
+		/**
+		 * Tell the list the cases have moved, once the job has stopped.
+		 *
+		 * @return {void}
+		 */
+		onFinished() {
+			this.$emit('completed', this.job)
+		},
+
+		/**
+		 * Close the dialog.
 		 *
 		 * @return {void}
 		 */
 		onClose() {
-			this.$emit(this.executed ? 'completed' : 'close')
-		},
-
-		/**
-		 * Render a human-readable reason string for a blocked/failed/error entry.
-		 *
-		 * @param {{status: string, reasons: Array}} item The summarized result entry.
-		 * @return {string}
-		 */
-		reasonText(item) {
-			if (!item.reasons || item.reasons.length === 0) return item.status
-			return item.reasons
-				.map(
-					(r) => r?.failureMessage || r?.message || r?.type || item.status,
-				)
-				.join(', ')
+			this.$emit('close')
 		},
 	},
 }
@@ -491,10 +434,10 @@ export default {
 
 <style scoped>
 .bulk-transition-dialog {
-	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+	padding: 8px 0;
 }
 
 .bulk-transition-dialog__field {
@@ -505,27 +448,11 @@ export default {
 
 .bulk-transition-dialog__actions {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
-}
-
-.bulk-transition-dialog__summary {
-	background-color: var(--color-background-hover);
-	border-radius: var(--border-radius);
-	padding: 8px 12px;
-}
-
-.bulk-transition-dialog__reasons {
-	margin: 8px 0 0;
-	padding-left: 20px;
-	font-size: 0.9em;
-	color: var(--color-text-maxcontrast);
 }
 
 .bulk-transition-dialog__error {
 	color: var(--color-error);
-}
-
-.bulk-transition-dialog__preview-loading {
-	margin: 8px auto;
 }
 </style>

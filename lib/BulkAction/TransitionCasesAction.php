@@ -165,7 +165,17 @@ class TransitionCasesAction implements BulkActionInterface {
 		}
 
 		try {
-			$this->engine->execute(caseId: $caseId, transitionId: $transitionId, comment: $comment);
+			$outcome = $this->engine->execute(caseId: $caseId, transitionId: $transitionId, comment: $comment);
+
+			// Carried, not counted. The move succeeded, so the case belongs
+			// under `applied`; what the count cannot say is that the phase's
+			// work did not arrive with it. A separate outcome would change
+			// what every reader of `applied` means, where a reason only adds
+			// to it.
+			$missed = $this->missedActions(outcome: $outcome);
+			if ($missed !== '') {
+				return BulkActionResult::applied(reason: $missed);
+			}
 
 			return BulkActionResult::applied();
 		} catch (GuardFailedException $e) {
@@ -174,6 +184,39 @@ class TransitionCasesAction implements BulkActionInterface {
 			return BulkActionResult::failed(message: $e->getMessage());
 		}//end try
 	}//end apply()
+
+	/**
+	 * The automatic actions that did not run, named on the row.
+	 *
+	 * A case that moved but whose phase work did not arrive looks identical to
+	 * a clean move in a count, and the bulk dialog that used to say so is gone
+	 * with the loop. The note lives on the member instead, so a handler
+	 * opening the applied list still finds it.
+	 *
+	 * @param array<string, mixed> $outcome What the engine answered.
+	 *
+	 * @return string The note, or an empty string when every action ran.
+	 */
+	private function missedActions(array $outcome): string {
+		$failed = ($outcome['failedActions'] ?? []);
+		if (is_array($failed) === false || $failed === []) {
+			return '';
+		}
+
+		$types = [];
+		foreach ($failed as $action) {
+			$type = trim((string)($action['type'] ?? ''));
+			if ($type !== '') {
+				$types[] = $type;
+			}
+		}
+
+		if ($types === []) {
+			return 'moved, but an automatic action did not run';
+		}
+
+		return 'moved, but these automatic actions did not run: ' . implode(', ', $types);
+	}//end missedActions()
 
 	/**
 	 * Ask the engine what this transition would do, writing nothing.

@@ -56,6 +56,30 @@ export function readListFilters(routeQuery) {
 }
 
 /**
+ * The filters the case list is narrowed by right now, read off the address bar.
+ *
+ * The list keeps its filters in the query string, which is how the CSV export
+ * already finds them. A bulk handler is called with the ticked rows and
+ * nothing else, so this is the only place the whole result set is reachable
+ * from.
+ *
+ * @param {string} [search] A query string, defaulting to the current one.
+ *
+ * @return {object} The filters.
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ */
+export function readLocationFilters(search) {
+	const raw = ((search === undefined) ? (globalThis.location?.search || '') : search)
+	const query = {}
+
+	new URLSearchParams(raw).forEach((value, key) => {
+		query[key] = value
+	})
+
+	return readListFilters(query)
+}
+
+/**
  * The selection to hand the job, for the scope the handler chose.
  *
  * @param {object} choice              What the handler picked.

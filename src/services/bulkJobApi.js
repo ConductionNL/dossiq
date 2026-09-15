@@ -201,3 +201,33 @@ export function readRefusal(error) {
 		details: (body.details || {}),
 	}
 }
+
+/**
+ * How many cases match a set of filters.
+ *
+ * Asked before a handler is offered the whole result, because offering "select
+ * all 400" without knowing there are 400 is exactly the surprise the scope
+ * affordance exists to prevent. An unreadable count answers 0, which withholds
+ * the offer rather than guessing at it.
+ *
+ * ⚠️ The objects endpoint wants BARE filter keys. Spelling them `filter[x]`
+ * makes it answer the empty set, confidently and without an error, and the
+ * page would then say every search matches nothing.
+ *
+ * @param {object} filters The list's current filters.
+ *
+ * @return {Promise<number>} How many cases match.
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ */
+export async function countMatchingCases(filters) {
+	try {
+		const { data } = await axios.get(
+			generateUrl('/apps/openregister/api/objects/dossiq/case'),
+			{ params: { ...(filters || {}), _limit: 1 } },
+		)
+
+		return Number(data?.total || 0)
+	} catch {
+		return 0
+	}
+}
