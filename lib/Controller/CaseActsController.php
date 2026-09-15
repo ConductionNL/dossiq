@@ -53,13 +53,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
-use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
-use OCA\Dossiq\Service\Lifecycle\CaseIncompleteness;
-use OCA\Dossiq\Service\Lifecycle\DraftCaseActs;
-use OCA\Dossiq\Service\Lifecycle\LifecycleActorGate;
-use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Lifecycle\CaseActs;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -83,13 +77,7 @@ class CaseActsController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param CaseEndingActs $endings Finish, abort and archive.
-	 * @param CaseHoldActs $holds Hold and release.
-	 * @param DraftCaseActs $drafts Begin and promote.
-	 * @param CaseIncompleteness $incompleteness Record what is missing.
-	 * @param LifecycleActorGate $gate Whether an act is permitted, and which role is missing.
-	 * @param ProcessOwnedStatusRule $processStatus Whether a status may be hand-set.
-	 * @param CaseStatusStore $store Reads the case for the menu.
+	 * @param CaseActs $acts Every act on a case, behind one collaborator.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
@@ -97,13 +85,7 @@ class CaseActsController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseEndingActs $endings,
-		private readonly CaseHoldActs $holds,
-		private readonly DraftCaseActs $drafts,
-		private readonly CaseIncompleteness $incompleteness,
-		private readonly LifecycleActorGate $gate,
-		private readonly ProcessOwnedStatusRule $processStatus,
-		private readonly CaseStatusStore $store,
+		private readonly CaseActs $acts,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -129,31 +111,7 @@ class CaseActsController extends Controller {
 	public function acts(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: function () use ($caseId): array {
-				$case = $this->store->loadCase(caseId: $caseId);
-				if ($case === null) {
-					throw new RefusedException(
-						rule: 'case-not-found',
-						sentence: 'This case could not be found.',
-						status: RefusedException::STATUS_UNPROCESSABLE,
-					);
-				}
-
-				return [
-					'caseId' => $caseId,
-					'held' => $this->holds->isHeld(case: $case),
-					'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
-					'draft' => $this->drafts->isDraft(case: $case),
-					'incomplete' => ($this->incompleteness->missingOn(case: $case) !== []),
-					'missingFields' => $this->incompleteness->missingOn(case: $case),
-					'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
-					'ending' => $this->endings->endingOf(case: $case),
-					'statusIsHandSettable' => $this->processStatus->allowsHandSet(
-						caseTypeId: (string)($case['caseType'] ?? '')
-					),
-					'acts' => $this->actList(case: $case),
-				];
-			},
+			run: fn (): array => $this->acts->overview(caseId: $caseId),
 		);
 	}//end acts()
 
@@ -170,7 +128,7 @@ class CaseActsController extends Controller {
 	public function finish(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->endings->finish(
+			run: fn (): array => $this->acts->finish(
 				caseId: $caseId,
 				reason: (string)$this->request->getParam('reason', ''),
 				resultTypeId: (string)$this->request->getParam('resultTypeId', ''),
@@ -192,7 +150,7 @@ class CaseActsController extends Controller {
 	public function abort(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->endings->abort(
+			run: fn (): array => $this->acts->abort(
 				caseId: $caseId,
 				reason: (string)$this->request->getParam('reason', ''),
 				resultTypeId: (string)$this->request->getParam('resultTypeId', ''),
@@ -214,7 +172,7 @@ class CaseActsController extends Controller {
 	public function archive(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->endings->archive(
+			run: fn (): array => $this->acts->archive(
 				caseId: $caseId,
 				reason: (string)$this->request->getParam('reason', ''),
 			),
@@ -234,7 +192,7 @@ class CaseActsController extends Controller {
 	public function hold(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->holds->hold(
+			run: fn (): array => $this->acts->hold(
 				caseId: $caseId,
 				reason: (string)$this->request->getParam('reason', ''),
 				until: (string)$this->request->getParam('until', ''),
@@ -255,7 +213,7 @@ class CaseActsController extends Controller {
 	public function releaseHold(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->holds->release(
+			run: fn (): array => $this->acts->releaseHold(
 				caseId: $caseId,
 				reason: (string)$this->request->getParam('reason', ''),
 			),
@@ -275,7 +233,7 @@ class CaseActsController extends Controller {
 	public function draft(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->drafts->begin(caseId: $caseId),
+			run: fn (): array => $this->acts->draft(caseId: $caseId),
 		);
 	}//end draft()
 
@@ -292,7 +250,7 @@ class CaseActsController extends Controller {
 	public function promote(string $caseId): JSONResponse {
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->drafts->promote(caseId: $caseId),
+			run: fn (): array => $this->acts->promote(caseId: $caseId),
 		);
 	}//end promote()
 
@@ -314,41 +272,9 @@ class CaseActsController extends Controller {
 
 		return $this->guarded(
 			caseId: $caseId,
-			run: fn (): array => $this->incompleteness->record(caseId: $caseId, missing: $fields),
+			run: fn (): array => $this->acts->recordIncompleteness(caseId: $caseId, fields: $fields),
 		);
 	}//end incompleteness()
-
-	/**
-	 * The three role-gated acts, each with its verdict and its reason.
-	 *
-	 * @param array<string, mixed> $case The loaded case.
-	 *
-	 * @return array<int, array<string, mixed>> One entry per act.
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	 */
-	private function actList(array $case): array {
-		$acts = [];
-		foreach (['finish', 'abort', 'archive'] as $act) {
-			$allowed = $this->gate->may(act: $act, case: $case);
-
-			// A permitted act carries no reason, so the menu has nothing to
-			// render beside it. Only a refusal explains itself.
-			$reason = '';
-			if ($allowed === false) {
-				$reason = $this->gate->refusalSentence(act: $act, case: $case);
-			}
-
-			$acts[] = [
-				'act' => $act,
-				'allowed' => $allowed,
-				'role' => $this->gate->roleFor(act: $act, case: $case),
-				'reason' => $reason,
-			];
-		}
-
-		return $acts;
-	}//end actList()
 
 	/**
 	 * Run one act behind the session and per-case guards.

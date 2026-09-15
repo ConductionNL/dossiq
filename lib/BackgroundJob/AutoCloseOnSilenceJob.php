@@ -118,7 +118,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 				}
 
 				if ($decision['action'] === 'close') {
-					$this->silence->close(caseId: $caseId, case: $case, decision: $decision);
+					$this->silence->close(caseId: $caseId, decision: $decision);
 					$closed++;
 				}
 			} catch (Throwable $e) {

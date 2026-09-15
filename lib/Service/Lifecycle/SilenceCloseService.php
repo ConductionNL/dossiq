@@ -180,15 +180,19 @@ class SilenceCloseService {
 	 * are the entry's `type` and the empty actor, which is the honest name for
 	 * nobody.
 	 *
+	 * The caller's copy of the case is deliberately NOT a parameter. The act
+	 * below reloads it, because `abort()` writes to the case first and a stale
+	 * copy written back afterwards would undo the very ending this method just
+	 * recorded.
+	 *
 	 * @param string $caseId The case UUID.
-	 * @param array<string, mixed> $case The loaded case.
 	 * @param array{silentDays: int, period: int} $decision What was decided.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
-	public function close(string $caseId, array $case, array $decision): void {
+	public function close(string $caseId, array $decision): void {
 		$reason = sprintf(
 			'Closed after %d days without activity, the period this case type declares.',
 			$decision['period'],

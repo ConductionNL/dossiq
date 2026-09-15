@@ -37,7 +37,6 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Regression tests for StatusTransitionController body parsing.
@@ -100,7 +99,6 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$caseAccessGuard,
-			$this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$user = $this->createMock(IUser::class);

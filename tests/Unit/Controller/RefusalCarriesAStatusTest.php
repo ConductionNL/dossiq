@@ -61,7 +61,6 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Every refusal carries a status the caller can read (REQ-QG-CRN-2).
@@ -110,7 +109,6 @@ class RefusalCarriesAStatusTest extends TestCase {
 			userSession: $this->session(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),
-			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end transitionController()
 

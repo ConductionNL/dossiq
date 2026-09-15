@@ -39,7 +39,6 @@ use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
@@ -68,7 +67,6 @@ class StatusTransitionController extends Controller {
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
-	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the process owns it
 	 */
 	public function __construct(
 		string $appName,
@@ -78,7 +76,6 @@ class StatusTransitionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
-		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -206,17 +203,10 @@ class StatusTransitionController extends Controller {
 	/**
 	 * Execute an admin-only free-form transition.
 	 *
-	 * 🔑 THIS IS THE HAND-SET PATH, which is why REQ-LIFE-03 is enforced here.
-	 * A free-form transition is a status written because an administrator said
-	 * so rather than because the process moved, and a case type that declares
-	 * `processOwnedStatus` accepts exactly none of those. The declared
-	 * transitions are untouched: they ARE the process moving the status, so
-	 * putting the rule on `execute()` would refuse the one way a process-owned
-	 * status is allowed to change.
-	 *
-	 * What this does not reach is a PATCH sent straight to OpenRegister. That
-	 * boundary is the grants gateway's, not this controller's, and pretending
-	 * otherwise here would be a guard that reads complete and is not.
+	 * 🔑 THIS IS THE HAND-SET PATH, and REQ-LIFE-03 is enforced on it inside
+	 * {@see StatusTransitionService::executeFreeForm()} rather than here. The
+	 * engine owns the write, so any other caller it grows gets the rule too,
+	 * and this controller keeps one collaborator fewer.
 	 *
 	 * @param string $caseId The case UUID
 	 *
@@ -251,7 +241,6 @@ class StatusTransitionController extends Controller {
 		}
 
 		try {
-			$this->processOwnedStatus->requireHandSetAllowedOn(caseId: $caseId);
 			$result = $this->transitionEngine->executeFreeForm(
 				caseId: $caseId,
 				toStatusId: $toStatusId,

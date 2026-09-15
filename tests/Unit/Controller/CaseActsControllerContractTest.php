@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseActsController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Lifecycle\CaseActs;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
 use OCA\Dossiq\Service\Lifecycle\CaseIncompleteness;
@@ -116,11 +117,46 @@ class CaseActsControllerContractTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The store the facade reads the case from.
+	 *
+	 * @var CaseStatusStore&MockObject
+	 */
+	private CaseStatusStore $store;
+
+	/**
+	 * The process-owned status rule, which the overview reports.
+	 *
+	 * @var ProcessOwnedStatusRule&MockObject
+	 */
+	private ProcessOwnedStatusRule $processStatus;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var CaseActsController
 	 */
 	private CaseActsController $controller;
+
+	/**
+	 * A REAL facade over doubled acts.
+	 *
+	 * The seam between the controller and the acts is exactly what these
+	 * tests are about, so doubling the facade would let a wrong delegation
+	 * pass: `releaseHold()` reaching `hold()` would answer the same 200.
+	 *
+	 * @return CaseActs The facade.
+	 */
+	private function facade(): CaseActs {
+		return new CaseActs(
+			endings: $this->endings,
+			holds: $this->holds,
+			drafts: $this->drafts,
+			incompleteness: $this->incompleteness,
+			gate: $this->gate,
+			processStatus: $this->processStatus,
+			store: $this->store,
+		);
+	}//end facade()
 
 	/**
 	 * A signed-in handler who works on the case.
@@ -159,11 +195,11 @@ class CaseActsControllerContractTest extends TestCase {
 		);
 		$this->gate->method('refusalSentence')->willReturn('This act needs the archivaris group.');
 
-		$store = $this->createMock(originalClassName: CaseStatusStore::class);
-		$store->method('loadCase')->willReturn(self::CASE);
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->method('loadCase')->willReturn(self::CASE);
 
-		$processStatus = $this->createMock(originalClassName: ProcessOwnedStatusRule::class);
-		$processStatus->method('allowsHandSet')->willReturn(true);
+		$this->processStatus = $this->createMock(originalClassName: ProcessOwnedStatusRule::class);
+		$this->processStatus->method('allowsHandSet')->willReturn(true);
 
 		$this->caseAccessGuard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
@@ -176,13 +212,7 @@ class CaseActsControllerContractTest extends TestCase {
 		$this->controller = new CaseActsController(
 			appName: 'dossiq',
 			request: $this->request,
-			endings: $this->endings,
-			holds: $this->holds,
-			drafts: $this->drafts,
-			incompleteness: $this->incompleteness,
-			gate: $this->gate,
-			processStatus: $processStatus,
-			store: $store,
+			acts: $this->facade(),
 			caseAccessGuard: $this->caseAccessGuard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
@@ -320,11 +350,11 @@ class CaseActsControllerContractTest extends TestCase {
 		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$guard->method('hasCaseMutationAccess')->willReturn(false);
 
-		$endings = $this->createMock(originalClassName: CaseEndingActs::class);
-		$endings->expects($this->never())->method('finish');
+		$this->endings = $this->createMock(originalClassName: CaseEndingActs::class);
+		$this->endings->expects($this->never())->method('finish');
 
-		$store = $this->createMock(originalClassName: CaseStatusStore::class);
-		$store->expects($this->never())->method('loadCase');
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->expects($this->never())->method('loadCase');
 
 		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('mallory');
@@ -334,13 +364,7 @@ class CaseActsControllerContractTest extends TestCase {
 		$controller = new CaseActsController(
 			appName: 'dossiq',
 			request: $this->request,
-			endings: $endings,
-			holds: $this->holds,
-			drafts: $this->drafts,
-			incompleteness: $this->incompleteness,
-			gate: $this->gate,
-			processStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
-			store: $store,
+			acts: $this->facade(),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
@@ -363,19 +387,13 @@ class CaseActsControllerContractTest extends TestCase {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn(null);
 
-		$holds = $this->createMock(originalClassName: CaseHoldActs::class);
-		$holds->expects($this->never())->method('hold');
+		$this->holds = $this->createMock(originalClassName: CaseHoldActs::class);
+		$this->holds->expects($this->never())->method('hold');
 
 		$controller = new CaseActsController(
 			appName: 'dossiq',
 			request: $this->request,
-			endings: $this->endings,
-			holds: $holds,
-			drafts: $this->drafts,
-			incompleteness: $this->incompleteness,
-			gate: $this->gate,
-			processStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
-			store: $this->createMock(originalClassName: CaseStatusStore::class),
+			acts: $this->facade(),
 			caseAccessGuard: $this->caseAccessGuard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

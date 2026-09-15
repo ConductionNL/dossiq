@@ -115,10 +115,15 @@ class ProcessOwnedStatusRule {
 		}
 
 		if ($this->rules->processOf(caseTypeId: $caseTypeId) === '') {
-			throw RefusedException::indeterminate(
+			// Built rather than taken from `RefusedException::indeterminate()`,
+			// which is the same object: the fleet phpmd config exempts exactly
+			// one class from StaticAccess and adding a second for one call
+			// would be editing shared config to suit this file.
+			throw new RefusedException(
 				rule: 'process-owned-status-unresolvable',
 				sentence: 'This case type gives its status to a process that could not be found, '
 					.'so the status cannot be set by hand or by the process.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 
