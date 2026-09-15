@@ -35,9 +35,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\AppInfo\Application;
+use InvalidArgumentException;
+use OCP\Config\Exceptions\TypeConflictException;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * The reader's own view settings for their queue.
@@ -95,8 +96,9 @@ class QueueViewPreferences {
 	public function groupBy(string $userId): string {
 		try {
 			$stored = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_GROUP_BY, 'source');
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: reading the queue grouping failed: ' . $e->getMessage());
+		} catch (InvalidArgumentException | TypeConflictException $e) {
+			$this->logger->warning('Dossiq: the queue grouping could not be read: ' . $e->getMessage());
+
 			return 'source';
 		}
 
@@ -215,9 +217,12 @@ class QueueViewPreferences {
 	private function storedHidden(string $userId): array {
 		try {
 			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_HIDDEN_GROUPS, '');
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: reading the hidden queue groups failed: ' . $e->getMessage());
-			return [];
+		} catch (InvalidArgumentException | TypeConflictException $e) {
+			// Narrow on purpose: see the note in PersonalStageService. A
+			// reader whose preference cannot be read sees every group, which
+			// is the safe direction for a queue to be wrong in.
+			$this->logger->warning('Dossiq: the hidden queue groups could not be read: ' . $e->getMessage());
+			$raw = '';
 		}
 
 		if (trim($raw) === '') {

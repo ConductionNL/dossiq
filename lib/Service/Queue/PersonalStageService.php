@@ -41,9 +41,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Queue;
 
 use OCA\Dossiq\AppInfo\Application;
+use InvalidArgumentException;
+use OCP\Config\Exceptions\TypeConflictException;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads and writes one person's private stages.
@@ -119,10 +120,13 @@ class PersonalStageService {
 	public function all(string $userId): array {
 		try {
 			$raw = $this->userConfig->getValueString($userId, Application::APP_ID, self::PREF_STAGES, '');
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: reading the personal stages failed: ' . $e->getMessage());
-
-			return [];
+		} catch (InvalidArgumentException | TypeConflictException $e) {
+			// Exactly what `getValueString` can raise: a malformed identifier,
+			// or a key some earlier version stored as another type. Anything
+			// else is a defect and belongs in the log with a stack trace, not
+			// behind a blanket catch that turns it into "you set no stages".
+			$this->logger->warning('Dossiq: the personal stages could not be read: ' . $e->getMessage());
+			$raw = '';
 		}
 
 		if (trim($raw) === '') {
