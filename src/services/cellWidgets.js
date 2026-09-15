@@ -18,6 +18,7 @@
 
 import CaseStateMarkersCell from '../components/cells/CaseStateMarkersCell.vue'
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
+import LensedValueCell from '../components/cells/LensedValueCell.vue'
 import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
 import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
 import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'
@@ -52,4 +53,12 @@ export default {
 	// empty on nine rows in ten push the case title off the screen for nothing.
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	caseStateMarkers: CaseStateMarkersCell,
+
+	// A lens column on the Objects tab: a field of the linked object, resolved
+	// by OpenRegister while it renders the link row. It is a component and not
+	// a formatter for one reason: an unreadable value arrives as the object
+	// `{ "@withheld": true }`, which a formatter would stringify to
+	// `[object Object]` and a blank cell would state as "there is no object".
+	// @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
+	lensedValue: LensedValueCell,
 }
