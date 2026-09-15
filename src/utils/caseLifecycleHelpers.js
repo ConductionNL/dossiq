@@ -21,6 +21,8 @@
  * @spec openspec/specs/case-dashboard-view/spec.md
  */
 
+import { stateFieldRefusal } from './statusFieldRules.js'
+
 /**
  * Read an object's id whichever shape OpenRegister handed it back in.
  *
@@ -225,13 +227,27 @@ export function lifecycleRefusalCode(action, state) {
 /**
  * Turn a server refusal into a sentence.
  *
- * @param {object} body The refusal body ({message, error, code, failedGuards}).
+ * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */
 export function refusalMessage(body, translate) {
 	const t = typeof translate === 'function' ? translate : (s) => s
+
+	// A state's field rules are the platform's refusal, and it arrives one
+	// level down under `errors` with the sentence beside the code. It is read
+	// FIRST because the outer `error` on that same body is the exception text,
+	// so reading the body the old way would show a handler the machinery
+	// instead of the field they have to go and fill in. Never re-translated:
+	// the sentence is either the one the administrator wrote on the rule, in
+	// their own language, or OpenRegister's own naming the field and the state.
+	const stateField = stateFieldRefusal(body)
+	if (stateField?.message) {
+		return stateField.message
+	}
+
 	const guards = Array.isArray(body?.failedGuards) ? body.failedGuards : []
 	if (guards.length > 0) {
 		// `failureMessage` is the key GuardRegistry::evaluateAll writes. Reading

@@ -195,6 +195,152 @@
 			</NcButton>
 		</div>
 
+		<div class="status-type-form__rules">
+			<h5 class="status-type-form__checklist-heading">
+				{{ t('dossiq', 'Fields in this status') }}
+			</h5>
+			<p class="status-type-form__hint">
+				{{
+					t(
+						'dossiq',
+						'What this status asks of the case. Publishing the case type hands these to the platform, which refuses a save that breaks one.',
+					)
+				}}
+			</p>
+
+			<div
+				v-for="(rule, index) in fieldRules"
+				:key="index"
+				class="status-type-form__rule">
+				<div class="status-type-form__row">
+					<div class="status-type-form__field status-type-form__field--rule">
+						<NcSelect
+							:modelValue="selectedRule(rule)"
+							:options="ruleOptions"
+							:inputLabel="t('dossiq', 'This field')"
+							:data-testid="`status-type-rule-kind-${index}`"
+							@update:modelValue="
+								(v) => updateRule(index, 'rule', v ? v.id : 'required')
+							" />
+					</div>
+					<div class="status-type-form__field">
+						<NcSelect
+							v-if="fieldOptions.length > 0"
+							:modelValue="selectedField(rule)"
+							:options="fieldOptions"
+							:inputLabel="t('dossiq', 'Field')"
+							:placeholder="t('dossiq', 'Pick a field')"
+							:data-testid="`status-type-rule-field-${index}`"
+							@update:modelValue="
+								(v) => updateRule(index, 'field', v ? v.id : '')
+							" />
+						<NcTextField
+							v-else
+							:modelValue="rule.field"
+							:label="t('dossiq', 'Field')"
+							:data-testid="`status-type-rule-field-${index}`"
+							@update:modelValue="(v) => updateRule(index, 'field', v)" />
+					</div>
+					<NcButton
+						variant="tertiary"
+						:aria-label="
+							t('dossiq', 'Remove rule for {field}', {
+								field: rule.field || String(index + 1),
+							})
+						"
+						@click="removeRule(index)">
+						<template #icon>
+							<DeleteIcon :size="20" />
+						</template>
+					</NcButton>
+				</div>
+
+				<div class="status-type-form__row">
+					<div class="status-type-form__field">
+						<NcTextField
+							:modelValue="groupsText(rule)"
+							:label="t('dossiq', 'Only for these groups')"
+							:placeholder="t('dossiq', 'Everyone')"
+							:data-testid="`status-type-rule-groups-${index}`"
+							@update:modelValue="
+								(v) => updateRule(index, 'groups', splitGroups(v))
+							" />
+						<p class="status-type-form__hint">
+							{{
+								t(
+									'dossiq',
+									'Separate group names with a comma. Leave it empty and the rule holds for everyone, administrators included.',
+								)
+							}}
+						</p>
+					</div>
+					<div class="status-type-form__field">
+						<NcTextField
+							:modelValue="rule.message"
+							:label="t('dossiq', 'What to say when the save is refused')"
+							:placeholder="
+								t('dossiq', 'Fill in the motivation before deciding.')
+							"
+							:data-testid="`status-type-rule-message-${index}`"
+							@update:modelValue="(v) => updateRule(index, 'message', v)" />
+					</div>
+				</div>
+
+				<div class="status-type-form__row">
+					<NcCheckboxRadioSwitch
+						:modelValue="rule.condition !== null"
+						:data-testid="`status-type-rule-conditional-${index}`"
+						@update:modelValue="(v) => toggleCondition(index, v)">
+						{{ t('dossiq', 'Only in some cases') }}
+					</NcCheckboxRadioSwitch>
+				</div>
+
+				<div v-if="rule.condition" class="status-type-form__row">
+					<div class="status-type-form__field">
+						<NcSelect
+							:modelValue="selectedKind(rule)"
+							:options="kindOptions"
+							:inputLabel="t('dossiq', 'Holds when')"
+							:data-testid="`status-type-rule-kind-of-${index}`"
+							@update:modelValue="
+								(v) =>
+									updateCondition(index, 'kind', v ? v.id : 'fieldPresent')
+							" />
+					</div>
+					<div class="status-type-form__field">
+						<NcTextField
+							:modelValue="rule.condition.field"
+							:label="t('dossiq', 'Reading this field')"
+							:data-testid="`status-type-rule-condition-field-${index}`"
+							@update:modelValue="
+								(v) => updateCondition(index, 'field', v)
+							" />
+					</div>
+					<div
+						v-if="rule.condition.kind === 'fieldEquals'"
+						class="status-type-form__field">
+						<NcTextField
+							:modelValue="rule.condition.value"
+							:label="t('dossiq', 'And finding this value')"
+							:data-testid="`status-type-rule-condition-value-${index}`"
+							@update:modelValue="
+								(v) => updateCondition(index, 'value', v)
+							" />
+					</div>
+				</div>
+			</div>
+
+			<NcButton
+				variant="tertiary"
+				data-testid="status-type-rule-add"
+				@click="addRule">
+				<template #icon>
+					<PlusIcon :size="20" />
+				</template>
+				{{ t('dossiq', 'Add a field rule') }}
+			</NcButton>
+		</div>
+
 		<span v-if="error" class="status-type-form__error" role="alert">{{
 			error
 		}}</span>
@@ -211,6 +357,15 @@ import {
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import { STATUS_COLOURS, statusColourStyle } from '../../../utils/statusColour.js'
+import {
+	CONDITION_KINDS,
+	conditionKindLabels,
+	FIELD_RULES,
+	fieldRule,
+	fieldRuleLabels,
+	normaliseGroups,
+	ruleCondition,
+} from '../../../utils/statusFieldRules.js'
 import {
 	checklistItem,
 	STATUS_ROLES,
@@ -240,6 +395,19 @@ export default {
 		error: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * The fields a rule may name, as `{id, label}`.
+		 *
+		 * Empty on an instance whose case type has no properties yet, and the
+		 * form falls back to a text field rather than an empty picker: a rule
+		 * can name a property of the case schema itself, which is not in this
+		 * list and never was.
+		 */
+		fields: {
+			type: Array,
+			default: () => [],
 		},
 	},
 
@@ -344,6 +512,59 @@ export default {
 		selectedRole() {
 			return this.roleOptions.find((o) => o.id === this.form.role) || null
 		},
+
+		/**
+		 * The rules this status declares, always a list.
+		 *
+		 * @return {Array<object>} The rules.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		fieldRules() {
+			return Array.isArray(this.form.fieldRules) ? this.form.fieldRules : []
+		},
+
+		/**
+		 * The three things a status can do to a field, in the reader's language.
+		 *
+		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		ruleOptions() {
+			const labels = fieldRuleLabels()
+
+			return FIELD_RULES.map((id) => ({ id, label: labels[id] || id }))
+		},
+
+		/**
+		 * The questions a condition may ask, in the reader's language.
+		 *
+		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		kindOptions() {
+			const labels = conditionKindLabels()
+
+			return CONDITION_KINDS.map((id) => ({ id, label: labels[id] || id }))
+		},
+
+		/**
+		 * The fields a rule may name.
+		 *
+		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		fieldOptions() {
+			return this.fields
+				.map((field) => ({
+					id: String(field?.id ?? field?.name ?? field ?? ''),
+					label: String(field?.label ?? field?.name ?? field ?? ''),
+				}))
+				.filter((option) => option.id !== '')
+		},
 	},
 
 	methods: {
@@ -414,6 +635,147 @@ export default {
 				this.form.checklist.filter((item, i) => i !== index),
 			)
 		},
+
+		/**
+		 * The option standing for a rule's kind.
+		 *
+		 * @param {object} rule The rule row.
+		 * @return {object|null} The option.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		selectedRule(rule) {
+			return this.ruleOptions.find((o) => o.id === rule.rule) || null
+		},
+
+		/**
+		 * The option standing for the field a rule names.
+		 *
+		 * @param {object} rule The rule row.
+		 * @return {object|null} The option.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		selectedField(rule) {
+			return this.fieldOptions.find((o) => o.id === rule.field) || null
+		},
+
+		/**
+		 * The option standing for a condition's kind.
+		 *
+		 * @param {object} rule The rule row.
+		 * @return {object|null} The option.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		selectedKind(rule) {
+			return (
+				this.kindOptions.find((o) => o.id === rule.condition?.kind) || null
+			)
+		},
+
+		/**
+		 * The groups a rule names, as one line of text.
+		 *
+		 * @param {object} rule The rule row.
+		 * @return {string} The names, comma separated.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		groupsText(rule) {
+			return normaliseGroups(rule.groups).join(', ')
+		},
+
+		/**
+		 * One line of text as a list of group names.
+		 *
+		 * @param {string} text What the author typed.
+		 * @return {Array<string>} The names.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		splitGroups(text) {
+			return normaliseGroups(String(text ?? '').split(','))
+		},
+
+		/**
+		 * Report one changed rule.
+		 *
+		 * @param {number} index Which rule.
+		 * @param {string} field The key on the rule.
+		 * @param {string|Array} value The new value.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		updateRule(index, field, value) {
+			this.update(
+				'fieldRules',
+				this.fieldRules.map((rule, i) =>
+					i === index ? { ...rule, [field]: value } : rule,
+				),
+			)
+		},
+
+		/**
+		 * Give a rule a condition, or take it away.
+		 *
+		 * Taking it away sets null rather than an empty object, because an empty
+		 * object is a condition that reads no field, and a rule carrying one
+		 * would be published as unconditional anyway. Null is the state the
+		 * saved row and the switch agree on.
+		 *
+		 * @param {number} index Which rule.
+		 * @param {boolean} conditional Whether the rule holds only sometimes.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		toggleCondition(index, conditional) {
+			this.updateRule(index, 'condition', conditional ? ruleCondition() : null)
+		},
+
+		/**
+		 * Report one changed part of a rule's condition.
+		 *
+		 * @param {number} index Which rule.
+		 * @param {string} field The key on the condition.
+		 * @param {string} value The new value.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		updateCondition(index, field, value) {
+			const rule = this.fieldRules[index]
+			const condition = { ...(rule?.condition || ruleCondition()), [field]: value }
+			this.updateRule(index, 'condition', condition)
+		},
+
+		/**
+		 * Add an empty rule row.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		addRule() {
+			this.update('fieldRules', [...this.fieldRules, fieldRule()])
+		},
+
+		/**
+		 * Remove one rule row.
+		 *
+		 * @param {number} index Which rule.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		removeRule(index) {
+			this.update(
+				'fieldRules',
+				this.fieldRules.filter((rule, i) => i !== index),
+			)
+		},
 	},
 }
 </script>
@@ -471,6 +833,23 @@ export default {
 	gap: 12px;
 	align-items: center;
 	margin-bottom: 8px;
+}
+
+.status-type-form__rules {
+	border-top: 1px solid var(--color-border);
+	margin-top: 12px;
+	padding-top: 12px;
+}
+
+.status-type-form__rule {
+	border-inline-start: 3px solid var(--color-border);
+	padding-inline-start: 12px;
+	margin-bottom: 12px;
+}
+
+.status-type-form__field--rule {
+	max-width: 200px;
+	flex: 0 0 200px;
 }
 
 .status-type-form__error {
