@@ -200,3 +200,25 @@ export const CnDataTable = {
 		])
 	},
 }
+
+/**
+ * `buildManifestRoutes` and its helpers — RE-EXPORTED FROM THE REAL PACKAGE,
+ * not stubbed.
+ *
+ * Everything above this line stands in for a Vue component the suite cannot
+ * mount. This one is different: it is pure JavaScript over a plain object,
+ * and it is the thing `src/utils/manifestRoutes.js` is tested FOR. A stub of
+ * it would make `routePermissions.spec.js` assert that our own fake emits the
+ * split route, which is a test that cannot fail. The subpath import is not
+ * aliased back here — the alias in `vitest.config.js` matches the bare
+ * package name exactly — so this reaches the installed library.
+ */
+export {
+	buildManifestRoutes,
+	pageHasSplitView,
+	pageIdForRoute,
+	SPLIT_ROUTE_SUFFIX,
+	splitIdForRoute,
+	splitRouteName,
+	splitRoutePath,
+} from '@conduction/nextcloud-vue/src/utils/buildManifestRoutes.js'
