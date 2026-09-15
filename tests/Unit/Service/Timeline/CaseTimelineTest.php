@@ -197,6 +197,13 @@ class CaseTimelineTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * Whether the container claims the writer and then fails to build it.
+	 *
+	 * @var boolean
+	 */
+	private bool $containerAnswersButCannotBuild = false;
+
+	/**
 	 * Set up the stand-ins.
 	 *
 	 * @return void
@@ -205,6 +212,7 @@ class CaseTimelineTest extends TestCase {
 		$this->writer = new FakeTimelineWriter();
 		$this->objects = new FakeTimelineObjectService();
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->containerAnswersButCannotBuild = false;
 	}//end setUp()
 
 	/**
@@ -239,7 +247,7 @@ class CaseTimelineTest extends TestCase {
 		// `get()`, and a double that answered only one of them would let a
 		// change to which method the seam uses pass unnoticed.
 		$container = $this->createMock(ContainerInterface::class);
-		$container->method('has')->willReturn($writerResolves);
+		$container->method('has')->willReturn($writerResolves || $this->containerAnswersButCannotBuild);
 		$container->method('get')->willReturnCallback(
 			function (string $name) use ($writerResolves): object {
 				if ($writerResolves === false) {
@@ -451,6 +459,30 @@ class CaseTimelineTest extends TestCase {
 
 		$this->assertSame('', $id);
 	}//end testARefusedWriteIsSwallowedAndLogged()
+
+	/**
+	 * The container claiming the writer and then failing to build it is the
+	 * path the refactor opened: `isAvailable()` asks `has()`, which answers
+	 * yes, and `get()` throws anyway because OpenRegister could not construct
+	 * the service. It must reach the one catch that logs it, not the caller.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testAWriterThatCannotBeBuiltIsLoggedNotThrown(): void {
+		$this->containerAnswersButCannotBuild = true;
+		$this->logger->expects($this->once())->method('warning');
+
+		$id = $this->timeline(writerResolves: false)->record(
+			caseId: 'case-1',
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: 'Gebeld',
+		);
+
+		$this->assertSame('', $id);
+		$this->assertSame([], $this->writer->written);
+	}//end testAWriterThatCannotBeBuiltIsLoggedNotThrown()
 
 	/**
 	 * A blank case or a blank kind writes nothing at all.
