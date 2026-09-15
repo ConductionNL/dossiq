@@ -270,8 +270,10 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$resumed = $this->pauseService->resumeAfterPauze($id, $resumeAt);
 
 		// Dossiq case-data side: base end +14 at pause, -10 unused at
-		// resume, net +4 = start + 60.
-		$expected = $start->modify('+60 days')->format('Y-m-d');
+		// resume, net +4 = start + 60, landed on the next day the
+		// administered calendar works (Awb 1:1 Algemene termijnenwet), so
+		// the assertion holds on the runs where start + 60 is a weekend.
+		$expected = $this->firstWorkingDayFrom($start->modify('+60 days'))->format('Y-m-d');
 		self::assertSame($expected, $resumed['endDateCurrent']);
 
 		// Engine side: suspend was evidenced with the Awb basis, and the
@@ -282,8 +284,25 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$armed = $this->engine->calls['arm'][0]['config'];
 		$consumed = (int)$start->diff($pauseStart)->days;
 		$remaining = ((int)$armed['sla']['value'] - $consumed);
-		$engineFireAt = $resumeAt->modify('+' . $remaining . ' days');
+		$engineFireAt = $this->firstWorkingDayFrom($resumeAt->modify('+' . $remaining . ' days'));
 		self::assertSame($expected, $engineFireAt->format('Y-m-d'));
+	}
+
+	/**
+	 * The day the fixture's administered calendar first works on or after
+	 * the given date, so an expectation anchored on today survives a
+	 * weekend without a time machine.
+	 *
+	 * @param DateTimeImmutable $date The raw calendar date.
+	 *
+	 * @return DateTimeImmutable
+	 */
+	private function firstWorkingDayFrom(DateTimeImmutable $date): DateTimeImmutable {
+		$calendar = $this->calendars->resolve('nl-national', null);
+		while ($calendar->isWorkingDay($date) === false) {
+			$date = $date->modify('+1 day');
+		}
+		return $date;
 	}
 
 	/**

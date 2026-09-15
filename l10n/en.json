@@ -4268,7 +4268,20 @@
         "The term starts now. The case leaves your drafts.": "The term starts now. The case leaves your drafts.",
         "What you can do with this case": "What you can do with this case",
         "You park the case until a date. The statutory term keeps running.": "You park the case until a date. The statutory term keeps running.",
-        "You pick the case up again before its date.": "You pick the case up again before its date."
+        "You pick the case up again before its date.": "You pick the case up again before its date.",
+        "Hand it over": "Hand it over",
+        "Hand this case to another team": "Hand this case to another team",
+        "Hand to another team": "Hand to another team",
+        "Handed on": "Handed on",
+        "Handed on to": "Handed on to",
+        "Handled elsewhere": "Handled elsewhere",
+        "Seats": "Seats",
+        "Tell the applicant, this is a doorzending (Awb 2:3)": "Tell the applicant, this is a doorzending (Awb 2:3)",
+        "The case keeps its number, its history and its term. Only the team changes.": "The case keeps its number, its history and its term. Only the team changes.",
+        "The case was not handed on.": "The case was not handed on.",
+        "The group that handles it from here": "The group that handles it from here",
+        "Waiting to be picked up": "Waiting to be picked up",
+        "Why it is moving": "Why it is moving"
     },
     "plurals": ""
 }
