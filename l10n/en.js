@@ -4554,7 +4554,13 @@ OC.L10N.register(
         "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Write down why, and the flag will change. Both raising and clearing keep the reason.",
         "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
         "This case is not flagged as needing attention.": "This case is not flagged as needing attention.",
-        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case."
+        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case.",
+        "Aanvullingsverzoek": "Aanvullingsverzoek",
+        "What is missing": "What is missing",
+        "Answer by": "Answer by",
+        "Asked by": "Asked by",
+        "Asked at": "Asked at",
+        "Answered": "Answered"
     },
     "nplurals=2; plural=(n != 1);"
 )

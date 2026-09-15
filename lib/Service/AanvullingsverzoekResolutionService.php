@@ -212,6 +212,16 @@ class AanvullingsverzoekResolutionService {
 			return false;
 		}
 
+		// 🔴 PARSING IS NOT THE SAME AS READING. `0000-00-00` does NOT throw:
+		// PHP rolls it over to a date in the year -1, which is comfortably in
+		// the past, so a request carrying one from a bad import would expire
+		// itself on the next timer fire and take the file's evidence with it.
+		// So the parse has to ROUND-TRIP before it counts as a date.
+		$asStored = substr(trim($due), 0, 10);
+		if ($deadline->format('Y-m-d') !== $asStored) {
+			return false;
+		}
+
 		return ($deadline->format('Y-m-d') < ($now ?? new DateTimeImmutable())->format('Y-m-d'));
 	}//end hasRunOut()
 

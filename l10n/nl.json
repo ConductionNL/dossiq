@@ -4565,6 +4565,12 @@
         "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Schrijf op waarom, dan verandert de markering. Zowel het zetten als het opheffen bewaart de reden.",
         "This case is already flagged as needing attention.": "Deze zaak is al gemarkeerd als aandacht nodig.",
         "This case is not flagged as needing attention.": "Deze zaak is niet gemarkeerd als aandacht nodig.",
-        "You cannot change the attention flag on this case.": "Je kunt de aandachtsmarkering op deze zaak niet wijzigen."
+        "You cannot change the attention flag on this case.": "Je kunt de aandachtsmarkering op deze zaak niet wijzigen.",
+        "Aanvullingsverzoek": "Aanvullingsverzoek",
+        "What is missing": "Wat ontbreekt",
+        "Answer by": "Reageren voor",
+        "Asked by": "Gevraagd door",
+        "Asked at": "Gevraagd op",
+        "Answered": "Beantwoord"
     }
 }
