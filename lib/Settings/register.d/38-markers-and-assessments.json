@@ -256,14 +256,12 @@
                 "raiseWhen": {
                   "type": "string",
                   "enum": [
-                    "document-scan-failed",
                     "advice-request-overdue",
-                    "party-address-undeliverable",
                     "aanvullingsverzoek-open",
                     "term-exceeded"
                   ],
                   "title": "Raised when",
-                  "description": "The condition that raises the marker. A closed list, because a condition nothing evaluates is a marker that never appears and never says so."
+                  "description": "The condition that raises the marker. A closed list, and a short one on purpose: a condition nothing can evaluate is a marker that never appears and never says why. A marker for a document that failed its virus scan is absent because `scanVerdict` is the open scan-verdict-on-the-row change and no document carries one yet, and a marker for a party whose post came back is absent because a role carries no such field. Both land when the fields do. `aanvullingsverzoek-open` reads the derived flag `aanvullingsverzoek-as-a-record` writes and raises nothing until that change lands, which is declared rather than silent."
                 },
                 "clearWhen": {
                   "type": "string",

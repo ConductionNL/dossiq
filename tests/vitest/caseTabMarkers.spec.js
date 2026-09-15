@@ -84,21 +84,21 @@ describe('a marker names the panel where the work is', () => {
 		axios.post.mockReset()
 	})
 
-	it('draws the failed scan against the Files panel, with its reason', async () => {
+	it('draws the overdue advice against the Work panel, with its reason', async () => {
 		const wrapper = await mountWithMarkers([
 			{
-				marker: 'document-scan-failed',
-				tab: 'case-files',
-				reason: '1 document(s) did not pass the virus scan.',
+				marker: 'advice-request-overdue',
+				tab: 'case-work-panel',
+				reason: '1 advice request(s) are past the date they were asked for.',
 				raisedAt: '2026-06-01T09:00:00+00:00',
 			},
 		])
 
-		const marker = wrapper.find('[data-testid="case-marker-document-scan-failed"]')
+		const marker = wrapper.find('[data-testid="case-marker-advice-request-overdue"]')
 		expect(marker.exists()).toBe(true)
-		expect(marker.attributes('data-tab')).toBe('case-files')
-		expect(marker.text()).toContain('Files')
-		expect(marker.text()).toContain('did not pass the virus scan')
+		expect(marker.attributes('data-tab')).toBe('case-work-panel')
+		expect(marker.text()).toContain('Work')
+		expect(marker.text()).toContain('past the date they were asked for')
 	})
 
 	it('says nothing at all on a case carrying no marker', async () => {
@@ -109,13 +109,13 @@ describe('a marker names the panel where the work is', () => {
 
 	it('draws one row per marker, each naming its own panel', async () => {
 		const wrapper = await mountWithMarkers([
-			{ marker: 'document-scan-failed', tab: 'case-files', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{ marker: 'term-exceeded', tab: 'case-data-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
 			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'b', raisedAt: '2026-06-02T09:00:00+00:00' },
 		])
 
 		const rows = wrapper.findAll('[data-testid="case-attention-markers"] li')
 		expect(rows).toHaveLength(2)
-		expect(rows.map((r) => r.attributes('data-tab'))).toEqual(['case-files', 'case-work-panel'])
+		expect(rows.map((r) => r.attributes('data-tab'))).toEqual(['case-data-panel', 'case-work-panel'])
 	})
 
 	it('shows the marker id rather than nothing when a panel has no label', async () => {
@@ -140,10 +140,10 @@ describe('the marker is not the unread badge', () => {
 		// strip must not: writing one would clear the other panel's badge as a
 		// side effect of drawing a marker.
 		const wrapper = await mountWithMarkers([
-			{ marker: 'document-scan-failed', tab: 'case-files', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
 		])
 
-		expect(wrapper.find('[data-testid="case-marker-document-scan-failed"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-marker-advice-request-overdue"]').exists()).toBe(true)
 		expect(axios.put).not.toHaveBeenCalled()
 		expect(axios.delete).not.toHaveBeenCalled()
 
@@ -155,10 +155,10 @@ describe('the marker is not the unread badge', () => {
 		// Clearing is doing the work. A dismissal button would be the per-user
 		// unread badge again, wearing the marker's clothes.
 		const wrapper = await mountWithMarkers([
-			{ marker: 'document-scan-failed', tab: 'case-files', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
 		])
 
-		const marker = wrapper.find('[data-testid="case-marker-document-scan-failed"]')
+		const marker = wrapper.find('[data-testid="case-marker-advice-request-overdue"]')
 		expect(marker.findAll('button')).toHaveLength(0)
 	})
 

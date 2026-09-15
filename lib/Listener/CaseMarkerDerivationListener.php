@@ -115,11 +115,20 @@ class CaseMarkerDerivationListener implements IEventListener {
 		$modified = $event->getModifiedData();
 		$payload = array_merge($payload, $modified);
 
+		// The rows a condition reads that are NOT on the case. One query, on
+		// the same footing as the case-type read the priority derivation
+		// beside this already makes on every save. A create has no id yet and
+		// therefore no related rows, which answers an empty context: no
+		// marker that needs one is judged, and none was standing to keep.
+		$context = $this->markerService->contextFor(
+			caseId: (string)($payload['@self']['id'] ?? ($payload['id'] ?? ''))
+		);
+
 		$event->setModifiedData(
 			array_merge(
 				$modified,
 				$this->riskService->resolve(case: $payload),
-				$this->markerService->resolve(case: $payload)
+				$this->markerService->resolve(case: $payload, context: $context)
 			)
 		);
 	}//end apply()

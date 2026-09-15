@@ -61,6 +61,9 @@ let plainType = ''
 /** One case per scenario, so no test depends on another's writes. */
 const cases: Record<string, string> = {}
 
+/** The advice request whose overdue date raises the marker. */
+let markedAdvice = ''
+
 test.describe('A case says what needs looking at, and who said so', () => {
 	test.setTimeout(180_000)
 
@@ -150,12 +153,23 @@ test.describe('A case says what needs looking at, and who said so', () => {
 			},
 		})
 
-		// The marker: a document whose scan came back bad. The CONDITION is
-		// seeded, never the marker.
-		await seed('marked', plainType, {
-			caseDocuments: [
-				{ title: `${RUN_PREFIX} bankafschrift`, scanVerdict: 'infected' },
-			],
+		// The marker: an advice request nobody answered by the date it was
+		// asked for. The CONDITION is seeded, never the marker, and it is
+		// seeded as its own object because `adviceRequest` points back at the
+		// case rather than living on it.
+		await seed('marked', plainType)
+		markedAdvice = objectId(
+			await createObject(api, token, 'adviceRequest', {
+				case: cases.marked,
+				question: `${RUN_PREFIX} advies brandveiligheid`,
+				status: 'requested',
+				deadline: '2020-01-01',
+			}),
+		)
+		// The case is saved again so the derivation sees the request that was
+		// written after it. A create cannot see rows that do not exist yet.
+		await updateObject(api, token, 'case', cases.marked, {
+			description: `${RUN_PREFIX} advice seeded`,
 		})
 
 		await api.dispose()
@@ -391,7 +405,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 	})
 
 	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#a-failed-scan-marks-the-documents-tab
-	test('a failed scan marks the Files panel, naming the reason', async ({
+	test('an overdue advice request marks the Work panel, naming the reason', async ({
 		page,
 		playwright,
 		baseURL,
@@ -401,20 +415,20 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const row = await showObject(api, 'case', cases.marked)
 		const markers = (row.attentionMarkers ?? []) as Array<Record<string, string>>
 
-		expect(markers.map((m) => m.marker)).toContain('document-scan-failed')
-		expect(markers.find((m) => m.marker === 'document-scan-failed')?.tab).toBe('case-files')
+		expect(markers.map((m) => m.marker)).toContain('advice-request-overdue')
+		expect(markers.find((m) => m.marker === 'advice-request-overdue')?.tab).toBe('case-work-panel')
 		expect(row.hasAttentionMarkers).toBe(true)
 
 		await openCase(page, 'marked')
-		const marker = page.locator('[data-testid="case-marker-document-scan-failed"]')
+		const marker = page.locator('[data-testid="case-marker-advice-request-overdue"]')
 		await expect(marker).toBeVisible({ timeout: 30_000 })
-		await expect(marker).toHaveAttribute('data-tab', 'case-files')
+		await expect(marker).toHaveAttribute('data-tab', 'case-work-panel')
 
 		await api.dispose()
 	})
 
 	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#opening-the-tab-does-not-clear-the-marker
-	test('opening the Files panel leaves the marker exactly where it was', async ({
+	test('opening the Work panel leaves the marker exactly where it was', async ({
 		page,
 		playwright,
 		baseURL,
@@ -422,16 +436,16 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const api = await playwright.request.newContext({ baseURL })
 
 		await openCase(page, 'marked')
-		await expect(page.locator('[data-testid="case-marker-document-scan-failed"]')).toBeVisible({
+		await expect(page.locator('[data-testid="case-marker-advice-request-overdue"]')).toBeVisible({
 			timeout: 30_000,
 		})
 
 		// Open the panel the marker points at, and leave again.
-		await page.getByRole('tab', { name: /files|bestanden|documenten/i }).first().click()
+		await page.getByRole('tab', { name: /work|werk|taken/i }).first().click()
 		await page.waitForTimeout(1_000)
 		await page.reload(PAGE_LOAD)
 
-		const marker = page.locator('[data-testid="case-marker-document-scan-failed"]')
+		const marker = page.locator('[data-testid="case-marker-advice-request-overdue"]')
 		await expect(marker, 'a visit is not the work').toBeVisible({ timeout: 30_000 })
 
 		// And the stored fact agrees: nothing was written by looking.
@@ -442,25 +456,25 @@ test.describe('A case says what needs looking at, and who said so', () => {
 	})
 
 	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#handling-the-work-clears-the-marker
-	test('replacing the failed document clears the marker, with nobody dismissing it', async ({
+	test('recording the advice clears the marker, with nobody dismissing it', async ({
 		playwright,
 		baseURL,
 	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		// The work: the bad document is replaced with one that passed. No
-		// gesture anywhere touches the marker.
+		// The work: the advice arrived. No gesture anywhere touches the
+		// marker, and the case itself is saved only to trigger the derivation
+		// that reads the request again.
+		await updateObject(api, token, 'adviceRequest', markedAdvice, { status: 'received' })
 		await updateObject(api, token, 'case', cases.marked, {
-			caseDocuments: [
-				{ title: `${RUN_PREFIX} bankafschrift`, scanVerdict: 'clean' },
-			],
+			description: `${RUN_PREFIX} advice received`,
 		})
 
 		const after = await showObject(api, 'case', cases.marked)
 		const markers = (after.attentionMarkers ?? []) as Array<Record<string, string>>
 
-		expect(markers.map((m) => m.marker)).not.toContain('document-scan-failed')
+		expect(markers.map((m) => m.marker)).not.toContain('advice-request-overdue')
 		expect(after.hasAttentionMarkers).toBe(false)
 
 		await api.dispose()

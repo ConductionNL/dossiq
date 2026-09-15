@@ -25,6 +25,27 @@
  * The panel a marker points at is named from the list the case page already
  * uses, so nothing invents a second vocabulary of panels (design D-7).
  *
+ * 🔴 A CONDITION READS EITHER THE CASE OR ITS RELATED ROWS, AND THE TWO ARE
+ * NOT THE SAME KIND OF READ. `caseDocuments`, `adviceRequests` and `roles` are
+ * NOT properties of a case: each is a separate register object pointing back
+ * at it, exactly as `37-unread-state.json` records for notes and
+ * contactmomenten. A condition written against `$case['adviceRequests']` would
+ * therefore be false on every case for ever, and nothing would fail. So the
+ * related rows arrive as an explicit `$context`, fetched by `contextFor()`,
+ * and a condition whose rows are ABSENT from the context is not evaluated at
+ * all. A marker already standing for such a condition is KEPT rather than
+ * cleared, because a save that could not see the rows has learnt nothing about
+ * whether the work was done, and silently dropping the marker would be the
+ * same no-op wearing different clothes.
+ *
+ * WHAT IS NOT DECLARED HERE IS AS DELIBERATE AS WHAT IS. A marker for a
+ * document that failed its virus scan needs `scanVerdict`, which is the open
+ * `scan-verdict-on-the-row` change and does not exist on `caseDocument` yet. A
+ * marker for a party whose post came back needs a field `role` does not carry.
+ * Declaring either now would put a condition in the vocabulary that nothing
+ * can answer, which is the exact defect the closed list exists to prevent.
+ * They land when the fields do.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service
  *
@@ -47,6 +68,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -56,6 +79,8 @@ use Throwable;
  * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
  */
 class CaseAttentionMarkerService {
+
+	use SearchesObjects;
 
 	/**
 	 * The panels of the case page a marker may point at.
@@ -88,11 +113,23 @@ class CaseAttentionMarkerService {
 	 * @var array<int, string>
 	 */
 	public const RAISE_CONDITIONS = [
-		'document-scan-failed',
 		'advice-request-overdue',
-		'party-address-undeliverable',
 		'aanvullingsverzoek-open',
 		'term-exceeded',
+	];
+
+	/**
+	 * The context key each condition reads, for the conditions that need one.
+	 *
+	 * A condition absent from this map reads the case payload and can always be
+	 * answered. A condition present in it can only be answered when its rows
+	 * were fetched, and is skipped, with any standing marker kept, when they
+	 * were not.
+	 *
+	 * @var array<string, string>
+	 */
+	public const CONDITION_CONTEXT = [
+		'advice-request-overdue' => 'adviceRequests',
 	];
 
 	/**
@@ -115,13 +152,6 @@ class CaseAttentionMarkerService {
 	 */
 	public const SHIPPED_MARKERS = [
 		[
-			'id' => 'document-scan-failed',
-			'label' => 'A document failed its virus scan',
-			'tab' => 'case-files',
-			'raiseWhen' => 'document-scan-failed',
-			'clearWhen' => self::CLEAR_CONDITION,
-		],
-		[
 			'id' => 'advice-request-overdue',
 			'label' => 'An advice request is past its date',
 			'tab' => 'case-work-panel',
@@ -129,10 +159,10 @@ class CaseAttentionMarkerService {
 			'clearWhen' => self::CLEAR_CONDITION,
 		],
 		[
-			'id' => 'party-address-undeliverable',
-			'label' => 'Post to a party came back',
-			'tab' => 'case-people-panel',
-			'raiseWhen' => 'party-address-undeliverable',
+			'id' => 'term-exceeded',
+			'label' => 'The date this case had to be decided by has passed',
+			'tab' => 'case-data-panel',
+			'raiseWhen' => 'term-exceeded',
 			'clearWhen' => self::CLEAR_CONDITION,
 		],
 	];
@@ -140,16 +170,68 @@ class CaseAttentionMarkerService {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeResolver $resolver The effective blueprint of a case type,
-	 *                                   so a child type inherits its parent's
-	 *                                   markers without declaring them.
-	 * @param LoggerInterface  $logger   Structured logger.
+	 * @param CaseTypeResolver $resolver        The effective blueprint of a case
+	 *                                          type, so a child type inherits
+	 *                                          its parent's markers without
+	 *                                          declaring them.
+	 * @param LoggerInterface  $logger          Structured logger.
+	 * @param SettingsService  $settingsService The OpenRegister seam, for the
+	 *                                          rows a condition reads that are
+	 *                                          not on the case itself.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
+		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The related rows the conditions read, for one case.
+	 *
+	 * ONE query, on the same footing as the case-type read the priority
+	 * derivation beside this already makes on every save. A failure answers an
+	 * EMPTY context rather than an empty row set, and the difference matters:
+	 * an empty context means "not asked", which keeps a standing marker,
+	 * where an empty row set would mean "asked, and there is nothing", which
+	 * clears one. A store that was briefly unreachable must not look like work
+	 * somebody finished.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> The context.
+	 *
+	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 */
+	public function contextFor(string $caseId): array {
+		$caseId = trim($caseId);
+		if ($caseId === '' || $this->settingsService === null) {
+			return [];
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: 'adviceRequest',
+				filters: ['case' => $caseId, '_limit' => 100]
+			);
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Dossiq: could not read the advice requests behind a marker: ' . $e->getMessage(),
+				['app' => Application::APP_ID, 'caseId' => $caseId]
+			);
+			return [];
+		}
+
+		return ['adviceRequests' => $rows];
+	}//end contextFor()
 
 	/**
 	 * What is wrong with a set of marker declarations.
@@ -276,32 +358,51 @@ class CaseAttentionMarkerService {
 	 * makes "handling the work clears the marker" true by construction rather
 	 * than by a second listener remembering to clear it.
 	 *
-	 * @param array<string, mixed>   $case    The case, with the rows the
-	 *                                       conditions read already on it.
+	 * @param array<string, mixed>   $case    The case being judged.
 	 * @param DateTimeImmutable|null $now     Today, for the conditions that ask.
+	 * @param array<string, mixed>   $context The related rows, from
+	 *                                        `contextFor()`. A condition whose
+	 *                                        key is absent is not judged, and
+	 *                                        its standing marker is kept.
 	 *
 	 * @return array<int, array<string, mixed>> The raised markers.
 	 *
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */
-	public function evaluate(array $case, ?DateTimeImmutable $now = null): array {
+	public function evaluate(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
 		$now = ($now ?? new DateTimeImmutable());
 		$caseTypeId = $this->referenceId(value: ($case['caseType'] ?? null));
 		$standing = $this->standing(case: $case);
 
 		$raised = [];
 		foreach ($this->declarationsFor(caseTypeId: $caseTypeId) as $declaration) {
+			$condition = (string)$declaration['raiseWhen'];
+			$id = (string)$declaration['id'];
+
+			$needs = (string)(self::CONDITION_CONTEXT[$condition] ?? '');
+			if ($needs !== '' && array_key_exists($needs, $context) === false) {
+				// The rows this condition reads were not fetched, so this save
+				// learnt nothing about it. Keep what was standing; clearing it
+				// would say the work was done on no evidence at all.
+				$kept = $this->keep(marker: $id, case: $case);
+				if ($kept !== null) {
+					$raised[] = $kept;
+				}
+
+				continue;
+			}
+
 			$reason = $this->reasonFor(
-				condition: (string)$declaration['raiseWhen'],
+				condition: $condition,
 				case: $case,
-				now: $now
+				now: $now,
+				context: $context
 			);
 
 			if ($reason === '') {
 				continue;
 			}
 
-			$id = (string)$declaration['id'];
 			$raised[] = [
 				'marker' => $id,
 				'tab' => (string)$declaration['tab'],
@@ -317,17 +418,42 @@ class CaseAttentionMarkerService {
 	}//end evaluate()
 
 	/**
+	 * A marker already standing on the case, exactly as it stands.
+	 *
+	 * @param string               $marker The marker id.
+	 * @param array<string, mixed> $case   The case.
+	 *
+	 * @return array<string, mixed>|null The row, or null when none stands.
+	 */
+	private function keep(string $marker, array $case): ?array {
+		$markers = ($case['attentionMarkers'] ?? []);
+		if (is_array($markers) === false) {
+			return null;
+		}
+
+		foreach ($markers as $row) {
+			if (is_array($row) === true && (string)($row['marker'] ?? '') === $marker) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end keep()
+
+	/**
 	 * The marker fields this save implies.
 	 *
-	 * @param array<string, mixed>   $case The case being saved.
-	 * @param DateTimeImmutable|null $now  Today.
+	 * @param array<string, mixed>   $case    The case being saved.
+	 * @param DateTimeImmutable|null $now     Today.
+	 * @param array<string, mixed>   $context The related rows, from `contextFor()`.
 	 *
-	 * @return array{attentionMarkers: array<int, array<string, mixed>>, hasAttentionMarkers: bool} The fields to write back.
+	 * @return array{attentionMarkers: array<int, array<string, mixed>>,
+	 *               hasAttentionMarkers: bool} The fields to write back.
 	 *
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */
-	public function resolve(array $case, ?DateTimeImmutable $now = null): array {
-		$markers = $this->evaluate(case: $case, now: $now);
+	public function resolve(array $case, ?DateTimeImmutable $now = null, array $context = []): array {
+		$markers = $this->evaluate(case: $case, now: $now, context: $context);
 
 		return [
 			'attentionMarkers' => $markers,
@@ -342,17 +468,21 @@ class CaseAttentionMarkerService {
 	 * "two documents failed their virus scan" sends somebody to the right
 	 * document, and `document-scan-failed` sends them to a glossary.
 	 *
-	 * @param string             $condition One of RAISE_CONDITIONS.
-	 * @param array<string, mixed> $case    The case.
-	 * @param DateTimeImmutable   $now      Today.
+	 * @param string               $condition One of RAISE_CONDITIONS.
+	 * @param array<string, mixed> $case      The case.
+	 * @param DateTimeImmutable    $now       Today.
+	 * @param array<string, mixed> $context   The related rows.
 	 *
 	 * @return string The reason, or the empty string when the condition is false.
 	 */
-	private function reasonFor(string $condition, array $case, DateTimeImmutable $now): string {
+	private function reasonFor(
+		string $condition,
+		array $case,
+		DateTimeImmutable $now,
+		array $context = [],
+	): string {
 		return match ($condition) {
-			'document-scan-failed' => $this->documentsFailingScan(case: $case),
-			'advice-request-overdue' => $this->adviceOverdue(case: $case, now: $now),
-			'party-address-undeliverable' => $this->undeliverableParties(case: $case),
+			'advice-request-overdue' => $this->adviceOverdue(context: $context, now: $now),
 			'aanvullingsverzoek-open' => $this->openAanvullingsverzoek(case: $case),
 			'term-exceeded' => $this->termExceeded(case: $case, now: $now),
 			default => '',
@@ -360,45 +490,25 @@ class CaseAttentionMarkerService {
 	}//end reasonFor()
 
 	/**
-	 * Documents on this case whose scan came back bad.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return string The reason, or the empty string.
-	 */
-	private function documentsFailingScan(array $case): string {
-		$failed = 0;
-		foreach ($this->rows(case: $case, key: 'caseDocuments') as $document) {
-			$verdict = strtolower(trim((string)($document['scanVerdict'] ?? '')));
-			if (in_array($verdict, ['infected', 'failed', 'unscannable'], true) === true) {
-				$failed++;
-			}
-		}
-
-		if ($failed === 0) {
-			return '';
-		}
-
-		return sprintf('%d document(s) did not pass the virus scan.', $failed);
-	}//end documentsFailingScan()
-
-	/**
 	 * Advice requests on this case that are past their date.
 	 *
-	 * @param array<string, mixed> $case The case.
-	 * @param DateTimeImmutable    $now  Today.
+	 * `adviceRequest` is a register object pointing back at the case, never a
+	 * property of it, so the rows arrive in the context rather than on `$case`.
+	 *
+	 * @param array<string, mixed> $context The related rows.
+	 * @param DateTimeImmutable    $now     Today.
 	 *
 	 * @return string The reason, or the empty string.
 	 */
-	private function adviceOverdue(array $case, DateTimeImmutable $now): string {
+	private function adviceOverdue(array $context, DateTimeImmutable $now): string {
 		$overdue = 0;
-		foreach ($this->rows(case: $case, key: 'adviceRequests') as $request) {
+		foreach ($this->rows(context: $context, key: 'adviceRequests') as $request) {
 			$status = strtolower(trim((string)($request['status'] ?? '')));
 			if (in_array($status, ['received', 'closed', 'withdrawn', 'expired'], true) === true) {
 				continue;
 			}
 
-			$due = trim((string)($request['dueDate'] ?? ''));
+			$due = trim((string)($request['deadline'] ?? ''));
 			if ($due === '' || $this->hasPassed(date: $due, now: $now) === false) {
 				continue;
 			}
@@ -412,28 +522,6 @@ class CaseAttentionMarkerService {
 
 		return sprintf('%d advice request(s) are past the date they were asked for.', $overdue);
 	}//end adviceOverdue()
-
-	/**
-	 * Parties on this case whose address came back.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return string The reason, or the empty string.
-	 */
-	private function undeliverableParties(array $case): string {
-		$bounced = 0;
-		foreach ($this->rows(case: $case, key: 'roles') as $role) {
-			if (($role['addressUndeliverable'] ?? false) === true) {
-				$bounced++;
-			}
-		}
-
-		if ($bounced === 0) {
-			return '';
-		}
-
-		return sprintf('Post to %d part(y|ies) on this case came back.', $bounced);
-	}//end undeliverableParties()
 
 	/**
 	 * Whether this case is waiting on an applicant.
@@ -507,15 +595,15 @@ class CaseAttentionMarkerService {
 	}//end standing()
 
 	/**
-	 * The rows of an array-valued property, each one an array.
+	 * The related rows under one context key, each one an array.
 	 *
-	 * @param array<string, mixed> $case The case.
-	 * @param string               $key  The property.
+	 * @param array<string, mixed> $context The context.
+	 * @param string               $key     The key.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function rows(array $case, string $key): array {
-		$rows = ($case[$key] ?? []);
+	private function rows(array $context, string $key): array {
+		$rows = ($context[$key] ?? []);
 		if (is_array($rows) === false) {
 			return [];
 		}
