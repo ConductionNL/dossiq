@@ -40,9 +40,9 @@
 				:label="t('dossiq', 'Why it is moving')" />
 
 			<NcCheckboxRadioSwitch
-				:model-value="doorzending"
+				:modelValue="doorzending"
 				data-testid="case-handover-doorzending"
-				@update:model-value="doorzending = $event">
+				@update:modelValue="doorzending = $event">
 				{{ t('dossiq', 'Tell the applicant, this is a doorzending (Awb 2:3)') }}
 			</NcCheckboxRadioSwitch>
 

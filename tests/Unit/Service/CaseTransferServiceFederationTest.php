@@ -262,7 +262,11 @@ class CaseTransferServiceFederationTest extends TestCase {
 			shareBroker: new TransferShareBroker($gateway, $logger),
 			logger: $logger,
 			auditTrail: $auditTrail,
-			internal: $this->createMock(originalClassName: InternalHandover::class),
+			// A STUB, not a mock: the helper is static, and `createMock()` is an
+			// instance method. The federated path never reaches the internal
+			// handover, so a stub that answers nothing is the whole
+			// requirement here.
+			internal: self::createStub(InternalHandover::class),
 		);
 	}//end makeTransferService()
 

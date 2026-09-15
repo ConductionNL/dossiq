@@ -28,14 +28,16 @@ const REGISTER_PATH = path.resolve(
 	'../../lib/Settings/dossiq_register.json',
 )
 
-const schemas = () =>
-	JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas
+function schemas () {
+  return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas
+}
 
 /** @return {object|undefined} The Handed on chip. */
-const handedOn = () =>
-	panels
+function handedOn () {
+  return panels
 		.pageConfig('Cases')
 		.quickFilters.find((entry) => entry.label === 'Handed on')
+}
 
 describe('the Handed on lens', () => {
 	it('filters on the pending marker and nothing else', () => {

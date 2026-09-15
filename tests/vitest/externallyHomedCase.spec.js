@@ -30,8 +30,9 @@ const REGISTER_PATH = path.resolve(
 	'../../lib/Settings/dossiq_register.json',
 )
 
-const caseSchema = () =>
-	JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas.case
+function caseSchema () {
+  return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas.case
+}
 
 /**
  * One header action of the CaseDetail page.

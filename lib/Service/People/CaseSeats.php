@@ -177,8 +177,17 @@ class CaseSeats {
 		}
 
 		$existing = $this->coordinatorBinding(caseId: $caseId);
+
+		// The uid is the FALLBACK label, never the stored identity: the seat is
+		// addressed by `participant`, and a caller that passed no display name
+		// gets a row a person can still read rather than an empty one.
+		$label = trim($displayName);
+		if ($label === '') {
+			$label = $this->uidOf(participant: $participant);
+		}
+
 		$record = [
-			'name' => ($displayName !== '' ? $displayName : $this->uidOf(participant: $participant)),
+			'name' => $label,
 			'roleType' => ($existing['roleType'] ?? $roleTypes[0]),
 			'case' => $caseId,
 			'participant' => $this->referenceOf(participant: $participant),
