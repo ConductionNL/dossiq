@@ -159,6 +159,7 @@ export default {
 		 * A DOM id for the progress bar, so its label associates with it.
 		 *
 		 * @return {string} The id.
+		 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
 		 */
 		progressId() {
 			return `case-terms-progress-${this.objectId || 'unknown'}`

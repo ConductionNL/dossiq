@@ -111,12 +111,17 @@ class CaseTermsService {
 			$bound[] = $statutory;
 		}
 
+		$plannedExtra = [];
+		if ($plannedStart !== '') {
+			$plannedExtra = ['plannedStartDate' => $plannedStart];
+		}
+
 		$planned = $this->bindLeadTime(
 			caseId: $caseId,
 			kind: TermKind::PLANNED,
 			days: $declared['plannedLeadTimeDays'],
 			start: $from,
-			extra: (($plannedStart !== '') ? ['plannedStartDate' => $plannedStart] : []),
+			extra: $plannedExtra,
 		);
 		if ($planned !== null) {
 			$bound[] = $planned;
@@ -327,7 +332,10 @@ class CaseTermsService {
 		$done = $this->phasesDone(phases: $phases, statusTypeId: $statusTypeId);
 		$total = count($phases);
 
-		$byPhases = ($total > 0) ? (int)round((($done / $total) * 100)) : $consumed;
+		$byPhases = $consumed;
+		if ($total > 0) {
+			$byPhases = (int)round((($done / $total) * 100));
+		}
 
 		return [
 			'progress' => max(0, min(100, (int)round(((($byPhases + $consumed) / 2))))),
@@ -399,8 +407,8 @@ class CaseTermsService {
 			return 0;
 		}
 
-		$start = $this->dayOf((string)($term['startDate'] ?? ''));
-		$end = $this->dayOf((string)($term['endDate'] ?? ''));
+		$start = $this->dayOf(value: (string)($term['startDate'] ?? ''));
+		$end = $this->dayOf(value: (string)($term['endDate'] ?? ''));
 		if ($start === null || $end === null) {
 			return 0;
 		}
@@ -485,14 +493,17 @@ class CaseTermsService {
 	 * @return int The count, 0 when there is no readable end.
 	 */
 	private function daysLeft(string $end, DateTimeImmutable $today): int {
-		$endDay = $this->dayOf($end);
+		$endDay = $this->dayOf(value: $end);
 		if ($endDay === null) {
 			return 0;
 		}
 
 		$days = (int)$today->diff($endDay)->days;
+		if ($endDay < $today) {
+			return (-1 * $days);
+		}
 
-		return (($endDay < $today) ? (-1 * $days) : $days);
+		return $days;
 	}//end daysLeft()
 
 	/**

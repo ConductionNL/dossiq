@@ -169,19 +169,24 @@ class InformationRequestService {
 			);
 		}
 
+		$why = 'Aanvulling gevraagd';
+		if ($rationale !== '') {
+			$why = $rationale;
+		}
+
 		// The send worked, so the clock stops. This order is the requirement:
 		// a suspension that happens first survives a send that fails.
 		$suspended = $this->pause->registerPauze(
 			termInstanceId: $instanceId,
 			durationDays: max(1, $durationDays),
-			rationale: (($rationale !== '') ? $rationale : 'Aanvulling gevraagd (Awb 4:5)'),
+			rationale: ($why . ' (Awb 4:5)'),
 		);
 
 		$record = $this->termService->recordEvent(
 			termInstanceId: $instanceId,
 			type: self::EVENT_REQUESTED,
 			basis: 'Awb 4:5',
-			rationale: (($rationale !== '') ? $rationale : 'Aanvulling gevraagd'),
+			rationale: $why,
 			daysImpact: max(1, $durationDays),
 			moment: $now,
 			items: $asked,

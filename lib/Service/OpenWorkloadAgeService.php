@@ -185,8 +185,11 @@ class OpenWorkloadAgeService {
 		}
 
 		$status = trim((string)$status);
+		if ($status === '') {
+			return 'unknown';
+		}
 
-		return (($status !== '') ? $status : 'unknown');
+		return $status;
 	}//end statusOf()
 
 	/**

@@ -160,11 +160,21 @@ class ChainTermSplitter {
 		$claimed = array_sum($declared);
 		$left = max(0.0, (100.0 - $claimed));
 		$undeclared = (count($values) - count($declared));
-		$each = ($left > 0.0) ? ($left / $undeclared) : 0.01;
+		$each = 0.01;
+		if ($left > 0.0) {
+			$each = ($left / $undeclared);
+		}
 
-		return array_map(
-			static fn (float $share): float => (($share > 0.0) ? $share : $each),
-			$values
-		);
+		$weights = [];
+		foreach ($values as $share) {
+			if ($share > 0.0) {
+				$weights[] = $share;
+				continue;
+			}
+
+			$weights[] = $each;
+		}//end foreach
+
+		return $weights;
 	}//end weights()
 }//end class

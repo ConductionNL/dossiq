@@ -120,7 +120,7 @@ final class TermKind {
 	public static function of(array $instance): string {
 		$kind = (string)($instance['kind'] ?? '');
 
-		if (self::isKnown($kind) === true) {
+		if (self::isKnown(kind: $kind) === true) {
 			return $kind;
 		}
 
@@ -159,7 +159,7 @@ final class TermKind {
 		$visible = [];
 
 		foreach ($terms as $term) {
-			if (self::isCitizenVisible(self::of($term)) === true) {
+			if (self::isCitizenVisible(kind: self::of(instance: $term)) === true) {
 				$visible[] = $term;
 			}
 		}//end foreach

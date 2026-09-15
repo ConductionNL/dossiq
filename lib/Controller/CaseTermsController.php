@@ -355,7 +355,10 @@ class CaseTermsController extends Controller {
 	private function jsonBody(): array {
 		$raw = (string)file_get_contents('php://input');
 		$body = json_decode($raw, true);
+		if (is_array($body) === false) {
+			return [];
+		}
 
-		return ((is_array($body) === true) ? $body : []);
+		return $body;
 	}//end jsonBody()
 }//end class
