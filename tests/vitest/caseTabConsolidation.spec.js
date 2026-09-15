@@ -229,9 +229,9 @@ describe('the surfaces that read in exactly one chrome', () => {
 	)
 
 	it('leaves the sidebar the tabs that have no strip counterpart', () => {
-		// History, Access, Sharing and Tags duplicate nothing, so they stay.
-		// Asserted exactly: a later change that empties the sidebar, or refills
-		// it, has to say so here rather than drift.
+		// History, Terms, Access, Sharing and Tags duplicate nothing, so they
+		// stay. Asserted exactly: a later change that empties the sidebar, or
+		// refills it, has to say so here rather than drift.
 		//
 		// `access` arrived with case-grants-name-their-source: who holds which
 		// right on this case and where each grant came from, read from
@@ -239,8 +239,15 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// for. It has no strip counterpart and duplicates nothing: the strip
 		// carries what has HAPPENED to the case, and this carries who may act
 		// on it.
+		//
+		// `terms` arrived with phase-terms-and-the-internal-target: the four
+		// clocks on this case read apart, the statutory term beside the planned
+		// end, the internal target and the phase term. It has no strip
+		// counterpart either. The strip says what happened; this says what is
+		// still owed and by when.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
+			'terms',
 			'access',
 			'sharing',
 			'tags',
