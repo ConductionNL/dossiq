@@ -23,6 +23,7 @@
 					<th scope="col">{{ t('dossiq', 'Strategy') }}</th>
 					<th scope="col">{{ t('dossiq', 'Health') }}</th>
 					<th scope="col">{{ t('dossiq', 'Active') }}</th>
+					<th scope="col">{{ t('dossiq', 'Connection test') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -46,9 +47,25 @@
 								: t('dossiq', 'Inactive')
 						}}
 					</td>
+					<td class="stuf-endpoints__test">
+						<NcButton
+							:disabled="testing === row.id"
+							:data-testid="'stuf-test-' + row.id"
+							@click="test(row)">
+							{{ t('dossiq', 'Test connection') }}
+						</NcButton>
+						<span
+							class="stuf-endpoints__result"
+							:class="'stuf-endpoints__result--' + resultFor(row).type">
+							{{ resultFor(row).label }}
+						</span>
+						<span v-if="resultFor(row).measuredAt" class="stuf-endpoints__measured">
+							{{ t('dossiq', 'Measured {moment}', { moment: resultFor(row).measuredAt }) }}
+						</span>
+					</td>
 				</tr>
 				<tr v-if="!endpoints.length">
-					<td colspan="7" class="stuf-endpoints__empty">
+					<td colspan="8" class="stuf-endpoints__empty">
 						{{ t('dossiq', 'No StUF endpoints configured yet.') }}
 					</td>
 				</tr>
@@ -69,15 +86,25 @@
 </template>
 
 <script>
+import { NcButton } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
+import { testStufEndpoint } from '../../services/connectionTestApi.js'
 import { listEndpoints } from '../../services/stufApi.js'
+import { connectionLabel } from '../../utils/starterStates.js'
 
 export default {
 	name: 'StufEndpoints',
+	components: { NcButton },
 	data() {
 		return {
 			endpoints: [],
 			loadError: '',
+			testing: '',
+			// Keyed by endpoint id. An endpoint missing from here has not been
+			// probed, which reads as "Not tested" and deliberately not as a
+			// failure: a red cross on a connection nobody pressed the button
+			// for sends somebody debugging a working integration.
+			results: {},
 		}
 	},
 
@@ -100,6 +127,42 @@ export default {
 				this.loadError = t('dossiq', 'Failed to load StUF endpoints')
 				showError(this.loadError)
 			}
+		},
+
+		/**
+		 * Probe one endpoint and keep what came back.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+		 */
+		async test(row) {
+			this.testing = row.id
+			try {
+				this.results = { ...this.results, [row.id]: await testStufEndpoint(row.id) }
+			} catch (e) {
+				// A call that never completed is a failed test, not an absent
+				// one: the button was pressed and the endpoint did not answer.
+				this.results = {
+					...this.results,
+					[row.id]: {
+						state: 'failed',
+						reason: e.response?.data?.error || t('dossiq', 'The endpoint did not answer'),
+						measuredAt: new Date().toISOString(),
+					},
+				}
+			} finally {
+				this.testing = ''
+			}
+		},
+
+		/**
+		 * What one endpoint's connection test reads as.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+		 */
+		resultFor(row) {
+			return connectionLabel(this.results[row.id] || null)
 		},
 
 		/**
@@ -185,5 +248,32 @@ export default {
 .stuf-endpoints__error {
 	color: var(--color-error);
 	margin-top: 12px;
+}
+
+.stuf-endpoints__test {
+	white-space: nowrap;
+}
+
+.stuf-endpoints__result {
+	margin-inline-start: 8px;
+	font-size: 12px;
+}
+
+.stuf-endpoints__result--success {
+	color: var(--color-success-text);
+}
+
+.stuf-endpoints__result--warning {
+	color: var(--color-text-maxcontrast);
+}
+
+.stuf-endpoints__result--error {
+	color: var(--color-error-text);
+}
+
+.stuf-endpoints__measured {
+	display: block;
+	color: var(--color-text-maxcontrast);
+	font-size: 11px;
 }
 </style>

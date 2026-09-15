@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Starter\MunicipalRoleSetService;
+use OCA\Dossiq\Service\Starter\ShippedSets;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -43,9 +45,11 @@ class TenantSeedService {
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerInterface $logger Logger.
+	 * @param MunicipalRoleSetService $roleSet The shipped municipal role set.
+	 * @param LoggerInterface         $logger  Logger.
 	 */
 	public function __construct(
+		private readonly MunicipalRoleSetService $roleSet,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -62,11 +66,25 @@ class TenantSeedService {
 	 */
 	public function seedZaaktypeTemplates(string $schemaName, string $tier): array {
 		$templates = $this->resolveTemplatesForTier(tier: $tier);
+		$set = ShippedSets::VTH;
+		$setVersion = ShippedSets::versionOf(set: $set);
+
 		$this->logger->info(
 			'Dossiq: seeding zaaktype templates into tenant schema',
-			['schemaName' => $schemaName, 'tier' => $tier, 'count' => count($templates)]
+			[
+				'schemaName' => $schemaName,
+				'tier' => $tier,
+				'count' => count($templates),
+				'set' => $set,
+				'setVersion' => $setVersion,
+			]
 		);
-		return ['templates' => $templates];
+
+		// The set and its version travel with the report so the provisioner
+		// that performs the writes can stamp them. This service still does not
+		// write the case types itself, and saying so on the report is better
+		// than a caller assuming it did.
+		return ['templates' => $templates, 'set' => $set, 'setVersion' => $setVersion, 'written' => false];
 	}//end seedZaaktypeTemplates()
 
 	/**
@@ -98,11 +116,25 @@ class TenantSeedService {
 	 * @spec openspec/specs/tenant-schemas/spec.md#requirement-seed-tier-templates-and-default-tenant-onboarding-template-req-001-b-seed
 	 */
 	public function createDefaultRoles(string $schemaName, array $roles): array {
+		// 🔑 THE ROLES ARE THE SHIPPED SET, WRITTEN AND STAMPED, NOT A LOG LINE.
+		// This method used to return the names it was handed and write nothing,
+		// so a tenant provisioned through it started with no roles at all and
+		// the log said otherwise. It seeds the named municipal set, dormant,
+		// with a provenance row per role; the caller's own list is kept on the
+		// report so a provisioner that wanted something else can see what it
+		// actually got.
+		$tally = $this->roleSet->seed();
+
 		$this->logger->info(
 			'Dossiq: creating default tenant roles',
-			['schemaName' => $schemaName, 'roles' => $roles]
+			['schemaName' => $schemaName, 'requested' => $roles, 'seeded' => $tally]
 		);
-		return $roles;
+
+		if ($tally === null) {
+			return $roles;
+		}
+
+		return array_column(MunicipalRoleSetService::ROLES_SHIPPED, 'name');
 	}//end createDefaultRoles()
 
 	/**
