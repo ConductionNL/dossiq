@@ -869,6 +869,29 @@ $extra = [
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
 
+        // What a new instance starts with (starter-content-and-templates).
+        // The literal `/api/starter/roles` paths sit BEFORE the `{schema}` and
+        // `{caseTypeId}` wildcards, per the ordering note at the top of this
+        // file: a wildcard declared first swallows the literal.
+    ['name' => 'starterContent#roles',        'url' => '/api/starter/roles',                            'verb' => 'GET'],
+    ['name' => 'starterContent#adoptRoles',   'url' => '/api/starter/roles/adopt',                      'verb' => 'POST'],
+    ['name' => 'starterContent#undoRoles',    'url' => '/api/starter/roles/undo',                       'verb' => 'POST'],
+    ['name' => 'starterContent#shipped',      'url' => '/api/starter/shipped/{schema}',                 'verb' => 'GET'],
+    ['name' => 'starterContent#adoptShipped', 'url' => '/api/starter/shipped/{schema}/{id}/adopt',      'verb' => 'POST'],
+    ['name' => 'starterContent#retire',       'url' => '/api/starter/case-types/{caseTypeId}/retire',   'verb' => 'POST'],
+    ['name' => 'starterContent#restore',      'url' => '/api/starter/case-types/{caseTypeId}/restore',  'verb' => 'POST'],
+    ['name' => 'starterContent#copyDomain',   'url' => '/api/starter/domains/{domainId}/copy',          'verb' => 'POST'],
+    ['name' => 'starterContent#stepUsedBy',   'url' => '/api/starter/steps/{stepId}/used-by',           'verb' => 'GET'],
+    ['name' => 'starterContent#deleteStep',   'url' => '/api/starter/steps/{stepId}',                   'verb' => 'DELETE'],
+
+        // Starting from something somebody prepared earlier.
+    ['name' => 'templateStart#caseTemplates',      'url' => '/api/case-templates',                      'verb' => 'GET'],
+    ['name' => 'templateStart#startFromTemplate',  'url' => '/api/case-templates/{templateId}/start',   'verb' => 'POST'],
+    ['name' => 'templateStart#contentTemplates',   'url' => '/api/content-templates/{kind}',            'verb' => 'GET'],
+
+        // A connection is tested from the screen that configures it.
+    ['name' => 'connectionTest#testStufEndpoint', 'url' => '/api/connections/stuf/{endpointId}/test',   'verb' => 'POST'],
+
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
         // dossiq's DashboardController, which implements them locally.
