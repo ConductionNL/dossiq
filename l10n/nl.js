@@ -4559,7 +4559,24 @@ OC.L10N.register(
         "{count} working day": "{count} werkdag",
         "{count} working days": "{count} werkdagen",
         "{count} working day in this status": "{count} werkdag in deze status",
-        "{count} working days in this status": "{count} werkdagen in deze status"
+        "{count} working days in this status": "{count} werkdagen in deze status",
+        "Assessed high risk": "Hoog ingeschat risico",
+        "Assessed risk:": "Ingeschat risico:",
+        "Attention": "Aandacht",
+        "Clear the flag": "Markering opheffen",
+        "Cleared": "Opgeheven",
+        "Due for review": "Toe aan herbeoordeling",
+        "Flag for attention": "Markeer voor aandacht",
+        "Flagged as needing attention:": "Gemarkeerd als aandacht nodig:",
+        "Needs attention": "Aandacht nodig",
+        "Raised": "Gezet",
+        "Why it no longer needs attention": "Waarom er geen aandacht meer nodig is",
+        "Why this case needs attention": "Waarom deze zaak aandacht nodig heeft",
+        "The attention flag could not be changed.": "De aandachtsmarkering kon niet worden gewijzigd.",
+        "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Schrijf op waarom, dan verandert de markering. Zowel het zetten als het opheffen bewaart de reden.",
+        "This case is already flagged as needing attention.": "Deze zaak is al gemarkeerd als aandacht nodig.",
+        "This case is not flagged as needing attention.": "Deze zaak is niet gemarkeerd als aandacht nodig.",
+        "You cannot change the attention flag on this case.": "Je kunt de aandachtsmarkering op deze zaak niet wijzigen."
     },
     "nplurals=2; plural=(n != 1);"
 )
