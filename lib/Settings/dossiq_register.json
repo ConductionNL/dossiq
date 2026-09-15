@@ -489,6 +489,12 @@
                                     "items": {
                                         "type": "string"
                                     }
+                                },
+                                "until": {
+                                    "type": "string",
+                                    "title": "Ends",
+                                    "description": "When the grant this row produces stops answering, as an ISO-8601 moment. Optional: a row without it grants without an end. The key is spelled the way OpenRegister reads it (GrantConstraints::UNTIL_KEY, openregister#3750), so no translation stands between the declaration and the rule; a second spelling is where an end quietly stops arriving. OpenRegister reads it at resolution time, so nothing has to run to take the right away, and an end nobody can parse is treated as already passed. dossiq never compares this to a clock: the clock that decides is OpenRegister's.",
+                                    "maxLength": 64
                                 }
                             }
                         }
