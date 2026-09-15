@@ -209,6 +209,13 @@
 			"order": 10
 		},
 		{
+			"id": "PersonalQueueMenu",
+			"label": "Your queue",
+			"icon": "FormatListBulleted",
+			"route": "PersonalQueue",
+			"order": 12
+		},
+		{
 			"id": "Queue",
 			"label": "Queue",
 			"icon": "TrayFull",
@@ -271,6 +278,13 @@
 			"icon": "FormatListChecks",
 			"route": "Tasks",
 			"order": 32
+		},
+		{
+			"id": "EndOfDayMenu",
+			"label": "Close out your day",
+			"icon": "WeatherNight",
+			"route": "EndOfDay",
+			"order": 34
 		},
 		{
 			"id": "WorkflowBoard",
@@ -1018,6 +1032,17 @@
 			},
 			"slots": {
 				"widget-my-work": "MyWorkWidget"
+			}
+		},
+		{
+			"id": "PersonalQueue",
+			"route": "/my-queue",
+			"type": "custom",
+			"title": "Your queue",
+			"component": "PersonalQueueView",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"config": {
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -2920,6 +2945,17 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "EndOfDay",
+			"route": "/end-of-day",
+			"type": "custom",
+			"title": "Close out your day",
+			"component": "EndOfDayView",
+			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case.",
+			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
