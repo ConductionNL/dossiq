@@ -465,8 +465,9 @@ class CaseAttentionMarkerService {
 	 * Why a condition is true on this case, or the empty string.
 	 *
 	 * One sentence a handler can act on, rather than the condition's own name:
-	 * "two documents failed their virus scan" sends somebody to the right
-	 * document, and `document-scan-failed` sends them to a glossary.
+	 * "two advice requests are past the date they were asked for" sends
+	 * somebody to the right request, and `advice-request-overdue` sends them
+	 * to a glossary.
 	 *
 	 * @param string               $condition One of RAISE_CONDITIONS.
 	 * @param array<string, mixed> $case      The case.
