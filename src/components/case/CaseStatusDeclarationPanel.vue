@@ -240,19 +240,6 @@ export default {
 
 	methods: {
 		/**
-		 * Read what the case's current status declares.
-		 *
-		 * An instance whose engine cannot answer renders no strip, which is
-		 * the right answer to "this app does not know what this status
-		 * declares": the catch binds nothing and says so in words rather than
-		 * swallowing the failure into an empty object that reads as "nothing
-		 * declared".
-		 *
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
-		 */
-		/**
 		 * What one withheld move is waiting on.
 		 *
 		 * @param {object} entry The withheld entry.
@@ -264,6 +251,20 @@ export default {
 			return withheldSentence(entry)
 		},
 
+		/**
+		 * Read what the case's current status declares.
+		 *
+		 * An instance whose engine cannot answer renders no strip, which is
+		 * the right answer to "this app does not know what this status
+		 * declares": the catch binds nothing and says so in words rather than
+		 * swallowing the failure into an empty object that reads as "nothing
+		 * declared".
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+		 */
 		async load() {
 			if (this.caseId === '') {
 				return

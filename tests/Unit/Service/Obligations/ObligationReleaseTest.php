@@ -67,14 +67,14 @@ class ObligationReleaseTest extends TestCase {
 	protected function setUp(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
-		$repository = new ConsultationRepository($settings, $logger);
+		$repository = new ConsultationRepository(settingsService: $settings, logger: $logger);
 
 		$this->consultations = new ConsultationService(
 			settingsService: $settings,
 			logger: $logger,
 			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
 			repository: $repository,
-			dependencyGraph: new ConsultationDependencyGraph($repository),
+			dependencyGraph: new ConsultationDependencyGraph(repository: $repository),
 			dates: $this->caseDates(),
 			obligations: new ObligationService(
 				settingsService: $settings,
