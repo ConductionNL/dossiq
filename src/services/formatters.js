@@ -13,65 +13,9 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
-
-// The six states a connection row may show. Keys are the stored enum
-// values; the values are the English SOURCE strings, translated on each call
-// rather than here — a module-level `t()` runs before the catalogue is
-// registered and would freeze every label in English on a Dutch instance.
-// Kept here rather than read from the schema's `x-enum-labels` because a
-// formatter is handed the VALUE and never the property, so the schema is not
-// reachable from this seat.
-//
-// `simulated` is the one this page needed and did not have. A seam bound to a
-// mock adapter is not `unavailable` — it answers, it succeeds, it returns an
-// id — and calling it `configured` is the exact claim this page exists to stop
-// the app from making. Simulated says what it is.
-//
-// `limited` came with the contract amendment in hydra#673 (D4, D12): the
-// connection works in part, such as a preview API that serves some calls and
-// refuses others. Only a report or a probe sets it. Dossiq reports none today;
-// the label is here so the column never shows a status as its raw value.
-//
-// This is a local copy of the built-in nextcloud-vue#1163 added. The pinned
-// release (2.53.1) predates that merge, so the copy stays until a release
-// with the built-ins, and `limited` among them, is pinned.
-const INTEGRATION_STATUS_LABELS = {
-	configured: 'Configured',
-	limited: 'Limited',
-	unconfigured: 'Not configured',
-	unavailable: 'Not available',
-	simulated: 'Simulated',
-	error: 'Error',
-}
-
-/**
- * The label for a connection status, translated on each call.
- *
- * @param {string} value The `status` enum value.
- * @return {string} The label, or the raw value when it is not one of the six.
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
- */
-function connectionStatus(value) {
-	const source = INTEGRATION_STATUS_LABELS[value]
-	return source ? t('dossiq', source) : String(value ?? '')
-}
-
-/**
- * The Open settings link text, or '' when the row has nowhere to send a reader.
- *
- * @param {string} value The row's `settingsUrl`.
- * @return {string} The link text, or ''.
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
- */
-function connectionSettingsLabel(value) {
-	return typeof value === 'string' && value.length > 0
-		? t('dossiq', 'Open settings')
-		: ''
-}
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -154,46 +98,6 @@ function lookupRelatedName(type, uuid) {
 }
 
 export default {
-	/**
-	 * The six states a connection row may show, as the label a reader
-	 * understands. An unknown value renders itself rather than an empty cell:
-	 * a status the app cannot name is still a status the admin should see.
-	 *
-	 * The name is the one hydra's connection-registry contract (D8) gives it,
-	 * so every app adopting the registry carries the same formatter.
-	 *
-	 * @param {string} value The `status` enum value.
-	 * @return {string} The label, or the raw value when it is not one of the six.
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
-	 */
-	connectionStatus,
-
-	/**
-	 * The text of the Open settings link on a connection row.
-	 *
-	 * Empty when the connection has no settings section, which is what makes
-	 * the cell fall through to plain text and offer nothing to click.
-	 *
-	 * @param {string} value The row's `settingsUrl`.
-	 * @return {string} The link text, or '' when there is no destination.
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
-	 */
-	connectionSettingsLabel,
-
-	/**
-	 * Alias of `connectionStatus`, the name before adopt-connection-registry.
-	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
-	 */
-	integrationStatus: connectionStatus,
-
-	/**
-	 * Alias of `connectionSettingsLabel`, the name before adopt-connection-registry.
-	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
-	 */
-	integrationSettingsLabel: connectionSettingsLabel,
-
 	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *

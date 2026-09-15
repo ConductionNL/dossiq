@@ -79,87 +79,21 @@ describe('the caseTitle formatter', () => {
 })
 
 /**
- * The two formatters the Integrations page reads its Status and Settings
- * columns with.
- *
- * Both have a fallback that decides whether the page tells the truth. A status
- * outside the four the schema declares must render ITSELF rather than an empty
- * cell — an unnamed status is still a status the admin has to see, and a blank
- * cell reads as "nothing is wrong". The settings label must render the EMPTY
- * string when there is no destination, because that is what makes CnCellRenderer
- * fall through from an anchor to plain text and stop offering a link into a
- * section that does not exist.
+ * The Integrations page reads its Status and Settings columns with the
+ * `connectionStatus` and `connectionSettingsLabel` formatters that
+ * nextcloud-vue ships built in. CnAppRoot spreads the app's own registry OVER
+ * the built-ins, so a local formatter under either name silently wins. A copy
+ * that predates `disabled` would show the raw word on a switched-off
+ * connection. This builds the registry the way CnAppRoot does and asks it.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-describe('the connection status formatter', () => {
-	it('names each of the six states', () => {
-		expect(formatters.connectionStatus('configured')).toBe('Configured')
-		expect(formatters.connectionStatus('limited')).toBe('Limited')
-		expect(formatters.connectionStatus('unconfigured')).toBe('Not configured')
-		expect(formatters.connectionStatus('unavailable')).toBe('Not available')
-		expect(formatters.connectionStatus('simulated')).toBe('Simulated')
-		expect(formatters.connectionStatus('error')).toBe('Error')
-	})
+describe('the connection formatters the Integrations page reads', () => {
+	it('come from the library, so a switched-off connection reads Switched off', async () => {
+		const { BUILT_IN_FORMATTERS } = await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
+		const registry = { ...BUILT_IN_FORMATTERS, ...formatters }
 
-	// Simulated is the state the page did not have and needed. A seam bound to
-	// a mock adapter answers, succeeds and returns an id, so it is neither
-	// unavailable nor configured, and rendering it as either is the claim this
-	// page exists to stop the app from making.
-	it('does not let a mock adapter read as a configured channel', () => {
-		expect(formatters.connectionStatus('simulated')).not.toBe(
-			formatters.connectionStatus('configured'),
-		)
-		expect(formatters.connectionStatus('simulated')).not.toBe(
-			formatters.connectionStatus('unavailable'),
-		)
-	})
-
-	// Limited came with the contract amendment (hydra#673). A connection that
-	// works in part is neither working nor broken, so it must not borrow either
-	// label, and it must not fall through to its raw enum value.
-	it('keeps a connection that works in part apart from working and broken', () => {
-		const limited = formatters.connectionStatus('limited')
-		expect(limited).not.toBe('limited')
-		expect(limited).not.toBe(formatters.connectionStatus('configured'))
-		expect(limited).not.toBe(formatters.connectionStatus('unavailable'))
-		expect(limited).not.toBe(formatters.connectionStatus('error'))
-	})
-
-	it('renders an unknown value as itself, not as an empty cell', () => {
-		expect(formatters.connectionStatus('degraded')).toBe('degraded')
-	})
-
-	it('renders a missing value as empty rather than as the word undefined', () => {
-		expect(formatters.connectionStatus(undefined)).toBe('')
-		expect(formatters.connectionStatus(null)).toBe('')
-	})
-})
-
-describe('the connection settings-link formatter', () => {
-	it('labels a link when there is somewhere to go', () => {
-		expect(
-			formatters.connectionSettingsLabel(
-				'/settings/admin/dossiq#section-stuf',
-			),
-		).toBe('Open settings')
-	})
-
-	it('offers nothing when the connection has no settings section', () => {
-		expect(formatters.connectionSettingsLabel('')).toBe('')
-		expect(formatters.connectionSettingsLabel(undefined)).toBe('')
-		expect(formatters.connectionSettingsLabel(null)).toBe('')
-	})
-})
-
-// The contract names (hydra connection-registry D8) replaced the dossiq-only
-// ones. The old names stay as aliases, and an alias that drifted from the
-// function it stands for would render two different labels for one status.
-describe('the pre-registry formatter names', () => {
-	it('are the same functions as the contract names', () => {
-		expect(formatters.integrationStatus).toBe(formatters.connectionStatus)
-		expect(formatters.integrationSettingsLabel).toBe(
-			formatters.connectionSettingsLabel,
-		)
+		expect(registry.connectionStatus('disabled')).toBe('Switched off')
+		expect(registry.connectionSettingsLabel('')).toBe('')
 	})
 })
