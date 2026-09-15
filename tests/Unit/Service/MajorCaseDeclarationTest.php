@@ -25,6 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
+use OCA\Dossiq\Service\Conversation\CaseRecordStore;
+use OCA\Dossiq\Service\Conversation\MajorCaseDeclaration;
 use OCA\Dossiq\Service\Conversation\ResponderResolver;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\SettingsService;
@@ -64,9 +66,9 @@ class MajorCaseDeclarationTest extends TestCase {
 	/**
 	 * The service under test.
 	 *
-	 * @var CaseConversationService
+	 * @var MajorCaseDeclaration
 	 */
-	private CaseConversationService $service;
+	private MajorCaseDeclaration $service;
 
 	/**
 	 * Build the service over an in-memory register holding one case.
@@ -97,8 +99,8 @@ class MajorCaseDeclarationTest extends TestCase {
 		$this->broker = $this->createMock(TalkConversationBroker::class);
 		$this->responders = $this->createMock(ResponderResolver::class);
 
-		$this->service = new CaseConversationService(
-			settingsService: $settings,
+		$this->service = new MajorCaseDeclaration(
+			cases: new CaseRecordStore(settingsService: $settings),
 			broker: $this->broker,
 			responders: $this->responders,
 			logger: new NullLogger(),

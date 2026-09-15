@@ -131,18 +131,11 @@ class CaseCaptureService {
 			return ['ok' => false, 'reason' => self::REASON_NOT_A_CAPTURE];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$documentSchema = $this->settingsService->getConfigValue(key: 'document_schema');
-		$caseDocumentSchema = $this->settingsService->getConfigValue(key: 'case_document_schema');
-
-		if (empty($register) === true || empty($documentSchema) === true || empty($caseDocumentSchema) === true) {
-			throw new RuntimeException('Document schema not configured');
-		}
+		$store = $this->documentStore();
+		$objectService = $store['objectService'];
+		$register = $store['register'];
+		$documentSchema = $store['documentSchema'];
+		$caseDocumentSchema = $store['caseDocumentSchema'];
 
 		$now = (new DateTimeImmutable())->format(DateTimeImmutable::ATOM);
 
@@ -184,6 +177,42 @@ class CaseCaptureService {
 
 		return ['ok' => true, 'document' => $caseDocument];
 	}//end attachCapture()
+
+	/**
+	 * The OpenRegister seam and the two schemas a capture is filed through.
+	 *
+	 * Held apart from `attachCapture()` because it is the configuration half,
+	 * and mixing it in put that method one branch over the complexity the
+	 * house allows.
+	 *
+	 * @return array{objectService: object, register: int|string, documentSchema: int|string, caseDocumentSchema: int|string}
+	 *         The store and the schemas.
+	 *
+	 * @throws RuntimeException When OpenRegister is absent or not configured for documents.
+	 *
+	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 */
+	private function documentStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$documentSchema = $this->settingsService->getConfigValue(key: 'document_schema');
+		$caseDocumentSchema = $this->settingsService->getConfigValue(key: 'case_document_schema');
+
+		if (empty($register) === true || empty($documentSchema) === true || empty($caseDocumentSchema) === true) {
+			throw new RuntimeException('Document schema not configured');
+		}
+
+		return [
+			'objectService' => $objectService,
+			'register' => $register,
+			'documentSchema' => $documentSchema,
+			'caseDocumentSchema' => $caseDocumentSchema,
+		];
+	}//end documentStore()
 
 	/**
 	 * What the capture is, said once so the case list can read it.

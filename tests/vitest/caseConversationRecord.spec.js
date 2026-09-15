@@ -79,6 +79,24 @@ describe('the record the case keeps of a conversation', () => {
 		expect(rule.subject.nl).toBeTruthy()
 		expect(rule.subject.en).toBeTruthy()
 	})
+
+	it('fires at the declaration, not on every later save of a major case', () => {
+		// A `filter` here would be read by NOBODY: OpenRegister's
+		// AnnotationNotificationDispatcher honours `filter` only on a `created`
+		// trigger, and an `updated` rule carrying one matches on type alone. So
+		// the responders would be notified again every time anyone saved the
+		// case. The engine's field-change `condition` is the shape that fires
+		// once, when isMajor goes from absent-or-false to true.
+		const trigger = caseSchema['x-openregister-notifications'].caseDeclaredMajor.trigger
+		expect(trigger.type).toBe('updated')
+		expect(trigger.filter, 'an updated trigger ignores filter; this rule would fire on every save').toBeUndefined()
+		expect(trigger.condition).toEqual({
+			field: 'isMajor',
+			operator: 'equals',
+			value: true,
+			from: false,
+		})
+	})
 })
 
 describe('the panel that shows it', () => {

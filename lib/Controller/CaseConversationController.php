@@ -37,6 +37,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Conversation\CaseCaptureService;
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
+use OCA\Dossiq\Service\Conversation\MajorCaseDeclaration;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -68,7 +69,8 @@ class CaseConversationController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                 $request         Inbound request.
-	 * @param CaseConversationService  $conversations   Conversations and major declarations.
+	 * @param CaseConversationService  $conversations   Conversations and the record they leave.
+	 * @param MajorCaseDeclaration     $major           Declaring a case major, and closing its channel.
 	 * @param CaseCaptureService       $captures        Voice notes and screen captures.
 	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession             $userSession     Current user session.
@@ -76,6 +78,7 @@ class CaseConversationController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaseConversationService $conversations,
+		private readonly MajorCaseDeclaration $major,
 		private readonly CaseCaptureService $captures,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
@@ -236,7 +239,7 @@ class CaseConversationController extends Controller {
 		}
 
 		return $this->answer(
-			result: $this->conversations->declareMajor(caseId: $caseId, declaredBy: $user->getUID())
+			result: $this->major->declareMajor(caseId: $caseId, declaredBy: $user->getUID())
 		);
 	}//end declareMajor()
 
@@ -262,7 +265,7 @@ class CaseConversationController extends Controller {
 			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(result: $this->conversations->closeMajorChannel(caseId: $caseId));
+		return $this->answer(result: $this->major->closeMajorChannel(caseId: $caseId));
 	}//end closeMajorChannel()
 
 	/**

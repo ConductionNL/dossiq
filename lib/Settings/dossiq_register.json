@@ -1204,12 +1204,11 @@
                     "caseDeclaredMajor": {
                         "trigger": {
                             "type": "updated",
-                            "filter": {
+                            "condition": {
                                 "field": "isMajor",
-                                "operator": "in",
-                                "values": [
-                                    true
-                                ]
+                                "operator": "equals",
+                                "value": true,
+                                "from": false
                             }
                         },
                         "enabled": true,
@@ -1226,7 +1225,7 @@
                             "nl": "Zaak \"{{title}}\" is opgeschaald naar calamiteit",
                             "en": "Case \"{{title}}\" has been declared major"
                         },
-                        "x-notes": "Declared rather than dispatched, per ADR-031. The engine's updated trigger carries no field-changed condition (openspec/fleet-notification-plan.md names this gap), so the filter narrows the rule to major cases rather than to the moment of declaration. Narrowing it further waits on that engine change."
+                        "x-notes": "Declared rather than dispatched, per ADR-031. A `condition`, NOT a `filter`: AnnotationNotificationDispatcher reads `filter` only on a `created` trigger, so a filter here would be ignored in silence and every save of a major case would notify the responders again. The non-numeric field-change `condition` on `updated` has landed in the engine, which openspec/fleet-notification-plan.md still names as a gap; that doc is stale. `from: false` casts to the empty string, which is what both an absent isMajor and a false one read as, so the rule fires at the declaration and not after it."
                     }
                 },
                 "icon": "FolderAccountOutline",

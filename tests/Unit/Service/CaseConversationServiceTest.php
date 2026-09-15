@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
-use OCA\Dossiq\Service\Conversation\ResponderResolver;
+use OCA\Dossiq\Service\Conversation\CaseRecordStore;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -53,13 +53,6 @@ class CaseConversationServiceTest extends TestCase {
 	 * @var TalkConversationBroker|MockObject
 	 */
 	private TalkConversationBroker $broker;
-
-	/**
-	 * The responder resolver.
-	 *
-	 * @var ResponderResolver|MockObject
-	 */
-	private ResponderResolver $responders;
 
 	/**
 	 * The service under test.
@@ -95,12 +88,10 @@ class CaseConversationServiceTest extends TestCase {
 		);
 
 		$this->broker = $this->createMock(TalkConversationBroker::class);
-		$this->responders = $this->createMock(ResponderResolver::class);
 
 		$this->service = new CaseConversationService(
-			settingsService: $settings,
+			cases: new CaseRecordStore(settingsService: $settings),
 			broker: $this->broker,
-			responders: $this->responders,
 			logger: new NullLogger(),
 		);
 	}//end setUp()

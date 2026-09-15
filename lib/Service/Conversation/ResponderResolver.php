@@ -139,7 +139,19 @@ class ResponderResolver {
 			return [];
 		}
 
-		$responders = ($caseType['responders'] ?? []);
+		return $this->names(responders: ($caseType['responders'] ?? []));
+	}//end declaredResponders()
+
+	/**
+	 * The declared names, trimmed, non-empty and each one once.
+	 *
+	 * @param mixed $responders Whatever the case type carries.
+	 *
+	 * @return array<string> The names.
+	 *
+	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 */
+	private function names(mixed $responders): array {
 		if (is_array($responders) === false) {
 			return [];
 		}
@@ -153,7 +165,7 @@ class ResponderResolver {
 		}
 
 		return $names;
-	}//end declaredResponders()
+	}//end names()
 
 	/**
 	 * The users one declared responder stands for.
