@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -386,6 +387,8 @@ class TermijnTimerService {
 	 *
 	 * @return DateTimeImmutable The first ordinary day on or after the date.
 	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
+	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the flag IS the declared
@@ -417,6 +420,8 @@ class TermijnTimerService {
 	 * @param string|null $organisation The subject's organisation, when any.
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
+	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
 	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
@@ -471,14 +476,25 @@ class TermijnTimerService {
 		?string $calendarSlug,
 		?string $organisation,
 	): DateTimeImmutable {
+		$named = (trim((string)$calendarSlug) !== '');
 		$calendars = $this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS);
 		$calculator = $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS);
 		if ($calendars === null || $calculator === null) {
+			if ($named === true) {
+				throw $this->unresolvedCalendar(slug: (string)$calendarSlug, because: 'OpenRegister is not installed');
+			}
+
 			return $this->fallbackRoll(date: $date, because: 'OpenRegister is not installed');
 		}
 
 		try {
 			$calendar = $calendars->resolve(calendarSlug: $calendarSlug, organisation: $organisation);
+			if ($named === true && $calendar === null) {
+				throw $this->unresolvedCalendar(
+					slug: (string)$calendarSlug,
+					because: 'the engine knows no calendar by that name'
+				);
+			}
 
 			return $calculator->add(
 				from: $date,
@@ -486,11 +502,56 @@ class TermijnTimerService {
 				unit: self::UNIT_BUSINESS_DAYS,
 				calendar: $calendar
 			);
+		} catch (RefusedException $refusal) {
+			throw $refusal;
 		} catch (\Throwable $e) {
+			if ($named === true) {
+				throw $this->unresolvedCalendar(
+					slug: (string)$calendarSlug,
+					because: 'the engine calendar could not be read',
+					previous: $e
+				);
+			}
+
 			$this->logFailure(operation: 'roll to working day', timerId: $date->format('Y-m-d'), error: $e);
 			return $this->fallbackRoll(date: $date, because: 'the engine calendar could not be read');
-		}
+		}//end try
 	}//end rollOnCalendar()
+
+	/**
+	 * The refusal a term gets when the calendar it NAMES does not resolve
+	 * (REQ-TERM-060).
+	 *
+	 * A term that names no calendar falls back to the local one and says so in
+	 * the log, which is what `every-term-on-the-engine-calendar` shipped and
+	 * what an install without OpenRegister needs. A term that NAMES one is a
+	 * different case: somebody administered a calendar, wrote its name on the
+	 * term, and the answer that comes back is computed on a different set of
+	 * holidays. Silently answering on the wrong calendar is how a statutory
+	 * date is wrong and nobody can see it, so this refuses and names the
+	 * calendar it could not find.
+	 *
+	 * @param string $slug The calendar the term names.
+	 * @param string $because What was absent, so the operator can tell an
+	 *        uninstalled engine from an unknown name.
+	 * @param \Throwable|null $previous The failure underneath, when there was one.
+	 *
+	 * @return RefusedException The refusal to throw.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 */
+	private function unresolvedCalendar(string $slug, string $because, ?\Throwable $previous = null): RefusedException {
+		$this->logger->warning(
+			'Dossiq termijn: a term names a working calendar that does not resolve, so binding is refused',
+			['calendar' => $slug, 'because' => $because]
+		);
+
+		return RefusedException::indeterminate(
+			rule: 'term-calendar-unresolved',
+			sentence: 'The working calendar "' . $slug . '" could not be read, so this term was not bound.',
+			previous: $previous,
+		);
+	}//end unresolvedCalendar()
 
 	/**
 	 * The roll on dossiq's own calendar, used only when the engine cannot answer.
