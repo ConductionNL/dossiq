@@ -211,7 +211,7 @@
 		{
 			"id": "PersonalQueueMenu",
 			"label": "Your queue",
-			"icon": "FormatListBulleted",
+			"icon": "ClipboardListOutline",
 			"route": "PersonalQueue",
 			"order": 12
 		},
@@ -282,7 +282,7 @@
 		{
 			"id": "EndOfDayMenu",
 			"label": "Close out your day",
-			"icon": "WeatherNight",
+			"icon": "ClipboardCheckOutline",
 			"route": "EndOfDay",
 			"order": 34
 		},
