@@ -44,6 +44,20 @@
 		</NcEmptyContent>
 
 		<div v-else>
+			<p
+				v-if="isArchived"
+				class="case-archival__archived"
+				data-testid="case-archival-archived">
+				{{ archivedSentence }}
+			</p>
+
+			<NcNoteCard
+				v-if="archiveStateDisagrees"
+				type="warning"
+				data-testid="case-archival-disagreement">
+				{{ t('dossiq', 'This case and openregister do not agree on whether it is archived.') }}
+			</NcNoteCard>
+
 			<NcNoteCard
 				v-if="isUnnominatable"
 				type="warning"
@@ -147,6 +161,8 @@ export default {
 			loading: true,
 			error: '',
 			retention: null,
+			archived: null,
+			archiveStatus: '',
 			reason: '',
 			busy: false,
 		}
@@ -176,6 +192,50 @@ export default {
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
 		unnominatableReason() {
 			return String(this.nomination?.unnominatableReason ?? '')
+		},
+
+		/**
+		 * Is this case archived, according to the platform?
+		 *
+		 * `@self.archived` is openregister's own marker (openregister#3772),
+		 * written beside the object rather than into it. It is the authority
+		 * here: `case.archiveStatus` is ZGW data about the archive, and a field
+		 * describing an event is not the same as the event.
+		 *
+		 * @return {boolean} True when openregister holds the marker.
+		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 */
+		isArchived() {
+			return this.archived !== null && this.archived !== undefined
+		},
+
+		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		archivedSentence() {
+			const a = (this.archived ?? {})
+
+			return this.t('dossiq', 'Archived on {at} by {by}. {reason}', {
+				at: String(a.at ?? ''),
+				by: String(a.by ?? ''),
+				reason: String(a.reason ?? ''),
+			})
+		},
+
+		/**
+		 * Do the platform marker and the case's own field disagree?
+		 *
+		 * They can, and the disagreement is worth saying out loud rather than
+		 * resolving silently: dossiq's archive act writes `archiveStatus` and
+		 * openregister's marker is written by the platform's archive verb, so a
+		 * case can carry one without the other. Picking a winner in the browser
+		 * would hide exactly the case somebody has to look at.
+		 *
+		 * @return {boolean} True when one says archived and the other does not.
+		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 */
+		archiveStateDisagrees() {
+			const saysArchived = this.archiveStatus.startsWith('archived')
+
+			return saysArchived !== this.isArchived
 		},
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
@@ -269,7 +329,10 @@ export default {
 			this.error = ''
 
 			try {
-				this.retention = await caseRetention(this.caseId)
+				const read = await caseRetention(this.caseId)
+				this.retention = read.retention
+				this.archived = read.archived
+				this.archiveStatus = read.archiveStatus
 			} catch (e) {
 				this.error = String(e?.message ?? e)
 			} finally {

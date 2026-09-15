@@ -108,6 +108,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-archival"
+			:name="t('dossiq', 'Archiving')"
+			:description="
+				t(
+					'dossiq',
+					'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
+				)
+			"
+			:loading="!storesReady">
+			<ArchivalSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-mailbox"
 			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
@@ -207,6 +220,7 @@ import Settings from './Settings.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
@@ -229,6 +243,7 @@ export default {
 		CaseTypeAdmin,
 		ZgwMappingSettings,
 		AiSettingsTab,
+		ArchivalSettingsTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,

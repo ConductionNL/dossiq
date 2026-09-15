@@ -165,9 +165,13 @@ export function isIsoDuration(value) {
  * `@self._retention` is metadata attached on the render path, not a stored
  * property, so it is read off the object rather than asked for as a field.
  *
+ * Returned beside it are `@self.archived`, the platform's archive marker from
+ * openregister#3772, and the case's own `archiveStatus`. Both describe the same
+ * event and only one of them is the platform's, so the panel shows the marker
+ * and says when the case's own field disagrees with it.
+ *
  * @param {string} caseId The case uuid.
- * @return {Promise<object|null>} The retention block, or null when the case
- *   carries none.
+ * @return {Promise<object>} `retention`, `archived` and `archiveStatus`.
  * @throws {Error} When the case cannot be read.
  *
  * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
@@ -177,5 +181,11 @@ export async function caseRetention(caseId) {
 		generateUrl(`${API}/objects/dossiq/case/${caseId}`),
 	)
 
-	return (data?.['@self']?._retention ?? null)
+	const self = (data?.['@self'] ?? {})
+
+	return {
+		retention: (self._retention ?? null),
+		archived: (self.archived ?? null),
+		archiveStatus: String(data?.archiveStatus ?? ''),
+	}
 }
