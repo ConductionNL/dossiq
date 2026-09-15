@@ -46,6 +46,12 @@ use Throwable;
  * evaluates every guard without writing.
  *
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) `BulkActionResult` is a value object
+ * whose constructor is PRIVATE: `applied()`, `skipped()`, `refused()` and
+ * `failed()` are its only constructors, and they are static by OpenRegister's
+ * design so the four outcomes read as four named things rather than as four
+ * flags. There is no instance to call, so the rule cannot be satisfied here.
  */
 class TransitionCasesAction implements BulkActionInterface {
 

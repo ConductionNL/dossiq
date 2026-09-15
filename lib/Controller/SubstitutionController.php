@@ -170,12 +170,17 @@ class SubstitutionController extends Controller {
 
 		$caseType = trim((string)$this->request->getParam('caseType', ''));
 
+		$filter = null;
+		if ($caseType !== '') {
+			$filter = ['caseType' => $caseType];
+		}
+
 		try {
 			$released = $this->reassignmentService->releaseCaseload(
 				fromUser: (string)$this->request->getParam('fromUser', ''),
 				toUser: (string)$this->request->getParam('toUser', ''),
 				justification: (string)$this->request->getParam('justification', ''),
-				filter: (($caseType === '') ? null : ['caseType' => $caseType]),
+				filter: $filter,
 				actorId: $actorId,
 			);
 		} catch (\InvalidArgumentException $e) {
