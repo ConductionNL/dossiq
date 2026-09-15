@@ -14,6 +14,8 @@
 
 import Account from 'vue-material-design-icons/Account.vue'
 import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
+import AccountArrowRightOutline from 'vue-material-design-icons/AccountArrowRightOutline.vue'
+import AccountCheckOutline from 'vue-material-design-icons/AccountCheckOutline.vue'
 import AccountClock from 'vue-material-design-icons/AccountClock.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import AccountGroupOutline from 'vue-material-design-icons/AccountGroupOutline.vue'
@@ -31,9 +33,11 @@ import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue
 import AlertOctagonOutline from 'vue-material-design-icons/AlertOctagonOutline.vue'
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import Archive from 'vue-material-design-icons/Archive.vue'
+import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
+import BellBadgeOutline from 'vue-material-design-icons/BellBadgeOutline.vue'
 import BellCogOutline from 'vue-material-design-icons/BellCogOutline.vue'
 import BellPlusOutline from 'vue-material-design-icons/BellPlusOutline.vue'
 import BellRing from 'vue-material-design-icons/BellRing.vue'
@@ -85,10 +89,14 @@ import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
+import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
+import EmailMarkAsUnread from 'vue-material-design-icons/EmailMarkAsUnread.vue'
+import EmailOpenOutline from 'vue-material-design-icons/EmailOpenOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EmoticonSad from 'vue-material-design-icons/EmoticonSad.vue'
 import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import Factory from 'vue-material-design-icons/Factory.vue'
@@ -112,6 +120,7 @@ import FlagCheckered from 'vue-material-design-icons/FlagCheckered.vue'
 import FlagOutline from 'vue-material-design-icons/FlagOutline.vue'
 import FolderAccountOutline from 'vue-material-design-icons/FolderAccountOutline.vue'
 import FolderCogOutline from 'vue-material-design-icons/FolderCogOutline.vue'
+import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
@@ -145,6 +154,7 @@ import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue
 import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
+import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
@@ -197,6 +207,8 @@ import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline
 export default {
 	Account,
 	AccountArrowRight,
+	AccountArrowRightOutline,
+	AccountCheckOutline,
 	AccountClock,
 	AccountGroup,
 	AccountGroupOutline,
@@ -214,9 +226,11 @@ export default {
 	AlertOctagonOutline,
 	AlertOutline,
 	Archive,
+	ArchiveOutline,
 	ArrowUpBoldCircle,
 	BadgeAccountOutline,
 	BankTransfer,
+	BellBadgeOutline,
 	BellCogOutline,
 	BellPlusOutline,
 	BellRing,
@@ -271,7 +285,10 @@ export default {
 	Domain,
 	Earth,
 	EmailAlert,
+	EmailMarkAsUnread,
+	EmailOpenOutline,
 	EmailOutline,
+	EmailSearchOutline,
 	EmoticonSad,
 	EyeOutline,
 	Factory,
@@ -291,9 +308,11 @@ export default {
 	FileEyeOutline,
 	FileSign,
 	FileTreeOutline,
+	DeleteClockOutline,
 	FlagCheckered,
 	FlagOutline,
 	FolderAccountOutline,
+	FolderMultipleOutline,
 	FolderCogOutline,
 	FolderOutline,
 	FolderPlusOutline,
@@ -328,6 +347,7 @@ export default {
 	NoteTextOutline,
 	OfficeBuilding,
 	OfficeBuildingOutline,
+	OpenInNew,
 	PaperclipCheck,
 	PauseCircleOutline,
 	PercentOutline,

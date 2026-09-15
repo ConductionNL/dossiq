@@ -94,6 +94,9 @@ class CaseTypeResolver {
 		'personalDataCategories',
 		'legalBasis',
 		'verwerkingsactiviteit',
+		'defaultImpact',
+		'defaultUrgency',
+		'priorityMatrix',
 	];
 
 	/**

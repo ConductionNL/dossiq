@@ -46,7 +46,9 @@ class SchemaSlugMap {
 	 * @var array<string, string>
 	 */
 	public const SLUG_TO_CONFIG_KEY = [
-		'catalog' => 'catalogus_schema',
+		// NOT 'catalog': opencatalogi owns that slug, and slugs are global on a
+		// shared OpenRegister, so both definitions would resolve to each other.
+		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
 		// `caseTask` is gone. remove-casetask deleted the schema from both
 		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
@@ -70,6 +72,8 @@ class SchemaSlugMap {
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
 		'customerContact' => 'customer_contact_schema',
+		// One row per message the mailbox processed (inbound-mail-filters).
+		'mailIntakeEntry' => 'mail_intake_entry_schema',
 		'decisionDocument' => 'decision_document_schema',
 		'dispatch' => 'dispatch_schema',
 		'document' => 'document_schema',
@@ -216,6 +220,24 @@ class SchemaSlugMap {
 		'x-openregister-lifecycle',
 		'x-openregister-aggregations',
 		'x-openregister-object-source',
+		// Which changes to a case are news to somebody who has already seen
+		// it. OpenRegister's SubstantiveChangeEvaluator reads this block off
+		// `Schema::getConfiguration()`, and an ABSENT block is not an inert
+		// default: it means every non-computed property counts, so one bulk
+		// correction marks four hundred cases unread. Leaving the key out of
+		// this list would therefore not disable the badge, it would make it
+		// cry wolf, with nothing anywhere saying so.
+		'x-openregister-read-state',
+		// What a typed case link is called from each side. OpenRegister's
+		// RelationTypeResolver reads this vocabulary off
+		// `Schema::getConfiguration()` and resolves a property's
+		// `x-openregister-relation: {type: "vervolg"}` against it. A key the
+		// vocabulary does not hold is DROPPED rather than carried, so on an
+		// instance that imported the case schema before this block existed
+		// every typed relation would quietly read as the property's own title
+		// and "referenced by", with nothing anywhere reporting it. That is the
+		// same silent fallback openregister#3764 exists to end.
+		'x-openregister-relation-types',
 	];
 
 	/**

@@ -162,6 +162,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * @return void
 	 */
 	private function patchExistingMappings(array $defaults, IOutput $output): void {
+		$this->healEmptySourceSchemas(defaults: $defaults, output: $output);
+
 		// Patch: enkelvoudiginformatieobject indicatieGebruiksrecht Twig template.
 		// Old: '{{ usageRightsIndication }}' renders false as "" → ?bool → null.
 		// New: uses is same as() to distinguish false from null.
@@ -178,6 +180,63 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			}
 		}
 	}//end patchExistingMappings()
+
+	/**
+	 * Give a stored mapping the schema its default now resolves to.
+	 *
+	 * `run()` skips a resource key that already has a mapping, which is right
+	 * for an operator's edits and wrong for the one field no operator chose.
+	 * `sourceSchema` is read from `<x>_schema` in settings at the moment the
+	 * mapping is first written, so a mapping written before its schema existed
+	 * keeps an empty `sourceSchema` for the life of the instance. OpenRegister
+	 * then answers `Schema slug "" is not carried by register "dossiq"`, a 400
+	 * that names the register and not the mapping.
+	 *
+	 * That happened to `catalogus`: dossiq shipped no catalogue schema at all,
+	 * so every `/api/zgw/catalogi/v1/catalogussen` write 400ed, and the VNG
+	 * contract collections lost their whole setUp behind it.
+	 *
+	 * Only an EMPTY value is filled in. A mapping pointed at a different schema
+	 * on purpose is left exactly as it is.
+	 *
+	 * @param array $defaults The default mapping configurations
+	 * @param IOutput $output The repair output
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
+	 */
+	private function healEmptySourceSchemas(array $defaults, IOutput $output): void {
+		$healed = 0;
+
+		foreach ($defaults as $resourceKey => $config) {
+			$resolved = (string)($config['sourceSchema'] ?? '');
+			if ($resolved === '') {
+				continue;
+			}
+
+			if ($this->zgwMappingService->hasMapping($resourceKey) === false) {
+				continue;
+			}
+
+			$existing = $this->zgwMappingService->getMapping($resourceKey);
+			if ($existing === null || (string)($existing['sourceSchema'] ?? '') !== '') {
+				continue;
+			}
+
+			$existing['sourceSchema'] = $resolved;
+			$this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $existing);
+			$healed++;
+			$output->info("Filled in the empty sourceSchema on the {$resourceKey} ZGW mapping.");
+		}
+
+		if ($healed > 0) {
+			$this->logger->info(
+				'Dossiq: filled in empty ZGW mapping schemas',
+				['healed' => $healed]
+			);
+		}
+	}//end healEmptySourceSchemas()
 
 	/**
 	 * Build a Twig URL-replacement template string.
@@ -355,8 +414,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'verantwoordelijkeOrganisatie' => '{{ assignee }}',
 				'archiefnominatie' => '{{ archiveNomination }}',
 				'archiefactiedatum' => '{{ archiveActionDate }}',
-				'archiefstatus' => '{{ archiveStatus }}',
-				'betalingsindicatie' => '{{ paymentIndication }}',
+				'archiefstatus' => '{{ archiveStatus | default("") | zgw_enum("archiveStatus", _valueMappings) }}',
+				'betalingsindicatie' => '{{ paymentIndication | default("") | zgw_enum("paymentIndication", _valueMappings) }}',
 				'laatsteBetaaldatum' => '{{ lastPaymentDate }}',
 				'hoofdzaak' => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
 			],
@@ -374,11 +433,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'assignee' => '{{ verantwoordelijkeOrganisatie }}',
 				'archiveNomination' => '{{ archiefnominatie }}',
 				'archiveActionDate' => '{{ archiefactiedatum }}',
-				'archiveStatus' => '{{ archiefstatus }}',
-				'paymentIndication' => '{{ betalingsindicatie }}',
+				'archiveStatus' => '{{ archiefstatus | default("") | zgw_enum_reverse("archiveStatus", _valueMappings) }}',
+				'paymentIndication' => '{{ betalingsindicatie | default("") | zgw_enum_reverse("paymentIndication", _valueMappings) }}',
 				'lastPaymentDate' => '{{ laatsteBetaaldatum }}',
 				'parentCase' => '{{ hoofdzaak | zgw_extract_uuid }}',
 			],
+			// Two of these three enums were HALF translated, which is worse than
+			// either language on its own: only the values that happened to stay
+			// Dutch were reachable, and ZGW's own words for the rest answered
+			// 400. `vertrouwelijkheidaanduiding` really is identical on both
+			// sides, so it maps to itself and says so.
 			'valueMapping' => [
 				'confidentiality' => [
 					'openbaar' => 'openbaar',
@@ -389,6 +453,18 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'confidentieel' => 'confidentieel',
 					'geheim' => 'geheim',
 					'zeer_geheim' => 'zeer_geheim',
+				],
+				'archiveStatus' => [
+					'nog_te_archiveren' => 'nog_te_archiveren',
+					'archived' => 'gearchiveerd',
+					'archived_retention_period_unknown' => 'gearchiveerd_procestermijn_onbekend',
+					'overgedragen' => 'overgedragen',
+				],
+				'paymentIndication' => [
+					'nvt' => 'nvt',
+					'not_yet' => 'nog_niet',
+					'gedeeltelijk' => 'gedeeltelijk',
+					'geheel' => 'geheel',
 				],
 			],
 			'nullableFields' => [
@@ -486,6 +562,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'extensionPossible' => '{{ extensionAllowed }}',
 				'verlengingstermijn' => '{{ extensionPeriod }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
+				// Encoded here and decoded by the `cast` below, because Twig renders
+				// a bare array as the literal string "Array". Unlike referentieproces
+				// and gerelateerdeZaaktypen beside it, this one is backed by an ARRAY
+				// property, so the JSON text is a transport step and never the stored
+				// value. See the reverseCast for the inbound half.
 				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
 				'selectielijstDossiqype' => '{{ selectionListProcessType }}',
 				'referentieproces' => '{{ referenceProcess | json_encode }}',
@@ -526,6 +607,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'suspensionAllowed' => 'bool',
 				'extensionAllowed' => 'bool',
 				'publicationRequired' => 'bool',
+				// The template above json_encodes it, because Twig cannot emit an
+				// array; this turns it back into one before the write. Without it
+				// OpenRegister refuses with "should be type 'array or null' but is
+				// 'string'" and the whole ZTC setUp falls over behind that one 400.
+				'productsOrServices' => 'jsonToArray',
 			],
 			'cast' => [
 				'concept' => 'bool',
@@ -1113,7 +1199,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'titel' => '{{ title }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'auteur' => '{{ author }}',
-				'status' => '{{ status }}',
+				'status' => '{{ status | default("") | zgw_enum("status", _valueMappings) }}',
 				'format' => '{{ format }}',
 				'taal' => '{{ language }}',
 				'fileName' => '{{ fileName }}',
@@ -1138,7 +1224,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'title' => '{{ titel }}',
 				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
 				'author' => '{{ auteur }}',
-				'status' => '{{ status }}',
+				'status' => '{{ status | default("") | zgw_enum_reverse("status", _valueMappings) }}',
 				'format' => '{{ formaat }}',
 				'language' => '{{ taal }}',
 				'fileName' => '{{ bestandsnaam }}',
@@ -1159,11 +1245,16 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'geheim' => 'geheim',
 					'zeer_geheim' => 'zeer_geheim',
 				],
+				// The KEYS are what the register stores and the values are what
+				// ZGW sends. This table used to map Dutch to Dutch, while the
+				// document schema declares in_bewerking, for_determination, final
+				// and archived, so three of ZGW's four statuses could not be
+				// stored at all and answered 400 'should be one of'.
 				'status' => [
 					'in_bewerking' => 'in_bewerking',
-					'ter_vaststelling' => 'ter_vaststelling',
-					'definitief' => 'definitief',
-					'gearchiveerd' => 'gearchiveerd',
+					'for_determination' => 'ter_vaststelling',
+					'final' => 'definitief',
+					'archived' => 'gearchiveerd',
 				],
 			],
 			'reverseCast' => [
@@ -1209,17 +1300,22 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'informatieobject' => '{{ document }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType }}',
+				'objectType' => '{{ objectType | default("") | zgw_enum("objectType", _valueMappings) }}',
 			],
 			'reverseMapping' => [
 				'document' => '{{ informatieobject }}',
 				'object' => '{{ object }}',
-				'objectType' => '{{ objectType }}',
+				'objectType' => '{{ objectType | default("") | zgw_enum_reverse("objectType", _valueMappings) }}',
 			],
+			// This table existed and nothing used it, because neither template
+			// called zgw_enum. It also mapped 'zaak' to 'zaak' and 'decision'
+			// to 'decision', while the register stores 'case' and 'decision'
+			// and ZGW spells them 'zaak' and 'besluit'. Neither of ZGW's two
+			// values could be stored.
 			'valueMapping' => [
 				'objectType' => [
-					'zaak' => 'zaak',
-					'decision' => 'decision',
+					'case' => 'zaak',
+					'decision' => 'besluit',
 				],
 			],
 			'queryParameterMapping' => [
@@ -1292,8 +1388,13 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'name' => '{{ naam }}',
-				'documentationLink' => '{{ documentatieLink }}',
+				// Inverted before this: the keys are ZGW field names, which are
+				// `naam` and `documentatieLink`, and the templates read register
+				// properties, which are `name` and `documentationLink`. Both
+				// halves pointed the wrong way, so the NRC kanalen response
+				// carried two fields ZGW does not define, both empty.
+				'naam' => '{{ name }}',
+				'documentatieLink' => '{{ documentationLink }}',
 				'filters' => '{{ filters }}',
 			],
 			'cast' => [
@@ -1368,9 +1469,13 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'domein' => '{{ domein }}',
 				'rsin' => '{{ rsin }}',
-				'contactPersonManagementName' => '{{ contactpersoonBeheerNaam }}',
-				'contactPersonManagementPhoneNumber' => '{{ contactpersoonBeheerTelefoonnummer }}',
-				'contactPersonManagementEmailAddress' => '{{ contactpersoonBeheerEmailadres }}',
+				// Inverted before this, the same way the kanaal mapping was: the
+				// keys are the ZGW field names and the templates read register
+				// properties. The ZTC catalogussen response carried three fields
+				// ZGW does not define, all empty, and dropped the three it does.
+				'contactpersoonBeheerNaam' => '{{ contactPersonManagementName }}',
+				'contactpersoonBeheerTelefoonnummer' => '{{ contactPersonManagementPhoneNumber }}',
+				'contactpersoonBeheerEmailadres' => '{{ contactPersonManagementEmailAddress }}',
 				'zaaktypen' => '[]',
 				'besluittypen' => '[]',
 				'informatieobjecttypen' => '[]',
@@ -1427,24 +1532,42 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					to: 'catalogi/informatieobjecttypen',
 					varName: 'informatieobjecttype'
 				),
-				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting }}',
+				// Same inversion as `richting` below: the ZGW field is
+				// `volgnummer`, and the value comes from `sequenceNumber`.
+				'volgnummer' => '{{ sequenceNumber }}',
+				// The ZGW field is `richting`, not `direction`. This key used to
+				// say `direction` and read `{{ richting }}`, so the response
+				// carried a field ZGW does not define, holding a value the
+				// register does not store. Both halves were inverted.
+				'richting' => '{{ direction | default("") | zgw_enum("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseMapping' => [
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 				'informatieobjecttype' => '{{ informatieobjecttype | zgw_extract_uuid }}',
 				'sequenceNumber' => '{{ volgnummer }}',
-				'direction' => '{{ richting }}',
+				'direction' => '{{ richting | default("") | zgw_enum_reverse("direction", _valueMappings) }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseCast' => [
 				'sequenceNumber' => 'int',
 			],
 			'cast' => [
-				'sequenceNumber' => 'int',
+				'volgnummer' => 'int',
 			],
-			'valueMapping' => [],
+			// ZGW spells this enum in Dutch and the schema declares it in
+			// English, and both templates used to pass the value straight
+			// through. POST /catalogi/v1/zaaktype-informatieobjecttypen with
+			// ZGW's own `richting: inkomend` answered 400 "should be one of:
+			// 'inbound', 'internal', 'outbound'", so the endpoint could not
+			// accept a conformant body at all.
+			'valueMapping' => [
+				'direction' => [
+					'inbound' => 'inkomend',
+					'internal' => 'intern',
+					'outbound' => 'uitgaand',
+				],
+			],
 			'queryParameterMapping' => [
 				'caseType' => [
 					'field' => 'caseType',

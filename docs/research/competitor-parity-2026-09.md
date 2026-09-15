@@ -1,0 +1,441 @@
+# Competitor parity, September 2026
+
+This page is the result of the competitor parity programme, as of ledger v10.1 and gap register v4.1 (2026-09-14). Thirty columns stand in the matrix: dossiq, three other Dutch case systems, twenty-two non-Dutch systems that were installed and driven, and four products rated from their documentation. Every number below comes from a corpus file, named by path. The record is `procest/_ledger/parity-ledger.html` on `development` in `ConductionNL/market-intelligence`; the corpus paths on this page are relative to that repository. The sources per system, with the links a reader needs to check a cell, are on [competitor sources](competitor-sources.md).
+
+Every batch is folded in. Ledger v7 took batches 9 and 10: Request Tracker 5.0.10 and Frappe Helpdesk 1.30.1 driven, Jira Software Data Center 11.3 and Easy Redmine 16.0 rated from documents. Ledger v10 took batches 11 and 12: Gitea 1.27.3, Taiga 6.10.2, Tuleap Community Edition 17.5 and Huly v0.7.426, all four driven, counted in `procest/_round4/compare/twenty-six-system-tally.md`. That closes the undriven set the candidate table has carried since round 3. No count on this page now depends on which batch set you mean.
+
+What followed from the results is written elsewhere and cited here:
+
+- the re-read of the stale rows, [competitor gap re-read 2026-09-13](competitor-gap-re-read-2026-09-13.md), which closed 12 of the 36 rows the register marked stale
+- dossiq's OpenSpec umbrella, `openspec/changes/competitor-parity-2026-09/proposal.md`, merged as [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643), 33 changes
+- openregister's umbrella, merged as [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688), 26 changes
+- the discovery sweep and the twenty-two decisions Ruben took on 2026-09-14, [competitor discovery, September 2026](competitor-discovery-2026-09.md)
+- the case-type depth study, `procest/_round4/discovery/casetype-configurability.md`, which moved four ledger cells and is summarised below
+
+Ledger v10 also folded the gap register's own numbering. Every row and every pending proposal now names the OpenSpec change that carries it, in the repository that owns it, and the counts below are read from that register rather than estimated.
+
+Ledger v10.1 and register v4.1 closed the last of it on 2026-09-14. Every gap the register can act on, every pending proposal that asks dossiq for work, and every discovery cluster now names a change you can open. What is left uncarried is nine gaps, 22 pending proposals and 18 candidates, and each of them says in the register why nothing is open rather than waiting to be rediscovered. Nothing in that remainder is a backlog item.
+
+## Method
+
+### Installed and driven, or rated from documents
+
+Every system carries one of four evidence classes (`data.family.classes` in `procest/_ledger/parity-ledger.html`).
+
+| class | what it means |
+|---|---|
+| driven | Installed, seeded with Dutch municipal cases, and driven in a browser. Every rating cites a file path with a line number, a screen, or a computation the live engine returned. The only class that may produce a new matrix row. |
+| documented | Closed source and not driven. Rated from the API reference, the documentation, the public tracker and the price pages, every cell quoting the page it rests on. Printed under the label `documented, not driven` wherever its number appears, never in a driven count or a driven ranking. An upper bound: every driven batch found something the vendor's page did not say. |
+| trial | Self-hostable only under a paid or time-limited licence. Can reach the driven standard at a cost. |
+| docs only | Cloud only. Included for landscape, never as evidence. |
+
+Twenty-two non-Dutch systems are driven and four are documented: JSM Cloud, YouTrack 2026.2, Jira Software Data Center 11.3 and Easy Redmine 16.0.
+
+### The evidence convention
+
+The method paragraph of the ledger's handover (`data.handover.method`) is the rule set every batch worked under. The parts that decide a cell:
+
+- Never rate from a feature page. A rating cites a path with a line, a screen, or a number an engine returned.
+- Grep for the route, not the model. A model in the source is not a capability; Plane's epics answer 404 while `is_epic` sits in the tree.
+- Propose a row only if at least one corpus system scores `yes` on it. A row nobody passes measures the standard rather than the products.
+- Recount every tally by script. Batch 1 mistyped six of thirteen totals and batch 2 seven of twenty-six, so `procest/_round4/tools/corpus-tally.py` counts and ranks every column, and `count-column.py` fails when its own tally lines disagree.
+- Check a comparative claim (first, only, best) against the published files before writing it. Three such claims failed in batch 3, two more in batch 7.
+- A product you configured is doing what you told it. Batch 7's own automatic action fired on the task a recurrence created and corrupted a measurement until it was removed.
+
+### The counting rule: 225 = 206 + 19
+
+The ledger holds **225 rows**: the original 206-row matrix from round 2 (`procest/_round2/compare/M1-functionality.md`), plus the **19** of round 3's 21 proposals that were promoted after two were dropped as restatements (`procest/_round4/compare/promoted-rows-batch3.md`). A proposal is not a row until it is promoted, so the rows batches 1 to 12 proposed, 11 + 5 + 3 + 3 + 3 + 3 + 5 + 5 + 3 + 2 + 2 + 3, are **48 pending**. The ledger counts 43 through batch 10 (`data.family.counting`); batch 11 adds 8.22 and 13.24, and batch 12 adds 11.34, 13.25 and 8.23 (`procest/_round4/compare/proposed-rows-batch11.md` and `proposed-rows-batch12.md`). Adding 206 + 21 + 11 double counts the promoted nineteen. Say which artefact you mean: the corpus M1 file is 206, the ledger is 225.
+
+Proposals are kept out of the matrix for a reason the round 2 file states: a proposed row has a verdict for the system that produced it and nothing for the systems nobody re-read, and filling those blanks would be a fabricated reading. Pending proposals carry a `Q` prefix in the gap register because their ids collide with promoted ids (Q2.27 is identifier uniqueness, 2.27 is the edit lock).
+
+**The pending set became 146 on 2026-09-14, and 225 did not move.** dossiq's customer page carried 329 rows against the ledger's 225: 104 of them were added in dossiq#2314 on 2026-09-10, under ids the corpus had never issued, rating every competitor `unknown`. 42 of those ids collided with a pending proposal that asked a different question. The reconciliation is `procest/_round4/compare/dossiq-matrix-drift.md` and decision D1 took the corpus as the record: the 104 entered the queue as proposals with ids assigned centrally, 91 renumbered and 13 kept, and six absorbed into a proposal that already asked their question. 48 + 98 = **146 pending**. The rows are still 225, because not one of the 104 had ever had a column read against it but ours. `src/data/capabilityComparison.json` is now re-issued from the corpus by `scripts/sync-capability-comparison.mjs`, and `tests/vitest/capabilityComparison.spec.js` fails when its id set drifts from the corpus again.
+
+### The statutory split
+
+Round 3 estimated that roughly forty rows named Dutch statutory concepts. Round 4 replaced the estimate with a test and published the list: **26 rows** (`procest/_round4/compare/statutory-rows.md`). A row is statutory when it names a Dutch statutory instrument, a national register, a government authentication scheme, a government interoperability standard, or a Dutch government software vendor. Everything else is domain neutral, even when Dutch municipalities are the reason it matters: retention, e-signing, payments, SSO and citizen portals are ordinary product capabilities a Dutch buyer happens to need.
+
+The test cuts both ways. Classifying a row as statutory removes it from the denominator, which raises a competitor's headline rather than lowering it. The headline is therefore the **domain-neutral 180**, and the 26 are reported separately.
+
+## The ranking on the domain-neutral 180
+
+Counted and ranked by `procest/_round4/tools/corpus-tally.py`, printed in `procest/_round4/compare/twenty-six-system-tally.md`, which supersedes the eighteen, twenty-two and twenty-four column tallies before it. The script sorts on `yes` only and keeps file order on a tie, so OTOBO prints above Odoo and nothing in the method ranks on `partial`. It prints two rankings, so a documented cell is never read as a driven one.
+
+### Driven columns, twenty-six as of ledger v10
+
+| rank | system | yes | partial | family |
+|---|---|---|---|---|
+| 1 | xxllnc Zaken | 125 | 31 | Dutch case systems |
+| 2 | GZAC/Valtimo | 82 | 46 | Dutch case systems |
+| 3 | OTOBO 11.0 | 78 | 45 | help desks and ITSM |
+| 4 | Odoo 19.0 | 78 | 51 | project tools and boards |
+| 5 | Znuny 7.3 | 73 | 45 | help desks and ITSM |
+| 6 | Frappe Helpdesk 1.30 | 72 | 58 | help desks and ITSM |
+| 7 | **dossiq** | **71** | **77** | Dutch case systems |
+| 8 | Request Tracker 5.0 | 65 | 54 | help desks and ITSM |
+| 9 | Tuleap CE 17.5 | 65 | 54 | ALM suites |
+| 10 | Huly 0.7.426 | 60 | 74 | issue and workspace |
+| 11 | iTop 3.2 | 58 | 49 | help desks and ITSM |
+| 12 | OpenCase | 58 | 38 | Dutch case systems (Danish, on Nextcloud) |
+| 13 | GLPI 11 | 56 | 66 | help desks and ITSM |
+| 14 | osTicket 1.18 | 55 | 43 | help desks and ITSM |
+| 15 | Zammad 7 | 53 | 57 | help desks and ITSM |
+| 16 | OpenProject 16 | 46 | 64 | project tools and boards |
+| 17 | Redmine 7 | 43 | 51 | forges |
+| 18 | Deck 1.18 | 37 | 37 | project tools and boards |
+| 19 | Kanboard 1.2 | 37 | 39 | project tools and boards |
+| 20 | GitLab CE 19.3 | 36 | 56 | forges |
+| 21 | Vikunja 2.6 | 35 | 26 | project tools and boards |
+| 22 | Taiga 6.10.2 | 32 | 52 | project tools and boards |
+| 23 | Forgejo 16 | 23 | 47 | forges |
+| 24 | Gitea 1.27.3 | 23 | 47 | forges |
+| 25 | Plane 1.4 | 22 | 49 | project tools and boards |
+| 26 | FreeScout 1.8 | 22 | 31 | help desks and ITSM |
+
+Two rows of this table are one product. Gitea and Forgejo answer all 206 matrix rows identically, 23 yes and 48 partial each, and a script comparing the two published columns reports 0 rows differing (`procest/gitea/round4/gitea-vs-forgejo.md`). Where the fork separated is six subsystems no matrix row reaches.
+
+Two more are a coincidence worth naming, because the total is a poor summary of a column. Tuleap CE and Request Tracker tie at 65 yes and 54 partial each, from a ticketing engine and an ALM suite, and their columns disagree on 60 of the 180 rows (`procest/_round4/compare/findings-batch12.md`).
+
+Huly carries 74 `partial` cells, more than any other driven column. That is the signature of a product with the pieces and not the assembly: a process engine with thirteen actions and no case, a holiday calendar nothing reads, and a contact registry with no case to attach a contact to.
+
+### Documented columns, four as of ledger v10, graded `documented, not driven`
+
+| system | yes | partial | where it would sit among all columns |
+|---|---|---|---|
+| Easy Redmine 16.0 | 86 | 62 | second of thirty, above GZAC |
+| JSM Cloud | 83 | 53 | third of thirty, above GZAC |
+| YouTrack 2026.2 | 78 | 44 | seventh of thirty, level with OTOBO and Odoo |
+| Jira Software DC 11.3 | 64 | 55 | thirteenth of thirty, one below Tuleap CE |
+
+All four are upper bounds. OTOBO's `Ticket::Service` shipped switched off and ignored a configured SLA; a documentation page would not have said so (`procest/_round4/compare/open-core-batch8.md`). Easy Redmine's 86 is the highest documented number in the corpus and the least verifiable, for a second reason: the paid half has no public tree and there is no public tracker to check a `no` against (`procest/_round4/compare/findings-batch10.md`). Jira Software Data Center carries a third caveat that is not about evidence at all. Sales to new customers ended on 2026-03-30 and the products reach end of life on 2029-03-28, so a municipality reading that column cannot buy what it describes.
+
+### The full ranking, thirty columns
+
+With the documented columns admitted as upper bounds, the same script prints: xxllnc Zaken 125, Easy Redmine 86 (documented), JSM Cloud 83 (documented), GZAC 82, OTOBO 78, Odoo 78, YouTrack 78 (documented), Znuny 73, Frappe Helpdesk 72, **dossiq 71**, Request Tracker 65, Tuleap CE 65, Jira Software DC 64 (documented), Huly 60, iTop 58, OpenCase 58, GLPI 56, osTicket 55, Zammad 53, OpenProject 46, Redmine 43, Deck 37, Kanboard 37, GitLab CE 36, Vikunja 35, Taiga 32, Forgejo 23, Gitea 23, Plane 22, FreeScout 22. dossiq is seventh of twenty-six driven columns and tenth of thirty.
+
+### The families
+
+Driven columns only, from `procest/_round4/compare/twenty-six-system-tally.md` and the family table in `twenty-two-system-tally.md`:
+
+| family | driven systems | best domain-neutral `yes` |
+|---|---|---|
+| Dutch case systems | xxllnc Zaken, GZAC, dossiq, OpenCase | 125 |
+| help desks and ITSM | OTOBO 78, Znuny 73, Frappe Helpdesk 72, Request Tracker 65, iTop 58, GLPI 56, osTicket 55, Zammad 53, FreeScout 22 | 78 |
+| project tools and boards | Odoo 78, OpenProject 46, Deck 37, Kanboard 37, Vikunja 35, Taiga 32, Plane 22 | 78 |
+| forges | Redmine 43, GitLab CE 36, Forgejo 23, Gitea 23 | 43 |
+
+Batch 12's two columns join no family cleanly. Tuleap Community Edition 17.5 at 65 is an ALM suite, a tracker with a document manager and a workflow beside it; Huly v0.7.426 at 60 is an issue tracker and a workspace in one product (`procest/_round4/compare/findings-batch12.md`).
+
+## Where dossiq stands, and what moved it
+
+**dossiq scores 71 of 180.** The combined 84 of 206 that earlier pages quoted includes thirteen `yes` answers on statutory rows no non-Dutch system can score, so it measures the jurisdiction as much as the product. On the move to 180 every competitor loses nothing, because none of them scored those rows anyway. The gap to GLPI narrows from 28 rows to 15 (`data.family.comparable`).
+
+What moved the position, batch by batch (`data.family.leadLost`):
+
+- **Batch 4, Znuny 7.3.6 at 73.** The first time in four rounds that a non-Dutch product beat dossiq on the comparable half. Not a help desk that grew: a process engine, an ACL engine, custom fields, nine working calendars, a generic interface and a customer portal, with none of its 37 vendor packages priced.
+- **Batch 5, OTOBO 11.0.17 at 78.** The other OTRS fork. The same product as Znuny in 881 of its 1,132 modules, identical on 231 of 247 rows; the 16 rows that differ are what each vendor built after the 2019 split, and 13 went OTOBO's way (`procest/_round4/compare/otobo-vs-znuny.md`).
+- **Batch 6, Odoo 19.0 Community at 78.** Ties OTOBO from the platform under its project module: one chatter, one automation engine, one record-rule layer, one form builder and typed properties, with no case number, no term engine and no document model.
+- **Batch 7 changed nothing above dossiq.** Kanboard 37 and Vikunja 35 landed fifteenth and seventeenth.
+- **Batch 8 put two documented ceilings beside the driven top.** JSM Cloud 83 and YouTrack 78, never driven.
+- **Batch 9, Frappe Helpdesk 1.30.1 at 72.** One row above dossiq, the fourth driven system to pass us and the first on the profile closest to our own: a term engine, mail intake, a customer identity, a status vocabulary with a customer label and refusals on configuration in use, all from one tree. A third of its column is the Frappe framework's desk at `/app`, which its own UI does not draw. Request Tracker 5.0.10 reads 65, eighth.
+- **Batch 10 raised the documented ceiling.** Easy Redmine 16.0 reads 86 and Jira Software Data Center 11.3 reads 64, neither driven. A buyer comparing dossiq to "Redmine" is quite likely being shown Easy Redmine.
+- **Batch 11 changed nothing above dossiq.** Taiga 6.10.2 landed twenty-second at 32 and Gitea 1.27.3 twenty-fourth at 23, row for row with Forgejo, which forked from it.
+- **Batch 12 changed nothing above dossiq either, and closed the undriven set.** Tuleap Community Edition 17.5 landed ninth at 65 and Huly v0.7.426 tenth at 60. Both are the first non-Dutch columns to score anything at all in section 7, one row each.
+
+Two of the six driven columns above dossiq are Dutch case systems, two are forks of one German service desk, one is a Belgian ERP's project module and one is a help desk on an Indian low-code framework. The only two systems above GZAC on the comparable half are xxllnc Zaken and products nobody in this corpus has run.
+
+### The shape per area
+
+`yes` answers per area, dossiq beside the strongest columns the tallies print per area. dossiq's column is the 206-row reading of 2026-09-07 with the 2026-09-08 corrections (`procest/_round2/compare/M1-functionality.md`, tally per area); the re-read of 2026-09-13 closed twelve more rows after this count and is cited on the [re-read page](competitor-gap-re-read-2026-09-13.md). Non-Dutch columns are from `twelve-system-tally.md`, `fourteen-system-tally.md`, `eighteen-system-tally.md` and `twenty-two-system-tally.md` in `procest/_round4/compare/`.
+
+| area | rows | dossiq | xxllnc | GZAC | OpenCase | OTOBO | Odoo | Znuny | Helpdesk | Deck |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 Intake | 13 | 4 | 9 | 3 | 7 | 7 | 7 | 7 | 6 | 2 |
+| 2 Case core | 22 | 9 | 16 | 13 | 7 | 10 | 11 | 10 | 11 | 7 |
+| 3 Tasks and phases | 19 | 6 | 11 | 14 | 2 | 10 | 8 | 9 | 6 | 3 |
+| 4 Documents | 23 | 7 | 18 | 5 | 13 | 2 | 3 | 1 | 1 | 7 |
+| 5 Parties and contacts | 13 | 5 | 11 | 1 | 7 | 4 | 3 | 3 | 4 | 0 |
+| 6 Communication | 14 | 4 | 10 | 2 | 3 | 6 | 7 | 7 | 7 | 2 |
+| 7 Decisions | 7 | **6** | 3 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 8 Deadlines | 10 | **8** | 7 | 4 | 2 | 5 | 5 | 5 | 4 | 2 |
+| 9 Search | 12 | 4 | 10 | 5 | 5 | 8 | 8 | 7 | 7 | 3 |
+| 10 Reporting | 10 | 5 | 7 | 5 | 1 | 7 | 6 | 7 | 6 | 1 |
+| 11 Configuration | 24 | 9 | 13 | 18 | 3 | 10 | 11 | 11 | 10 | 4 |
+| 12 Integrations | 23 | **11** | 10 | 9 | 4 | 4 | 3 | 2 | 3 | 2 |
+| 13 Access and privacy | 16 | 6 | 11 | 6 | 7 | 5 | 6 | 4 | **7** | 4 |
+
+Frappe Helpdesk's 7 in section 13 is level with Tuleap CE, the highest of the twenty-two driven non-Dutch columns, on customer identity, per-customer visibility, two-factor with a login log, and API tokens per user. Request Tracker's 8 in section 9 is TicketSQL, a query language with saved searches, charts and dashboards, level with OTOBO and Odoo (`procest/_round4/compare/twenty-two-system-tally.md`).
+
+Batch 12's two columns are not in the table and they are the ones that beat dossiq most often per area, counted from `procest/tuleap/round4/M1-column.md` and `procest/huly/round4/M1-column.md`. Huly is above dossiq in case core (10 against 9), tasks (9 against 6), documents (8 against 7) and search (7 against 4). Tuleap CE is above dossiq in reporting (7 against 5), configuration (11 against 9) and access and privacy (7 against 6). Both are far below on parties, communication, deadlines, decisions and integrations, which is the same shape every non-Dutch column has.
+
+Three sentences the tallies repeat:
+
+- **Decisions are where every non-Dutch system collapses.** Twenty driven non-Dutch columns score 0 of 7, and so do all four documented ones. Batch 12 broke the zero and barely: Tuleap CE and Huly score 1 each, both on 7.1 alone, an outcome list configured per type. Nobody outside the Dutch family scores 7.2 to 7.7. The nearest object in the whole family is OpenProject's `MeetingOutcome`, whose `kind` enum has a `decision` value and no approver, quorum, number, effective date or publication (`procest/_round4/compare/findings.md`).
+- **Documents are where the whole non-Dutch corpus is weakest, and batch 12 found the exception.** Znuny and GitLab have 46 document rows between them and two `yes` answers; Kanboard and Vikunja the same; Frappe Helpdesk, Request Tracker, Gitea and Taiga score one each of 23. Deck reaches 7 through its host: an attachment is a file in Files, so versions, a share with an expiry, a lock, a trash, a preview and a file manager come free (`procest/_round4/compare/eighteen-system-tally.md`). Then Huly scored **8 of 23** and Tuleap 7, both from a document manager of their own rather than a host: a document as a record with attributes an administrator adds, a folder tree, labels, annotations and full-text indexing of file content, measured with a control word (`procest/huly/round4/M1-column.md`). Huly is the first non-Dutch column to pass dossiq's 7 in section 4.
+- **Section 12 flatters dossiq.** Ten of its 23 rows are statutory (12.1 to 12.6, 12.8, 12.9, 12.11 and 12.16 in the list below), so dossiq's lead there is partly the jurisdiction.
+
+## The 26 statutory rows and the zero-yes proof
+
+The list, from `procest/_round4/compare/statutory-rows.md`:
+
+| row | capability | why statutory |
+|---|---|---|
+| 4.20 | Archive export of closed cases (XML, SIP, TMLO/MDTO) | TMLO and MDTO are Dutch archival metadata standards |
+| 5.3 | National registry lookup (BRP, KvK) | names BRP and KvK |
+| 5.5 | Address protection or secrecy indication | geheimhouding is a BRP concept |
+| 5.8 | Authorised representative (gemachtigde) on a case | Awb 2:1 |
+| 5.10 | Property or address object as a party (BAG) | names BAG |
+| 5.11 | Contact import and change subscriptions from registries | the registries meant are BRP and KvK |
+| 5.13 | External register views embedded in the app | the registers meant are the national ones |
+| 6.6 | Digital post to citizens (Berichtenbox) | names Berichtenbox |
+| 6.14 | Notes synced to an external case register | the register meant is a zaaksysteem |
+| 7.3 | Formal decision record (besluit) | besluit is an Awb concept with legal consequences |
+| 7.4 | Decision letter generated as a workflow step | bekendmaking, Awb 3:41 and 3:45 |
+| 7.5 | Woo request with per-document assessment and redaction | names the Wet open overheid (Woo) |
+| 7.6 | Objection handling surface | bezwaar, Awb 6 and 7 |
+| 7.7 | Result drives archival nomination and retention | Archiefwet selectielijst |
+| 11.22 | AVG register fields per case type | verwerkingsregister, AVG article 30 |
+| 12.1 | ZGW APIs (Zaken, Documenten, Catalogi, Besluiten) | names ZGW |
+| 12.2 | Notificaties API | a ZGW component |
+| 12.3 | Objecten and Objecttypen API | a ZGW component |
+| 12.4 | StUF (BG, ZKN, DCR) | names StUF |
+| 12.5 | DSO or Omgevingswet | names the Omgevingswet |
+| 12.6 | National person and company registries | BRP and Handelsregister |
+| 12.8 | Citizen authentication (DigiD, eHerkenning, eIDAS) | names DigiD and eHerkenning |
+| 12.9 | Digital post or berichtenbox | names berichtenbox |
+| 12.11 | External document generation service (SmartDocuments, Xential) | both are Dutch government software vendors |
+| 12.16 | Map and geo services (PDOK, BAG, ArcGIS) | names PDOK and BAG |
+| 13.11 | AVG register per case type | as 11.22 |
+
+One row sits on the line. 5.11 is `partial` for several systems because LDAP synchronisation and SCIM provisioning do import people and keep them in step with a directory, which is a registry subscription of staff rather than citizens. Moving it changes no headline, and the file flags it rather than picking the flattering side.
+
+**The proof.** Twenty-six non-Dutch systems, twenty-two driven and four documented, read against all 26 rows: **676 cells, zero `yes`** (572 driven, 104 documented). The two halves are stated apart because they are different kinds of evidence. Every `partial` in the statutory column is the generic half of a Dutch question, most of them 5.11, a directory that creates users; the count per system is in the tally's statutory column. Every catalogue was searched by name before a statutory `no` was written, and the substring hits are the finding. The Atlassian Marketplace filtered to Data Center returns 9 apps for DigiD, all calendars and planning, 3 for eHerkenning, all Gherkin editors, and 0 for eIDAS, ZGW, zaakgericht, StUF and SmartDocuments, where the unfiltered Cloud search of batch 8 returned 76, 7 and 0. The JetBrains Marketplace returns 0, 0 and 0 and corrects DigiD to "digit". None of the seven names occurs anywhere in Easy8's 1,434 pages (`data.family.statutoryProof`, measured in `procest/_round4/compare/twenty-two-system-tally.md` and recounted in `twenty-six-system-tally.md`).
+
+That is why the 180 is the headline. Counting the 26 in a product comparison measures the jurisdiction, and the 26 still matter enormously to the buyer.
+
+## Fourteen open-core shapes
+
+The matrix has 206 rows and none of them asked whether the capability just scored is in the build you can install. Round 4 checked every system against its source tree rather than its licence page, and found fourteen shapes a missing capability takes (`data.handover.openCore` holds eleven, with the per-batch reading in `procest/_round4/compare/open-core-batch*.md`; the twelfth is batch 11's and the last two batch 12's, none of the three in the ledger yet). Each shape is named after the system that defined it.
+
+| # | shape | defined by | what was read |
+|---|---|---|---|
+| 1 | Gates nothing | GLPI, Zammad, Redmine, Forgejo, osTicket, Znuny, OTOBO, Deck, Kanboard, Request Tracker, Frappe Helpdesk | zero entitlement hits over the tree; Znuny's 37 and OTOBO's 45 vendor packages none priced; Kanboard's 163-plugin directory has no price field; Request Tracker's ten hits are the GPL header, a dashboard subscription and the vendor's address, and Frappe Helpdesk returns zero over both repositories |
+| 2 | Gates at runtime, some features degrading silently | OpenProject | 32 features behind `EnterpriseToken.allows_to?`, the GPL source present and refusing to run; four degrade silently, including internal comments becoming invisible to everyone |
+| 3 | Omits the paid half entirely | Plane | no entitlement machinery; the paid features are absent and only the seams remain, such as `useBulkOperationStatus = () => false` |
+| 4 | Prices modules with the paywall through the free half | FreeScout | 72 of 75 modules priced, 539.73 dollars for the set, 33 matrix rows gated |
+| 5 | Removes the paid code at build time | GitLab CE | 1,616 no-op seams in 1,599 files; 22 rows settled by a 404 or 400 from the running instance |
+| 6 | Sells a separate non-public edition beside an AGPL core | OpenCase | the enterprise edition (AI, digital post, CPR and CVR) gated on `enterprise_version` |
+| 7 | Sells a catalogue of closed extensions beside a complete core | iTop | 103 extensions on the store, 70 AGPL, 33 under the Combodo Software License, none in the tree and none gated by it |
+| 8 | Keeps the paid half in a private repository and labels part of it inside the free product | Odoo | 21 `to_buy` records under OEEL-1 and 45 upgrade badges; the edition boundary last moved in 2019 by the git history |
+| 9 | Draws the paid half as a column in a plan table | JSM Cloud | no code to read; 16 cells Premium, 8 Enterprise, 5 Atlassian Guard, 2 Data Center; incident, change and problem moved to Premium on 2024-10-16 |
+| 10 | Keeps the paid code in the tree and answers 404 for it by design | Vikunja | three features behind a key checked daily against the vendor; `RequireFeature` serves 404 "so gated routes are indistinguishable from unregistered ones"; with a key the check reports user counts to the vendor |
+| 11 | Sells a source-available proprietary layer on a GPL core, as open source | Easy Redmine 16.0 (documented) | a GPL-2.0 Redmine core with everything Easy wrote beside it under the Easy8 Commercial License: the on-premises buyer may download that tree, the cloud buyer "has no right to obtain the source code to the Elements, nor to view it", neither may pass it on, and a change carries a notification duty to the vendor. Inside the tree a plan table decides what runs, 22 matrix cells naming Platform and 9 an add-on, under a product page reading "100% open source" |
+| 12 | The steward of the open core sells a closed product built on it | Gitea 1.27.3 | MIT on 3,010 of 3,013 Go files and every open-core grep at zero, while Gitea Ltd sells Gitea Enterprise and Gitea Cloud. No gate, no seam, no plan table, no store, no 404: the tree holds no evidence that the closed product exists, and it is not lying, because every capability in it works |
+| 13 | The open edition ships the whole lock and none of the key | Tuleap CE 17.5 | twenty GPL-2.0 files under `src/common/SeatManagement/` verify an Ed25519-signed licence and bind its audience claim to the SHA-256 of this instance's own hostname. The edition is decided by a missing `keys` directory, so the sidebar brands the product a Dev Build. The tree also carries the sentence the paid edition shows at expiry, "All accounts will be in read only mode in %d days", and not the code that would do it, and a `restrictions` array parsed, stored and read by nothing. Nineteen plugins the vendor marks part of Tuleap Enterprise are simply absent, against two dangling listeners in 130 |
+| 14 | One licence, no gate, and a reference deployment that runs a minority of the tree | Huly v0.7.426 | seven EPL-2.0 licence files, zero hits for a key, an entitlement or a feature flag, and a public `develop` branch. The vendor's own self-host compose runs 1 of the 22 directories under `services/` and 6 of the 14 under `pods/`. Mail, calendar, signing, printing, export, backup and the process worker are absent, and the app rail still offers Processes with nothing behind it |
+
+Two systems are not shapes. Deck withholds nothing for money, and its score is set by which host surfaces it plugs into. Taiga is the same verdict reached the same way: MPL-2.0 across 931 Python files, zero hits to every open-core grep, and a vendor selling hosting of that code. YouTrack is shape one and closed: nothing withheld above ten users and three agents, and what a buyer does not get is the source, which the shapes do not measure.
+
+What the twelfth shape adds is a limit on the method itself. For every system in eleven batches the tree told you where the boundary was, through a gate, a seam, an empty module, a 404 or a label. Gitea's boundary is in a roadmap, which is not a file, so a buyer cannot check it now and cannot check it next year either. What is withheld there is not a feature but the option to withhold one. Forgejo is the control that makes it legible: the same code, the same empty greps, and a licence under which a closed derivative is unavailable to anyone, its own vendor included.
+
+**And the question now has an expiry date on it.** On 2026-09-13 `tuleap.net` announced that "Tuleap Community Edition development and releases are no longer public", with 30 September as the last day to download what is left. `github.com/Enalean/tuleap` answers 404 and the stable git URL answers 403 to an anonymous client. Every line number in the Tuleap column is a line number in a tree with no public home: the column was read from `/usr/share/tuleap` inside the running container, which is where the GPL obligation is met, and it is the first column in the corpus that nobody else can check with a browser (`procest/_round4/compare/open-core-batch12.md`). The corpus should record per system not only what the tree says, but whether the tree can still be read.
+
+What the corpus says about the question: copyleft proves nothing, since most of these trees are GPL, LGPL or AGPL and among them sits every shape a grep has found; a grep finds a gate and never a catalogue, a roadmap or a private repository, so read the store, the Apps page and the git history as well; and a documented column cannot find a silent switch, which is why a closed product's number is an upper bound. The open-core question and the phone-home question have also come apart. Gitea and Forgejo read a version file weekly and disclose nothing; Taiga sends its instance's own URL, a persistent identifier and 46 measured properties to the vendor every night, with telemetry on by default. Nothing is gated in any of the three. Pending row Q12.26 asks the question and no row in the 225 does. dossiq passes pending row 11.27, the capability is in the edition you can deploy, because there is no paid half: `grep -rniE "licen[cs]e_key|entitlement|enterprise_feature|allows_to" lib/ src/` returns 0 hits (`data.family.proposals`).
+
+## The working-day findings
+
+Round 4 asked the same question of every system: when a product says a term ends on a date, what counted? The files are `procest/_round4/compare/deadline-engines.md` and `deadline-engines-batch2.md` to `deadline-engines-batch12.md`.
+
+**dossiq's own engine, and its five copies.** Round 3 found dossiq counting working days in five private code copies that disagreed with each other, three of the five computing the moving feasts (`deadline-engines.md`, the comparison table; `data.dossiqLessons`). The ledger records that the five were consolidated since; the re-read confirms one `lib/Service/WorkingDayCalculator.php` on the current tree, with Easter hand-rolled rather than taken from `easter_date()`, and no time zone statement in `TermijnService.php` (`competitor-gap-re-read-2026-09-13.md`, rows Q12.25 and Q8.19).
+
+**Three in ten stored terms land on a day the Algemene termijnenwet (Atw) moves.** dossiq counts Awb terms in calendar days, which is correct: the terms it tracks are expressed in weeks or days, and 8 weeks is stored as 56 days. What dossiq does not do is roll the end date to the next working day, which the Atw requires. OpenProject's calendar-day calculator is arithmetically the same thing dossiq does, and it was run against a real Dutch holiday table: across every start date from 1 January to 31 October 2026 at the five term lengths dossiq stores (14, 28, 42, 56 and 84 days), the engine returned a Saturday, Sunday or Dutch holiday in **462 of 1,520 computations, 30.4%**. Its working-day calculator returned one 0 times in 1,675 (`deadline-engines.md`; batch 2 confirmed the figure independently in `deadline-engines-batch2.md`). That number is not about OpenProject. It is the size of a defect in dossiq, obtained by running someone else's engine in dossiq's mode.
+
+**The lesson is a combination nobody ships.** The counting mode and the end-date rule are two separate decisions. OpenProject has a per-item choice of counting mode and applies the roll only in the mode that never needs it. dossiq needs to count in calendar days and then roll, which needs the one administered holiday calendar that promoted row 8.12 asks for.
+
+**The engines, side by side.** From the batch files, the systems that have a calendar at all:
+
+| | working calendar | holidays are data | recomputes when the calendar changes | pause credited back | Easter |
+|---|---|---|---|---|---|
+| GLPI 11 | many, `Calendar` + `Calendar_Holiday` | yes | no | not measured | no |
+| Zammad 7 | one per SLA | yes, with iCal feed | no | not measured | no |
+| OpenProject 16 | one, instance wide | yes, `non_working_days` | **yes**, with the reason written to the history | no | no |
+| Redmine 7 | the work week only | no, and no place to put one | no, measured; a dependent's dates follow a predecessor instead | no | no |
+| osTicket 1.18 | business-hours schedules per department, several combinable | yes, in holiday schedules | no, measured | not measured | no; the grammar repeats the American moving feasts, not the Dutch ones |
+| Znuny 7.3, OTOBO 11 | nine, in the core | month and day only | yes, `EscalationIndexRebuild` | Znuny as a free package, OTOBO in the core and shipped off | no; Goede Vrijdag 2027 returned as a working day |
+| iTop 3.2 | none in the core, free extension | in the extension | no | **yes, core, on by default** | no |
+| Odoo 19 | one per company, and nothing plans with it | yes, typed by hand | no | no | no; Goede Vrijdag 2027 returned as a working day |
+| Plane, Deck, Kanboard, Vikunja | none | none | n/a | no | no; Kanboard and Vikunja count weekends and turn 31 August plus a month into 1 October |
+| Frappe Helpdesk 1.30 | one per SLA, administered | yes, every date typed by hand | **yes**, saving the holiday list recomputes every open ticket that links it | **yes**, by status category, measured | no |
+| Request Tracker 5.0 | named schedules, administered as JSON in the config editor | yes, `MM-DD` recurring or `YYYY-MM-DD` once | no; a save reached one of five web workers until a restart | **yes**, by config | no |
+| Gitea 1.27, Taiga 6.10 | none | none | n/a | no | no |
+| Tuleap CE 17.5 | **`opening_days`, a real weekday mask the engine reads** | no, and no holiday object exists | n/a | no | no |
+| Huly 0.7.426 | weekends only, hard-coded in one function | **a `PublicHoliday` class with a date and a department, which the engine never reads** | no | no | no |
+| Jira Software DC (documented) | a board setting for charts, read by no due date | Monday to Friday for a rule | not documented | not documented | no |
+| Easy Redmine (documented) | one, with the country's holidays imported from an ICS feed | yes, from the feed | not documented | documented, inside the SLA hours | no |
+| JSM Cloud (documented) | per service space | dates by hand; Data Center imports ICS | documented for an SLA edit | documented | no, on 0 of 1,184 pages |
+| YouTrack (documented) | per helpdesk project, hours only | **none** | not documented | documented | no, on 0 of 619 pages |
+
+The driven rows are the batch tables in `deadline-engines-batch2.md` (GLPI to Redmine), `deadline-engines-batch3.md` (osTicket), `deadline-engines-batch5.md` (Znuny, OTOBO, iTop), the section 8 table in `deadline-engines-batch6.md` (pauses, Odoo, Deck), `deadline-engines-batch7.md` (Kanboard, Vikunja), `deadline-engines-batch9.md` (Frappe Helpdesk, Request Tracker), `deadline-engines-batch11.md` (Gitea, Taiga) and `deadline-engines-batch12.md` (Tuleap, Huly).
+
+**Two engines that agree with each other still disagree with the law.** Frappe Helpdesk counts in 527 lines of Python and Request Tracker in a CPAN module wrapped in 258 lines of Perl. Different people, different products, different decades. Run on one Dutch calendar over the 2026 and 2027 feasts, they returned the same date to the minute on every one of the eight shared questions (`deadline-engines-batch9.md`). They also both landed a 2027 term on Tweede Paasdag, because Easter 2027 was typed nowhere and neither grammar has a rule beyond a fixed month and day. Frappe types every date every year; RT recurs a fixed date and types the movable ones. Two traps sit beside that: a fresh Frappe site counts in `Asia/Kolkata` until an administrator sets the zone, and an RT schedule saved through the config editor reached one of five web workers until a restart.
+
+**One date field, three write paths, three instants.** Gitea stores `issue.due_date` as one column, and the three API endpoints that write it disagree by 24 hours for the same submitted date: create keeps the raw instant, edit makes it end of day in the caller's zone, and the dedicated deadline endpoint makes it end of day in the instance's zone. Only the third reads the administered setting. A user sees it on one screen: the issue timeline reads "modified the due date ... to January 31, 2028" and the sidebar twelve centimetres away reads "February 1, 2028", for the same stored value (`deadline-engines-batch11.md`). Taiga cannot have the bug, because its `due_date` is a date and not a timestamp, and it is the only `yes` on the new row.
+
+**That new row indicts dossiq, and it is an audit instruction rather than a competitive one.** Proposed row 8.22 asks whether every write path to a date field agrees, and dossiq rates `no` from the source. **Nine controllers can set a date on a case**, `TermijnController`, `DeadlineReportingController`, `ZrcController`, `DwangsomController`, `ComplaintController`, `ConsultationController`, `AdviceController`, `WOOAssessmentController` and `ContactMomentController`. Ten services carry a deadline in their name, beside `WorkingDayCalculator` and `SlaCalculator`. The only normaliser in the tree is private, `normaliseDate()` at `lib/Service/Doorlooptijd/CaseEnricher.php:252`, reachable by one caller. Nothing asserts that the nine writers agree and no test compares them (`procest/_round4/compare/proposed-rows-batch11.md`). Ten batches measured a term engine by finding where a date is stored and reading the arithmetic once. Gitea is the proof that the unit of measurement is the writer, not the field.
+
+**Batch 12 found the first real open-day engine, and the first administered calendar an engine cannot see.** Tuleap's `opening_days` is a configuration key with `DatePeriodWithOpenDays` behind it, and Friday plus one open day returned Monday on the live tree. It is also the third product in two batches to show a caseworker the wrong day: one stored integer renders as 12 September for the administrator and 13 September for a colleague in Amsterdam, because the web path uses the reader's zone and REST uses the server's. Huly has a `PublicHoliday` class with a date and a department, created on its own screen in the HR module, and nothing outside HR reads it: the single working-day function in the build hard-codes Saturday and Sunday, and reads the weekday in UTC while writing the day locally.
+
+**That is proposed row 8.23, and it indicts dossiq too.** The row asks whether the calendar the deadline engine reads is the calendar the organisation administers, which promoted row 8.12 cannot express, because 8.12 cannot tell "no calendar" from "a calendar the engine cannot see". dossiq rates `partial`. We have the best calendar in the corpus and it is not on the critical path by construction: 37 files under `lib/` do date arithmetic and **five reference `WorkingDayCalculator`**. Three of the thirty-two that do not are term paths by name: `BezwaarTermijnScheduler.php:76` adds the six-week bezwaar term to the bekendmaking date, `NoticeOfDefaultService.php:171` adds the ingebrekestelling grace period, and `DeadlinePauseService.php` credits a suspension back at lines 93 and 172. Six weeks from bekendmaking is the right term; what the Atw then requires is the roll, and these three do not ask for it. The corpus file calls this an audit instruction rather than a proven defect, because a file doing date arithmetic is not necessarily computing a statutory term (`procest/_round4/compare/proposed-rows-batch12.md`).
+
+**Nothing in twenty-six non-Dutch columns computes Easter.** Znuny on a Dutch calendar moved 16 working hours from 2 April 2026 12:00 to 7 April 15:00, skipping Goede Vrijdag and Tweede Paasdag, and then returned Goede Vrijdag 2027 as a working day, because its grammar has no rule beyond a fixed month and day. OTOBO gives identical numbers on identical code. Odoo's Dutch calendar skipped the 2026 feasts typed by hand and failed 2027 the same way. Frappe Helpdesk and Request Tracker landed a 2027 term on Tweede Paasdag. Tuleap and Huly compute weekends and no holidays at all. The word occurs on 0 of the 2,896 pages batch 8 read. dossiq computes it, in `lib/Service/WorkingDayCalculator.php` with `easterSunday()` at line 253 and `holidays(int $year)` at 219, and has the calendar as an OpenRegister schema (`data.family.leadLost`; `deadline-engines-batch8.md`, `deadline-engines-batch9.md`, `deadline-engines-batch11.md`).
+
+**Two ideas worth taking.** OpenProject recomputes existing deadlines when the calendar changes and writes the reason into the history as `Journal::CausedByWorkingDayChanges`; that is pending row 8.17. Redmine recomputes a dependent's dates when a predecessor slips; that is pending row Q3.21. Neither does both. dossiq does neither. Both are in the umbrella as `terms-on-the-engine-calendar` and `dependent-term-follows-predecessor`.
+
+## What the family round says about dossiq
+
+Section 08 of the ledger, `data.dossiqLessons`, holds fifteen findings as of v7. The ledger's own closing line: start with the deadline rule, then wire the enum labels, then read each Throwable site with proposed row 10.14 open beside it.
+
+| finding | what was measured |
+|---|---|
+| Three in ten statutory deadlines land on a day the law says must move | 462 of 1,520 computations, 30.4%, in `deadline-engines.md`. Promoted rows 8.11 and 8.17 carry the fix. |
+| Enum labels exist on one property and nowhere else | 230 enum declarations across `lib/Settings/dossiq_register.json` (116) and `lib/Settings/register.d/` (114), one carrying `x-enum-labels`, recounted 2026-09-13. |
+| Sites that turn a failure into an absence | `catch (\Throwable)` followed by `return null` under `lib/Service/`: the ledger counts 24; the re-read counts 47 sites in 37 files among 276 catches. Redmine's 204, osTicket's 302, Znuny's 200 with an error object, OTOBO, iTop and Odoo's RPC surfaces are the same defect in six costumes. Proposed row Q10.14. |
+| Cells that read schema only | Batch 4 counted eight cells in the published matrix where dossiq's evidence is a registered schema with no surface; the re-read finds 27 schemas with no surface anywhere, an upper bound for the structural test in `no-schema-without-a-surface`. Personal-data storage registered ahead of the feature that uses it is a verwerkingsregister question. |
+| dossiq computes Easter and none of twenty-six competitors does | see the working-day findings above. |
+| Two OTRS forks, an ERP and a help desk are ahead on the comparable half | OTOBO 78, Odoo 78, Znuny 73 and Frappe Helpdesk 72 against 71. |
+| Two engines that agree with each other still disagree with ours | Batch 9. Frappe Helpdesk's `calc_time` and Request Tracker's `RT::SLA` returned the same date to the minute on every shared question of a Dutch year, and both put a 2027 term on Tweede Paasdag. dossiq's five calendar rows would not. |
+| The plan boundary sits on the row the buyer needs most | Batch 10. Easy Redmine's HelpDesk, and with it every SLA row in the column, is the Platform plan; the CRM, Assets, the Knowledge Base and branding are priced add-ons. "100% open source" and an SLA on the feature page are two true sentences about two different purchases. |
+| Seven document rows a kanban board passes on our own host | Deck scores `yes` on seven of 23 document rows, six of them Nextcloud's: versions, a share with an expiry, a lock, a trash, a preview and a file manager. dossiq runs on the same host; the rest are one design decision away (`procest/nextcloud-deck/round4/open-core.md`). |
+| A reply with a rewritten subject line is a lost letter | `InboundEmailJob.php` links a reply by the `[ZAAK-…]` subject tag and reads neither `In-Reply-To` nor `References`; Odoo reads the headers first (`mail_thread.py:1185-1193`). Proposed row 6.18. |
+| A right on a parent case stops at the child | `lib/Service/CaseAccessGuard.php` never reads `parentCase`; Vikunja resolves access through the parent chain, measured three levels down. Proposed row 13.23. |
+| A paid feature can answer 404 | Vikunja's gate; read the licence package before recommending an AGPL product. |
+| The citizen reads our state machine | JSM maps the internal status to a customer's name per request type; a ZGW `statustype` has a `statustekst` for exactly this reason. Proposed row 6.19, opened as `citizen-status-labels`. |
+| One row where dossiq beats OpenProject outright | Pending row 11.27, the capability is in the edition you can deploy. |
+| The cheapest fix the round surfaced | Pending row 8.18, an administrator runs the term engine against a date of their choosing. dossiq scores `no`; osTicket was measured passing it live. |
+
+Two more sit in the corpus and not in the ledger. Batch 11's is proposed row 8.22: nine controllers can set a date on a case and the only normaliser in the tree is private. Batch 12's is proposed row 8.23: five files of thirty-seven doing date arithmetic call `WorkingDayCalculator`, and three of the rest are term paths by name.
+
+## The gap register, counted by owner
+
+`procest/_gaps/gap-register.md`, generated by `procest/_gaps/tools/build-gap-register.py`, fourth version, 2026-09-14. A row is a gap when dossiq's rating is not `yes`. Every gap has one owner, the app that holds the logic, and dossiq keeps a half on every row it does not own: a leaf placement, a schema declaration, a store call or an event (`procest/_gaps/ownership-rules.md`).
+
+**273 rows read, 161 gaps**: 110 from the matrix, 16 from the promoted rows, 35 from the pending proposals. 101 are `partial`, 60 are `no`. 11 of the 26 statutory rows are gaps.
+
+The 273 is 206 matrix rows, 19 promoted rows and 48 pending proposals, which is the queue as ledger v10 folds it from the batch files. The 146 of decision D1 is a second half of the same register, counted separately below, because 98 of those proposals have never had a column read against them but ours.
+
+| owner | gaps | S | M | L | carried | not carried |
+|---|---|---|---|---|---|---|
+| openregister | 69 | 51 | 17 | 1 | 67 | 2 |
+| dossiq | 34 | 26 | 7 | 1 | 34 | 0 |
+| integriq | 15 | 5 | 7 | 3 | 13 | 2 |
+| nextcloud (the platform) | 13 | 13 | 0 | 0 | 9 | 4 |
+| portaliq | 6 | 0 | 6 | 0 | 6 | 0 |
+| buildiq | 6 | 0 | 4 | 2 | 6 | 0 |
+| nextcloud-vue | 5 | 3 | 2 | 0 | 5 | 0 |
+| filinq | 3 | 0 | 3 | 0 | 3 | 0 |
+| pipelinq | 3 | 1 | 2 | 0 | 3 | 0 |
+| shillinq | 2 | 0 | 2 | 0 | 2 | 0 |
+| humaniq | 2 | 2 | 0 | 0 | 2 | 0 |
+| decidiq | 1 | 1 | 0 | 0 | 1 | 0 |
+| thematiq | 1 | 1 | 0 | 0 | 1 | 0 |
+| hermiq | 1 | 0 | 1 | 0 | 0 | 1 |
+| **total** | **161** | **103** | **51** | **7** | **152** | **9** |
+
+Sizes: S is a placement, a declaration or one action, under a day; M a change with a handful of tasks; L a new mechanism or a certification track.
+
+### Carried means a change you can open
+
+This is what the fourth version adds. Carried no longer means "a spec or an open change exists somewhere". It means the register names the change directory, in the repository that owns it, and a reader can open it. **85 distinct changes carry 152 of the 161 gaps**: dossiq 40, openregister 28, portaliq 4, filinq 3, integriq 3, buildiq 2, nextcloud-vue 2, shillinq 2, pipelinq 1. Read one as `<repo>/openspec/changes/<slug>/`, so `dossiq/case-delete-guard` is [`openspec/changes/case-delete-guard`](https://github.com/ConductionNL/dossiq/tree/development/openspec/changes/case-delete-guard) in this repository, and `openregister/object-watchers` is [the same path](https://github.com/ConductionNL/openregister/tree/development/openspec/changes/object-watchers) in openregister.
+
+The two rows the fourth version left needing a change have one. Q8.23, the calendar the deadline engine reads, is carried by dossiq's `every-term-on-the-engine-calendar`, and Q13.25, where a role's permissions come from, by openregister's `permission-provenance-and-deny`.
+
+Nine gaps are not carried, and none of the nine is waiting on a decision. Each says why in the register rather than waiting to be rediscovered.
+
+| gap | owner | why nothing is open |
+|---|---|---|
+| 1.9 and 4.6, Office, Teams and Outlook | integriq | deliberate no |
+| 10.7, export files area with expiry and download counts | openregister | deliberate no |
+| 13.14, locked rows for restricted cases in lists | openregister | deliberate no |
+| 12.7 staff SSO, 12.20 object storage, 13.15 two-factor and login history, Q13.22 weak-credential refusal | nextcloud | platform facts to write down, not work to schedule |
+| Q9.15, a command language a person types | hermiq | waits for a driven `yes` |
+
+### The pending half
+
+The register's second half is decision D1's queue: **146 pending proposals, 124 of them carried**, 121 by a named change and three by a spec someone already wrote. 35 of the 146 are the ones the first half already counts as gaps. The other 111 sit outside it: 98 entered under D1 on 2026-09-14 with no competitor column read against them but ours, and 21 of the 111 dossiq already passes. They are questions rather than measurements, so they stay out of every count on this page.
+
+**The 32 became 124 on the evening of 2026-09-14.** Eleven repositories read their own share of the queue and opened 72 new changes, and mapped 20 more proposals onto changes that already said the same thing in different words. The mapping, one row per proposal with the change and the basis, is `procest/_gaps/pending-changes-2026-09-14.json`.
+
+| repository | proposals | pull request |
+|---|---:|---|
+| openregister | 40 | [#3722](https://github.com/ConductionNL/openregister/pull/3722) |
+| dossiq | 30 | [#2759](https://github.com/ConductionNL/dossiq/pull/2759) |
+| filinq | 4 | [#1092](https://github.com/ConductionNL/filinq/pull/1092) |
+| integriq | 4 | [#2013](https://github.com/ConductionNL/integriq/pull/2013) |
+| nextcloud-vue | 3 | [#1168](https://github.com/ConductionNL/nextcloud-vue/pull/1168) |
+| portaliq | 3 | [#554](https://github.com/ConductionNL/portaliq/pull/554) |
+| buildiq | 2 | [#773](https://github.com/ConductionNL/buildiq/pull/773) |
+| decidiq | 2 | [#1320](https://github.com/ConductionNL/decidiq/pull/1320) |
+| pipelinq | 2 | [#1947](https://github.com/ConductionNL/pipelinq/pull/1947) |
+| humaniq | 1 | [#437](https://github.com/ConductionNL/humaniq/pull/437) |
+| opencatalogi | 1 | [#1517](https://github.com/ConductionNL/opencatalogi/pull/1517) |
+| nextcloud (the platform) | 1 | none, it is a platform fact |
+
+The 22 with no change are not a backlog. 21 of them rate dossiq `yes`, so there is nothing to build. The twenty-second is Q13.22: Nextcloud holds the credentials and the password policy, not dossiq.
+
+Why the third version and the fourth differ, and the arithmetic is simple. 268 rows became 273, because ledger v10 folded batches 11 and 12 and their five proposals joined the 43 the third version read. 158 gaps became 161, because three of those five rate dossiq below `yes`. The [re-read of 2026-09-13](competitor-gap-re-read-2026-09-13.md) read all 40 rows the register flags, the 36 marked stale plus 4 the archived changes had moved, against `828da9a69`: 12 closed, 24 stay, 4 stay narrowed. The two umbrellas are what the register became: [dossiq#2643](https://github.com/ConductionNL/dossiq/pull/2643) with [five more](https://github.com/ConductionNL/dossiq/pull/2684), and [openregister#3688](https://github.com/ConductionNL/openregister/pull/3688).
+
+## The five to build first
+
+The register's own order (`procest/_gaps/README.md`), which the dossiq umbrella adopts as the head of its build order.
+
+1. **The working calendar, administered, with the Atw roll and recompute.** Rows 8.12, 8.11, Q8.17, Q8.19 and Q8.20 on openregister, Q8.16 on dossiq. Statutory correctness, not a feature: 30.4% of the terms dossiq stores land on a day the Atw moves. Five openregister changes carry it, `working-calendar-admin`, `end-date-roll-on-the-calendar`, `calendar-time-zone`, `calendar-change-recomputes-timers` and `term-engine-diagnostic`, and two dossiq ones, `terms-on-the-engine-calendar` and `counting-mode-per-term`.
+2. **Watchers on a case.** Row 13.18, openregister, S. Eight of eight non-Dutch systems in the register's reading pass it and dossiq is the only `no` in the ledger; batch 7 added Vikunja as a passer and Kanboard as a `no`. In the umbrella as `case-followers` over openregister's `object-watchers`.
+3. **Internal versus public per timeline entry.** Row 6.15, openregister, S. Seven of eight pass, dossiq fails, and the citizen portal cannot show a case timeline until every entry says which side of the counter it belongs on. In the umbrella as `timeline-entries-default-internal`, after `citizen-status-labels`.
+4. **Refusals carry a status.** Row Q10.14, dossiq, M. The fail-open shape gate 13 exists to catch, and no test asserts the status code beside the state. In the umbrella as `refusals-carry-a-status`, with the re-read's counts: 47 sites in 37 files, 93 of 106 controller suites asserting a status.
+5. **Substituted work reaches My work.** Row 13.17, dossiq, S. The spec `handler-vervanging-waarneming` requires it and `fetchSubstitutedWork()` has no call site, so a case assigned to someone on leave is invisible until it breaches. In the umbrella as `substituted-work-reaches-my-work`, with humaniq's leave as the absence signal.
+
+Two of the five are shipped and three are half shipped. `refusals-carry-a-status` merged as [dossiq#2744](https://github.com/ConductionNL/dossiq/pull/2744) and `substituted-work-reaches-my-work` as [dossiq#2719](https://github.com/ConductionNL/dossiq/pull/2719). The platform halves of the first three merged in openregister: the administered working calendar as [#3714](https://github.com/ConductionNL/openregister/pull/3714), watchers as [#3707](https://github.com/ConductionNL/openregister/pull/3707) and timeline visibility as [#3711](https://github.com/ConductionNL/openregister/pull/3711), with dossiq's own half of the calendar as [#2748](https://github.com/ConductionNL/dossiq/pull/2748). The dossiq halves of watchers and timeline visibility, and the four remaining calendar changes, are still open.
+
+The ledger's own first pick, the schema-only registrations (Q11.31), is sixth: right, a privacy argument, and larger than the eight cells the matrix named once the re-read counted 27.
+
+## What the discovery sweep found after this page
+
+This page measures dossiq against a list we wrote. A second sweep asked the opposite question: what do thirty-six other systems have that the list never thought to ask. It is written up on [competitor discovery, September 2026](competitor-discovery-2026-09.md), and its corpus is `procest/_round4/discovery/` beside the files cited above.
+
+The short version. Thirty-six product surfaces were walked item by item, 2,010 items in the 34 lanes that state a count. Those raised 1,008 distinct raw candidates, which `consolidate-discovery.py` reduced to **636 consolidated candidates** in **71 clusters**. 184 are a `must` for a gemeente and dossiq fails 434 of the 636. **618 of them are carried by 94 OpenSpec changes in fourteen repositories**, and the 18 that are not sit in one cluster. 70 of the 71 clusters are carried.
+
+The last four clusters were opened on the evening of 2026-09-14: the dashboard cluster as [launchpad#637](https://github.com/ConductionNL/launchpad/pull/637), the decision as a walked process as [decidiq#1316](https://github.com/ConductionNL/decidiq/pull/1316), the money cluster as [shillinq#1608](https://github.com/ConductionNL/shillinq/pull/1608) with three new umbrellas, outbound sender identity as [integriq#2012](https://github.com/ConductionNL/integriq/pull/2012), the satisfaction survey as [openregister#3720](https://github.com/ConductionNL/openregister/pull/3720), and dossiq's own nine as [dossiq#2762](https://github.com/ConductionNL/dossiq/pull/2762), fourteen changes. The one cluster left is 59, the twenty capabilities decision D17 re-rated with an MKB lens and recorded rather than built. humaniq took the member that is its own job.
+
+**Read the 636 as candidates, not as rows.** A candidate is a question the sweep found worth asking. It is not in the matrix, it has no column read across the corpus, and it has no ledger id. The counting rule above still holds: 225 rows and, since 2026-09-14, 146 pending proposals. Decision D6 set the promotion bar on 2026-09-14: relevance, not passer count. Every `must` enters, whatever the passer count, and every statutory candidate enters with it. So a row can now enter that nobody passes, which is why the driven passer count is printed beside every row. What the sweep shows about the matrix itself is the **47 matrix holes**: a `must` with two or more driven passers and no row in the corpus able to hold it.
+
+### The four ledger cells the depth study moved
+
+The case-type depth study (`procest/_round4/discovery/casetype-configurability.md`) read dossiq's tree rather than the matrix, and four cells changed. Three ran in dossiq's favour and one against.
+
+| row | capability | was | is | why |
+|---|---|---|---|---|
+| 2.7 | Configurable status vocabulary with colour and order | partial | **yes** | `statusType.colour` is a twelve-value NL Design System enum and `src/views/settings/tabs/StatusesTab.vue:47` renders the swatch. The note said "no colour". |
+| 3.3 | Checklist items per phase | partial | **yes** | `statusType.checklist[]` carries a title and a required flag, `lib/Service/Transitions/StatusChecklistGuard.php` enforces it on every transition, and `StatusTypeForm.vue:118` authors it. |
+| 2.3 | Case type versioning with draft, publish, activate | partial | **yes**, with a caveat | `caseType` carries `version`, `previousVersion` and `supersededBy`, and `lib/Service/CaseTypePublishService.php` publishes and retires. The caveat: a new version drops `workflowDefinition` (`DerivedCaseTypePayload.php:115`), so the process model is re-authored every time. |
+| 11.2 | Config as code, import and export of case types | yes | **no** | The export is a declared placeholder. |
+
+Row 11.2 is the one that runs the other way, and it is the hollow-green shape this programme keeps finding. `lib/Service/CaseDefinitionExportService.php:268` says so in its own comment: a placeholder that returns structured placeholders instead of querying OpenRegister. All six components return empty arrays, behind three live admin-authorised routes. `POST /api/case-definitions/{id}/export` answers 200 with a structurally valid, empty package, so a test that checks the response shape passes. A municipality that exports a case type gets nothing, and is told nothing.
+
+Two further defects turned up on the way, neither of them a ledger row. `propertyDefinition.requiredAtStatus` is authored in `PropertiesTab.vue:155`, stored in the schema and read by no backend code, because it is not in the `x-openregister-extends-form.map`. And `WorkflowEditor` does not honour `lifecycleStatus: published`, which the schema's own description calls immutable: the canvas, node create, drag and delete and the whole `TransitionConfigPanel` stay editable on a published template.
+
+## What is built so far
+
+Eighteen pull requests that change behaviour are merged on `development`, in five repositories. A specification is not a feature, so the OpenSpec pull requests listed above are not in this table.
+
+| repository | merged |
+|---|---|
+| dossiq | [#2719](https://github.com/ConductionNL/dossiq/pull/2719), [#2721](https://github.com/ConductionNL/dossiq/pull/2721), [#2723](https://github.com/ConductionNL/dossiq/pull/2723), [#2729](https://github.com/ConductionNL/dossiq/pull/2729), [#2732](https://github.com/ConductionNL/dossiq/pull/2732), [#2744](https://github.com/ConductionNL/dossiq/pull/2744), [#2746](https://github.com/ConductionNL/dossiq/pull/2746), [#2748](https://github.com/ConductionNL/dossiq/pull/2748), [#2752](https://github.com/ConductionNL/dossiq/pull/2752), [#2754](https://github.com/ConductionNL/dossiq/pull/2754) |
+| openregister | [#3707](https://github.com/ConductionNL/openregister/pull/3707), [#3711](https://github.com/ConductionNL/openregister/pull/3711), [#3714](https://github.com/ConductionNL/openregister/pull/3714), [#3719](https://github.com/ConductionNL/openregister/pull/3719), [#3724](https://github.com/ConductionNL/openregister/pull/3724) |
+| filinq | [#1090](https://github.com/ConductionNL/filinq/pull/1090) |
+| integriq | [#2015](https://github.com/ConductionNL/integriq/pull/2015) |
+| portaliq | [#551](https://github.com/ConductionNL/portaliq/pull/551) |
+
+More build lanes are in flight and are not counted here. They are not merged, so nothing on this page counts them. A change directory that appears in the register and not in the table above is specified and not yet shipped.
+
+## Where to check a cell
+
+Every system's code, documentation, API and issue tracker links, and the corpus directory that holds its column, are on [competitor sources](competitor-sources.md), generated from the ledger's sources register. The comparison pages that seeded the candidate set are listed there too. For the numbers on this page, the files to open are `procest/_round4/compare/twenty-six-system-tally.md` (the ranking), `statutory-rows.md` (the 26), `open-core-batch10.md` to `open-core-batch12.md` (the eleventh to fourteenth shapes), `deadline-engines-batch9.md`, `deadline-engines-batch11.md` and `deadline-engines-batch12.md` (the two engines that agree, the field with three writers, and the calendar the engine cannot see), `deadline-engines.md` (the 30.4%) and `procest/_gaps/README.md` (the counts by owner and the five), all in `ConductionNL/market-intelligence` on `development`.

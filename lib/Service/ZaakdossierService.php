@@ -36,6 +36,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -101,7 +102,6 @@ class ZaakdossierService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
-	 * @param ZgwDocumentService $documentService Binary file storage service.
 	 * @param InformatieobjectAccessGuard $accessGuard Classification access guard.
 	 * @param InformatieobjectStatusLifecycle $statusLifecycle Per-document status state machine.
 	 * @param InformatieobjectMetadataNormaliser $normaliser Coerces the freely
@@ -109,14 +109,15 @@ class ZaakdossierService {
 	 *                                                       direction onto the
 	 *                                                       schema.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DocumentRecordStore $recordStore Records and joins, and the file on the case.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ZgwDocumentService $documentService,
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly InformatieobjectStatusLifecycle $statusLifecycle,
 		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
+		private readonly DocumentRecordStore $recordStore,
 	) {
 	}//end __construct()
 
@@ -189,23 +190,31 @@ class ZaakdossierService {
 			],
 		];
 
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
-		$infoId = $this->resolveSavedUuid(saved: $saved);
+		// Documents live on the case: the file is stored on the CASE first, so
+		// the node listener may already have projected a record for it by the
+		// time this runs; that record gets the metadata, and only when there is
+		// none is one created here.
+		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
+		$existing = [];
+		if ($fileId > 0) {
+			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
+			$informatieobject['fileId'] = $fileId;
+		}
 
-		// Persist the binary content under the informatieobject UUID folder.
-		$this->documentService->storeRaw(uuid: $infoId, fileName: $fileName, content: $content);
+		$infoId = (string)($existing['id'] ?? '');
+		unset($existing['id'], $existing['@self']);
+		$record = array_merge($existing, $informatieobject);
+		if ($infoId !== '') {
+			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
+		}
 
-		$this->stampFileId(
-			objectService: $objectService,
-			informatieobject: $informatieobject,
-			infoId: $infoId,
-			fileName: $fileName,
-			register: $register,
-			infoSchema: $infoSchema,
-		);
+		if ($infoId === '') {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
+			$infoId = $this->resolveSavedUuid(saved: $saved);
+		}
 
-		// Create the case <-> document join.
-		$this->createJoin(caseId: $caseId, infoObjectId: $infoId);
+		// Create the case <-> document join, unless the listener already did.
+		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
@@ -224,64 +233,6 @@ class ZaakdossierService {
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
-
-	/**
-	 * Write the Nextcloud file id back onto a just-stored informatieobject.
-	 *
-	 * The schema has always declared `fileId` and nothing ever wrote it, so
-	 * every uploaded document carried none, and VersionHistoryPanel returns
-	 * EARLY when it is absent: it renders "No previous versions" rather than an
-	 * error, so the Versions action looked correct on every document in the
-	 * dossier while never asking the versions API anything.
-	 *
-	 * 🔴 THE WHOLE OBJECT, NOT JUST THE FIELD. `saveObject()` REPLACES the
-	 * stored object with what it is handed; there is no merge or patch mode.
-	 * Passing `['fileId' => $fileId]` with a uuid threw every other property
-	 * away, and the informatieobject schema requires four of them, so
-	 * OpenRegister refused the write with:
-	 *
-	 *     The required properties (title, fileName,
-	 *     vertrouwelijkheidaanduiding, informatieobjecttype) are missing.
-	 *
-	 * `DossierUploadHandler::uploadOne()` catches that, so the upload reported
-	 * `success: false` per file while the controller still answered 201
-	 * Created. Nothing on the Documents tab ever appeared and the dossier came
-	 * back `{"total":0,"groups":[],"informatieobjecten":[]}`, with no error
-	 * anywhere a user could see. It took document generation down too, because
-	 * MergeTemplateHandler files its rendered template through this method.
-	 *
-	 * @param mixed                $objectService    The OpenRegister object service.
-	 * @param array<string, mixed> $informatieobject The document as it was stored.
-	 * @param string               $infoId           Its uuid.
-	 * @param string               $fileName         The stored file name.
-	 * @param string               $register         The register id.
-	 * @param string               $infoSchema       The informatieobject schema id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
-	 */
-	private function stampFileId(
-		mixed $objectService,
-		array $informatieobject,
-		string $infoId,
-		string $fileName,
-		string $register,
-		string $infoSchema,
-	): void {
-		$fileId = $this->resolveFileId(infoId: $infoId, fileName: $fileName);
-		if ($fileId <= 0) {
-			return;
-		}
-
-		$informatieobject['fileId'] = $fileId;
-		$objectService->saveObject(
-			object: $informatieobject,
-			register: $register,
-			schema: $infoSchema,
-			uuid: $infoId
-		);
-	}//end stampFileId()
 
 	/**
 	 * Link an existing informatieobject to a case without duplicating the document.
@@ -617,34 +568,6 @@ class ZaakdossierService {
 
 		return 'intern';
 	}//end resolveDefaultClassification()
-
-	/**
-	 * The Nextcloud file id backing a just-stored document.
-	 *
-	 * A store that succeeded and an id that cannot be read back are different
-	 * failures, and neither is worth losing the upload over: the document and
-	 * its file are already there, and only the version history depends on the
-	 * id, so an unreadable id is logged and the upload stands.
-	 *
-	 * @param string $infoId The informatieobject UUID.
-	 * @param string $fileName The stored filename.
-	 *
-	 * @return int The file id, or 0 when it cannot be resolved.
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
-	 */
-	private function resolveFileId(string $infoId, string $fileName): int {
-		try {
-			return $this->documentService->getFileId(uuid: $infoId, fileName: $fileName);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq dossier: stored ' . $fileName . ' but could not read its file id',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
-			);
-
-			return 0;
-		}
-	}//end resolveFileId()
 
 	/**
 	 * Create a zaakinformatieobject join object.

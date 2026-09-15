@@ -14,7 +14,7 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
@@ -48,7 +48,8 @@
             "facetable": true,
             "default": "draft",
             "description": "ZGW DRC document status lifecycle (forward-only)",
-            "enum": ["draft", "final", "archived"]
+            "enum": ["draft", "final", "archived"],
+            "x-enum-labels": {"draft": "Draft", "final": "Final", "archived": "Archived"}
           },
           "informatieobjecttype": {"type": "string", "title": "Information Object Type Reference", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
           "keywords": {
@@ -65,7 +66,8 @@
             "facetable": true,
             "default": "internal",
             "description": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
-            "enum": ["incoming", "outgoing", "internal"]
+            "enum": ["incoming", "outgoing", "internal"],
+            "x-enum-labels": {"incoming": "Incoming", "outgoing": "Outgoing", "internal": "Internal"}
           },
           "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
           "bronorganisatie":      {"type": "string", "title": "Source Organization", "maxLength": 64, "description": "RSIN of the source organization"},

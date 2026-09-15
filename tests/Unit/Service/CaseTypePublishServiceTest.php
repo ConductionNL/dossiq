@@ -26,10 +26,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\UnreadTriggerService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -144,7 +146,14 @@ class CaseTypePublishServiceTest extends TestCase {
 
 		$store = new CaseTypeStore($settings);
 
-		return new CaseTypePublishService($settings, new CaseTypeResolver($store), $store, new NullLogger());
+		return new CaseTypePublishService(
+			settingsService: $settings,
+			caseTypeResolver: new CaseTypeResolver(store: $store),
+			store: $store,
+			acknowledgement: new CaseTypeAcknowledgement(),
+			unreadTriggers: new UnreadTriggerService(),
+			logger: new NullLogger(),
+		);
 	}//end service()
 
 	/**

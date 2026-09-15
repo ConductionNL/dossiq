@@ -109,8 +109,13 @@ describe('statusType carries a colour and a list visibility', () => {
 	it('moves the schema version, or OpenRegister fast-skips the import', () => {
 		// A property added to a register JSON is inert until the register is
 		// re-imported, and OpenRegister skips a schema whose version did not
-		// change. 1.1.0 was the version that shipped the checklist.
-		expect(schema('statusType').version).toBe('1.2.0')
+		// change. 1.1.0 shipped the checklist. 1.3.0 was claimed twice, by
+		// what-a-status-declares (derivedWhen, waitingOn, maximumDwell) and by
+		// phase-terms (phaseTermDays, phaseTermShare), each unaware of the
+		// other. The merged schema carries both sets, so it has to move past
+		// either: an instance that already imported one lane's 1.3.0 would
+		// fast-skip the other's and every property in it would be inert.
+		expect(schema('statusType').version).toBe('1.4.0')
 	})
 })
 
@@ -281,7 +286,16 @@ describe('an attribute without a case type is shared', () => {
 	})
 
 	it('moves the propertyDefinition version, or the loosening is inert', () => {
-		expect(schema('propertyDefinition').version).toBe('1.2.0')
+		// OpenRegister re-imports a schema when its version moves, so the
+		// loosened `required` list only reaches an installed instance if this
+		// number is ahead of the one that shipped with `caseType` required.
+		// The assertion used to pin the literal `1.2.0`, which made every
+		// later edit of the schema red for the wrong reason: the clause is
+		// that the version MOVED, not that it stopped at that number.
+		const [major, minor] = schema('propertyDefinition')
+			.version.split('.')
+			.map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1002)
 	})
 })
 

@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Dossiq Case Management Register",
-        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.0 restricts `dossiqIntegration` reads to admins; see that schema's own description for what was open and why the block names all four actions.",
-        "version": "0.19.0"
+        "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
+        "version": "0.19.2"
     },
     "x-openregister": {
         "type": "application",
@@ -17,16 +17,30 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.7.0",
+                "version": "1.12.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
                 "description": "Case type definition: defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+                "configuration": {
+                    "x-openregister-shareable": true
+                },
                 "type": "object",
                 "required": [
                     "title"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
+                    "versionDate": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Versiedatum",
+                        "description": "Date this version of the case type took effect. ZGW sends it as versiedatum on every zaaktype write."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255,
@@ -75,6 +89,42 @@
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
                         "title": "Processing Deadline"
                     },
+                    "processingDeadlineDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "A fixed closing date for this case type, instead of a lead time. A subsidy round closes on a date, not so many days after each application. Fill this in and every case of this type ends on this day, whenever it came in. A date that has already passed still creates the case, with a term that reads expired.",
+                        "title": "Fixed closing date"
+                    },
+                    "plannedLeadTime": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The working days your team gives itself to finish a case of this type. This is the service norm, not the law. It runs beside the statutory term and is warned on separately, so a case can be late against the plan and on time against the Awb.",
+                        "title": "Planned lead time in days"
+                    },
+                    "internalTargetDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The working days a teamleider steers on, clocked apart from the statutory term. It never appears on a citizen surface and is never quoted in a message to an applicant.",
+                        "title": "Internal target in days"
+                    },
+                    "statutoryWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days before the statutory term ends you want to be warned. Leave it empty and the escalation ladder decides.",
+                        "title": "Warn on the statutory term, days before"
+                    },
+                    "plannedWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days before the planned end you want to be warned. This warning is its own, so passing it says nothing about the statutory term.",
+                        "title": "Warn on the planned end, days before"
+                    },
+                    "chainTermDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "One term for the whole chain of phases, in working days, split over the phases by the share each declares. A phase that overruns shrinks the phases after it. The chain end never moves, so a chain whose phases have eaten it reports zero days left rather than a later date.",
+                        "title": "Chain term in days"
+                    },
                     "initialStatus": {
                         "type": "string",
                         "format": "uuid",
@@ -91,6 +141,72 @@
                         "default": "bpmn",
                         "title": "Handling Model",
                         "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case model. A case type is driven by exactly one of the two."
+                    },
+                    "defaultImpact": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "description": "The impact a case of this type starts with. An intake channel that creates cases takes this rather than inventing one. Leave it empty and a case starts at medium.",
+                        "title": "Default impact"
+                    },
+                    "defaultUrgency": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "description": "The urgency a case of this type starts with. Leave it empty and a case starts at medium.",
+                        "title": "Default urgency"
+                    },
+                    "priorityMatrix": {
+                        "type": "array",
+                        "description": "How impact and urgency become a priority for cases of this type. High impact on a bezwaar and high impact on a melding openbare ruimte are not the same urgency, which is why the matrix belongs to the case type rather than to the instance. Declare only the cells that differ: the rest come from the instance default, and a child case type inherits its parent's cells along with everything else it inherits.",
+                        "title": "Priority matrix",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "impact": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "medium",
+                                        "high"
+                                    ],
+                                    "title": "Impact",
+                                    "description": "The impact half of the pair this cell answers for."
+                                },
+                                "urgency": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "medium",
+                                        "high"
+                                    ],
+                                    "title": "Urgency",
+                                    "description": "The urgency half of the pair this cell answers for."
+                                },
+                                "priority": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "normal",
+                                        "high",
+                                        "urgent"
+                                    ],
+                                    "title": "Priority",
+                                    "description": "The priority a case of this type takes for that pair. Leave a cell undeclared and the instance default answers it."
+                                }
+                            },
+                            "required": [
+                                "impact",
+                                "urgency",
+                                "priority"
+                            ]
+                        }
                     },
                     "confidentiality": {
                         "type": "string",
@@ -147,6 +263,62 @@
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension Period"
                     },
+                    "maxSuspensionDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The longest suspension this case type allows, in days. Awb 4:5 bounds the pause as well as the extension, so a suspension asked for beyond this is refused and the refusal names the maximum. Leave it empty and a suspension is bounded only by suspensionAllowed.",
+                        "title": "Maximum suspension in days"
+                    },
+                    "destructionRole": {
+                        "type": "string",
+                        "description": "The group whose members may destroy a deleted case of this type. Destroying is a second act after deleting, and it cannot be undone, so the right is named per case type: a melding and a bezwaar do not need the same seniority behind it. A case type that names no group refuses every destruction except an administrator's, which is the same answer OpenRegister's own destroy right gives.",
+                        "title": "Destroying role"
+                    },
+                    "finishingRole": {
+                        "type": "string",
+                        "description": "The group whose members may finish a case of this type. Finishing is the act that says the case reached its result, and the result decides what is retained. A case type that names no group lets any handler with access to the case finish it, which is today's behaviour.",
+                        "title": "Finishing role"
+                    },
+                    "abortingRole": {
+                        "type": "string",
+                        "description": "The group whose members may abort a case of this type. An abort records an intrekking or a niet-ontvankelijkverklaring: there is a result and it is not a besluit. Named separately from finishing because the two are not the same authority.",
+                        "title": "Aborting role"
+                    },
+                    "archivingRole": {
+                        "type": "string",
+                        "description": "The group whose members may archive a finished case of this type. Archiving writes the retention rule the result type carries, so it is an archivist's act rather than a handler's. A case type that names no group refuses every archive except an administrator's.",
+                        "title": "Archiving role"
+                    },
+                    "processOwnedStatus": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the process owns the status of cases of this type. Where it does, a status only moves through a declared transition and a direct write of the status field is refused. This is a per case type declaration and not a product decision, because a gemeente running both kinds is the normal case.",
+                        "title": "Process owns the status"
+                    },
+                    "autoCloseAfterSilenceDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days of no activity close a case of this type automatically. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
+                        "title": "Close after silence, in days"
+                    },
+                    "autoCloseWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days before an automatic close the applicant is warned, through the declared automatic moments. A case type that declares a silence period and no warning gets the default of seven days, because closing without notice is the part that would be indefensible.",
+                        "title": "Warn this many days first"
+                    },
+                    "recoveryWindowDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days a deleted case of this type can still be recovered. OpenRegister keeps the recycle state and the window, and dossiq refuses a destruction while this many days have not passed. Leave it empty to use the window the instance already applies.",
+                        "title": "Recovery window in days"
+                    },
+                    "lawfulPurposeRetention": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many months the personal data in a case of this type still has a lawful purpose after the case closes (AVG art. 5.1e). This is not the Archiefwet period: that one comes from the selectielijst through the result type, and the two are kept apart on purpose.",
+                        "title": "Lawful purpose retention in months"
+                    },
                     "publicationRequired": {
                         "type": "boolean",
                         "default": false,
@@ -170,11 +342,10 @@
                     "productsOrServices": {
                         "type": "array",
                         "title": "Products or Services",
-                        "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "description": "Products/services (fees) that apply to this case type. An entry is either a Pipelinq product uuid (ADR-003), where the charge on a concrete case is a Pipelinq financial transaction, or the product URL a ZGW client sent as productenOfDiensten. The items constraint was format uuid, which made the ZTC zaaktypen endpoint refuse every conformant ZGW body, since that field is a list of URLs.",
                         "x-external-register": "pipelinq",
                         "items": {
-                            "type": "string",
-                            "format": "uuid"
+                            "type": "string"
                         }
                     },
                     "selectionListProcessType": {
@@ -226,6 +397,18 @@
                         "type": "string",
                         "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
                         "title": "Default assignee"
+                    },
+                    "coordinatorRequiredBeforeSigning": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case of this type needs a coordinator named before its besluit is signed. The Awb answer is signed by the second seat, and a case type that leaves this off never asks for one: most cases have a handler and nobody else.",
+                        "title": "Coordinator required before signing"
+                    },
+                    "defaultInformatieobjecttype": {
+                        "type": "string",
+                        "title": "Default document type",
+                        "maxLength": 255,
+                        "description": "Uuid of the informatieobjecttype a file dropped into a case of this type is registered under, until a handler sets another in Document properties. Optional: when empty, the register's first document type by title is used. See document-projection REQ-DPR-001."
                     },
                     "workflowDefinition": {
                         "type": "string",
@@ -333,17 +516,82 @@
                         "description": "The version that replaced this one, written the moment that version is published. A version with this filled in keeps running its own cases and is no longer offered for new ones. Empty means this is the version in use.",
                         "title": "Superseded by",
                         "facetable": true
+                    },
+                    "rightsMatrix": {
+                        "type": "array",
+                        "title": "Rights",
+                        "description": "Who may do what with cases of this type, as a matrix of department by role, separately per confidentiality level. Confidentiality is an AXIS of this declaration and is never folded into a role name: a role per level per department is the combinatorial explosion every mandate matrix eventually becomes. Declared here and evaluated in OpenRegister, which owns the grant, its provenance and the deny. dossiq computes no effective permission from these rows.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "department",
+                                "role",
+                                "confidentiality",
+                                "actions"
+                            ],
+                            "properties": {
+                                "department": {
+                                    "type": "string",
+                                    "title": "Department",
+                                    "description": "The department the right is granted to. Matches organisatieRol.department.",
+                                    "maxLength": 255
+                                },
+                                "role": {
+                                    "type": "string",
+                                    "title": "Role",
+                                    "description": "The organisational role the right is granted to, an organisatieRol id or its roleName. A role name never encodes a confidentiality level; that is what the axis beside it is for.",
+                                    "maxLength": 255
+                                },
+                                "confidentiality": {
+                                    "type": "string",
+                                    "title": "Confidentiality",
+                                    "description": "The confidentiality level this row grants at. The same vocabulary the case and the case type use, so a row and a case can be compared without a translation table.",
+                                    "enum": [
+                                        "openbaar",
+                                        "beperkt_openbaar",
+                                        "intern",
+                                        "zaakvertrouwelijk",
+                                        "vertrouwelijk",
+                                        "confidentieel",
+                                        "geheim",
+                                        "zeer_geheim"
+                                    ]
+                                },
+                                "actions": {
+                                    "type": "array",
+                                    "title": "Actions",
+                                    "description": "The verbs granted, in OpenRegister's vocabulary. GET /apps/openregister/api/permissions publishes the grantable set; a verb outside it is refused at save time and names itself.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "until": {
+                                    "type": "string",
+                                    "title": "Ends",
+                                    "description": "When the grant this row produces stops answering, as an ISO-8601 moment. Optional: a row without it grants without an end. The key is spelled the way OpenRegister reads it (GrantConstraints::UNTIL_KEY, openregister#3750), so no translation stands between the declaration and the rule; a second spelling is where an end quietly stops arriving. OpenRegister reads it at resolution time, so nothing has to run to take the right away, and an end nobody can parse is treated as already passed. dossiq never compares this to a clock: the clock that decides is OpenRegister's.",
+                                    "maxLength": 64
+                                }
+                            }
+                        }
+                    },
+                    "caseTypeGroup": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "caseTypeGroup",
+                        "title": "Case type group",
+                        "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
+                        "facetable": true
                     }
                 }
             },
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.2.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
-                "description": "Status lifecycle phase definition for a case type",
+                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). A status that declares none of the three behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, and it has no maximum. See openspec/changes/what-a-status-declares.",
                 "type": "object",
                 "required": [
                     "name",
@@ -382,6 +630,19 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "phaseTermDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days this phase gets, counted on the calendar your organisation administers. An ontvankelijkheidstoets can have its own two weeks inside an eight week term. The clock starts when a case enters this phase and stops when it leaves. A phase that runs over shows as overdue on the case while the case term still reads on time, and it never moves the case term.",
+                        "title": "Phase term in days"
+                    },
+                    "phaseTermShare": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "This phase's share of the chain term, as a percentage. Use it when the case type declares one term for the whole chain and you want it split over the phases. The shares of the phases after an overrunning one are recomputed, and the chain end stays where it was.",
+                        "title": "Share of the chain term, in percent"
                     },
                     "role": {
                         "type": "string",
@@ -448,6 +709,71 @@
                                 }
                             }
                         }
+                    },
+                    "derivedWhen": {
+                        "type": "array",
+                        "description": "What makes this status true. A status that declares conditions is DERIVED: the case moves into it as the conditions become true, and it leaves the list of moves a handler picks. A status that declares nothing is a judgment somebody makes, which is most of them. Every condition is written in the vocabulary OpenRegister's lifecycleCondition rule kind uses, so the evaluation is a deletion once that kind lands rather than a rewrite.",
+                        "title": "Derived when",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "kind"
+                            ],
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "fieldPresent",
+                                        "fieldEquals",
+                                        "documentPresent"
+                                    ],
+                                    "description": "Which question is asked. fieldPresent: the case carries a value for the named field. fieldEquals: that value is the one named. documentPresent: a document of the named type hangs on the case.",
+                                    "title": "Kind"
+                                },
+                                "field": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The case property the condition reads, for fieldPresent and fieldEquals.",
+                                    "title": "Field"
+                                },
+                                "value": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The value the field must carry, for fieldEquals.",
+                                    "title": "Value"
+                                },
+                                "documentType": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The documentType the case must carry a document of, for documentPresent. A uuid or the type's slug.",
+                                    "title": "Document type"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "What the handler is told is missing while this condition is unmet. Write it as the thing itself, not as the rule: \"the signed consent form\" rather than \"documentPresent failed\".",
+                                    "x-translatable": true,
+                                    "title": "Label"
+                                }
+                            }
+                        }
+                    },
+                    "waitingOn": {
+                        "type": "string",
+                        "enum": [
+                            "us",
+                            "applicant",
+                            "thirdParty"
+                        ],
+                        "description": "Who the case waits on while it sits here. The applicant and a third party are DIFFERENT facts: a hersteltermijn suspends the beslistermijn and an advice request does not, so a value that conflates them cannot decide whether the clock stops. Queue and team counts read this. The role property keeps working unchanged beside it; leave waitingOn empty and the case counts as ours to move.",
+                        "title": "Waiting on",
+                        "facetable": true
+                    },
+                    "maximumDwell": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days a case may sit here before the dwell is reported as breached. Counted on the organisation's working calendar. Entering the status arms an engine timer and leaving it cancels the timer, so the breach is an event rather than something a nightly sweep discovers. A dwell breach is not a term breach: it never touches the case's statutory term or its state, and it is what catches the case that is stuck inside a term that is long. Leave it empty for a status with no maximum.",
+                        "title": "Maximum dwell"
                     }
                 }
             },
@@ -577,7 +903,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property Definition",
@@ -600,8 +926,8 @@
                     },
                     "description": {
                         "type": "string",
-                        "description": "Longer explanation of this property",
-                        "title": "Description"
+                        "description": "The sentence a handler reads under the field while answering it. One line. This is the field's help: the case form renders it beside the input, not as a heading and not as the field's own documentation. Definition carries the short definition for whoever maintains the case type.",
+                        "title": "Help text"
                     },
                     "caseType": {
                         "type": "string",
@@ -615,14 +941,30 @@
                         "enum": [
                             "string",
                             "number",
+                            "integer",
                             "boolean",
+                            "array",
+                            "object",
+                            "null",
+                            "file",
+                            "geo",
+                            "color",
+                            "recurrence",
+                            "NcFile",
+                            "NcMail",
+                            "NcContact",
+                            "NcNote",
+                            "NcTodo",
+                            "NcCalendarEvent",
+                            "NcTalk",
+                            "NcDeck",
                             "date",
                             "url",
                             "email",
                             "enum",
                             "json"
                         ],
-                        "description": "Data type of this property. 'enum' carries its allowed values in enumValues; 'json' carries a JSON Schema in defaultValue and is validated as a document rather than a scalar. Both exist because the alternative: flattening them to 'string'. Moves a constraint out of the model and into nobody's hands: a four-value cadence and a JSON schema would both become free text that nothing checks.",
+                        "description": "What kind of answer this field holds. The list is OpenRegister's own property vocabulary, published at /apps/openregister/api/schemas/property-vocabulary and generated from the validator that checks the saved value, so the editor cannot offer a type the engine refuses. The last five values are the ones dossiq used to offer before the vocabulary reached the editor: 'date', 'url' and 'email' are a string with a format, 'enum' is a string with a choice list, and 'json' is an object. They stay accepted so a stored definition keeps working and keeps its value. Nothing rewrites them, the editor offers them only on the definition that already carries one, and each one names its replacement.",
                         "title": "Property Type"
                     },
                     "maxLength": {
@@ -636,8 +978,48 @@
                         "items": {
                             "type": "string"
                         },
-                        "description": "The allowed values, when propertyType is 'enum'. Ignored for every other type. Without this the 'enum' type would be indistinguishable from 'string' at runtime, which is the flattening it exists to prevent.",
-                        "title": "Enum Values"
+                        "description": "The answers this field accepts, one per entry. OpenRegister's `enum` constraint applies to every type, so a choice list is not a type of its own: a text field, a number field or a date field can each limit its answers to a list. Leave it empty and the field takes any answer its type allows. A field whose stored type is the old 'enum' keeps its values here.",
+                        "title": "Choice list"
+                    },
+                    "format": {
+                        "type": "string",
+                        "title": "Format",
+                        "description": "Which kind of text this is, for a string field. OpenRegister publishes the list: date, date-time, email, url, markdown, html, bsn and 27 more. Leave it empty for plain text. Adding a format to a field that already holds answers is breaking, so OpenRegister rechecks every stored value against it."
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "title": "Pattern",
+                        "description": "A regular expression the answer must match. OpenRegister enforces it. dossiq declares it and validates nothing itself."
+                    },
+                    "minimum": {
+                        "type": "number",
+                        "title": "Lowest value",
+                        "description": "The lowest number this field accepts. Only meaningful on a number or integer field."
+                    },
+                    "maximum": {
+                        "type": "number",
+                        "title": "Highest value",
+                        "description": "The highest number this field accepts. Only meaningful on a number or integer field."
+                    },
+                    "items": {
+                        "type": "object",
+                        "title": "List entry",
+                        "description": "What one entry of a list looks like, as {\"type\": \"string\"}. Only used when the type is array. The vocabulary's 'items' key takes a shape rather than a type name, so storing the name alone would forward something malformed."
+                    },
+                    "ref": {
+                        "type": "string",
+                        "title": "Reference to another object",
+                        "description": "The schema a reference points at, by slug. This is how a field holds another case or a catalogued object instead of text."
+                    },
+                    "calculation": {
+                        "type": "object",
+                        "title": "Calculation",
+                        "description": "A JSON expression that derives this answer from other fields, evaluated by OpenRegister. A Twig expression is not accepted: the JSON form is diffable and an auditor can read it a year later, which is the decision this field carries."
+                    },
+                    "propertySource": {
+                        "type": "string",
+                        "title": "Values from a register",
+                        "description": "The register this field's values come from, such as bag. integriq resolves it. dossiq stores the answer and ships no resolver. The case form does not read it yet: OpenRegister owns the key x-openregister-property-source and has not published it, and a form may only forward a key the vocabulary holds."
                     },
                     "isRequired": {
                         "type": "boolean",
@@ -662,7 +1044,7 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document Type",
@@ -672,6 +1054,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -746,7 +1133,7 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision Type",
@@ -756,6 +1143,11 @@
                     "name"
                 ],
                 "properties": {
+                    "catalogus": {
+                        "type": "string",
+                        "title": "Catalogus",
+                        "description": "Uuid of the zgwCatalogus this type belongs to. ZGW clients send it as a catalogus URL on every ZTC write and filter the list endpoints on it; the inbound mapping extracted the uuid and wrote it into a property that did not exist, so the link was dropped without an error and the filter matched nothing."
+                    },
                     "name": {
                         "type": "string",
                         "maxLength": 255,
@@ -868,7 +1260,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.19.0",
+                "version": "1.22.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -956,6 +1348,14 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-lifecycle": {
+                        "field": "status",
+                        "initial": {
+                            "from": "caseType",
+                            "field": "initialStatus"
+                        },
+                        "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+                    },
                     "objectNameField": "title",
                     "objectDescriptionField": "description",
                     "tmloDefaults": {
@@ -1108,6 +1508,19 @@
                                         "prop": "@ref.statusType.hiddenInLists"
                                     },
                                     true
+                                ]
+                            }
+                        },
+                        "waitingOn": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "Who the case waits on, taken from the status it sits in (statusType.waitingOn). Materialised for the reason statusHiddenInLists is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener, and a team count has to narrow on it server-side. A status that declares nothing coalesces to `us`, so a case type nobody has annotated counts as ours to move rather than as an empty fourth bucket. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "coalesce": [
+                                    {
+                                        "prop": "@ref.statusType.waitingOn"
+                                    },
+                                    "us"
                                 ]
                             }
                         },
@@ -1524,6 +1937,60 @@
                                 }
                             ]
                         }
+                    ],
+                    "x-openregister-relation-types": [
+                        {
+                            "key": "deelzaak",
+                            "label": {
+                                "nl": "deelzaak van",
+                                "en": "sub-case of"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft deelzaak",
+                                "en": "has sub-case"
+                            }
+                        },
+                        {
+                            "key": "vervolg",
+                            "label": {
+                                "nl": "vervolg op",
+                                "en": "follow-up to"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft vervolg",
+                                "en": "has follow-up"
+                            }
+                        },
+                        {
+                            "key": "subject",
+                            "label": {
+                                "nl": "gaat over",
+                                "en": "is about"
+                            },
+                            "inverseLabel": {
+                                "nl": "onderwerp van",
+                                "en": "subject of"
+                            }
+                        },
+                        {
+                            "key": "bijdrage",
+                            "label": {
+                                "nl": "draagt bij aan",
+                                "en": "contributes to"
+                            },
+                            "inverseLabel": {
+                                "nl": "krijgt bijdrage van",
+                                "en": "receives a contribution from"
+                            }
+                        },
+                        {
+                            "key": "samenhang",
+                            "label": {
+                                "nl": "hangt samen met",
+                                "en": "related to"
+                            },
+                            "symmetric": true
+                        }
                     ]
                 },
                 "required": [
@@ -1585,13 +2052,20 @@
                             },
                             "map": {
                                 "title": "name",
-                                "definition": "definition",
                                 "description": "description",
+                                "definition": "definition",
                                 "type": "propertyType",
+                                "format": "format",
+                                "pattern": "pattern",
                                 "maxLength": "maxLength",
+                                "minimum": "minimum",
+                                "maximum": "maximum",
+                                "items": "items",
+                                "$ref": "ref",
                                 "enum": "enumValues",
                                 "required": "isRequired",
-                                "default": "defaultValue"
+                                "default": "defaultValue",
+                                "calculation": "calculation"
                             },
                             "values": {
                                 "mode": "array",
@@ -1599,7 +2073,9 @@
                                 "definitionRef": "propertyDefinition",
                                 "nameKey": "name",
                                 "valueKey": "value"
-                            }
+                            },
+                            "app": "dossiq",
+                            "form": "case type, properties tab"
                         },
                         "order": 1
                     },
@@ -1636,7 +2112,7 @@
                         "x-relation-filter": {
                             "caseType": "@object.caseType"
                         },
-                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
+                        "description": "Reference to the current status type. The case type sets the first one, through the x-openregister-prefill block on caseType. Moves between statuses belong to dossiq's StatusTransitionService. Every case type carries its own workflow template, so the routes are data rather than schema. OpenRegister reads them through the provider this schema's x-openregister-lifecycle block names. So available-actions answers a case's real transitions. The write path validates against that same reader. x-relation-filter scopes the picker to the case type's own statuses.",
                         "title": "Status",
                         "facetable": true,
                         "order": 4
@@ -1667,6 +2143,117 @@
                         "description": "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.",
                         "title": "Status hidden in lists",
                         "facetable": true,
+                        "visible": false
+                    },
+                    "waitingOn": {
+                        "type": "string",
+                        "readOnly": true,
+                        "default": "us",
+                        "description": "Who this case waits on, taken from the status it sits in (statusType.waitingOn). Computed declaratively by OpenRegister so a queue counts by it server-side rather than by reading four hundred rows into PHP. A status that declares nothing reads as ours to move, which is what makes the count safe on a case type nobody has annotated. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
+                        "title": "Waiting on",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "currentStatusEnteredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the case entered the status it is in now. The engine writes it in the same save as the status, so the dwell is measured from a fact rather than reconstructed from the record chain on every read.",
+                        "title": "Entered current status at",
+                        "visible": false
+                    },
+                    "currentStatusDwellDays": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Working days the case has spent in the status it is in now, counted on the organisation's working calendar. Held on the case because that is where it is used: an aggregate on a dashboard answers a manager, and a handler sorts a work list. The Cases index sorts and filters on this column.",
+                        "title": "Days in status",
+                        "facetable": true
+                    },
+                    "statusDwellBreached": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "default": false,
+                        "description": "Whether the case has been in its current status longer than that status allows (statusType.maximumDwell). Its own fact with its own filter: a case can breach this while its statutory term is comfortable, and that is the case this flag exists to find. It never changes the term or the case's state.",
+                        "title": "Stuck in status",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "statusDwellTotals": {
+                        "type": "array",
+                        "description": "How long the case has spent in each status it has visited, in working days. Written as the status changes. The process mining page reads these rather than computing a second set, so the page and the case cannot disagree about the same measurement.",
+                        "title": "Time per status",
+                        "visible": false,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "statusType"
+                            ],
+                            "properties": {
+                                "statusType": {
+                                    "type": "string",
+                                    "description": "The statusType the time was spent in.",
+                                    "title": "Status type"
+                                },
+                                "workingDays": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "description": "Working days spent in that status, summed over every visit.",
+                                    "title": "Working days"
+                                }
+                            }
+                        }
+                    },
+                    "endingAct": {
+                        "type": "string",
+                        "enum": ["finish", "abort", "archive", "autoClose"],
+                        "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
+                        "title": "Ending act",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "skippedPhases": {
+                        "type": "string",
+                        "description": "The phases this case never reached, recorded when it was closed early. A JSON-encoded array of statusType names. An intrekking or a niet-ontvankelijkverklaring arrives mid-process, and the phases it skipped are a fact somebody will ask about.",
+                        "title": "Skipped phases",
+                        "visible": false
+                    },
+                    "heldUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.",
+                        "title": "Held until",
+                        "facetable": true
+                    },
+                    "holdReason": {
+                        "type": "string",
+                        "description": "Why this case is on hold. Required by the act, because a case nobody is working for a reason nobody wrote is a case that gets forgotten rather than parked.",
+                        "title": "Hold reason"
+                    },
+                    "isDraft": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case is still a draft. A draft binds no statutory term, appears in no working list, count or report, and is visible only to its author. Promoting it is one act that binds the term. A concept-zaak whose Awb clock has not started is a real object in a gemeente, and the alternative is a half-filled case that is already overdue.",
+                        "title": "Draft",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "draftCreatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the draft was begun, kept on the case after it is promoted. When the aanvraag arrived is a fact somebody will ask about, and the promotion moment is not it.",
+                        "title": "Draft begun at",
+                        "visible": false
+                    },
+                    "isIncomplete": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether required fields were knowingly left empty. A phone intake cannot always be complete, and refusing it loses the case; what the case must not do is report itself complete. Acts that need the missing data are refused, naming the field.",
+                        "title": "Incomplete",
+                        "facetable": true
+                    },
+                    "missingFields": {
+                        "type": "string",
+                        "description": "The required fields knowingly left empty, as a JSON-encoded array of field names. Named rather than counted, because an act refused for missing data has to say which field is missing.",
+                        "title": "Missing fields",
                         "visible": false
                     },
                     "result": {
@@ -1743,6 +2330,71 @@
                         "facetable": true,
                         "order": 6
                     },
+                    "handoverPending": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a handover of this case is waiting for the receiving team to accept it. A projection of the open casetransfer record and never a second custody trail: it exists so the sending team's list can show what it handed on and nobody picked up.",
+                        "title": "Handover pending"
+                    },
+                    "handoverTo": {
+                        "type": "string",
+                        "description": "The team the pending handover named, as a Nextcloud group id. Cleared when the handover is accepted or refused.",
+                        "title": "Handed over to"
+                    },
+                    "externalApplication": {
+                        "type": "string",
+                        "description": "The application this case is homed in, when the work happens somewhere else. The case still carries its type, status, terms and parties, because the central list is what it is for. dossiq does not offer to do the work on a case homed elsewhere.",
+                        "title": "External application"
+                    },
+                    "externalIdentifier": {
+                        "type": "string",
+                        "description": "What the externally homed case is called in the application that holds it, so a handler can quote one number to the specialist team.",
+                        "title": "Identifier there"
+                    },
+                    "externalUrl": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The link to this case in the application that holds it.",
+                        "title": "Link to the work"
+                    },
+                    "handoverRecord": {
+                        "type": "object",
+                        "description": "What a leaver handover did to this case: who held it before, who holds it now, who ran the act and when. Written once per act, so the work of somebody who has left is traceable a year later.",
+                        "title": "Handover record",
+                        "properties": {
+                            "fromUser": {
+                                "type": "string",
+                                "description": "The person whose work was handed over.",
+                                "title": "From"
+                            },
+                            "toUser": {
+                                "type": "string",
+                                "description": "The person who received it.",
+                                "title": "To"
+                            },
+                            "actor": {
+                                "type": "string",
+                                "description": "The administrator who ran the act.",
+                                "title": "By"
+                            },
+                            "seat": {
+                                "type": "string",
+                                "description": "Which seat moved: handler or coordinator.",
+                                "title": "Seat"
+                            },
+                            "batchId": {
+                                "type": "string",
+                                "description": "The act this case moved in, so everything it touched can be read together.",
+                                "title": "Batch"
+                            },
+                            "movedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "When it moved.",
+                                "title": "Moved at"
+                            }
+                        }
+                    },
                     "intakeChannel": {
                         "type": "string",
                         "enum": [
@@ -1761,6 +2413,42 @@
                         "facetable": true,
                         "order": 8
                     },
+                    "impact": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "default": "medium",
+                        "description": "How much it matters if this case goes wrong. One half of what the case type's matrix reads to derive the priority; urgency is the other half. They are two questions rather than one scale because a different person often knows each, and turning the pair into a priority is work the product should do rather than a handler.",
+                        "title": "Impact",
+                        "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "medium": "Medium",
+                            "high": "High"
+                        },
+                        "order": 15
+                    },
+                    "urgency": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "default": "medium",
+                        "description": "How soon this case matters. The other half of the pair the case type's matrix reads. A case type may declare a default for a new case, and an intake channel that creates cases takes that default rather than inventing one.",
+                        "title": "Urgency",
+                        "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "medium": "Medium",
+                            "high": "High"
+                        },
+                        "order": 16
+                    },
                     "priority": {
                         "type": "string",
                         "enum": [
@@ -1770,10 +2458,101 @@
                             "urgent"
                         ],
                         "default": "normal",
-                        "description": "Case priority",
+                        "description": "Case priority, derived and never typed. The case type's matrix answers for this case's impact and urgency, a declared rule may raise it as the statutory term approaches, and a person may override it on the record. The field, its values and its facet are unchanged, so everything written before the derivation keeps reading it.",
                         "title": "Priority",
                         "facetable": true,
+                        "x-enum-labels": {
+                            "low": "Low",
+                            "normal": "Normal",
+                            "high": "High",
+                            "urgent": "Urgent"
+                        },
+                        "x-enum-order": {
+                            "low": 1,
+                            "normal": 2,
+                            "high": 3,
+                            "urgent": 4
+                        },
+                        "x-enum-colours": {
+                            "low": "grey",
+                            "normal": "blue",
+                            "high": "orange",
+                            "urgent": "red"
+                        },
                         "order": 6
+                    },
+                    "priorityDerived": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "readOnly": true,
+                        "description": "What the matrix says this case's priority is, kept beside the value everything reads. It carries on being computed underneath a raise or an override, so clearing an override returns the case to the right answer rather than to whatever was last typed.",
+                        "title": "Derived priority",
+                        "order": 17
+                    },
+                    "priorityOrder": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "The declared order of this case's priority, so a list can sort by it. A list cannot sort on the word: alphabetically high comes before low and urgent comes last of all, which is neither the order a handler means nor a usable one. Written from x-enum-order on the priority property.",
+                        "title": "Priority order",
+                        "order": 18
+                    },
+                    "priorityFloor": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "readOnly": true,
+                        "description": "The lowest priority a declared rule has raised this case to. A floor rather than a value, because writing the raised priority straight into priority would last until the next save and then sink back down the queue. A floor only ever lifts, which is why an extended term cannot make a raised case less urgent.",
+                        "title": "Priority floor",
+                        "order": 19
+                    },
+                    "priorityRaisedBy": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The declared rule that last raised this case's priority, so a handler can see why a case moved up without anybody touching it.",
+                        "title": "Priority raised by",
+                        "order": 20
+                    },
+                    "priorityOverride": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                        ],
+                        "description": "A priority a person set by hand, which wins over the derived answer until it is cleared. Set it with a reason. Clearing it returns the case to the value the matrix derives now, not to the one it derived when the override was made.",
+                        "title": "Priority override",
+                        "order": 21
+                    },
+                    "priorityOverrideBy": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Who set the override. Written from the session rather than offered as a field, because who made a decision is a fact about the edit and not something anybody should be able to type.",
+                        "title": "Overridden by",
+                        "order": 22
+                    },
+                    "priorityOverrideAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "description": "When the override was set.",
+                        "title": "Overridden at",
+                        "order": 23
+                    },
+                    "priorityOverrideReason": {
+                        "type": "string",
+                        "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
+                        "title": "Override reason",
+                        "order": 24
                     },
                     "parentCase": {
                         "type": "string",
@@ -1782,7 +2561,14 @@
                         "title": "Parent case",
                         "description": "Reference to parent case (for sub-cases)",
                         "visible": true,
-                        "order": 14
+                        "order": 14,
+                        "x-openregister-relation": {
+                            "type": "deelzaak",
+                            "inherits": {
+                                "confidentiality": "confidentiality",
+                                "responsible": "assignee"
+                            }
+                        }
                     },
                     "relatedCases": {
                         "type": "string",
@@ -1866,6 +2652,12 @@
                         "format": "date",
                         "description": "Date when the archive action should be executed",
                         "title": "Archive action date"
+                    },
+                    "lawfulPurposeEndDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The day the personal data in this case stops having a lawful purpose (AVG art. 5.1e). Counted from the case's end date and the case type's own retention, never from the archive action date. The two clocks disagree on purpose, and a case that carries one date answers whichever question it was built for and gets the other one wrong.",
+                        "title": "Lawful purpose ends"
                     },
                     "archiveStatus": {
                         "type": "string",
@@ -2082,6 +2874,62 @@
                         "title": "Published at",
                         "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
                         "visible": false
+                    },
+                    "followUpCases": {
+                        "type": "array",
+                        "title": "Follow-up cases",
+                        "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "vervolg"
+                            }
+                        }
+                    },
+                    "subjectCases": {
+                        "type": "array",
+                        "title": "Subject cases",
+                        "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "subject"
+                            }
+                        }
+                    },
+                    "contributingCases": {
+                        "type": "array",
+                        "title": "Contributing cases",
+                        "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "bijdrage"
+                            }
+                        }
+                    },
+                    "associatedCases": {
+                        "type": "array",
+                        "title": "Associated cases",
+                        "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "samenhang"
+                            }
+                        }
                     }
                 },
                 "searchable": true
@@ -2811,7 +3659,7 @@
             "caseObject": {
                 "slug": "caseObject",
                 "icon": "CubeOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-zgw-equivalent": "ZaakObject",
                 "title": "Case Object",
                 "description": "Links an external object to a case",
@@ -2820,6 +3668,44 @@
                     "case",
                     "objectType"
                 ],
+                "configuration": {
+                    "objectNameField": "case | objectIdentification | objectType",
+                    "objectDescriptionField": "description",
+                    "x-notes": "THE NAME OF A LINK ROW IS THE CASE IT BELONGS TO, and that is what makes the reverse view readable. OpenRegister's /referenced-by groups the records that reference an object and titles each row with the stored object NAME, which it fills from objectNameField at save time. A caseObject is the row that holds the reference, so the group on a building's page is a list of link rows; naming each one after its case is what turns that list into the answer to 'which cases is this building in'. THE FIRST LINK IN THE CHAIN IS THE RELATION ITSELF, NOT A MIRROR OF IT: `case` carries a $ref, so MetadataHydrationHandler resolves the uuid to the referenced case's own name through the name cache. A calculated mirror was tried first and is wrong here, because metadata is hydrated in SaveObject BEFORE ObjectCreatingEvent materialises a calculation, so the mirror is empty on the save that names the row and the name would only arrive on the next one. The chain falls back to the identification and then to the required objectType, so a row is never unnamed.",
+                    "x-openregister-lenses": {
+                        "objectTitle": {
+                            "through": "objectUrl",
+                            "property": "name",
+                            "label": "Object"
+                        },
+                        "objectStatus": {
+                            "through": "objectUrl",
+                            "property": "status",
+                            "label": "Object status"
+                        }
+                    },
+                    "x-openregister-list": {
+                        "columns": [
+                            {
+                                "property": "objectType",
+                                "label": "Object type"
+                            },
+                            {
+                                "property": "objectIdentification",
+                                "label": "Identification"
+                            },
+                            {
+                                "property": "description",
+                                "label": "Description"
+                            }
+                        ],
+                        "searchFields": [
+                            "objectIdentification",
+                            "description",
+                            "objectType"
+                        ]
+                    }
+                },
                 "properties": {
                     "case": {
                         "type": "string",
@@ -4688,7 +5574,7 @@
             "case-location": {
                 "slug": "case-location",
                 "icon": "MapMarker",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
                 "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
@@ -4697,7 +5583,24 @@
                     "case",
                     "source"
                 ],
+                "configuration": {
+                    "x-notes": "A CASE BORROWS ITS GEOMETRY FROM THE OBJECT IT IS ABOUT. Where a location is taken from a linked object, the object already holds the address point or the parcel outline, and copying that geometry onto the case makes two shapes that disagree the moment the parcel is redrawn. `linkedObject` holds the path instead, and OpenRegister's /geo-features endpoint collects the object's own features alongside the case location's, each one marked `_source: inherited`, `_through: linkedObject` and `_fromObject`, so a map says where a pin came from. A location that carries its own geometry for the same purpose outranks the inherited one, which comes back marked `_superseded` rather than dropped.",
+                    "x-openregister-geo-inheritance": {
+                        "from": [
+                            {
+                                "through": "linkedObject",
+                                "label": "Linked object"
+                            }
+                        ]
+                    }
+                },
                 "properties": {
+                    "linkedObject": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.",
+                        "title": "Linked Object"
+                    },
                     "case": {
                         "type": "string",
                         "format": "uuid",
@@ -6915,10 +7818,10 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
-                "description": "Hand-off of a case from one organisation to another (initiate / accept / reject)",
+                "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
                 "type": "object",
                 "required": [
                     "caseId",
@@ -6943,10 +7846,36 @@
                         "description": "Target partner organisation UUID",
                         "title": "Target Organization"
                     },
+                    "handoverScope": {
+                        "type": "string",
+                        "enum": [
+                            "organisation",
+                            "team"
+                        ],
+                        "default": "organisation",
+                        "description": "Which boundary this hand-off crosses. `organisation` is the federated zaakoverdracht to another gemeente; `team` is the internal handover to another team here. The record shape is the same on purpose, so one read answers where a case has been.",
+                        "title": "Handover Scope"
+                    },
+                    "sourceTeam": {
+                        "type": "string",
+                        "description": "The team the case leaves, as a Nextcloud group id. Set on an internal handover only, and the team the case returns to when the receiving team refuses it.",
+                        "title": "Source Team"
+                    },
+                    "targetTeam": {
+                        "type": "string",
+                        "description": "The team the case goes to, as a Nextcloud group id. Set on an internal handover only. A group that does not exist refuses the handover rather than leaving the case unowned.",
+                        "title": "Target Team"
+                    },
                     "reason": {
                         "type": "string",
                         "description": "Reason for the transfer",
                         "title": "Reason"
+                    },
+                    "doorzending": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this handover is a doorzending under Awb 2:3, which obliges us to tell the applicant where the case went. An internal move between two teams of the same bestuursorgaan is not a doorzending and tells the applicant nothing.",
+                        "title": "Doorzending"
                     },
                     "requestedDate": {
                         "type": "string",
@@ -6995,6 +7924,40 @@
                         "type": "string",
                         "description": "User ID of the transfer initiator",
                         "title": "Initiated By"
+                    },
+                    "acceptedBy": {
+                        "type": "string",
+                        "description": "User id of whoever accepted or refused the handover on the receiving team's behalf.",
+                        "title": "Accepted By"
+                    },
+                    "emptiedSeats": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "seat": {
+                                    "type": "string",
+                                    "enum": [
+                                        "handler",
+                                        "coordinator"
+                                    ],
+                                    "description": "Which seat was emptied.",
+                                    "title": "Seat"
+                                },
+                                "holder": {
+                                    "type": "string",
+                                    "description": "The person who held the seat before the handover.",
+                                    "title": "Holder"
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "Why the seat was emptied, which is always that the holder is not in the receiving team.",
+                                    "title": "Reason"
+                                }
+                            }
+                        },
+                        "description": "Seats this handover emptied because their holder is not in the receiving team. Recorded rather than silently cleared: a case that arrives with nobody on it must say who came off it.",
+                        "title": "Emptied Seats"
                     },
                     "custodyAuditTrail": {
                         "type": "array",
@@ -9117,6 +10080,11 @@
                 }
             },
             "dossiqIntegration": {
+                "_meta": {
+                    "status": "deprecated",
+                    "change": "openspec/changes/adopt-connection-registry",
+                    "note": "Kept for one release so a revert brings the old Integrations page back. Nothing seeds or writes these rows any more: the page reads integriq's app_connection schema, dossiq declares its connections in lib/Settings/connections.json, and IntegrationStatusService reports to integriq by event. Removal is a follow-up issue, tracked in the PR body of adopt-connection-registry."
+                },
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
                 "version": "1.2.0",

@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
@@ -102,6 +103,7 @@ interface DossierObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  *
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
@@ -137,6 +139,13 @@ class ZaakdossierServiceTest extends TestCase {
 	private ZaakdossierService $service;
 
 	/**
+	 * The file service stub: `addFile` on the case, answering a file id.
+	 *
+	 * @var object
+	 */
+	private object $files;
+
+	/**
 	 * Set up fixtures with all dossier config keys mapped.
 	 *
 	 * @return void
@@ -144,6 +153,54 @@ class ZaakdossierServiceTest extends TestCase {
 	protected function setUp(): void {
 		$this->settings = $this->createMock(SettingsService::class);
 		$this->documents = $this->createMock(ZgwDocumentService::class);
+		$this->files = new class {
+			/** @var int The file id the next addFile answers. */
+			public int $fileId = 4711;
+
+			/** @var array<int, array<string, mixed>> Every addFile asked. */
+			public array $added = [];
+
+			/**
+			 * @param mixed $objectEntity The object the file is attached to.
+			 * @param string $fileName The file name.
+			 * @param mixed $content The bytes.
+			 * @param bool $share Whether to share.
+			 * @param array<int, string> $tags Tags.
+			 * @param mixed $_schema Unused.
+			 * @param mixed $_register Unused.
+			 * @param mixed $registerId The register.
+			 *
+			 * @return object A file with getFileId().
+			 */
+			public function addFile(
+				mixed $objectEntity,
+				string $fileName,
+				mixed $content,
+				bool $share = false,
+				array $tags = [],
+				mixed $_schema = null,
+				mixed $_register = null,
+				mixed $registerId = null,
+			): object {
+				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'content' => $content, 'register' => $registerId];
+				$fileId = $this->fileId;
+				return new class ($fileId) {
+					/**
+					 * @param int $fileId The file id.
+					 */
+					public function __construct(private readonly int $fileId) {
+					}
+
+					/**
+					 * @return int The file id.
+					 */
+					public function getFileId(): int {
+						return $this->fileId;
+					}
+				};
+			}
+		};
+		$this->settings->method('getFileService')->willReturn($this->files);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') {
 				$map = [
@@ -166,7 +223,6 @@ class ZaakdossierServiceTest extends TestCase {
 		// machine end to end rather than a mock's canned answers.
 		$this->service = new ZaakdossierService(
 			settingsService: $this->settings,
-			documentService: $this->documents,
 			accessGuard: $this->accessGuard,
 			statusLifecycle: new InformatieobjectStatusLifecycle(
 				settingsService: $this->settings,
@@ -175,6 +231,7 @@ class ZaakdossierServiceTest extends TestCase {
 			// A REAL normaliser, so the keyword/direction assertions below
 			// exercise the production coercion rather than a mock's answers.
 			normaliser: new InformatieobjectMetadataNormaliser(),
+			recordStore: new DocumentRecordStore(settingsService: $this->settings),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -259,9 +316,7 @@ class ZaakdossierServiceTest extends TestCase {
 			}
 		);
 
-		$this->documents->expects($this->once())
-			->method('storeRaw')
-			->with($this->equalTo('inf-1'), $this->equalTo('a.pdf'), $this->equalTo($content));
+		$this->documents->expects($this->never())->method('storeRaw');
 
 		$result = $this->service->uploadDocument(
 			caseId: 'case-1',
@@ -269,6 +324,12 @@ class ZaakdossierServiceTest extends TestCase {
 			content: $content,
 			metadata: ['informatieobjecttype' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'intern', 'title' => 'My doc'],
 		);
+
+		// documents-live-on-the-case: the file is attached to the CASE.
+		$this->assertCount(1, $this->files->added);
+		$this->assertSame('case-1', $this->files->added[0]['object']);
+		$this->assertSame('a.pdf', $this->files->added[0]['fileName']);
+		$this->assertSame($content, $this->files->added[0]['content']);
 
 		$this->assertSame('inf-1', $result['id']);
 		$this->assertSame('draft', $result['status']);
@@ -654,7 +715,6 @@ class ZaakdossierServiceTest extends TestCase {
 	public function testTheUploadStampsTheFileIdOntoTheDocument(): void {
 		$os = $this->createMock(DossierObjectServiceStub::class);
 		$this->settings->method('getObjectService')->willReturn($os);
-		$this->documents->method('getFileId')->willReturn(4711);
 
 		$writes = [];
 		$os->method('saveObject')->willReturnCallback(
@@ -668,9 +728,9 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->service->uploadDocument('case-1', 'a.pdf', 'PDF', ['informatieobjecttype' => 'iot-1']);
 
 		$stamp = array_values(
-			array_filter($writes, static fn (array $w): bool => $w['uuid'] === 'inf-1')
+			array_filter($writes, static fn (array $w): bool => $w['schema'] === 'informatieobject')
 		);
-		$this->assertCount(1, $stamp, 'the upload must write the file id back');
+		$this->assertCount(1, $stamp, 'one write carries the document, file id included');
 		$this->assertSame(4711, $stamp[0]['object']['fileId']);
 
 		// AND IT MUST STILL BE A WHOLE DOCUMENT. This assertion used to read
@@ -699,7 +759,7 @@ class ZaakdossierServiceTest extends TestCase {
 	public function testAnUnreadableFileIdStillLeavesTheDocumentFiled(): void {
 		$os = $this->createMock(DossierObjectServiceStub::class);
 		$this->settings->method('getObjectService')->willReturn($os);
-		$this->documents->method('getFileId')->willThrowException(new \RuntimeException('gone'));
+		$this->files->fileId = 0;
 
 		$schemas = [];
 		$os->method('saveObject')->willReturnCallback(

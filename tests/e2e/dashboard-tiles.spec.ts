@@ -184,7 +184,12 @@ function isoDay(days: number): string {
 }
 
 /**
- * Open the dashboard from a hard load and settle the support dialog.
+ * Open the team-overview Dashboard (`/dashboard`) from a hard load and settle
+ * the support dialog.
+ *
+ * dashboard-my-work-split moved the app's landing page to My Work
+ * (`openMyWork`, below); the Dashboard now holds only the KPI tiles, the
+ * status/type charts and Stalled Cases, at its own route.
  *
  * A HARD load, deliberately: the widget catalog used to register only inside
  * the lazy detail-page chunk, so the tiles were fine after a client-side visit
@@ -194,6 +199,22 @@ function isoDay(days: number): string {
  * @param page The Playwright page.
  */
 async function openDashboard(page: Page): Promise<void> {
+	await page.goto(`/index.php/apps/${REGISTER}/dashboard`)
+	await dismissSupportDialog(page)
+}
+
+/**
+ * Open My Work — the app's landing page — from a hard load and settle the
+ * support dialog. Carries the My work / Deadlines / Open Cases widgets that
+ * used to sit on the Dashboard; see the file header.
+ *
+ * A HARD load for the same reason `openDashboard` uses one: the widget
+ * catalog and header actions must be exercised on first paint, not after a
+ * client-side navigation.
+ *
+ * @param page The Playwright page.
+ */
+async function openMyWork(page: Page): Promise<void> {
 	await page.goto(`/index.php/apps/${REGISTER}/`)
 	await dismissSupportDialog(page)
 }
@@ -516,7 +537,7 @@ test.describe('Dashboard tiles', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-fresh-session-lands-on-the-dashboard
+	// @e2e openspec/specs/dashboard/spec.md#a-fresh-load-of-the-dashboard-shows-every-kpi-tile
 	test('every KPI tile shows a number on the first load of a session', async ({
 		page,
 	}) => {
@@ -558,7 +579,7 @@ test.describe('Dashboard tiles', () => {
 		test('My work lists each of your open tasks once, with days left', async ({
 			page,
 		}) => {
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -601,21 +622,71 @@ test.describe('Dashboard tiles', () => {
 			)
 		})
 
-		// @e2e openspec/specs/dashboard/spec.md#scenario-you-complete-a-task-from-the-row
-		test('a My work row opens the task, which is where Pick up and Complete are', async ({
+		// 🔴 THE CITATION THIS CARRIED WAS WITHDRAWN, AND THE TEST RE-AIMED.
+		//
+		// It cited `dashboard#scenario-you-complete-a-task-from-the-row`, a
+		// scenario whose own body reads `@e2e exclude blocked on nextcloud-vue
+		// row actions for object-table`. So the spec says nothing can prove it
+		// yet, and a citation on it said something did. What the body actually
+		// exercises is a row click landing on the task, which is a DIFFERENT
+		// scenario in the same spec, DASH-005d, and one nothing cited: it was
+		// in gate-19's uncovered list on 2026-09-12. Moving the citation turns
+		// a claim on an excluded scenario into coverage of an uncovered one.
+		//
+		// AND THE URL ASSERTION ALONE WAS NOT THE SCENARIO'S THEN. "navigate to
+		// the task detail view" is a view that rendered, not a path that
+		// matched: `asTaskRow` maps `id = row.uuid ?? row.id`, the engine emits
+		// BOTH on every row, and `/tasks/<numeric id>` satisfies
+		// `/\/tasks\/[^/]+$/` exactly as well while the page below it resolves
+		// no task at all. That is not hypothetical; `asTaskRow`'s own comment
+		// records three surfaces that shipped `/apps/dossiq/tasks/153` and went
+		// nowhere without erroring. So the title the detail page prints is read
+		// back, and it has to be the row that was clicked.
+		//
+		// ✅ MUTATION CHECK RUN 2026-09-12, against a private disposable
+		// instance. The break reproduces that defect verbatim: `page.route`
+		// deleted `uuid` from the seeded row in the `/api/flow-tasks` response,
+		// so the row routed by the engine's numeric primary key instead. The
+		// edit was counted, and the count asserted, because a rewrite that
+		// matched nothing would have left the real row routing correctly and
+		// made the green meaningless.
+		//
+		//   red on  "the task detail page must show the task whose row was clicked"
+		//           Expected: "E2EZAAK-… task due tomorrow"
+		//           Received: "Task"
+		//           62 × <h2 data-testid="task-detail-title">Task</h2>
+		//
+		// 🔴 AND THE ASSERTION THIS REPLACED STAYED GREEN UNDER THAT SAME
+		// BREAK. `toHaveURL(/\/tasks\/[^/]+$/)` passed on the numeric id, which
+		// is the whole reason the clause was repaired.
+		//
+		// ⚠️ `task-detail-missing` IS DELIBERATELY NOT ASSERTED. It was, and the
+		// mutation run showed it does not fire: an unresolvable id leaves
+		// `missing` false and the title falling back to the literal "Task", so
+		// the not-there state renders for a confirmed 404 and not for this. An
+		// assertion nobody has watched fail is decoration, and the title clause
+		// catches this break and that one both.
+		//
+		// @e2e openspec/specs/dashboard/spec.md#dash-005d-my-work-item-click-navigates-to-detail
+		test('clicking a My work row opens that task on the task detail page', async ({
 			page,
 		}) => {
-			// Row actions are blocked on nextcloud-vue, so the declared interim
-			// is the row route. This test holds the interim, so the day a row
-			// action lands and the route is dropped, it says so. It also holds
-			// the row's IDENTITY: the engine's `uuid` is what `/tasks/:id`
-			// accepts, and its numeric `id`, which sits beside it in the same
-			// response, is not.
-			await openDashboard(page)
+			await openMyWork(page)
 			const table = widget(page, 'my-work')
 			await expect(table).toBeVisible({ timeout: 30_000 })
 			await rows(table).filter({ hasText: TASK_SOON }).first().click()
 			await expect(page).toHaveURL(/\/tasks\/[^/]+$/, { timeout: 15_000 })
+			// The view, by its own root, and then the task it resolved. Both:
+			// the root alone renders for an id that resolves to nothing, and
+			// the title alone cannot say which page is printing it.
+			await expect(
+				page.locator('[data-testid="task-detail-page"]'),
+				'the row must open the task detail view, not a route that merely matches',
+			).toBeVisible({ timeout: 30_000 })
+			await expect(
+				page.locator('[data-testid="task-detail-title"]'),
+				'the task detail page must show the task whose row was clicked',
+			).toHaveText(TASK_SOON, { timeout: 30_000 })
 		})
 	})
 
@@ -623,7 +694,7 @@ test.describe('Dashboard tiles', () => {
 	test('Deadlines holds the overdue and the nearly due, overdue first and in red', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
@@ -675,7 +746,7 @@ test.describe('Dashboard tiles', () => {
 	test('a closed case stays off Deadlines, however late it was', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(rows(table).first()).toBeVisible({ timeout: 30_000 })
 		await expect(rows(table).filter({ hasText: CLOSED_CASE })).toHaveCount(0)
@@ -695,12 +766,22 @@ test.describe('Dashboard tiles', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#scenario-view-all-from-the-deadlines-table
-	// @e2e openspec/specs/signalering-widgets/spec.md
+	// 🔴 THE SIGNALERING CITATION NAMED A SPEC FILE AND NO REQUIREMENT, which
+	// gate-19 reads as "no anchor: cites a whole spec" and credits at nothing.
+	// A spec with forty scenarios in it is not a claim. The scenario this body
+	// proves is `The Deadlines table keeps its own, wider filter`, clause for
+	// clause: follow the tile's View all, land carrying `deadline lte @today+3d`
+	// and `isFinalStatus false`, and not the Overdue chip's narrower filter.
+	// Its own `@e2e` line in the spec still points at
+	// `tests/e2e/case-list-lenses.spec.ts`, which is where this assertion used
+	// to live before the fixture that fills the tile's window moved it here;
+	// that pointer is stale and is not this file's to correct.
+	// @e2e openspec/specs/signalering-widgets/spec.md#the-deadlines-table-keeps-its-own-wider-filter
 	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-004c-overdue-panel-with-view-all-link
 	test('View all on Deadlines opens the Cases list already filtered', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		const table = widget(page, 'deadlines')
 		await expect(table).toBeVisible({ timeout: 30_000 })
 
@@ -772,7 +853,7 @@ test.describe('Dashboard tiles', () => {
 	test('New case offers the published case type and not the draft', async ({
 		page,
 	}) => {
-		await openDashboard(page)
+		await openMyWork(page)
 		await page.getByRole('button', { name: /^(New case|Nieuwe zaak)$/i }).click()
 		const dialog = page.getByRole('dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })

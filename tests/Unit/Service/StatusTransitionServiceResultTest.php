@@ -36,9 +36,11 @@ use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * A final transition writes a result, or it does not happen.
@@ -46,6 +48,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\StatusTransitionService
  */
 class StatusTransitionServiceResultTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * The store the engine reads and writes through.
@@ -132,6 +136,8 @@ class StatusTransitionServiceResultTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $this->resultWriter,
 			statusChecklist: $this->createMock(StatusChecklist::class),
+			declarations: $this->undeclaredStatuses(),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

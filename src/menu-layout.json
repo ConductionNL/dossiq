@@ -18,8 +18,11 @@
 	"relocations": {
 		"OrganisationsMenu": "Contacts",
 		"Queue": "WorkGroup",
+		"PersonalQueueMenu": "WorkGroup",
+		"EndOfDayMenu": "WorkGroup",
 		"MyWork": "WorkGroup",
 		"Cases": "WorkGroup",
+		"CasesDeletedMenu": "WorkGroup",
 		"Tasks": "WorkGroup",
 		"WorkflowBoard": "WorkGroup"
 	},

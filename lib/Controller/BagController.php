@@ -83,7 +83,7 @@ class BagController extends Controller {
 	 *   - huisletter (string, optional)
 	 *   - huisnummertoevoeging (string, optional)
 	 *
-	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, address, dormant and extras.
 	 *
 	 * @NoAdminRequired
 	 *
@@ -141,7 +141,7 @@ class BagController extends Controller {
 	 *
 	 * @param string $id BAG pand identificatie.
 	 *
-	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, address, dormant and extras.
 	 *
 	 * @NoAdminRequired
 	 *
@@ -158,7 +158,7 @@ class BagController extends Controller {
 	 *
 	 * @param string $id BAG verblijfsobject identificatie.
 	 *
-	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, address, dormant and extras.
 	 *
 	 * @NoAdminRequired
 	 *

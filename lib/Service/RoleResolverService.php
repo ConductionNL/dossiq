@@ -34,14 +34,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Central role-routing engine.
@@ -49,6 +50,8 @@ use Throwable;
  * @spec openspec/changes/role-based-step-routing/tasks.md#T02
  */
 class RoleResolverService {
+	use RefusesWhenIndeterminate;
+
 	/**
 	 * Default strategy name when normalising legacy fields.
 	 */
@@ -145,8 +148,10 @@ class RoleResolverService {
 	 * @return array<int, string> Ordered participant refs (post-delegation)
 	 *
 	 * @throws RoutingStrategyMissingException When the rule's strategy is unknown
+	 * @throws RefusedException When the case's roles could not be read at all
 	 *
 	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
 	 */
 	public function resolve(array $rule, array $case): array {
 		$strategyName = (string)($rule['strategy'] ?? '');
@@ -274,7 +279,9 @@ class RoleResolverService {
 	 *
 	 * @param string $caseId The case id
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<int, array<string, mixed>> The role rows, empty when the case has none.
+	 *
+	 * @throws RefusedException When the role register could not be read at all.
 	 */
 	private function loadCaseRoles(string $caseId): array {
 		if ($caseId === '') {
@@ -292,14 +299,15 @@ class RoleResolverService {
 			return [];
 		}
 
-		try {
-			// OpenRegister's ObjectService::findAll() takes ONE config array.
-			// This call used to pass ($register, $schema, $filters)
-			// positionally, which is a TypeError against `array $config` — and
-			// the catch below turned that TypeError into an empty role list, so
-			// stored case roles were never loaded and rule resolution silently
-			// fell through to its other sources.
-			$records = $objectService->findAll(
+		// OpenRegister's ObjectService::findAll() takes ONE config array. This
+		// call used to pass ($register, $schema, $filters) positionally, which
+		// is a TypeError against `array $config` — and the catch that stood
+		// here turned that TypeError into an empty role list, so stored case
+		// roles were never loaded and rule resolution silently fell through to
+		// its other sources. An empty role list is also how a routing rule
+		// resolves to nobody, which is why the read now refuses instead.
+		$records = $this->readOrRefuse(
+			read: fn (): mixed => $objectService->findAll(
 				[
 					'filters' => [
 						'register' => $register,
@@ -307,13 +315,11 @@ class RoleResolverService {
 						'case' => $caseId,
 					],
 				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: failed to load roles for case ' . $caseId . ': ' . $e->getMessage(),
-			);
-			return [];
-		}//end try
+			),
+			what: 'the roles on case ' . $caseId,
+			rule: 'case-roles-unreadable',
+			sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
+		);
 
 		$rows = [];
 		foreach ((array)$records as $record) {

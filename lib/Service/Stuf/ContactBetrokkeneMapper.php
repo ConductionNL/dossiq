@@ -31,8 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -46,10 +45,12 @@ class ContactBetrokkeneMapper {
 	 *
 	 * @param StufRegisterAccess $register The register access helper.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseDateNormaliser $dates The one date write path, which owns the zone.
 	 */
 	public function __construct(
 		private StufRegisterAccess $register,
 		private LoggerInterface $logger,
+		private CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -198,6 +199,6 @@ class ContactBetrokkeneMapper {
 	 * @return string The timestamp.
 	 */
 	private function isoNow(): string {
-		return (new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')))->format(format: 'c');
+		return $this->dates->nowAsMoment();
 	}//end isoNow()
 }//end class

@@ -30,6 +30,9 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\NoticeOfDefaultService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -39,9 +42,24 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnService
  */
 class NoticeOfDefaultServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
 	private NoticeOfDefaultService $service;
+	/**
+	 * The settings mock, reused when a second service is built on a calendar.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The logger, reused for the same reason.
+	 *
+	 * @var LoggerInterface
+	 */
+	private LoggerInterface $logger;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -62,6 +80,8 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
+		$this->settings = $settings;
+		$this->logger = $logger;
 		$this->termService = new TermijnService($settings, $logger);
 		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
 
@@ -196,5 +216,117 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		$b = $row['penaltyPaymentCalculation'];
 		self::assertSame('afwijkend', $b['regime']);
 		self::assertSame(50000, $b['plafondCalculated']);
+	}
+
+	/**
+	 * The same service, with the engine calendar reachable.
+	 *
+	 * @param array<int, string> $closed Non-working dates as `Y-m-d`.
+	 *
+	 * @return NoticeOfDefaultService The service under test.
+	 */
+	private function serviceOnCalendar(array $closed): NoticeOfDefaultService {
+		$calendars = new WorkingCalendarServiceFake(new WorkingCalendarFake('nl-national', $closed));
+		$calculator = new SlaCalculatorFake();
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturnCallback(
+			static function (string $class) use ($calendars, $calculator): ?object {
+				return match ($class) {
+					TermijnTimerService::CALENDAR_SERVICE_CLASS => $calendars,
+					TermijnTimerService::SLA_CALCULATOR_CLASS => $calculator,
+					default => null,
+				};
+			}
+		);
+		$timers = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
+
+		return new NoticeOfDefaultService($this->settings, $this->termService, $this->logger, $timers);
+	}
+
+	/**
+	 * Awb 4:17: fourteen days from a receipt on 7 June 2026 is a Sunday, and
+	 * the dwangsom cannot start running on one. The window opens the Monday.
+	 *
+	 * @return void
+	 */
+	public function testTheGracePeriodEndingOnASundayMovesToTheMonday(): void {
+		$row = $this->serviceOnCalendar([])->registerNoticeOfDefault(
+			'ti-1',
+			new DateTimeImmutable('2026-06-07'),
+			'email',
+			'doc:1'
+		);
+
+		self::assertSame('2026-06-22', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The fixture pair: the same receipt with the engine calendar out of
+	 * reach keeps the raw Sunday, so the assertion above is about the roll
+	 * and not about the fourteen days.
+	 *
+	 * @return void
+	 */
+	public function testTheSameGracePeriodWithoutTheCalendarKeepsTheSunday(): void {
+		$row = $this->service->registerNoticeOfDefault(
+			'ti-1',
+			new DateTimeImmutable('2026-06-07'),
+			'email',
+			'doc:1'
+		);
+
+		self::assertSame('2026-06-21', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The grace counts on the calendar the ORGANISATION administers: a day it
+	 * closes moves the window even though no national list names it.
+	 *
+	 * @return void
+	 */
+	public function testTheGracePeriodCountsOnTheAdministeredCalendar(): void {
+		$row = $this->serviceOnCalendar(['2026-03-30'])->registerNoticeOfDefault(
+			'ti-1',
+			new DateTimeImmutable('2026-03-15'),
+			'post'
+		);
+
+		// 2026-03-29 is a Sunday and 2026-03-30 is a local closure.
+		self::assertSame('2026-03-31', $row['penaltyPaymentCalculation']['startDate']);
+	}
+
+	/**
+	 * The regime's validity rules are untouched by the roll: a premature
+	 * notice is still premature and still spawns nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheRollDoesNotChangeTheValidityRules(): void {
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-lopend-2',
+			'case' => 'Z/2026/303',
+			'deadlineDefinition' => 'td-ov',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-12-31',
+			'endDateCurrent' => '2026-12-31',
+			'status' => 'lopend',
+			'notificatiesVerstuurd' => [],
+		]);
+
+		$row = $this->serviceOnCalendar([])->registerNoticeOfDefault(
+			'ti-lopend-2',
+			new DateTimeImmutable('2026-06-07'),
+			'post'
+		);
+
+		self::assertFalse($row['gevalideerd']);
+		self::assertSame('premaat', $row['validityStatus']);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $row);
 	}
 }

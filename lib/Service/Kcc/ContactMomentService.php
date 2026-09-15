@@ -29,8 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
-use DateTimeImmutable;
-use DateTimeInterface;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
@@ -67,10 +66,12 @@ class ContactMomentService {
 	 *
 	 * @param SettingsService $settingsService The settings service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private LoggerInterface $logger,
+		private CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -175,13 +176,13 @@ class ContactMomentService {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	private function applyTimestamps(array $payload, array $data): array {
-		$payload['startedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+		$payload['startedAt'] = $this->dates->nowAsMoment();
 		if (isset($data['startedAt']) === true && $data['startedAt'] !== '') {
-			$payload['startedAt'] = (string)$data['startedAt'];
+			$payload['startedAt'] = $this->dates->toMoment($data['startedAt'], 'startedAt');
 		}
 
 		if (isset($data['endedAt']) === true && $data['endedAt'] !== '') {
-			$payload['endedAt'] = (string)$data['endedAt'];
+			$payload['endedAt'] = $this->dates->toMoment($data['endedAt'], 'endedAt');
 			$payload['durationSeconds'] = $this->computeDuration(start: $payload['startedAt'], end: $payload['endedAt']);
 		}
 
@@ -460,8 +461,8 @@ class ContactMomentService {
 	 */
 	private function computeDuration(string $start, string $end): int {
 		try {
-			$startTs = (new DateTimeImmutable($start))->getTimestamp();
-			$endTs = (new DateTimeImmutable($end))->getTimestamp();
+			$startTs = $this->dates->parse($start, 'startedAt')->getTimestamp();
+			$endTs = $this->dates->parse($end, 'endedAt')->getTimestamp();
 		} catch (\Throwable $e) {
 			return 0;
 		}

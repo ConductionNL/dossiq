@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\BelplanController;
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -202,4 +203,101 @@ class BelplanControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(['error' => 'Geen belplan voor dit nummer'], $response->getData());
 	}//end testRouteMapsADomainRuntimeExceptionToA400CarryingItsMessage()
+
+	/**
+	 * Put an admin on the session and configure the belplan schema, so that
+	 * create() reaches the OpenRegister write.
+	 *
+	 * @param object $objectService The duck-typed object service to hand back.
+	 *
+	 * @return void
+	 */
+	private function signInAsAdminWithSchema(object $objectService): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'belplan_schema' => 'belplan',
+				default => '',
+			}
+		);
+		$this->request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'name' => 'Burgerzaken',
+				default => $default,
+			}
+		);
+	}//end signInAsAdminWithSchema()
+
+	/**
+	 * A belplan OpenRegister's schema refuses is the admin's payload, not a
+	 * server fault, and the response has to say which property failed.
+	 *
+	 * This arm previously returned a fixed 500 with the sentence "Could not
+	 * create belplan", which named neither the cause nor the property, so
+	 * there was no way to tell a typo from an outage from either the status or
+	 * the body.
+	 *
+	 * @return void
+	 */
+	public function testCreateMapsAnOpenRegisterValidationRefusalToA400NamingTheProperty(): void {
+		$objectService = new class {
+			/**
+			 * Refuse the write the way OpenRegister's validator does.
+			 *
+			 * @param array  $object   The payload.
+			 * @param string $register The register slug.
+			 * @param string $schema   The schema slug.
+			 *
+			 * @return array Never returns.
+			 */
+			public function saveObject(array $object, string $register, string $schema): array {
+				throw new OpenRegisterValidationException(
+					message: "Property 'priority' should be of type integer but string given"
+				);
+			}
+		};
+		$this->signInAsAdminWithSchema($objectService);
+
+		$response = $this->controller->create();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertStringContainsString(
+			"Property 'priority'",
+			(string)($response->getData()['error'] ?? '')
+		);
+	}//end testCreateMapsAnOpenRegisterValidationRefusalToA400NamingTheProperty()
+
+	/**
+	 * The other direction, which is the half that must not regress: a genuine
+	 * fault is still the server's and still a 500.
+	 *
+	 * @return void
+	 */
+	public function testCreateStillAnswersFiveHundredForAGenuineServerFault(): void {
+		$objectService = new class {
+			/**
+			 * Fail the way broken code does.
+			 *
+			 * @param array  $object   The payload.
+			 * @param string $register The register slug.
+			 * @param string $schema   The schema slug.
+			 *
+			 * @return array Never returns.
+			 */
+			public function saveObject(array $object, string $register, string $schema): array {
+				throw new \TypeError('Argument #1 must be of type array, null given');
+			}
+		};
+		$this->signInAsAdminWithSchema($objectService);
+
+		$response = $this->controller->create();
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+	}//end testCreateStillAnswersFiveHundredForAGenuineServerFault()
 }//end class

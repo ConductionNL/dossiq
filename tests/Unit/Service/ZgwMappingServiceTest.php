@@ -199,10 +199,16 @@ class ZgwMappingServiceTest extends TestCase {
 		$keys = $this->service->getResourceKeys();
 
 		$this->assertContains('zaak', $keys);
-		$this->assertContains('zaaktype', $keys);
+		// `caseType`, not `zaaktype`. #832 renamed the repair step's keys and
+		// this list kept the old four, so `listMappings()` offered an operator
+		// four mappings that do not exist and hid four that do. See
+		// ZgwResourceMapConsistencyTest, which holds the two lists together.
+		$this->assertContains('caseType', $keys);
 		$this->assertContains('status', $keys);
-		$this->assertContains('besluit', $keys);
+		$this->assertContains('decision', $keys);
 		$this->assertContains('enkelvoudiginformatieobject', $keys);
+		$this->assertNotContains('zaaktype', $keys);
+		$this->assertNotContains('besluit', $keys);
 		$this->assertCount(26, $keys);
 
 	}//end testGetResourceKeysReturnsKnownKeys()
@@ -228,13 +234,12 @@ class ZgwMappingServiceTest extends TestCase {
 		$mappings = $this->service->listMappings();
 
 		$this->assertArrayHasKey('zaak', $mappings);
-		$this->assertArrayHasKey('zaaktype', $mappings);
+		$this->assertArrayHasKey('caseType', $mappings);
 		$this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
-		// `caseType` is the English alias for `zaaktype`, and is deliberately
-		// NOT one of RESOURCE_KEYS. Asserting it is null read as a contract but
-		// was reading an absent key, so it passed on a PHP warning rather than
-		// on the service agreeing with it.
-		$this->assertArrayNotHasKey('caseType', $mappings);
+		// It is `zaaktype` that is absent, and that is the point: the repair
+		// step writes `zgw_mapping_caseType`. This assertion used to say the
+		// opposite, so the stale inventory read as a contract.
+		$this->assertArrayNotHasKey('zaaktype', $mappings);
 
 	}//end testListMappingsReturnsAllKeys()
 

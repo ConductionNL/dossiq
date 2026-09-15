@@ -114,6 +114,11 @@ describe('CaseDetail — the timeline is not also a body tab (task 4.1)', () => 
 		// The whole of row A05 is that the case keeps ONE history. A body
 		// panel over the same audit log beside a sidebar tab with filters is
 		// two views of one log again.
+		//
+		// ⚠️ THE NAME IS RESERVED, AND IT WAS NEARLY TAKEN. The page does carry
+		// a stage stepper titled Timeline, and it is declared as `case-stages`
+		// precisely so this guard keeps meaning what it says. That widget is
+		// where the case is in its process, not what has happened to it.
 		const config = caseDetail().config
 		expect(config.widgets.map((widget) => widget.id)).not.toContain(
 			'case-timeline',

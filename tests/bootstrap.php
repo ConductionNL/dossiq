@@ -321,6 +321,12 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 // load order relative to the stub block below does not matter.
 require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 
+// Shared engine-calendar fake for the Algemene termijnenwet roll. Mirrors the
+// REAL WorkingCalendarService::resolve() and SlaCalculator::add() signatures,
+// so a term site that drifts off the engine's contract fails here instead of
+// agreeing with itself.
+require_once __DIR__ . '/Unit/Fixtures/WorkingCalendarEngineFake.php';
+
 // Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
 // store behaviours a hand-written mock hides — a save drops what the schema
 // does not declare, and a filter on an undeclared property matches zero rows —
@@ -456,12 +462,14 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 }
 
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// The connection-registry events (adopt-connection-registry) ride the same loop:
+// IntegrationStatusService sends them by name, exactly like the delivery seam.
 // PublicationService dispatches DeliveryRequestedEvent and
 // DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
@@ -472,6 +480,26 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
 // tests if something supplies the class.
 if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
+}
+
+// OpenRegister's bulk-action contract. dossiq's four case actions IMPLEMENT the
+// interface and RETURN the result type, so without these stubs they cannot even
+// be loaded in a unit test on a host where OpenRegister is absent. BulkJobMember
+// is here for its four outcome constants, which is all BulkActionResult names.
+if (class_exists('\\OCA\\OpenRegister\\Db\\BulkJobMember') === false) {
+	include_once __DIR__ . '/Stubs/Db/BulkJobMember.php';
+}
+
+if (interface_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionInterface') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionInterface.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionResult') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionResult.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\BulkActionRegistrationEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/BulkActionRegistrationEvent.php';
 }
 
 // OpenRegister's flow-node contract. procest's six action nodes implement it,
@@ -567,6 +595,16 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/TaskTerminalEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
+}
+
+// people-on-the-case: OpenRegister's three person-link events, so
+// PersonLinkListenerTest can exercise handle() against the real getLink()
+// shape on a bare container. Declaration-only stubs, shared with psalm and
+// phpstan (see psalm.xml <stubs> and phpstan.neon scanFiles).
+if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so

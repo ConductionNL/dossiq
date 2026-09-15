@@ -16,6 +16,7 @@
  * the on-disk config the importer and the manifest renderer actually read.
  *
  * @spec openspec/changes/parties-on-the-case/specs/roles-decisions/spec.md
+ * @spec openspec/specs/people-on-the-case/spec.md
  */
 
 import fs from 'fs'
@@ -76,36 +77,35 @@ function action(id) {
 }
 
 describe('the Parties widget', () => {
-	it('lists the roles of the open case, sorted by role type', () => {
-		const roles = widget('case-roles')
+	it('shows the people linked to this case, not a table of identifiers', () => {
+		const parties = widget('case-parties')
 
-		expect(roles).toBeTruthy()
-		expect(roles.type).toBe('object-list')
-		expect(roles.content.register).toBe('dossiq')
-		expect(roles.content.schema).toBe('role')
-		expect(roles.content.filter).toEqual({ case: '@objectId' })
-		expect(roles.content.sort).toEqual({ field: 'roleType', dir: 'asc' })
-		expect(roles.content.limit).toBe(50)
-		expect(roles.content.emptyText).toBeTruthy()
+		// people-on-the-case: a party is an OpenRegister person link (a user or
+		// a contact, in a role type), rendered by the contacts integration. The
+		// object-list this replaced showed a roleType uuid and a participant
+		// string nobody could act on, and could offer no way to add anybody.
+		expect(parties).toBeTruthy()
+		expect(parties.type).toBe('integration')
+		expect(parties.integrationId).toBe('contacts')
+		expect(parties.title).toBe('Parties')
 	})
 
-	it('shows the role type, the participant and the delegation window', () => {
-		expect(
-			widget('case-roles').content.columns.map((column) => column.key),
-		).toEqual(['roleType', 'participant', 'delegate', 'delegateUntil'])
-	})
-
-	it('reads only properties the role schema declares', () => {
+	it('still writes the role records the resolver reads', () => {
+		// The link is the fact; the `role` record is its projection, written by
+		// PersonLinkListener. Nothing in the manifest renders `role` any more,
+		// so this is the check that the schema the projection writes still
+		// declares what CaseRoleProjection puts on it.
 		const properties = Object.keys(schema('role').properties)
-		const roles = widget('case-roles')
 
-		for (const key of Object.keys(roles.content.filter)) {
-			expect(properties, `filter key ${key}`).toContain(key)
+		for (const key of [
+			'case',
+			'roleType',
+			'participant',
+			'name',
+			'description',
+		]) {
+			expect(properties, `the projection writes ${key}`).toContain(key)
 		}
-		for (const column of roles.content.columns) {
-			expect(properties, `column ${column.key}`).toContain(column.key)
-		}
-		expect(properties, 'the sort field').toContain(roles.content.sort.field)
 	})
 
 	it('replaces the Contacts tab rather than sitting beside it', () => {
@@ -126,9 +126,9 @@ describe('the Parties widget', () => {
 
 	it('leads the People tab, and is never a layout cell of its own', () => {
 		const detail = page('CaseDetail')
-		const where = panels.caseTabOf('case-roles')
+		const where = panels.caseTabOf('case-parties')
 
-		expect(where, 'case-roles is not reachable from the strip').toBeTruthy()
+		expect(where, 'case-parties is not reachable from the strip').toBeTruthy()
 		expect(where.tab).toBe('People')
 		expect(where.label).toBe('Parties')
 
@@ -137,13 +137,13 @@ describe('the Parties widget', () => {
 		const sections = panels
 			.caseWidget('case-people-panel')
 			.content.sections.map((section) => section.widget.id)
-		expect(sections[0]).toBe('case-roles')
+		expect(sections[0]).toBe('case-parties')
 
 		// A widget rendered by the tabs widget AND placed in `layout` renders
 		// twice, which is why its siblings are absent from `layout` too.
 		expect(
 			(detail.config.layout || []).map((cell) => cell.widgetId),
-		).not.toContain('case-roles')
+		).not.toContain('case-parties')
 	})
 })
 
@@ -299,6 +299,12 @@ describe('the Team column and the Mine chip', () => {
 		const initial = chips.find((chip) => chip.default === true) || chips[0]
 		const scoping = { ...initial.filter }
 		delete scoping.statusHiddenInLists
+		// `isDraft` is the second condition allowed through, added by
+		// `lifecycle-acts-on-the-case`. Same reasoning: a draft is a property
+		// of the CASE, not of the reader. It binds no statutory term and is in
+		// nobody's working list, so excluding it does not narrow the index to
+		// anyone's own work, which is the thing this test guards.
+		delete scoping.isDraft
 		expect(scoping, 'the index must open unfiltered').toEqual({})
 	})
 })

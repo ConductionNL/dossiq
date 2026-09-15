@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -111,6 +112,11 @@ class TermijnService {
 		$instance = [
 			'case' => $caseId,
 			'deadlineDefinition' => (string)($definitie['id'] ?? ''),
+			// The kind this instance carries. A term created here is the one the
+			// Awb sets and the citizen is told about, and every instance written
+			// before the four kinds existed is one of these too, which is why
+			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
+			'kind' => TermKind::STATUTORY,
 			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
 			'endDateCalculated' => $endDate,
 			'endDateCurrent' => $endDate,
@@ -243,6 +249,87 @@ class TermijnService {
 
 		return $rows[0];
 	}//end getTermijnInstanceForZaak()
+
+	/**
+	 * Every TermijnInstance bound to a case, newest first.
+	 *
+	 * {@see getTermijnInstanceForZaak()} answers the ONE latest instance, which
+	 * was the right answer while a case had one clock. A case now carries a
+	 * statutory term, a planned end, an internal target and a phase term, and a
+	 * caller that wants all four cannot get them by asking for the latest four
+	 * times. This is the same query without the `[0]`.
+	 *
+	 * @param string $caseId Case id.
+	 *
+	 * @return array<int, array<string, mixed>> The instances, newest start first.
+	 *
+	 * @throws RefusedException When the store could not be asked.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 */
+	public function instancesForCase(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null || $caseId === '') {
+			return [];
+		}
+
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
+		if ($register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['case' => $caseId]
+			);
+		} catch (\Throwable $e) {
+			// NOT an empty list. A case with no clocks and a case whose clocks
+			// could not be read are opposite facts, and the second rendered as
+			// the first tells a handler there is no deadline.
+			$this->logger->warning(
+				'TermijnService.instancesForCase lookup failed, so the read is refused',
+				['case' => $caseId, 'error' => $e->getMessage()]
+			);
+
+			throw new RefusedException(
+				rule: 'term-instances-unreadable',
+				sentence: 'The terms on this case could not be read.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
+
+		usort(
+			$rows,
+			static fn (array $a, array $b): int
+				=> strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''))
+		);
+
+		return $rows;
+	}//end instancesForCase()
+
+	/**
+	 * Persist a term instance of any kind.
+	 *
+	 * The ONE writer of a TermijnInstance row. A planned end, an internal
+	 * target and a phase term are computed elsewhere, because their end dates
+	 * reach the working calendar and this file's statutory path does not yet;
+	 * they are written here, so there is still one place that knows which
+	 * register and which schema a term instance lives in.
+	 *
+	 * @param array<string, mixed> $instance The finished row.
+	 *
+	 * @return array<string, mixed>|null The stored instance, or null when the store refused.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 */
+	public function saveTermInstance(array $instance): ?array {
+		return $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
+	}//end saveTermInstance()
 
 	/**
 	 * Update a TermijnInstance (partial; merged on top of existing).
@@ -402,6 +489,9 @@ class TermijnService {
 	 * @param DateTimeImmutable|null $moment When (default now).
 	 * @param string $documentLink Optional document ref.
 	 * @param string $actor Optional actor (default 'system').
+	 * @param array<int, string> $items What was asked for, or what came in. Awb 4:5
+	 *        joins asking to suspending, so the record that carries the suspension
+	 *        carries what was asked in the same row rather than in a second one.
 	 *
 	 * @return array<string, mixed>|null
 	 *
@@ -416,6 +506,7 @@ class TermijnService {
 		?DateTimeImmutable $moment = null,
 		string $documentLink = '',
 		string $actor = 'system',
+		array $items = [],
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
@@ -429,6 +520,10 @@ class TermijnService {
 		];
 		if ($documentLink !== '') {
 			$event['documentLink'] = $documentLink;
+		}
+
+		if (count($items) > 0) {
+			$event['items'] = array_values($items);
 		}
 
 		return $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);

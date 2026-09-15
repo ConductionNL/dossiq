@@ -8,6 +8,19 @@
  * workflowStepId?}`. Creates a task linked to the case via OpenRegister
  * ObjectService.
  *
+ * WHO THE TASK GOES TO, in order:
+ *
+ * 1. `assignee`, the action's own, as a literal or a template such as
+ *    `{{ case.assignee }}`;
+ * 2. `assigneeFallback`, the declared second choice;
+ * 3. the case's `assignee`, its handler, because a task created on a case is
+ *    that case handler's work unless somebody said otherwise;
+ * 4. nobody, and the task carries the case's team so it still reaches a queue.
+ *
+ * `assignee: "none"` is a RESERVED WORD, not a uid: it stops at step 1 and
+ * leaves the task unclaimed, which is how an action authors a queue task that
+ * the default must not hand to one person. The case's team still comes along.
+ *
  * 🔴 THE ASSIGNEE IS RESOLVED, NOT COPIED. This handler used to write
  * `$actionConfig['assignee'] ?? ''` onto the task. That is wrong in two ways
  * and both are silent. A declaration writing `{{ case.assignee }}`, the
@@ -38,8 +51,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -56,12 +71,16 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * @param EngineTaskGateway $engineTasks     The dual-run seam onto OpenRegister's task engine
 	 * @param LoggerInterface   $logger          Logger
 	 * @param IUserSession|null $userSession Names the actor when the context does not.
+	 * @param WorkingDayCalculator|null $workingDays Counts a declared lead time in
+	 *                                               working days, on the administered
+	 *                                               calendar the case terms use.
 	 */
 	public function __construct(
 		private readonly AssigneeResolver $assignees,
 		private readonly EngineTaskGateway $engineTasks,
 		private readonly LoggerInterface $logger,
 		private readonly ?IUserSession $userSession = null,
+		private readonly ?WorkingDayCalculator $workingDays = null,
 	) {
 	}//end __construct()
 
@@ -105,10 +124,10 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// field for each. Carrying the case's team over is what keeps a
 			// checklist task on somebody's queue when no person resolves.
 			//
-			// Read through referenceId, never a (string) cast: `assignedGroup`
+			// Read through the resolver, never a (string) cast: `assignedGroup`
 			// is a $ref, so an expanded read casts to the literal "Array" and
 			// writes a team that resolves to nothing.
-			$team = $this->assignees->referenceId(value: ($case['assignedGroup'] ?? ''));
+			$team = $this->assignees->resolveTeam(case: $case);
 			if ($team !== '') {
 				$task['assigneeGroup'] = $team;
 			}
@@ -121,6 +140,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			if ($workflowStepId !== '') {
 				$task['workflowStepId'] = $workflowStepId;
 			}
+
+			// What the case type declared about THIS task: its own due date,
+			// the team it is offered to, the form it asks for, and what
+			// completing it does. Everything here is a declaration dossiq
+			// writes and the engine performs — there is no dossiq task store,
+			// no dossiq task number and no dossiq lock, which is what
+			// `remove-casetask` settled.
+			$task = $this->declared(task: $task, actionConfig: $actionConfig);
 
 			// THE ENGINE IS THE RECORD NOW, and the register write is gone.
 			// The dual-run has served its purpose: every read surface moved
@@ -169,6 +196,122 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	}//end handle()
 
 	/**
+	 * Apply the case type's per-task declaration to the task being created.
+	 *
+	 * Four of the five settings land on the task; the fifth, `enabled`, has
+	 * already been honoured by whoever built the action, because a task that
+	 * does not run is not created rather than created and hidden.
+	 *
+	 * 🔑 THE DUE DATE IS THE TASK'S OWN. A lead time is counted in working
+	 * days from today, through the same administered calendar the case terms
+	 * use, and it OVERRIDES nothing: an action that named its own `dueIn` or a
+	 * task whose declaration names no lead time keeps whatever it had. A task
+	 * showing the case deadline is the failure this replaces — every task on a
+	 * case appearing to be due on the same day tells a handler nothing about
+	 * which one is late.
+	 *
+	 * 🔑 THE FORM AND THE EFFECTS GO INTO `metadata`, WHICH IS THE ENGINE'S
+	 * OWN ROOM FOR THEM. `metadata.form` is the shape
+	 * `OCA\OpenRegister\Service\Task\TaskFormResolver` reads for a run-less
+	 * task, so declaring it here is what makes the form render and validate
+	 * without dossiq owning a second form vocabulary. `metadata.dossiq.effects`
+	 * is dossiq's own, read back by {@see \OCA\Dossiq\Listener\TaskEffectsListener}
+	 * when the task completes.
+	 *
+	 * @param array<string, mixed> $task         The task being built.
+	 * @param array<string, mixed> $actionConfig The action, carrying the declaration.
+	 *
+	 * @return array<string, mixed> The task, with the declaration applied.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function declared(array $task, array $actionConfig): array {
+		$declaration = ($actionConfig['declaration'] ?? null);
+		if (is_array($declaration) === false) {
+			return $task;
+		}
+
+		$due = $this->declaredDueDate(declaration: $declaration, task: $task);
+		if ($due !== '') {
+			$task['dueDate'] = $due;
+		}
+
+		foreach (['candidateGroups', 'candidateUsers'] as $key) {
+			$candidates = ($declaration[$key] ?? []);
+			if (is_array($candidates) === true && $candidates !== []) {
+				$task[$key] = array_values($candidates);
+			}
+		}
+
+		$metadata = self::declaredMetadata(declaration: $declaration);
+		if ($metadata !== []) {
+			$task['metadata'] = $metadata;
+		}
+
+		return $task;
+	}//end declared()
+
+	/**
+	 * The form and the effects, in the shapes their readers expect.
+	 *
+	 * `form` is OpenRegister's own declaration shape, read by its task form
+	 * resolver off `metadata.form`; `dossiq.effects` is dossiq's, read back by
+	 * {@see \OCA\Dossiq\Listener\TaskCompletionEffectsListener} when the
+	 * task completes. Neither is translated on the way in: a second
+	 * description of the same declaration is one that can disagree.
+	 *
+	 * @param array<string, mixed> $declaration The per-task declaration.
+	 *
+	 * @return array<string, mixed> The metadata, empty when nothing is declared.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private static function declaredMetadata(array $declaration): array {
+		$metadata = [];
+		if (is_array(($declaration['form'] ?? null)) === true) {
+			$metadata['form'] = $declaration['form'];
+		}
+
+		$effects = ($declaration['effects'] ?? []);
+		if (is_array($effects) === true && $effects !== []) {
+			$metadata['dossiq'] = ['effects' => array_values($effects)];
+		}
+
+		return $metadata;
+	}//end declaredMetadata()
+
+	/**
+	 * The due date a declared lead time gives this task, or ''.
+	 *
+	 * Counted in working days from today, through the same administered
+	 * calendar the case terms use. It OVERRIDES nothing: an action that named
+	 * its own date keeps it, and a declaration naming no lead time leaves the
+	 * task with whatever it had.
+	 *
+	 * @param array<string, mixed> $declaration The per-task declaration.
+	 * @param array<string, mixed> $task        The task being built.
+	 *
+	 * @return string The ISO date-time, or '' when nothing declares one.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function declaredDueDate(array $declaration, array $task): string {
+		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
+		if ($leadTime < 1 || $this->workingDays === null) {
+			return '';
+		}
+
+		if (trim((string)($task['dueDate'] ?? '')) !== '') {
+			return '';
+		}
+
+		return $this->workingDays->addWorkingDays(
+			start: new DateTimeImmutable('today'),
+			days: $leadTime
+		)->format('c');
+	}//end declaredDueDate()
+
+	/**
 	 * The identity the engine write is authorized as.
 	 *
 	 * The transition's own `userId` first: `StatusTransitionService` sets it on
@@ -212,11 +355,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * Who this task goes to.
 	 *
 	 * Three declared sources, in order: the action's own assignee, the
-	 * fallback it declares beside it, and the case's own handler. The third is
-	 * not a guess. A task created by a status transition belongs to the case,
-	 * and the case says who is handling it; before this, an action that named
-	 * nobody produced a task nobody was told about, on a case with a named
-	 * handler sitting one field away.
+	 * fallback it declares beside it, and the case's own handler. All three now
+	 * live in `AssigneeResolver`, where the flow node reads them too; this
+	 * method used to do the third step itself, which meant a human step in a
+	 * flow did not get it.
+	 *
+	 * `assignee: "none"` is the way out, and it is not the same as naming
+	 * nobody: it keeps the task unclaimed on purpose, and the case's team still
+	 * comes along, which is what a queue task is.
 	 *
 	 * 🔴 IT DOES NOT REFUSE, AND THE FLOW NODE DOES. The difference is real.
 	 * An unassigned FLOW task can be resumed by anybody, so leaving one
@@ -233,6 +379,7 @@ class CreateTaskHandler implements ActionHandlerInterface {
 	 * @return string The principal, or '' when nothing names one.
 	 *
 	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
+	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
 	 */
 	private function resolveAssignee(array $actionConfig, array $case, string $title): string {
 		$assignee = $this->assignees->resolve(
@@ -244,12 +391,14 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return $assignee;
 		}
 
-		$own = $this->assignees->referenceId(value: ($case['assignee'] ?? ''));
-		if ($own !== '') {
-			return $own;
+		// Authored to stay unclaimed. Saying so is not the same as forgetting,
+		// so the warning below would be a lie here.
+		$authored = trim((string)($actionConfig['assignee'] ?? ''));
+		if (strcasecmp($authored, AssigneeResolver::UNASSIGNED) === 0) {
+			return '';
 		}
 
-		if ($this->assignees->referenceId(value: ($case['assignedGroup'] ?? '')) === '') {
+		if ($this->assignees->resolveTeam(case: $case) === '') {
 			$this->logger->warning(
 				'CreateTaskHandler: the task "{title}" names nobody and its case has no handler and no team, '
 					. 'so nobody is notified that it exists',

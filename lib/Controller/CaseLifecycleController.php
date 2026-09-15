@@ -11,6 +11,15 @@
  *  - POST /api/case/{caseId}/resume    (body {reason})
  *  - POST /api/case/{caseId}/extend    (body {reason})
  *  - POST /api/case/{caseId}/reopen    (body {reason})
+ *  - POST /api/case/{caseId}/delete    (no body)
+ *
+ * Delete is the one gesture here that hands the case to another app. It calls
+ * OpenRegister's delete, which is a soft delete with a stated recovery window
+ * (openregister#3724). dossiq ships no soft delete of its own, per decision
+ * D10, and this method writes no deletion marker. The delete guard from
+ * `case-delete-guard` runs first by construction: it listens on OpenRegister's
+ * pre-persist `ObjectDeletingEvent`, so a case a term, a sub-case, a legal hold
+ * or retention still holds never reaches the recycle state.
  *
  * Every method is `#[NoAdminRequired]` and every method guards the case
  * itself: without the per-case guard these would be four ways for any signed-in
@@ -43,6 +52,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseLifecycleService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -73,6 +83,8 @@ class CaseLifecycleController extends Controller {
 		'already_suspended' => Http::STATUS_CONFLICT,
 		'not_suspended' => Http::STATUS_CONFLICT,
 		'case_not_closed' => Http::STATUS_CONFLICT,
+		'case_held' => Http::STATUS_CONFLICT,
+		'openregister_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
 	];
 
 	/**
@@ -83,6 +95,7 @@ class CaseLifecycleController extends Controller {
 	 * @param CaseLifecycleService $lifecycle The lifecycle gestures
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
 	 * @param StatusTransitionService $transitionEngine Consulted for the reopen authority
+	 * @param SettingsService $settingsService Bridge to OpenRegister, which owns the recycle state
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 */
@@ -92,6 +105,7 @@ class CaseLifecycleController extends Controller {
 		private readonly CaseLifecycleService $lifecycle,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly StatusTransitionService $transitionEngine,
+		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -192,6 +206,74 @@ class CaseLifecycleController extends Controller {
 			gate: fn (IUser $user): bool => $this->transitionEngine->isAdmin(userId: $user->getUID()),
 		);
 	}//end reopen()
+
+	/**
+	 * Delete the case, into the recovery window OpenRegister keeps.
+	 *
+	 * The case is not gone after this. It reads as deleted, it is listed in
+	 * the deleted lens with the date its window ends, and a handler who
+	 * deleted the wrong bezwaar gets it back with one gesture. Destroying it
+	 * is a second act and lives on {@see CaseRecycleController}.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	#[NoAdminRequired]
+	public function delete(string $caseId): JSONResponse {
+		return $this->guarded(
+			caseId: $caseId,
+			run: fn (): array => $this->recycle(caseId: $caseId),
+		);
+	}//end delete()
+
+	/**
+	 * Hand a permitted delete to OpenRegister's recycle state.
+	 *
+	 * The guard's refusal arrives as a `HookStoppedException`, which is what
+	 * OpenRegister raises when a pre-persist listener stops the delete. It is
+	 * caught by name rather than by class, because dossiq runs on instances
+	 * where OpenRegister is absent and a `use` of a missing class is a fatal.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return array<string, mixed> What happened
+	 *
+	 * @throws RuntimeException `case_held` when the guard refused.
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	private function recycle(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			throw new RuntimeException('openregister_unavailable');
+		}
+
+		try {
+			$objectService->deleteObject(uuid: $caseId, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			if (is_a($e, 'OCA\\OpenRegister\\Exception\\HookStoppedException') === true) {
+				$this->logger->info(
+					'CaseLifecycleController: the delete guard refused',
+					['caseId' => $caseId, 'errors' => $e->getErrors()]
+				);
+
+				throw new RuntimeException('case_held');
+			}
+
+			throw $e;
+		}
+
+		return [
+			'success' => true,
+			'caseId' => $caseId,
+			'state' => 'deleted',
+		];
+	}//end recycle()
 
 	/**
 	 * Run one gesture behind the session and per-case guards.

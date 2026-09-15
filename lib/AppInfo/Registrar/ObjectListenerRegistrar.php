@@ -29,11 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -61,8 +63,36 @@ class ObjectListenerRegistrar {
 		$context->registerNotifierService(Notifier::class);
 
 		$this->registerCacheInvalidationListeners(context: $context);
+		$this->registerCaseDeleteGuard(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new DocumentListenerRegistrar())->register(context: $context);
+		(new PersonListenerRegistrar())->register(context: $context);
 	}//end register()
+
+	/**
+	 * Register the case delete guard (REQ-CM-35).
+	 *
+	 * The binding is by schema: `CaseDeleteGuardListener` guards the schema
+	 * named by {@see CaseDeleteGuardListener::GUARDED_SCHEMA_CONFIG_KEY} and
+	 * returns for every other schema on the instance. Nextcloud's
+	 * registration API takes an event class and a listener class and has no
+	 * place for a schema, so the binding is named here and honoured there.
+	 *
+	 * The PRE-persist event is the only one that can refuse: `ObjectDeletedEvent`
+	 * fires after the row is gone (ADR-078).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
+	 */
+	private function registerCaseDeleteGuard(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: CaseDeleteGuardListener::class
+		);
+	}//end registerCaseDeleteGuard()
 
 	/**
 	 * Register the KPI and role-routing cache-invalidation listeners.

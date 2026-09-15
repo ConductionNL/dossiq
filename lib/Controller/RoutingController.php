@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -46,6 +48,8 @@ use Throwable;
  * @psalm-suppress UnusedClass
  */
 class RoutingController extends Controller {
+	use TranslatesRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -130,27 +134,14 @@ class RoutingController extends Controller {
 				$steps = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
 			}
 
-			$affected = [];
-			foreach ($steps as $step) {
-				$rule = $this->resolver->normaliseRule($step);
-				if ($rule === null) {
-					continue;
-				}
-
-				$assignees = $this->resolver->resolve($rule, $case);
-				$affected[] = [
-					'stepId' => (string)($step['id'] ?? ''),
-					'order' => (int)($step['order'] ?? 0),
-					'assignees' => $assignees,
-				];
-			}
-
 			return new JSONResponse(
 				[
 					'caseId' => $id,
-					'affectedSteps' => $affected,
+					'affectedSteps' => $this->resolveSteps(steps: $steps, case: $case),
 				],
 			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'reroute on case ' . $id, e: $e);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: reroute failed for case ' . $id . ': ' . $e->getMessage(),
@@ -161,6 +152,39 @@ class RoutingController extends Controller {
 			);
 		}//end try
 	}//end reroute()
+
+	/**
+	 * Resolve every routable step on a case to its assignees.
+	 *
+	 * Lifted out of {@see self::reroute()}, which had grown a step loop, a
+	 * rule guard and three exception arms in one method.
+	 *
+	 * @param array<int, array<string, mixed>> $steps The workflow's steps.
+	 * @param array<string, mixed>             $case  The case the rules resolve against.
+	 *
+	 * @return array<int, array<string, mixed>> One entry per step that carries a rule.
+	 *
+	 * @throws RefusedException When a case's roles could not be read at all.
+	 *
+	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
+	 */
+	private function resolveSteps(array $steps, array $case): array {
+		$affected = [];
+		foreach ($steps as $step) {
+			$rule = $this->resolver->normaliseRule($step);
+			if ($rule === null) {
+				continue;
+			}
+
+			$affected[] = [
+				'stepId' => (string)($step['id'] ?? ''),
+				'order' => (int)($step['order'] ?? 0),
+				'assignees' => $this->resolver->resolve($rule, $case),
+			];
+		}
+
+		return $affected;
+	}//end resolveSteps()
 
 	/**
 	 * Decode a JSON-encoded steps payload into an array.

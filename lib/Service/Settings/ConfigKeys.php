@@ -247,13 +247,29 @@ class ConfigKeys {
 		// Case-email integration (case-email-integration spec).
 		// emailTemplate is the only net-new schema; sending/threading live in NC Mail.
 		'email_template_schema',
-		// Shared-mailbox poller / IMAP-side config (ADR-022 exception).
-		'email_imap_host',
-		'email_imap_port',
-		'email_imap_encryption',
-		'email_imap_username',
-		'email_imap_password',
+		// 🔴 THE IMAP CONNECTION KEYS ARE GONE, CREDENTIAL INCLUDED
+		// (inbound-mail-filters, decision D12). Nextcloud Mail owns the account,
+		// the password and the OAuth 2.0 flow; dossiq stores an account id and a
+		// folder name and nothing that is a secret in a database backup. An
+		// admin surface that still offered `email_imap_password` would keep
+		// writing one, which is why the key leaves this allow-list in the same
+		// change that deletes the stored value.
+		'email_mail_account_id',
 		'email_imap_folder',
+		// Who may open a case by mail, and the readable rules behind a junk
+		// verdict. The allow half is Nextcloud Mail's trusted-sender list.
+		'email_intake_blocklist',
+		'email_intake_junk_rules',
+		// The group that reads the intake log and releases a quarantined
+		// message. Empty means administrators only, never everybody: the log
+		// holds the original of every message the mailbox received.
+		'email_intake_role',
+		'mail_intake_entry_schema',
+		// The classification schemes a case type may classify against, as a
+		// JSON map of scheme name to allowed values. A case type marking its
+		// classification an access rule against a scheme absent from here
+		// refuses creation rather than creating a case nobody can reach.
+		'case_classification_schemes',
 		'email_transport',
 		'email_poll_interval',
 		'email_poll_batch_size',

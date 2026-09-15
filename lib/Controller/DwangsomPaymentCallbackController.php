@@ -30,8 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use DateTimeImmutable;
+use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,6 +59,7 @@ class DwangsomPaymentCallbackController extends Controller {
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param DwangsomUitbetalingService $service Uitbetaling service.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param IAppConfig $appConfig App config (for secret).
 	 * @param LoggerInterface $logger Logger.
 	 */
@@ -65,6 +67,7 @@ class DwangsomPaymentCallbackController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly DwangsomUitbetalingService $service,
+		private readonly CaseDateNormaliser $dates,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -118,7 +121,22 @@ class DwangsomPaymentCallbackController extends Controller {
 			);
 		}
 
-		$paymentDate = $this->parseDate(value: (string)($body['actualPaymentDate'] ?? ''));
+		$submittedDate = (string)($body['actualPaymentDate'] ?? '');
+		$paymentDate = null;
+		if ($submittedDate !== '') {
+			try {
+				$paymentDate = $this->dates->parse($submittedDate, 'actualPaymentDate');
+			} catch (InvalidArgumentException $e) {
+				// This used to answer null and the service then stamped its own
+				// day, so a malformed callback silently booked a payment on the
+				// wrong date.
+				return new JSONResponse(
+					['message' => $e->getMessage()],
+					Http::STATUS_BAD_REQUEST
+				);
+			}
+		}
+
 		$bankRef = (string)($body['betalingsreferentie'] ?? '');
 
 		try {
@@ -181,22 +199,4 @@ class DwangsomPaymentCallbackController extends Controller {
 		return hash_equals($expected, $supplied);
 	}//end validateSignature()
 
-	/**
-	 * Parse an optional ISO date into a DateTimeImmutable.
-	 *
-	 * @param string $value Date string.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function parseDate(string $value): ?DateTimeImmutable {
-		if ($value === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return null;
-		}
-	}//end parseDate()
 }//end class

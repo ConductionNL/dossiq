@@ -16,6 +16,8 @@
         "Circuit open",
         "Cloud",
         "Contact",
+        "DKIM",
+        "DMARC",
         "Dashboard",
         "Deadlines",
         "Flow",
@@ -27,11 +29,14 @@
         "Label",
         "Mail",
         "Manager",
+        "Nextcloud",
+        "Object",
         "OK",
         "Partner",
         "Process mining",
         "Register",
         "SLA",
+        "SPF",
         "Score",
         "Start",
         "Status",
@@ -43,6 +48,7 @@
         "Team",
         "Tenant",
         "Tenants",
+        "Threading",
         "Trigger",
         "Type",
         "Urgent",
@@ -51,6 +57,7 @@
         "items",
         "max {n}",
         "{count} items",
-        "{from} – (no end)"
+        "{from} – (no end)",
+        "{percent}%"
     ]
 }

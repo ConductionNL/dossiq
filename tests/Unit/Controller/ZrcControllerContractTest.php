@@ -39,11 +39,13 @@ use OCA\Dossiq\Controller\ZrcController;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -62,6 +64,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class ZrcControllerContractTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The IRequest mock handed to the controller.
@@ -118,8 +122,10 @@ class ZrcControllerContractTest extends TestCase {
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,
+			dates: $this->caseDates(),
 			caseRelationService: $this->caseRelationService,
 			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
+			joinHoming: $this->createMock(originalClassName: DocumentJoinHoming::class),
 		);
 	}//end setUp()
 

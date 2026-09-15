@@ -2366,7 +2366,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.10.0",
+        "version": "1.11.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2454,6 +2454,14 @@
         "description": "A case instance in the case management system",
         "type": "object",
         "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": {
+              "from": "caseType",
+              "field": "initialStatus"
+            },
+            "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+          },
           "objectNameField": "title",
           "objectDescriptionField": "description",
           "tmloDefaults": {
@@ -2683,7 +2691,61 @@
                 }
               }
             }
-          }
+          },
+          "x-openregister-relation-types": [
+            {
+              "key": "deelzaak",
+              "label": {
+                "nl": "deelzaak van",
+                "en": "sub-case of"
+              },
+              "inverseLabel": {
+                "nl": "heeft deelzaak",
+                "en": "has sub-case"
+              }
+            },
+            {
+              "key": "vervolg",
+              "label": {
+                "nl": "vervolg op",
+                "en": "follow-up to"
+              },
+              "inverseLabel": {
+                "nl": "heeft vervolg",
+                "en": "has follow-up"
+              }
+            },
+            {
+              "key": "subject",
+              "label": {
+                "nl": "gaat over",
+                "en": "is about"
+              },
+              "inverseLabel": {
+                "nl": "onderwerp van",
+                "en": "subject of"
+              }
+            },
+            {
+              "key": "bijdrage",
+              "label": {
+                "nl": "draagt bij aan",
+                "en": "contributes to"
+              },
+              "inverseLabel": {
+                "nl": "krijgt bijdrage van",
+                "en": "receives a contribution from"
+              }
+            },
+            {
+              "key": "samenhang",
+              "label": {
+                "nl": "hangt samen met",
+                "en": "related to"
+              },
+              "symmetric": true
+            }
+          ]
         },
         "required": [
           "title",
@@ -2723,7 +2785,7 @@
             "x-relation-filter": {
               "caseType": "@object.caseType"
             },
-            "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
+            "description": "Reference to the current status type. The case type sets the first one, through the x-openregister-prefill block on caseType. Moves between statuses belong to dossiq's StatusTransitionService. Every case type carries its own workflow template, so the routes are data rather than schema. OpenRegister reads them through the provider this schema's x-openregister-lifecycle block names. So available-actions answers a case's real transitions. The write path validates against that same reader. x-relation-filter scopes the picker to the case type's own statuses.",
             "title": "Status",
             "facetable": true
           },
@@ -2842,7 +2904,14 @@
             "$ref": "case",
             "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": true
+            "visible": true,
+            "x-openregister-relation": {
+              "type": "deelzaak",
+              "inherits": {
+                "confidentiality": "confidentiality",
+                "responsible": "assignee"
+              }
+            }
           },
           "relatedCases": {
             "type": "string",
@@ -3109,6 +3178,62 @@
             "title": "Published at",
             "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
             "visible": false
+          },
+          "followUpCases": {
+            "type": "array",
+            "title": "Follow-up cases",
+            "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "vervolg"
+              }
+            }
+          },
+          "subjectCases": {
+            "type": "array",
+            "title": "Subject cases",
+            "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "subject"
+              }
+            }
+          },
+          "contributingCases": {
+            "type": "array",
+            "title": "Contributing cases",
+            "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "bijdrage"
+              }
+            }
+          },
+          "associatedCases": {
+            "type": "array",
+            "title": "Associated cases",
+            "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "samenhang"
+              }
+            }
           }
         },
         "searchable": true
@@ -10222,6 +10347,46 @@
                 "requires": "OCA\\Dossiq\\Lifecycle\\HoorzittingAfzienGuard",
                 "description": "Sla de hoorzitting over wanneer het hoorrecht is afgezien (AWB 7:3). Geweigerd wanneer hearingWaived niet is gezet."
               }
+            }
+          }
+        }
+      },
+      "caseTypeGroup": {
+        "slug": "caseTypeGroup",
+        "icon": "FolderAccountOutline",
+        "version": "1.0.0",
+        "title": "Case Type Group",
+        "description": "A group of case types granted as one.",
+        "type": "object",
+        "required": [
+          "groupName"
+        ],
+        "properties": {
+          "groupName": {
+            "type": "string",
+            "title": "Group Name",
+            "description": "Human-readable name of this group of case types.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What this group is for, and who it belongs to."
+          },
+          "partner": {
+            "type": "string",
+            "title": "Partner",
+            "description": "The samenwerkingsverband or partner organisation the group belongs to.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "caseTypes": {
+            "type": "array",
+            "title": "Case Types",
+            "description": "The case types in this group.",
+            "items": {
+              "type": "string"
             }
           }
         }
@@ -20550,6 +20715,48 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-1-1",
+          "id": "5f2b0c41-9d8e-4f27-8a13-6c0d5b7e9a24"
+        },
+        "groupName": "Voorbeeld Groupname 1",
+        "description": "Voorbeeld Description 1",
+        "partner": "Voorbeeld Partner 1",
+        "caseTypes": [
+          "Voorbeeld Casetypes 1"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-2-2",
+          "id": "8a4d1e63-2b7c-4f19-9e05-71c3d8a6b4f2"
+        },
+        "groupName": "Voorbeeld Groupname 2",
+        "description": "Voorbeeld Description 2",
+        "partner": "Voorbeeld Partner 2",
+        "caseTypes": [
+          "Voorbeeld Casetypes 2"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-3-3",
+          "id": "c93f7a25-6e41-4d0b-b28f-0a5e14c7d9b3"
+        },
+        "groupName": "Voorbeeld Groupname 3",
+        "description": "Voorbeeld Description 3",
+        "partner": "Voorbeeld Partner 3",
+        "caseTypes": [
+          "Voorbeeld Casetypes 3"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "organisatieRol",
           "slug": "organisatierol-organisatierol-1-1",
           "id": "013e4560-22d5-4abf-a567-1cc980917ec5"
@@ -24122,6 +24329,213 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-hoofdcatalogus",
+          "id": "9f1d6b2e-4c3a-4b71-9a5e-1c0d8f2a7b31"
+        },
+        "domein": "HOOFD",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Sanne de Wit",
+        "contactPersonManagementPhoneNumber": "0612345678",
+        "contactPersonManagementEmailAddress": "catalogusbeheer@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-vergunningen",
+          "id": "2a7c4e91-8d60-4f2b-bc13-6e94a05d3c78"
+        },
+        "domein": "VERG",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Joost Prins",
+        "contactPersonManagementPhoneNumber": "0687654321",
+        "contactPersonManagementEmailAddress": "vergunningen@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-handhaving",
+          "id": "c40b8f15-7e22-4d8a-9f36-b5127ae0d964"
+        },
+        "domein": "HAND",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Amina Yildiz",
+        "contactPersonManagementPhoneNumber": "0611223344",
+        "contactPersonManagementEmailAddress": "handhaving@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-1-1",
+          "id": "ef2b35b8-1d8d-5342-8eb8-8ace7adff1ef"
+        },
+        "mailMessageId": "<voorbeeld-1@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 101,
+        "sender": "aanvrager@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "[ZAAK-2026-000142] Aanvullende stukken",
+        "receivedAt": "2026-09-11T09:15:00+00:00",
+        "sentAt": "2026-09-11T09:10:00+00:00",
+        "original": "From: aanvrager@example.invalid\r\nSubject: [ZAAK-2026-000142] Aanvullende stukken\r\n\r\nVoorbeeldtekst 1.",
+        "originalTruncated": false,
+        "decidingFilter": "",
+        "filterOutcome": "accept",
+        "filterReason": "No filter objected, so the pipeline reached its accept default.",
+        "spfResult": "pass",
+        "dkimResult": "pass",
+        "dmarcResult": "pass",
+        "threadingResult": "pass",
+        "outcome": "case",
+        "reason": "Linked to the case its subject names."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-2-1",
+          "id": "3a7b6a10-4f82-57f2-9b06-7dec46c87dbb"
+        },
+        "mailMessageId": "<voorbeeld-2@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 102,
+        "sender": "afwezig@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "Automatisch antwoord: uw bericht",
+        "receivedAt": "2026-09-12T09:30:00+00:00",
+        "sentAt": "2026-09-12T09:25:00+00:00",
+        "original": "From: afwezig@example.invalid\r\nSubject: Automatisch antwoord: uw bericht\r\n\r\nVoorbeeldtekst 2.",
+        "originalTruncated": false,
+        "decidingFilter": "auto-reply",
+        "filterOutcome": "reject",
+        "filterReason": "The message declares auto-submitted: auto-replied.",
+        "spfResult": "pass",
+        "dkimResult": "none",
+        "dmarcResult": "none",
+        "threadingResult": "none",
+        "outcome": "refused",
+        "reason": "An automatic reply opens no case."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-3-1",
+          "id": "14ea299b-677b-53b9-90aa-49630278c94b"
+        },
+        "mailMessageId": "<voorbeeld-3@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 103,
+        "sender": "onbekend@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "Vraag over mijn vergunning",
+        "receivedAt": "2026-09-13T09:45:00+00:00",
+        "sentAt": "2026-09-13T09:40:00+00:00",
+        "original": "From: onbekend@example.invalid\r\nSubject: Vraag over mijn vergunning\r\n\r\nVoorbeeldtekst 3.",
+        "originalTruncated": false,
+        "decidingFilter": "",
+        "filterOutcome": "accept",
+        "filterReason": "No filter objected, so the pipeline reached its accept default.",
+        "spfResult": "unavailable",
+        "dkimResult": "unavailable",
+        "dmarcResult": "unavailable",
+        "threadingResult": "none",
+        "outcome": "inbox",
+        "reason": "No case and no case type claimed this message, so it is waiting in the intake inbox."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-1-1",
+          "id": "0f3b2e64-5c1a-4f8e-9d20-7a1c4b6e9d01"
+        },
+        "person": "Voorbeeld Person 1",
+        "day": "2026-03-01",
+        "waiting": 4,
+        "late": 1,
+        "summary": "Voorbeeld Summary 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-2-2",
+          "id": "1a7d5c92-8b34-4e17-ae55-3c2f8d4a7b12"
+        },
+        "person": "Voorbeeld Person 2",
+        "day": "2026-03-02",
+        "waiting": 11,
+        "late": 3,
+        "summary": "Voorbeeld Summary 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-3-3",
+          "id": "2c9e4a18-6f72-4b03-8c19-5d8b1e7f3a23"
+        },
+        "person": "Voorbeeld Person 3",
+        "day": "2026-03-03",
+        "waiting": 2,
+        "late": 0,
+        "summary": "Voorbeeld Summary 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-1-1",
+          "id": "3e1f7b26-9d48-4c85-b740-6a3c2e9d8f34"
+        },
+        "person": "Voorbeeld Person 1",
+        "actor": "Voorbeeld Actor 1",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 1",
+        "noteId": "Voorbeeld Noteid 1",
+        "mentionedAt": "2026-03-01T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-2-2",
+          "id": "4b8c3d95-1e60-4a72-9f38-7c5d4b1a2e45"
+        },
+        "person": "Voorbeeld Person 2",
+        "actor": "Voorbeeld Actor 2",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 2",
+        "noteId": "Voorbeeld Noteid 2",
+        "mentionedAt": "2026-03-02T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-3-3",
+          "id": "5d2a6e83-4f19-4d56-a821-8e6f3c2b1d56"
+        },
+        "person": "Voorbeeld Person 3",
+        "actor": "Voorbeeld Actor 3",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 3",
+        "noteId": "Voorbeeld Noteid 3",
+        "mentionedAt": "2026-03-03T09:00:00+01:00",
+        "acknowledgedAt": "2026-03-03T17:30:00+01:00"
       }
     ]
   }

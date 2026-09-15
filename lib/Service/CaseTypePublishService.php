@@ -53,18 +53,51 @@ class CaseTypePublishService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
-	 * @param CaseTypeResolver $caseTypeResolver The effective blueprint.
-	 * @param CaseTypeStore    $store            Reads for the resolver's schemas.
-	 * @param LoggerInterface  $logger           The logger.
+	 * @param SettingsService         $settingsService  Bridge to OpenRegister + config.
+	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
+	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
+	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
+	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
+	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
+		private readonly CaseTypeAcknowledgement $acknowledgement,
+		private readonly UnreadTriggerService $unreadTriggers,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * What publishing this case type should say out loud without refusing.
+	 *
+	 * 🔴 A WARNING AND NOT A FINDING, ON PURPOSE. A finding blocks publication,
+	 * and a case type may genuinely owe no acknowledgement of receipt, so
+	 * refusing would make a lawful configuration unpublishable. What must not
+	 * happen is the duty coming OFF quietly: Awb 4:3a owes a confirmation to
+	 * every electronic submission, and an app that stops sending one still
+	 * reads green. So publication says so and names the article, and the person
+	 * publishing decides.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, string> The warnings, empty when nothing is off.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	public function warnings(string $caseTypeId): array {
+		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
+		if ($caseType === []) {
+			return [];
+		}
+
+		return array_merge(
+			$this->acknowledgement->publicationWarnings(caseType: $caseType),
+			$this->unreadTriggers->publicationWarnings(caseType: $caseType)
+		);
+	}//end warnings()
 
 	/**
 	 * What stands between this draft and being published.
@@ -155,14 +188,20 @@ class CaseTypePublishService {
 	 * @param string $caseTypeId CaseType UUID.
 	 * @param string $changeNote  What changed in this version.
 	 *
-	 * @return array<string, mixed> `{published: bool, findings: string[], version: ?int}`.
+	 * @return array<string, mixed> `{published: bool, findings: string[], warnings: string[], version: ?int}`.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function publish(string $caseTypeId, string $changeNote): array {
 		$findings = $this->validate(caseTypeId: $caseTypeId);
+		$warnings = $this->warnings(caseTypeId: $caseTypeId);
 		if ($findings !== []) {
-			return ['published' => false, 'findings' => $findings, 'version' => null];
+			return [
+				'published' => false,
+				'findings' => $findings,
+				'warnings' => $warnings,
+				'version' => null,
+			];
 		}
 
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
@@ -175,6 +214,7 @@ class CaseTypePublishService {
 			return [
 				'published' => false,
 				'findings' => ['The case type could not be saved.'],
+				'warnings' => $warnings,
 				'version' => null,
 			];
 		}
@@ -183,7 +223,19 @@ class CaseTypePublishService {
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 
-		return ['published' => true, 'findings' => [], 'version' => $version];
+		if ($warnings !== []) {
+			$this->logger->warning(
+				'Case type publish: published with warnings',
+				['caseType' => $caseTypeId, 'warnings' => $warnings]
+			);
+		}
+
+		return [
+			'published' => true,
+			'findings' => [],
+			'warnings' => $warnings,
+			'version' => $version,
+		];
 	}//end publish()
 
 	/**

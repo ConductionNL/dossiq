@@ -1,0 +1,1607 @@
+{
+    "ceiling": 226,
+    "measured": "2026-09-15",
+    "window": 3,
+    "about": [
+        "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
+        "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
+        "The refusal class is deliberately absent: a site where a rule said no is converted to a RefusedException and leaves this file (REQ-QG-CRN-2). Four left it on 2026-09-13, all four in the guard-resolver class hydra gate 8 exists for. Any entry below may turn out to be a refusal when someone reads it; that is what the next batch is for.",
+        "The proposal measured 47 sites over a three-LINE window. This instrument counts three STATEMENTS, because a multi-line logger call in front of the return is the same shape and a line window cannot see it. The same tree reads 90 by lines and 203 by statements.",
+        "Merging development on 2026-09-14 brought new sites with it, and moved one. #2719 added `Substitution/HumaniqLeaveReader::readLeave#1`. #2732 split `Flow/CaseFlowActions` and added `Flow/PlannedSeriesLedger::optional#1`, `::plannedFlows#1` and `::rowsOf#1`, which is also where `CaseFlowActions::plannedFlows` went, so that entry is removed here rather than kept. The ceiling went 203 to 206 for those four sites and nothing else.",
+        "2026-09-14, openspec/changes/one-date-write-path: three nulling date parsers left lib/ (CaseEnricher::normaliseDate, TermijnTimerService::dateOrNull, WorkQueueService::parseDateOnly) and three CaseDateNormaliser sites arrived, two zone-resolution degradations and one read-path reader. The ceiling is unchanged at 206; every write path refuses now instead of answering null.",
+        "2026-09-14, openspec/changes/inbound-mail-filters: nine sites arrived with the mail intake path. Eight are degradations of an OPTIONAL app, Nextcloud Mail, which is absent on most instances and whose service, account, attachment, folder and event readers each log at warning and answer the documented empty value; the ninth is the read-miss on an intake log entry. The ceiling went 206 to 215 for those nine and nothing else.",
+        "2026-09-14, openspec/changes/case-grants-name-their-source: four sites arrived with OpenRegisterGrantsGateway, the one place dossiq asks OpenRegister who may do what on a case. All four are degradations of an app that may be absent or may predate openregister#3726, and each logs at warning naming what was absent. The null is load-bearing rather than tolerated: the caller reads null as \"carry on\" and false as \"OpenRegister refused\", and collapsing the two would lock every handler out of every case on an instance that has not upgraded. The ceiling went 215 to 219 for those four and nothing else.",
+        "2026-09-15, openspec/changes/handing-a-case-over: four sites arrived with the internal handover. All four read something and answer the documented empty list when the read cannot be made: three are degradations of OpenRegister being absent or unconfigured and each logs at warning naming what it was reading, and the fourth is a read miss on a case. None is a refusal: every rule this change enforces throws RefusedException and is translated by the controller, which is why the handover's own refusals (an unresolvable team, a settled handover, an unreadable case) are nowhere on this list. The ceiling went 219 to 223 for those four and nothing else.",
+        "2026-09-15, openspec/changes/dependent-term-follows-predecessor (REQ-RCL-12/13): three sites arrived with the typed relation labels and the derived sub-case. Two are degradations of OpenRegister answering badly rather than being absent, and each logs at warning naming what could not be read: the relation rows behind the Related cases tab, and the parentCase inheritance declaration. The third is a read miss on the parent of a sub-case. None is a refusal: every rule this change enforces is a guard in DeelzaakService or CaseRelationService that answers a reason the controller translates, which is why the duplicate, the self-relation, the hierarchy overlap and the case-type refusal are nowhere on this list. Merging development took the ceiling to 222 first, so it went 222 to 225 for those three and nothing else.",
+        "2026-09-15, openspec/changes/markers-and-assessments-on-the-case: ONE site arrived with CaseAttentionConditionService::contextFor, the read of the advice requests a marker condition asks about. It is a degradation of a read that may be unavailable, it logs at warning naming the case, and the empty value is load-bearing rather than tolerated: an empty CONTEXT means \"not asked\" and leaves every marker standing, where an empty ROW SET would mean \"asked, and there is nothing\" and would clear one. Collapsing the two would report a handler's work as done on no evidence, on every unrelated save. The ceiling went 225 to 226 for that one site and nothing else."
+    ],
+    "classes": {
+        "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
+        "degradation": "A sibling app, an engine or a container binding is absent. Keep the catch, log at warning naming what was absent, return the documented empty value.",
+        "read-miss": "An object was not found on a read. Answering null is right; the catch is how the store reports the miss."
+    },
+    "sites": [
+        {
+            "file": "lib/Service/Access/OpenRegisterGrantsGateway.php",
+            "method": "provenanceForCase",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`provenanceForCase()` answers `return null` when OpenRegister's evaluator throws; the catch logs at warning naming the case (\"OpenRegister could not answer the provenance for a case\") and the caller publishes the action list exactly as it would without OpenRegister. Null is deliberately NOT false here: reading \"we could not ask\" as \"refused\" would empty every case's action list on every instance that has not upgraded to openregister#3726."
+        },
+        {
+            "file": "lib/Service/Access/OpenRegisterGrantsGateway.php",
+            "method": "permissionHandler",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`permissionHandler()` answers `return null` when OpenRegister's PermissionHandler is not in the container; the catch logs at warning (\"OpenRegister PermissionHandler unavailable\") and the access read is skipped. dossiq runs against OpenRegister builds where this service is genuinely absent."
+        },
+        {
+            "file": "lib/Service/Access/OpenRegisterGrantsGateway.php",
+            "method": "caseSchema",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`caseSchema()` answers `return null` when the configured case schema cannot be resolved; the catch logs at warning naming the slug (\"the case schema could not be resolved\") and no provenance is asked for."
+        },
+        {
+            "file": "lib/Service/Access/OpenRegisterGrantsGateway.php",
+            "method": "caseObject",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`caseObject()` answers `return null` when the case cannot be read for its own authorization block; the catch logs at warning naming the case. Null is a legitimate argument to OpenRegister's `provenanceFor()`, which then reports the schema and register levels, so this degrades to the broader answer rather than to no answer."
+        },
+        {
+            "file": "lib/Service/Actions/AutomaticActionFlowMigrator.php",
+            "method": "flowService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`flowService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at debug (\"Dossiq: FlowService could not be resolved\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Actions/CreateDocumentHandler.php",
+            "method": "resolveDossierService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveDossierService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Actions/MergeTemplateHandler.php",
+            "method": "resolveObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Actions/MergeTemplateHandler.php",
+            "method": "resolveZaakdossierService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveZaakdossierService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Actions/ScheduleReminderHandler.php",
+            "method": "computeFireTime",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`computeFireTime()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Actions/SendEmailHandler.php",
+            "method": "resolveEmailService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveEmailService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Advice/AdviceRepository.php",
+            "method": "find",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`find()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: failed to load advice\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Advice/AdviceRepository.php",
+            "method": "findForCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findForCase()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to fetch advice for case\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Advice/AdviceRepository.php",
+            "method": "findOpen",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOpen()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to load open advice\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/AdviceService.php",
+            "method": "expireAdvice",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`expireAdvice()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to expire advice\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Archival/ReadsConfiguredRows.php",
+            "method": "findRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Archival/ReadsConfiguredRows.php",
+            "method": "findRows",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRows()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/BelplanRoutingService.php",
+            "method": "getSpecialistBeschikbaarheid",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getSpecialistBeschikbaarheid()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to fetch specialist beschikbaarheid\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/BelplanRoutingService.php",
+            "method": "loadBelplannen",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadBelplannen()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to load belplannen\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Beschikking/AuditPacketBuilder.php",
+            "method": "findStateMachineLogs",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findStateMachineLogs()` answers `return []` when the read fails; the catch logs at error (\"BeschikkingService: findStateMachineLogs failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Beschikking/BeschikkingRepository.php",
+            "method": "find",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`find()` answers `return null` when the read fails; the catch logs at error (\"BeschikkingService: find failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Beschikking/FilinqTemplateEngineAdapter.php",
+            "method": "versionInForce",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`versionInForce()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Filinq could not list the versions of a beschikking template\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Beschikking/OpenRegisterArchivalAdapter.php",
+            "method": "resolveTmloService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveTmloService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",
+            "method": "findByIdentifier",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findByIdentifier()` answers `return null` when the read fails; the catch logs at debug (\"Dossiq: besluitvorming idempotency lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",
+            "method": "createObject",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: besluitvorming seed object create failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Bezwaar/AdvisoryCommitteeService.php",
+            "method": "autoAssignDefaultCommittee",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`autoAssignDefaultCommittee()` answers `return null` when the read fails; the catch logs at error (\"Dossiq BAC: auto-assignment failed for bezwaar\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Bezwaar/BeroepService.php",
+            "method": "reopenSourceObjectionCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`reopenSourceObjectionCase()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq beroep: reopen transition failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Bezwaar/HearingService.php",
+            "method": "seedDefaultHearing",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`seedDefaultHearing()` answers `return null` when the read fails; the catch logs at debug (\"Dossiq hearing: lookup for existing sessions failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Bezwaar/HearingService.php",
+            "method": "seedDefaultHearing",
+            "occurrence": 2,
+            "class": "read-miss",
+            "reason": "`seedDefaultHearing()` answers `return null` when the read fails; the catch logs at info (\"Dossiq hearing: seedDefaultHearing skipped for bezwaar\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/BurgerIdentificationService.php",
+            "method": "resolveContactsManager",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveContactsManager()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/CaseAccessGuard.php",
+            "method": "loadCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadCase()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq CaseAccessGuard: case lookup failed — denying case mutation\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseCollaborationService.php",
+            "method": "findActivityObject",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findActivityObject()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseCollaborationService.php",
+            "method": "resolveRemoteToken",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveRemoteToken()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseCollaborationService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseCollaborationService: ObjectService unavailable\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/CaseCollaborationService.php",
+            "method": "getFederatedShareMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getFederatedShareMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseCollaborationService: OR FederatedShareMapper unavailable\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/CaseCopyService.php",
+            "method": "documentsOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`documentsOf()` answers `return []` when the read fails; the catch logs at warning (\"CaseCopyService: could not read the source case documents\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseCopyService.php",
+            "method": "fetch",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetch()` answers `return null` when the read fails; the catch logs at debug (\"CaseCopyService: object lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "engineCalendarZone",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`engineCalendarZone()` answers `return null` when OpenRegister, the working calendar service or the calendar's own zone accessor is absent; the catch logs at debug naming what did not answer, and the zone falls through to the tenant setting and then to Europe/Amsterdam, logged once per request."
+        },
+        {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "tenantZone",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`tenantZone()` answers `return null` when no tenant is bound to the request or its configuration cannot be read; the catch logs at debug and the zone falls through to Europe/Amsterdam, logged once per request."
+        },
+        {
+            "file": "lib/Service/CaseDateNormaliser.php",
+            "method": "tryParse",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`tryParse()` is the read-path reader: a stored value that is not an ISO 8601 date answers null so a report can skip the row. Every WRITE path calls `parse()`, which refuses instead, and OneDateWritePathTest holds that line."
+        },
+        {
+            "file": "lib/Service/CaseEmailMatchService.php",
+            "method": "getEmailLinkService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getEmailLinkService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/CasePlanProjectionService.php",
+            "method": "findCaseType",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findCaseType()` answers `return null` when the read fails; the catch logs at error (\"CasePlanProjectionService: caseType lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CasePlanProjectionService.php",
+            "method": "findPublishedModel",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findPublishedModel()` answers `return null` when the read fails; the catch logs at error (\"CasePlanProjectionService: caseModel lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseReassignmentService.php",
+            "method": "finalStatusIds",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseSharingService.php",
+            "method": "getCaseIdForShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getCaseIdForShare()` answers `return null` when the read fails; the catch logs at debug (\"CaseSharingService: getCaseIdForShare failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTransferService.php",
+            "method": "getCaseIdForTransfer",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getCaseIdForTransfer()` answers `return null` when the read fails; the catch logs at debug (\"CaseTransferService: getCaseIdForTransfer failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTransferService.php",
+            "method": "findTransferByIdempotencyKey",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findTransferByIdempotencyKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTypeCopyService.php",
+            "method": "saveNew",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`saveNew()` answers `return null` when the read fails; the catch logs at error (\"CaseTypeCopyService: failed to create the new case type\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTypeCopyService.php",
+            "method": "findChildren",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findChildren()` answers `return []` when the read fails; the catch logs at warning (\"CaseTypeCopyService: failed to list child objects\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTypeCopyService.php",
+            "method": "fetchObject",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchObject()` answers `return null` when the read fails; the catch logs at debug (\"CaseTypeCopyService: object lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTypeStore.php",
+            "method": "readCaseType",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`readCaseType()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseTypeStore.php",
+            "method": "search",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`search()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/CaseVoorbladService.php",
+            "method": "fetchOpenCases",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchOpenCases()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to fetch zaken for voorblad\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Cmmn/CaseModelLoader.php",
+            "method": "getActiveModel",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getActiveModel()` answers `return null` when the read fails; the catch logs at error (\"CaseModelLoader: searchObjects failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ConflictOfInterestService.php",
+            "method": "resolveEmployeeBsn",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveEmployeeBsn()` answers `return null` when the read fails; the catch logs at warning (\"Medewerker identity resolution failed — treating as indeterminate\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ConflictOfInterestService.php",
+            "method": "lookupRelationViaBrp",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`lookupRelationViaBrp()` answers `return null` when the read fails; the catch logs at warning (\"BRP relationship lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Consultation/ConsultationRepository.php",
+            "method": "findBySecureToken",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findBySecureToken()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: failed to find consultation by token\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ContactMomentService.php",
+            "method": "listForBurger",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listForBurger()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to list contactmomenten\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/DeadlineMonitoringSeedDataService.php",
+            "method": "existingDefinitionIds",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`existingDefinitionIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/DeadlineReportingService.php",
+            "method": "listInstances",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listInstances()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Deelzaak/CaseObjectReader.php",
+            "method": "fetchCaseById",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchCaseById()` answers `return null` when the read fails; the catch logs at debug (\"Case lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Deelzaak/CaseObjectReader.php",
+            "method": "loadCaseType",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadCaseType()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Dmn/DecisionTableService.php",
+            "method": "getTable",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTable()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Doorlooptijd/CaseEnricher.php",
+            "method": "deriveDeadline",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`deriveDeadline()` answers `return null` when the read fails; the catch logs at debug (\"Could not derive deadline from processingDeadline\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/DossierCompiler.php",
+            "method": "collectCaseDocuments",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`collectCaseDocuments()` answers `return []` when the read fails; the catch logs at warning (\"DossierCompiler: failed to list case documents\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Dso/DsoObjectRepository.php",
+            "method": "findZaak",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findZaak()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq DsoObjectRepository: could not load zaak\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Dso/DsoObjectRepository.php",
+            "method": "findSamenwerkverzoek",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findSamenwerkverzoek()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq DsoObjectRepository: could not load samenwerkverzoek\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/DwangsomBezwaarService.php",
+            "method": "findUitbetalingen",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findUitbetalingen()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/DwangsomCalculationService.php",
+            "method": "fetchCalculationRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchCalculationRow()` answers `return null` when the read fails; the catch logs at warning (\"DwangsomCalculation lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/CaseNumberRecognizer.php",
+            "method": "exactMatches",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`exactMatches()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: resolving a case number failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/EmailTemplateRepository.php",
+            "method": "findIn",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findIn()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/MailMessageSource.php",
+            "method": "accountsOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`accountsOf()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: listing Mail accounts failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/MailMessageSource.php",
+            "method": "listMessagesSince",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listMessagesSince()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: listing Mail messages failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/UnmatchedMailIntake.php",
+            "method": "caseFor",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`caseFor()` answers `return null` when the read fails; the catch logs at error (\"UnmatchedMailIntake: could not file the mail as a case\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/FilinqRedactionClient.php",
+            "method": "detectionBackend",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`detectionBackend()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at debug (\"The anonymisation backend state could not be read from OpenRegister\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Flow/CaseFlowActions.php",
+            "method": "optional",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`optional()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at debug (\"CaseFlowActions: OpenRegister collaborator unavailable\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Flow/CaseFlowActions.php",
+            "method": "fetch",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetch()` answers `return null` when the read fails; the catch logs at debug (\"CaseFlowActions: object lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Flow/PlannedSeriesLedger.php",
+            "method": "optional",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`optional()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at debug (\"PlannedSeriesLedger: OpenRegister collaborator unavailable\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Flow/PlannedSeriesLedger.php",
+            "method": "plannedFlows",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`plannedFlows()` answers `return []` when the read fails; the catch logs at warning (\"PlannedSeriesLedger: could not read the planned follow-ups\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Flow/PlannedSeriesLedger.php",
+            "method": "rowsOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`rowsOf()` answers `return []` when the read fails; the catch logs at warning (\"PlannedSeriesLedger: could not read the cases a series created\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/InspectionChecklistService.php",
+            "method": "listChecklists",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listChecklists()` answers `return []` when the read fails; the catch logs at warning (\"Failed to list inspection checklists\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/InspectionChecklistService.php",
+            "method": "getResultsForCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getResultsForCase()` answers `return []` when the read fails; the catch logs at warning (\"Failed to get inspection results for case\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/KccWerkplekSeedDataService.php",
+            "method": "existingIds",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`existingIds()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq KCC-werkplek seed: could not read existing rows; treating the schema as empty\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/KpiAggregationService.php",
+            "method": "rows",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`rows()` answers `return []` when the read fails; the catch logs at warning (\"[KpiAggregationService] Read failed, reporting an empty set for this metric\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/KpiAggregationService.php",
+            "method": "objectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`objectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"[KpiAggregationService] OpenRegister is installed but its ObjectService did not resolve\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/LhsLookupService.php",
+            "method": "lookupFromRegister",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`lookupFromRegister()` answers `return null` when the read fails; the catch logs at warning (\"LHS matrix lookup from register failed, using fallback\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Mandaat/MandaatRepository.php",
+            "method": "loadRoleIndex",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadRoleIndex()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Mandaat/MandaatRepository.php",
+            "method": "findPriorDecision",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findPriorDecision()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Mandaat/MandaatRepository.php",
+            "method": "findMandatenForBesluit",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findMandatenForBesluit()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/MandaatEscalatieService.php",
+            "method": "findEscalation",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findEscalation()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/MandaatGebruikService.php",
+            "method": "getDecisionAuditTrail",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getDecisionAuditTrail()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/MandaatGebruikService.php",
+            "method": "getDecisionByMandaat",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getDecisionByMandaat()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Milestone/MilestoneRepository.php",
+            "method": "findCaseTypeId",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findCaseTypeId()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Milestone/StalledCaseDetector.php",
+            "method": "parseCaseStart",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`parseCaseStart()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/OrganisationQuotaLimits.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for a quota limit\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/PartnerMigrationService.php",
+            "method": "migrateOne",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`migrateOne()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: partner migration failed for one row\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/PartnerMigrationService.php",
+            "method": "findOrganisationByUuid",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/PartnerMigrationService.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not get OrganisationMapper for partner migration\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/PdokService.php",
+            "method": "lookupAddress",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`lookupAddress()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/People/CaseRoleProjection.php",
+            "method": "existingRole",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`existingRole()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/People/CaseRoleProjection.php",
+            "method": "findRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRow()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/People/CaseRoleVocabulary.php",
+            "method": "caseSchema",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`caseSchema()` answers `return null` when the read fails; the catch logs at info (\"Dossiq people: the case schema could not be read\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/People/PersonLinkReader.php",
+            "method": "peopleOn",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`peopleOn()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Relation/CaseRelationStore.php",
+            "method": "fetchCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchCase()` answers `return null` when the read fails; the catch logs at debug (\"CaseRelationService: case lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/SatelliteOrphanScanner.php",
+            "method": "readSatelliteRows",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`readSatelliteRows()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: orphan scan could not read a satellite schema\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/SatelliteOrphanScanner.php",
+            "method": "findOrganisationByUuid",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/SatelliteOrphanScanner.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for the satellite orphan scan\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/SeedDataService.php",
+            "method": "createObject",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: Failed to create seed object\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Settings/SchemaKeyReconciler.php",
+            "method": "schemaMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`schemaMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister SchemaMapper for reconcile\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Settings/SchemaSlugResolver.php",
+            "method": "resolve",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolve()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/SettingsService.php",
+            "method": "getFileService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getFileService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister FileService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/SettingsService.php",
+            "method": "getApprovalService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getApprovalService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister ApprovalService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/SettingsService.php",
+            "method": "getOpenRegisterClass",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOpenRegisterClass()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister class\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Sharing/FederatedCaseShareService.php",
+            "method": "getCaseIdForFederatedShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getCaseIdForFederatedShare()` answers `return null` when the read fails; the catch logs at debug (\"CaseSharingService: getCaseIdForFederatedShare failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Sharing/FederatedCaseShareService.php",
+            "method": "loadCaseForFederatedShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadCaseForFederatedShare()` answers `return null` when the read fails; the catch logs at warning (\"CaseSharingService: createFederatedShare case load failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Sharing/FederatedCaseShareService.php",
+            "method": "mintOutgoingShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`mintOutgoingShare()` answers `return null` when the read fails; the catch logs at error (\"CaseSharingService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
+            "method": "objectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`objectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseSharingService: ObjectService unavailable\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
+            "method": "caseTokenService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`caseTokenService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
+            "method": "federationShareService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`federationShareService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseSharingService: OR FederationShareService unavailable (federation leaf not present)\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/StateMachineService.php",
+            "method": "logTransition",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`logTransition()` answers `return []` when the read fails; the catch logs at error (\"StateMachineService: failed to persist transition log\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Stuf/StufRegisterAccess.php",
+            "method": "findById",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findById()` answers `return null` when the read fails; the catch logs at warning, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Stuf/StufRegisterAccess.php",
+            "method": "findAll",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findAll()` answers `return []` when the read fails; the catch logs at warning, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Stuf/StufRegisterAccess.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Dossiq StUF: could not resolve OpenRegister ObjectService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Substitution/HumaniqLeaveReader.php",
+            "method": "readLeave",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`readLeave()` answers `return null` when the humaniq HR app answers badly or is absent; the catch logs at warning (\"Dossiq: could not read humaniq leave for a substitution\") naming the user and the error, and the caller falls back to the typed substitution dates."
+        },
+        {
+            "file": "lib/Service/Substitution/SubstitutedWorkResolver.php",
+            "method": "finalStatusIds",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`finalStatusIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Substitution/SubstitutionAccessGuard.php",
+            "method": "allSubstitutions",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`allSubstitutions()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/SubstitutionAuditService.php",
+            "method": "stampIfSubstituted",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`stampIfSubstituted()` answers `return null` when the read fails; the catch logs at error (\"Substitution capacity stamp failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Support/ConfiguredRegistryService.php",
+            "method": "list",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`list()` answers `return []` when the read fails; the catch logs at warning (\"Configured registry listing failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Support/ConfiguredRegistryService.php",
+            "method": "resolveContext",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveContext()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Support/OwningCaseResolver.php",
+            "method": "loadChild",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadChild()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq: owning-case lookup failed — denying\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Support/ProjectsOntoFlows.php",
+            "method": "flowService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`flowService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Flow projection could not resolve FlowService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Task/EngineInboxQuery.php",
+            "method": "resolveInbox",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveInbox()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Task/EngineTaskGateway.php",
+            "method": "find",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`find()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Task/EngineTaskGateway.php",
+            "method": "resolveService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve the OpenRegister task service\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantAuditTrailService.php",
+            "method": "getAuditTrailMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getAuditTrailMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve AuditTrailMapper\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantAuditTrailService.php",
+            "method": "resolveTenantEntity",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveTenantEntity()` answers `return null` when the read fails; the catch logs at error (\"Dossiq AUDIT: could not resolve tenant ObjectEntity\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantAuthenticationService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantBillingService.php",
+            "method": "emitEvent",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`emitEvent()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: emitEvent failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantBillingService.php",
+            "method": "fetchEventsForMonth",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchEventsForMonth()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantBillingService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantConfigurationService.php",
+            "method": "getConfig",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getConfig()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantConfigurationService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantMigrationService.php",
+            "method": "migrateOne",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`migrateOne()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: tenant migration failed for one row\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantMigrationService.php",
+            "method": "findOrganisationByUuid",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisationByUuid()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantMigrationService.php",
+            "method": "findOrganisationBySlug",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisationBySlug()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantMigrationService.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OrganisationMapper for tenant migration\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantOnboardingService.php",
+            "method": "markStepComplete",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`markStepComplete()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: markStepComplete failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantOnboardingService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantOrganisationResolver.php",
+            "method": "findOrganisation",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisation()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantOrganisationResolver.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for tenant resolution\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantQuotaService.php",
+            "method": "getQuota",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getQuota()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantQuotaService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantSaasService.php",
+            "method": "getById",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getById()` answers `return null` when the read fails; the catch logs at info (\"Dossiq: TenantSaasService::getById miss\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantSaasService.php",
+            "method": "listActive",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listActive()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: TenantSaasService::listActive failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantSaasService.php",
+            "method": "getObjectService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not resolve ObjectService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantSchemaProvisioner.php",
+            "method": "listApplicationTables",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`listApplicationTables()` answers `return []` when its collaborator is absent or unresolvable; the catch logs at info (\"Dossiq: listApplicationTables failed\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantSchemaProvisioner.php",
+            "method": "shardTableMarkers",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`shardTableMarkers()` answers `return []` when the read fails; the catch logs at info (\"Dossiq: could not resolve register ids\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantService.php",
+            "method": "getTenantByGroupId",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTenantByGroupId()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: getTenantByGroupId failed against OR\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantService.php",
+            "method": "getTenantStatus",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTenantStatus()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantService.php",
+            "method": "findOrganisationsByUserId",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOrganisationsByUserId()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TenantService.php",
+            "method": "getOrganisationMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OrganisationMapper\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantService.php",
+            "method": "getTenantLifecycleService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`getTenantLifecycleService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get TenantLifecycleService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/TenantSessionService.php",
+            "method": "activeTenantId",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`activeTenantId()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: membership lookup failed while resolving the session tenant\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TermijnService.php",
+            "method": "getTermijnInstance",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTermijnInstance()` answers `return null` when the read fails; the catch logs at warning (\"TermijnService.getTermijnInstance failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TermijnService.php",
+            "method": "getTermijnInstanceForZaak",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTermijnInstanceForZaak()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TermijnService.php",
+            "method": "getTermijnDefinitie",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getTermijnDefinitie()` answers `return null` when the read fails; the catch logs at warning (\"TermijnService.getTermijnDefinitie lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TermijnService.php",
+            "method": "save",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`save()` answers `return null` when the read fails; the catch logs at error (\"TermijnService persist failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/TermijnTimerService.php",
+            "method": "arm",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`arm()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transfer/TransferRegisterGateway.php",
+            "method": "federationShareService",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`federationShareService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OR FederationShareService\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Transfer/TransferRegisterGateway.php",
+            "method": "federatedShareMapper",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`federatedShareMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OR FederatedShareMapper\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Transfer/TransferShareBroker.php",
+            "method": "mintTransferShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`mintTransferShare()` answers `return null` when the read fails; the catch logs at error (\"CaseTransferService: OR createOutgoingShare failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transfer/TransferShareBroker.php",
+            "method": "resolveTransferShare",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveTransferShare()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transitions/CaseResultWriter.php",
+            "method": "findRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transitions/CaseStatusStore.php",
+            "method": "loadCase",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadCase()` answers `return null` when the read fails; the catch logs at error (\"StatusTransitionService: loadCase failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transitions/CaseStatusStore.php",
+            "method": "findStatusRecords",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findStatusRecords()` answers `return null` when the read fails; the catch logs at error (\"StatusTransitionService: replay searchObjects failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transitions/CaseTypeReader.php",
+            "method": "findRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Transitions/SideEffectDispatcher.php",
+            "method": "nodes",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`nodes()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"SideEffectDispatcher: OpenRegister node catalogue unavailable; using the local handlers\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Transitions/StatusTypeLookup.php",
+            "method": "read",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`read()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Vth/LhsDecisionTableLookup.php",
+            "method": "intervention",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`intervention()` answers `return null` when the read fails; the catch logs at warning (\"Dossiq: the LHS decision table refused a triple\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Vth/LhsDecisionTableLookup.php",
+            "method": "tableFor",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`tableFor()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Dossiq: could not read decision tables for the LHS lookup\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Vth/LhsDecisionTableLookup.php",
+            "method": "evaluator",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`evaluator()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Dossiq: OpenRegister decision-table evaluator could not be resolved\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Vth/LhsMatrixDecisionTableMigrator.php",
+            "method": "existingTable",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`existingTable()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"Dossiq: could not read existing decision tables\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/Vth/LhsMatrixDecisionTableMigrator.php",
+            "method": "fetchMatrices",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchMatrices()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: could not list LHS matrices\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/WooPublication/OpenCatalogiApiClient.php",
+            "method": "resolveCatalog",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolveCatalog()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at info (\"OpenCatalogiApiClient::resolveCatalog: discovery call failed, continuing with defaults\") and the caller carries on without it."
+        },
+        {
+            "file": "lib/Service/WorkQueueService.php",
+            "method": "computeWorkload",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`computeWorkload()` answers `return []` when the read fails; the catch logs at warning (\"WorkQueue: workload case search failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/WorkQueueService.php",
+            "method": "queueCaseItems",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`queueCaseItems()` answers `return []` when the read fails; the catch logs at warning (\"WorkQueue: case search failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/WorkQueueService.php",
+            "method": "nearestActiveTermDeadline",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`nearestActiveTermDeadline()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
+            "method": "findOne",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOne()` answers `return null` when the read fails; the catch logs at error, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
+            "method": "listVersionsForCaseType",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listVersionsForCaseType()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to list workflow definitions for caseType\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
+            "method": "save",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`save()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: failed to save workflow definition\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
+            "method": "mergeOntoStored",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`mergeOntoStored()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: refusing to update a row that cannot be read\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowDefinitionRepository.php",
+            "method": "listStatusTypeIds",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`listStatusTypeIds()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: failed to list statusTypes for caseType\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowTemplateFlowMigrator.php",
+            "method": "statusNames",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`statusNames()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: could not list status types for the flow projection\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Workflow/WorkflowTemplateFlowMigrator.php",
+            "method": "fetchTemplates",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchTemplates()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: could not list workflow templates\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/WorkflowStepAuthorizationResolver.php",
+            "method": "ncGroupIdFor",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`ncGroupIdFor()` answers `return null` when the read fails; the catch logs at warning (\"WorkflowStepAuthorizationResolver: roleType lookup failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/WorkflowTemplateLoader.php",
+            "method": "getActiveTemplate",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getActiveTemplate()` answers `return null` when the read fails; the catch logs at error (\"WorkflowTemplateLoader: searchObjects failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Zaakdossier/DocumentDefaults.php",
+            "method": "integrityOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`integrityOf()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Zaakdossier/DocumentRecordStore.php",
+            "method": "findRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findRow()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Zaakdossier/InformatieobjectReader.php",
+            "method": "contentFor",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`contentFor()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwDrcRulesService.php",
+            "method": "findOioRelationsForDocument",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findOioRelationsForDocument()` answers `return []` when the read fails; the catch logs at warning (\"Drc-007: OIO relation search with partial match failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwRulesBase.php",
+            "method": "fetchExternalUrl",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`fetchExternalUrl()` answers `return null` when the read fails; the catch logs at warning (\"Failed to fetch external URL\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwRulesBase.php",
+            "method": "findObjectByField",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findObjectByField()` answers `return null` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwRulesBase.php",
+            "method": "findAllObjectsByField",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findAllObjectsByField()` answers `return []` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwRulesBase.php",
+            "method": "findBySchemaKey",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findBySchemaKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwService.php",
+            "method": "getConsumerAuthorisaties",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`getConsumerAuthorisaties()` answers `return []` when the read fails; the catch logs at warning (\"Could not get consumer autorisaties\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwService.php",
+            "method": "resolveParentZaaktypeDraft",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveParentZaaktypeDraft()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft status\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwService.php",
+            "method": "resolveParentZaaktypeDraftFromBody",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`resolveParentZaaktypeDraftFromBody()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft from body\"), so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwZrcRulesService.php",
+            "method": "caseTypeDefaultAssignee",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`caseTypeDefaultAssignee()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwZtcRulesService.php",
+            "method": "loadCaseTypeRow",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadCaseTypeRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/ZgwZtcRulesService.php",
+            "method": "loadFinalStatusSlugs",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`loadFinalStatusSlugs()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+        },
+        {
+            "file": "lib/Service/Email/IntakeLog.php",
+            "method": "find",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`find()` answers `return null` when the intake log entry cannot be read; the catch logs at debug (\"Dossiq: reading an intake log entry failed\") and the controller turns the null into a 404."
+        },
+        {
+            "file": "lib/Service/Email/IntakeLog.php",
+            "method": "search",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`search()` answers `return []` when the object store behind the intake log is unreachable; the catch logs at debug (\"Dossiq: searching the intake log failed\") and the log surface renders its empty state."
+        },
+        {
+            "file": "lib/Service/Email/MailMessageSource.php",
+            "method": "allAccounts",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`allAccounts()` answers `return []` when the Nextcloud Mail tables are absent, because Mail is an optional app; the catch logs at warning (\"Dossiq: listing every Mail account failed\") and the settings surface offers no account to pick."
+        },
+        {
+            "file": "lib/Service/Email/MailMessageSource.php",
+            "method": "listMailboxMessagesSince",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`listMailboxMessagesSince()` answers `return []` when the Nextcloud Mail tables are absent or the folder is gone; the catch logs at warning (\"Dossiq: listing the intake folder failed\") and intake reads nothing that run rather than failing the cron."
+        },
+        {
+            "file": "lib/Service/Email/MailMessageSource.php",
+            "method": "mailboxesOf",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`mailboxesOf()` answers `return []` when the Nextcloud Mail tables are absent; the catch logs at warning (\"Dossiq: listing Mail folders failed\") and the folder picker offers nothing to move a message to."
+        },
+        {
+            "file": "lib/Service/Email/NextcloudMailGateway.php",
+            "method": "account",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`account()` answers `return null` when Nextcloud Mail's account service refuses the configured id; the catch logs at warning (\"Dossiq: the configured intake account could not be read\") and intake reports itself unavailable rather than throwing on a cron run."
+        },
+        {
+            "file": "lib/Service/Email/NextcloudMailGateway.php",
+            "method": "attachments",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`attachments()` answers `return []` when Nextcloud Mail cannot hand over a message's attachments; the catch logs at warning (\"Dossiq: reading attachments failed\") and the message is still filed without them."
+        },
+        {
+            "file": "lib/Service/Email/NextcloudMailGateway.php",
+            "method": "service",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`service()` answers `return null` when a Nextcloud Mail service cannot be resolved from the container, which is what an absent or moved Mail app looks like; the catch logs at warning (\"Dossiq: a Nextcloud Mail service could not be resolved, so intake is unavailable\")."
+        },
+        {
+            "file": "lib/Service/Email/NextcloudMailGateway.php",
+            "method": "unpackSynchronisation",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`unpackSynchronisation()` answers `return null` when a Mail synchronisation event cannot be read, which is how a Mail release that moved the event's shape arrives; the catch logs at warning (\"Dossiq: a Mail synchronisation event could not be read\") and the run ends without messages."
+        },
+        {
+            "file": "lib/Service/People/CaseSeats.php",
+            "method": "rows",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`rows()` answers `return []` when OpenRegister is absent or a schema key is unset; the catch logs at warning naming the schema it was reading (\"a seat lookup could not be answered\"). An empty list reads as \"no coordinator named\", which is the same answer a case with an empty seat gives, so the People tab renders rather than erroring. It is never used to decide who may act: every grant is OpenRegister's, read through OpenRegisterGrantsGateway."
+        },
+        {
+            "file": "lib/Service/People/CoordinatorRequirement.php",
+            "method": "caseOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`caseOf()` answers `return []` when the case cannot be read; the catch logs at warning naming the case. The caller reads an empty case as \"no case type, so no requirement\", which fails OPEN on purpose: falling closed here would refuse every signing on an instance whose register is briefly unreadable, which is a worse failure than the one the requirement is for. The requirement itself is a RefusedException thrown from `requireSeatFilled()`."
+        },
+        {
+            "file": "lib/Service/People/LeaverHandoverService.php",
+            "method": "draftsOf",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`draftsOf()` answers `return []` when the case type schema cannot be read; the catch logs at warning naming the person (\"the drafts could not be read\"). The drafts are a LISTING beside the act, not part of it, so an unreadable list must not stop a leaver handover that has cases and tasks to move."
+        },
+        {
+            "file": "lib/Service/Transfer/InternalHandover.php",
+            "method": "outstandingFor",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`outstandingFor()` answers `return []` when the transfer schema cannot be read; the catch logs at warning naming the team (\"the outstanding handovers could not be read\"). This is a read of a lens, and the acts it lists refuse loudly on their own: initiating, accepting and refusing a handover all throw RefusedException rather than answering an empty value."
+        },
+        {
+            "file": "lib/Service/Relation/CaseRelationStore.php",
+            "method": "relationRows",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`relationRows()` answers `return []` when OpenRegister's `/uses` or `/used` throws; the catch logs at warning naming the case and the direction (\"OpenRegister could not answer the relation rows for a case\"), and the Related cases tab renders without its typed groups. Throwing would take down a case page over a panel on it, and answering a refusal would claim the case has no relations, which is a different and worse sentence than \"we could not ask\"."
+        },
+        {
+            "file": "lib/Service/Deelzaak/SubCaseDeriver.php",
+            "method": "declaration",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`declaration()` answers `return []` when OpenRegister cannot read what `case.parentCase` declares a child inherits; the catch logs at warning (\"the parentCase relation declaration could not be read\"). The empty declaration is not silent: `derive()` carries it into the answer as `inheritanceApplied`, so the caller is told the sub-case inherited nothing rather than being handed a result that looks complete."
+        },
+        {
+            "file": "lib/Service/Deelzaak/SubCaseDeriver.php",
+            "method": "findParent",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findParent()` answers `return null` when the parent case cannot be read, which is how OpenRegister reports a miss; the catch logs at debug naming the uuid and `derive()` turns the null into the `parent_not_found` refusal the controller answers as 409. The rule that says which parents may take a sub-case lives in `DeelzaakService::validateCreate()` and refuses ahead of this."
+        },
+        {
+            "file": "lib/Service/CaseAttentionConditionService.php",
+            "method": "contextFor",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`contextFor()` answers an EMPTY CONTEXT when the advice-request read throws; the catch logs at warning naming the case, and `CaseAttentionMarkerService::evaluate()` then leaves every marker whose rows were not fetched exactly as it found it. The empty context is deliberately NOT an empty row set: an empty row set means \"asked, and there is nothing outstanding\" and CLEARS the marker, so reading a store that was briefly unreachable as an answer would report a handler's work as done on no evidence at all, on every unrelated save of the case, and nothing anywhere would fail. Raising is not open either: this runs inside a pre-persist listener, so a throw would fail the user's save over a marker."
+        }
+    ]
+}

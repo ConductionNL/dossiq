@@ -3,32 +3,43 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The one bulk dialog in its four modes.
+ * The one bulk dialog in its four modes, now that the act is a job.
  *
- * The assertion that carries the requirement is Execute staying DISABLED
- * while the reason is empty, in every mode. Suspending, resuming and
- * extending are statutory acts (Awb 4:5 and 4:14) that someone has to
- * justify later, and doing twenty at once is exactly when the justification
- * goes unwritten. The server refuses a reasonless batch too, but a disabled
- * button says so before the click rather than after it, and only a mounted
- * template can show whether the two halves agree.
+ * TWO ASSERTIONS CARRY THE REQUIREMENTS, and everything else here supports
+ * them.
  *
- * A FULL mount, not a shallow one: `canExecute` is read from the template's
+ * The first is that the button stays DISABLED while the reason is empty, in
+ * every mode. Suspending, resuming and extending are statutory acts (Awb 4:5
+ * and 4:14) somebody accounts for later, and doing twenty at once is exactly
+ * when the justification goes unwritten. The action declares the requirement
+ * and the server enforces it; the disabled button is the half that says so
+ * before the click, and only a mounted template can show the two halves agree.
+ *
+ * The second is that the first button REHEARSES and does not write. The whole
+ * point of the change is that a handler reads the skip list before four
+ * hundred cases move, so a dialog whose first button committed would satisfy
+ * every other assertion here and still be the old dialog.
+ *
+ * A FULL mount, not a shallow one: `canRehearse` is read from the template's
  * `:disabled` binding, and a shallow mount that never evaluates the template
  * cannot see a computed the template no longer reads.
  *
  * The `@nextcloud/vue` components are stubbed for the reason
- * `dialogTemplateBindings.spec.js` gives at length — several chunks deep they
+ * `dialogTemplateBindings.spec.js` gives at length: several chunks deep they
  * pull in the rich-text/reference-picker stack, which assumes a live
  * Nextcloud runtime. The stubs still render slots and still emit, so the
  * bindings under test are exercised rather than skipped.
  *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
+
+// See bulkProgress.spec.js: jsdom environment setup dominates this file's wall
+// clock, and under load it can spend the default 5s budget on its own.
+vi.setConfig({ testTimeout: 30000, hookTimeout: 30000 })
 
 /**
  * A stub that renders its default and actions slots.
@@ -79,9 +90,28 @@ function field(name) {
 	}
 }
 
+vi.mock('@nextcloud/l10n', () => ({
+	translate: (app, text, vars) =>
+		String(text).replace(/\{(\w+)\}/g, (match, key) =>
+			(vars && key in vars ? String(vars[key]) : match),
+		),
+	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
+}))
+
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
 vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
 	default: box('NcLoadingIcon'),
+}))
+// NOT `box()`: that stub sets `inheritAttrs: false`, which swallows the
+// `data-testid` the refusal is found by, and the failure then reads as "the
+// refusal is missing" rather than "the stub ate the id".
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
+	default: {
+		name: 'NcNoteCard',
+		render() {
+			return h('div', { class: 'NcNoteCard' }, this.$slots.default?.())
+		},
+	},
 }))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
@@ -111,42 +141,53 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 	},
 }))
 
+const previewBulkJob = vi.fn()
+const commitBulkJob = vi.fn()
+
+vi.mock('../../src/services/bulkJobApi.js', () => ({
+	ACTION_LIFECYCLE: 'dossiq:lifecycle-cases',
+	ACTION_REASSIGN: 'dossiq:reassign-cases',
+	ACTION_SET_ATTRIBUTE: 'dossiq:set-case-attribute',
+	ACTION_TRANSITION: 'dossiq:transition-cases',
+	ACTIVE_STATES: ['previewed', 'running', 'cancelling'],
+	FINAL_STATES: ['completed', 'failed', 'cancelled'],
+	bulkJobReportUrl: (id) => `/download/${id}`,
+	cancelBulkJob: vi.fn(),
+	commitBulkJob: (...args) => commitBulkJob(...args),
+	fetchBulkJob: vi.fn(),
+	fetchBulkJobMembers: vi.fn().mockResolvedValue({ results: [], total: 0 }),
+	isFinished: (job) => ['completed', 'failed', 'cancelled'].includes(String(job?.state)),
+	previewBulkJob: (...args) => previewBulkJob(...args),
+	readRefusal: (error) => {
+		const body = ((error && error.response && error.response.data) || {})
+
+		return {
+			reason: String(body.reason || ''),
+			message: String(body.error || ''),
+			details: (body.details || {}),
+		}
+	},
+	retryBulkJob: vi.fn(),
+}))
+
 const axios = (await import('@nextcloud/axios')).default
 const BulkTransitionDialog = (
 	await import('../../src/dialogs/BulkTransitionDialog.vue')
 ).default
 
-/**
- * A preview response in which every case is ready.
- *
- * @param {Array<string>} ids The case ids.
- * @return {object} An axios-shaped response.
- */
-function readyPreview(ids) {
-	const results = {}
-	for (const id of ids) {
-		results[id] = { status: 'ready', reasons: [] }
-	}
-	return { data: { results } }
-}
-
-/**
- * Mount the dialog and let its mounted hook settle.
- *
- * @param {string} mode The dialog mode.
- * @param {Array<string>} [caseIds] The selection.
- * @return {Promise<object>} The wrapper.
- */
-async function open(mode, caseIds = ['case-1', 'case-2']) {
-	const wrapper = mount(BulkTransitionDialog, { props: { caseIds, mode } })
-	await flush()
-	return wrapper
+/** A rehearsed job over two cases. */
+const PREVIEWED = {
+	id: 4,
+	state: 'previewed',
+	total: 2,
+	processed: 0,
+	counts: { applied: 2, skipped: 0, refused: 0, failed: 0 },
 }
 
 /**
  * Let pending promises and the render queue settle.
  *
- * @return {Promise<void>}
+ * @return {Promise<void>} Resolves once the queue is empty.
  */
 async function flush() {
 	await new Promise((resolve) => setTimeout(resolve, 0))
@@ -154,186 +195,213 @@ async function flush() {
 }
 
 /**
- * The Execute button.
+ * Mount the dialog and let its mounted hook settle.
  *
- * @param {object} wrapper The mounted wrapper.
- * @return {object} The button wrapper.
+ * @param {string} mode The dialog mode.
+ * @param {object} [props] Extra props.
+ * @return {Promise<object>} The wrapper.
  */
-const execute = (wrapper) => wrapper.find('[data-testid="bulk-execute"]')
+async function open(mode, props = {}) {
+	const wrapper = mount(BulkTransitionDialog, {
+		props: { caseIds: ['case-1', 'case-2'], mode, ...props },
+	})
+	await flush()
+
+	return wrapper
+}
+
+/** The button that rehearses the act. */
+const rehearse = (wrapper) => wrapper.find('[data-testid="bulk-rehearse"]')
 
 /**
  * Type a reason into the dialog.
  *
  * @param {object} wrapper The mounted wrapper.
  * @param {string} text The reason.
- * @return {Promise<void>}
+ * @return {Promise<void>} Resolves when the field has the value.
  */
 async function typeReason(wrapper, text) {
 	await wrapper.find('[data-testid="bulk-reason"]').setValue(text)
 }
 
-describe('BulkTransitionDialog, the three lifecycle modes', () => {
-	beforeEach(() => {
-		axios.get.mockReset()
-		axios.post.mockReset()
-		axios.post.mockResolvedValue(readyPreview(['case-1', 'case-2']))
+beforeEach(() => {
+	vi.clearAllMocks()
+	previewBulkJob.mockResolvedValue(PREVIEWED)
+	axios.get = vi.fn().mockResolvedValue({
+		data: { transitions: [{ id: 'to-decided', label: 'Decide' }] },
 	})
+})
 
-	it.each(['suspend', 'resume', 'extend'])(
-		'%s previews on open without asking for a transition',
-		async (mode) => {
+describe('BulkTransitionDialog, the three lifecycle modes', () => {
+	for (const mode of ['suspend', 'resume', 'extend']) {
+		it(`${mode} keeps the act unavailable while the reason is empty`, async () => {
 			const wrapper = await open(mode)
 
-			expect(axios.get).not.toHaveBeenCalled()
-			expect(axios.post).toHaveBeenCalledTimes(1)
-			expect(axios.post.mock.calls[0][1]).toEqual({
-				caseIds: ['case-1', 'case-2'],
-				gesture: mode,
-			})
-			expect(wrapper.find('.NcSelect').exists()).toBe(false)
-		},
-	)
-
-	it.each(['suspend', 'resume', 'extend'])(
-		'%s keeps Execute disabled while the reason is empty',
-		async (mode) => {
-			const wrapper = await open(mode)
-
-			expect(execute(wrapper).attributes('disabled')).toBeDefined()
+			expect(rehearse(wrapper).attributes('disabled')).toBeDefined()
 
 			await typeReason(wrapper, 'Awaiting documents')
+			if (mode === 'extend') {
+				await wrapper.find('[data-testid="bulk-new-deadline"]')
+					.setValue('2026-12-01')
+			}
 			await flush()
 
-			// Extend still wants a date; the other two are ready to go.
-			expect(execute(wrapper).attributes('disabled') === undefined).toBe(
-				mode !== 'extend',
-			)
-		},
-	)
+			expect(rehearse(wrapper).attributes('disabled')).toBeUndefined()
+		})
+	}
 
-	it('extend also waits for a new deadline', async () => {
+	it('extend also waits for a new deadline, not only for the reason', async () => {
 		const wrapper = await open('extend')
 		await typeReason(wrapper, 'Complex case')
 		await flush()
 
-		expect(execute(wrapper).attributes('disabled')).toBeDefined()
-
-		await wrapper
-			.find('[data-testid="bulk-new-deadline"]')
-			.setValue('2026-12-01')
-		await flush()
-
-		expect(execute(wrapper).attributes('disabled')).toBeUndefined()
+		expect(rehearse(wrapper).attributes('disabled')).toBeDefined()
 	})
 
-	it('suspend posts the reason and the days', async () => {
-		const wrapper = await open('suspend', ['case-1'])
-		axios.post.mockResolvedValue(readyPreview(['case-1']))
+	it('suspend hands the gesture, the reason and the days to the job', async () => {
+		const wrapper = await open('suspend')
 		await typeReason(wrapper, 'Awaiting documents')
 		await wrapper.find('[data-testid="bulk-days"]').setValue('21')
+		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		await execute(wrapper).trigger('click')
-		await flush()
-
-		const [url, payload] = axios.post.mock.calls.at(-1)
-		expect(url).toContain('bulk-transition/execute')
-		expect(payload).toEqual({
-			caseIds: ['case-1'],
-			gesture: 'suspend',
-			reason: 'Awaiting documents',
-			days: 21,
+		expect(previewBulkJob).toHaveBeenCalledWith({
+			action: 'dossiq:lifecycle-cases',
+			parameters: { gesture: 'suspend', reason: 'Awaiting documents', days: 21 },
+			selection: { ids: ['case-1', 'case-2'] },
+			justification: 'Awaiting documents',
 		})
 	})
 
-	it('extend posts the reason and the new end date', async () => {
-		const wrapper = await open('extend', ['case-1'])
-		axios.post.mockResolvedValue(readyPreview(['case-1']))
+	it('extend hands the new deadline and no days', async () => {
+		const wrapper = await open('extend')
 		await typeReason(wrapper, 'Complex case')
-		await wrapper
-			.find('[data-testid="bulk-new-deadline"]')
-			.setValue('2026-12-01')
+		await wrapper.find('[data-testid="bulk-new-deadline"]').setValue('2026-12-01')
+		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		await execute(wrapper).trigger('click')
-		await flush()
-
-		expect(axios.post.mock.calls.at(-1)[1]).toEqual({
-			caseIds: ['case-1'],
+		const { parameters } = previewBulkJob.mock.calls[0][0]
+		expect(parameters).toEqual({
 			gesture: 'extend',
 			reason: 'Complex case',
 			newEndDate: '2026-12-01',
 		})
 	})
+})
 
-	it('reports a partial failure per case rather than as a success', async () => {
-		const wrapper = await open('suspend', ['case-1', 'case-2'])
-		await typeReason(wrapper, 'Awaiting documents')
+describe('BulkTransitionDialog, the rehearsal is not the act', () => {
+	it('the first button rehearses and writes nothing', async () => {
+		const wrapper = await open('resume')
+		await typeReason(wrapper, 'Documents arrived')
+		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		axios.post.mockResolvedValue({
-			data: {
-				results: {
-					'case-1': { status: 'succeeded' },
-					'case-2': {
-						status: 'failed',
-						reasons: [{ message: 'already_suspended' }],
-					},
+		// The whole change is that the skip list is read BEFORE the act. A
+		// dialog whose first button committed would pass every other
+		// assertion in this file and still be the old dialog.
+		expect(previewBulkJob).toHaveBeenCalledTimes(1)
+		expect(commitBulkJob).not.toHaveBeenCalled()
+	})
+
+	it('the rehearsed job replaces the form, so the counts are what is read next', async () => {
+		const wrapper = await open('resume')
+		await typeReason(wrapper, 'Documents arrived')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(wrapper.find('[data-testid="bulk-job-progress"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="bulk-rehearse"]').exists()).toBe(false)
+	})
+
+	it('a version refusal names both versions rather than saying it was refused', async () => {
+		previewBulkJob.mockRejectedValue({
+			response: {
+				data: {
+					reason: 'case-type-versions',
+					error: 'refused',
+					details: { caseType: 'Bezwaar', versions: [2, 3], counts: { 2: 18, 3: 4 } },
 				},
 			},
 		})
 
-		await execute(wrapper).trigger('click')
+		const wrapper = await open('resume')
+		await typeReason(wrapper, 'Documents arrived')
+		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		const summary = wrapper.find('[data-testid="bulk-execute-summary"]')
-		expect(summary.exists()).toBe(true)
-		expect(summary.text()).toContain('1 of 2')
-		expect(summary.text()).toContain('case-2')
-		expect(summary.text()).toContain('already_suspended')
+		const refusal = wrapper.get('[data-testid="bulk-refusal"]').text()
+		expect(refusal).toContain('2 and 3')
+		expect(refusal).toContain('Bezwaar')
+	})
+
+	it('a ceiling refusal says the ceiling and what was selected', async () => {
+		previewBulkJob.mockRejectedValue({
+			response: {
+				data: { reason: 'ceiling', error: 'refused', details: { ceiling: 500, count: 900 } },
+			},
+		})
+
+		const wrapper = await open('resume')
+		await typeReason(wrapper, 'Documents arrived')
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		const refusal = wrapper.get('[data-testid="bulk-refusal"]').text()
+		expect(refusal).toContain('500')
+		expect(refusal).toContain('900')
 	})
 })
 
 describe('BulkTransitionDialog, the transition mode', () => {
-	beforeEach(() => {
-		axios.get.mockReset()
-		axios.post.mockReset()
-		axios.get.mockResolvedValue({
-			data: { transitions: [{ id: 'submit', label: 'Submit' }] },
-		})
-		axios.post.mockResolvedValue(readyPreview(['case-1']))
-	})
-
 	it('still asks the first case for its available transitions', async () => {
-		await open('transition', ['case-1'])
+		await open('transition')
 
-		expect(axios.get.mock.calls[0][0]).toContain('available-transitions')
+		expect(axios.get).toHaveBeenCalledTimes(1)
+		expect(String(axios.get.mock.calls[0][0])).toContain('case-1')
 	})
 
-	it('now requires a reason too, and posts it as the comment', async () => {
-		const wrapper = await open('transition', ['case-1'])
-		// Through the component's own v-model rather than the stub's DOM
-		// input: the transition is an OBJECT, and an input element would
-		// hand the dialog the string "[object Object]".
-		wrapper
-			.findComponent({ name: 'NcSelect' })
-			.vm.$emit('update:modelValue', { id: 'submit', label: 'Submit' })
+	it('needs a transition as well as a reason', async () => {
+		const wrapper = await open('transition')
+		await typeReason(wrapper, 'Handled in bulk')
 		await flush()
 
-		// A transition used to execute with an optional comment. Reading back
-		// a batch of cases that moved for no recorded reason is what that
-		// allowed, so the reason gates this mode as well now.
-		expect(execute(wrapper).attributes('disabled')).toBeDefined()
+		// The reason alone is not enough: without a transition the act has no
+		// target, and the server would refuse it after the click.
+		expect(rehearse(wrapper).attributes('disabled')).toBeDefined()
+	})
 
-		await typeReason(wrapper, 'Quarterly clean-up')
-		await flush()
-		await execute(wrapper).trigger('click')
+	it('hands the transition and the reason as the comment on each case', async () => {
+		const wrapper = await open('transition')
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Handled in bulk')
 		await flush()
 
-		expect(axios.post.mock.calls.at(-1)[1]).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: 'Quarterly clean-up',
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(previewBulkJob).toHaveBeenCalledWith({
+			action: 'dossiq:transition-cases',
+			parameters: { transitionId: 'to-decided', comment: 'Handled in bulk' },
+			selection: { ids: ['case-1', 'case-2'] },
+			justification: 'Handled in bulk',
 		})
+	})
+
+	it('a selection widened to the whole result sends the search, not the ids', async () => {
+		const wrapper = await open('transition', {
+			matchingTotal: 400,
+			filters: { caseType: 'bezwaar' },
+		})
+		wrapper.vm.selectedTransition = { id: 'to-decided', label: 'Decide' }
+		await typeReason(wrapper, 'Handled in bulk')
+		await flush()
+
+		await wrapper.get('[data-testid="bulk-selection-widen"]').trigger('click')
+		await flush()
+		await rehearse(wrapper).trigger('click')
+		await flush()
+
+		expect(previewBulkJob.mock.calls[0][0].selection)
+			.toEqual({ query: { caseType: 'bezwaar' } })
 	})
 })

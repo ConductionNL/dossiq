@@ -199,6 +199,13 @@ class AdviceController extends Controller {
 		try {
 			$advice = $this->adviceService->requestAdvice(caseId: $id, data: $data, requestedBy: $user->getUID());
 			return new JSONResponse(data: $advice, statusCode: Http::STATUS_CREATED);
+		} catch (\InvalidArgumentException $e) {
+			// A date the system cannot read is the caller's to fix, and nothing
+			// is created. It used to be stored verbatim.
+			return new JSONResponse(
+				['error' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST,
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Failed to create advice request for case ' . $id . ': ' . $e->getMessage(),

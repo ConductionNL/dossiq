@@ -53,6 +53,9 @@ parameters:
         # DeliveryConcludedEvent), same declaration-only-stub discipline as
         # the decision-app namespaces above.
         - tests/Stubs/Integriq
+        # OpenRegister's people-on-objects event contract, same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/OpenRegister/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an
@@ -111,6 +114,28 @@ parameters:
         -
             message: '#Strict comparison using === between class-string#'
             path: lib/Listener/ApprovalStepNotificationListener.php
+
+        # NextcloudMailGateway unpacks ANOTHER APP's event class.
+        #
+        # `OCA\Mail\Events\NewMessagesSynchronized` ships in Nextcloud Mail,
+        # which is an optional runtime dependency: the gateway holds its name as
+        # a string constant and reaches it through `is_a()` plus `method_exists()`
+        # precisely so dossiq carries no hard dependency on it (design D-1). The
+        # class is therefore absent from this app's analysis tree, and `is_a()`
+        # with a constant class-string narrows `$event` to it, so every probed
+        # call reports as a call on an unknown class.
+        #
+        # A stub under tests/Stubs was the alternative and costs more than it
+        # buys: giving the methods real return types makes the `is_object()`
+        # guards always-true, and giving them `mixed` moves the error to the
+        # call the rows are passed to. The code is correct and the narrowing is
+        # the false positive.
+        #
+        # Scoped to the one file that is allowed to name an `OCA\Mail` symbol at
+        # all, so the same call anywhere else is still a real finding.
+        -
+            message: '#Call to method \w+\(\) on an unknown class OCA\\Mail\\Events\\NewMessagesSynchronized#'
+            path: lib/Service/Email/NextcloudMailGateway.php
 
         # registerJob exists on server; not yet in nextcloud/ocp stub used for analysis
         - '#Call to an undefined method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerJob#'

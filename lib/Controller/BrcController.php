@@ -96,7 +96,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -127,7 +127,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -166,7 +166,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -192,7 +192,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -237,7 +237,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -284,7 +284,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -328,7 +328,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -373,7 +373,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {

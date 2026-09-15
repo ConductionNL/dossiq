@@ -45,6 +45,13 @@ use RuntimeException;
 /**
  * Service for advice request (adviesAanvraag) workflow.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
+ * CaseDateNormaliser, and it replaced inline date handling rather than adding a
+ * concern: the two calls here are the received moment and the deadline, both of
+ * which used to be formatted in this class. Control: phpmd on this file at
+ * 8f9dc479^ is clean at twelve, so dropping the dependency is the only way back
+ * under the threshold and it puts a second date write path back.
+ *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService {
@@ -68,6 +75,7 @@ class AdviceService {
 	 * @param AdviceRepository $repository OpenRegister access for adviesAanvraag records
 	 * @param AdviceAuthorizationGuard $guard Per-object transition IDOR guard (Wilco #6)
 	 * @param AdviceNotifier $notifier Advice notification fan-out
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -77,6 +85,7 @@ class AdviceService {
 		private readonly AdviceRepository $repository,
 		private readonly AdviceAuthorizationGuard $guard,
 		private readonly AdviceNotifier $notifier,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -140,7 +149,7 @@ class AdviceService {
 		$update = ['status' => $to];
 
 		if ($to === 'received') {
-			$update['receivedAt'] = date('c');
+			$update['receivedAt'] = $this->dates->nowAsMoment();
 			$fileId = (string)($payload['adviceDocument'] ?? ($payload['fileId'] ?? ''));
 			if ($fileId !== '') {
 				$update['adviceDocument'] = $fileId;
@@ -341,6 +350,7 @@ class AdviceService {
 	 * @return array<string, mixed> Saved adviceRequest object
 	 *
 	 * @throws RuntimeException If OpenRegister is unavailable or decidesk fails closed
+	 * @throws \InvalidArgumentException If the deadline is not a date this system can read
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-6
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
@@ -354,11 +364,19 @@ class AdviceService {
 
 		$register = $this->settingsService->getConfigValue('register');
 
+		// The deadline used to be stored verbatim, so 31-01-2028 became an
+		// advice request nobody could act on and nobody was told about. It is
+		// parsed here, and an unreadable value refuses the write.
+		$deadline = null;
+		if (($data['deadline'] ?? null) !== null && $data['deadline'] !== '') {
+			$deadline = $this->dates->toCalendarDate($data['deadline'], 'deadline');
+		}
+
 		$payload = [
 			'caseRef' => $caseId,
 			'requestedBy' => $requestedBy,
 			'advisor' => $data['advisor'] ?? '',
-			'deadline' => $data['deadline'] ?? null,
+			'deadline' => $deadline,
 			'status' => 'open',
 			'question' => $data['question'] ?? '',
 			'adviceText' => '',

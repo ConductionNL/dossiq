@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\ProcessMining;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Status\StatusDwellService;
 
 /**
  * Reconstructs per-status dwell intervals and ranks the resulting bottlenecks.
@@ -42,6 +44,71 @@ use DateTimeImmutable;
  * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
  */
 class DwellTimeAnalyzer {
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser      $dates The one date write path.
+	 * @param StatusDwellService|null $held  The numbers the case itself carries.
+	 *                                      Optional so a caller that only wants
+	 *                                      the reconstruction — every existing
+	 *                                      one — builds the analyzer unchanged;
+	 *                                      {@see self::heldTotalsByStatus()}
+	 *                                      answers nothing without it rather
+	 *                                      than answering something wrong.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?StatusDwellService $held = null,
+	) {
+	}//end __construct()
+
+	/**
+	 * The per-status totals the CASES themselves hold, in working days.
+	 *
+	 * 🔑 THE PAGE AND THE LIST HAVE TO READ ONE NUMBER. The reconstruction
+	 * below walks the statusRecord chain and answers in wall-clock hours; the
+	 * case holds working days, written as the status changes. Two measurements
+	 * of the same thing on two clocks is how a dashboard and a work list start
+	 * disagreeing about the same case in front of the same person. So this is
+	 * the number the report publishes beside the aggregates, and it is read off
+	 * the case rather than computed a second time here.
+	 *
+	 * A case that carries no held number contributes nothing, which is every
+	 * case that predates the change. Their history is still in the chain and
+	 * still reaches the aggregates; only the held total is silent about them,
+	 * which is the honest answer to "how long has it been in this status" for
+	 * a case nobody recorded entering one.
+	 *
+	 * @param array<string, array<string, mixed>> $casesById Case rows, keyed by id.
+	 * @param DateTimeImmutable|null              $now       The moment to count to.
+	 *
+	 * @return array<string, int> Working days, keyed by statusType id.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function heldTotalsByStatus(array $casesById, ?DateTimeImmutable $now = null): array {
+		if ($this->held === null) {
+			return [];
+		}
+
+		$totals = [];
+		foreach ($casesById as $case) {
+			if (is_array($case) === false) {
+				continue;
+			}
+
+			if (($case['statusDwellTotals'] ?? []) === [] && ($case['currentStatusEnteredAt'] ?? '') === '') {
+				continue;
+			}
+
+			foreach ($this->held->totalsFor(case: $case, now: $now) as $statusId => $days) {
+				$totals[$statusId] = (($totals[$statusId] ?? 0) + $days);
+			}
+		}
+
+		return $totals;
+	}//end heldTotalsByStatus()
+
 	/**
 	 * Build dwell-time intervals: one entry per (case, status-visit), the
 	 * time the case spent in that status before the next recorded
@@ -86,7 +153,7 @@ class DwellTimeAnalyzer {
 			$endDate = ($case['endDate'] ?? null);
 			$closedAt = null;
 			if (is_string($endDate) === true && $endDate !== '') {
-				$closedAt = $this->parseDate(value: $endDate, fallback: $now);
+				$closedAt = ($this->dates->tryParse($endDate) ?? $now);
 			}
 
 			$intervals = array_merge(
@@ -284,7 +351,7 @@ class DwellTimeAnalyzer {
 			return null;
 		}
 
-		return $this->parseDate(value: $raw, fallback: null);
+		return $this->dates->tryParse($raw);
 	}//end extractTimestamp()
 
 	/**
@@ -313,25 +380,4 @@ class DwellTimeAnalyzer {
 		return $sorted[($rank - 1)];
 	}//end percentile()
 
-	/**
-	 * Parse a date/datetime string; return `$fallback` on empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
-	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 */
-	private function parseDate(mixed $value, ?DateTimeImmutable $fallback): ?DateTimeImmutable {
-		if (is_string($value) === false || $value === '') {
-			return $fallback;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return $fallback;
-		}
-	}//end parseDate()
 }//end class

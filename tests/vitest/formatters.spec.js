@@ -92,13 +92,14 @@ describe('the caseTitle formatter', () => {
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-describe('the integration status formatter', () => {
-	it('names each of the five states', () => {
-		expect(formatters.integrationStatus('configured')).toBe('Configured')
-		expect(formatters.integrationStatus('unconfigured')).toBe('Not configured')
-		expect(formatters.integrationStatus('unavailable')).toBe('Not available')
-		expect(formatters.integrationStatus('simulated')).toBe('Simulated')
-		expect(formatters.integrationStatus('error')).toBe('Error')
+describe('the connection status formatter', () => {
+	it('names each of the six states', () => {
+		expect(formatters.connectionStatus('configured')).toBe('Configured')
+		expect(formatters.connectionStatus('limited')).toBe('Limited')
+		expect(formatters.connectionStatus('unconfigured')).toBe('Not configured')
+		expect(formatters.connectionStatus('unavailable')).toBe('Not available')
+		expect(formatters.connectionStatus('simulated')).toBe('Simulated')
+		expect(formatters.connectionStatus('error')).toBe('Error')
 	})
 
 	// Simulated is the state the page did not have and needed. A seam bound to
@@ -106,36 +107,59 @@ describe('the integration status formatter', () => {
 	// unavailable nor configured, and rendering it as either is the claim this
 	// page exists to stop the app from making.
 	it('does not let a mock adapter read as a configured channel', () => {
-		expect(formatters.integrationStatus('simulated')).not.toBe(
-			formatters.integrationStatus('configured'),
+		expect(formatters.connectionStatus('simulated')).not.toBe(
+			formatters.connectionStatus('configured'),
 		)
-		expect(formatters.integrationStatus('simulated')).not.toBe(
-			formatters.integrationStatus('unavailable'),
+		expect(formatters.connectionStatus('simulated')).not.toBe(
+			formatters.connectionStatus('unavailable'),
 		)
+	})
+
+	// Limited came with the contract amendment (hydra#673). A connection that
+	// works in part is neither working nor broken, so it must not borrow either
+	// label, and it must not fall through to its raw enum value.
+	it('keeps a connection that works in part apart from working and broken', () => {
+		const limited = formatters.connectionStatus('limited')
+		expect(limited).not.toBe('limited')
+		expect(limited).not.toBe(formatters.connectionStatus('configured'))
+		expect(limited).not.toBe(formatters.connectionStatus('unavailable'))
+		expect(limited).not.toBe(formatters.connectionStatus('error'))
 	})
 
 	it('renders an unknown value as itself, not as an empty cell', () => {
-		expect(formatters.integrationStatus('degraded')).toBe('degraded')
+		expect(formatters.connectionStatus('degraded')).toBe('degraded')
 	})
 
 	it('renders a missing value as empty rather than as the word undefined', () => {
-		expect(formatters.integrationStatus(undefined)).toBe('')
-		expect(formatters.integrationStatus(null)).toBe('')
+		expect(formatters.connectionStatus(undefined)).toBe('')
+		expect(formatters.connectionStatus(null)).toBe('')
 	})
 })
 
-describe('the integration settings-link formatter', () => {
+describe('the connection settings-link formatter', () => {
 	it('labels a link when there is somewhere to go', () => {
 		expect(
-			formatters.integrationSettingsLabel(
+			formatters.connectionSettingsLabel(
 				'/settings/admin/dossiq#section-stuf',
 			),
 		).toBe('Open settings')
 	})
 
 	it('offers nothing when the connection has no settings section', () => {
-		expect(formatters.integrationSettingsLabel('')).toBe('')
-		expect(formatters.integrationSettingsLabel(undefined)).toBe('')
-		expect(formatters.integrationSettingsLabel(null)).toBe('')
+		expect(formatters.connectionSettingsLabel('')).toBe('')
+		expect(formatters.connectionSettingsLabel(undefined)).toBe('')
+		expect(formatters.connectionSettingsLabel(null)).toBe('')
+	})
+})
+
+// The contract names (hydra connection-registry D8) replaced the dossiq-only
+// ones. The old names stay as aliases, and an alias that drifted from the
+// function it stands for would render two different labels for one status.
+describe('the pre-registry formatter names', () => {
+	it('are the same functions as the contract names', () => {
+		expect(formatters.integrationStatus).toBe(formatters.connectionStatus)
+		expect(formatters.integrationSettingsLabel).toBe(
+			formatters.connectionSettingsLabel,
+		)
 	})
 })

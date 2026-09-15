@@ -32,12 +32,17 @@ namespace OCA\Dossiq\Tests\Unit\Service\ProcessMining;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\Status\StatusDwellService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
  */
 class DwellTimeAnalyzerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private DwellTimeAnalyzer $analyzer;
 
@@ -51,7 +56,7 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->analyzer = new DwellTimeAnalyzer();
+		$this->analyzer = new DwellTimeAnalyzer(dates: $this->caseDates());
 		$this->now = new DateTimeImmutable('2026-07-01T00:00:00+00:00');
 		$this->from = new DateTimeImmutable('2026-01-01');
 		$this->to = new DateTimeImmutable('2026-12-31');
@@ -326,5 +331,92 @@ class DwellTimeAnalyzerTest extends TestCase {
 		self::assertSame([], $this->analyzer->rankBottlenecks([]));
 
 	}//end testRankingEmptyStatsYieldsEmptyList()
+
+	/**
+	 * The page and the case answer the same question with the same number.
+	 *
+	 * The reconstruction below counts wall-clock hours off the record chain;
+	 * the case holds working days, written as the status changes. Two
+	 * measurements of one thing on two clocks is how a dashboard and a work
+	 * list start disagreeing about the same case in front of the same person,
+	 * so the report publishes what the case holds rather than a second set.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testHeldTotalsAreReadOffTheCasesRatherThanRecomputed(): void {
+		$analyzer = new DwellTimeAnalyzer(
+			dates: $this->caseDates(),
+			held: new StatusDwellService(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+		);
+
+		$totals = $analyzer->heldTotalsByStatus(
+			casesById: [
+				'case-1' => [
+					'status' => 'review',
+					'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00',
+					'statusDwellTotals' => [['statusType' => 'intake', 'workingDays' => 4]],
+				],
+				'case-2' => [
+					'status' => 'intake',
+					'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00',
+					'statusDwellTotals' => [],
+				],
+			],
+			now: new DateTimeImmutable('2026-06-08T09:00:00+02:00'),
+		);
+
+		// Case-1 banked 4 in intake and has 5 running in review; case-2 has 5
+		// in intake.
+		self::assertSame(expected: ['intake' => 9, 'review' => 5], actual: $totals);
+
+	}//end testHeldTotalsAreReadOffTheCasesRatherThanRecomputed()
+
+	/**
+	 * A case that holds no number contributes none, rather than a guess.
+	 *
+	 * Every case that predates the change is in this shape. Their history is
+	 * still in the record chain and still reaches the aggregates; only the
+	 * held total is silent about them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testACaseHoldingNoDwellContributesNothing(): void {
+		$analyzer = new DwellTimeAnalyzer(
+			dates: $this->caseDates(),
+			held: new StatusDwellService(calendar: new WorkingDayCalculator(), dates: $this->caseDates()),
+		);
+
+		self::assertSame(
+			expected: [],
+			actual: $analyzer->heldTotalsByStatus(
+				casesById: ['case-1' => ['status' => 'review', 'startDate' => '2026-01-01']],
+				now: $this->now,
+			)
+		);
+
+	}//end testACaseHoldingNoDwellContributesNothing()
+
+	/**
+	 * An analyzer built without the held reader answers nothing, not something
+	 * wrong.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function testWithoutTheHeldReaderTheTotalsAreEmpty(): void {
+		self::assertSame(
+			expected: [],
+			actual: $this->analyzer->heldTotalsByStatus(
+				casesById: ['case-1' => ['status' => 'review', 'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00']],
+				now: $this->now
+			)
+		);
+
+	}//end testWithoutTheHeldReaderTheTotalsAreEmpty()
 
 }//end class

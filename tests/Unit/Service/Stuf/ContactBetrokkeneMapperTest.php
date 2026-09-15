@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 use OCA\Dossiq\Service\Stuf\ContactBetrokkeneMapper;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -31,6 +32,8 @@ use Psr\Log\LoggerInterface;
  * Tests for ContactBetrokkeneMapper.
  */
 class ContactBetrokkeneMapperTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private ContactBetrokkeneMapper $mapper;
 
 	private SchemaAwareStufRegister $register;
@@ -56,7 +59,8 @@ class ContactBetrokkeneMapperTest extends TestCase {
 		$this->register = new SchemaAwareStufRegister();
 		$this->mapper = new ContactBetrokkeneMapper(
 			$this->register,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->caseDates()
 		);
 	}//end setUp()
 

@@ -3,16 +3,22 @@
 /**
  * Dossiq Planned Follow-Up Sweep.
  *
- * Switches off every planned follow-up flow that has already fired, which is
- * what makes "plan a follow-up" single-shot.
+ * Switches off every planned follow-up flow that has nothing left to do, which
+ * is what makes "plan a follow-up" single-shot and what makes a series stop.
  *
  * 🔴 THE ENGINE HAS NO ONE-SHOT TRIGGER, AND FIVE CRON FIELDS CANNOT SAY
- * "ONCE". A planned date pins minute, hour, day and month, which names one
- * minute of one day of one month, and that minute comes round again next year.
- * Left alone, a follow-up planned for 15 October 2026 would also open a case on
- * 15 October 2027, and every year after that, with nothing anywhere reporting
- * it. So the promise is kept HERE, by disabling the flow after it has run,
- * rather than pretended in the cron expression.
+ * "ONCE" OR "THREE TIMES". A planned date pins minute, hour, day and month,
+ * which names one minute of one day of one month, and that minute comes round
+ * again next year. Left alone, a follow-up planned for 15 October 2026 would
+ * also open a case on 15 October 2027, and every year after that, with nothing
+ * anywhere reporting it. So the promise is kept HERE, by disabling the flow
+ * once it is spent, rather than pretended in the cron expression.
+ *
+ * What "spent" means is the document's rule, not this job's
+ * ({@see \OCA\Dossiq\Service\Flow\PlannedFollowUpDocument::isSpent()}): a
+ * single follow-up after one firing, a series when its count is reached or its
+ * end date has passed, and a series with neither end never — it stops when
+ * somebody stops it.
  *
  * The sweep is hourly rather than daily because the residue of a missed sweep
  * is a year long: a flow that fires at 06:00 and is not switched off before the
@@ -33,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/workflow-definition-engine/spec.md
+ * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -48,9 +54,9 @@ use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
 
 /**
- * Hourly job retiring the planned follow-ups that have fired.
+ * Hourly job retiring the planned follow-ups that are spent.
  *
- * @spec openspec/specs/workflow-definition-engine/spec.md
+ * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
  */
 class PlannedFollowUpSweepJob extends TimedJob {
 
@@ -74,7 +80,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	}//end __construct()
 
 	/**
-	 * Retire the planned follow-ups that have fired.
+	 * Retire the planned follow-ups that are spent.
 	 *
 	 * @param mixed $argument The job argument.
 	 *
@@ -82,14 +88,14 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
-	 * @spec openspec/specs/workflow-definition-engine/spec.md
+	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 	 */
 	protected function run($argument): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
 
-		$retired = $this->flowActions->retireFired();
+		$retired = $this->flowActions->retireSpent();
 		if ($retired === 0) {
 			return;
 		}
@@ -97,7 +103,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 		// Logged only when something happened: an hourly job that says "0" every
 		// hour is an hourly job nobody reads.
 		$this->logger->info(
-			'Dossiq: retired ' . $retired . ' planned follow-up(s) that had fired',
+			'Dossiq: retired ' . $retired . ' planned follow-up(s) that were spent',
 			['app' => Application::APP_ID],
 		);
 	}//end run()

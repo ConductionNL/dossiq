@@ -81,22 +81,21 @@ export default {
 			return this.store.mappings
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/**
+		 * The resource keys the server actually holds mappings for.
+		 *
+		 * This used to be a hardcoded list of twelve, and it was a third copy
+		 * of an inventory the backend already owns. It named `case` and
+		 * `case_type` for mappings stored as `zaak` and `caseType`, so those
+		 * two rows read "Not configured" against a configured mapping and both
+		 * buttons addressed a resource key that does not exist. The other
+		 * fourteen mappings had no row at all. Reading the API's own keys is
+		 * what stops the list drifting again.
+		 *
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		resourceKeys() {
-			return [
-				'case',
-				'case_type',
-				'status',
-				'statustype',
-				'result',
-				'resultaattype',
-				'role',
-				'roltype',
-				'eigenschap',
-				'decision',
-				'besluittype',
-				'informatieobjecttype',
-			]
+			return Object.keys(this.mappings)
 		},
 	},
 

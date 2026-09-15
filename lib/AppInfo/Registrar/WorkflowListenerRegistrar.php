@@ -28,12 +28,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\CasePhaseTermListener;
+use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -73,7 +78,30 @@ class WorkflowListenerRegistrar {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
 		$this->registerHumanStepListeners(context: $context);
+		$this->registerCasePlanListeners(context: $context);
 	}//end register()
+
+	/**
+	 * Register the CMMN case-plan projection listener.
+	 *
+	 * A caseType with `handlingModel: cmmn` gets its published `caseModel`
+	 * projected onto OpenRegister's case layer the moment a case of that type
+	 * is created. The listener observes; every decision, including whether the
+	 * caseType is CMMN-managed at all, lives in
+	 * {@see \OCA\Dossiq\Service\CasePlanProjectionService}.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function registerCasePlanListeners(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CasePlanProjectionListener::class
+		);
+	}//end registerCasePlanListeners()
 
 	/**
 	 * Register termijnbewaking (AWB deadline engine) listeners.
@@ -95,6 +123,14 @@ class WorkflowListenerRegistrar {
 			listener: DeadlineCaseCreatedListener::class
 		);
 
+		// A phase carries its own clock, and the clock moves when the case
+		// does. The listener reconciles rather than compares, so it needs no
+		// before-image and is correct on a replay.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: CasePhaseTermListener::class
+		);
+
 		// The case number is DECLARED on the schema, as an OpenRegister
 		// calculation using the `sequence` operator. On an install whose
 		// OpenRegister ships that operator this listener writes nothing: it
@@ -105,6 +141,17 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
+		);
+
+		// Awb 4:3a: a case created from an electronic submission owes its
+		// sender a confirmation of receipt. The text, the renderer and the
+		// requirement all shipped and nothing ever triggered them, so a
+		// statutory duty sat unperformed behind a spec that described it. This
+		// is that trigger. It queues rather than sends, so a mail server that
+		// is down cannot stop a case being created.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()
 
@@ -177,6 +224,21 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: TaskTerminalEvent::class,
 			listener: TaskCompletionResumeListener::class
+		);
+
+		// The SAME event, a second listener, deliberately. Resuming the run a
+		// task was blocking and doing what the case type declared completing
+		// it does are two different jobs with two different failure modes: a
+		// refused signal is an authorization answer, a failed effect is a
+		// letter that was not sent. One listener doing both would have to
+		// decide which failure silences the other.
+		//
+		// It listens rather than living in the completion call because a task
+		// can be completed from the case page, the task page, the inbox or
+		// OpenRegister's own API, and dossiq is in the path of only the first.
+		$context->registerEventListener(
+			event: TaskTerminalEvent::class,
+			listener: TaskCompletionEffectsListener::class
 		);
 
 	}//end registerHumanStepListeners()

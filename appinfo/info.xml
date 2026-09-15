@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.14-beta.20260912123903</version>
+    <version>0.4.24-unstable.20260915201603</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -156,6 +156,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             See openspec/changes/case-status-onto-engine-lifecycle.
         -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <!--
+            lifecycle-acts-on-the-case REQ-LIFE-04: a case type may declare a
+            period of no activity after which dossiq closes the case. Off by
+            default, announced before it happens, and recorded as the product
+            having done it.
+        -->
+        <job>OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
@@ -176,6 +183,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
              switched off after it has fired rather than left to come round
              again next year. -->
         <job>OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob</job>
+        <!-- A sweep rather than a timer per item: four other acts can end a
+             triage item's life, and a timer armed against an entry that is
+             gone wakes nobody and says nothing. -->
+        <job>OCA\Dossiq\BackgroundJob\TriageWakeJob</job>
+        <!-- Hourly, not daily: the hour a digest arrives is the reader's own
+             choice, and a job that wakes once a day sends everybody's at
+             whatever hour the runner happened to fire.
+             See openspec/changes/one-personal-queue. -->
+        <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
     </background-jobs>
 
     <repair-steps>
@@ -424,6 +440,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
+            <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell a rename from a back-fill. Covers every renamed property
                 together: a register-scoped step that moved some owners and not others
@@ -527,6 +555,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 entry in the <install> block below for why it cannot adopt.
             -->
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
+            <!-- documents-live-on-the-case: every document's file moves into the
+                 folder of the case that owns it, once, behind a persisted key. -->
+            <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
+            <!-- people-on-the-case: the case schema declares this instance's role
+                 types as the roles a person can hold. Every upgrade, not once:
+                 role types are data an admin adds whenever the process needs one. -->
+            <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
+            <!-- inbound-mail-filters: Nextcloud Mail holds the account now, so
+                 the mailbox password dossiq used to store is deleted rather than
+                 migrated. A credential nobody uses is still a credential in a
+                 database backup. -->
+            <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -555,6 +595,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
+              MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
 
@@ -663,6 +704,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
+            <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
                 ships are imported by OpenRegister while the register above is,
                 and they arrive `owner = NULL, enabled = false` by that engine's
@@ -671,7 +724,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 uid and an upgrade runs as nobody); it names what is outstanding
                 and the command that completes it. It never throws.
             -->
+            <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
+            <!-- inbound-mail-filters: Nextcloud Mail holds the account now, so
+                 the mailbox password dossiq used to store is deleted rather than
+                 migrated. A credential nobody uses is still a credential in a
+                 database backup. -->
+            <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
         </install>
     </repair-steps>
 
@@ -684,6 +743,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
+        <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>

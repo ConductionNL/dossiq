@@ -114,6 +114,7 @@
 				<p>{{ shortlistText }}</p>
 				<p>{{ reratedText }}</p>
 				<p>{{ addedRowsText }}</p>
+				<p v-if="pendingText">{{ pendingText }}</p>
 				<p>
 					{{
 						t(
@@ -266,6 +267,66 @@
 						</tbody>
 					</table>
 				</div>
+
+				<!-- The proposals for this area. A separate table, under its
+				     own heading, because the one thing a reader must not do
+				     with these is read them as ratings: four of the five
+				     columns are empty and the fifth is ours. Putting them in
+				     the table above with an Unknown chip would invite exactly
+				     that, and would also put our own score in a row nobody
+				     has been measured on. -->
+				<template v-if="area.pending.length">
+					<h4 class="features-roadmap__pending-heading">
+						{{ t('dossiq', 'Proposed, not yet rated') }}
+					</h4>
+					<div class="features-roadmap__scroller">
+						<table class="features-roadmap__table">
+							<caption class="features-roadmap__caption">
+								{{
+									pendingCaption(area)
+								}}
+							</caption>
+							<thead>
+								<tr>
+									<th scope="col" class="features-roadmap__num">
+										{{ t('dossiq', 'No.') }}
+									</th>
+									<th scope="col">
+										{{ t('dossiq', 'Capability') }}
+									</th>
+									<th
+										scope="col"
+										class="features-roadmap__col--self">
+										{{ selfSystem.name }}
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr
+									v-for="row in area.pending"
+									:key="row.id"
+									class="features-roadmap__row--pending">
+									<td class="features-roadmap__num">
+										{{ row.id }}
+									</td>
+									<th scope="row" class="features-roadmap__cap">
+										{{ row.label }}
+									</th>
+									<td class="features-roadmap__col--self">
+										<span
+											class="features-roadmap__chip"
+											:class="
+												'features-roadmap__chip--'
+												+ row.dossiq
+											">
+											{{ ratingLabel(row.dossiq) }}
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</template>
 			</details>
 		</section>
 	</div>
@@ -280,6 +341,7 @@ import {
 	formatComparedOn,
 	groupByArea,
 	overallTallies,
+	pendingRows,
 	RATING_COLUMNS,
 } from '../utils/capabilityComparison.js'
 
@@ -357,6 +419,42 @@ export default {
 		 */
 		total() {
 			return comparison.capabilities.length
+		},
+
+		/**
+		 * @return {object} Our own column, for the proposals table header.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
+		selfSystem() {
+			return comparison.systems.find((system) => system.isSelf)
+		},
+
+		/**
+		 * The sentence covering the proposals: questions on the list that
+		 * nobody has been measured on yet.
+		 *
+		 * They are not in `total`, not in `totals` and not in any area tally,
+		 * and this paragraph is where a reader is told that. Without it the
+		 * proposals table further down reads as a second scoreboard with four
+		 * empty columns, which is the misreading the whole split exists to
+		 * prevent.
+		 *
+		 * @return {string} The sentence, empty when nothing is pending.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		pendingText() {
+			const pending = pendingRows(comparison)
+			if (pending.length === 0) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'Another {count} capabilities are proposed and not yet rated. We read our own code for each of them. We have not read the other {others} systems against them, so they are in no total on this page. A proposal becomes a row when every system has been read against it.',
+				{
+					count: pending.length,
+					others: comparison.systems.length - 1,
+				},
+			)
 		},
 
 		/**
@@ -634,6 +732,28 @@ export default {
 		 */
 		areaSummary(area) {
 			const self = area.tallies.dossiq
+			if (area.capabilities.length === 0) {
+				// Areas 14 to 17 are proposals and nothing else: four questions
+				// round 4 raised that had nowhere to go. A summary reading
+				// "0 capabilities" over a table with rows in it is the kind of
+				// number that makes a reader distrust the rest of the page.
+				return t('dossiq', '{count} proposed, none rated yet.', {
+					count: area.pending.length,
+				})
+			}
+			if (area.pending.length > 0) {
+				return t(
+					'dossiq',
+					'{total} capabilities. Dossiq has {yes}, partly has {partial}, is missing {no}. {pending} more proposed.',
+					{
+						total: area.capabilities.length,
+						yes: self.yes,
+						partial: self.partial,
+						no: self.no,
+						pending: area.pending.length,
+					},
+				)
+			}
 			return t(
 				'dossiq',
 				'{total} capabilities. Dossiq has {yes}, partly has {partial}, is missing {no}.',
@@ -660,6 +780,30 @@ export default {
 				{
 					area: area.label,
 					count: this.systems.length,
+				},
+			)
+		},
+
+		/**
+		 * Table caption for one area's proposals.
+		 *
+		 * It names the one column that is filled and says the others are not.
+		 * The table shows our rating and no rival column at all, so without
+		 * this sentence a reader has no way to tell a proposal apart from a
+		 * row we scored alone.
+		 *
+		 * @param {object} area Grouped area from `groupByArea`.
+		 * @return {string} Translated caption.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
+		pendingCaption(area) {
+			return t(
+				'dossiq',
+				'{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.',
+				{
+					count: area.pending.length,
+					area: area.label,
+					others: this.systems.length - 1,
 				},
 			)
 		},
@@ -788,6 +932,16 @@ export default {
 
 .features-roadmap__chip--no {
 	background-color: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+}
+
+.features-roadmap__pending-heading {
+	margin: 16px 0 0;
+}
+
+/* Proposals, set back from the rated table above them. The left rule is the
+   visual half of the caption's claim: these rows are not part of that table. */
+.features-roadmap__row--pending .features-roadmap__cap {
 	color: var(--color-text-maxcontrast);
 }
 

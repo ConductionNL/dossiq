@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use RuntimeException;
 
 /**
@@ -43,11 +44,18 @@ class DeadlinePauseService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
-	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
+	 * @param TermijnTimerService|null $timerService Engine timer mapping and the
+	 *        working-calendar bridge (optional while the engine rolls out).
+	 * @param TermDeclarationReader|null $declarations What the case type declares about
+	 *        suspending. Awb 4:5 bounds the pause as well as the extension, and
+	 *        `caseType.maxSuspensionDays` is where the bound is written. Optional for
+	 *        the same reason the extension service's is: a caller that builds this by
+	 *        hand keeps working, and simply gets today's unbounded behaviour.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly ?TermDeclarationReader $declarations = null,
 	) {
 	}//end __construct()
 
@@ -66,6 +74,7 @@ class DeadlinePauseService {
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException When instance missing or duurDagen <= 0.
+	 * @throws RefusedException When the case type forbids the suspension, or forbids it this long.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
@@ -88,9 +97,17 @@ class DeadlinePauseService {
 			throw new RuntimeException('TermijnInstance already paused: ' . $termInstanceId);
 		}
 
+		$this->assertSuspensionAllowed(instance: $instance, durationDays: $durationDays);
+
 		$now = new DateTimeImmutable();
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $now->format('Y-m-d')));
-		$newEnd = $current->modify('+' . $durationDays . ' days')->format('Y-m-d');
+
+		// REQ-TOT-002 keeps the arithmetic here, as case data. What moves is
+		// only the day it lands on: `endDateCurrent` is the date a handler is
+		// judged on, so Algemene termijnenwet art. 1 applies to it and the
+		// administered calendar decides, not this service.
+		$credited = $current->modify('+' . $durationDays . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $credited) ?? $credited)->format('Y-m-d');
 		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		// Opschorting maps onto the engine: suspend the beslistermijn timer
@@ -132,6 +149,50 @@ class DeadlinePauseService {
 	}//end registerPauze()
 
 	/**
+	 * Refuse a suspension the case type does not allow, or does not allow this
+	 * long (REQ-TERM-066).
+	 *
+	 * Awb 4:5 bounds the pause as well as the extension, so a case type carries
+	 * a maximum beside `suspensionAllowed`. The refusal names the maximum, per
+	 * ADR-050: a handler who asked for sixty days needs to read that
+	 * twenty-eight is the ceiling, not that the answer was no.
+	 *
+	 * @param array<string, mixed> $instance The instance being suspended.
+	 * @param int $durationDays How many days were asked for.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case type forbids it, or forbids it this long.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 */
+	private function assertSuspensionAllowed(array $instance, int $durationDays): void {
+		if ($this->declarations === null) {
+			return;
+		}
+
+		$declared = $this->declarations->forCase(caseId: (string)($instance['case'] ?? ''));
+
+		if ($declared['suspensionAllowed'] === false) {
+			throw new RefusedException(
+				rule: 'suspension-not-allowed',
+				sentence: 'This case type does not allow the term to be suspended.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		$maximum = (int)$declared['maxSuspensionDays'];
+		if ($maximum > 0 && $durationDays > $maximum) {
+			throw new RefusedException(
+				rule: 'suspension-beyond-declared-maximum',
+				sentence: 'This case type allows a suspension of at most ' . $maximum
+					. ' days, and you asked for ' . $durationDays . '.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertSuspensionAllowed()
+
+	/**
 	 * Resume after pauze with the aanvulling-datum.
 	 *
 	 * Computes consumed vs. unconsumed pause days; adds only the
@@ -167,9 +228,11 @@ class DeadlinePauseService {
 		$consumed = max(0, min($durationDays, $diff));
 		$unused = $durationDays - $consumed;
 
-		// Pull back the unused portion of einddatumActueel.
+		// Pull back the unused portion of einddatumActueel, then let the
+		// administered calendar decide the day it lands on (Awt art. 1).
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
-		$newEnd = $current->modify('-' . $unused . ' days')->format('Y-m-d');
+		$remaining = $current->modify('-' . $unused . ' days');
+		$newEnd = ($this->timerService?->rollTermEndFor(date: $remaining) ?? $remaining)->format('Y-m-d');
 
 		// Resume the engine timer: it re-projects the fire moment from the
 		// unconsumed remainder (AWB 4:15), landing on the same date the
