@@ -112,6 +112,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -698,6 +699,19 @@ const registry = {
 		kind: 'page',
 		component: CaseAccessTab,
 		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
+	// --- The four clocks on the case (phase-terms-and-the-internal-target). ---
+	// A `component:` tab and not a `widgets[]` one, for the same reason
+	// CaseAccessTab is: a sidebar tab renders either a registered component or
+	// one of CnObjectSidebar's built-ins (data, metadata, audit, object-table),
+	// and none of the four can read /api/cases/{id}/terms. It is kind `page`,
+	// which is what a sidebar-tab component is in this registry; it is NOT a
+	// custom `widget`, so it adds nothing to the ADR-049 widget count.
+	// @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	CaseTermsTab: {
+		kind: 'page',
+		component: CaseTermsTab,
+		_note: 'The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server\'s: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.',
 	},
 	CaseSharingTab: {
 		kind: 'page',

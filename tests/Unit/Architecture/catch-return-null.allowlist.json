@@ -1,5 +1,5 @@
 {
-    "ceiling": 224,
+    "ceiling": 223,
     "measured": "2026-09-15",
     "window": 3,
     "about": [
@@ -12,7 +12,7 @@
         "2026-09-14, openspec/changes/inbound-mail-filters: nine sites arrived with the mail intake path. Eight are degradations of an OPTIONAL app, Nextcloud Mail, which is absent on most instances and whose service, account, attachment, folder and event readers each log at warning and answer the documented empty value; the ninth is the read-miss on an intake log entry. The ceiling went 206 to 215 for those nine and nothing else.",
         "2026-09-14, openspec/changes/case-grants-name-their-source: four sites arrived with OpenRegisterGrantsGateway, the one place dossiq asks OpenRegister who may do what on a case. All four are degradations of an app that may be absent or may predate openregister#3726, and each logs at warning naming what was absent. The null is load-bearing rather than tolerated: the caller reads null as \"carry on\" and false as \"OpenRegister refused\", and collapsing the two would lock every handler out of every case on an instance that has not upgraded. The ceiling went 215 to 219 for those four and nothing else.",
         "2026-09-15, openspec/changes/handing-a-case-over: four sites arrived with the internal handover. All four read something and answer the documented empty list when the read cannot be made: three are degradations of OpenRegister being absent or unconfigured and each logs at warning naming what it was reading, and the fourth is a read miss on a case. None is a refusal: every rule this change enforces throws RefusedException and is translated by the controller, which is why the handover's own refusals (an unresolvable team, a settled handover, an unreadable case) are nowhere on this list. The ceiling went 219 to 223 for those four and nothing else.",
-        "2026-09-15, openspec/changes/markers-and-assessments-on-the-case: ONE site arrived with CaseAttentionConditionService::contextFor, the read of the advice requests a marker condition asks about. It is a degradation of a read that may be unavailable, it logs at warning naming the case, and the empty value is load-bearing rather than tolerated: an empty CONTEXT means \"not asked\" and leaves every marker standing, where an empty ROW SET would mean \"asked, and there is nothing\" and would clear one. Collapsing the two would report a handler's work as done on no evidence, on every unrelated save. The ceiling went 223 to 224 for that one site and nothing else."
+        "2026-09-15, openspec/changes/markers-and-assessments-on-the-case: ONE site arrived with CaseAttentionConditionService::contextFor, the read of the advice requests a marker condition asks about. It is a degradation of a read that may be unavailable, it logs at warning naming the case, and the empty value is load-bearing rather than tolerated: an empty CONTEXT means \"not asked\" and leaves every marker standing, where an empty ROW SET would mean \"asked, and there is nothing\" and would clear one. Collapsing the two would report a handler's work as done on no evidence, on every unrelated save. The ceiling went 222 to 223 for that one site and nothing else."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -768,13 +768,6 @@
             "occurrence": 1,
             "class": "read-miss",
             "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: Failed to create seed object\"), so a failed read and an absent record are the same answer."
-        },
-        {
-            "file": "lib/Service/SelectionReassignmentService.php",
-            "method": "readCase",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`readCase()` answers `return null` when the read fails; the catch logs at warning (\"Reassignment could not read a case\"), so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/Settings/SchemaKeyReconciler.php",

@@ -451,13 +451,15 @@ $extra = [
     ['name' => 'caseActions#planned',        'url' => '/api/case/{caseId}/planned',         'verb' => 'GET'],
     ['name' => 'caseActions#stopSeries',     'url' => '/api/case/{caseId}/planned/{flowId}/stop', 'verb' => 'POST'],
 
-        // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
-        // prefix with literal `bulk-transition` segments, distinct from the
-        // singular `/api/case/{caseId}/...` engine routes above and from every
-        // other `/api/cases/{id}/...` parameterised route (none of which use a
-        // single literal `bulk-transition` first segment), so no collision.
-    ['name' => 'statusTransition#bulkPreview', 'url' => '/api/cases/bulk-transition/preview', 'verb' => 'POST'],
-    ['name' => 'statusTransition#bulkExecute', 'url' => '/api/cases/bulk-transition/execute', 'verb' => 'POST'],
+        // Bulk acts on cases (bulk-actions-report-progress). ONE route: the act
+        // is handed to OpenRegister's job, which owns the record, the
+        // rehearsal, the progress, the per-row outcome, the cancel and the
+        // retry. Those are read from OpenRegister's own `/api/bulk-jobs/...`
+        // routes and are deliberately NOT proxied here: a proxy would be a
+        // second job model that can disagree with the first.
+        //
+        // The two `bulk-transition` routes this replaces looped in dossiq.
+    ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
 
         // ── CMMN Adaptive Case Engine (cmmn-adaptive-case) ──────────────
         // Sibling to the Status Transition Engine above: single write-path
@@ -798,11 +800,13 @@ $extra = [
     ['name' => 'substitution#index',           'url' => '/api/substitutions',                 'verb' => 'GET'],
     ['name' => 'substitution#create',          'url' => '/api/substitutions',                 'verb' => 'POST'],
     ['name' => 'substitution#substitutedWork', 'url' => '/api/substitutions/work',            'verb' => 'GET'],
+        // Releasing a departed or absent handler's caseload builds a selection
+        // and hands it to the SAME bulk job the Cases page uses, with the same
+        // written justification. It grows no loop of its own (D-6).
+    ['name' => 'substitution#releaseCaseload', 'url' => '/api/substitutions/release-caseload', 'verb' => 'POST'],
     ['name' => 'substitution#actions',         'url' => '/api/substitutions/{id}/actions',    'verb' => 'GET'],
     ['name' => 'substitution#revoke',          'url' => '/api/substitutions/{id}/revoke',     'verb' => 'POST'],
     ['name' => 'caseReassignment#reassignPreview', 'url' => '/api/reassignments/preview',      'verb' => 'POST'],
-    ['name' => 'caseReassignment#reassignExecute', 'url' => '/api/reassignments/execute',      'verb' => 'POST'],
-    ['name' => 'caseReassignment#reassignSelection', 'url' => '/api/reassignments/selection',  'verb' => 'POST'],
 
         // ── Handing a case to another team, and handing over a leaver's work ──
         // (handing-a-case-over). The internal handover addresses a CASE; the
@@ -826,6 +830,17 @@ $extra = [
     ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
     ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
     ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // The four clocks on ONE CASE. Addressed by case and not by instance,
+        // because a case page holds a case id and there are four instances
+        // behind it: a statutory term, a planned end, an internal target and a
+        // phase term. The `/citizen` read answers with the statutory term only.
+    ['name' => 'caseTerms#index',    'url' => '/api/cases/{caseId}/terms',               'verb' => 'GET'],
+    ['name' => 'caseTerms#citizen',  'url' => '/api/cases/{caseId}/terms/citizen',       'verb' => 'GET'],
+        // Awb 4:5: asking the applicant and suspending the term are one act.
+    ['name' => 'caseTerms#requestInformation', 'url' => '/api/cases/{caseId}/information-request',          'verb' => 'POST'],
+    ['name' => 'caseTerms#receiveInformation', 'url' => '/api/cases/{caseId}/information-request/received', 'verb' => 'POST'],
+        // How old the work still standing is, read live over open cases only.
+    ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.

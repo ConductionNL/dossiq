@@ -98,6 +98,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Bezwaar/HearingSchedulePlanner.php` | 106, 153 | neither | | the Awb 7:4 lid 2 inzage floor is a minimum notice counted backwards from the hearing; rolling an end date forward would shorten it |
 | `lib/Service/Bezwaar/HearingService.php` | 570 | neither | | a proposed hearing date two weeks out, which the planner then reschedules |
 | `lib/Service/CaseLifecycleService.php` | 516, 521 | statutory | engine calendar | extends a case end date by the case type's period, which is the term a handler is judged on |
+| `lib/Service/CaseTermsService.php` | 249 | statutory | engine calendar | binds the planned end, the internal target, the phase term and a case type's fixed closing date; every one of them is a date somebody is held to, and `endAfter()` is the single line that turns a day count into one |
 | `lib/Service/ComplaintAnalyticsService.php` | 247 | neither | | a six month reporting window |
 | `lib/Service/ComplaintService.php` | 408 | statutory | `WorkingDayCalculator` | Awb 9:11 klachttermijn in weeks; the service already consults the calculator for working days |
 | `lib/Service/DeadlinePauseService.php` | 93, 172 | statutory | engine calendar | Awb 4:5 and 4:15: the credited suspension and the unused remainder both move `endDateCurrent` |

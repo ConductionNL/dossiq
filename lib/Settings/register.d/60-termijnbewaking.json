@@ -111,14 +111,14 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Termijn Instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
         "type": "object",
+        "x-notes": "`deadlineDefinition` left the required list in 1.1.0. Four kinds of clock are instances of this schema now, and only the statutory one materialises from a TermijnDefinitie: a planned end, an internal target and a phase term are declared on the case type and the status type. Keeping the reference required would have forced a made-up definition id onto three of the four kinds, which is worse than an absent reference because a made-up id resolves to nothing while claiming to resolve.",
         "required": [
           "case",
-          "deadlineDefinition",
           "startDate",
           "endDateCalculated",
           "endDateCurrent",
@@ -130,6 +130,33 @@
             "title": "Case Reference",
             "description": "Reference to the dossiq case (case id)",
             "facetable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statutory",
+              "planned",
+              "internal",
+              "phase"
+            ],
+            "default": "statutory",
+            "title": "Kind of clock",
+            "description": "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another.",
+            "facetable": true
+          },
+          "statusType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "statusType",
+            "title": "Phase",
+            "description": "The phase this clock belongs to. Filled in on a phase term and empty on the other three kinds.",
+            "facetable": true
+          },
+          "plannedStartDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Planned start date",
+            "description": "The day work on this case is planned to start. A case carrying one shows it in the working list, so a handler can see what is coming as well as what is due."
           },
           "deadlineDefinition": {
             "type": "string",
@@ -224,7 +251,7 @@
       "termijnGebeurtenis": {
         "slug": "termijnGebeurtenis",
         "icon": "ScriptText",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Event",
         "title": "Termijn Gebeurtenis",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
@@ -254,11 +281,22 @@
               "penaltypayment-gestart",
               "pause-expired",
               "objection-submitted",
-              "objection-resolved"
+              "objection-resolved",
+              "information-requested",
+              "information-received",
+              "information-request-failed"
             ],
             "title": "Event Type",
             "description": "Event kind",
             "facetable": true
+          },
+          "items": {
+            "type": "array",
+            "title": "What was asked for",
+            "description": "The missing items named in a request to the applicant, or the ones that came back with the aanvulling. Asking and suspending the term are one act under Awb 4:5, so one record carries what was asked, when it was asked, and the suspension it caused.",
+            "items": {
+              "type": "string"
+            }
           },
           "moment": {
             "type": "string",
