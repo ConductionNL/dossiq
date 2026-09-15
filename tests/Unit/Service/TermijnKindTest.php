@@ -22,6 +22,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermCalendarGuard;
 use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -108,7 +109,7 @@ class TermijnKindTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnInstanceWithNoKindReadsAsStatutory(): void {
-		self::assertSame(TermKind::STATUTORY, TermKind::of(['case' => 'c1']));
+		self::assertSame(TermKind::STATUTORY, TermKind::ofInstance(['case' => 'c1']));
 	}//end testAnInstanceWithNoKindReadsAsStatutory()
 
 	/**
@@ -118,7 +119,7 @@ class TermijnKindTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnknownKindReadsAsStatutory(): void {
-		self::assertSame(TermKind::STATUTORY, TermKind::of(['kind' => 'something-else']));
+		self::assertSame(TermKind::STATUTORY, TermKind::ofInstance(['kind' => 'something-else']));
 		self::assertFalse(TermKind::isKnown('something-else'));
 	}//end testAnUnknownKindReadsAsStatutory()
 
@@ -272,6 +273,7 @@ class TermijnKindTest extends TestCase {
 			logger: new NullLogger(),
 			dates: $this->caseDates(),
 			fallbackCalendar: new WorkingDayCalculator(),
+			calendarGuard: new TermCalendarGuard(logger: new NullLogger()),
 		);
 
 		try {
@@ -305,6 +307,7 @@ class TermijnKindTest extends TestCase {
 			logger: new NullLogger(),
 			dates: $this->caseDates(),
 			fallbackCalendar: new WorkingDayCalculator(),
+			calendarGuard: new TermCalendarGuard(logger: new NullLogger()),
 		);
 
 		// 19 September 2026 is a Saturday, so the local calendar rolls it.

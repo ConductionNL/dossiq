@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -114,7 +115,7 @@ class TermijnService {
 			// The kind this instance carries. A term created here is the one the
 			// Awb sets and the citizen is told about, and every instance written
 			// before the four kinds existed is one of these too, which is why
-			// {@see TermKind::of()} reads an absent kind as statutory.
+			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
 			'kind' => TermKind::STATUTORY,
 			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
 			'endDateCalculated' => $endDate,
@@ -262,6 +263,8 @@ class TermijnService {
 	 *
 	 * @return array<int, array<string, mixed>> The instances, newest start first.
 	 *
+	 * @throws RefusedException When the store could not be asked.
+	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
 	public function instancesForCase(string $caseId): array {
@@ -284,13 +287,21 @@ class TermijnService {
 				filters: ['case' => $caseId]
 			);
 		} catch (\Throwable $e) {
+			// NOT an empty list. A case with no clocks and a case whose clocks
+			// could not be read are opposite facts, and the second rendered as
+			// the first tells a handler there is no deadline.
 			$this->logger->warning(
-				'TermijnService.instancesForCase lookup failed',
+				'TermijnService.instancesForCase lookup failed, so the read is refused',
 				['case' => $caseId, 'error' => $e->getMessage()]
 			);
 
-			return [];
-		}
+			throw new RefusedException(
+				rule: 'term-instances-unreadable',
+				sentence: 'The terms on this case could not be read.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
 
 		usort(
 			$rows,

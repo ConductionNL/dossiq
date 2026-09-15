@@ -117,7 +117,7 @@ final class TermKind {
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
-	public static function of(array $instance): string {
+	public static function ofInstance(array $instance): string {
 		$kind = (string)($instance['kind'] ?? '');
 
 		if (self::isKnown(kind: $kind) === true) {
@@ -125,7 +125,7 @@ final class TermKind {
 		}
 
 		return self::STATUTORY;
-	}//end of()
+	}//end ofInstance()
 
 	/**
 	 * Whether a citizen may be shown this clock (REQ-TERM-063).
@@ -159,7 +159,7 @@ final class TermKind {
 		$visible = [];
 
 		foreach ($terms as $term) {
-			if (self::isCitizenVisible(kind: self::of(instance: $term)) === true) {
+			if (self::isCitizenVisible(kind: self::ofInstance(instance: $term)) === true) {
 				$visible[] = $term;
 			}
 		}//end foreach

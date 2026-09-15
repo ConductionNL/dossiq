@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -91,6 +92,8 @@ class OpenWorkloadAgeService {
 	 * @return array{generatedAt: string, openCases: int, truncated: bool,
 	 *               perStatus: array<int, array{status: string, cases: int, averageDays: int,
 	 *               medianDays: int, oldestDays: int}>}
+	 *
+	 * @throws RefusedException When the open cases could not be read at all.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
 	 */
@@ -136,7 +139,9 @@ class OpenWorkloadAgeService {
 	/**
 	 * The open cases, filtered by the store rather than by this reading.
 	 *
-	 * @return array<int, array<string, mixed>> The rows, empty when unreadable.
+	 * @return array<int, array<string, mixed>> The rows; empty only when nothing is configured.
+	 *
+	 * @throws RefusedException When the store could not be asked.
 	 */
 	private function openCases(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -162,12 +167,21 @@ class OpenWorkloadAgeService {
 				filters: ['isFinalStatus' => 0, '_limit' => self::MAX_ROWS]
 			);
 		} catch (\Throwable $e) {
+			// 🔴 NOT an empty list. "We could not ask" and "nothing is standing"
+			// are opposite answers to a teamleider, and the second one closes a
+			// question the app never managed to put. The controller turns this
+			// into a 503 that says so.
 			$this->logger->warning(
-				'Dossiq workload age: the open cases could not be read',
+				'Dossiq workload age: the open cases could not be read, so the report is refused',
 				['error' => $e->getMessage()]
 			);
 
-			return [];
+			throw new RefusedException(
+				rule: 'open-workload-unreadable',
+				sentence: 'The open cases could not be read, so their age cannot be reported.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
 		}
 	}//end openCases()
 
@@ -211,11 +225,19 @@ class OpenWorkloadAgeService {
 			return null;
 		}
 
-		try {
-			$from = (new DateTimeImmutable($start))->setTime(0, 0);
-		} catch (\Throwable $e) {
+		// FALSE rather than a throw, so an unreadable stored date is read as
+		// absent instead of caught and silently turned into one.
+		$parsed = date_create_immutable($start);
+		if ($parsed === false) {
+			$this->logger->warning(
+				'Dossiq workload age: a case carries a start date nothing can read, so it is left out',
+				['value' => $start]
+			);
+
 			return null;
 		}
+
+		$from = $parsed->setTime(0, 0);
 
 		if ($from > $today) {
 			return 0;

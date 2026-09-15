@@ -205,7 +205,7 @@ class RequestInformationSuspendsTest extends TestCase {
 		$result = $this->service()->receive(
 			caseId: 'c1',
 			items: ['Bankafschrift'],
-			at: new DateTimeImmutable('2026-09-20'),
+			when: new DateTimeImmutable('2026-09-20'),
 		);
 
 		self::assertTrue($result['resumed']);

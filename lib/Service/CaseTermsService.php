@@ -52,6 +52,10 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. Making it an instance would add a constructor dependency
+ * to every class that names a kind, to hide a `::` behind a `->`.
  */
 class CaseTermsService {
 	/**
@@ -169,7 +173,7 @@ class CaseTermsService {
 		$end = $this->timers->rollTermEndFor(date: new DateTimeImmutable($fixed))->format('Y-m-d');
 		$existing = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
 
-		if ($existing !== null && TermKind::of($existing) === TermKind::STATUTORY) {
+		if ($existing !== null && TermKind::ofInstance($existing) === TermKind::STATUTORY) {
 			return $this->termService->updateTermijnInstance(
 				termInstanceId: (string)($existing['id'] ?? ''),
 				patch: [
@@ -273,7 +277,7 @@ class CaseTermsService {
 
 		$terms = [];
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			$kind = TermKind::of($row);
+			$kind = TermKind::ofInstance($row);
 			$end = (string)($row['endDateCurrent'] ?? ($row['endDateCalculated'] ?? ''));
 			$daysLeft = $this->daysLeft(end: $end, today: $today);
 
@@ -540,12 +544,21 @@ class CaseTermsService {
 			return null;
 		}
 
-		try {
-			return (new DateTimeImmutable($value))->setTime(0, 0);
-		} catch (\Throwable $e) {
-			$this->logger->debug('Dossiq terms: unreadable date on a term instance', ['value' => $value]);
+		// `date_create_immutable()` answers FALSE where the constructor throws,
+		// so a stored value nobody can parse is a value this reads as absent
+		// rather than an exception this swallows. The distinction matters: a
+		// catch that returns null cannot tell a malformed date from a store
+		// that fell over, and this one only ever sees the first.
+		$parsed = date_create_immutable($value);
+		if ($parsed === false) {
+			$this->logger->warning(
+				'Dossiq terms: a term instance carries a date nothing can read, so it is treated as unset',
+				['value' => $value]
+			);
 
 			return null;
 		}
+
+		return $parsed->setTime(0, 0);
 	}//end dayOf()
 }//end class

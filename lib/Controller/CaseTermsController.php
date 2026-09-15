@@ -142,6 +142,8 @@ class CaseTermsController extends Controller {
 
 		try {
 			return new JSONResponse(['case' => $caseId, 'terms' => $this->terms->citizenTermsFor(caseId: $caseId)]);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'read the term a citizen may see', e: $e);
 		} catch (Throwable $e) {
 			$this->logger->warning('CaseTerms citizen view failed: ' . $e->getMessage());
 
@@ -149,7 +151,7 @@ class CaseTermsController extends Controller {
 				['message' => 'The term on this case could not be read.', 'error' => 'terms-unreadable'],
 				Http::STATUS_SERVICE_UNAVAILABLE
 			);
-		}
+		}//end try
 	}//end citizen()
 
 	/**
@@ -249,6 +251,8 @@ class CaseTermsController extends Controller {
 
 		try {
 			return new JSONResponse($this->workload->report());
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'read the age of the open workload', e: $e);
 		} catch (Throwable $e) {
 			$this->logger->warning('CaseTerms workload age failed: ' . $e->getMessage());
 
@@ -256,7 +260,7 @@ class CaseTermsController extends Controller {
 				['message' => 'The workload age could not be read.', 'error' => 'workload-age-unreadable'],
 				Http::STATUS_SERVICE_UNAVAILABLE
 			);
-		}
+		}//end try
 	}//end workloadAge()
 
 	/**

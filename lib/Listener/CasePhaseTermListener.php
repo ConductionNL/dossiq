@@ -54,6 +54,11 @@ use Throwable;
  *
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. Making it an instance would add a constructor dependency
+ * to every class that names a kind, to hide a `::` behind a `->`.
+ *
  * @template-implements IEventListener<Event>
  */
 class CasePhaseTermListener implements IEventListener {
@@ -129,7 +134,7 @@ class CasePhaseTermListener implements IEventListener {
 	 */
 	private function alreadyClocked(string $caseId, string $statusTypeId): bool {
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::of($row) !== TermKind::PHASE) {
+			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
 				continue;
 			}
 

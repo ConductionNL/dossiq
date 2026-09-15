@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -224,8 +225,15 @@ class TermDeclarationReader {
 				filters: ['caseType' => $caseTypeId]
 			);
 		} catch (\Throwable $e) {
-			return [];
-		}
+			// "This type declares no phases" and "we could not ask" are opposite
+			// answers, and the first one silently gives every phase zero days.
+			throw new RefusedException(
+				rule: 'term-declarations-unreadable',
+				sentence: 'The phases of this case type could not be read, so its terms were not resolved.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
 	}//end statusRowsOf()
 
 	/**
@@ -344,8 +352,17 @@ class TermDeclarationReader {
 				id: $id
 			);
 		} catch (\Throwable $e) {
-			return [];
-		}
+			// A row that is not there comes back as null from the finder, which
+			// is a read miss and an ordinary answer. Reaching this catch means
+			// the store could not be asked, and answering "declares nothing"
+			// to that would let an unreadable case type allow every suspension.
+			throw new RefusedException(
+				rule: 'term-declarations-unreadable',
+				sentence: 'This case type could not be read, so its terms were not resolved.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}//end try
 
 		return ($row ?? []);
 	}//end findRow()

@@ -58,6 +58,10 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. Making it an instance would add a constructor dependency
+ * to every class that names a kind, to hide a `::` behind a `->`.
  */
 class InformationRequestService {
 	/**
@@ -211,7 +215,7 @@ class InformationRequestService {
 	 *
 	 * @param string $caseId The case UUID.
 	 * @param array<int, string> $items What came in, one line each.
-	 * @param DateTimeImmutable|null $at When it arrived (default now).
+	 * @param DateTimeImmutable|null $when When it arrived (default now).
 	 *
 	 * @return array{resumed: bool, instance: array<string, mixed>, record: array<string, mixed>|null}
 	 *
@@ -219,8 +223,8 @@ class InformationRequestService {
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
 	 */
-	public function receive(string $caseId, array $items, ?DateTimeImmutable $at = null): array {
-		$moment = ($at ?? new DateTimeImmutable());
+	public function receive(string $caseId, array $items, ?DateTimeImmutable $when = null): array {
+		$moment = ($when ?? new DateTimeImmutable());
 		$instance = $this->suspendedTermFor(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? '');
 
@@ -293,7 +297,7 @@ class InformationRequestService {
 	 */
 	private function runningTermFor(string $caseId): array {
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::of($row) !== TermKind::STATUTORY) {
+			if (TermKind::ofInstance($row) !== TermKind::STATUTORY) {
 				continue;
 			}
 
@@ -320,7 +324,7 @@ class InformationRequestService {
 	 */
 	private function suspendedTermFor(string $caseId): array {
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::of($row) === TermKind::STATUTORY && (string)($row['status'] ?? '') === 'paused') {
+			if (TermKind::ofInstance($row) === TermKind::STATUTORY && (string)($row['status'] ?? '') === 'paused') {
 				return $row;
 			}
 		}//end foreach

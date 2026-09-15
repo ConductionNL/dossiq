@@ -139,7 +139,7 @@ class PhaseTermTest extends TestCase {
 			caseId: 'c1',
 			caseTypeId: 'ct1',
 			statusTypeId: 'st1',
-			at: new DateTimeImmutable('2026-09-01'),
+			when: new DateTimeImmutable('2026-09-01'),
 		);
 
 		self::assertNotNull($started);
@@ -165,7 +165,7 @@ class PhaseTermTest extends TestCase {
 			caseId: 'c1',
 			caseTypeId: 'ct1',
 			statusTypeId: 'st1',
-			at: new DateTimeImmutable('2026-09-15'),
+			when: new DateTimeImmutable('2026-09-15'),
 		);
 
 		self::assertArrayHasKey('p1', $this->patches);
@@ -188,7 +188,7 @@ class PhaseTermTest extends TestCase {
 
 		$this->phases->stopRunningPhases(
 			caseId: 'c1',
-			at: new DateTimeImmutable('2026-09-15'),
+			when: new DateTimeImmutable('2026-09-15'),
 			except: 'st1',
 		);
 
@@ -225,7 +225,7 @@ class PhaseTermTest extends TestCase {
 			array_merge($this->instanceOf(kind: TermKind::PHASE, end: '2026-11-01'), ['id' => 'p1', 'statusType' => 'st0']),
 		];
 
-		$this->phases->stopRunningPhases(caseId: 'c1', at: new DateTimeImmutable('2026-09-15'));
+		$this->phases->stopRunningPhases(caseId: 'c1', when: new DateTimeImmutable('2026-09-15'));
 
 		self::assertArrayHasKey('p1', $this->patches);
 		self::assertArrayNotHasKey('s1', $this->patches, 'Nothing here may write to a statutory instance.');

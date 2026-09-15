@@ -55,6 +55,10 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. Making it an instance would add a constructor dependency
+ * to every class that names a kind, to hide a `::` behind a `->`.
  */
 class PhaseTermService {
 	/**
@@ -92,7 +96,7 @@ class PhaseTermService {
 	 * @param string $caseId The case UUID.
 	 * @param string $caseTypeId The case type UUID.
 	 * @param string $statusTypeId The phase being entered.
-	 * @param DateTimeImmutable|null $at When the move happened (default now).
+	 * @param DateTimeImmutable|null $when When the move happened (default now).
 	 *
 	 * @return array<string, mixed>|null The started phase term, or null when the
 	 *         phase declares no clock and the chain declares no term either.
@@ -103,14 +107,14 @@ class PhaseTermService {
 		string $caseId,
 		string $caseTypeId,
 		string $statusTypeId,
-		?DateTimeImmutable $at = null,
+		?DateTimeImmutable $when = null,
 	): ?array {
 		if ($caseId === '' || $statusTypeId === '') {
 			return null;
 		}
 
-		$moment = ($at ?? new DateTimeImmutable());
-		$this->stopRunningPhases(caseId: $caseId, at: $moment, except: $statusTypeId);
+		$moment = ($when ?? new DateTimeImmutable());
+		$this->stopRunningPhases(caseId: $caseId, when: $moment, except: $statusTypeId);
 
 		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
 		if ($days <= 0) {
@@ -137,19 +141,19 @@ class PhaseTermService {
 	 * Stop every running phase clock on a case.
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param DateTimeImmutable|null $at When they stopped (default now).
+	 * @param DateTimeImmutable|null $when When they stopped (default now).
 	 * @param string $except A phase to leave running, when the case is entering it.
 	 *
 	 * @return int How many clocks were stopped.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
-	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $at = null, string $except = ''): int {
-		$moment = ($at ?? new DateTimeImmutable());
+	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $when = null, string $except = ''): int {
+		$moment = ($when ?? new DateTimeImmutable());
 
 		$stopped = 0;
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::of($row) !== TermKind::PHASE) {
+			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
 				continue;
 			}
 
@@ -280,7 +284,7 @@ class PhaseTermService {
 	private function spentPerPhase(string $caseId, array $phases, int $upTo): array {
 		$byPhase = [];
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::of($row) !== TermKind::PHASE) {
+			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
 				continue;
 			}
 
