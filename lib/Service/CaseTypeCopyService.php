@@ -61,14 +61,6 @@ class CaseTypeCopyService {
 	];
 
 	/**
-	 * Constructor.
-	 *
-	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
-	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
-	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
-	 * @param LoggerInterface        $logger          Logger.
-	 */
-	/**
 	 * What the copy in progress could not carry.
 	 *
 	 * Held on the instance for the same reason `SeedDataService` holds its
@@ -79,6 +71,14 @@ class CaseTypeCopyService {
 	 */
 	private array $notCarried = [];
 
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
+	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
+	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
+	 * @param LoggerInterface        $logger          Logger.
+	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,

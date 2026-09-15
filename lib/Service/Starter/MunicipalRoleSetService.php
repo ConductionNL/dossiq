@@ -374,9 +374,10 @@ class MunicipalRoleSetService {
 				filters: ['roleType' => $roleTypeId, '_limit' => 1],
 			);
 
-			// null is "could not look", not "found none", and the difference
-			// matters here: reporting no grants because the role schema is
-			// unconfigured would let an undo strip access nobody checked for.
+			// A null answer means "could not look", not "found none", and the
+			// difference matters here: reporting no grants because the role
+			// schema is unconfigured would let an undo strip access nobody
+			// checked for.
 			if ($grants === null || $grants !== []) {
 				$inUse[] = (string)($role['name'] ?? '');
 			}
