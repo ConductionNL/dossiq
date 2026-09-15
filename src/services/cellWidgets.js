@@ -19,6 +19,7 @@
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
 import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
 import StatusBadgeCell from '../components/cells/StatusBadgeCell.vue'
+import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'
 
 export default {
 	// The Deadline column on the Cases index: days left, days overdue past
@@ -37,4 +38,11 @@ export default {
 	// status type carries.
 	// @spec openspec/specs/case-types/spec.md
 	statusBadge: StatusBadgeCell,
+
+	// The Unread column on the case lists: whether this row changed since the
+	// reader last looked. Keyed on `@self.unread`, which OpenRegister attaches
+	// per reader on the render path rather than storing, so nothing in dossiq
+	// holds a read state of its own.
+	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	unreadIndicator: UnreadIndicatorCell,
 }
