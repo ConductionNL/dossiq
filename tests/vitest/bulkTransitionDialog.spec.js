@@ -37,6 +37,10 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
+// See bulkProgress.spec.js: jsdom environment setup dominates this file's wall
+// clock, and under load it can spend the default 5s budget on its own.
+vi.setConfig({ testTimeout: 30000, hookTimeout: 30000 })
+
 /**
  * A stub that renders its default and actions slots.
  *

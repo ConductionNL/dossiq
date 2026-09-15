@@ -22,6 +22,14 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
+// The default 5s is jsdom ENVIRONMENT setup plus the test, and on this file
+// setup is about two thirds of the wall clock. Under a loaded machine, or
+// beside the PHP suite, the setup alone can spend the budget and the failure
+// reads as "the panel did not render" rather than "the environment was slow".
+// Raised here rather than globally: the node-environment specs, which are most
+// of the suite, should keep failing fast.
+vi.setConfig({ testTimeout: 30000, hookTimeout: 30000 })
+
 const fetchBulkJobMembers = vi.fn()
 const commitBulkJob = vi.fn()
 const cancelBulkJob = vi.fn()
