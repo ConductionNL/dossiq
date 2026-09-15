@@ -11,7 +11,9 @@
  *
  *  - DeelzaakCreateModal fell back to `'public'` when the chosen sub-case
  *    type had no confidentiality, so a sub-case could not be created for any
- *    such type. Nine of the 23 case types on the dev instance have none.
+ *    such type. Nine of the 23 case types on the dev instance have none. The
+ *    modal now derives the sub-case through `createSubCase()`, so the payload
+ *    is captured there; the fallback it asserts is unchanged.
  *  - The case type General tab offered `public`, `internal`, `secret` and so
  *    on as option ids, so no confidentiality could be saved on a case type
  *    from the settings page. That is how case types without one came about.
@@ -41,6 +43,17 @@ vi.mock('../../src/store/modules/deelzaak.js', () => ({
 }))
 vi.mock('../../src/store/modules/object.js', () => ({ useObjectStore: () => ({}) }))
 
+// The modal derives the sub-case rather than saving it, so this is where the
+// payload is captured: a save with parentCase filled in builds the hierarchy
+// and inherits nothing, which is what the derive replaced.
+const derived = { object: null }
+vi.mock('../../src/services/deelzaakApi.js', () => ({
+	createSubCase: async ({ object }) => {
+		derived.object = object
+		return { ok: true, object: { id: 'sub-1' }, inherited: {}, inheritanceApplied: true }
+	},
+}))
+
 const { default: DeelzaakCreateModal } =
 	await import('../../src/modals/DeelzaakCreateModal.vue')
 const { getConfidentialityOptions } =
@@ -57,7 +70,7 @@ const caseTypeEnum =
  * @return {Promise<object>} The payload handed to the object store.
  */
 async function submitSubCase(caseType) {
-	let saved = null
+	derived.object = null
 	const context = {
 		serverError: '',
 		saving: false,
@@ -72,19 +85,13 @@ async function submitSubCase(caseType) {
 		form: { title: 'Advies brandweer', description: '', caseType: 'ct-1' },
 		validate: () => true,
 		deelzaakStore: { validateSubCase: async () => ({ ok: true }) },
-		objectStore: {
-			saveObject: async (schema, data) => {
-				saved = data
-				return { id: 'sub-1' }
-			},
-		},
 		$emit: () => {},
 	}
 
 	await DeelzaakCreateModal.methods.submit.call(context)
 	expect(context.serverError).toBe('')
 
-	return saved
+	return derived.object
 }
 
 describe('Sub-case confidentiality', () => {

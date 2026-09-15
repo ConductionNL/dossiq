@@ -118,7 +118,7 @@ export async function sleepTriageItem(entryId, until, reason) {
  * @param {string} caseTypeId   The intake case type the form maps to.
  * @param {object} submission   The submitted values every case starts from.
  * @param {string} submissionId The submission's own identifier.
- * @return {Promise<object>} `{created, failed, relationHasNoInverse}`.
+ * @return {Promise<object>} `{created, failed}`.
  *
  * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */

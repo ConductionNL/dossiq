@@ -252,22 +252,25 @@ class IntakeFanOutTest extends TestCase {
 	/**
 	 * The answer says the relation carries no inverse name yet.
 	 *
-	 * The named relation type is openregister's `relation-types-with-inverses`
-	 * and it does not exist, so this is recorded rather than implied.
+	 * The cases are tied with `samenhang`, which the case schema declares
+	 * symmetric, so both ends read the same word because that is what the
+	 * relation IS and not because nothing better existed. The answer no longer
+	 * carries `relationHasNoInverse`, because there is nothing left to warn of.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-one-submission-opens-several-cases-tracked-together-req-triage-06
 	 */
-	public function testTheMissingInverseIsRecordedInTheAnswer(): void {
+	public function testTheSiblingsAreTiedWithTheSymmetricRelation(): void {
 		$result = $this->fanOut()->submit(
 			formCaseTypeId: 'ct-melding',
 			submission: [],
 			submissionId: 'sub-1'
 		);
 
-		$this->assertTrue($result['relationHasNoInverse']);
-	}//end testTheMissingInverseIsRecordedInTheAnswer()
+		$this->assertSame(CaseRelationService::RELATION_SAMENHANG, IntakeFanOut::RELATION);
+		$this->assertArrayNotHasKey('relationHasNoInverse', $result);
+	}//end testTheSiblingsAreTiedWithTheSymmetricRelation()
 
 	/**
 	 * A department carries its own case and nothing of the sibling's.
