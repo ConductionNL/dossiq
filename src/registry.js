@@ -73,6 +73,7 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
+import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
@@ -294,6 +295,13 @@ const registry = {
 		component: CaseTypeDuplicateDialog,
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
 	},
+	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	CaseHandoverDialog: {
+		kind: 'modal',
+		component: CaseHandoverDialog,
+		_note: 'CaseDetail Actions menu: hand this case to another team. A modal rather than an api-call because the act takes a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the field that cannot be defaulted: on, the applicant is told the case moved and to whom; off, nothing is sent, because an internal move between two teams of one bestuursorgaan is our arrangement and not their news.',
+	},
+
 	// @spec openspec/specs/status-transition-engine/spec.md
 	CaseLifecycleActionDialog: {
 		kind: 'modal',

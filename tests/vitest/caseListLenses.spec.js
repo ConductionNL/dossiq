@@ -94,23 +94,42 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
  * deliberately left unbroken. It is asserted in its own file,
  * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
  * column beside it.
+ *
+ * Handed on is the second such lens, and it is spelled out here rather than
+ * spliced into LENSES because the list is no longer LENSES plus one: two
+ * Cases-only chips sit at different positions, and `slice(1)` with two
+ * insertions reads as arithmetic rather than as an order anybody chose. Its
+ * key and its filter are asserted in `handingACaseOver.spec.js`.
  */
-const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1), 'Stuck']
+const CASE_LENSES = [
+	'All',
+	'Unread',
+	'Mine',
+	'Unclaimed',
+	'Handed on',
+	'Closed',
+	'Overdue',
+	'Due this week',
+	'Stuck',
+]
 
 /**
- * The lenses the Cases list carries and the Tasks list cannot.
+ * The three chips the Cases list carries and the Tasks list cannot.
  *
- * Unread is a per-USER lens over OpenRegister's read state, and a task is a
- * different object with a read state of its own. Stuck narrows on
- * `statusDwellBreached`, which is written when a case sits in a STATUS longer
- * than that status allows, and a task has no status type and no maximum dwell.
- * Both are asserted in their own files rather than dropped from the parity
- * comparison, so the day tasks grow either one, this list is what says so.
+ * Named once so the parity test below subtracts exactly these and nothing
+ * else: a hand-written `filter` per exception is how a fourth Cases-only lens
+ * would quietly stop being compared at all.
+ *
+ * Unread is a per-USER lens over OpenRegister's read state on the `case`
+ * schema. Handed on reads `handoverPending`, which a case carries because a
+ * case is what moves between teams. Stuck reads `statusDwellBreached`, written
+ * when a case sits in a STATUS longer than that status allows, and a task has
+ * neither a status type nor a maximum dwell.
  */
-const CASES_ONLY = ['Unread', 'Stuck']
+const CASES_ONLY = ['Unread', 'Handed on', 'Stuck']
 
 describe('Cases index lenses', () => {
-	it('declares the eight chips in order', () => {
+	it('declares the nine chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -163,14 +182,17 @@ describe('Cases index lenses', () => {
 })
 
 describe('Tasks index lenses', () => {
-	it('declares the same six labels as Cases, in the same order', () => {
+	it('declares the same six labels as the Cases list shares with it, in order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
-		// The parity is still asserted, with the lenses a task list cannot
-		// carry taken out rather than the whole comparison dropped. Unread is
-		// a per-USER lens over OpenRegister's read state on the `case` schema;
-		// Stuck narrows on a case sitting in a STATUS longer than that status
+		// The parity is still asserted, with the three lenses a task list
+		// cannot carry taken out rather than the whole comparison dropped.
+		// Unread is a per-USER lens over OpenRegister's read state on the
+		// `case` schema, and a task is a different object with a read state of
+		// its own. Handed on reads `handoverPending`, which a case carries
+		// because a case is what moves between teams; a task moves with its
+		// case. Stuck reads a case sitting in a STATUS longer than that status
 		// allows, and a task has neither a status type nor a maximum dwell.
-		// The day tasks grow either one, this filter is what says so.
+		// The day any of the three grows a counterpart, this filter says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
 			chips('Cases')
 				.map((entry) => entry.label)

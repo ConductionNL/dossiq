@@ -183,7 +183,7 @@ class StatusDwellTimerTest extends TestCase {
 	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */
 	public function testLeavingTheStatusCancelsTheTimer(): void {
-		$declarations = $this->declarations([
+		$declarations = $this->declarations(statusTypes: [
 			'review' => ['id' => 'review', 'name' => 'Under review', 'order' => 1, 'maximumDwell' => 20],
 			'decision' => ['id' => 'decision', 'name' => 'Decision', 'order' => 2],
 		]);
@@ -207,7 +207,7 @@ class StatusDwellTimerTest extends TestCase {
 	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */
 	public function testEnteringAStatusWithAMaximumArmsAfterCancelling(): void {
-		$declarations = $this->declarations([
+		$declarations = $this->declarations(statusTypes: [
 			'review' => ['id' => 'review', 'name' => 'Under review', 'order' => 1, 'maximumDwell' => 20],
 		]);
 

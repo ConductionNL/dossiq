@@ -169,12 +169,16 @@ class StatusDwellService {
 	 */
 	public function snapshot(array $case, ?int $maximum, ?DateTimeImmutable $now = null): array {
 		$entered = $this->enteredAt(case: $case);
+		$enteredAt = '';
+		if ($entered !== null) {
+			$enteredAt = $entered->format('c');
+		}
 
 		return [
 			'days' => $this->elapsedWorkingDays(case: $case, now: $now),
 			'maximum' => $maximum,
 			'breached' => $this->isBreached(case: $case, maximum: $maximum, now: $now),
-			'enteredAt' => ($entered === null ? '' : $entered->format('c')),
+			'enteredAt' => $enteredAt,
 		];
 	}//end snapshot()
 

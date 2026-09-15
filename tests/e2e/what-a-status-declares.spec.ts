@@ -36,7 +36,6 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
-	createObject,
 	getAvailableTransitions,
 	getRequestToken,
 	objectId,

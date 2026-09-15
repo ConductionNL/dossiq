@@ -114,11 +114,16 @@ class StatusDwellTimer {
 			return null;
 		}
 
+		$named = $statusName;
+		if ($named === '') {
+			$named = $statusTypeId;
+		}
+
 		$config = [
 			'subjectType' => 'object',
 			'subjectUuid' => $caseId,
 			'appId' => 'dossiq',
-			'title' => 'Maximum dwell ' . ($statusName === '' ? $statusTypeId : $statusName),
+			'title' => 'Maximum dwell ' . $named,
 			'purpose' => 'due',
 			'legalEffect' => 'none',
 			'sla' => [

@@ -210,11 +210,12 @@ export default {
 				this.current = data?.current || {}
 				this.derivation = data?.derivation || null
 				this.loaded = true
-			} catch (error) {
-				// An instance whose transition engine refuses, or whose case
-				// has no workflow at all, has nothing to declare. No strip is
-				// the honest rendering of that, and an error toast here would
-				// fire on every case page of such an instance.
+			} catch {
+				// Binds nothing, deliberately. An instance whose transition
+				// engine refuses, or whose case has no workflow at all, has
+				// nothing to declare: no strip is the honest rendering of
+				// that, and an error toast here would fire on every case page
+				// of such an instance.
 				this.loaded = false
 			}
 		},

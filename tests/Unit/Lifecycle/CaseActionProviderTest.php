@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -99,6 +100,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerAnswering()
@@ -329,6 +331,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -361,6 +364,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -467,6 +471,7 @@ class CaseActionProviderTest extends TestCase {
 					],
 				]
 			),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -513,6 +518,7 @@ class CaseActionProviderTest extends TestCase {
 					'update' => ['action' => 'update', 'granted' => true, 'source' => 'role', 'role' => 'behandelaar'],
 				]
 			),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -557,6 +563,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(provenance: null),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

@@ -265,6 +265,11 @@ class ConfigKeys {
 		// holds the original of every message the mailbox received.
 		'email_intake_role',
 		'mail_intake_entry_schema',
+		// The classification schemes a case type may classify against, as a
+		// JSON map of scheme name to allowed values. A case type marking its
+		// classification an access rule against a scheme absent from here
+		// refuses creation rather than creating a case nobody can reach.
+		'case_classification_schemes',
 		'email_transport',
 		'email_poll_interval',
 		'email_poll_batch_size',

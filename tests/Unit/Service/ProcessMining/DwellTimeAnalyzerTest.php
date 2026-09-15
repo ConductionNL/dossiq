@@ -367,8 +367,9 @@ class DwellTimeAnalyzerTest extends TestCase {
 			now: new DateTimeImmutable('2026-06-08T09:00:00+02:00'),
 		);
 
-		// case-1: 4 banked in intake, 5 running in review. case-2: 5 in intake.
-		self::assertSame(['intake' => 9, 'review' => 5], $totals);
+		// Case-1 banked 4 in intake and has 5 running in review; case-2 has 5
+		// in intake.
+		self::assertSame(expected: ['intake' => 9, 'review' => 5], actual: $totals);
 
 	}//end testHeldTotalsAreReadOffTheCasesRatherThanRecomputed()
 
@@ -390,8 +391,8 @@ class DwellTimeAnalyzerTest extends TestCase {
 		);
 
 		self::assertSame(
-			[],
-			$analyzer->heldTotalsByStatus(
+			expected: [],
+			actual: $analyzer->heldTotalsByStatus(
 				casesById: ['case-1' => ['status' => 'review', 'startDate' => '2026-01-01']],
 				now: $this->now,
 			)
@@ -409,8 +410,8 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 */
 	public function testWithoutTheHeldReaderTheTotalsAreEmpty(): void {
 		self::assertSame(
-			[],
-			$this->analyzer->heldTotalsByStatus(
+			expected: [],
+			actual: $this->analyzer->heldTotalsByStatus(
 				casesById: ['case-1' => ['status' => 'review', 'currentStatusEnteredAt' => '2026-06-01T09:00:00+02:00']],
 				now: $this->now
 			)

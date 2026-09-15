@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Lifecycle;
 
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -135,6 +136,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
+	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
@@ -144,6 +146,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		private readonly StatusTransitionService $transitionEngine,
 		private readonly CaseResultWriter $resultWriter,
 		private readonly OpenRegisterGrantsGateway $grants,
+		private readonly ExternalHome $externalHome,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -240,8 +243,38 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			return [];
 		}
 
-		return $actions;
+		// A case homed in another application (REQ-HAND-04). The acts stay in
+		// the list and come back BLOCKED, carrying the application that holds
+		// the work: an act that vanished would read as a permission problem
+		// and send somebody to the rights matrix for an afternoon.
+		return $this->honourExternalHome(actions: $actions, object: $object);
 	}//end availableActions()
+
+	/**
+	 * Disable the acts that perform work on a case handled elsewhere.
+	 *
+	 * @param list<array<string, mixed>> $actions The moves as published.
+	 * @param array<string, mixed>       $object  The loaded case payload.
+	 *
+	 * @return list<array<string, mixed>> The moves, blocked when the work is elsewhere.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
+	 */
+	private function honourExternalHome(array $actions, array $object): array {
+		$sentence = $this->externalHome->whereTheWorkIs(case: $object);
+		if ($sentence === '') {
+			return $actions;
+		}
+
+		$disabled = [];
+		foreach ($actions as $action) {
+			$action['blocked'] = true;
+			$action['description'] = $sentence;
+			$disabled[] = $action;
+		}
+
+		return $disabled;
+	}//end honourExternalHome()
 
 	/**
 	 * The uid to resolve the caller by, or null to let the session decide.
@@ -353,6 +386,18 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		$caller = null;
 		if ($userId !== '') {
 			$caller = $userId;
+		}
+
+		// 🔴 THE BLOCK IS ENFORCED, NOT ADVISED. `availableActions()` publishes
+		// these moves disabled, and a client that posts one anyway must meet
+		// the same answer: a `blocked` flag nothing checks on the write path is
+		// a suggestion, and the first client that ignores it moves a status
+		// here that the specialist application never hears about. Thrown as a
+		// plain RuntimeException, which OpenRegister answers 422 — the move was
+		// refused, and nothing is broken.
+		$elsewhere = $this->externalHome->whereTheWorkIs(case: $object);
+		if ($elsewhere !== '') {
+			throw new RuntimeException($elsewhere);
 		}
 
 		try {
