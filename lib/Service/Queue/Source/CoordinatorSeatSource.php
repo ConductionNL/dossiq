@@ -1,19 +1,21 @@
 <?php
 
 /**
- * The cases sitting on a team the reader holds the seat on.
+ * The cases the reader holds the coordinator seat on.
  *
- * WHAT A SEAT IS IN DOSSIQ. The proposal calls this the coordinator seat. A
- * dossiq case has no coordinator property: it has `assignedGroup`, the team
- * the work landed on, and `assignee`, the person who picked it up. The seat is
- * therefore the team, and holding it means being in that group. Inventing a
- * coordinator field to match the wording would have put a second owner on the
- * case, which is exactly the two-statuses problem D-6 refuses elsewhere in
- * this change.
+ * READ THE SEAT, DO NOT APPROXIMATE IT. This source was first written against
+ * `assignedGroup`, because a dossiq case had no coordinator and the team the
+ * work landed on was the closest thing to one. It has one now:
+ * `handing-a-case-over` landed `CaseSeats` while this change was being built,
+ * and a coordinator is a role record against the case, findable by
+ * `casesCoordinatedBy()`. Approximating a seat that exists would have listed
+ * the wrong cases for every coordinator on the instance, and it would have
+ * looked right.
  *
- * Only cases NOBODY has picked up are listed. A case a colleague is already on
- * is their item, not the whole team's, and a queue that lists it for eight
- * people is a queue eight people learn to skim.
+ * A coordinator is not the handler. `assigned-cases` already answers for the
+ * cases in the reader's own hands; this one answers for the cases they are
+ * accountable for and somebody else is doing, which is the second seat the
+ * queue would otherwise have no way to show.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Queue\Source
@@ -36,14 +38,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue\Source;
 
+use OCA\Dossiq\Service\People\CaseSeats;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
-use OCP\IGroupManager;
 use OCP\IL10N;
-use OCP\IUserManager;
 
 /**
- * Unclaimed cases on the reader's own teams.
+ * Open cases the reader coordinates.
  *
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */
@@ -53,8 +54,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 *
 	 * @param SettingsService $settings The register configuration.
 	 * @param IL10N           $l10n     Translations.
-	 * @param IGroupManager   $groups   The reader's groups, which are the seats they hold.
-	 * @param IUserManager    $users    Resolves the reader.
+	 * @param CaseSeats       $seats    Who holds which seat on a case.
 	 *
 	 * @return void
 	 *
@@ -63,8 +63,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	public function __construct(
 		SettingsService $settings,
 		private readonly IL10N $l10n,
-		private readonly IGroupManager $groups,
-		private readonly IUserManager $users,
+		private readonly CaseSeats $seats,
 	) {
 		parent::__construct(settings: $settings);
 	}//end __construct()
@@ -88,7 +87,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
 	 */
 	public function label(): string {
-		return $this->l10n->t('Waiting on your team');
+		return $this->l10n->t('Cases you coordinate');
 	}//end label()
 
 	/**
@@ -99,7 +98,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function closesWhen(): string {
-		return $this->l10n->t('A case leaves when somebody takes it, or when it is closed.');
+		return $this->l10n->t('A case leaves when you hand the seat on, or when it is closed.');
 	}//end closesWhen()
 
 	/**
@@ -114,7 +113,12 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	}//end mechanisms()
 
 	/**
-	 * The unclaimed cases on this person's teams.
+	 * The open cases this person coordinates.
+	 *
+	 * The seat is read first and the cases second, because the seat is a role
+	 * record and the case is what the reader opens. A case whose seat record
+	 * survives its case is skipped rather than listed as a row pointing at
+	 * nothing.
 	 *
 	 * @param string $userId The person.
 	 *
@@ -123,13 +127,8 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function itemsFor(string $userId): array {
-		$user = $this->users->get($userId);
-		if ($user === null) {
-			return [];
-		}
-
-		$seats = $this->groups->getUserGroupIds($user);
-		if ($seats === []) {
+		$coordinated = $this->seats->casesCoordinatedBy(uid: $userId);
+		if ($coordinated === []) {
 			return [];
 		}
 
@@ -139,29 +138,29 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 		}
 
 		$items = [];
-		foreach ($seats as $seat) {
-			$rows = $this->rows(
-				schema: $schema,
-				filters: ['assignedGroup' => $seat, 'assignee' => 'IS NULL', 'isFinalStatus' => false]
-			);
-
-			foreach ($rows as $row) {
-				$id = $this->idOf(row: $row);
-				if ($id === '') {
-					continue;
-				}
-
-				$items[] = new QueueItem(
-					source: $this->name(),
-					subjectType: 'case',
-					subjectId: $id,
-					title: (string)($row['title'] ?? $id),
-					priority: (string)($row['priority'] ?? ''),
-					dueAt: $this->dateOf(row: $row, key: 'deadline'),
-					coveredFor: null,
-					route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
-				);
+		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => false]) as $row) {
+			$id = $this->idOf(row: $row);
+			if ($id === '' || in_array($id, $coordinated, true) === false) {
+				continue;
 			}
+
+			// The cases the reader is already HANDLING are their own group.
+			// Listing them twice is two rows for one piece of work, and the
+			// reader would close one and wonder about the other.
+			if (trim((string)($row['assignee'] ?? '')) === $userId) {
+				continue;
+			}
+
+			$items[] = new QueueItem(
+				source: $this->name(),
+				subjectType: 'case',
+				subjectId: $id,
+				title: (string)($row['title'] ?? $id),
+				priority: (string)($row['priority'] ?? ''),
+				dueAt: $this->dateOf(row: $row, key: 'deadline'),
+				coveredFor: null,
+				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
+			);
 		}
 
 		return $items;

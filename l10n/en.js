@@ -4272,8 +4272,6 @@ OC.L10N.register(
         "Your queue": "Your queue",
         "Cases assigned to you": "Cases assigned to you",
         "A case leaves when it is closed or goes to somebody else.": "A case leaves when it is closed or goes to somebody else.",
-        "Waiting on your team": "Waiting on your team",
-        "A case leaves when somebody takes it, or when it is closed.": "A case leaves when somebody takes it, or when it is closed.",
         "Your open tasks": "Your open tasks",
         "A task leaves when it is completed or cancelled.": "A task leaves when it is completed or cancelled.",
         "Advice asked of you": "Advice asked of you",
@@ -4387,7 +4385,9 @@ OC.L10N.register(
         "Communication channel": "Communication channel",
         "The case could not be opened.": "The case could not be opened.",
         "This case type asks for a few things before the case exists. Answer them and the case is opened.": "This case type asks for a few things before the case exists. Answer them and the case is opened.",
-        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme."
+        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.",
+        "Cases you coordinate": "Cases you coordinate",
+        "A case leaves when you hand the seat on, or when it is closed.": "A case leaves when you hand the seat on, or when it is closed."
     },
     "nplurals=2; plural=(n != 1);"
 )

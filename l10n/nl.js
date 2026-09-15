@@ -4272,8 +4272,6 @@ OC.L10N.register(
         "Your queue": "Jouw wachtrij",
         "Cases assigned to you": "Zaken die aan jou zijn toegewezen",
         "A case leaves when it is closed or goes to somebody else.": "Een zaak verdwijnt als die gesloten wordt of naar iemand anders gaat.",
-        "Waiting on your team": "Wacht op je team",
-        "A case leaves when somebody takes it, or when it is closed.": "Een zaak verdwijnt als iemand hem oppakt, of als hij gesloten wordt.",
         "Your open tasks": "Je openstaande taken",
         "A task leaves when it is completed or cancelled.": "Een taak verdwijnt als die is afgerond of geannuleerd.",
         "Advice asked of you": "Advies dat aan jou gevraagd is",
@@ -4387,7 +4385,9 @@ OC.L10N.register(
         "Communication channel": "Communicatiekanaal",
         "The case could not be opened.": "De zaak kon niet geopend worden.",
         "This case type asks for a few things before the case exists. Answer them and the case is opened.": "Dit zaaktype vraagt een paar dingen voordat de zaak bestaat. Vul ze in en de zaak wordt geopend.",
-        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "Dit zaaktype rubriceert tegen een schema dat deze omgeving niet kent, dus de zaak kan nog niet geopend worden. Vraag een beheerder het schema toe te voegen."
+        "This case type classifies against a scheme this instance does not know, so the case cannot be opened yet. Ask an administrator to add the scheme.": "Dit zaaktype rubriceert tegen een schema dat deze omgeving niet kent, dus de zaak kan nog niet geopend worden. Vraag een beheerder het schema toe te voegen.",
+        "Cases you coordinate": "Zaken die jij coördineert",
+        "A case leaves when you hand the seat on, or when it is closed.": "Een zaak verdwijnt als je de rol overdraagt, of als de zaak gesloten wordt."
     },
     "nplurals=2; plural=(n != 1);"
 )
