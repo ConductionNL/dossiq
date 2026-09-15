@@ -4282,14 +4282,14 @@ OC.L10N.register(
         "See what would happen": "See what would happen",
         "Change the status of {count} cases": "Change the status of {count} cases",
         "No cases are selected.": "No cases are selected.",
-        "These cases run on {versions} versions of {caseType}. A field means something different on each, so pick one version and try again.": "These cases run on {versions} versions of {caseType}. A field means something different on each, so pick one version and try again.",
         "This act takes at most {ceiling} cases at a time, and you selected {count}.": "This act takes at most {ceiling} cases at a time, and you selected {count}.",
         "Give the cases to": "Give the cases to",
         "Why these cases are moving": "Why these cases are moving",
         "Recorded with the act and readable afterwards": "Recorded with the act and readable afterwards",
         "Say why these cases are moving. The reason is kept with the act.": "Say why these cases are moving. The reason is kept with the act.",
         "The cases could not be moved.": "The cases could not be moved.",
-        "Give to another handler": "Give to another handler"
+        "Give to another handler": "Give to another handler",
+        "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again."
     },
     "nplurals=2; plural=(n != 1);"
 )

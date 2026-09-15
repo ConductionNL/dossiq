@@ -413,7 +413,7 @@ export default {
 			if (reason === 'case-type-versions') {
 				return t(
 					'dossiq',
-					'These cases run on {versions} versions of {caseType}. A field means something different on each, so pick one version and try again.',
+					'These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.',
 					{
 						versions: (details.versions || []).join(' and '),
 						caseType: (details.caseType || ''),

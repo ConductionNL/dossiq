@@ -4287,13 +4287,13 @@
         "See what would happen": "Bekijk wat er zou gebeuren",
         "Change the status of {count} cases": "Wijzig de status van {count} zaken",
         "No cases are selected.": "Er zijn geen zaken geselecteerd.",
-        "These cases run on {versions} versions of {caseType}. A field means something different on each, so pick one version and try again.": "Deze zaken lopen op versie {versions} van {caseType}. Een veld betekent per versie iets anders, dus kies één versie en probeer opnieuw.",
         "This act takes at most {ceiling} cases at a time, and you selected {count}.": "Deze actie neemt maximaal {ceiling} zaken tegelijk, en je selecteerde er {count}.",
         "Give the cases to": "Geef de zaken aan",
         "Why these cases are moving": "Waarom deze zaken verhuizen",
         "Recorded with the act and readable afterwards": "Vastgelegd bij de actie en later leesbaar",
         "Say why these cases are moving. The reason is kept with the act.": "Zeg waarom deze zaken verhuizen. De reden wordt bij de actie bewaard.",
         "The cases could not be moved.": "De zaken konden niet verplaatst worden.",
-        "Give to another handler": "Geef aan een andere behandelaar"
+        "Give to another handler": "Geef aan een andere behandelaar",
+        "These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.": "Deze zaken lopen op versies {versions} van {caseType}. Een veld betekent per versie iets anders, dus kies één versie en probeer opnieuw."
     }
 }
