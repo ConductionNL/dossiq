@@ -771,6 +771,17 @@ $extra = [
     ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
     ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
     ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // The four clocks on ONE CASE. Addressed by case and not by instance,
+        // because a case page holds a case id and there are four instances
+        // behind it: a statutory term, a planned end, an internal target and a
+        // phase term. The `/citizen` read answers with the statutory term only.
+    ['name' => 'caseTerms#index',    'url' => '/api/cases/{caseId}/terms',               'verb' => 'GET'],
+    ['name' => 'caseTerms#citizen',  'url' => '/api/cases/{caseId}/terms/citizen',       'verb' => 'GET'],
+        // Awb 4:5: asking the applicant and suspending the term are one act.
+    ['name' => 'caseTerms#requestInformation', 'url' => '/api/cases/{caseId}/information-request',          'verb' => 'POST'],
+    ['name' => 'caseTerms#receiveInformation', 'url' => '/api/cases/{caseId}/information-request/received', 'verb' => 'POST'],
+        // How old the work still standing is, read live over open cases only.
+    ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
