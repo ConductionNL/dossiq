@@ -42,7 +42,6 @@ namespace OCA\Dossiq\Service\Intake;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
-use Throwable;
 
 /**
  * Which classification schemes resolve on this instance, and to what.
@@ -169,21 +168,20 @@ class ClassificationSchemes {
 	}//end allows()
 
 	/**
-	 * The schemes an administrator wrote, read defensively.
+	 * The schemes an administrator wrote.
 	 *
-	 * Unreadable configuration answers an empty list rather than throwing. The
-	 * shipped scheme then still resolves, and a case type naming a scheme that
-	 * only lived in the broken configuration refuses creation, which is the
-	 * fail-closed direction.
+	 * 🔴 NO CATCH AROUND THE CONFIG READ. `getValueString()` carries a default
+	 * and a swallowed failure here would be a second, silent way for a scheme
+	 * to go missing on top of the one this class already reports. Unreadable
+	 * JSON is handled where it happens, by the `is_array` check below: the
+	 * shipped scheme still resolves, and a case type naming a scheme that only
+	 * lived in the broken JSON refuses creation, which is the fail-closed
+	 * direction.
 	 *
 	 * @return array<string, array<int, string>> Scheme name to allowed values.
 	 */
 	private function administered(): array {
-		try {
-			$raw = $this->appConfig->getValueString(Application::APP_ID, self::SCHEMES_KEY, '');
-		} catch (Throwable $e) {
-			return [];
-		}
+		$raw = $this->appConfig->getValueString(Application::APP_ID, self::SCHEMES_KEY, '');
 
 		if (trim($raw) === '') {
 			return [];

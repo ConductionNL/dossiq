@@ -57,6 +57,10 @@ use Throwable;
 /**
  * Refusing a case at intake, to a declared department and role.
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) — `RefusedException::indeterminate()` is
+ *  a named constructor, not a service call. It holds no state and exists so a
+ *  caller cannot build a refusal with the wrong status on it.
+ *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md

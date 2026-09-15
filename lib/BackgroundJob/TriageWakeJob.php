@@ -81,6 +81,9 @@ class TriageWakeJob extends TimedJob {
 	 *
 	 * @return void
 	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — the parameter is
+	 *  `TimedJob::run()`'s, and a sweep takes no argument.
+	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	protected function run($argument): void {

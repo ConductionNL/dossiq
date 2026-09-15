@@ -36,6 +36,7 @@ use DateTime;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\TriageSleep;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -44,8 +45,12 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the triage sleep and the sweep that wakes it.
  *
  * @covers \OCA\Dossiq\Service\Intake\TriageSleep
+ *
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TriageSleepTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The day the clock reads.
@@ -130,7 +135,10 @@ class TriageSleepTest extends TestCase {
 		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime(self::TODAY));
 
-		return new TriageSleep(log: $this->log, time: $time);
+		// The REAL normaliser, never a double. It is the one class allowed to
+		// decide what a date is, and a double here would let this service grow
+		// a second answer while the test stayed green.
+		return new TriageSleep(log: $this->log, dates: $this->caseDates(), time: $time);
 	}//end sleepService()
 
 	/**

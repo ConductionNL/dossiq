@@ -40,17 +40,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCP\AppFramework\Utility\ITimeFactory;
-use Throwable;
 
 /**
  * Putting a triage item to sleep until a date, and waking it.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) — `RefusedException::indeterminate()` is
+ *  a named constructor, not a service call. It holds no state and exists so a
+ *  caller cannot build a refusal with the wrong status on it.
  *
  * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
@@ -101,11 +103,13 @@ class TriageSleep {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeLog    $log  The intake log the triage queue reads.
-	 * @param ITimeFactory $time Clock.
+	 * @param IntakeLog          $log   The intake log the triage queue reads.
+	 * @param CaseDateNormaliser $dates The one class that reads a date.
+	 * @param ITimeFactory       $time  Clock.
 	 */
 	public function __construct(
 		private readonly IntakeLog $log,
+		private readonly CaseDateNormaliser $dates,
 		private readonly ITimeFactory $time,
 	) {
 	}//end __construct()
@@ -135,7 +139,7 @@ class TriageSleep {
 			);
 		}
 
-		$wakeDate = $this->parseDate(value: $until);
+		$wakeDate = $this->dates->toCalendarDateOrNull(value: $until);
 		if ($wakeDate === null) {
 			throw new RefusedException(
 				rule: self::RULE_NO_DATE,
@@ -165,7 +169,7 @@ class TriageSleep {
 		$this->assertNotYetACase(entry: $entry);
 
 		$record = [
-			self::FIELD_UNTIL => $wakeDate->format('Y-m-d'),
+			self::FIELD_UNTIL => $wakeDate,
 			self::FIELD_REASON => $why,
 			'sleptBy' => $actorId,
 			'sleptAt' => $this->time->getDateTime()->format(DATE_ATOM),
@@ -191,7 +195,7 @@ class TriageSleep {
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	public function isAsleep(array $entry): bool {
-		$until = $this->parseDate(value: (string)($entry[self::FIELD_UNTIL] ?? ''));
+		$until = $this->dates->toCalendarDateOrNull(value: (string)($entry[self::FIELD_UNTIL] ?? ''));
 		if ($until === null) {
 			return false;
 		}
@@ -297,40 +301,21 @@ class TriageSleep {
 	}//end sleeping()
 
 	/**
-	 * Today, with the time of day thrown away.
+	 * Today, as a calendar date.
 	 *
-	 * A sleep is a calendar decision. Comparing it against a moment would wake
-	 * an item at midnight on one instance and at noon on another.
+	 * 🔴 A SLEEP IS A CALENDAR DECISION, AND EVERY COMPARISON HERE IS BETWEEN
+	 * TWO `Y-m-d` STRINGS. Comparing moments would wake an item at midnight on
+	 * one instance and at noon on another, and building a `DateTimeImmutable`
+	 * here would be a second rule for what a date is, which
+	 * {@see \OCA\Dossiq\Service\CaseDateNormaliser} exists to be the only one
+	 * of. `Y-m-d` sorts lexicographically, so `<=` and `>` are the calendar
+	 * comparison without a date object in sight.
 	 *
-	 * @return DateTimeImmutable Midnight today.
+	 * @return string Today as `Y-m-d`, on the clock this service was given.
 	 */
-	private function today(): DateTimeImmutable {
-		$now = $this->time->getDateTime();
-
-		return new DateTimeImmutable($now->format('Y-m-d') . ' 00:00:00');
+	private function today(): string {
+		return $this->time->getDateTime()->format('Y-m-d');
 	}//end today()
-
-	/**
-	 * One calendar date, or null when it is not one.
-	 *
-	 * @param string $value The declared date.
-	 *
-	 * @return DateTimeImmutable|null Midnight on that date, or null.
-	 */
-	private function parseDate(string $value): ?DateTimeImmutable {
-		$raw = trim($value);
-		if ($raw === '') {
-			return null;
-		}
-
-		try {
-			$parsed = new DateTimeImmutable($raw);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		return new DateTimeImmutable($parsed->format('Y-m-d') . ' 00:00:00');
-	}//end parseDate()
 
 	/**
 	 * The wake date one entry carries, for a surface that shows it.
@@ -342,12 +327,9 @@ class TriageSleep {
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	public function wakeDateOf(array $entry): string {
-		$until = $this->parseDate(value: (string)($entry[self::FIELD_UNTIL] ?? ''));
-		if ($until === null) {
-			return '';
-		}
-
-		return $until->format('Y-m-d');
+		return (string)$this->dates->toCalendarDateOrNull(
+			value: (string)($entry[self::FIELD_UNTIL] ?? '')
+		);
 	}//end wakeDateOf()
 
 	/**
@@ -360,6 +342,6 @@ class TriageSleep {
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
 	 */
 	public function readsAsDate(string $value): bool {
-		return ($this->parseDate(value: $value) instanceof DateTimeInterface);
+		return ($this->dates->toCalendarDateOrNull(value: $value) !== null);
 	}//end readsAsDate()
 }//end class
