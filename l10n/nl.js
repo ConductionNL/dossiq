@@ -4259,7 +4259,20 @@ OC.L10N.register(
         "This case type states no retention for personal data.": "Dit zaaktype noemt geen bewaartermijn voor persoonsgegevens.",
         "Archive action due": "Archiefactie verwacht",
         "No archive action date has been derived for this case.": "Voor deze zaak is geen archiefactiedatum afgeleid.",
-        "The selectielijst sets this date through the result type of the case.": "De selectielijst bepaalt deze datum via het resultaattype van de zaak."
+        "The selectielijst sets this date through the result type of the case.": "De selectielijst bepaalt deze datum via het resultaattype van de zaak.",
+        "Hand it over": "Draag over",
+        "Hand this case to another team": "Draag deze zaak over aan een ander team",
+        "Hand to another team": "Overdragen aan ander team",
+        "Handed on": "Overgedragen",
+        "Handed on to": "Overgedragen aan",
+        "Handled elsewhere": "Elders behandeld",
+        "Seats": "Zetels",
+        "Tell the applicant, this is a doorzending (Awb 2:3)": "Laat de aanvrager weten dat dit een doorzending is (Awb 2:3)",
+        "The case keeps its number, its history and its term. Only the team changes.": "De zaak houdt haar nummer, haar geschiedenis en haar termijn. Alleen het team verandert.",
+        "The case was not handed on.": "De zaak is niet overgedragen.",
+        "The group that handles it from here": "De groep die de zaak vanaf nu behandelt",
+        "Waiting to be picked up": "Wacht op acceptatie",
+        "Why it is moving": "Waarom de zaak verhuist"
     },
     "nplurals=2; plural=(n != 1);"
 )

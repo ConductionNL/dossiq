@@ -38,10 +38,15 @@ import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+	asOfRows,
 	CASE_SCHEMA,
+	constraintsOf,
+	fetchAccessHistory,
 	fetchCallerScope,
 	fetchObjectGrants,
+	fetchObjectPermissions,
 	grantRows,
+	objectPermissionRows,
 } from '../../src/services/caseAccessApi.js'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -206,6 +211,258 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 				granted: false,
 			}),
 		)
+	})
+})
+
+describe("The object's own permission set, and the rule behind each row", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('keeps the status beside the set, so a 403 is not a failed read', async () => {
+		// OpenRegister refuses this read to a caller who may open the case and
+		// holds no manage right on it. Reported as `null` alone it would render
+		// as "openregister could not be asked", which is wrong twice: it
+		// answered, and the reader is not missing data, they are not entitled
+		// to it.
+		const refusal = new Error('forbidden')
+		refusal.response = { status: 403 }
+		axios.get.mockRejectedValueOnce(refusal)
+
+		expect(await fetchObjectPermissions('case-1')).toEqual({ status: 403, set: null })
+	})
+
+	it('reports 0 when nothing answered at all, which is not a refusal', async () => {
+		axios.get.mockRejectedValueOnce(new Error('openregister is down'))
+
+		expect(await fetchObjectPermissions('case-1')).toEqual({ status: 0, set: null })
+	})
+
+	it('answers null for a body with no holders list, never an empty set', async () => {
+		axios.get.mockResolvedValueOnce({ status: 200, data: { object: 'case-1' } })
+
+		expect((await fetchObjectPermissions('case-1')).set).toBeNull()
+	})
+
+	it('names the level and the role on every row', () => {
+		const rows = objectPermissionRows({
+			denyEnforcement: 'staging',
+			holders: [
+				{
+					principal: 'behandelaars',
+					verbs: ['read'],
+					rules: [
+						{
+							principal: 'behandelaars',
+							action: 'read',
+							level: 'schema',
+							role: 'behandelaar',
+							rule: [{ group: 'behandelaars' }],
+							declared: true,
+						},
+					],
+				},
+			],
+			denied: [],
+		})
+
+		expect(rows).toEqual([
+			expect.objectContaining({
+				holder: 'behandelaars',
+				right: 'read',
+				source: 'schema',
+				role: 'behandelaar',
+				level: 'schema',
+				declared: true,
+			}),
+		])
+	})
+
+	it('marks a verb the catalogue does not publish as undeclared', () => {
+		const rows = objectPermissionRows({
+			holders: [
+				{
+					principal: 'archivaris',
+					verbs: ['obliterate'],
+					rules: [{ principal: 'archivaris', action: 'obliterate', level: 'object', declared: false }],
+				},
+			],
+		})
+
+		expect(rows[0].declared).toBe(false)
+	})
+
+	it('lists a refusal beside the grant and subtracts nothing', () => {
+		const rows = objectPermissionRows({
+			denyEnforcement: 'enforcing',
+			holders: [
+				{
+					principal: 'waarnemers',
+					verbs: ['read'],
+					rules: [{ principal: 'waarnemers', action: 'read', level: 'register', declared: true }],
+				},
+			],
+			denied: [{ principal: 'waarnemers', action: 'read', level: 'object', declared: true }],
+		})
+
+		// Two rows on one holder and one right, exactly as the five-read path
+		// keeps them. One row would mean this function picked a winner, which
+		// is the second evaluator D-1 forbids.
+		expect(rows.filter((row) => row.holder === 'waarnemers' && row.right === 'read')).toHaveLength(2)
+		expect(rows.map((row) => row.source)).toContain('deny')
+	})
+
+	it('calls a refusal staged while the instance has not switched it on', () => {
+		const rows = objectPermissionRows({
+			denyEnforcement: 'staging',
+			holders: [],
+			denied: [{ principal: 'waarnemers', action: 'read', level: 'object' }],
+		})
+
+		expect(rows[0].source).toBe('staged-deny')
+	})
+
+	it('does not replay the share and role reads when the object answered', () => {
+		// The same grant would arrive twice, once with its rule and once
+		// without, and an auditor counting holders would count it twice.
+		const rows = grantRows({
+			objectPermissions: {
+				holders: [
+					{
+						principal: 'behandelaars',
+						verbs: ['read'],
+						rules: [{ principal: 'behandelaars', action: 'read', level: 'schema' }],
+					},
+				],
+			},
+			objectGrants: [{ principal: 'behandelaars', actions: ['read'] }],
+			roleGrants: { roles: [{ role: 'behandelaar', actions: ['read'] }] },
+			callerScope: null,
+			denyRules: { enforcing: true, rules: [{ principal: 'behandelaars', action: 'read' }] },
+		})
+
+		expect(rows).toHaveLength(1)
+		expect(rows[0].source).toBe('schema')
+	})
+
+	it("still carries the caller's own verdict, which the object's answer has not got", () => {
+		const rows = grantRows({
+			objectPermissions: { holders: [] },
+			objectGrants: null,
+			roleGrants: null,
+			callerScope: {
+				user: 'alice',
+				provenance: { read: { granted: true, source: 'role', role: 'behandelaar' } },
+			},
+			denyRules: null,
+		})
+
+		expect(rows).toContainEqual(expect.objectContaining({ holder: 'alice', right: 'read' }))
+	})
+})
+
+describe('An end and an area are rendered, never evaluated', () => {
+	it('reads the end off a verb grant, which carries the entry itself', () => {
+		expect(constraintsOf({ group: 'waarnemers', until: '2026-10-01T17:00:00+02:00' }, 'waarnemers'))
+			.toEqual({ until: '2026-10-01T17:00:00+02:00', scopedTo: null })
+	})
+
+	it('picks the holder out of a role grant, which carries the whole list', () => {
+		// A role grant reports its rule as every holder of the role, so the
+		// entry naming THIS principal is the one with this row's end on it.
+		// Reading the first entry would give one holder everybody else's date.
+		const rule = [
+			{ group: 'behandelaars' },
+			{ group: 'waarnemers', until: '2026-10-01T17:00:00+02:00' },
+		]
+
+		expect(constraintsOf(rule, 'waarnemers').until).toBe('2026-10-01T17:00:00+02:00')
+		expect(constraintsOf(rule, 'behandelaars').until).toBe('')
+	})
+
+	it('reads the area a grant is confined to', () => {
+		expect(constraintsOf({ group: 'beheerders', scopedTo: { registers: ['zaken'] } }, 'beheerders'))
+			.toEqual({ until: '', scopedTo: { registers: ['zaken'] } })
+	})
+
+	it('renders an end that has already passed, and drops no row for it', () => {
+		// 🔴 THE POINT OF THE WHOLE FUNCTION. Whether an expired grant still
+		// answers is resolved in OpenRegister, on every path a question takes.
+		// A clock here would be a second one, and two clocks disagree first on
+		// the day the grant runs out, which is the day somebody looks.
+		const rows = objectPermissionRows({
+			holders: [
+				{
+					principal: 'waarnemers',
+					verbs: ['read'],
+					rules: [
+						{
+							principal: 'waarnemers',
+							action: 'read',
+							level: 'object',
+							rule: { group: 'waarnemers', until: '1999-01-01T00:00:00+00:00' },
+						},
+					],
+				},
+			],
+		})
+
+		expect(rows).toHaveLength(1)
+		expect(rows[0].until).toBe('1999-01-01T00:00:00+00:00')
+	})
+
+	it('carries a bare string entry without inventing a constraint for it', () => {
+		expect(constraintsOf('behandelaars', 'behandelaars')).toEqual({ until: '', scopedTo: null })
+	})
+})
+
+describe('The panel answers who held a right on a past date', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('answers null for a body with no change list', async () => {
+		axios.get.mockResolvedValueOnce({ status: 200, data: { object: 'case-1' } })
+
+		expect((await fetchAccessHistory('case-1', '2026-03-01')).history).toBeNull()
+	})
+
+	it('reports the holders of that date, with who set them and what changed them after', () => {
+		const answer = asOfRows({
+			at: '2026-03-01T23:59:59',
+			changes: [{ at: '2026-06-01T10:00:00+02:00', by: 'bob' }],
+			asOf: {
+				at: '2026-01-05T09:00:00+01:00',
+				setBy: 'alice',
+				changedAfterwardsBy: { at: '2026-06-01T10:00:00+02:00', by: 'bob' },
+				holders: [
+					{
+						principal: 'behandelaars',
+						verbs: ['read'],
+						rules: [{ principal: 'behandelaars', action: 'read', level: 'object' }],
+					},
+				],
+			},
+		})
+
+		expect(answer.answered).toBe(true)
+		expect(answer.setBy).toBe('alice')
+		expect(answer.changedAfterwardsBy.by).toBe('bob')
+		expect(answer.rows).toHaveLength(1)
+	})
+
+	it('says a date is unanswered rather than reporting that nobody held anything', () => {
+		// OpenRegister answers `asOf: null` when its trail does not reach back
+		// that far. An empty table would claim nobody held a right that day,
+		// which is a different statement and one this panel cannot make.
+		const answer = asOfRows({ at: '2019-03-01', changes: [], asOf: null })
+
+		expect(answer.answered).toBe(false)
+		expect(answer.rows).toEqual([])
+	})
+
+	it('says a failed history read is unanswered too', () => {
+		expect(asOfRows(null).answered).toBe(false)
 	})
 })
 

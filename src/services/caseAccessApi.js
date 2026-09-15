@@ -11,6 +11,27 @@
  * default, and does not cache: a copy of an access decision is a second access
  * decision that nobody updates (D-5).
  *
+ * THE OBJECT NOW ANSWERS FOR ITSELF, AND THE FIVE READS STAY. openregister#3744
+ * added `GET /api/objects/{r}/{s}/{id}/permissions`, which answers in one read
+ * what the five below were assembled into, and a history endpoint beside it. An
+ * openregister older than that answers 404 to both. So the new read is preferred
+ * where it answers and the five are the fallback, because a panel that had
+ * dropped them would render an empty access table on every older instance, and
+ * an empty access table is the one answer an auditor must never be handed by
+ * accident (D-6).
+ *
+ *   GET /apps/openregister/api/objects/{register}/{schema}/{id}/permissions
+ *       Every principal holding a verb on THIS case, each with the rule behind
+ *       it: the level the rule is written at, the role it arrived through, and
+ *       whether the verb is in the published catalogue. The deny rules come
+ *       back beside the grants, never subtracted from them.
+ *
+ *   GET /apps/openregister/api/objects/{register}/{schema}/{id}/permissions/history?at=
+ *       The set as it stood at a moment, read from the object's audit trail,
+ *       with who set it and which change took it away afterwards. This is the
+ *       auditor's actual question: not what changed, but who could open this
+ *       dossier in March.
+ *
  * The five reads, and why each one is here:
  *
  *   GET /apps/openregister/api/permissions
@@ -57,6 +78,38 @@ export const CASE_REGISTER = 'dossiq'
 export const CASE_SCHEMA = 'case'
 
 /**
+ * GET one OpenRegister path, keeping the status beside the body.
+ *
+ * 🔑 THE STATUS IS PART OF THE ANSWER. A 403 on the access set is OpenRegister
+ * answering: this reader may open the case and may not enumerate who else can,
+ * which is a second right (openregister#3744). Folding that into "could not be
+ * read" tells the reader the wrong thing twice, so the status travels with the
+ * body and the caller decides (D-7).
+ *
+ * A transport failure has no status, and reports 0.
+ *
+ * @param {string} path   Path under the Nextcloud root, no leading slash.
+ * @param {object} params Query parameters.
+ *
+ * @return {Promise<{status: number, data: object|null}>} The status and the body.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+async function readResult(path, params = {}) {
+	try {
+		const response = await axios.get(generateUrl(`/${path}`), { params })
+		// A non-JSON body arrives as a string, and a string has keys in
+		// JavaScript, so `body.rules` on it is undefined rather than an error.
+		// That would render as "no rules" instead of as a failed read.
+		if (typeof response?.data !== 'object' || response.data === null) {
+			return { status: (response?.status || 0), data: null }
+		}
+		return { status: (response.status || 200), data: response.data }
+	} catch (error) {
+		return { status: (error?.response?.status || 0), data: null }
+	}
+}
+
+/**
  * GET one OpenRegister path, answering null when it cannot be read.
  *
  * @param {string} path   Path under the Nextcloud root, no leading slash.
@@ -66,18 +119,8 @@ export const CASE_SCHEMA = 'case'
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
 async function read(path, params = {}) {
-	try {
-		const response = await axios.get(generateUrl(`/${path}`), { params })
-		// A non-JSON body arrives as a string, and a string has keys in
-		// JavaScript, so `body.rules` on it is undefined rather than an error.
-		// That would render as "no rules" instead of as a failed read.
-		if (typeof response?.data !== 'object' || response.data === null) {
-			return null
-		}
-		return response.data
-	} catch {
-		return null
-	}
+	const { data } = await readResult(path, params)
+	return data
 }
 
 /**
@@ -158,6 +201,213 @@ export function fetchDenyRules() {
 }
 
 /**
+ * The permission set OpenRegister publishes for this case.
+ *
+ * 🔑 THE STATUS COMES BACK WITH IT, AND 403 IS NOT A FAILURE. OpenRegister
+ * refuses this read to a caller who may open the case but holds no `manage` on
+ * it, because enumerating the case workers on a dossier is a second right. That
+ * refusal is an answer, and the panel says so rather than reporting that the
+ * source could not be read (D-7).
+ *
+ * @param {string} caseId The case uuid.
+ *
+ * @return {Promise<{status: number, set: object|null}>} The status and the set.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+export async function fetchObjectPermissions(caseId) {
+	const { status, data } = await readResult(
+		`apps/openregister/api/objects/${CASE_REGISTER}/${CASE_SCHEMA}/${caseId}/permissions`,
+	)
+
+	if (data === null || Array.isArray(data.holders) === false) {
+		return { status, set: null }
+	}
+
+	return { status, set: data }
+}
+
+/**
+ * The set as it stood at a moment, from the object's audit trail.
+ *
+ * @param {string} caseId The case uuid.
+ * @param {string} at     An ISO-8601 moment to report the set as of.
+ *
+ * @return {Promise<{status: number, history: object|null}>} The status and the history.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+export async function fetchAccessHistory(caseId, at) {
+	const { status, data } = await readResult(
+		`apps/openregister/api/objects/${CASE_REGISTER}/${CASE_SCHEMA}/${caseId}/permissions/history`,
+		{ at },
+	)
+
+	if (data === null || Array.isArray(data.changes) === false) {
+		return { status, history: null }
+	}
+
+	return { status, history: data }
+}
+
+/**
+ * The end and the area written on one rule, as OpenRegister reported them.
+ *
+ * 🔴 NEITHER IS COMPARED TO ANYTHING. An `until` in the past is still rendered,
+ * with its date, because whether an expired grant still answers is resolved in
+ * OpenRegister on every path a question takes (openregister#3750). A clock here
+ * would be a second one, and two clocks disagree first on the day the grant
+ * runs out, which is the day somebody looks (D-8).
+ *
+ * A verb grant carries its rule as the entry itself. A role grant carries the
+ * whole holder list, because the role is what grants and the holders are who
+ * holds it, so the entry naming this principal is picked out of the list.
+ *
+ * @param {object|Array|string|null} rule      The rule as OpenRegister wrote it.
+ * @param {string}                   principal The holder this row is about.
+ *
+ * @return {{until: string, scopedTo: object|null}} The end and the area.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+export function constraintsOf(rule, principal) {
+	const none = { until: '', scopedTo: null }
+	if (rule === null || typeof rule !== 'object') {
+		return none
+	}
+
+	let entry = rule
+	if (Array.isArray(rule)) {
+		entry = rule.find(
+			(candidate) =>
+				candidate === principal
+				|| (candidate !== null
+					&& typeof candidate === 'object'
+					&& [candidate.principal, candidate.group, candidate.role, candidate.user].includes(
+						principal,
+					)),
+		)
+	}
+
+	if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+		return none
+	}
+
+	return {
+		until: (typeof entry.until === 'string' ? entry.until : ''),
+		scopedTo: (entry.scopedTo || null),
+	}
+}
+
+/**
+ * One rule OpenRegister reported, as a row to render.
+ *
+ * @param {object}  rule      The rule.
+ * @param {boolean} refusing  Whether this rule takes a right away.
+ * @param {boolean} enforcing Whether a refusal is in force on this instance.
+ *
+ * @return {object} The row.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+function ruleRow(rule, refusing, enforcing) {
+	const principal = (rule?.principal || '')
+	const { until, scopedTo } = constraintsOf(rule?.rule ?? null, principal)
+
+	let source = (rule?.level || 'object')
+	if (refusing === true) {
+		source = (enforcing === true ? 'deny' : 'staged-deny')
+	}
+
+	return {
+		holder: principal,
+		right: (rule?.action || ''),
+		source,
+		detail: (rule?.role || ''),
+		level: (rule?.level || ''),
+		role: (rule?.role || ''),
+		declared: (rule?.declared !== false),
+		conditional: (rule?.conditional === true),
+		until,
+		scopedTo,
+	}
+}
+
+/**
+ * Turn the object's own permission set into rows to render.
+ *
+ * 🔑 A DENY IS ITS OWN ROW. OpenRegister reports grants and refusals in two
+ * lists, and they stay two lists here. Subtracting one from the other is the
+ * second evaluator D-1 forbids, and the first time it disagreed with
+ * OpenRegister the difference would be a disclosure.
+ *
+ * @param {object|null} set The set, as `fetchObjectPermissions` returned it.
+ *
+ * @return {Array<object>} The rows.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+export function objectPermissionRows(set) {
+	if (set === null || typeof set !== 'object') {
+		return []
+	}
+
+	const enforcing = (set.denyEnforcement === 'enforcing')
+
+	const rows = []
+	for (const holder of set.holders || []) {
+		for (const rule of holder?.rules || []) {
+			rows.push(ruleRow(rule, false, enforcing))
+		}
+	}
+
+	for (const rule of set.denied || []) {
+		rows.push(ruleRow(rule, true, enforcing))
+	}
+
+	return rows
+}
+
+/**
+ * The set as it stood at the moment asked about, ready to render.
+ *
+ * WHY "UNANSWERED" IS ITS OWN STATE. OpenRegister answers `asOf: null` when its
+ * trail does not reach back that far, or when nothing had been written by then.
+ * Rendering that as an empty table would say nobody held anything at that
+ * moment, which is a different claim and one this panel cannot make.
+ *
+ * @param {object|null} history The history, as `fetchAccessHistory` returned it.
+ *
+ * @return {{answered: boolean, at: string, rows: Array<object>, setBy: string, changedAfterwardsBy: object|null}}
+ *         The set at that moment.
+ * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
+ */
+export function asOfRows(history) {
+	const unanswered = {
+		answered: false,
+		at: (history?.at || ''),
+		rows: [],
+		setBy: '',
+		changedAfterwardsBy: null,
+	}
+
+	const asOf = (history?.asOf || null)
+	if (asOf === null || typeof asOf !== 'object') {
+		return unanswered
+	}
+
+	const rows = []
+	for (const holder of asOf.holders || []) {
+		for (const rule of holder?.rules || []) {
+			rows.push(ruleRow(rule, false, false))
+		}
+	}
+
+	return {
+		answered: true,
+		at: (asOf.at || history?.at || ''),
+		rows,
+		setBy: (asOf.setBy || ''),
+		changedAfterwardsBy: (asOf.changedAfterwardsBy || null),
+	}
+}
+
+/**
  * Turn OpenRegister's four answers into one list of rows to render.
  *
  * 🔑 THIS IS A RENDERER, NOT AN EVALUATOR, and the difference is the whole
@@ -168,19 +418,33 @@ export function fetchDenyRules() {
  * evaluator, and the first time it disagreed with OpenRegister the difference
  * would be a disclosure.
  *
- * @param {object}      answers              The four reads.
- * @param {Array|null}  answers.objectGrants Grants written on this case.
- * @param {object|null} answers.roleGrants   Roles and the verbs they hold.
- * @param {object|null} answers.callerScope  The caller's own effective verbs.
- * @param {object|null} answers.denyRules    The deny rules as written.
+ * THE OBJECT'S OWN ANSWER WINS WHERE IT ARRIVES. `objectPermissions` is one
+ * read that already names the rule behind every grant, so when OpenRegister
+ * answered it the share and role reads are not replayed on top: the same grant
+ * would arrive twice, once with its rule and once without, and an auditor
+ * counting holders would count it twice. The deny preview goes the same way:
+ * that answer carries the refusals beside the grants already. The caller's own
+ * verdict still rides along, because it is the one thing not in it: an answer
+ * about this reader rather than a rule about everybody (D-6).
+ *
+ * @param {object}      answers                   The reads.
+ * @param {object|null} answers.objectPermissions The object's own permission set.
+ * @param {Array|null}  answers.objectGrants      Grants written on this case.
+ * @param {object|null} answers.roleGrants        Roles and the verbs they hold.
+ * @param {object|null} answers.callerScope       The caller's own effective verbs.
+ * @param {object|null} answers.denyRules         The deny rules as written.
  *
  * @return {Array<object>} Rows of `{holder, right, source, detail}`.
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
-export function grantRows({ objectGrants, roleGrants, callerScope, denyRules }) {
+export function grantRows({ objectPermissions = null, objectGrants, roleGrants, callerScope, denyRules }) {
 	const rows = []
 
-	for (const grant of objectGrants || []) {
+	if (objectPermissions !== null) {
+		rows.push(...objectPermissionRows(objectPermissions))
+	}
+
+	for (const grant of (objectPermissions === null ? objectGrants : null) || []) {
 		for (const right of grant?.actions || []) {
 			rows.push({
 				holder: grant.principal || grant.userId || grant.groupId || '',
@@ -196,7 +460,7 @@ export function grantRows({ objectGrants, roleGrants, callerScope, denyRules }) 
 		}
 	}
 
-	for (const role of roleGrants?.roles || []) {
+	for (const role of (objectPermissions === null ? roleGrants?.roles : null) || []) {
 		for (const right of role?.actions || []) {
 			rows.push({
 				holder: role.role || '',
@@ -207,7 +471,7 @@ export function grantRows({ objectGrants, roleGrants, callerScope, denyRules }) 
 		}
 	}
 
-	for (const rule of denyRules?.rules || []) {
+	for (const rule of (objectPermissions === null ? denyRules?.rules : null) || []) {
 		rows.push({
 			holder: rule.principal || '',
 			right: rule.action || '',
