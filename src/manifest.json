@@ -1751,13 +1751,24 @@
 						"content": {
 							"sections": [
 								{
+									"label": "Parties",
+									"widget": {
+										"id": "case-parties",
+										"type": "integration",
+										"integrationId": "contacts",
+										"title": "Parties",
+										"icon": "AccountKeyOutline",
+										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
+									}
+								},
+								{
 									"label": "Seats",
 									"widget": {
 										"id": "case-seats",
 										"type": "data",
 										"title": "Seats",
 										"icon": "AccountTieOutline",
-										"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties below with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
+										"_note": "handing-a-case-over REQ-HAND-05. Two named seats: the handler doing the work and the coordinator answerable for it. The handler is `assignee` and stays so, because My Work, the queue and every lens already read it. The COORDINATOR IS NOT HERE, and that is the design rather than an omission: it is a role binding on the case (D-4), so it renders in Parties above with its role type beside every other person on the case. Putting a second copy of it here would be a second place to look and a second thing to keep in step. `hideEmpty` stays off: a case with no handler must show the row empty, because the absence is what a teamleider is looking for.",
 										"content": {
 											"title": "Seats",
 											"columns": 2,
@@ -1787,17 +1798,6 @@
 												}
 											}
 										}
-									}
-								},
-								{
-									"label": "Parties",
-									"widget": {
-										"id": "case-parties",
-										"type": "integration",
-										"integrationId": "contacts",
-										"title": "Parties",
-										"icon": "AccountKeyOutline",
-										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
 									}
 								}
 							]
