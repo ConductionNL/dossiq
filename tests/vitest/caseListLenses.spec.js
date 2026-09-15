@@ -95,10 +95,22 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
  * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
  * column beside it.
  */
-const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1)]
+const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1), 'Stuck']
+
+/**
+ * The lenses the Cases list carries and the Tasks list cannot.
+ *
+ * Unread is a per-USER lens over OpenRegister's read state, and a task is a
+ * different object with a read state of its own. Stuck narrows on
+ * `statusDwellBreached`, which is written when a case sits in a STATUS longer
+ * than that status allows, and a task has no status type and no maximum dwell.
+ * Both are asserted in their own files rather than dropped from the parity
+ * comparison, so the day tasks grow either one, this list is what says so.
+ */
+const CASES_ONLY = ['Unread', 'Stuck']
 
 describe('Cases index lenses', () => {
-	it('declares the seven chips in order', () => {
+	it('declares the eight chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -153,15 +165,16 @@ describe('Cases index lenses', () => {
 describe('Tasks index lenses', () => {
 	it('declares the same six labels as Cases, in the same order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
-		// The parity is still asserted, with the one lens a task list cannot
-		// carry taken out rather than the whole comparison dropped: Unread is
-		// a per-USER lens over OpenRegister's read state on the `case` schema,
-		// and a task is a different object with a read state of its own. The
-		// day tasks grow one, this filter is what says so.
+		// The parity is still asserted, with the lenses a task list cannot
+		// carry taken out rather than the whole comparison dropped. Unread is
+		// a per-USER lens over OpenRegister's read state on the `case` schema;
+		// Stuck narrows on a case sitting in a STATUS longer than that status
+		// allows, and a task has neither a status type nor a maximum dwell.
+		// The day tasks grow either one, this filter is what says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
 			chips('Cases')
 				.map((entry) => entry.label)
-				.filter((label) => label !== 'Unread'),
+				.filter((label) => CASES_ONLY.includes(label) === false),
 		)
 	})
 

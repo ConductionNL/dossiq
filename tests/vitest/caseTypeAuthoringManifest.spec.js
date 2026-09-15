@@ -109,8 +109,9 @@ describe('statusType carries a colour and a list visibility', () => {
 	it('moves the schema version, or OpenRegister fast-skips the import', () => {
 		// A property added to a register JSON is inert until the register is
 		// re-imported, and OpenRegister skips a schema whose version did not
-		// change. 1.1.0 was the version that shipped the checklist.
-		expect(schema('statusType').version).toBe('1.2.0')
+		// change. 1.1.0 shipped the checklist; 1.3.0 shipped what a status
+		// declares about itself (derivedWhen, waitingOn, maximumDwell).
+		expect(schema('statusType').version).toBe('1.3.0')
 	})
 })
 

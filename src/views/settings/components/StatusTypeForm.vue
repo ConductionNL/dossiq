@@ -88,6 +88,43 @@
 		</div>
 
 		<div class="status-type-form__row">
+			<div class="status-type-form__field">
+				<NcSelect
+					:modelValue="selectedWaitingOn"
+					:options="waitingOnOptions"
+					:inputLabel="t('dossiq', 'Waiting on')"
+					:placeholder="t('dossiq', 'Us')"
+					data-testid="status-type-waiting-on"
+					@update:modelValue="(v) => update('waitingOn', v ? v.id : '')" />
+				<p class="status-type-form__hint">
+					{{
+						t(
+							'dossiq',
+							'Who the case waits on while it sits here. The applicant and a third party are different: only the first suspends the term.',
+						)
+					}}
+				</p>
+			</div>
+
+			<div class="status-type-form__field">
+				<NcTextField
+					:modelValue="String(form.maximumDwell)"
+					:label="t('dossiq', 'Maximum working days')"
+					type="number"
+					data-testid="status-type-maximum-dwell"
+					@update:modelValue="(v) => update('maximumDwell', v)" />
+				<p class="status-type-form__hint">
+					{{
+						t(
+							'dossiq',
+							'How long a case may sit here before it is reported as stuck. This is not the term of the case, and breaching it changes nothing about the term.',
+						)
+					}}
+				</p>
+			</div>
+		</div>
+
+		<div class="status-type-form__row">
 			<NcCheckboxRadioSwitch
 				:modelValue="form.isFinal"
 				data-testid="status-type-is-final"
@@ -174,7 +211,11 @@ import {
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PlusIcon from 'vue-material-design-icons/Plus.vue'
 import { STATUS_COLOURS, statusColourStyle } from '../../../utils/statusColour.js'
-import { checklistItem, STATUS_ROLES } from '../../../utils/statusTypeForm.js'
+import {
+	checklistItem,
+	STATUS_ROLES,
+	STATUS_WAITING_ON,
+} from '../../../utils/statusTypeForm.js'
 
 export default {
 	name: 'StatusTypeForm',
@@ -249,6 +290,37 @@ export default {
 			}
 
 			return STATUS_ROLES.map((id) => ({ id, label: labels[id] }))
+		},
+
+		/**
+		 * Who the case may be declared to be waiting on, in the reader's
+		 * language.
+		 *
+		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		waitingOnOptions() {
+			const labels = {
+				us: t('dossiq', 'Us'),
+				applicant: t('dossiq', 'The applicant'),
+				thirdParty: t('dossiq', 'Someone outside the organisation'),
+			}
+
+			return STATUS_WAITING_ON.map((id) => ({ id, label: labels[id] }))
+		},
+
+		/**
+		 * The waiting-on option the form holds, if it holds one.
+		 *
+		 * @return {object|null} The option.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		selectedWaitingOn() {
+			return (
+				this.waitingOnOptions.find((o) => o.id === this.form.waitingOn) || null
+			)
 		},
 
 		/**

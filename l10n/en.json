@@ -4248,7 +4248,23 @@
         "This case type states no retention for personal data.": "This case type states no retention for personal data.",
         "Archive action due": "Archive action due",
         "No archive action date has been derived for this case.": "No archive action date has been derived for this case.",
-        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case."
+        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case.",
+        "Waiting on the applicant": "Waiting on the applicant",
+        "Waiting on someone outside the organisation": "Waiting on someone outside the organisation",
+        "This case moves to {status} once these are on file": "This case moves to {status} once these are on file",
+        "stuck": "stuck",
+        "longer than this status allows": "longer than this status allows",
+        "Days in status": "Days in status",
+        "Stuck": "Stuck",
+        "_{count} working day in this status_::_{count} working days in this status_": ["{count} working day in this status", "{count} working days in this status"],
+        "_{count} working day_::_{count} working days_": ["{count} working day", "{count} working days"],
+        "Waiting on": "Waiting on",
+        "Us": "Us",
+        "The applicant": "The applicant",
+        "Someone outside the organisation": "Someone outside the organisation",
+        "Who the case waits on while it sits here. The applicant and a third party are different: only the first suspends the term.": "Who the case waits on while it sits here. The applicant and a third party are different: only the first suspends the term.",
+        "Maximum working days": "Maximum working days",
+        "How long a case may sit here before it is reported as stuck. This is not the term of the case, and breaching it changes nothing about the term.": "How long a case may sit here before it is reported as stuck. This is not the term of the case, and breaching it changes nothing about the term."
     },
     "plurals": ""
 }
