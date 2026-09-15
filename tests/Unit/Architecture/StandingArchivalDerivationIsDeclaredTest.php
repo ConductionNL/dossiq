@@ -98,24 +98,24 @@ class StandingArchivalDerivationIsDeclaredTest extends TestCase {
 			$path = $this->root() . '/' . $relative;
 
 			$this->assertFileExists(
-				$path,
-				$relative . ' is gone. If openregister can now nominate a case, delete this'
+				filename: $path,
+				message: $relative . ' is gone. If openregister can now nominate a case, delete this'
 					. ' test with it; if it cannot, the archiefactiedatum went with the file.'
 			);
 
 			$source = (string)file_get_contents($path);
 
 			$this->assertStringContainsString(
-				self::CLAIM,
-				$source,
-				$relative . ' no longer says it stands in for openregister, so its removal'
+				needle: self::CLAIM,
+				haystack: $source,
+				message: $relative . ' no longer says it stands in for openregister, so its removal'
 					. ' now reads as safe when it is not.'
 			);
 
 			$this->assertStringContainsString(
-				self::POINTER,
-				$source,
-				$relative . ' no longer points at the design note that measures what blocks'
+				needle: self::POINTER,
+				haystack: $source,
+				message: $relative . ' no longer points at the design note that measures what blocks'
 					. ' its removal, so the reason cannot be checked.'
 			);
 		}
@@ -157,11 +157,11 @@ class StandingArchivalDerivationIsDeclaredTest extends TestCase {
 		}
 
 		$this->assertSame(
-			[],
-			$found,
-			'These files add an archival period to a date, which belongs to openregister'
+			expected: [],
+			actual: $found,
+			message: 'These files add an archival period to a date, which belongs to openregister'
 				. ' and, until openregister can, to exactly the two standing classes: '
-				. implode(', ', $found)
+				. implode(separator: ', ', array: $found)
 		);
 	}//end testNoThirdClassDerivesAnArchiveActionDate()
 }//end class
