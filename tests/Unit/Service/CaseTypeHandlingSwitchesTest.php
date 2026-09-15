@@ -169,6 +169,56 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 	}//end testTheAuthoredMessageNamesAreTheOnesTheSenderKnows()
 
 	/**
+	 * Every switch the schema offers an author is a switch a reader reads.
+	 *
+	 * 🔑 THE TRAP THIS CLOSES IS A SWITCH THAT CAN BE SET AND CANNOT BE
+	 * PUBLISHED. Publication refuses a declared switch no reader reads, which is
+	 * right. What would be wrong is the authoring surface offering one anyway:
+	 * the administrator fills it in, presses Publish, and is told the thing the
+	 * form just asked them for is not allowed. The two lists have to be equal,
+	 * and the register fragment is read here rather than copied so they cannot
+	 * drift apart quietly.
+	 *
+	 * @return void
+	 */
+	public function testEverySwitchTheSchemaOffersHasAReader(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/48-starter-content.json'),
+			true
+		);
+
+		$declared = array_keys(
+			$fragment['components']['schemas']['caseType']['properties'][CaseTypeHandling::PROPERTY]['properties']
+		);
+		sort($declared);
+
+		$read = CaseTypeHandling::READ_SWITCHES;
+		sort($read);
+
+		self::assertSame(expected: $read, actual: $declared);
+	}//end testEverySwitchTheSchemaOffersHasAReader()
+
+	/**
+	 * The message names the schema offers are the ones the sender dispatches.
+	 *
+	 * The same drift, one level down: a case type could otherwise declare a
+	 * message the dispatcher throws `InvalidArgumentException` on.
+	 *
+	 * @return void
+	 */
+	public function testTheSchemaOffersOnlyMessagesTheSenderKnows(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/48-starter-content.json'),
+			true
+		);
+
+		$declared = $fragment['components']['schemas']['caseType']['properties'][CaseTypeHandling::PROPERTY]
+			['properties']['automaticMessages']['items']['enum'];
+
+		self::assertSame(expected: TermijnNotificationService::TEMPLATES, actual: $declared);
+	}//end testTheSchemaOffersOnlyMessagesTheSenderKnows()
+
+	/**
 	 * Each case type opens the screen its own block names.
 	 *
 	 * @return void
