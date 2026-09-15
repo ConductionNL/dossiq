@@ -54,3 +54,38 @@ Two dwell numbers on two clocks is the failure
 `dwell-time-on-the-working-calendar` describes. The field held on the case
 counts working time on the organisation's calendar, and the wall clock stays
 available beside it as that change specifies.
+
+## D-8. What shipped on two clocks, and why it is said out loud
+
+D-7 asks for one clock. What shipped is one AUTHORITY and one convenience,
+which is not the same thing and is worth naming rather than discovering.
+
+The breach is the engine's. The timer is armed in its own `businessDays` unit
+over the calendar the organisation administers, so the moment a case is
+reported stuck is decided by the same calendar every statutory term is decided
+by. The number held on the case is counted by dossiq's own
+`WorkingDayCalculator`, because the engine exposes projection and no count
+between two dates. On an organisation whose calendar differs from the Dutch
+national one the two can disagree by a day.
+
+That is a smaller wrong than the alternatives. Counting on the wall clock
+would put a second measurement of the same thing in front of the same person,
+which is the failure `dwell-time-on-the-working-calendar` describes. Walking
+the engine day by day to count would be sixty engine calls per case on a work
+list of four hundred rows. The honest fix is a count operation in
+`working-calendar-admin`, and until it exists the divergence is written in the
+service that causes it.
+
+## D-9. A derivation moves the case; it does not write the history
+
+The derivation runs on the save that made it true, which means a pre-persist
+listener, which means anything it writes elsewhere would survive a save that
+then failed. So it writes the status and the dwell fields into the same save
+and writes no `statusRecord` at all: a history carrying a move that never
+happened is worse than a history that is quiet about one that did.
+
+It is not invisible. OpenRegister's audit trail of the case records the change
+with its actor, and the per-status totals the same write settles are what the
+process mining page reads. The day the case timeline is asked to show
+derivations, the shape is a post-persist listener comparing the two statuses,
+not a second write from here.

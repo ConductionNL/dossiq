@@ -23,6 +23,8 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The inline task pane on the case page (task-on-the-case A06).
+// @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
@@ -39,6 +41,10 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
+// What the status this case is in declares: what is still missing before a
+// derived status fires, who the case waits on, and how long it has been here.
+// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
@@ -59,8 +65,6 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-// The inline task pane on the case page (task-on-the-case A06).
-// @spec openspec/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -108,6 +112,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
@@ -132,6 +137,10 @@ import MyWorkView from './views/MyWorkCards.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+import EndOfDayView from './views/queue/EndOfDayView.vue'
+// One personal queue fed by the declared sources (one-personal-queue).
+// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
@@ -207,6 +216,20 @@ const registry = {
 		kind: 'page',
 		component: CaseListExportAction,
 		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no dossiq-side serialization (ADR-022).',
+	},
+
+	// --- One personal queue, fed by every mechanism (one-personal-queue). ---
+	// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	PersonalQueueView: {
+		kind: 'page',
+		component: PersonalQueueView,
+		_note: 'The page holding everything waiting on the reader. A page and not an index, because it is not a list of one schema: it merges cases, engine tasks, consultations, advice, mentions, covered work and planned calendar items, and no manifest key names a set that spans four stores and a calendar. It hard-codes NO source: every group and its heading come from the declared queue sources the server resolves, which is what keeps a new mechanism from needing a page change.',
+	},
+
+	EndOfDayView: {
+		kind: 'page',
+		component: EndOfDayView,
+		_note: 'The end-of-day screen. Lists the queue candidates OpenRegister says this reader opened today, reading its per-reader read state rather than keeping a second record of who saw what. The time box is humaniq\'s hours leaf, placed per item and absent entirely when humaniq is not installed: a dossiq time field would become a second hours store the day humaniq arrives.',
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
@@ -444,6 +467,7 @@ const registry = {
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
 
+
 	// --- Case panel tabs that were sidebar tabs first. ---
 	//
 	// A tab child renders by TYPE: CnDetailWidgetHost picks a renderer from
@@ -656,6 +680,19 @@ const registry = {
 	// `cnRegistry[widget.type]`. dossiq supplies no per-widget slots, so the
 	// type is the key that has to answer.
 	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	// --- What the status asks for (what-a-status-declares). ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason case-unread is one:
+	// CnDetailPage resolves a grid item's renderer from `cnRegistry[widget.type]`
+	// when the app supplies no `widget-<id>` slot, and dossiq supplies none.
+	// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	'case-status-declaration': {
+		// @custom-widget-ratchet exclude the derivation verdict is not a field of the case and no declarative widget can compute one: what is missing for a derived status is evaluated per case against the status type's declared conditions, and it reaches the page on the transition engine's own answer rather than on the object. A data widget could render `waitingOn` and `currentStatusDwellDays` alone, and that would be two of the three lines with the one that matters left dark
+		kind: 'widget',
+		component: CaseStatusDeclarationPanel,
+		_note: 'CaseDetail: what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The first is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. All three come from /available-transitions in one round trip. Silent on a case that is ours to move, inside its maximum, with no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
+	},
+
 	'case-unread': {
 		// @custom-widget-ratchet exclude the per-user read state is not a field of the case and no declarative widget reads it: `@self.unreadCounts` is attached on the render path, the count per panel comes from OpenRegister's read-state endpoint, and the gesture that clears one is a PUT carrying a sub-resource. Deleted the day CnTabsWidget takes a badge per tab and emits its tab change, which is where this belongs (nextcloud-vue, clusters 58 and 15)
 		kind: 'widget',
@@ -695,6 +732,19 @@ const registry = {
 		kind: 'page',
 		component: CaseAccessTab,
 		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
+	// --- The four clocks on the case (phase-terms-and-the-internal-target). ---
+	// A `component:` tab and not a `widgets[]` one, for the same reason
+	// CaseAccessTab is: a sidebar tab renders either a registered component or
+	// one of CnObjectSidebar's built-ins (data, metadata, audit, object-table),
+	// and none of the four can read /api/cases/{id}/terms. It is kind `page`,
+	// which is what a sidebar-tab component is in this registry; it is NOT a
+	// custom `widget`, so it adds nothing to the ADR-049 widget count.
+	// @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	CaseTermsTab: {
+		kind: 'page',
+		component: CaseTermsTab,
+		_note: 'The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server\'s: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.',
 	},
 	CaseSharingTab: {
 		kind: 'page',

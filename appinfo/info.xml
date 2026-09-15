@@ -187,6 +187,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
              triage item's life, and a timer armed against an entry that is
              gone wakes nobody and says nothing. -->
         <job>OCA\Dossiq\BackgroundJob\TriageWakeJob</job>
+        <!-- Hourly, not daily: the hour a digest arrives is the reader's own
+             choice, and a job that wakes once a day sends everybody's at
+             whatever hour the runner happened to fire.
+             See openspec/changes/one-personal-queue. -->
+        <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
     </background-jobs>
 
     <repair-steps>

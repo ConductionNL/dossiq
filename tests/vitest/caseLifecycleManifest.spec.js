@@ -145,12 +145,15 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// are the top row and the panels take the rows under it, with no gutter
 		// row between.
 		//
-		// ONE ROW NOW SITS BETWEEN THEM, and it is not a gutter: the unread
+		// TWO ROWS NOW SIT BETWEEN THEM, and neither is a gutter. The unread
 		// strip says what changed on this case since the handler last looked
-		// and which panel holds it, which is read BEFORE the panels for the
-		// same reason the tiles are. The assertion therefore allows exactly
-		// the rows that carry a widget and still refuses an empty one, which
-		// is what it was guarding.
+		// and which panel holds it. The declaration strip says what the status
+		// the case is in is still waiting for, which is the only place that
+		// can be said at all: a derived status is not a move a handler picks,
+		// so an unmet derivation leaves nothing in the panels to read. Both
+		// are read BEFORE the panels for the same reason the tiles are. The
+		// assertion therefore allows exactly the rows that carry a widget and
+		// still refuses an empty one, which is what it was guarding.
 		const layout = caseDetail().config.layout
 		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
@@ -162,7 +165,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
-		).toEqual(['case-unread'])
+		).toEqual(['case-unread', 'case-status-declaration'])
 		expect(panels.gridY).toBe(
 			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
 		)

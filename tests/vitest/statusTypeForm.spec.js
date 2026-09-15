@@ -58,9 +58,11 @@ describe('emptyStatusTypeForm', () => {
 			'description',
 			'hiddenInLists',
 			'isFinal',
+			'maximumDwell',
 			'name',
 			'order',
 			'role',
+			'waitingOn',
 		])
 	})
 
@@ -206,10 +208,27 @@ describe('formToStatusType', () => {
 			role: 'in-progress',
 			colour: 'orange',
 			hiddenInLists: false,
+			waitingOn: 'applicant',
+			maximumDwell: 20,
 			checklist: [{ title: 'Check id', required: true }],
 		}
 
 		expect(formToStatusType(statusTypeToForm(stored))).toEqual(stored)
+	})
+
+	it('opens a row that predates the declarations as undeclared, not as a guess', () => {
+		// The direction that matters: a status nobody has annotated must not
+		// come back claiming to wait on somebody, and a maximum of zero would
+		// breach every case the instant it entered the status.
+		const older = { name: 'Ontvangen', order: 1 }
+		const form = statusTypeToForm(older)
+
+		expect(form.waitingOn).toBe('')
+		expect(form.maximumDwell).toBe('')
+		expect(formToStatusType(form).waitingOn).toBe('')
+		expect(formToStatusType(form).maximumDwell).toBe('')
+		expect(formToStatusType(statusTypeToForm({ maximumDwell: 0 })).maximumDwell).toBe('')
+		expect(formToStatusType(statusTypeToForm({ waitingOn: 'nobody' })).waitingOn).toBe('')
 	})
 
 	it('carries the reorder path through the same mapping', () => {
