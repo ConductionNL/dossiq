@@ -4261,7 +4261,22 @@
         "The case was not handed on.": "The case was not handed on.",
         "The group that handles it from here": "The group that handles it from here",
         "Waiting to be picked up": "Waiting to be picked up",
-        "Why it is moving": "Why it is moving"
+        "Why it is moving": "Why it is moving",
+        "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
+        "{who} set these rights.": "{who} set these rights.",
+        "a date the trail does not give": "a date the trail does not give",
+        "Only in {areas}": "Only in {areas}",
+        "OpenRegister does not publish this right.": "OpenRegister does not publish this right.",
+        "Reading the trail for that date": "Reading the trail for that date",
+        "Report the rights as they stood on": "Report the rights as they stood on",
+        "Somebody": "Somebody",
+        "The trail does not reach {date}, so nobody can be reported for it.": "The trail does not reach {date}, so nobody can be reported for it.",
+        "These rights stood on that date. Nobody is named as setting them.": "These rights stood on that date. Nobody is named as setting them.",
+        "Through the role {role}": "Through the role {role}",
+        "Where it came from": "Where it came from",
+        "Who held a right on a date": "Who held a right on a date",
+        "Written to end on {date}": "Written to end on {date}",
+        "You may open this case. You may not review who else can.": "You may open this case. You may not review who else can."
     },
     "plurals": ""
 }
