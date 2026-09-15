@@ -5,7 +5,7 @@
  *
  * Typed peer relations between cases, per RGBZ/ZRC `relevanteAndereZaken`.
  * Relations are typed with an `aardRelatie` (`vervolg` | `subject` |
- * `bijdrage`), guarded against self-relations, duplicates and hierarchy
+ * `bijdrage` | `samenhang`), guarded against self-relations, duplicates and hierarchy
  * overlap, and require OpenRegister read access to both cases.
  *
  * A link is written ONCE, on the case that declared it, in two places that one
@@ -65,7 +65,19 @@ class CaseRelationService {
 	 *
 	 * @var array<int, string>
 	 */
-	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage'];
+	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage', 'samenhang'];
+
+	/**
+	 * The one peer relation that genuinely reads the same from both ends.
+	 *
+	 * Cases opened by one intake submission belong together without one
+	 * leading the other, so the schema declares `samenhang` symmetric and
+	 * openregister refuses an inverse label on it. The other three are
+	 * directed, and each names what it is called from the far side.
+	 *
+	 * @var string
+	 */
+	public const RELATION_SAMENHANG = 'samenhang';
 
 	/**
 	 * Constructor.

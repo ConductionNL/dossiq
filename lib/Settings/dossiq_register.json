@@ -1816,6 +1816,14 @@
                                 "nl": "krijgt bijdrage van",
                                 "en": "receives a contribution from"
                             }
+                        },
+                        {
+                            "key": "samenhang",
+                            "label": {
+                                "nl": "hangt samen met",
+                                "en": "related to"
+                            },
+                            "symmetric": true
                         }
                     ]
                 },
@@ -2629,6 +2637,20 @@
                             "$ref": "case",
                             "x-openregister-relation": {
                                 "type": "bijdrage"
+                            }
+                        }
+                    },
+                    "associatedCases": {
+                        "type": "array",
+                        "title": "Associated cases",
+                        "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "samenhang"
                             }
                         }
                     }

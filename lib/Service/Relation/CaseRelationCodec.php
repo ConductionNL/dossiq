@@ -68,6 +68,7 @@ class CaseRelationCodec {
 		'vervolg'  => 'followUpCases',
 		'subject'  => 'subjectCases',
 		'bijdrage' => 'contributingCases',
+		'samenhang' => 'associatedCases',
 	];
 
 	/**
