@@ -70,3 +70,63 @@ quotes D22's instruction verbatim.
 
 Task 4.2 is `tests/e2e/case-grants-name-their-source.spec.ts`, tagged and not
 run: there is no Playwright on this host.
+
+
+## Wave 2: the object's own answer, its history, and a grant that ends
+
+openregister closed `permission-provenance-and-deny` after this change
+shipped: #3744 added the object's permission set, its history and
+`@self.actions`, and #3750 added `until`, `scopedTo` and claim-derived
+grants. The hand-off is ConductionNL/dossiq#2792. These tasks consume it.
+
+- [x] 5.1 `src/services/caseAccessApi.js`: read
+  `GET /api/objects/{r}/{s}/{id}/permissions`, keep the four older reads as
+  the fallback for an openregister that answers 404 to it, and carry a 403
+  through as a refusal rather than as a failed read (D-6, D-7).
+  - `tests/vitest/caseAccessPanel.spec.js`
+  - `@spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md`
+- [x] 5.2 The same module: read
+  `GET .../permissions/history?at=` and shape the set as it stood at a
+  moment, with who set it and what changed it afterwards (D-6).
+  - `tests/vitest/caseAccessPanel.spec.js`
+- [x] 5.3 `src/views/cases/components/CaseAccessTab.vue`: a date to ask the
+  panel about, the holders of that date, and the rule level, role and
+  catalogue standing on every row (REQ-CGP-05, REQ-CGP-06).
+- [x] 5.4 The same component and module: render `until` and `scopedTo` on a
+  grant, and compare neither to a clock (D-8).
+  - `tests/vitest/caseAccessPanel.spec.js`
+- [x] 5.5 `lib/Settings/dossiq_register.json`: a rights-matrix row may
+  declare `until`, in openregister's own key and format (REQ-CGP-08, D-8).
+  - `tests/Unit/Settings/CaseTypeRightsMatrixTest.php`
+- [x] 5.6 `tests/Unit/Architecture/NoSecondPermissionEvaluatorTest.php`:
+  record why `DossiqCaseAuthorizer::canReadCase()` does not retire here,
+  against #3744 and #3750, and keep the entry (D-9).
+- [x] 5.7 `tests/e2e/case-grants-history-and-scope.spec.ts`: read the
+  object's permission set, be refused the review as a reader without
+  `manage`, ask for a past date, and read a grant that ends;
+  `openspec validate case-grants-name-their-source --strict`.
+
+### What wave 2 built, and where each task landed
+
+Task 5.1 and 5.2 are `fetchObjectPermissions()`, `fetchAccessHistory()`,
+`objectPermissionRows()` and `asOfRows()` in `src/services/caseAccessApi.js`,
+over a reader that now returns the status beside the body. `grantRows()` takes
+the new answer when it has one and falls back to the four older reads when it
+does not, and both paths emit the same row keys.
+
+Tasks 5.3 and 5.4 are `CaseAccessTab.vue`: a date field, a second table for the
+moment asked about, and `until` and `scopedTo` rendered beside the rule. The
+component compares no date to the clock, which is what the vitest case on
+`objectPermissionRows()` pins.
+
+Task 5.5 is `caseType.rightsMatrix.items.properties.until` in
+`lib/Settings/dossiq_register.json`, spelled the way `GrantConstraints::UNTIL_KEY`
+reads it.
+
+Task 5.6 is the reason recorded in the architecture test and in design D-9:
+`canReadCase()` narrows an MCP read further than openregister's RBAC does, and
+retiring it widens the surface. That widening is `dossiq-mcp-adoption`'s, which
+already carries the argument for it.
+
+Task 5.7 is `tests/e2e/case-grants-history-and-scope.spec.ts`, tagged and not
+run: there is no Playwright on this host.

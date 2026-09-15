@@ -87,6 +87,16 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
 const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
 
 /**
+ * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
+ *
+ * A draft binds no statutory term and belongs in no working list, so every
+ * other lens excludes it and My drafts is the only way back to one. It has no
+ * counterpart on a list of tasks, so it is filtered out of the parity check
+ * below exactly as Unread is.
+ */
+const DRAFTS_LENS = 'My drafts'
+
+/**
  * The Cases chips, which carry one lens the Tasks list does not.
  *
  * Unread is a per-USER lens over OpenRegister's read state, not a field of the
@@ -94,11 +104,42 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
  * deliberately left unbroken. It is asserted in its own file,
  * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
  * column beside it.
+ *
+ * Handed on is the second such lens, and it is spelled out here rather than
+ * spliced into LENSES because the list is no longer LENSES plus one: two
+ * Cases-only chips sit at different positions, and `slice(1)` with two
+ * insertions reads as arithmetic rather than as an order anybody chose. Its
+ * key and its filter are asserted in `handingACaseOver.spec.js`.
  */
-const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1)]
+const CASE_LENSES = [
+	'All',
+	'Unread',
+	'Mine',
+	'Unclaimed',
+	'Handed on',
+	'Closed',
+	DRAFTS_LENS,
+	'Overdue',
+	'Due this week',
+]
+
+/**
+ * The three chips the Cases list carries and the Tasks list cannot.
+ *
+ * Named once so the parity test below subtracts exactly these and nothing
+ * else: a hand-written `filter` per exception is how a fourth Cases-only lens
+ * would quietly stop being compared at all.
+ *
+ * Each is Cases-only for its own reason. Unread is a per-USER lens over
+ * OpenRegister's read state on the `case` schema. Handed on is about a case
+ * moving between teams, which a task does not do on its own. My drafts is a
+ * case nobody has accepted yet, and a task belongs to a case that already
+ * exists.
+ */
+const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS]
 
 describe('Cases index lenses', () => {
-	it('declares the seven chips in order', () => {
+	it('declares the eight chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -112,7 +153,15 @@ describe('Cases index lenses', () => {
 		// opens on. The ONE condition is still the whole filter — no
 		// assignee, no case type, nothing that narrows to a person's own
 		// work — which is what this test has always been guarding.
-		expect(defaults[0].filter).toEqual({ statusHiddenInLists: false })
+		// Two conditions now, and neither narrows to a person's own work,
+		// which is what this test has always been guarding. A hidden status
+		// and a draft are properties of the CASE: one is a status its
+		// administrator marked hidden, the other is a case nobody has accepted
+		// yet. An assignee condition here would still be the defect.
+		expect(defaults[0].filter).toEqual({
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
@@ -137,6 +186,8 @@ describe('Cases index lenses', () => {
 	it('spells the Overdue operator as a flat bracket key', () => {
 		expect(chip('Cases', 'Overdue').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[lt]': '@today',
 		})
 	})
@@ -144,6 +195,8 @@ describe('Cases index lenses', () => {
 	it('gives Due this week the half-open window on deadline', () => {
 		expect(chip('Cases', 'Due this week').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[gte]': '@today',
 			'deadline[lt]': '@today+7d',
 		})
@@ -151,17 +204,19 @@ describe('Cases index lenses', () => {
 })
 
 describe('Tasks index lenses', () => {
-	it('declares the same six labels as Cases, in the same order', () => {
+	it('declares the same six labels as the Cases list shares with it, in order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
-		// The parity is still asserted, with the one lens a task list cannot
-		// carry taken out rather than the whole comparison dropped: Unread is
-		// a per-USER lens over OpenRegister's read state on the `case` schema,
-		// and a task is a different object with a read state of its own. The
-		// day tasks grow one, this filter is what says so.
+		// The parity is still asserted, with the two lenses a task list cannot
+		// carry taken out rather than the whole comparison dropped. Unread is a
+		// per-USER lens over OpenRegister's read state on the `case` schema,
+		// and a task is a different object with a read state of its own.
+		// Handed on reads `handoverPending`, which a case carries because a
+		// case is what moves between teams; a task moves with its case. The
+		// day either grows a counterpart, this filter is what says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
 			chips('Cases')
 				.map((entry) => entry.label)
-				.filter((label) => label !== 'Unread'),
+				.filter((label) => CASES_ONLY.includes(label) === false),
 		)
 	})
 

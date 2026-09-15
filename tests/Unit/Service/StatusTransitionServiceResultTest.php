@@ -39,6 +39,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * A final transition writes a result, or it does not happen.
@@ -132,6 +133,7 @@ class StatusTransitionServiceResultTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $this->resultWriter,
 			statusChecklist: $this->createMock(StatusChecklist::class),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

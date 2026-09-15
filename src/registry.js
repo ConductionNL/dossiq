@@ -73,7 +73,9 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // its type allows, and plan a follow-up case for a later date.
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
+import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
@@ -294,11 +296,24 @@ const registry = {
 		component: CaseTypeDuplicateDialog,
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
 	},
+	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	CaseHandoverDialog: {
+		kind: 'modal',
+		component: CaseHandoverDialog,
+		_note: 'CaseDetail Actions menu: hand this case to another team. A modal rather than an api-call because the act takes a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the field that cannot be defaulted: on, the applicant is told the case moved and to whom; off, nothing is sent, because an internal move between two teams of one bestuursorgaan is our arrangement and not their news.',
+	},
+
 	// @spec openspec/specs/status-transition-engine/spec.md
 	CaseLifecycleActionDialog: {
 		kind: 'modal',
 		component: CaseLifecycleActionDialog,
 		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+	},
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	CaseLifecycleMenuDialog: {
+		kind: 'modal',
+		component: CaseLifecycleMenuDialog,
+		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume, which is the one gesture a suspended case needs in front of the handler rather than behind a menu.',
 	},
 
 	// --- Copy a case, from its own page (case-actions-menu, row A24). ---

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -46,6 +47,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Maps dossiq's transitions onto OpenRegister's published actions.
@@ -96,6 +98,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerAnswering()
@@ -319,12 +322,14 @@ class CaseActionProviderTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			statusChecklist: $this->createMock(StatusChecklist::class),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -357,6 +362,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -463,6 +469,7 @@ class CaseActionProviderTest extends TestCase {
 					],
 				]
 			),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -509,6 +516,7 @@ class CaseActionProviderTest extends TestCase {
 					'update' => ['action' => 'update', 'granted' => true, 'source' => 'role', 'role' => 'behandelaar'],
 				]
 			),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -553,6 +561,7 @@ class CaseActionProviderTest extends TestCase {
 			transitionEngine: $engine,
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(provenance: null),
+			externalHome: new ExternalHome(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

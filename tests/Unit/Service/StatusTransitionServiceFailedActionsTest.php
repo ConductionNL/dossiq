@@ -36,6 +36,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * The answer names the actions that did not run.
@@ -129,6 +130,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			logger: $this->logger,
 			resultWriter: $resultWriter,
 			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 
