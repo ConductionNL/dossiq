@@ -149,8 +149,13 @@ class CaseTypeRetirementService {
 	 */
 	private function record(array $caseType, string $caseTypeId, string $act): array {
 		$user = $this->session->getUser();
+		$actor = '';
+		if ($user !== null) {
+			$actor = $user->getUID();
+		}
+
 		$caseType['lifecycleAct'] = $act;
-		$caseType['lifecycleActBy'] = (($user === null) ? '' : $user->getUID());
+		$caseType['lifecycleActBy'] = $actor;
 		$caseType['lifecycleActAt'] = gmdate('c');
 
 		$saved = $this->store->save(

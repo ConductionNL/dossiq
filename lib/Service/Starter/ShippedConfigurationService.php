@@ -117,10 +117,15 @@ class ShippedConfigurationService {
 		// '' would mean "create", and the ledger would grow a second row for
 		// the same object every time a repair step ran.
 		$existingId = $this->store->idOf(row: $existing);
+		$updates = null;
+		if ($existingId !== '') {
+			$updates = $existingId;
+		}
+
 		$saved = $this->store->save(
 			configKey: self::LEDGER,
 			payload: $payload,
-			id: (($existingId === '') ? null : $existingId),
+			id: $updates,
 		);
 
 		return ($saved !== null);
@@ -147,7 +152,7 @@ class ShippedConfigurationService {
 		);
 
 		return [
-			'state' => ($untouched === true) ? self::STATE_SHIPPED : self::STATE_CHANGED,
+			'state' => $this->stateFor(untouched: $untouched),
 			'set' => (string)($row['set'] ?? ''),
 			'setVersion' => (string)($row['setVersion'] ?? ''),
 		];
@@ -200,7 +205,7 @@ class ShippedConfigurationService {
 			$overview[] = [
 				'targetObject' => $targetObject,
 				'title' => (string)($object['title'] ?? ($object['name'] ?? '')),
-				'state' => ($untouched === true) ? self::STATE_SHIPPED : self::STATE_CHANGED,
+				'state' => $this->stateFor(untouched: $untouched),
 				'set' => $set,
 				'setVersion' => $seeded,
 				'latestVersion' => $latest,
@@ -274,6 +279,21 @@ class ShippedConfigurationService {
 
 		return ['adopted' => true, 'reason' => ''];
 	}//end adopt()
+
+	/**
+	 * Shipped and untouched, or shipped and changed here.
+	 *
+	 * @param boolean $untouched Whether the object still hashes to what shipped.
+	 *
+	 * @return string One of the two shipped states.
+	 */
+	private function stateFor(bool $untouched): string {
+		if ($untouched === true) {
+			return self::STATE_SHIPPED;
+		}
+
+		return self::STATE_CHANGED;
+	}//end stateFor()
 
 	/**
 	 * The ledger row for one object, or null when nothing shipped it.

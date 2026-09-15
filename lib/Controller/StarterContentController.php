@@ -157,6 +157,10 @@ class StarterContentController extends Controller {
 
 		$set = (string)$this->request->getParam('set', '');
 		$newShipped = $this->request->getParam('object', []);
+		if (is_array($newShipped) === false) {
+			$newShipped = [];
+		}
+
 		$accepted = ($this->request->getParam('acceptLocalChangeLoss', false) === true);
 
 		return $this->answered(
@@ -166,7 +170,7 @@ class StarterContentController extends Controller {
 					objectsKey: $objectsKey,
 					targetObject: $id,
 					set: $set,
-					newShipped: (is_array($newShipped) === true) ? $newShipped : [],
+					newShipped: $newShipped,
 					accepted: $accepted,
 				);
 
@@ -220,10 +224,7 @@ class StarterContentController extends Controller {
 			run: function (): JSONResponse {
 				$result = $this->roleSet->adopt();
 
-				return new JSONResponse(
-					$result,
-					(($result['ok'] === true) ? Http::STATUS_OK : Http::STATUS_CONFLICT)
-				);
+				return new JSONResponse($result, $this->okOrConflict(result: $result));
 			}
 		);
 	}//end adoptRoles()
@@ -241,10 +242,7 @@ class StarterContentController extends Controller {
 			run: function (): JSONResponse {
 				$result = $this->roleSet->undoAdoption();
 
-				return new JSONResponse(
-					$result,
-					(($result['ok'] === true) ? Http::STATUS_OK : Http::STATUS_CONFLICT)
-				);
+				return new JSONResponse($result, $this->okOrConflict(result: $result));
 			}
 		);
 	}//end undoRoles()
@@ -306,10 +304,10 @@ class StarterContentController extends Controller {
 				$result = $this->domains->copy(domainId: $domainId, name: $name);
 
 				$status = Http::STATUS_OK;
-				if ($result['domain'] === '') {
-					$status = (($result['reason'] === 'not_found')
-						? Http::STATUS_NOT_FOUND
-						: Http::STATUS_INTERNAL_SERVER_ERROR);
+				if ($result['domain'] === '' && $result['reason'] === 'not_found') {
+					$status = Http::STATUS_NOT_FOUND;
+				} else if ($result['domain'] === '') {
+					$status = Http::STATUS_INTERNAL_SERVER_ERROR;
 				}
 
 				// A partial copy is not a failure and it is not a success. It
@@ -365,14 +363,7 @@ class StarterContentController extends Controller {
 			run: function () use ($stepId): JSONResponse {
 				$result = $this->steps->delete(stepId: $stepId);
 
-				$status = Http::STATUS_OK;
-				if ($result['ok'] === false) {
-					$status = (($result['reason'] === 'not_found')
-						? Http::STATUS_NOT_FOUND
-						: Http::STATUS_CONFLICT);
-				}
-
-				return new JSONResponse($result, $status);
+				return new JSONResponse($result, $this->foundOrConflict(result: $result));
 			}
 		);
 	}//end deleteStep()
@@ -385,15 +376,46 @@ class StarterContentController extends Controller {
 	 * @return JSONResponse The response.
 	 */
 	private function stateAnswer(array $result): JSONResponse {
-		$status = Http::STATUS_OK;
-		if ($result['ok'] === false) {
-			$status = (($result['reason'] === 'not_found')
-				? Http::STATUS_NOT_FOUND
-				: Http::STATUS_CONFLICT);
+		return new JSONResponse($result, $this->foundOrConflict(result: $result));
+	}//end stateAnswer()
+
+	/**
+	 * 200 when the act was performed, 409 when the state refused it.
+	 *
+	 * @param array{ok: bool} $result The service's answer.
+	 *
+	 * @return integer The HTTP status.
+	 */
+	private function okOrConflict(array $result): int {
+		if ($result['ok'] === true) {
+			return Http::STATUS_OK;
 		}
 
-		return new JSONResponse($result, $status);
-	}//end stateAnswer()
+		return Http::STATUS_CONFLICT;
+	}//end okOrConflict()
+
+	/**
+	 * 200, 404 when the thing is not there, 409 when its state refused the act.
+	 *
+	 * The two refusals are different facts and a caller acts on them
+	 * differently: a 404 means the id is wrong, a 409 means the id is right and
+	 * the answer is no.
+	 *
+	 * @param array{ok: bool, reason: string} $result The service's answer.
+	 *
+	 * @return integer The HTTP status.
+	 */
+	private function foundOrConflict(array $result): int {
+		if ($result['ok'] === true) {
+			return Http::STATUS_OK;
+		}
+
+		if ($result['reason'] === 'not_found') {
+			return Http::STATUS_NOT_FOUND;
+		}
+
+		return Http::STATUS_CONFLICT;
+	}//end foundOrConflict()
 
 	/**
 	 * Run one action, turning anything thrown into a 500 that says nothing

@@ -76,9 +76,9 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
 import { adoptShipped, listShipped } from '../../services/starterApi.js'
 import { adoptionLosesLocalChange, hasUpdate, shippedLabel } from '../../utils/starterStates.js'
 
@@ -114,7 +114,10 @@ export default {
 				const data = await listShipped(this.schema)
 				this.rows = Array.isArray(data.items) ? data.items : []
 				this.loadError = ''
-			} catch (e) {
+			} catch {
+				// The list is emptied on purpose. Leaving the previous rows on
+				// screen beside an error message would read as the current
+				// state of the register, which is exactly what it is not.
 				this.rows = []
 				this.loadError = t('dossiq', 'Could not read the shipped configuration')
 				showError(this.loadError)

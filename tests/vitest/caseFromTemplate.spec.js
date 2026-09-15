@@ -5,8 +5,8 @@
  * Starting a case from a saved template, and recording which one.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
 	listCaseTemplates,
 	listContentTemplates,

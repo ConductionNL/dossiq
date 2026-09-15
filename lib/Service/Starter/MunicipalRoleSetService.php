@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -231,7 +232,7 @@ class MunicipalRoleSetService {
 			payload: [
 				'set' => ShippedSets::MUNICIPAL_ROLES,
 				'setVersion' => ShippedSets::versionOf(set: ShippedSets::MUNICIPAL_ROLES),
-				'adoptedBy' => (($user === null) ? '' : $user->getUID()),
+				'adoptedBy' => $this->actor(user: $user),
 				'adoptedAt' => gmdate('c'),
 			],
 		);
@@ -279,8 +280,7 @@ class MunicipalRoleSetService {
 			);
 		}
 
-		$user = $this->session->getUser();
-		$adoption['reversedBy'] = (($user === null) ? '' : $user->getUID());
+		$adoption['reversedBy'] = $this->actor(user: $this->session->getUser());
 		$adoption['reversedAt'] = gmdate('c');
 		$this->store->save(
 			configKey: self::ADOPTIONS,
@@ -290,6 +290,25 @@ class MunicipalRoleSetService {
 
 		return ['ok' => true, 'reason' => '', 'roleInUse' => ''];
 	}//end undoAdoption()
+
+	/**
+	 * Who is acting, or '' when nobody is signed in.
+	 *
+	 * A repair step has no session, and the adoption record still has to be
+	 * written: an empty actor is a fact worth recording, and refusing the write
+	 * because nobody is signed in would leave the set half adopted.
+	 *
+	 * @param IUser|null $user The signed-in user, or null.
+	 *
+	 * @return string The user id, or ''.
+	 */
+	private function actor(?IUser $user): string {
+		if ($user === null) {
+			return '';
+		}
+
+		return $user->getUID();
+	}//end actor()
 
 	/**
 	 * Every role type this set shipped.

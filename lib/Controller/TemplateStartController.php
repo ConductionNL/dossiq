@@ -135,11 +135,14 @@ class TemplateStartController extends Controller {
 		}
 
 		$overrides = $this->request->getParam('overrides', []);
+		if (is_array($overrides) === false) {
+			$overrides = [];
+		}
 
 		try {
 			$result = $this->cases->startFrom(
 				templateId: $templateId,
-				overrides: (is_array($overrides) === true) ? $overrides : [],
+				overrides: $overrides,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: could not start from a template: ' . $e->getMessage());
@@ -148,10 +151,12 @@ class TemplateStartController extends Controller {
 		}
 
 		if ($result['ok'] === false) {
-			return new JSONResponse(
-				$result,
-				(($result['reason'] === 'not_found') ? Http::STATUS_NOT_FOUND : Http::STATUS_CONFLICT)
-			);
+			$refused = Http::STATUS_CONFLICT;
+			if ($result['reason'] === 'not_found') {
+				$refused = Http::STATUS_NOT_FOUND;
+			}
+
+			return new JSONResponse($result, $refused);
 		}
 
 		return new JSONResponse($result, Http::STATUS_CREATED);

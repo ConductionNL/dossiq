@@ -131,8 +131,7 @@ class CaseTypeCopyService {
 	public function copyReport(string $caseTypeId): array {
 		$this->notCarried = [];
 		$caseType = $this->derive(caseTypeId: $caseTypeId, asVersion: false);
-		$notCarried = $this->notCarried;
-		$this->notCarried = [];
+		$notCarried = $this->takeNotCarried();
 
 		return [
 			'caseType' => $caseType,
@@ -143,6 +142,24 @@ class CaseTypeCopyService {
 			'notCarried' => $notCarried,
 		];
 	}//end copyReport()
+
+	/**
+	 * What the copy just finished could not carry, clearing the tally.
+	 *
+	 * A method rather than reading the property inline, because the property is
+	 * filled several frames down inside `derive()` and static analysis cannot
+	 * see that: it narrows the property to the empty array it was initialised
+	 * to and then calls `$notCarried === []` always true. A typed return says
+	 * what the list actually is.
+	 *
+	 * @return array<int, string> The names of what did not come along.
+	 */
+	private function takeNotCarried(): array {
+		$notCarried = $this->notCarried;
+		$this->notCarried = [];
+
+		return $notCarried;
+	}//end takeNotCarried()
 
 	/**
 	 * Whether a case type is offered as a starting point for a new one.

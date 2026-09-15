@@ -11,8 +11,8 @@
  * why they are asserted separately here.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { listShipped } from '../../src/services/starterApi.js'
 import {
 	adoptionLosesLocalChange,

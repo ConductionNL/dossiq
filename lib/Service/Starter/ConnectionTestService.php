@@ -137,7 +137,14 @@ class ConnectionTestService {
 			$result['status'] = $status;
 			$result['responseTimeMs'] = (int)round(((microtime(true) - $started) * 1000));
 			$result['measuredAt'] = gmdate('c');
-			$result['state'] = (($status > 0 && $status < 500) ? self::REACHABLE : self::FAILED);
+
+			// A 4xx from a broker that is up is a different problem from a
+			// broker that is down, so only a 5xx or no status at all reads as
+			// the connection failing.
+			$result['state'] = self::FAILED;
+			if ($status > 0 && $status < 500) {
+				$result['state'] = self::REACHABLE;
+			}
 
 			if ($result['state'] === self::FAILED) {
 				$result['reason'] = ('The endpoint answered ' . $status . '.');

@@ -11,8 +11,8 @@
  * the component.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
 import axios from '@nextcloud/axios'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { testStufEndpoint } from '../../src/services/connectionTestApi.js'
 import { connectionLabel } from '../../src/utils/starterStates.js'
 

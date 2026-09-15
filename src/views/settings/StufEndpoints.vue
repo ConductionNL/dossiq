@@ -86,8 +86,8 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
+import { NcButton } from '@nextcloud/vue'
 import { testStufEndpoint } from '../../services/connectionTestApi.js'
 import { listEndpoints } from '../../services/stufApi.js'
 import { connectionLabel } from '../../utils/starterStates.js'
