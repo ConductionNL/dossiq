@@ -3,15 +3,27 @@
 /**
  * Dossiq Case Relation (peer / relevanteAndereZaken) Service
  *
- * Typed peer relations between cases on the existing `case.relatedCases`
- * field, per RGBZ/ZRC `relevanteAndereZaken`. Relations are typed with an
- * `aardRelatie` (`vervolg` | `onderwerp` | `bijdrage`), stored symmetrically
- * (visible from both cases), guarded against self-relations, duplicates and
- * hierarchy overlap, and require OpenRegister read access to both cases.
+ * Typed peer relations between cases, per RGBZ/ZRC `relevanteAndereZaken`.
+ * Relations are typed with an `aardRelatie` (`vervolg` | `subject` |
+ * `bijdrage`), guarded against self-relations, duplicates and hierarchy
+ * overlap, and require OpenRegister read access to both cases.
  *
- * This service is the ONLY writer of `relatedCases` — it keeps both sides
- * consistent on add, remove and delete-cleanup, and normalises direct field
- * writes (e.g. the ZGW inbound path) back to symmetry.
+ * A link is written ONCE, on the case that declared it, in two places that one
+ * save keeps together: the property named by
+ * {@see CaseRelationCodec::TYPED_PROPERTIES}, which is a real reference and is
+ * therefore what OpenRegister indexes, and `case.relatedCases`, the RGBZ list
+ * that carries the clarification. The far side is not written at all. It is
+ * read back from OpenRegister's `/used`, where the schema's declared
+ * `inverseLabel` names it.
+ *
+ * That is the change openregister#3764 made possible. Before it, the
+ * counterpart was written the same `aardRelatie` as the near side, so a case
+ * that followed another read as "vervolg" from the case it followed: one name
+ * for two ends, and a reverse panel that could only ever show the near half.
+ *
+ * This service is the ONLY writer of `relatedCases` and of the typed
+ * properties: it keeps them consistent on add, remove and delete-cleanup, and
+ * promotes direct field writes (e.g. the ZGW inbound path) into typed links.
  *
  * Hierarchy (hoofdzaak/deelzaak, the `parentCase` field) stays the concern of
  * {@see DeelzaakService}; this service refuses to mirror it as a peer relation.
@@ -88,11 +100,145 @@ class CaseRelationService {
 			return [];
 		}
 
-		return $this->codec->decode(case: $case);
+		$stored = $this->codec->decode(case: $case);
+		$rows   = $this->labelledRows(caseId: $caseId, stored: $stored);
+
+		// Anything written before the case schema declared its relation types
+		// lives only in `relatedCases`, on both cases, under one name. It is
+		// still shown, and it is deliberately NOT given a direction: the old
+		// mirror recorded none, so any direction chosen here would be invented.
+		foreach ($stored as $entry) {
+			$targetId = (string)($entry['caseId'] ?? '');
+			$type     = (string)($entry['aardRelatie'] ?? '');
+			if ($targetId === '' || isset($rows[$targetId.'|'.$type]) === true) {
+				continue;
+			}
+
+			$rows[$targetId.'|'.$type] = array_merge(
+				$entry,
+				[
+					'direction'    => null,
+					'label'        => null,
+					'inverseLabel' => null,
+					'displayLabel' => null,
+					'legacy'       => true,
+				]
+			);
+		}
+
+		return array_values($rows);
 	}//end listRelations()
 
 	/**
-	 * Add a typed peer relation symmetrically to both cases.
+	 * The typed peer relations OpenRegister can name, keyed by target and type.
+	 *
+	 * Both directions are read, and each row keeps `displayLabel` exactly as it
+	 * arrives. It is already the half of the pair that belongs to that
+	 * direction, and picking between `label` and `inverseLabel` here is how a
+	 * reverse panel ends up showing the near name, which is the defect
+	 * openregister#3764 exists to end.
+	 *
+	 * @param string $caseId The case being read.
+	 * @param array<int, array<string, mixed>> $stored The case's own
+	 *        `relatedCases` entries, which carry the clarification.
+	 *
+	 * @return array<string, array<string, mixed>> Rows keyed by target and type.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function labelledRows(string $caseId, array $stored): array {
+		$properties = array_values(CaseRelationCodec::TYPED_PROPERTIES);
+		$rows       = [];
+
+		foreach ([false, true] as $incoming) {
+			foreach ($this->store->relationRows(caseUuid: $caseId, incoming: $incoming) as $row) {
+				$relation = ($row['relation'] ?? null);
+				if (is_array($relation) === false) {
+					continue;
+				}
+
+				$property = (string)($relation['property'] ?? '');
+				if (in_array($property, $properties, true) === false) {
+					continue;
+				}
+
+				$targetId = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+				$type     = (string)($relation['type'] ?? '');
+				if ($targetId === '' || $type === '') {
+					continue;
+				}
+
+				$rows[$targetId.'|'.$type] = [
+					'caseId'       => $targetId,
+					'aardRelatie'  => $type,
+					'title'        => (string)($row['title'] ?? ''),
+					'direction'    => ($relation['direction'] ?? null),
+					'label'        => ($relation['label'] ?? null),
+					'inverseLabel' => ($relation['inverseLabel'] ?? null),
+					'displayLabel' => ($relation['displayLabel'] ?? null),
+					'legacy'       => false,
+				];
+
+				$notes = $this->noteFor(
+					stored: $stored,
+					targetId: $targetId,
+					natureRelationship: $type,
+					farSide: $row,
+					caseId: $caseId
+				);
+				if ($notes !== null) {
+					$rows[$targetId.'|'.$type]['notes'] = $notes;
+				}
+			}//end foreach
+		}//end foreach
+
+		return $rows;
+	}//end labelledRows()
+
+	/**
+	 * The clarification written beside one relation, from whichever side wrote it.
+	 *
+	 * A note belongs to the case that declared the link, so an incoming row's
+	 * note is on the far case rather than on this one.
+	 *
+	 * @param array<int, array<string, mixed>> $stored This case's entries.
+	 * @param string $targetId The other case.
+	 * @param string $natureRelationship Relation type.
+	 * @param array<string, mixed> $farSide The other case as serialised by OpenRegister.
+	 * @param string $caseId The case being read.
+	 *
+	 * @return string|null The note.
+	 */
+	private function noteFor(
+		array $stored,
+		string $targetId,
+		string $natureRelationship,
+		array $farSide,
+		string $caseId,
+	): ?string {
+		foreach ($stored as $entry) {
+			if ((string)($entry['caseId'] ?? '') === $targetId
+				&& (string)($entry['aardRelatie'] ?? '') === $natureRelationship
+				&& (string)($entry['notes'] ?? '') !== ''
+			) {
+				return (string)$entry['notes'];
+			}
+		}
+
+		foreach ($this->codec->decode(case: $farSide) as $entry) {
+			if ((string)($entry['caseId'] ?? '') === $caseId
+				&& (string)($entry['aardRelatie'] ?? '') === $natureRelationship
+				&& (string)($entry['notes'] ?? '') !== ''
+			) {
+				return (string)$entry['notes'];
+			}
+		}
+
+		return null;
+	}//end noteFor()
+
+	/**
+	 * Add a typed peer relation to the case that declares it.
 	 *
 	 * Guards (all fail closed):
 	 *   - `aardRelatie` must be one of {@see self::RELATION_TYPES};
@@ -156,6 +302,22 @@ class CaseRelationService {
 			];
 		}
 
+		$originRelations = $this->codec->decode(case: $target);
+		// A link now has a near end and a far end, so the same type declared
+		// from both cases is two contradictory statements rather than one
+		// relation seen twice: A follows B and B follows A cannot both be
+		// true. The mirror used to make this collide with the duplicate check
+		// by accident; now it is checked on purpose.
+		if ($this->codec->hasPair(relations: $originRelations, caseId: $caseId, natureRelationship: $natureRelationship) === true
+			|| in_array(
+				$caseId,
+				($this->codec->typedLinks(case: $target)[$this->codec->typedProperty(natureRelationship: $natureRelationship) ?? ''] ?? []),
+				true
+			) === true
+		) {
+			return ['ok' => false, 'reason' => 'duplicate'];
+		}
+
 		$originRelations = $this->codec->decode(case: $origin);
 		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true) {
 			return ['ok' => false, 'reason' => 'duplicate'];
@@ -166,15 +328,21 @@ class CaseRelationService {
 			natureRelationship: $natureRelationship,
 			notes: $notes
 		);
-		$this->store->persistRelations(case: $origin, relations: $originRelations);
 
-		// Symmetric counterpart — same type names the link, the UI renders
-		// direction-aware labels.
-		$this->addInverseRelation(
-			target: $target,
-			caseId: $caseId,
-			natureRelationship: $natureRelationship,
-			notes: $notes
+		// The link is written ONCE, on the case that declared it, into the
+		// property whose relation type names both halves. The far side is not
+		// written at all: it is discovered through OpenRegister's `/used`, and
+		// it reads as the inverse label the schema declares. Writing the same
+		// `aardRelatie` on the counterpart, which is what this did before, is
+		// what made a `vervolg` read as "vervolg" from the case it followed.
+		$this->store->persistRelations(
+			case: $origin,
+			relations: $originRelations,
+			typedLinks: $this->codec->withTypedLink(
+				links: $this->codec->typedLinks(case: $origin),
+				natureRelationship: $natureRelationship,
+				targetId: $targetId
+			)
 		);
 
 		return ['ok' => true];
@@ -209,35 +377,12 @@ class CaseRelationService {
 	}//end rejectInvalidRelationInput()
 
 	/**
-	 * Persist the symmetric counterpart entry on the target case, unless it is
-	 * already present.
+	 * Remove a typed peer relation, whichever case declared it.
 	 *
-	 * @param array<string, mixed> $target Target case object.
-	 * @param string $caseId Origin case UUID (the entry's reference).
-	 * @param string $natureRelationship Relation type.
-	 * @param string|null $notes Optional free-text clarification.
-	 *
-	 * @return void
-	 */
-	private function addInverseRelation(
-		array $target,
-		string $caseId,
-		string $natureRelationship,
-		?string $notes,
-	): void {
-		$targetRelations = $this->codec->decode(case: $target);
-		if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
-			$targetRelations[] = $this->codec->buildEntry(
-				caseId: $caseId,
-				natureRelationship: $natureRelationship,
-				notes: $notes
-			);
-			$this->store->persistRelations(case: $target, relations: $targetRelations);
-		}
-	}//end addInverseRelation()
-
-	/**
-	 * Remove a typed peer relation from BOTH cases.
+	 * The typed link is one-sided now, so only the case that holds it needs
+	 * stripping. Both cases are still written, because a link created before
+	 * this change is mirrored in `relatedCases` on both, and unlinking from one
+	 * side only would leave the other still showing it.
 	 *
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
@@ -263,14 +408,30 @@ class CaseRelationService {
 			caseId: $targetId,
 			natureRelationship: $natureRelationship
 		);
-		$this->store->persistRelations(case: $origin, relations: $originRelations);
+		$this->store->persistRelations(
+			case: $origin,
+			relations: $originRelations,
+			typedLinks: $this->codec->withoutTypedLink(
+				links: $this->codec->typedLinks(case: $origin),
+				natureRelationship: $natureRelationship,
+				targetId: $targetId
+			)
+		);
 
 		$targetRelations = $this->codec->removePair(
 			relations: $this->codec->decode(case: $target),
 			caseId: $caseId,
 			natureRelationship: $natureRelationship
 		);
-		$this->store->persistRelations(case: $target, relations: $targetRelations);
+		$this->store->persistRelations(
+			case: $target,
+			relations: $targetRelations,
+			typedLinks: $this->codec->withoutTypedLink(
+				links: $this->codec->typedLinks(case: $target),
+				natureRelationship: $natureRelationship,
+				targetId: $caseId
+			)
+		);
 
 		return ['ok' => true];
 	}//end removeRelation()
@@ -316,8 +477,19 @@ class CaseRelationService {
 			$relations = $this->codec->decode(case: $counterpart);
 			$stripped = $this->codec->removeAllForCase(relations: $relations, caseId: $caseId);
 
-			if (count($stripped) !== count($relations)) {
-				$this->store->persistRelations(case: $counterpart, relations: $stripped);
+			$links    = $this->codec->typedLinks(case: $counterpart);
+			$unlinked = $this->codec->withoutTypedLink(
+				links: $links,
+				natureRelationship: null,
+				targetId: $caseId
+			);
+
+			if (count($stripped) !== count($relations) || $unlinked !== $links) {
+				$this->store->persistRelations(
+					case: $counterpart,
+					relations: $stripped,
+					typedLinks: $unlinked
+				);
 				$updated++;
 			}
 		}//end foreach
@@ -326,12 +498,18 @@ class CaseRelationService {
 	}//end cleanupForDeletedCase()
 
 	/**
-	 * Restore symmetry after a direct write to `relatedCases` (e.g. ZGW inbound).
+	 * Promote a direct write to `relatedCases` into typed links (e.g. ZGW inbound).
 	 *
-	 * For each relation on the given case, ensures the counterpart case carries
-	 * the matching inverse entry. Used by the ZGW inbound path so guards and
-	 * symmetry hold even when the field was written directly by the mapping
-	 * layer rather than through {@see self::addRelation()}.
+	 * The ZGW mapping layer writes `relatedCases` straight onto the case, which
+	 * leaves the link invisible to OpenRegister: the field is one JSON-encoded
+	 * string, and nothing scans inside a string for references. This copies each
+	 * entry into the property that carries its type, so a relation that arrived
+	 * over ZGW reads from both ends exactly like one created here.
+	 *
+	 * What it no longer does is write the same `aardRelatie` back onto the
+	 * counterpart. That mirror was what made a `vervolg` read as "vervolg" from
+	 * the case that was followed, and the far side now comes from `/used` with
+	 * the inverse label the schema declares.
 	 *
 	 * @param string $caseId Case UUID whose relations were written directly.
 	 *
@@ -349,7 +527,11 @@ class CaseRelationService {
 			return;
 		}
 
-		foreach ($this->codec->decode(case: $case) as $relation) {
+		$relations = $this->codec->decode(case: $case);
+		$links     = $this->codec->typedLinks(case: $case);
+		$promoted  = $links;
+
+		foreach ($relations as $relation) {
 			$targetId = (string)($relation['caseId'] ?? '');
 			$natureRelationship = (string)($relation['aardRelatie'] ?? '');
 			if ($targetId === '' || $targetId === $caseId
@@ -358,16 +540,19 @@ class CaseRelationService {
 				continue;
 			}
 
-			$target = $this->store->fetchCase(caseUuid: $targetId);
-			if ($target === null) {
-				continue;
-			}
-
-			$targetRelations = $this->codec->decode(case: $target);
-			if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
-				$targetRelations[] = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
-				$this->store->persistRelations(case: $target, relations: $targetRelations);
-			}
+			$promoted = $this->codec->withTypedLink(
+				links: $promoted,
+				natureRelationship: $natureRelationship,
+				targetId: $targetId
+			);
 		}//end foreach
+
+		if ($promoted !== $links) {
+			$this->store->persistRelations(
+				case: $case,
+				relations: $relations,
+				typedLinks: $promoted
+			);
+		}
 	}//end normalise()
 }//end class

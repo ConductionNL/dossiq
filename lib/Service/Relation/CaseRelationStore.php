@@ -108,12 +108,15 @@ class CaseRelationStore {
 	 *
 	 * @param array<string, mixed> $case Case object to update.
 	 * @param array<int, array<string, mixed>> $relations Relation entries.
+	 * @param array<string, array<int, string>>|null $typedLinks The typed
+	 *        reference lists to write beside it, keyed by property name, or
+	 *        null to leave them as they are.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function persistRelations(array $case, array $relations): void {
+	public function persistRelations(array $case, array $relations, ?array $typedLinks = null): void {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -128,6 +131,13 @@ class CaseRelationStore {
 		$payload = $case;
 		$payload['relatedCases'] = json_encode(array_values($relations));
 
+		// The typed lists and `relatedCases` are written in the same save, so
+		// the reference OpenRegister indexes and the RGBZ list carrying the
+		// clarification cannot drift apart across two writes.
+		foreach (($typedLinks ?? []) as $property => $uuids) {
+			$payload[$property] = array_values($uuids);
+		}
+
 		try {
 			$objectService->saveObject(
 				object: $payload,
@@ -141,6 +151,65 @@ class CaseRelationStore {
 			);
 		}
 	}//end persistRelations()
+
+	/**
+	 * The relation rows OpenRegister answers for a case, in one direction.
+	 *
+	 * `getObjectUses()` and `getObjectUsedBy()` are on `ObjectServiceInterface`
+	 * (ADR-084), so this reads them in process rather than addressing our own
+	 * HTTP routes, which ADR-080 D2/D3 forbids. Each row carries a `relation`
+	 * block, and the half of the label pair that belongs to THAT direction is
+	 * already picked in `displayLabel`.
+	 *
+	 * @param string $caseUuid Case UUID.
+	 * @param bool $incoming True for the cases that reference this one
+	 *                       (`/used`), false for the ones it references
+	 *                       (`/uses`).
+	 *
+	 * @return array<int, array<string, mixed>> The serialised rows.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function relationRows(string $caseUuid, bool $incoming): array {
+		if ($caseUuid === '') {
+			return [];
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		try {
+			$answer = $incoming === true
+				? $objectService->getObjectUsedBy($caseUuid)
+				: $objectService->getObjectUses($caseUuid);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'CaseRelationService: relation rows unavailable',
+				['uuid' => $caseUuid, 'incoming' => $incoming, 'error' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$results = ($answer['results'] ?? []);
+		if (is_array($results) === false) {
+			return [];
+		}
+
+		$rows = [];
+		foreach ($results as $row) {
+			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+				$row = $row->jsonSerialize();
+			}
+
+			if (is_array($row) === true) {
+				$rows[] = $row;
+			}
+		}
+
+		return $rows;
+	}//end relationRows()
 
 	/**
 	 * Normalise an OpenRegister lookup result to a plain case array.

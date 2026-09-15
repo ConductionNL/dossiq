@@ -48,6 +48,155 @@ namespace OCA\Dossiq\Service\Relation;
  */
 class CaseRelationCodec {
 	/**
+	 * The case property that holds each `aardRelatie` as a real reference.
+	 *
+	 * `relatedCases` is one JSON-encoded string, so OpenRegister sees no
+	 * reference in it at all: `scanForRelations()` walks structure, not the
+	 * inside of a string, and a property with no `$ref` is not a reference
+	 * property to `RelationAnnotationValidator::isReferenceProperty()` either.
+	 * A link stored only there is invisible to `/uses`, to `/used`, to the
+	 * relation graph and to its export.
+	 *
+	 * It is three properties rather than one because OpenRegister resolves one
+	 * label pair per property. Three types sharing a property would share a
+	 * label, which is the single name for both ends that this change exists to
+	 * stop.
+	 *
+	 * @var array<string, string>
+	 */
+	public const TYPED_PROPERTIES = [
+		'vervolg'  => 'followUpCases',
+		'subject'  => 'subjectCases',
+		'bijdrage' => 'contributingCases',
+	];
+
+	/**
+	 * The property that carries one relation type, or null when none does.
+	 *
+	 * @param string $natureRelationship Relation type (`aardRelatie`).
+	 *
+	 * @return string|null The case property name.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function typedProperty(string $natureRelationship): ?string {
+		return (self::TYPED_PROPERTIES[$natureRelationship] ?? null);
+	}//end typedProperty()
+
+	/**
+	 * The typed reference lists a case carries, keyed by property name.
+	 *
+	 * Every typed property is present in the answer, empty when the case has
+	 * no link of that type: a caller that has to ask whether the key exists is
+	 * a caller that will write a partial list over a full one.
+	 *
+	 * @param array<string, mixed> $case Case object.
+	 *
+	 * @return array<string, array<int, string>> Property name to case uuids.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function typedLinks(array $case): array {
+		$links = [];
+		foreach (self::TYPED_PROPERTIES as $property) {
+			$raw = ($case[$property] ?? []);
+			if (is_string($raw) === true && $raw !== '') {
+				$decoded = json_decode($raw, true);
+				$raw     = (is_array($decoded) === true) ? $decoded : [$raw];
+			}
+
+			if (is_array($raw) === false) {
+				$raw = [];
+			}
+
+			$uuids = [];
+			foreach ($raw as $value) {
+				// A reference list may come back expanded to the referenced
+				// object when the caller asked OpenRegister to extend it, so
+				// read the uuid out of either shape rather than casting an
+				// array to a string.
+				if (is_array($value) === true) {
+					$value = ($value['id'] ?? ($value['uuid'] ?? ''));
+				}
+
+				$value = is_string($value) ? trim($value) : '';
+				if ($value !== '' && in_array($value, $uuids, true) === false) {
+					$uuids[] = $value;
+				}
+			}
+
+			$links[$property] = $uuids;
+		}//end foreach
+
+		return $links;
+	}//end typedLinks()
+
+	/**
+	 * The typed lists with one link added, or unchanged when it is already there.
+	 *
+	 * @param array<string, array<int, string>> $links Typed lists, as {@see self::typedLinks()}.
+	 * @param string $natureRelationship Relation type.
+	 * @param string $targetId The case being linked to.
+	 *
+	 * @return array<string, array<int, string>> The typed lists.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function withTypedLink(array $links, string $natureRelationship, string $targetId): array {
+		$property = $this->typedProperty(natureRelationship: $natureRelationship);
+		if ($property === null || $targetId === '') {
+			return $links;
+		}
+
+		$current = ($links[$property] ?? []);
+		if (in_array($targetId, $current, true) === false) {
+			$current[] = $targetId;
+		}
+
+		$links[$property] = array_values($current);
+
+		return $links;
+	}//end withTypedLink()
+
+	/**
+	 * The typed lists with one link removed.
+	 *
+	 * @param array<string, array<int, string>> $links Typed lists.
+	 * @param string|null $natureRelationship Relation type, or null to strip the
+	 *                                        case from every typed list.
+	 * @param string $targetId The case to unlink.
+	 *
+	 * @return array<string, array<int, string>> The typed lists.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function withoutTypedLink(array $links, ?string $natureRelationship, string $targetId): array {
+		if ($targetId === '') {
+			return $links;
+		}
+
+		$only = null;
+		if ($natureRelationship !== null) {
+			$only = $this->typedProperty(natureRelationship: $natureRelationship);
+			if ($only === null) {
+				return $links;
+			}
+		}
+
+		foreach ($links as $property => $uuids) {
+			if ($only !== null && $property !== $only) {
+				continue;
+			}
+
+			$links[$property] = array_values(
+				array_filter($uuids, static fn (string $uuid): bool => $uuid !== $targetId)
+			);
+		}
+
+		return $links;
+	}//end withoutTypedLink()
+
+	/**
 	 * Build a single relation entry, carrying the optional clarification.
 	 *
 	 * @param string $caseId Referenced case UUID.
