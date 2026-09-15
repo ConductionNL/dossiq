@@ -306,6 +306,7 @@ $extra = [
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
     ['name' => 'deelzaak#validate', 'url' => '/api/deelzaken/validate',              'verb' => 'POST'],
+    ['name' => 'deelzaak#create',   'url' => '/api/deelzaken',                       'verb' => 'POST'],
     ['name' => 'deelzaak#list',     'url' => '/api/deelzaken/{caseId}/children',     'verb' => 'GET'],
     ['name' => 'deelzaak#parent',   'url' => '/api/deelzaken/{caseId}/parent',       'verb' => 'GET'],
     ['name' => 'deelzaak#unlink',   'url' => '/api/deelzaken/{caseId}/unlink',       'verb' => 'POST'],
@@ -329,6 +330,19 @@ $extra = [
         // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
     ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
+
+        // One personal queue, fed by the declared sources (one-personal-queue).
+        // Nothing here takes a user id: every endpoint answers for the caller.
+    ['name' => 'personalQueue#index',              'url' => '/api/personal-queue',                   'verb' => 'GET'],
+    ['name' => 'personalQueue#endOfDay',           'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
+    ['name' => 'personalQueue#setGrouping',        'url' => '/api/personal-queue/grouping',          'verb' => 'POST'],
+    ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
+    ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],
+    ['name' => 'personalQueue#planItem',           'url' => '/api/personal-queue/planned-items',     'verb' => 'POST'],
+    ['name' => 'personalQueue#digestSettings',     'url' => '/api/personal-queue/digest',            'verb' => 'GET'],
+    ['name' => 'personalQueue#saveDigestSettings', 'url' => '/api/personal-queue/digest',            'verb' => 'POST'],
+    ['name' => 'personalQueue#stage',              'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'GET'],
+    ['name' => 'personalQueue#setStage',           'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'POST'],
 
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
@@ -429,6 +443,19 @@ $extra = [
     ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
     ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
 
+        // The attention flag a person raises and clears
+        // (markers-and-assessments-on-the-case, row 2.36). Both writes go
+        // through here rather than through an object patch, because the rule
+        // is that neither act happens without a written reason and that
+        // clearing appends rather than deleting. A browser writing the case
+        // directly could skip the first and lose the second. The risk
+        // assessment and the marker set get no route: the first is guarded by
+        // a declaration on the property, the second is derived into the save,
+        // and both arrive with the case the page already read.
+    ['name' => 'caseAttention#state', 'url' => '/api/case/{caseId}/attention',       'verb' => 'GET'],
+    ['name' => 'caseAttention#raise', 'url' => '/api/case/{caseId}/attention/raise', 'verb' => 'POST'],
+    ['name' => 'caseAttention#clear', 'url' => '/api/case/{caseId}/attention/clear', 'verb' => 'POST'],
+
         // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up
         // case for a later date — once, or as a series that comes round again
@@ -445,6 +472,23 @@ $extra = [
     ['name' => 'caseActions#plan',           'url' => '/api/case/{caseId}/plan',            'verb' => 'POST'],
     ['name' => 'caseActions#planned',        'url' => '/api/case/{caseId}/planned',         'verb' => 'GET'],
     ['name' => 'caseActions#stopSeries',     'url' => '/api/case/{caseId}/planned/{flowId}/stop', 'verb' => 'POST'],
+
+        // The task as a first-class record (task-as-a-first-class-record).
+        // Completing, claiming and attaching happen where the handler already
+        // is, so none of these takes anybody to a task page. The two `/api/
+        // case-tasks/` routes carry only a task uuid: the case they guard is
+        // read FROM the task, because a caseId beside a taskId would be two
+        // claims about the same relationship and the wrong one could be used
+        // to reach a task on a case the caller may not see. The attachment
+        // routes do name the case, because holding a file is an act on the
+        // case's own record of work in progress. The always-available acts
+        // are NOT a route of their own: they ride on `caseActs#acts` above,
+        // so "what may I do right now" is one endpoint feeding one menu.
+    ['name' => 'caseTask#capabilities', 'url' => '/api/case-tasks/capabilities',         'verb' => 'GET'],
+    ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
+    ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
+    ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
+    ['name' => 'caseTask#detach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments/{fileId}', 'verb' => 'DELETE'],
 
         // Bulk acts on cases (bulk-actions-report-progress). ONE route: the act
         // is handed to OpenRegister's job, which owns the record, the

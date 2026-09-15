@@ -53,6 +53,7 @@ class ActionHandlerRegistry {
 	 * @param NotifyHandler $notify Built-in notification handler
 	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param EvaluateDecisionHandler $evaluateDecision DMN decision-evaluation handler
+	 * @param ResumeTermHandler $resumeTerm Lifts a paused term, as a task effect
 	 */
 	public function __construct(
 		SendEmailHandler $sendEmail,
@@ -63,6 +64,7 @@ class ActionHandlerRegistry {
 		NotifyHandler $notify,
 		BesluitvormingPublishHandler $decisionPublish,
 		EvaluateDecisionHandler $evaluateDecision,
+		ResumeTermHandler $resumeTerm,
 	) {
 		$this->handlers = [
 			'sendEmail' => $sendEmail,
@@ -73,6 +75,10 @@ class ActionHandlerRegistry {
 			'notify' => $notify,
 			'besluitvormingPublish' => $decisionPublish,
 			'evaluateDecision' => $evaluateDecision,
+			// Declared by a TASK rather than by a transition: finishing the
+			// task that processed the aanvulling is what lifts the pause the
+			// aanvulling request put on the term.
+			'resumeTerm' => $resumeTerm,
 		];
 	}//end __construct()
 

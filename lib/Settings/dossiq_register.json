@@ -485,6 +485,14 @@
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
                         "title": "IV3 Task Field"
                     },
+                    "responders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Responders",
+                        "description": "Who is pulled into the working channel when a case of this type is declared major. A user id, or a group as group:<gid>, or a bare group id. A name that does not resolve refuses the declaration rather than opening a channel that is missing the one person who had to be in it (ADR-102). A type that names nobody cannot be declared major. NOT visible:false: this is the field an administrator fills in on the case type, and visible:false hides a property on every surface, including the editor."
+                    },
                     "startableFlows": {
                         "type": "array",
                         "items": {
@@ -581,25 +589,17 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
-                    },
-                    "responders": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "title": "Responders",
-                        "description": "Who is pulled into the working channel when a case of this type is declared major. A user id, or a group as group:<gid>, or a bare group id. A name that does not resolve refuses the declaration rather than opening a channel that is missing the one person who had to be in it (ADR-102). A type that names nobody cannot be declared major."
                     }
                 }
             },
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
-                "description": "Status lifecycle phase definition for a case type",
+                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). A status that declares none of the three behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, and it has no maximum. See openspec/changes/what-a-status-declares.",
                 "type": "object",
                 "required": [
                     "name",
@@ -717,6 +717,71 @@
                                 }
                             }
                         }
+                    },
+                    "derivedWhen": {
+                        "type": "array",
+                        "description": "What makes this status true. A status that declares conditions is DERIVED: the case moves into it as the conditions become true, and it leaves the list of moves a handler picks. A status that declares nothing is a judgment somebody makes, which is most of them. Every condition is written in the vocabulary OpenRegister's lifecycleCondition rule kind uses, so the evaluation is a deletion once that kind lands rather than a rewrite.",
+                        "title": "Derived when",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "kind"
+                            ],
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "fieldPresent",
+                                        "fieldEquals",
+                                        "documentPresent"
+                                    ],
+                                    "description": "Which question is asked. fieldPresent: the case carries a value for the named field. fieldEquals: that value is the one named. documentPresent: a document of the named type hangs on the case.",
+                                    "title": "Kind"
+                                },
+                                "field": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The case property the condition reads, for fieldPresent and fieldEquals.",
+                                    "title": "Field"
+                                },
+                                "value": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The value the field must carry, for fieldEquals.",
+                                    "title": "Value"
+                                },
+                                "documentType": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The documentType the case must carry a document of, for documentPresent. A uuid or the type's slug.",
+                                    "title": "Document type"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "What the handler is told is missing while this condition is unmet. Write it as the thing itself, not as the rule: \"the signed consent form\" rather than \"documentPresent failed\".",
+                                    "x-translatable": true,
+                                    "title": "Label"
+                                }
+                            }
+                        }
+                    },
+                    "waitingOn": {
+                        "type": "string",
+                        "enum": [
+                            "us",
+                            "applicant",
+                            "thirdParty"
+                        ],
+                        "description": "Who the case waits on while it sits here. The applicant and a third party are DIFFERENT facts: a hersteltermijn suspends the beslistermijn and an advice request does not, so a value that conflates them cannot decide whether the clock stops. Queue and team counts read this. The role property keeps working unchanged beside it; leave waitingOn empty and the case counts as ours to move.",
+                        "title": "Waiting on",
+                        "facetable": true
+                    },
+                    "maximumDwell": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many working days a case may sit here before the dwell is reported as breached. Counted on the organisation's working calendar. Entering the status arms an engine timer and leaving it cancels the timer, so the breach is an event rather than something a nightly sweep discovers. A dwell breach is not a term breach: it never touches the case's statutory term or its state, and it is what catches the case that is stuck inside a term that is long. Leave it empty for a status with no maximum.",
+                        "title": "Maximum dwell"
                     }
                 }
             },
@@ -1175,32 +1240,6 @@
                             "en": "Case \"{{title}}\" assigned to you"
                         }
                     },
-                    "caseHandoffIntake": {
-                        "trigger": {
-                            "type": "created",
-                            "filter": {
-                                "field": "handoffSource",
-                                "operator": "notIn",
-                                "values": [
-                                    ""
-                                ]
-                            }
-                        },
-                        "enabled": true,
-                        "channels": [
-                            "nc-notification"
-                        ],
-                        "recipients": [
-                            {
-                                "kind": "field",
-                                "field": "assignee"
-                            }
-                        ],
-                        "subject": {
-                            "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
-                            "en": "New case \"{{title}}\" received via handoff"
-                        }
-                    },
                     "caseDeclaredMajor": {
                         "trigger": {
                             "type": "updated",
@@ -1226,10 +1265,36 @@
                             "en": "Case \"{{title}}\" has been declared major"
                         },
                         "x-notes": "Declared rather than dispatched, per ADR-031. A `condition`, NOT a `filter`: AnnotationNotificationDispatcher reads `filter` only on a `created` trigger, so a filter here would be ignored in silence and every save of a major case would notify the responders again. The non-numeric field-change `condition` on `updated` has landed in the engine, which openspec/fleet-notification-plan.md still names as a gap; that doc is stale. `from: false` casts to the empty string, which is what both an absent isMajor and a false one read as, so the rule fires at the declaration and not after it."
+                    },
+                    "caseHandoffIntake": {
+                        "trigger": {
+                            "type": "created",
+                            "filter": {
+                                "field": "handoffSource",
+                                "operator": "notIn",
+                                "values": [
+                                    ""
+                                ]
+                            }
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "kind": "field",
+                                "field": "assignee"
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
+                            "en": "New case \"{{title}}\" received via handoff"
+                        }
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.21.0",
+                "version": "1.22.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1477,6 +1542,19 @@
                                         "prop": "@ref.statusType.hiddenInLists"
                                     },
                                     true
+                                ]
+                            }
+                        },
+                        "waitingOn": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "Who the case waits on, taken from the status it sits in (statusType.waitingOn). Materialised for the reason statusHiddenInLists is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener, and a team count has to narrow on it server-side. A status that declares nothing coalesces to `us`, so a case type nobody has annotated counts as ours to move rather than as an empty fourth bucket. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "coalesce": [
+                                    {
+                                        "prop": "@ref.statusType.waitingOn"
+                                    },
+                                    "us"
                                 ]
                             }
                         },
@@ -1893,6 +1971,60 @@
                                 }
                             ]
                         }
+                    ],
+                    "x-openregister-relation-types": [
+                        {
+                            "key": "deelzaak",
+                            "label": {
+                                "nl": "deelzaak van",
+                                "en": "sub-case of"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft deelzaak",
+                                "en": "has sub-case"
+                            }
+                        },
+                        {
+                            "key": "vervolg",
+                            "label": {
+                                "nl": "vervolg op",
+                                "en": "follow-up to"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft vervolg",
+                                "en": "has follow-up"
+                            }
+                        },
+                        {
+                            "key": "subject",
+                            "label": {
+                                "nl": "gaat over",
+                                "en": "is about"
+                            },
+                            "inverseLabel": {
+                                "nl": "onderwerp van",
+                                "en": "subject of"
+                            }
+                        },
+                        {
+                            "key": "bijdrage",
+                            "label": {
+                                "nl": "draagt bij aan",
+                                "en": "contributes to"
+                            },
+                            "inverseLabel": {
+                                "nl": "krijgt bijdrage van",
+                                "en": "receives a contribution from"
+                            }
+                        },
+                        {
+                            "key": "samenhang",
+                            "label": {
+                                "nl": "hangt samen met",
+                                "en": "related to"
+                            },
+                            "symmetric": true
+                        }
                     ]
                 },
                 "required": [
@@ -2046,6 +2178,63 @@
                         "title": "Status hidden in lists",
                         "facetable": true,
                         "visible": false
+                    },
+                    "waitingOn": {
+                        "type": "string",
+                        "readOnly": true,
+                        "default": "us",
+                        "description": "Who this case waits on, taken from the status it sits in (statusType.waitingOn). Computed declaratively by OpenRegister so a queue counts by it server-side rather than by reading four hundred rows into PHP. A status that declares nothing reads as ours to move, which is what makes the count safe on a case type nobody has annotated. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
+                        "title": "Waiting on",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "currentStatusEnteredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the case entered the status it is in now. The engine writes it in the same save as the status, so the dwell is measured from a fact rather than reconstructed from the record chain on every read.",
+                        "title": "Entered current status at",
+                        "visible": false
+                    },
+                    "currentStatusDwellDays": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Working days the case has spent in the status it is in now, counted on the organisation's working calendar. Held on the case because that is where it is used: an aggregate on a dashboard answers a manager, and a handler sorts a work list. The Cases index sorts and filters on this column.",
+                        "title": "Days in status",
+                        "facetable": true
+                    },
+                    "statusDwellBreached": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "default": false,
+                        "description": "Whether the case has been in its current status longer than that status allows (statusType.maximumDwell). Its own fact with its own filter: a case can breach this while its statutory term is comfortable, and that is the case this flag exists to find. It never changes the term or the case's state.",
+                        "title": "Stuck in status",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "statusDwellTotals": {
+                        "type": "array",
+                        "description": "How long the case has spent in each status it has visited, in working days. Written as the status changes. The process mining page reads these rather than computing a second set, so the page and the case cannot disagree about the same measurement.",
+                        "title": "Time per status",
+                        "visible": false,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "statusType"
+                            ],
+                            "properties": {
+                                "statusType": {
+                                    "type": "string",
+                                    "description": "The statusType the time was spent in.",
+                                    "title": "Status type"
+                                },
+                                "workingDays": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "description": "Working days spent in that status, summed over every visit.",
+                                    "title": "Working days"
+                                }
+                            }
+                        }
                     },
                     "endingAct": {
                         "type": "string",
@@ -2406,7 +2595,14 @@
                         "title": "Parent case",
                         "description": "Reference to parent case (for sub-cases)",
                         "visible": true,
-                        "order": 14
+                        "order": 14,
+                        "x-openregister-relation": {
+                            "type": "deelzaak",
+                            "inherits": {
+                                "confidentiality": "confidentiality",
+                                "responsible": "assignee"
+                            }
+                        }
                     },
                     "relatedCases": {
                         "type": "string",
@@ -2713,6 +2909,48 @@
                         "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
                         "visible": false
                     },
+                    "followUpCases": {
+                        "type": "array",
+                        "title": "Follow-up cases",
+                        "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "vervolg"
+                            }
+                        }
+                    },
+                    "subjectCases": {
+                        "type": "array",
+                        "title": "Subject cases",
+                        "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "subject"
+                            }
+                        }
+                    },
+                    "contributingCases": {
+                        "type": "array",
+                        "title": "Contributing cases",
+                        "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "bijdrage"
+                            }
+                        }
+                    },
                     "conversations": {
                         "type": "array",
                         "title": "Conversations",
@@ -2726,7 +2964,7 @@
                         "type": "boolean",
                         "default": false,
                         "title": "Major",
-                        "description": "Whether this case has been declared major. Declaring it is the act; the working channel is the consequence. Set by CaseConversationService through a permissioned endpoint, never by hand.",
+                        "description": "Whether this case has been declared major. Declaring it is the act; the working channel is the consequence. Set by MajorCaseDeclaration through a permissioned endpoint, never by hand.",
                         "facetable": true
                     },
                     "majorChannel": {
@@ -2756,6 +2994,20 @@
                         "title": "Major responders",
                         "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
                         "visible": false
+                    },
+                    "associatedCases": {
+                        "type": "array",
+                        "title": "Associated cases",
+                        "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "samenhang"
+                            }
+                        }
                     }
                 },
                 "searchable": true

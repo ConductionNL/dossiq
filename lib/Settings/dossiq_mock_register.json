@@ -2366,7 +2366,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.10.0",
+        "version": "1.11.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2691,7 +2691,61 @@
                 }
               }
             }
-          }
+          },
+          "x-openregister-relation-types": [
+            {
+              "key": "deelzaak",
+              "label": {
+                "nl": "deelzaak van",
+                "en": "sub-case of"
+              },
+              "inverseLabel": {
+                "nl": "heeft deelzaak",
+                "en": "has sub-case"
+              }
+            },
+            {
+              "key": "vervolg",
+              "label": {
+                "nl": "vervolg op",
+                "en": "follow-up to"
+              },
+              "inverseLabel": {
+                "nl": "heeft vervolg",
+                "en": "has follow-up"
+              }
+            },
+            {
+              "key": "subject",
+              "label": {
+                "nl": "gaat over",
+                "en": "is about"
+              },
+              "inverseLabel": {
+                "nl": "onderwerp van",
+                "en": "subject of"
+              }
+            },
+            {
+              "key": "bijdrage",
+              "label": {
+                "nl": "draagt bij aan",
+                "en": "contributes to"
+              },
+              "inverseLabel": {
+                "nl": "krijgt bijdrage van",
+                "en": "receives a contribution from"
+              }
+            },
+            {
+              "key": "samenhang",
+              "label": {
+                "nl": "hangt samen met",
+                "en": "related to"
+              },
+              "symmetric": true
+            }
+          ]
         },
         "required": [
           "title",
@@ -2850,7 +2904,14 @@
             "$ref": "case",
             "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": true
+            "visible": true,
+            "x-openregister-relation": {
+              "type": "deelzaak",
+              "inherits": {
+                "confidentiality": "confidentiality",
+                "responsible": "assignee"
+              }
+            }
           },
           "relatedCases": {
             "type": "string",
@@ -3117,6 +3178,62 @@
             "title": "Published at",
             "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
             "visible": false
+          },
+          "followUpCases": {
+            "type": "array",
+            "title": "Follow-up cases",
+            "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "vervolg"
+              }
+            }
+          },
+          "subjectCases": {
+            "type": "array",
+            "title": "Subject cases",
+            "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "subject"
+              }
+            }
+          },
+          "contributingCases": {
+            "type": "array",
+            "title": "Contributing cases",
+            "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "bijdrage"
+              }
+            }
+          },
+          "associatedCases": {
+            "type": "array",
+            "title": "Associated cases",
+            "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "samenhang"
+              }
+            }
           }
         },
         "searchable": true
@@ -24335,6 +24452,90 @@
         "threadingResult": "none",
         "outcome": "inbox",
         "reason": "No case and no case type claimed this message, so it is waiting in the intake inbox."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-1-1",
+          "id": "0f3b2e64-5c1a-4f8e-9d20-7a1c4b6e9d01"
+        },
+        "person": "Voorbeeld Person 1",
+        "day": "2026-03-01",
+        "waiting": 4,
+        "late": 1,
+        "summary": "Voorbeeld Summary 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-2-2",
+          "id": "1a7d5c92-8b34-4e17-ae55-3c2f8d4a7b12"
+        },
+        "person": "Voorbeeld Person 2",
+        "day": "2026-03-02",
+        "waiting": 11,
+        "late": 3,
+        "summary": "Voorbeeld Summary 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-3-3",
+          "id": "2c9e4a18-6f72-4b03-8c19-5d8b1e7f3a23"
+        },
+        "person": "Voorbeeld Person 3",
+        "day": "2026-03-03",
+        "waiting": 2,
+        "late": 0,
+        "summary": "Voorbeeld Summary 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-1-1",
+          "id": "3e1f7b26-9d48-4c85-b740-6a3c2e9d8f34"
+        },
+        "person": "Voorbeeld Person 1",
+        "actor": "Voorbeeld Actor 1",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 1",
+        "noteId": "Voorbeeld Noteid 1",
+        "mentionedAt": "2026-03-01T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-2-2",
+          "id": "4b8c3d95-1e60-4a72-9f38-7c5d4b1a2e45"
+        },
+        "person": "Voorbeeld Person 2",
+        "actor": "Voorbeeld Actor 2",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 2",
+        "noteId": "Voorbeeld Noteid 2",
+        "mentionedAt": "2026-03-02T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-3-3",
+          "id": "5d2a6e83-4f19-4d56-a821-8e6f3c2b1d56"
+        },
+        "person": "Voorbeeld Person 3",
+        "actor": "Voorbeeld Actor 3",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 3",
+        "noteId": "Voorbeeld Noteid 3",
+        "mentionedAt": "2026-03-03T09:00:00+01:00",
+        "acknowledgedAt": "2026-03-03T17:30:00+01:00"
       }
     ]
   }

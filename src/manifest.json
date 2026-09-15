@@ -209,6 +209,13 @@
 			"order": 10
 		},
 		{
+			"id": "PersonalQueueMenu",
+			"label": "Your queue",
+			"icon": "ClipboardListOutline",
+			"route": "PersonalQueue",
+			"order": 12
+		},
+		{
 			"id": "Queue",
 			"label": "Queue",
 			"icon": "TrayFull",
@@ -271,6 +278,13 @@
 			"icon": "FormatListChecks",
 			"route": "Tasks",
 			"order": 32
+		},
+		{
+			"id": "EndOfDayMenu",
+			"label": "Close out your day",
+			"icon": "ClipboardCheckOutline",
+			"route": "EndOfDay",
+			"order": 34
 		},
 		{
 			"id": "WorkflowBoard",
@@ -1039,6 +1053,17 @@
 			}
 		},
 		{
+			"id": "PersonalQueue",
+			"route": "/my-queue",
+			"type": "custom",
+			"title": "Your queue",
+			"component": "PersonalQueueView",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"config": {
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
 			"id": "Queue",
 			"route": "/queue",
 			"type": "index",
@@ -1278,6 +1303,29 @@
 						}
 					},
 					{
+						"label": "Needs attention",
+						"_note": "markers-and-assessments-on-the-case, row 2.36. `needsAttention` is a stored, facetable boolean derived from the flag history on every save, so the chip is a real narrowing of the query rather than a search through tags. Deliberately not `_unread`: that one is per reader and clears because somebody looked, this one is the flag a named person raised and only another named person with a written reason can clear.",
+						"filter": {
+							"needsAttention": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Assessed high risk",
+						"_note": "markers-and-assessments-on-the-case, row 2.40. `riskLevel` carries the same declared read rule as the assessment it mirrors, so for a reader without the `dossiq-risk-assessment` group OpenRegister filters the property out and this chip narrows to nothing. That is the right answer: an empty list says no more than that this reader has nothing to see. There is NO risk column beside it, and that is deliberate rather than missing. A column is declared once for every reader, so a reader without the permission would get a header with nothing under it, which tells them an assessment exists and is most of what the permission was for. The column lands when the list can drop one per reader.",
+						"filter": {
+							"riskLevel": [
+								"high",
+								"critical"
+							],
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
@@ -1334,6 +1382,14 @@
 							"deadline[gte]": "@today",
 							"deadline[lt]": "@today+7d"
 						}
+					},
+					{
+						"label": "Stuck",
+						"filter": {
+							"isFinalStatus": false,
+							"statusDwellBreached": true
+						},
+						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
 					}
 				],
 				"columns": [
@@ -1398,6 +1454,12 @@
 						"label": "Deadline",
 						"widget": "deadlineCountdown",
 						"_note": "one-case-list A22. A raw ISO date makes every reader do the same subtraction once per row and get it wrong on the rows that matter. `deadlineCountdown` (src/services/cellWidgets.js) renders the days left and, past the deadline, the days overdue in the signalering red. A cell WIDGET rather than a `formatter` because a formatter returns a string and a string cannot carry the overdue state; nextcloud-vue 2.41 ships no built-in countdown cell, only `CnCountdownWidget` for a dashboard tile. The column stays sortable: CnDataTable sorts on the stored `deadline`, not on the rendered text."
+					},
+					{
+						"key": "currentStatusDwellDays",
+						"label": "Days in status",
+						"widget": "dwellDays",
+						"_note": "what-a-status-declares, task 4.2. The number is HELD on the case (currentStatusDwellDays), written by the transition engine as the status changes, which is what makes this column sortable at all: CnDataTable orders on the server, and the process mining page's own dwell figure is reconstructed per request from the statusRecord chain and exists in no column. A cell WIDGET rather than a formatter for the reason deadlineCountdown is one: a formatter returns a string and a string cannot carry the breached state. Breached is statusDwellBreached, its own flag with its own chip, and it is NOT the deadline: a case can be stuck for nine weeks inside a term that runs for six months, which is the case this column exists to find."
 					},
 					{
 						"key": "id",
@@ -2146,11 +2208,25 @@
 						}
 					},
 					{
+						"id": "case-status-declaration",
+						"type": "case-status-declaration",
+						"title": "What this status asks for",
+						"icon": "ListStatus",
+						"_note": "what-a-status-declares, tasks 1.3, 2.1 and 3.1. A status the case type DERIVES is not a move a handler can pick, so when it has not fired there is nothing on the page to press and nothing to read: the case sits where it is for a reason nobody can see. This strip names the missing document, which turns that into an errand. Beside it, who the case is waiting on and how long it has been here, both read in the same round trip because a handler asks all three at the same moment. It asks /available-transitions rather than an endpoint of its own: the engine publishes the three declarations beside the moves, so a second endpoint would be a second round trip for one strip and a second place for the derivation verdict to be computed. Renders nothing at all on a case that is ours to move, inside its maximum, with no derivation pending."
+					},
+					{
 						"id": "case-unread",
 						"type": "case-unread",
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-attention",
+						"type": "case-attention",
+						"title": "Attention",
+						"icon": "FlagOutline",
+						"_note": "markers-and-assessments-on-the-case, rows 2.36, 2.40 and 2.44. Three facts on one strip, kept apart on purpose: the flag a person raised with a written reason and cleared with another, both kept; the risk this organisation assessed, behind a permission declared on the property rather than checked in dossiq code; and the markers the system raised against a named panel. It sits UNDER the unread strip because it says the opposite kind of thing. The unread badge is per reader and clears because somebody looked. A marker is about the world, is not per user, and clears when the work behind it is done. Running the two together into one attention count is how a handler loses the ability to tell a colleague's judgement from a failed virus scan, so each gets its own row and its own lead sentence."
 					}
 				],
 				"layout": [
@@ -2200,10 +2276,28 @@
 						"showTitle": false
 					},
 					{
+						"id": "status-declaration-strip",
+						"widgetId": "case-status-declaration",
+						"gridX": 0,
+						"gridY": 3,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
+						"id": "attention-strip",
+						"widgetId": "case-attention",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 5,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2212,7 +2306,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 3,
+						"gridY": 5,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2221,7 +2315,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 7,
+						"gridY": 9,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2229,7 +2323,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 12,
+						"gridY": 14,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2238,7 +2332,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 12,
+						"gridY": 14,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
@@ -3014,6 +3108,17 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "EndOfDay",
+			"route": "/end-of-day",
+			"type": "custom",
+			"title": "Close out your day",
+			"component": "EndOfDayView",
+			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case.",
+			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},

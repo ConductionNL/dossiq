@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Status\StatusDeclaration;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use Psr\Log\LoggerInterface;
@@ -168,6 +169,96 @@ class WorkQueueService {
 
 		return $items;
 	}//end computeQueue()
+
+	/**
+	 * Count the open cases in a queue by who the queue is waiting on.
+	 *
+	 * The question a team lead asks is not how many cases are open, it is how
+	 * many of them anybody on the team can actually move today. A queue of
+	 * forty with twelve on the applicant and six on an advisory body is a queue
+	 * of twenty-two, and the other eighteen are somebody else's turn.
+	 *
+	 * @param string|null $userId Scope to one handler's queue, or null for the whole list.
+	 *
+	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	public function countByWaitingOn(?string $userId = null): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$caseSchema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $caseSchema === '') {
+			return $this->tallyWaitingOn(cases: []);
+		}
+
+		$filters = ['_limit' => self::WORKLOAD_LIMIT];
+		if ($userId !== null && $userId !== '') {
+			$filters['assignee'] = $userId;
+		}
+
+		try {
+			$cases = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				filters: $filters
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning('WorkQueue: waiting-on count search failed', ['error' => $e->getMessage()]);
+			return $this->tallyWaitingOn(cases: []);
+		}
+
+		return $this->tallyWaitingOn(cases: $cases);
+	}//end countByWaitingOn()
+
+	/**
+	 * Tally open cases by who each one waits on. Pure function — no I/O.
+	 *
+	 * An UNDECLARED case counts as ours, which is the whole reason
+	 * `statusType.waitingOn` coalesces to `us` on the case: a fourth bucket
+	 * called "not declared" would hold most of the queue on every case type
+	 * nobody has annotated, and a count nobody trusts is a count nobody reads.
+	 *
+	 * A CLOSED case counts in none of the three. Nobody is waiting on a case
+	 * that is finished, and a team lead who saw last year's work in this
+	 * week's number would stop using the number.
+	 *
+	 * @param array<int, array<string, mixed>> $cases The raw case rows.
+	 *
+	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	public function tallyWaitingOn(array $cases): array {
+		$counts = ['ours' => 0, 'applicant' => 0, 'thirdParty' => 0, 'total' => 0];
+
+		foreach ($cases as $case) {
+			if (is_array($case) === false) {
+				continue;
+			}
+
+			if ((string)($case['endDate'] ?? '') !== '' || ($case['isFinalStatus'] ?? false) === true) {
+				continue;
+			}
+
+			$counts['total']++;
+			$waitingOn = trim((string)($case['waitingOn'] ?? ''));
+			if ($waitingOn === StatusDeclaration::WAITING_ON_APPLICANT) {
+				$counts['applicant']++;
+				continue;
+			}
+
+			if ($waitingOn === StatusDeclaration::WAITING_ON_THIRD_PARTY) {
+				$counts['thirdParty']++;
+				continue;
+			}
+
+			$counts['ours']++;
+		}
+
+		return $counts;
+	}//end tallyWaitingOn()
 
 	/**
 	 * Compute per-handler open-case counts across all cases.

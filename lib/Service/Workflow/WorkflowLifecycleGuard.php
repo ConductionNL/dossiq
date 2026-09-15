@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -72,14 +73,41 @@ class WorkflowLifecycleGuard {
 	 *
 	 * @param WorkflowDefinitionRepository $repository The definition repository.
 	 * @param LoggerInterface $logger The logger.
+	 * @param TaskDeclarationValidator|null $taskDeclarations Publish-time check of the
+	 *                                                       per-task declaration blocks.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
 		private readonly LoggerInterface $logger,
+		private readonly ?TaskDeclarationValidator $taskDeclarations = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Why the last publish check refused, in the administrator's own words.
+	 *
+	 * The publish path answers null for every refusal, which is the contract
+	 * its callers were written against and is not changed here. What was
+	 * missing is kept beside it, so the controller can say WHICH task named
+	 * WHICH form, group or effect that is not there. "Could not publish" is
+	 * the message that sends somebody to a log to find a typo.
+	 *
+	 * @var array<int, array{path: string, code: string, message: string}>
+	 */
+	private array $lastRefusals = [];
+
+	/**
+	 * The refusals of the most recent publish check, newest call only.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	public function lastRefusals(): array {
+		return $this->lastRefusals;
+	}//end lastRefusals()
 
 	/**
 	 * Resolve the authoritative lifecycle status of a row.
@@ -257,6 +285,15 @@ class WorkflowLifecycleGuard {
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
 	public function isPublishableDraft(array $current, array $transitions, string $id): bool {
+		// A task naming a form, a group or an effect handler that is not there
+		// is refused HERE, with the other publish preconditions, because
+		// publishing is the last moment somebody is present to fix it. After
+		// it, the same declaration is a task that reaches no team or cannot be
+		// completed, met by the handler who needed the work to move.
+		if ($this->taskDeclarationsResolve(definition: $current, id: $id) === false) {
+			return false;
+		}
+
 		if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
 			$this->logger->warning(
 				'Dossiq: publish() — definition is not a draft',
@@ -280,6 +317,40 @@ class WorkflowLifecycleGuard {
 
 		return true;
 	}//end isPublishableDraft()
+
+	/**
+	 * Whether every task declaration on this definition resolves.
+	 *
+	 * Answers true when no validator is wired, which is what every existing
+	 * unit test constructing this guard two-argument gets: the check is
+	 * additive, and a test that never declared a task block cannot be failed
+	 * by one.
+	 *
+	 * @param array<string, mixed> $definition The definition row being published.
+	 * @param string               $id         The definition uuid, for the log.
+	 *
+	 * @return boolean True when every task declaration resolves.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function taskDeclarationsResolve(array $definition, string $id): bool {
+		$this->lastRefusals = [];
+		if ($this->taskDeclarations === null) {
+			return true;
+		}
+
+		$this->lastRefusals = $this->taskDeclarations->refusalsFor(definition: $definition);
+		if ($this->lastRefusals === []) {
+			return true;
+		}
+
+		$this->logger->warning(
+			'Dossiq: publish() — a task declaration names something that is not there',
+			['app' => Application::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
+		);
+
+		return false;
+	}//end taskDeclarationsResolve()
 
 	/**
 	 * Assert a published row may be deprecated: it MUST be published, and

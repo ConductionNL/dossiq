@@ -14,6 +14,7 @@ import { CnSettingsSection } from '@conduction/nextcloud-vue'
 import { createApp, h } from 'vue'
 import CaseEmailMatchSettings from './views/settings/CaseEmailMatchSettings.vue'
 import SubstitutionSettings from './views/settings/SubstitutionSettings.vue'
+import WorkDigestSettings from './views/settings/WorkDigestSettings.vue'
 import pinia from './pinia.js'
 
 const app = createApp(SubstitutionSettings)
@@ -41,3 +42,25 @@ const emailMatching = createApp({
 emailMatching.config.globalProperties.t = t
 emailMatching.config.globalProperties.n = n
 emailMatching.mount('#dossiq-personal-email-matching')
+
+// When the daily digest of your open work arrives (one-personal-queue).
+// It is a personal setting because the choice is the reader's; the routed
+// version is OpenRegister's notification routing, which this base does not
+// carry yet.
+const workDigest = createApp({
+	render: () =>
+		h(
+			CnSettingsSection,
+			{
+				name: t('dossiq', 'My daily work digest'),
+				description: t(
+					'dossiq',
+					'One message a day naming what is waiting on you. Nothing waiting means no message.',
+				),
+			},
+			[h(WorkDigestSettings)],
+		),
+})
+workDigest.config.globalProperties.t = t
+workDigest.config.globalProperties.n = n
+workDigest.mount('#dossiq-personal-work-digest')

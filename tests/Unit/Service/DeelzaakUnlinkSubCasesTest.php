@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -204,6 +205,10 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
+			deriver: new SubCaseDeriver(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
 		);
 	}//end makeService()
 
@@ -308,6 +313,10 @@ class DeelzaakUnlinkSubCasesTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			caseReader: new CaseObjectReader(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
+			deriver: new SubCaseDeriver(
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
