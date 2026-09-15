@@ -181,9 +181,11 @@ class CaseRelationStore {
 		}
 
 		try {
-			$answer = $incoming === true
-				? $objectService->getObjectUsedBy($caseUuid)
-				: $objectService->getObjectUses($caseUuid);
+			if ($incoming === true) {
+				$answer = $objectService->getObjectUsedBy($caseUuid);
+			} else {
+				$answer = $objectService->getObjectUses($caseUuid);
+			}
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseRelationService: relation rows unavailable',

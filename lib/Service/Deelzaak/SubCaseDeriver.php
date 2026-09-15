@@ -194,7 +194,11 @@ class SubCaseDeriver {
 			return null;
 		}
 
-		return is_object($parent) ? $parent : null;
+		if (is_object($parent) === false) {
+			return null;
+		}
+
+		return $parent;
 	}//end findParent()
 
 	/**
@@ -220,8 +224,13 @@ class SubCaseDeriver {
 
 		try {
 			$schemaId = $parent->getSchema();
+			$resolvedId  = null;
+			if (is_numeric($schemaId) === true) {
+				$resolvedId = (int)$schemaId;
+			}
+
 			$declaration = $relations->declarationFor(
-				schemaId: is_numeric($schemaId) ? (int)$schemaId : null,
+				schemaId: $resolvedId,
 				property: self::PARENT_PROPERTY
 			);
 		} catch (\Throwable $e) {
@@ -232,7 +241,11 @@ class SubCaseDeriver {
 			return [];
 		}
 
-		return is_array($declaration) ? $declaration : [];
+		if (is_array($declaration) === false) {
+			return [];
+		}
+
+		return $declaration;
 	}//end declaration()
 
 	/**
@@ -287,6 +300,10 @@ class SubCaseDeriver {
 			$object = $object->jsonSerialize();
 		}
 
-		return is_array($object) ? $object : [];
+		if (is_array($object) === false) {
+			return [];
+		}
+
+		return $object;
 	}//end asArray()
 }//end class

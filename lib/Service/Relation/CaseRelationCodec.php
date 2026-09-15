@@ -103,7 +103,11 @@ class CaseRelationCodec {
 			$raw = ($case[$property] ?? []);
 			if (is_string($raw) === true && $raw !== '') {
 				$decoded = json_decode($raw, true);
-				$raw     = (is_array($decoded) === true) ? $decoded : [$raw];
+				if (is_array($decoded) === true) {
+					$raw = $decoded;
+				} else {
+					$raw = [$raw];
+				}
 			}
 
 			if (is_array($raw) === false) {
@@ -120,7 +124,11 @@ class CaseRelationCodec {
 					$value = ($value['id'] ?? ($value['uuid'] ?? ''));
 				}
 
-				$value = is_string($value) ? trim($value) : '';
+				if (is_string($value) === false) {
+					$value = '';
+				}
+
+				$value = trim($value);
 				if ($value !== '' && in_array($value, $uuids, true) === false) {
 					$uuids[] = $value;
 				}
