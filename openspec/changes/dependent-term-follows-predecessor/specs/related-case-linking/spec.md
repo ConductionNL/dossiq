@@ -65,6 +65,7 @@ declared from both cases SHALL be refused.
 - **GIVEN** case A related to case B as a vervolg
 - **WHEN** B is related to A as a vervolg
 - **THEN** the request SHALL be refused as a duplicate
+- @e2e exclude {dossiq ships no add-relation surface: the Related cases tab is the library's read-only widget, so the guard has no browser path; asserted in tests/Unit/Service/CaseRelationServiceTest.php::testTheSameTypeDeclaredFromBothSidesIsRefused}
 
 #### Scenario: deleting a case clears the links declared towards it
 
@@ -100,6 +101,7 @@ than report a sub-case that inherited nothing.
 - **GIVEN** that parent
 - **WHEN** a sub-case is created with a confidentiality of its own
 - **THEN** the sub-case SHALL keep its own value and SHALL record no inheritance of it
+- @e2e exclude {the sub-case form does not offer confidentiality, so a child value cannot be typed in a browser; asserted in tests/Unit/Service/Deelzaak/SubCaseDeriverTest.php::testAValueTheChildAlreadyCarriesIsNotOverwritten}
 
 #### Scenario: an inheritance that could not be applied is reported
 
