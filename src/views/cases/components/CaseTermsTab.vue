@@ -27,7 +27,7 @@
   @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
 -->
 <template>
-	<div class="case-terms-tab">
+	<div class="case-terms-tab" data-testid="case-terms-tab">
 		<h3>{{ t('dossiq', 'The clocks on this case') }}</h3>
 
 		<div v-if="loading" class="case-terms-tab__loading">
@@ -36,12 +36,12 @@
 		</div>
 
 		<template v-else>
-			<p v-if="unreadable" class="case-terms-tab__unreadable">
+			<p v-if="unreadable" class="case-terms-tab__unreadable" data-testid="case-terms-unreadable">
 				{{ t('dossiq', 'The terms on this case could not be read. This panel is incomplete, not empty.') }}
 			</p>
 
 			<template v-else>
-				<div class="case-terms-tab__progress">
+				<div class="case-terms-tab__progress" data-testid="case-terms-progress">
 					<label class="case-terms-tab__progress-label" :for="progressId">
 						{{ t('dossiq', 'Progress') }}
 					</label>
@@ -50,7 +50,7 @@
 						class="case-terms-tab__progress-bar"
 						:value="progress.progress || 0"
 						max="100" />
-					<span class="case-terms-tab__progress-figure">
+					<span class="case-terms-tab__progress-figure" data-testid="case-terms-progress-figure">
 						{{ t('dossiq', '{percent}%', { percent: progress.progress || 0 }) }}
 					</span>
 					<span class="case-terms-tab__hint">
@@ -63,11 +63,11 @@
 					</span>
 				</div>
 
-				<p v-if="attention" class="case-terms-tab__attention">
+				<p v-if="attention" class="case-terms-tab__attention" data-testid="case-terms-attention">
 					{{ t('dossiq', 'At least one clock on this case has run out.') }}
 				</p>
 
-				<p v-if="rows.length === 0" class="case-terms-tab__empty">
+				<p v-if="rows.length === 0" class="case-terms-tab__empty" data-testid="case-terms-empty">
 					{{ t('dossiq', 'This case type declares no term, so no clock is running.') }}
 				</p>
 
@@ -84,7 +84,9 @@
 							v-for="row in rows"
 							:key="row.id || row.kind"
 							class="case-terms-tab__row"
-							:class="`case-terms-tab__row--${row.tone}`">
+							:class="`case-terms-tab__row--${row.tone}`"
+							:data-testid="`case-terms-row-${row.kind}`"
+							:data-tone="row.tone">
 							<td>
 								<span class="case-terms-tab__kind">{{ row.label }}</span>
 								<span class="case-terms-tab__hint">{{ row.hint }}</span>

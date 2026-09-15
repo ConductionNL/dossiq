@@ -25,17 +25,17 @@ export const KIND_ORDER = ['statutory', 'planned', 'internal', 'phase']
  * The label for one kind, in the reader's language.
  *
  * @param {string}   kind      One of the four kinds.
- * @param {Function} translate The `t` binding, so this module needs no global.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding, passed in so this module needs no global.
  *
  * @return {string} The label.
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  */
-export function kindLabel(kind, translate) {
+export function kindLabel(kind, t) {
 	const labels = {
-		statutory: translate('dossiq', 'Statutory term'),
-		planned: translate('dossiq', 'Planned end'),
-		internal: translate('dossiq', 'Internal target'),
-		phase: translate('dossiq', 'Phase term'),
+		statutory: t('dossiq', 'Statutory term'),
+		planned: t('dossiq', 'Planned end'),
+		internal: t('dossiq', 'Internal target'),
+		phase: t('dossiq', 'Phase term'),
 	}
 	return labels[kind] || kind
 }
@@ -44,17 +44,17 @@ export function kindLabel(kind, translate) {
  * What one kind means, in one sentence.
  *
  * @param {string}   kind      One of the four kinds.
- * @param {Function} translate The `t` binding.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence, empty for a kind we do not know.
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  */
-export function kindHint(kind, translate) {
+export function kindHint(kind, t) {
 	const hints = {
-		statutory: translate('dossiq', 'The date the applicant was told about.'),
-		planned: translate('dossiq', 'What your team gave itself. The applicant was not told this.'),
-		internal: translate('dossiq', 'A team target. It never reaches the applicant.'),
-		phase: translate('dossiq', 'This phase only. It never moves the case term.'),
+		statutory: t('dossiq', 'The date the applicant was told about.'),
+		planned: t('dossiq', 'What your team gave itself. The applicant was not told this.'),
+		internal: t('dossiq', 'A team target. It never reaches the applicant.'),
+		phase: t('dossiq', 'This phase only. It never moves the case term.'),
 	}
 	return hints[kind] || ''
 }
@@ -89,22 +89,22 @@ export function termTone(term, warnWithin = 5) {
  * The days-left count as a sentence.
  *
  * @param {object}   term      One shaped term from the server.
- * @param {Function} translate The `t` binding.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {string} The sentence.
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
  */
-export function daysLeftSentence(term, translate) {
+export function daysLeftSentence(term, t) {
 	if (!term || typeof term.daysLeft !== 'number' || !term.endDate) {
-		return translate('dossiq', 'No end date')
+		return t('dossiq', 'No end date')
 	}
 	if (term.overdue === true) {
-		return translate('dossiq', '{days} days over', { days: Math.abs(term.daysLeft) })
+		return t('dossiq', '{days} days over', { days: Math.abs(term.daysLeft) })
 	}
 	if (term.daysLeft === 0) {
-		return translate('dossiq', 'Due today')
+		return t('dossiq', 'Due today')
 	}
-	return translate('dossiq', '{days} days left', { days: term.daysLeft })
+	return t('dossiq', '{days} days left', { days: term.daysLeft })
 }
 
 /**
@@ -115,12 +115,12 @@ export function daysLeftSentence(term, translate) {
  * deadline because a front end was older than a back end.
  *
  * @param {Array}    terms     The terms as the server answered them.
- * @param {Function} translate The `t` binding.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
  *
  * @return {Array} The rows to render.
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  */
-export function termRows(terms, translate) {
+export function termRows(terms, t) {
 	if (!Array.isArray(terms)) {
 		return []
 	}
@@ -129,10 +129,10 @@ export function termRows(terms, translate) {
 		.filter((term) => term && typeof term === 'object')
 		.map((term) => ({
 			...term,
-			label: kindLabel(term.kind, translate),
-			hint: kindHint(term.kind, translate),
+			label: kindLabel(term.kind, t),
+			hint: kindHint(term.kind, t),
 			tone: termTone(term),
-			sentence: daysLeftSentence(term, translate),
+			sentence: daysLeftSentence(term, t),
 		}))
 		.sort((left, right) => rank(left.kind) - rank(right.kind))
 }

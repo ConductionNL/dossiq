@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\OpenWorkloadAgeService;
@@ -70,6 +71,7 @@ class CaseTermsController extends Controller {
 	 * @param CaseTermsService $terms The four clocks on a case.
 	 * @param InformationRequestService $requests Asking and suspending as one act.
 	 * @param OpenWorkloadAgeService $workload The age of what is still standing.
+	 * @param CaseAccessGuard $guard The per-case check, asked of every endpoint below.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
 	 */
@@ -79,6 +81,7 @@ class CaseTermsController extends Controller {
 		private readonly CaseTermsService $terms,
 		private readonly InformationRequestService $requests,
 		private readonly OpenWorkloadAgeService $workload,
+		private readonly CaseAccessGuard $guard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -97,7 +100,7 @@ class CaseTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->refuseUnlessMayRead(caseId: $caseId);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -132,7 +135,7 @@ class CaseTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function citizen(string $caseId): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->refuseUnlessMayRead(caseId: $caseId);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -160,7 +163,7 @@ class CaseTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function requestInformation(string $caseId): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->refuseUnlessMayChange(caseId: $caseId);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -207,7 +210,7 @@ class CaseTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function receiveInformation(string $caseId): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->refuseUnlessMayChange(caseId: $caseId);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -239,7 +242,7 @@ class CaseTermsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function workloadAge(): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->refuseUnlessSignedIn();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -257,25 +260,92 @@ class CaseTermsController extends Controller {
 	}//end workloadAge()
 
 	/**
-	 * Refuse an anonymous caller.
+	 * Refuse a caller who may not READ this case.
 	 *
-	 * The per-object check is the store's: every read below goes through
-	 * OpenRegister, which answers only with the cases the caller may see. This
-	 * guard is the one thing the store cannot do, which is to refuse a request
-	 * carrying no session at all even when a route attribute is misconfigured.
+	 * Asked per case and failing closed. `#[NoAdminRequired]` on its own would
+	 * let any signed-in user read the four clocks on any case id they can
+	 * guess, and a term end is a fact about a dossier they may have no business
+	 * knowing about.
 	 *
-	 * @return JSONResponse|null The refusal, or null when a user is signed in.
+	 * @param string $caseId The case the caller is asking about.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may read it.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
-	private function ensureAuthenticated(): ?JSONResponse {
-		if ($this->userSession->getUser() === null) {
+	private function refuseUnlessMayRead(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->anonymous();
+		}
+
+		if ($this->guard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
 			return new JSONResponse(
-				['message' => 'Sign in to read the terms on a case.', 'error' => 'not-authenticated'],
+				['message' => 'You cannot read this case.', 'error' => 'case-read-refused'],
 				Http::STATUS_FORBIDDEN
 			);
 		}
 
 		return null;
-	}//end ensureAuthenticated()
+	}//end refuseUnlessMayRead()
+
+	/**
+	 * Refuse a caller who may not CHANGE this case.
+	 *
+	 * Asking the applicant for something suspends a statutory term, which is a
+	 * write and not a read, so the mutation right is what it is asked of.
+	 *
+	 * @param string $caseId The case the caller is acting on.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the caller may change it.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 */
+	private function refuseUnlessMayChange(string $caseId): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->anonymous();
+		}
+
+		if ($this->guard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'You cannot change this case.', 'error' => 'case-change-refused'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return null;
+	}//end refuseUnlessMayChange()
+
+	/**
+	 * Refuse a request carrying no session at all.
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function anonymous(): JSONResponse {
+		return new JSONResponse(
+			['message' => 'Sign in to read the terms on a case.', 'error' => 'not-authenticated'],
+			Http::STATUS_UNAUTHORIZED
+		);
+	}//end anonymous()
+
+	/**
+	 * Refuse an anonymous caller on an endpoint that names no case.
+	 *
+	 * The workload report is scoped by the store rather than by a case id: it
+	 * reads through OpenRegister, which answers with the open cases this caller
+	 * may see and no others. There is no object to guard here, so the session
+	 * is the whole check.
+	 *
+	 * @return JSONResponse|null The refusal, or null when a user is signed in.
+	 */
+	private function refuseUnlessSignedIn(): ?JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return $this->anonymous();
+		}
+
+		return null;
+	}//end refuseUnlessSignedIn()
 
 	/**
 	 * Decode the JSON request body into an array.

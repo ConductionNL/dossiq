@@ -97,7 +97,6 @@ import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // Federated case sharing/transfer/activity — federated-case-collaboration.
 // @spec openspec/specs/federated-case-collaboration/spec.md
 import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
-import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 // Case-assistant chat panel — conversational assistance delegated to Hermiq
 // (fleet rule: AI functionality lives in Hermiq; dossiq is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
@@ -108,6 +107,7 @@ import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
