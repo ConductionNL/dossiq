@@ -11,8 +11,10 @@
  *  - POST /api/case/{caseId}/transition           (body {transitionId, comment?})
  *  - POST /api/case/{caseId}/transition-freeform  (admin only; body {toStatusId, comment?})
  *  - GET  /api/case/{caseId}/transition-history
- *  - POST /api/cases/bulk-transition/preview      (body {caseIds[], transitionId})
- *  - POST /api/cases/bulk-transition/execute      (body {caseIds[], transitionId, comment?})
+ *
+ * A bulk transition is NOT here. It is one act of OpenRegister's bulk job,
+ * declared by {@see \OCA\Dossiq\BulkAction\TransitionCasesAction}, which
+ * calls this same engine once per case. What went with it is the loop.
  *
  * Error responses use static messages — `$e->getMessage()` is NEVER returned.
  *
@@ -37,7 +39,6 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -63,7 +64,6 @@ class StatusTransitionController extends Controller {
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
 	 * @param StatusTransitionService $transitionEngine The engine service
-	 * @param BulkStatusTransitionService $bulkEngine The bulk wrapper service
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
@@ -72,7 +72,6 @@ class StatusTransitionController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly StatusTransitionService $transitionEngine,
-		private readonly BulkStatusTransitionService $bulkEngine,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
@@ -306,183 +305,6 @@ class StatusTransitionController extends Controller {
 			);
 		}
 	}//end history()
-
-	/**
-	 * Preview a bulk gesture across multiple cases: per case, is it available
-	 * and does the case allow it right now? Read-only — nothing on this path
-	 * writes.
-	 *
-	 * Two gestures share the endpoint. Without a `gesture` (or with
-	 * `gesture: "transition"`) this previews a status transition through the
-	 * engine, unchanged. With `suspend`, `resume` or `extend` it previews the
-	 * matching lifecycle gesture through `CaseLifecycleService::state()`.
-	 * One endpoint rather than four because the PREVIEW, the per-case result
-	 * map and the partial-failure reporting are the part worth keeping equal
-	 * across all four bulk actions — which is also why one dialog serves them.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @spec openspec/specs/case-bulk-status-transition/spec.md
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
-	 */
-	public function bulkPreview(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$body = $this->readJsonBody();
-		$caseIds = $this->readCaseIds(body: $body);
-		$transitionId = (string)($body['transitionId'] ?? '');
-		$gesture = $this->readGesture(body: $body);
-
-		try {
-			if ($gesture !== self::GESTURE_TRANSITION) {
-				return new JSONResponse(
-					$this->bulkEngine->previewLifecycle(caseIds: $caseIds, gesture: $gesture),
-				);
-			}
-
-			$result = $this->bulkEngine->preview(caseIds: $caseIds, transitionId: $transitionId);
-			return new JSONResponse($result);
-		} catch (RuntimeException $e) {
-			$this->logger->info('StatusTransitionController: bulkPreview rejected', ['code' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'Could not preview bulk transition'], Http::STATUS_BAD_REQUEST);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StatusTransitionController: bulkPreview failed',
-				['exception' => $e->getMessage(), 'transitionId' => $transitionId],
-			);
-			return new JSONResponse(
-				['error' => 'Could not preview bulk transition'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}
-	}//end bulkPreview()
-
-	/**
-	 * Execute a bulk gesture across multiple cases. Loops the matching single
-	 * write path once per case — the status engine's `execute()` for a
-	 * transition, `CaseLifecycleService`'s `suspend()` / `resume()` /
-	 * `extend()` for the three lifecycle gestures — so every guard and every
-	 * automatic action a single case gets, a bulk case gets too. Partial
-	 * success is allowed and reported per case, never silently swallowed.
-	 *
-	 * A lifecycle gesture REQUIRES a reason and answers 400 without one.
-	 * Suspending, resuming and extending are statutory acts (Awb 4:5 and
-	 * 4:14) that someone has to justify later; doing twenty of them at once
-	 * is precisely when the justification is most likely to go unwritten, so
-	 * the endpoint refuses rather than recording twenty blank ones.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @spec openspec/specs/case-bulk-status-transition/spec.md
-	 * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
-	 */
-	public function bulkExecute(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
-			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$body = $this->readJsonBody();
-		$caseIds = $this->readCaseIds(body: $body);
-		$transitionId = (string)($body['transitionId'] ?? '');
-		$gesture = $this->readGesture(body: $body);
-		$comment = null;
-		if (isset($body['comment']) === true) {
-			$comment = (string)$body['comment'];
-		}
-
-		try {
-			if ($gesture !== self::GESTURE_TRANSITION) {
-				$reason = trim((string)($body['reason'] ?? ''));
-				if ($reason === '') {
-					return new JSONResponse(['error' => 'A reason is required'], Http::STATUS_BAD_REQUEST);
-				}
-
-				return new JSONResponse(
-					$this->bulkEngine->executeLifecycle(
-						caseIds: $caseIds,
-						gesture: $gesture,
-						reason: $reason,
-						days: (int)($body['days'] ?? 0),
-						newEndDate: (string)($body['newEndDate'] ?? ''),
-					),
-				);
-			}
-
-			$result = $this->bulkEngine->execute(caseIds: $caseIds, transitionId: $transitionId, comment: $comment);
-			return new JSONResponse($result);
-		} catch (RuntimeException $e) {
-			$this->logger->info('StatusTransitionController: bulkExecute rejected', ['code' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'Could not execute bulk transition'], Http::STATUS_BAD_REQUEST);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'StatusTransitionController: bulkExecute failed',
-				['exception' => $e->getMessage(), 'transitionId' => $transitionId],
-			);
-			return new JSONResponse(
-				['error' => 'Could not execute bulk transition'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}
-	}//end bulkExecute()
-
-	/**
-	 * The gesture a bulk body asks for when it names none: a status
-	 * transition, which is what both endpoints did before the three
-	 * lifecycle gestures joined them.
-	 */
-	private const GESTURE_TRANSITION = 'transition';
-
-	/**
-	 * The gestures a bulk body may name.
-	 */
-	private const GESTURES = [self::GESTURE_TRANSITION, 'suspend', 'resume', 'extend'];
-
-	/**
-	 * Read the requested gesture from a decoded request body.
-	 *
-	 * An absent or unrecognised gesture reads as `transition`, which keeps
-	 * every existing caller — the workflow board's dialog, which sends no
-	 * `gesture` at all — on exactly the path it was on.
-	 *
-	 * @param array<string, mixed> $body Decoded request body
-	 *
-	 * @return string One of the GESTURES
-	 */
-	private function readGesture(array $body): string {
-		$gesture = (string)($body['gesture'] ?? self::GESTURE_TRANSITION);
-		if (in_array($gesture, self::GESTURES, true) === false) {
-			return self::GESTURE_TRANSITION;
-		}
-
-		return $gesture;
-	}//end readGesture()
-
-	/**
-	 * Read and normalise the `caseIds` array from a decoded request body.
-	 *
-	 * @param array<string, mixed> $body Decoded request body
-	 *
-	 * @return array<int, string>
-	 */
-	private function readCaseIds(array $body): array {
-		$caseIds = $body['caseIds'] ?? [];
-		if (is_array($caseIds) === false) {
-			return [];
-		}
-
-		$list = [];
-		foreach ($caseIds as $caseId) {
-			$list[] = (string)$caseId;
-		}
-
-		return $list;
-	}//end readCaseIds()
 
 	/**
 	 * Decode a JSON request body safely.

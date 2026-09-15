@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
+use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\TermijnService;
@@ -54,12 +55,17 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
 	 * @param CaseTypeSlugResolver $caseTypeSlugs Case-type uuid-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseTermsService|null $caseTerms The clocks beside the statutory one: the
+	 *        planned end, the internal target, and the fixed closing date when the case
+	 *        type declares one instead of a lead time. Optional so a container that
+	 *        cannot build it leaves the statutory bind exactly as it was.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTermsService $caseTerms = null,
 	) {
 	}//end __construct()
 
@@ -109,6 +115,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 
 		try {
 			$this->termService->createTermijnInstance($caseId, $caseType);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
 			// statutory clock running, which is exactly the state that hid a
@@ -120,6 +127,12 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				. 'so case ' . $caseId . ' runs without a statutory term',
 				['case' => $caseId, 'caseType' => $caseType, 'caseTypeId' => $caseTypeRef]
 			);
+
+			// A subsidy round declares a closing DATE and no lead time, so it
+			// has no TermijnDefinitie and a refusal here is the ordinary path
+			// rather than the broken one. The other clocks still bind, and the
+			// fixed date still becomes the statutory term.
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
@@ -127,6 +140,41 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Bind the planned end, the internal target and the fixed closing date.
+	 *
+	 * Separate from the statutory bind above, and tolerant of its own failure:
+	 * a service norm that could not be bound must never stop a case being
+	 * created, and the warning is what says the case is carrying fewer clocks
+	 * than its type declares.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $caseTypeRef The case type as the case carries it.
+	 * @param array<string, mixed> $payload The created case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 */
+	private function bindTheOtherClocks(string $caseId, string $caseTypeRef, array $payload): void {
+		if ($this->caseTerms === null) {
+			return;
+		}
+
+		try {
+			$this->caseTerms->bindForCase(
+				caseId: $caseId,
+				caseTypeId: $caseTypeRef,
+				plannedStart: trim((string)($payload['plannedStartDate'] ?? '')),
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijn: the planned end and the internal target could not be bound to case ' . $caseId,
+				['case' => $caseId, 'caseType' => $caseTypeRef, 'error' => $e->getMessage()]
+			);
+		}
+	}//end bindTheOtherClocks()
 
 	/**
 	 * Extract OR object array from an event.

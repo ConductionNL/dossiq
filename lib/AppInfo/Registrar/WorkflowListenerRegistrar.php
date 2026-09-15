@@ -30,6 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
@@ -37,6 +38,7 @@ use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -119,6 +121,14 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
+		);
+
+		// A phase carries its own clock, and the clock moves when the case
+		// does. The listener reconciles rather than compares, so it needs no
+		// before-image and is correct on a replay.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: CasePhaseTermListener::class
 		);
 
 		// The case number is DECLARED on the schema, as an OpenRegister
