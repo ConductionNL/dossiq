@@ -327,7 +327,7 @@ class InternalHandover {
 			throw new RefusedException(
 				rule: self::HANDOVER_SETTLED,
 				sentence: 'This handover was already settled, so it cannot be changed.',
-				status: RefusedException::STATUS_CONFLICT,
+				status: RefusedException::STATUS_REFUSED,
 			);
 		}
 
