@@ -195,16 +195,16 @@ class LeaverHandoverTest extends TestCase {
 				'tasks' => [['id' => 'task-1', 'title' => 'Beoordelen']],
 			]
 		);
-		$reassignment->method('execute')->willReturn(
+		// The cases are a bulk job now, committed by the handover because a
+		// leaver handover is an act somebody already decided. What comes back
+		// names the job and the cases the act was ordered over; what happened
+		// to each is the job's own report
+		// (bulk-actions-report-progress, D-1, D-6).
+		$reassignment->method('releaseCaseload')->willReturn(
 			[
-				'batchId' => 'batch-1',
-				'succeeded' => 3,
-				'failed' => 0,
-				'results' => [
-					['type' => 'case', 'id' => 'case-a', 'title' => 'case-a', 'success' => true],
-					['type' => 'case', 'id' => 'case-b', 'title' => 'case-b', 'success' => true],
-					['type' => 'task', 'id' => 'task-1', 'title' => 'Beoordelen', 'success' => true],
-				],
+				'job' => ['id' => 7, 'uuid' => 'batch-1', 'state' => 'running', 'total' => 2],
+				'caseIds' => ['case-a', 'case-b'],
+				'tasks' => [['id' => 'task-1', 'title' => 'Beoordelen', 'success' => true]],
 			]
 		);
 

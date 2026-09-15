@@ -47,4 +47,28 @@ interface LifecycleActionProviderInterface {
 	 * @return list<array{action:string,to:string,requires:?string,description:?string,inputs:list<array{field:string,required:bool}>,label?:string,blocked?:bool}>
 	 */
 	public function availableActions(array $object, string $userId): array;
+
+	/**
+	 * Take one of the moves this provider offered.
+	 *
+	 * 🔑 ADDED 2026-09-15, and the reason is worth keeping. This stub declared
+	 * `availableActions()` ALONE while dossiq's provider had implemented
+	 * `execute()` in full for months, which made the write half look like
+	 * dossiq's missing work. It was not: OpenRegister's own interface declared
+	 * no `execute()`, so nothing ever called what dossiq had written, and
+	 * `lifecycle-acts-on-the-case` opened against a lane that was already
+	 * closed. openregister#3679 was fixed by openregister#3682, which added
+	 * this method and the provider branch in `applyTransition()`.
+	 *
+	 * 🔴 THE SIGNATURE IS COPIED, NOT PARAPHRASED, parameter names included,
+	 * for the reason the class docblock gives: these are called by name.
+	 *
+	 * @param array<string, mixed> $object The object payload before the move.
+	 * @param string $userId The uid of the caller, empty when there is no session user.
+	 * @param string $action The action id, one `availableActions()` published.
+	 * @param array<string, mixed> $data The inputs the caller supplied, keyed by field.
+	 *
+	 * @return array<string, mixed> Whatever the provider reports about the move.
+	 */
+	public function execute(array $object, string $userId, string $action, array $data): array;
 }//end interface

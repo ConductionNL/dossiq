@@ -61,6 +61,8 @@
  * for a `textarea` under it searches inside an element that has no children.
  */
 
+import type { Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -75,13 +77,49 @@ import {
 } from './helpers/fixtures.ts'
 import {
 	clickHeaderAction,
-	openHeaderActionsMenu,
 	PAGE_LOAD,
 	trackDossiqErrors,
 } from './helpers/nav.ts'
 
 /** A day in milliseconds, for the extension arithmetic. */
 const DAY = 24 * 60 * 60 * 1000
+
+/**
+ * Open the one lifecycle menu on the case page.
+ *
+ * Since lifecycle-acts-on-the-case there is one entry in the header actions
+ * bar, `case-lifecycle-menu`, and the acts live inside the dialog it opens.
+ * The four header actions that used to be here are folded into it.
+ *
+ * @param page The page under test.
+ * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ */
+async function openLifecycleMenu(page: Page) {
+	await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
+	await expect(page.getByTestId('case-acts-list')).toBeVisible({
+		timeout: 25_000,
+	})
+}
+
+/**
+ * Open the menu and choose one act out of it.
+ *
+ * It asserts the entry is ENABLED before clicking, which presence alone no
+ * longer proves: a refused act is listed, disabled, with its reason, so a
+ * click on a disabled entry would do nothing and the failure would land on
+ * whatever came after it.
+ *
+ * @param page The page under test.
+ * @param act  The act id, as the menu renders it.
+ * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ */
+async function pickAct(page: Page, act: string) {
+	await openLifecycleMenu(page)
+	const entry = page.getByTestId(`case-act-button-${act}`)
+	await expect(entry).toBeVisible({ timeout: 25_000 })
+	await expect(entry).toBeEnabled()
+	await entry.click()
+}
 
 /** Transition ids the seeded workflow template declares. */
 const T = {
@@ -546,13 +584,13 @@ test.describe('Case lifecycle on the case page', () => {
 		// visible at all.
 		await openCase(page, 'suspend')
 
-		await clickHeaderAction(page, 'cn-action-case-suspend')
-		const dialog = page.getByTestId('case-lifecycle-dialog')
+		await pickAct(page, 'suspend')
+		const dialog = page.getByTestId('case-acts-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
 		// The reason is required: the button says so by staying disabled.
-		await expect(page.getByTestId('case-lifecycle-confirm')).toBeDisabled()
-		await dialog.getByTestId('case-lifecycle-reason').fill('Awb 4:5 e2e')
-		await page.getByTestId('case-lifecycle-confirm').click()
+		await expect(page.getByTestId('case-acts-confirm')).toBeDisabled()
+		await dialog.getByTestId('case-act-reason-input').fill('Awb 4:5 e2e')
+		await page.getByTestId('case-acts-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		/**
@@ -582,11 +620,11 @@ test.describe('Case lifecycle on the case page', () => {
 		// second one from reappearing without the reasoning above being read.
 		await expect(page.getByTestId('case-suspended-marker')).toHaveCount(0)
 
-		await clickHeaderAction(page, 'cn-action-case-resume')
-		const resumeDialog = page.getByTestId('case-lifecycle-dialog')
+		await pickAct(page, 'resume')
+		const resumeDialog = page.getByTestId('case-acts-dialog')
 		await expect(resumeDialog).toBeVisible({ timeout: 15_000 })
-		await resumeDialog.getByTestId('case-lifecycle-reason').fill('Hervat e2e')
-		await page.getByTestId('case-lifecycle-confirm').click()
+		await resumeDialog.getByTestId('case-act-reason-input').fill('Hervat e2e')
+		await page.getByTestId('case-acts-confirm').click()
 		await expect(resumeDialog).toHaveCount(0, { timeout: 25_000 })
 
 		await expect
@@ -612,11 +650,11 @@ test.describe('Case lifecycle on the case page', () => {
 		).toBe(true)
 
 		await openCase(page, 'extend')
-		await clickHeaderAction(page, 'cn-action-case-extend')
-		const dialog = page.getByTestId('case-lifecycle-dialog')
+		await pickAct(page, 'extend')
+		const dialog = page.getByTestId('case-acts-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-lifecycle-reason').fill('Awb 4:14 e2e')
-		await page.getByTestId('case-lifecycle-confirm').click()
+		await dialog.getByTestId('case-act-reason-input').fill('Awb 4:14 e2e')
+		await page.getByTestId('case-acts-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		// `plannedEndDate` is the field the extension writes. `deadline` is
@@ -658,19 +696,21 @@ test.describe('Case lifecycle on the case page', () => {
 		)
 
 		await openCase(page, 'closed')
-		// Opened explicitly rather than through clickHeaderAction, because what
-		// this test is about is that Reopen is OFFERED on a closed case: the
-		// visibility assertion has to be its own step, and an entry in a shut
-		// menu is absent whether the gate let it through or not.
-		await openHeaderActionsMenu(page)
-		const reopen = page.getByTestId('cn-action-case-reopen')
+		// Stepped rather than done through `pickAct`, because what this test is
+		// about is that Reopen is ENABLED on a closed case. Since
+		// lifecycle-acts-on-the-case a refused act is still LISTED, disabled
+		// with its reason, so presence no longer proves the gate let it
+		// through and the enabled state is the assertion that does.
+		await openLifecycleMenu(page)
+		const reopen = page.getByTestId('case-act-button-reopen')
 		await expect(reopen).toBeVisible({ timeout: 25_000 })
+		await expect(reopen).toBeEnabled()
 		await reopen.click()
 
-		const dialog = page.getByTestId('case-lifecycle-dialog')
+		const dialog = page.getByTestId('case-acts-dialog')
 		await expect(dialog).toBeVisible({ timeout: 15_000 })
-		await dialog.getByTestId('case-lifecycle-reason').fill('Heropend e2e')
-		await page.getByTestId('case-lifecycle-confirm').click()
+		await dialog.getByTestId('case-act-reason-input').fill('Heropend e2e')
+		await page.getByTestId('case-acts-confirm').click()
 		await expect(dialog).toHaveCount(0, { timeout: 25_000 })
 
 		await expect
