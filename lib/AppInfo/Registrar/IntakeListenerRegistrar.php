@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -70,6 +71,19 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: LocationBagValidationListener::class
+		);
+
+		// Intake-triage-and-refusal: a case type declares what must be answered
+		// before a case exists, and who may hold it. Enforced here rather than
+		// in the create form, because the form is one of five ways a case is
+		// written and the other four would walk past it.
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: IntakeRequirementsListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: IntakeRequirementsListener::class
 		);
 	}//end register()
 }//end class

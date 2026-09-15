@@ -47,6 +47,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Maps dossiq's transitions onto OpenRegister's published actions.
@@ -321,6 +322,7 @@ class CaseActionProviderTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			statusChecklist: $this->createMock(StatusChecklist::class),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$provider = new CaseActionProvider(

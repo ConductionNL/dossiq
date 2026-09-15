@@ -18,18 +18,30 @@ import {
 } from '../../src/utils/substitutionHelpers.js'
 
 describe('buildSubstitutedMap', () => {
-	it('keys cases and tasks by type:id with the absentee', () => {
+	/**
+	 * The value is the WHOLE `_substituted` block, not the absentee on its
+	 * own. `SubstitutedWorkResolver` annotates each routed row with
+	 * `absentee`, `substitutionId` and `until`, and `substitutedUntil()`
+	 * reads the last of those off this map. These assertions used to pin the
+	 * value as the absentee string, which is the shape the helper had before
+	 * substituted-work-reaches-my-work (#2719) added the end date, so they
+	 * failed on every branch from that merge onward.
+	 */
+	it('keys cases and tasks by type:id with the substitution block', () => {
 		const map = buildSubstitutedMap(
-			[{ id: 'c1', _substituted: { absentee: 'jan' } }],
-			[{ id: 't1', _substituted: { absentee: 'jan' } }],
+			[{ id: 'c1', _substituted: { absentee: 'jan', until: '2026-07-21' } }],
+			[{ id: 't1', _substituted: { absentee: 'jan', until: '2026-07-21' } }],
 		)
-		expect(map['case:c1']).toBe('jan')
-		expect(map['task:t1']).toBe('jan')
+		expect(map['case:c1']).toEqual({ absentee: 'jan', until: '2026-07-21' })
+		expect(map['task:t1']).toEqual({ absentee: 'jan', until: '2026-07-21' })
 	})
 
 	it('tolerates missing _substituted metadata', () => {
 		const map = buildSubstitutedMap([{ id: 'c1' }], [])
-		expect(map['case:c1']).toBe('')
+		// An empty block, so `substitutedFor()` reads '' off it rather than
+		// throwing on a value that is not there at all.
+		expect(map['case:c1']).toEqual({})
+		expect(substitutedFor(map, { type: 'case', id: 'c1' })).toBe('')
 	})
 })
 
@@ -49,7 +61,7 @@ describe('mergeSubstitutedCases', () => {
 })
 
 describe('substitutedFor', () => {
-	const map = { 'case:c1': 'jan' }
+	const map = { 'case:c1': { absentee: 'jan', until: '2026-07-21' } }
 	it('returns the absentee for a substituted item', () => {
 		expect(substitutedFor(map, { type: 'case', id: 'c1' })).toBe('jan')
 	})
@@ -63,7 +75,7 @@ describe('applySubstitutedFilter', () => {
 		{ type: 'case', id: 'own' },
 		{ type: 'case', id: 'sub' },
 	]
-	const map = { 'case:sub': 'jan' }
+	const map = { 'case:sub': { absentee: 'jan', until: '2026-07-21' } }
 
 	it('keeps everything when showSubstituted is true', () => {
 		expect(applySubstitutedFilter(items, map, true)).toHaveLength(2)

@@ -548,6 +548,8 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -645,7 +647,9 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"aggregate": {
 									"groupBy": "status",
@@ -672,7 +676,9 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"aggregate": {
 									"groupBy": "caseType",
@@ -698,7 +704,9 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"extend": ["calculations"],
 								"order": {
@@ -725,6 +733,8 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
 								}
 							},
@@ -892,6 +902,8 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false,
 									"deadline": {
 										"lte": "@today+3d"
 									}
@@ -936,6 +948,8 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"deadline[lte]": "@today+3d"
 								}
 							},
@@ -954,7 +968,9 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"isFinalStatus": false
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"order": {
 									"startDate": "desc"
@@ -975,7 +991,9 @@
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
-									"isFinalStatus": "false"
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false"
 								}
 							},
 							"viewAllLabel": "View all",
@@ -1030,13 +1048,15 @@
 				"breakpoint": 1024,
 				"paneWidth": "42%"
 			},
-			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
+			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. `statusHiddenInLists: false` is the third condition, added by lifecycle-acts-on-the-case REQ-LIFE-01, and it is kept LITERALLY EQUAL to the Cases page Unclaimed chip for the reason that note gives: the two lists answer the same question and a drift between them is invisible. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
 				"filter": {
 					"assignee": "IS NULL",
-					"isFinalStatus": false
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1239,33 +1259,40 @@
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
 				"extend": ["assignedGroup"],
-				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
+				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. lifecycle-acts-on-the-case REQ-LIFE-01: every WORKING lens now carries `statusHiddenInLists: false`, not only All. A status an administrator marked hidden used to empty one chip and leave the same cases filling Overdue, Due this week, Mine, Unclaimed, the Queue, My Work and the dashboard tiles beside it, so the list and the count disagreed and neither said why. Two lenses deliberately do NOT carry it. Closed is the lens a person explicitly filtered onto the terminal statuses, and hidden statuses are mostly those, so filtering there would empty the one list that is supposed to hold them. The same reasoning keeps it off the Completed this month tile. Hidden means out of the WORKING list, never out of search and never off the case's own page.",
 				"quickFilters": [
 					{
 						"label": "All",
 						"filter": {
-							"statusHiddenInLists": false
+							"statusHiddenInLists": false,
+							"isDraft": false
 						},
 						"default": true
 					},
 					{
 						"label": "Unread",
 						"filter": {
-							"_unread": true
+							"_unread": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
-							"isFinalStatus": false
+							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
 						"label": "Unclaimed",
 						"filter": {
 							"assignee": "IS NULL",
-							"isFinalStatus": false
+							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
@@ -1282,9 +1309,19 @@
 						}
 					},
 					{
+						"label": "My drafts",
+						"_note": "lifecycle-acts-on-the-case REQ-LIFE-14. A draft binds no statutory term and belongs in no working list, so every other lens excludes it and this one is the only way back to it. Scoped to `@me` because a draft is its author's: the case is created assigned to them and dossiq's own case endpoints go through CaseAccessGuard, which grants a case to its assignee and denies everyone else. The per-object grant inside OpenRegister is NOT part of this change, so a reader who queries OpenRegister directly with a filter naming drafts can still see one. Named here rather than implied to be done.",
+						"filter": {
+							"assignee": "@me",
+							"isDraft": true
+						}
+					},
+					{
 						"label": "Overdue",
 						"filter": {
 							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false,
 							"deadline[lt]": "@today"
 						}
 					},
@@ -1292,6 +1329,8 @@
 						"label": "Due this week",
 						"filter": {
 							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"isDraft": false,
 							"deadline[gte]": "@today",
 							"deadline[lt]": "@today+7d"
 						}
@@ -1306,6 +1345,13 @@
 						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
 					},
 					"identifier",
+					{
+						"key": "isIncomplete",
+						"label": "State",
+						"widget": "caseStateMarkers",
+						"sortable": false,
+						"_note": "lifecycle-acts-on-the-case, REQ-LIFE-13 and REQ-LIFE-15. ONE column carrying incomplete, on hold and draft, because three columns that are empty on nine rows in ten push the case title off the screen for nothing. Keyed on `isIncomplete` and not on a state field of its own: a column needs a key and the widget reads the whole ROW, so the key is only what the header sorts and filters on. `sortable: false` for the reason the Unread column gives: there is no single column behind the three markers, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than an absent one. A marker is a WORD and not a colour (WCAG 2.2 SC 1.4.1), and a row in none of the three states says nothing at all: four hundred rows saying Complete is noise around the three that matter."
+					},
 					"title",
 					{
 						"key": "initiatorDisplayName",
@@ -1400,6 +1446,7 @@
 				"_breadcrumbsNote": "REMOVED, deliberately. The case page carried a trail whose LAST crumb was the case title, rendered one line below the page header that already printed that title: 'Cases > Dakkapel Kerkstraat 12' directly under 'Dakkapel Kerkstraat 12'. It read as a repeat rather than as a location, and it cost the top of the page a row. The way back to the list is the app menu, which is where the other detail pages in this app put it. This key stays as a note and not as config so the next reader finds out the trail was removed on purpose rather than re-adding it.",
 				"_subtitleNote": "Placement row A01: the case page did not say which case you are on. `identifier` is the case number, and it reads under the title. THE KEY IS INERT AND STAYS DECLARED ANYWAY. In @conduction/nextcloud-vue 2.49 `subtitleField` is read by CnObjectRow, CnIndexPage and CnObjectList and by no detail-page code at all, so deleting it would change nothing on screen and re-adding it later would look like a new idea. The number reads on the page because `case-tile-number` prints it, which is the same place CaseHeaderRow printed it.",
 				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. THE TOP ROW IS FIVE CONFIGURED LIBRARY TILES AND NOTHING SPANS IT. It was one custom component, `case-header`, twelve columns wide and two rows tall, and Ruben's 2026-09-12 ruling is that the widgets on top of the page should be actual KPI widgets configured to show what they show, not a custom widget spanning an entire row. So the band is `case-tile-number`, `case-tile-type`, `case-tile-status`, `case-tile-assignee` and `case-tile-deadline`: four `stat` tiles and one `countdown` tile, all resolved by the library from `content`, none of them a registry component. The widths are 2, 3, 3, 2 and 2, because a case type title and a status name are phrases and a case number, a user id and a countdown are not. Under them the case's own progress is `case-stages`, the library `stages` widget, which is where the case is moved now. `lifecycleActions` is GONE -- it declared `{field: status}` and rendered nothing, because OpenRegister answers no actions for a $ref status field. Suspend, Resume, Extend term and Reopen are `open-modal` header actions onto one reason dialog (CaseLifecycleActionDialog), which reads /lifecycle before it posts. Only Reopen gates exactly as the spec words it, because `isFinalStatus` is on the case record: an action's local `visibleWhen` dot-paths into the loaded record, `suspensionAllowed` and `extensionAllowed` live on the case TYPE, and OpenRegister's object list IGNORES an `id` filter (it answers with the whole table), so a `source` predicate on the type would compare a different case type's flag and be wrong without saying so. Suspension is derived from the case's `activity` journal rather than a flag, so no field can gate Resume either, and that is the one thing this page lost when the transition strip went. The strip carried a Suspended marker and a second Resume button, both driven by GET /api/case/{id}/lifecycle. THE GESTURE STILL HAS A HOME: `case-resume` is a header action on this page and CaseLifecycleActionDialog reads /lifecycle before it posts, so a Resume on a case that is not suspended is refused with a sentence rather than silently accepted. THE MARKER DOES NOT. A `stat` tile's `overrides` test the LOADED RECORD, and no property of the case says it is suspended, so there is nothing for a configured tile to bind. Giving it one means materialising a suspension flag on the case, which is its own change: a flag written only on the next suspend would under-report every case suspended before it, and a wrong answer nobody can see is worse than a missing tile. Audit history IS the single sidebar history tab: the `version-history` tab is gone from this page (change case-stages, row A05), and the body strip carries no Timeline entry, so one log lives in one place. Copy case, Start and Plan follow-up (case-actions-menu, rows A24 to A26) are three more `open-modal` header actions, and NOT the `handler` type the design named: a handler action resolves `action.handler` against `effectiveManifest.actions`, which is a JSON map in this file and so cannot hold a function, and dossiq declares no such key, so the entry would warn to the console and do nothing when clicked. The id is `copy-case` and not `copy` because `copy` is one of the five reserved ids CnActionsBar drops at render time to avoid shadowing its built-in. None of the three passes props: open-modal forwards props verbatim without resolving tokens, so `@objectId` would arrive as that literal string, and each dialog reads the route instead. Start gates on `hasStartableFlows`, a materialised boolean on the CASE, exactly as `case-reopen` gates on `isFinalStatus` and for the same reason: a local visibleWhen dot-paths into the loaded case record, `startableFlows` lives on the case TYPE, and OpenRegister ignores an `id` filter so a `source` predicate on the type would compare a different case type's list and be wrong without saying so. An `endpoint` predicate cannot help either, because the URL is fetched verbatim with no token resolution and so cannot name this case.",
+				"_lifecycleMenuNote": "lifecycle-acts-on-the-case REQ-LIFE-10. ONE menu, replacing the four header actions that stood here: Suspend, Resume, Extend term and Reopen. They were not wrong, they were SCATTERED: the same case also carried its transitions in the stages widget and its delete behind a third control, each gated differently, so a handler found out what they could do by trying. The dialog merges /available-transitions, /lifecycle and /acts and derives nothing. The entry carries NO visibleWhen, and that is the point of the change: an act the case or the handler's role refuses is shown DISABLED with the reason, never hidden, because the reason is what tells them who to ask. A visibleWhen here could only read the case RECORD anyway, which is why Suspend used to be offered on cases whose TYPE forbids it. The note lives on the page config and not on the action, because a headerAction is a CLOSED object in the manifest schema and rejects an extra key, which is how a first attempt at this note was caught.",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
@@ -2341,64 +2388,11 @@
 						"successMessage": "Document added to the case."
 					},
 					{
-						"id": "case-suspend",
+						"id": "case-lifecycle-menu",
 						"type": "open-modal",
-						"label": "Suspend",
-						"icon": "PauseCircleOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "suspend"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-resume",
-						"type": "open-modal",
-						"label": "Resume",
+						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "resume"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-extend",
-						"type": "open-modal",
-						"label": "Extend term",
-						"icon": "CalendarPlus",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "extend"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-reopen",
-						"type": "open-modal",
-						"label": "Reopen",
-						"icon": "LockOpenVariantOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "reopen"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "eq",
-							"value": true
-						}
+						"target": "CaseLifecycleMenuDialog"
 					},
 					{
 						"id": "case-claim",

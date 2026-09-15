@@ -73,6 +73,35 @@ class KpiAggregationService {
 	private const FOLD_LIMIT = 2000;
 
 	/**
+	 * What every open-work count on the dashboard narrows on.
+	 *
+	 * 🔑 THE SECOND CONDITION IS WHY THIS CONSTANT EXISTS. `statusHiddenInLists`
+	 * is the calculated mirror of `statusType.hiddenInLists`, and REQ-LIFE-01
+	 * asks that a status an administrator marked hidden leave every place work
+	 * is counted, not only the Cases index. It was on the list and off the
+	 * count, so an administrator who hid a status watched the list empty while
+	 * the tile above it kept the same number, with nothing on screen to say
+	 * which of the two was lying.
+	 *
+	 * The third condition is REQ-LIFE-14's: a draft binds no statutory term and
+	 * belongs in no working list, count or report. A concept-zaak counted as
+	 * open work is a number a manager acts on for a case nobody has accepted.
+	 *
+	 * 🔴 0 AND NOT `false`. `countObjects()` documents it: a PHP bool reaches
+	 * PostgreSQL as a type it will not compare against the stored JSON and the
+	 * query throws.
+	 *
+	 * Written once and spread into each call rather than repeated, because
+	 * three counts that are meant to answer over the same population and are
+	 * spelled separately are three chances to drift.
+	 *
+	 * @var array<string, int>
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 */
+	private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0, 'isDraft' => 0];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service.
@@ -120,15 +149,15 @@ class KpiAggregationService {
 		$openCases = $this->rows(
 			ids: $ids,
 			schema: $ids['case'],
-			filters: ['isFinalStatus' => 0]
+			filters: self::OPEN_WORK
 		);
 
 		return [
-			'openCount' => $this->countCases(ids: $ids, filters: ['isFinalStatus' => 0]),
-			'newToday' => $this->countCases(ids: $ids, filters: ['isFinalStatus' => 0, 'startDate' => $today]),
+			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
+			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
 				ids: $ids,
-				filters: ['isFinalStatus' => 0, 'deadline' => ['lt' => $today]]
+				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])
 			),
 			'completedCount' => count($closed),
 			// The ENGINE counts, and it counts server-side. Both tiles used

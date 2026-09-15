@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -70,6 +71,7 @@ class CaseLifecycleService {
 	 * @param DeadlinePauseService $pauseService Opschorten / hervatten (Awb 4:5)
 	 * @param DeadlineExtensionService $extensionService Verlengen (Awb 4:14)
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseEndingActs $endings Reads which act ended the case, so a reopen keeps it
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
 	 *
@@ -82,6 +84,7 @@ class CaseLifecycleService {
 		private readonly DeadlinePauseService $pauseService,
 		private readonly DeadlineExtensionService $extensionService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseEndingActs $endings,
 		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
@@ -302,6 +305,14 @@ class CaseLifecycleService {
 			throw new RuntimeException('initial_status_not_of_case_type');
 		}
 
+		// REQ-LIFE-11: reopening keeps the ending in the record. The case is
+		// open again, and the fact that it was ended, by whom and when, is not
+		// undone by that; an archivist or a rechter asking what happened to
+		// this zaak has to be able to read it afterwards. So the ending is
+		// read off the journal BEFORE the fields it derives from are cleared,
+		// and written into the reopen entry rather than left to be inferred.
+		$ending = $this->endings->endingOf(case: $case);
+
 		$case['status'] = $initial;
 		$case['endDate'] = '';
 		// Zrc-008: reopening withdraws the archival claim as well as the end
@@ -311,7 +322,16 @@ class CaseLifecycleService {
 		// that gets a record destroyed early.
 		$case['archiveNomination'] = null;
 		$case['archiveActionDate'] = null;
-		$this->journal(case: $case, entry: ['type' => 'reopen', 'reason' => $reason]);
+		$this->journal(
+			case: $case,
+			entry: [
+				'type' => 'reopen',
+				'reason' => $reason,
+				// Kept as a nested record rather than flattened, so a reader
+				// cannot mistake the reopening's own actor for the ending's.
+				'reopenedFrom' => $ending,
+			]
+		);
 
 		$this->store->writeStatusRecord(
 			caseId: $caseId,

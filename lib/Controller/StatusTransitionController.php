@@ -203,6 +203,11 @@ class StatusTransitionController extends Controller {
 	/**
 	 * Execute an admin-only free-form transition.
 	 *
+	 * 🔑 THIS IS THE HAND-SET PATH, and REQ-LIFE-03 is enforced on it inside
+	 * {@see StatusTransitionService::executeFreeForm()} rather than here. The
+	 * engine owns the write, so any other caller it grows gets the rule too,
+	 * and this controller keeps one collaborator fewer.
+	 *
 	 * @param string $caseId The case UUID
 	 *
 	 * @return JSONResponse
@@ -210,6 +215,7 @@ class StatusTransitionController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	public function freeform(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
