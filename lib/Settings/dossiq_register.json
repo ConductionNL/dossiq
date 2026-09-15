@@ -1938,6 +1938,58 @@
                             ]
                         }
                     ],
+                    "partyKinds": [
+                        {
+                            "key": "person",
+                            "label": "Person",
+                            "description": "A natural person, with or without an account on this instance."
+                        },
+                        {
+                            "key": "organisation",
+                            "label": "Organisation",
+                            "description": "A company, authority or other body acting on the case."
+                        },
+                        {
+                            "key": "address",
+                            "label": "Address",
+                            "description": "A place the case is about, such as the address a permit is asked for.",
+                            "roles": [
+                                "locatie"
+                            ]
+                        }
+                    ],
+                    "linkRoles": [
+                        {
+                            "key": "aanvrager",
+                            "label": "Requester",
+                            "description": "The party the case is filed for."
+                        },
+                        {
+                            "key": "gemachtigde",
+                            "label": "Authorised representative",
+                            "description": "Acts for another party on this case, under Awb 2:1."
+                        },
+                        {
+                            "key": "belanghebbende",
+                            "label": "Interested party",
+                            "description": "Whose interest is directly affected by the decision."
+                        },
+                        {
+                            "key": "afzender",
+                            "label": "Sender",
+                            "description": "Sent a document that is on this case."
+                        },
+                        {
+                            "key": "geadresseerde",
+                            "label": "Addressee",
+                            "description": "A document on this case was addressed to them."
+                        },
+                        {
+                            "key": "locatie",
+                            "label": "Location",
+                            "description": "The place this case is about."
+                        }
+                    ],
                     "x-openregister-relation-types": [
                         {
                             "key": "deelzaak",
@@ -5536,7 +5588,7 @@
             "case-location": {
                 "slug": "case-location",
                 "icon": "MapMarker",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
                 "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
@@ -5610,6 +5662,12 @@
                         ],
                         "description": "Provenance of this location (bag = validated against BAG; pdok-reverse = reverse-geocoded; gps = field capture; free = manual; geocoded = forward-geocoded; import = CSV importer)",
                         "title": "Source"
+                    }
+                },
+                "configuration": {
+                    "x-openregister-party": {
+                        "kind": "address",
+                        "nameProperty": "label"
                     }
                 }
             },
