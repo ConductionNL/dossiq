@@ -144,11 +144,28 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// sees WHICH case they are on before WHAT they may do to it. The tiles
 		// are the top row and the panels take the rows under it, with no gutter
 		// row between.
-		const tiles = caseDetail().config.layout.filter((c) => c.gridY === 0)
+		//
+		// ONE ROW NOW SITS BETWEEN THEM, and it is not a gutter: the unread
+		// strip says what changed on this case since the handler last looked
+		// and which panel holds it, which is read BEFORE the panels for the
+		// same reason the tiles are. The assertion therefore allows exactly
+		// the rows that carry a widget and still refuses an empty one, which
+		// is what it was guarding.
+		const layout = caseDetail().config.layout
+		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
 		expect(tiles.length).toBeGreaterThan(1)
-		expect(panels.gridY).toBe(Math.max(...tiles.map((c) => c.gridHeight)))
 		expect(panels.gridX).toBe(0)
+
+		const tileRows = Math.max(...tiles.map((c) => c.gridHeight))
+		const between = layout.filter((c) => c.gridY >= tileRows && c.gridY < panels.gridY)
+		expect(
+			between.map((c) => c.widgetId),
+			'every row between the tiles and the panels must carry a widget',
+		).toEqual(['case-unread'])
+		expect(panels.gridY).toBe(
+			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
+		)
 	})
 
 	it('has retired the milestone progress tile from this page', () => {

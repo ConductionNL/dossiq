@@ -57,6 +57,7 @@ class CaseTypePublishService {
 	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
 	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
+	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -64,6 +65,7 @@ class CaseTypePublishService {
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeAcknowledgement $acknowledgement,
+		private readonly UnreadTriggerService $unreadTriggers,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -91,7 +93,10 @@ class CaseTypePublishService {
 			return [];
 		}
 
-		return $this->acknowledgement->publicationWarnings(caseType: $caseType);
+		return array_merge(
+			$this->acknowledgement->publicationWarnings(caseType: $caseType),
+			$this->unreadTriggers->publicationWarnings(caseType: $caseType)
+		);
 	}//end warnings()
 
 	/**

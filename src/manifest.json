@@ -1046,9 +1046,30 @@
 						"icon": "AccountCheckOutline",
 						"handler": "claimCase",
 						"type": "handler"
+					},
+					{
+						"id": "mark-unread",
+						"label": "Mark unread",
+						"icon": "EmailMarkAsUnread",
+						"handler": "markCaseUnread",
+						"type": "handler"
+					},
+					{
+						"id": "mark-read",
+						"label": "Mark read",
+						"icon": "EmailOpenOutline",
+						"handler": "markCaseRead",
+						"type": "handler"
 					}
 				],
 				"columns": [
+					{
+						"key": "@self.unread",
+						"label": "Unread",
+						"widget": "unreadIndicator",
+						"sortable": false,
+						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
+					},
 					"identifier",
 					"title",
 					{
@@ -1182,6 +1203,20 @@
 						"icon": "AccountCheckOutline",
 						"handler": "claimCase",
 						"type": "handler"
+					},
+					{
+						"id": "mark-unread",
+						"label": "Mark unread",
+						"icon": "EmailMarkAsUnread",
+						"handler": "markCaseUnread",
+						"type": "handler"
+					},
+					{
+						"id": "mark-read",
+						"label": "Mark read",
+						"icon": "EmailOpenOutline",
+						"handler": "markCaseRead",
+						"type": "handler"
 					}
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
@@ -1194,6 +1229,12 @@
 							"statusHiddenInLists": false
 						},
 						"default": true
+					},
+					{
+						"label": "Unread",
+						"filter": {
+							"_unread": true
+						}
 					},
 					{
 						"label": "Mine",
@@ -1232,6 +1273,13 @@
 					}
 				],
 				"columns": [
+					{
+						"key": "@self.unread",
+						"label": "Unread",
+						"widget": "unreadIndicator",
+						"sortable": false,
+						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
+					},
 					"identifier",
 					"title",
 					{
@@ -1948,6 +1996,13 @@
 								}
 							]
 						}
+					},
+					{
+						"id": "case-unread",
+						"type": "case-unread",
+						"title": "New since you last looked",
+						"icon": "BellBadgeOutline",
+						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
 					}
 				],
 				"layout": [
@@ -1988,10 +2043,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "unread-strip",
+						"widgetId": "case-unread",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2000,7 +2064,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2009,7 +2073,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2017,7 +2081,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 12,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2026,7 +2090,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 11,
+						"gridY": 12,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
