@@ -50,8 +50,17 @@ nothing.
 - [x] 7.1 `TemplateLibraryService`: a `kind` covering document, mail,
   task, note, approval and result, scoped to case types (D-6).
   - `tests/unit/Service/TemplateLibraryKindTest.php`
-- [x] 7.2 Offer the template where each kind is created, in the task
+- [ ] 7.2 Offer the template where each kind is created, in the task
   dialog, the note editor, the approval and the close form (D-6).
+  - PARTIAL, and left unticked on purpose. `src/components/TemplatePicker.vue`
+    is the offer and it is mounted on the close form
+    (`src/dialogs/CaseTransitionConfirmDialog.vue`), covered by
+    `tests/vitest/resultTemplateOnClose.spec.js`. The other three surfaces are
+    not dossiq's to change: a task is an engine row written through
+    `lib/Service/Task/EngineTaskGateway.php`, notes are OpenRegister-native and
+    rendered by `CnNotesTab.vue`, and approval runs through the transition
+    engine's own dialog. Each is one prop away once those surfaces accept a
+    slot. Named in the component's header rather than left to be discovered.
 - [x] 7.3 The reusable process step: referenced, not copied, with both
   directions readable and deletion refused while in use (D-6).
   - `tests/unit/Service/ReusableProcessStepTest.php`
