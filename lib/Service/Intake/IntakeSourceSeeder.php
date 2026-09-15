@@ -310,12 +310,20 @@ class IntakeSourceSeeder {
 
 		if (method_exists($object, 'getObject') === true) {
 			$data = $object->getObject();
-			return is_array($data) === true ? $data : [];
+			if (is_array($data) === true) {
+				return $data;
+			}
+
+			return [];
 		}
 
 		if (method_exists($object, 'jsonSerialize') === true) {
 			$data = $object->jsonSerialize();
-			return is_array($data) === true ? $data : [];
+			if (is_array($data) === true) {
+				return $data;
+			}
+
+			return [];
 		}
 
 		return [];
@@ -331,12 +339,20 @@ class IntakeSourceSeeder {
 	private function uuidOf(object|array $object): ?string {
 		if (is_array($object) === true) {
 			$uuid = ($object['id'] ?? ($object['uuid'] ?? null));
-			return is_string($uuid) === true ? $uuid : null;
+			if (is_string($uuid) === true) {
+				return $uuid;
+			}
+
+			return null;
 		}
 
 		if (method_exists($object, 'getUuid') === true) {
 			$uuid = $object->getUuid();
-			return is_string($uuid) === true ? $uuid : null;
+			if (is_string($uuid) === true) {
+				return $uuid;
+			}
+
+			return null;
 		}
 
 		return null;
