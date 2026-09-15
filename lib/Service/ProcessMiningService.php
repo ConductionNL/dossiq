@@ -147,6 +147,15 @@ class ProcessMiningService {
 				'title' => $group['title'],
 				'caseVolume' => count($group['cases']),
 				'dwellTime' => $dwellStats,
+				// The working days the CASES hold, beside the aggregates
+				// reconstructed from the record chain. Published rather than
+				// recomputed, so the page and a handler's work list answer the
+				// same question with the same number.
+				// @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+				'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
+					casesById: $group['cases'],
+					now: $now,
+				),
 				'bottlenecks' => $bottlenecks,
 				'transitionMatrix' => $transitions['matrix'],
 				'reworkPercent' => $transitions['reworkPercent'],

@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -93,6 +94,7 @@ class StatusTransitionService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
+	 * @param StatusDeclarations $declarations What a status declares about itself
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -105,6 +107,7 @@ class StatusTransitionService {
 		private readonly LoggerInterface $logger,
 		private readonly CaseResultWriter $resultWriter,
 		private readonly StatusChecklist $statusChecklist,
+		private readonly StatusDeclarations $declarations,
 	) {
 	}//end __construct()
 
@@ -133,18 +136,29 @@ class StatusTransitionService {
 		// definition the store listed first.
 		$template = $this->templateLoader->getTemplateForCase(case: $case);
 
+		// What the status the case is in DECLARES, beside the moves out of it.
+		// The handler asks both questions in the same breath — what can I do
+		// here, and why is the thing I expected not on offer — so they are
+		// answered in one round trip rather than two.
+		$declared = $this->declarations->panelFor(case: $case);
+
 		$result = [
 			'transitions' => [],
 			'current' => [
 				'statusId' => $currentId,
 				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
 				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+				'waitingOn' => $declared['waitingOn'],
+				'dwell' => $declared['dwell'],
 			],
+			'derivation' => $declared['derivation'],
 		];
 
 		if ($template === null) {
 			return $result;
 		}
+
+		$caseTypeId = (string)($case['caseType'] ?? '');
 
 		$transitions = $template['transitions'] ?? [];
 		if (is_array($transitions) === false) {
@@ -157,6 +171,19 @@ class StatusTransitionService {
 			}
 
 			if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
+				continue;
+			}
+
+			// A DERIVED status is not a move somebody picks. If it could be
+			// both, the two disagree within a week and nobody knows which one
+			// is the record: a handler sets Complete on a file that is not,
+			// the derivation never fires because the case is already there,
+			// and the missing document is never named. Dropping it here is
+			// what makes the derivation the single answer.
+			if ($this->declarations->isDerivedStatus(
+				caseTypeId: $caseTypeId,
+				statusTypeId: (string)($transition['toStatus'] ?? ''),
+			) === true) {
 				continue;
 			}
 
@@ -278,6 +305,11 @@ class StatusTransitionService {
 			resultTypeId: $resultTypeId,
 		);
 
+		// How long the case sat in the status it is leaving, written in the
+		// SAME save as the move. Two saves is two chances for one of them not
+		// to happen, and the one that goes missing is always the bookkeeping.
+		$caseAtSave = $this->declarations->applyStatusChange(case: $caseAtSave, toStatus: $toStatus);
+
 		// Status mutation BEFORE side-effects per REQ-STE-5-002.
 		// Include @self.version so the store can detect a concurrent modification.
 		$caseAtSave['status'] = $toStatus;
@@ -291,6 +323,12 @@ class StatusTransitionService {
 
 		// Alias for the remainder of the method.
 		$case = $savedCase;
+
+		// Stop the clock on the status the case left, start one on the status
+		// it entered when that status declares a maximum. After the save, and
+		// never before it: a timer armed for a move that then failed to persist
+		// would breach about a status the case is not in.
+		$this->declarations->retime(caseId: $caseId, toStatus: $toStatus);
 
 		[$record, $dispatched] = $this->recordAndDispatch(
 			case: $case,
@@ -688,8 +726,14 @@ class StatusTransitionService {
 		$this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
 		$currentId = (string)($case['status'] ?? '');
+		// The dwell bookkeeping belongs to the MOVE, not to the road into it.
+		// An admin free-form move is still a move, and a case whose dwell reset
+		// only on the guarded path would report months in a status it entered
+		// this morning.
+		$case = $this->declarations->applyStatusChange(case: $case, toStatus: $toStatusId);
 		$case['status'] = $toStatusId;
 		$case = $this->store->saveCase(case: $case);
+		$this->declarations->retime(caseId: $caseId, toStatus: $toStatusId);
 
 		$record = $this->store->writeStatusRecord(
 			caseId: $caseId,
