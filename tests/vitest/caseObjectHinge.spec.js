@@ -21,13 +21,17 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const register = JSON.parse(
-	fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'), 'utf8'),
+	fs.readFileSync(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+		'utf8',
+	),
 )
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'), 'utf8',
+	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
+	'utf8',
 )
 const panels = require('./helpers/casePanels.js')
 
@@ -91,7 +95,10 @@ describe('the lenses on caseObject', () => {
 		const columns = objectsWidget().content.columns
 		for (const name of Object.keys(lenses())) {
 			const column = columns.find((entry) => entry.key === name)
-			expect(column, `the ${name} lens is not a column on the Objects tab`).toBeDefined()
+			expect(
+				column,
+				`the ${name} lens is not a column on the Objects tab`,
+			).toBeDefined()
 			expect(column.widget).toBe('lensedValue')
 		}
 	})
@@ -113,7 +120,10 @@ describe('the declared list surface of caseObject', () => {
 		// over an empty column.
 		const known = (name) => caseObject().properties[String(name).split('.')[0]]
 		for (const column of listSurface().columns) {
-			expect(known(column.property), `list column ${column.property}`).toBeDefined()
+			expect(
+				known(column.property),
+				`list column ${column.property}`,
+			).toBeDefined()
 		}
 		for (const field of listSurface().searchFields) {
 			expect(known(field), `search field ${field}`).toBeDefined()
@@ -147,15 +157,17 @@ describe('what names a case object', () => {
 	})
 
 	it('materialises it, because a name is read by a list and not by a render', () => {
-		const calculation = caseObject().configuration['x-openregister-calculations'].caseTitle
+		const calculation =
+			caseObject().configuration['x-openregister-calculations'].caseTitle
 		expect(calculation.materialise).toBe(true)
 	})
 
 	it('coalesces to a property the schema requires, so no row is unnamed', () => {
 		// A name field pointing at a calculation that resolves to nothing is a
 		// blank name on every row, which is worse than the uuid it replaced.
-		const operands = caseObject().configuration['x-openregister-calculations']
-			.caseTitle.expression.coalesce.map((operand) => operand.prop)
+		const operands = caseObject().configuration[
+			'x-openregister-calculations'
+		].caseTitle.expression.coalesce.map((operand) => operand.prop)
 		expect(operands[0]).toBe('@ref.case.title')
 		expect(caseObject().required).toContain(operands.at(-1))
 	})
@@ -163,7 +175,8 @@ describe('what names a case object', () => {
 
 describe('what a case location inherits', () => {
 	it('declares the reference it inherits map features through', () => {
-		const sources = caseLocation().configuration['x-openregister-geo-inheritance'].from
+		const sources =
+			caseLocation().configuration['x-openregister-geo-inheritance'].from
 		expect(sources.length).toBeGreaterThan(0)
 		for (const source of sources) {
 			expect(
@@ -174,7 +187,9 @@ describe('what a case location inherits', () => {
 	})
 
 	it('labels the relation, so an inherited pin says where it came from', () => {
-		for (const source of caseLocation().configuration['x-openregister-geo-inheritance'].from) {
+		for (const source of caseLocation().configuration[
+			'x-openregister-geo-inheritance'
+		].from) {
 			expect(source.label).toBeTruthy()
 		}
 	})
@@ -183,7 +198,8 @@ describe('what a case location inherits', () => {
 		// The collector reads the referenced record's OWN features and does not
 		// recurse, so a declaration pointing at the caseObject link row would
 		// collect the link row's geometry, which is empty, and say nothing.
-		const sources = caseLocation().configuration['x-openregister-geo-inheritance'].from
+		const sources =
+			caseLocation().configuration['x-openregister-geo-inheritance'].from
 		const property = caseLocation().properties[sources[0].through]
 		expect(property.$ref).toBeUndefined()
 		expect(property.format).toBe('uri')

@@ -71,17 +71,23 @@ test.describe('Objects as the hinge between cases', () => {
 			'@self': {
 				geo: {
 					type: 'FeatureCollection',
-					features: [{
-						type: 'Feature',
-						geometry: { type: 'Point', coordinates: [4.9, 52.37] },
-						properties: { _purpose: 'address' },
-					}],
+					features: [
+						{
+							type: 'Feature',
+							geometry: { type: 'Point', coordinates: [4.9, 52.37] },
+							properties: { _purpose: 'address' },
+						},
+					],
 				},
 			},
 		})
 		objectUuid = objectId(target)
 
-		caseId = objectId(await seedCase(request, token, { title: `${RUN_PREFIX} Handhaving Kerkstraat` }))
+		caseId = objectId(
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Handhaving Kerkstraat`,
+			}),
+		)
 
 		const link = await createObject(request, token, 'dossiq', 'caseObject', {
 			case: caseId,
@@ -96,7 +102,10 @@ test.describe('Objects as the hinge between cases', () => {
 		await cleanupRunObjects(request, token)
 	})
 
-	test('shows the linked object title on the case, and follows a rename', async ({ request, page }) => {
+	test('shows the linked object title on the case, and follows a rename', async ({
+		request,
+		page,
+	}) => {
 		await page.goto(`/index.php/apps/dossiq/#/cases/${caseId}`, PAGE_LOAD)
 		await page.getByRole('tab', { name: 'Related' }).click()
 		await expect(page.getByText(`${RUN_PREFIX} Pand Kerkstraat 1`)).toBeVisible()
@@ -104,14 +113,23 @@ test.describe('Objects as the hinge between cases', () => {
 		// A lens holds the path. Renaming the object in its own register moves
 		// what the case shows, and writes nothing on the case.
 		const before = await showObject(request, 'dossiq', 'caseObject', linkId)
-		await createObject(request, token, REGISTER, 'object', {
-			name: `${RUN_PREFIX} Pand Kerkstraat 1a`,
-			status: 'in gebruik',
-		}, objectUuid)
+		await createObject(
+			request,
+			token,
+			REGISTER,
+			'object',
+			{
+				name: `${RUN_PREFIX} Pand Kerkstraat 1a`,
+				status: 'in gebruik',
+			},
+			objectUuid,
+		)
 
 		await page.reload(PAGE_LOAD)
 		await page.getByRole('tab', { name: 'Related' }).click()
-		await expect(page.getByText(`${RUN_PREFIX} Pand Kerkstraat 1a`)).toBeVisible()
+		await expect(
+			page.getByText(`${RUN_PREFIX} Pand Kerkstraat 1a`),
+		).toBeVisible()
 
 		const after = await showObject(request, 'dossiq', 'caseObject', linkId)
 		expect(after['@self'].updated).toBe(before['@self'].updated)
@@ -119,10 +137,13 @@ test.describe('Objects as the hinge between cases', () => {
 
 	test('refuses a write that names a lens property', async ({ request }) => {
 		const read = await showObject(request, 'dossiq', 'caseObject', linkId)
-		const response = await request.put(`${OR}/objects/dossiq/caseObject/${linkId}`, {
-			headers: { requesttoken: token },
-			data: read,
-		})
+		const response = await request.put(
+			`${OR}/objects/dossiq/caseObject/${linkId}`,
+			{
+				headers: { requesttoken: token },
+				data: read,
+			},
+		)
 
 		expect(response.status()).toBe(400)
 		expect(await response.text()).toContain('objectTitle')
@@ -137,27 +158,43 @@ test.describe('Objects as the hinge between cases', () => {
 		const body = await response.json()
 		const group = body.groups.find((entry) => entry.schema.slug === 'caseObject')
 		expect(group).toBeTruthy()
-		expect(group.results.map((row) => row.title))
-			.toContain(`${RUN_PREFIX} Handhaving Kerkstraat`)
+		expect(group.results.map((row) => row.title)).toContain(
+			`${RUN_PREFIX} Handhaving Kerkstraat`,
+		)
 	})
 
-	test('answers the declared list surface for case objects', async ({ request }) => {
-		const response = await request.get(`${OR}/schemas/caseObject/list-presentation`)
+	test('answers the declared list surface for case objects', async ({
+		request,
+	}) => {
+		const response = await request.get(
+			`${OR}/schemas/caseObject/list-presentation`,
+		)
 		expect(response.ok()).toBe(true)
 
 		const body = await response.json()
 		expect(body.declared).toBe(true)
-		expect(body.columns.map((column) => column.property))
-			.toEqual(['objectType', 'objectIdentification', 'description'])
+		expect(body.columns.map((column) => column.property)).toEqual([
+			'objectType',
+			'objectIdentification',
+			'description',
+		])
 	})
 
-	test('inherits the object geometry onto the case location, marked inherited', async ({ request }) => {
-		const location = await createObject(request, token, 'dossiq', 'case-location', {
-			case: caseId,
-			label: `${RUN_PREFIX} Inspectielocatie`,
-			source: 'bag',
-			linkedObject: `${OR}/objects/${REGISTER}/object/${objectUuid}`,
-		})
+	test('inherits the object geometry onto the case location, marked inherited', async ({
+		request,
+	}) => {
+		const location = await createObject(
+			request,
+			token,
+			'dossiq',
+			'case-location',
+			{
+				case: caseId,
+				label: `${RUN_PREFIX} Inspectielocatie`,
+				source: 'bag',
+				linkedObject: `${OR}/objects/${REGISTER}/object/${objectUuid}`,
+			},
+		)
 
 		const response = await request.get(
 			`${OR}/objects/dossiq/case-location/${objectId(location)}/geo-features`,
@@ -165,7 +202,9 @@ test.describe('Objects as the hinge between cases', () => {
 		expect(response.ok()).toBe(true)
 
 		const body = await response.json()
-		const inherited = body.features.find((feature) => feature.properties._source === 'inherited')
+		const inherited = body.features.find(
+			(feature) => feature.properties._source === 'inherited',
+		)
 		expect(inherited).toBeTruthy()
 		expect(inherited.properties._through).toBe('linkedObject')
 		expect(inherited.properties._fromObject).toBe(objectUuid)

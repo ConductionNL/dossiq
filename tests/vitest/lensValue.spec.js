@@ -49,7 +49,9 @@ describe('isWithheld', () => {
 
 describe('withheldReason', () => {
 	it('gives the reason the marker carries', () => {
-		expect(withheldReason({ '@withheld': true, reason: 'access' })).toBe('access')
+		expect(withheldReason({ '@withheld': true, reason: 'access' })).toBe(
+			'access',
+		)
 	})
 
 	it('gives nothing for a value that is not withheld', () => {
@@ -72,7 +74,9 @@ describe('withoutLenses', () => {
 			objectTitle: 'Pand 1234',
 			objectStatus: 'in gebruik',
 		}
-		expect(withoutLenses(read, CASE_OBJECT_LENSES)).toEqual({ objectType: 'pand' })
+		expect(withoutLenses(read, CASE_OBJECT_LENSES)).toEqual({
+			objectType: 'pand',
+		})
 	})
 
 	it('leaves the record it was given alone', () => {
@@ -83,7 +87,9 @@ describe('withoutLenses', () => {
 
 	it('drops a withheld lens too, which is still not a value', () => {
 		const read = { objectType: 'pand', objectTitle: { '@withheld': true } }
-		expect(withoutLenses(read, CASE_OBJECT_LENSES)).toEqual({ objectType: 'pand' })
+		expect(withoutLenses(read, CASE_OBJECT_LENSES)).toEqual({
+			objectType: 'pand',
+		})
 	})
 
 	it('copes with nothing to drop and nothing to drop it from', () => {

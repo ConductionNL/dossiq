@@ -61,8 +61,9 @@ describe('LensedValueCell', () => {
 		// The two states differ in presence and in words, never in colour alone
 		// (WCAG 2.2 SC 1.4.1), and the state is on the element so an e2e and a
 		// screen reader can both reach it.
-		expect(cell(null).attributes('data-state'))
-			.not.toBe(cell({ '@withheld': true }).attributes('data-state'))
+		expect(cell(null).attributes('data-state')).not.toBe(
+			cell({ '@withheld': true }).attributes('data-state'),
+		)
 	})
 
 	it('carries no hover text when nothing is being withheld', () => {

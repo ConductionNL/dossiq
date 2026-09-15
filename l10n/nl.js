@@ -3229,7 +3229,7 @@ OC.L10N.register(
         "Withdraw": "Intrekken",
         "Withdrawal": "Intrekking",
         "Withdrawn": "Ingetrokken",
-        "Withheld": "Geweigerd",
+        "Withheld": "Afgeschermd",
         "Within Awb deadline": "Binnen Awb-termijn",
         "Within deadline": "Binnen termijn",
         "Within SLA": "Binnen SLA",
@@ -3747,6 +3747,10 @@ OC.L10N.register(
         "Related": "Gerelateerd",
         "Objects and locations": "Objecten en locaties",
         "Link object": "Object koppelen",
+        "Object": "Object",
+        "Object status": "Status object",
+        "You may not open the linked object, so its value is not shown.": "U mag het gekoppelde object niet openen, daarom wordt de waarde niet getoond.",
+        "This value is not shown.": "Deze waarde wordt niet getoond.",
         "Object type": "Objecttype",
         "Identification": "Identificatie",
         "No objects linked to this case yet": "Nog geen objecten aan deze zaak gekoppeld",
@@ -4537,7 +4541,11 @@ OC.L10N.register(
         "{count} working day": "{count} werkdag",
         "{count} working days": "{count} werkdagen",
         "{count} working day in this status": "{count} werkdag in deze status",
-        "{count} working days in this status": "{count} werkdagen in deze status"
+        "{count} working days in this status": "{count} werkdagen in deze status",
+        "Case Title": "Zaaktitel",
+        "Linked Object": "Gekoppeld object",
+        "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.": "Het object waar deze locatie vandaan komt, als de URI die de caseObject-koppeling vasthoudt. Staat die ingevuld, dan erft de locatie het adrespunt of de perceelcontour van het object via x-openregister-geo-inheritance. De herkomst staat op de kaart en wordt niet in dit record gekopieerd.",
+        "The title of the case this link belongs to. Calculated and materialised by OpenRegister from @ref.case.title, so the link row carries a name a person reads. It is the schema's objectNameField, which is what titles the row in the reverse view on the linked object's own page. Coalesces to the identification and then the object type, so a case with no title still names its row. After editing a case title in bulk, run occ openregister:rematerialise-calculations.": "De titel van de zaak waar deze koppeling bij hoort. OpenRegister berekent en materialiseert hem uit @ref.case.title, zodat de koppelrij een naam draagt die een mens leest. Het is het objectNameField van het schema en daarmee de titel van de rij in het omgekeerde overzicht op de pagina van het gekoppelde object. Valt terug op de identificatie en daarna het objecttype, zodat een zaak zonder titel zijn rij toch een naam geeft. Draai occ openregister:rematerialise-calculations na een bulkwijziging van zaaktitels."
     },
     "nplurals=2; plural=(n != 1);"
 )

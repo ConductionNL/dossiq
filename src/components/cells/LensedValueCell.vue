@@ -77,7 +77,8 @@ export default {
 		 */
 		state() {
 			if (isWithheld(this.value)) return 'withheld'
-			if (this.value === null || this.value === undefined || this.value === '') return 'empty'
+			if (this.value === null || this.value === undefined || this.value === '')
+				return 'empty'
 			return 'value'
 		},
 
@@ -113,7 +114,10 @@ export default {
 		hint() {
 			if (this.state !== 'withheld') return ''
 			if (withheldReason(this.value) === 'access') {
-				return t('dossiq', 'You may not open the linked object, so its value is not shown.')
+				return t(
+					'dossiq',
+					'You may not open the linked object, so its value is not shown.',
+				)
 			}
 			return t('dossiq', 'This value is not shown.')
 		},
