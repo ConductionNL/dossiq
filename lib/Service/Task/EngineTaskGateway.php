@@ -76,6 +76,18 @@ class EngineTaskGateway {
     private const TASK_SERVICE = 'OCA\OpenRegister\Service\Task\TaskService';
 
     /**
+     * OpenRegister's form-aware completion service, by name.
+     *
+     * A second string, because completing a task that carries a form is a
+     * different object from the task service: it validates the payload
+     * against the declaration before the task service records the
+     * completion.
+     *
+     * @var string
+     */
+    private const COMPLETION_SERVICE = 'OCA\OpenRegister\Service\Task\TaskFormCompletion';
+
+    /**
      * The external key an engine task carries for a dossiq register task.
      *
      * Namespaced, because `task_key` is a shared external-reference column
@@ -432,6 +444,28 @@ class EngineTaskGateway {
             $payload['candidateGroups'] = [$group];
         }
 
+        // The case type's DECLARED candidates, which are a different thing
+        // from the case's team: the team is where work falls back to, the
+        // candidates are who the task is offered to before anybody has it.
+        // Declared lists win, because an administrator who named a team for
+        // this task meant that team and not the case's.
+        foreach (['candidateGroups', 'candidateUsers'] as $key) {
+            $declared = ($task[$key] ?? null);
+            if (is_array($declared) === true && $declared !== []) {
+                $payload[$key] = array_values($declared);
+            }
+        }
+
+        // `metadata.form` is the engine's own room for a run-less task's form
+        // declaration, read by its TaskFormResolver. `metadata.dossiq` is
+        // dossiq's, read back when the task completes. Both are passed
+        // through whole: translating them here would be a second description
+        // of the same declaration.
+        $metadata = ($task['metadata'] ?? null);
+        if (is_array($metadata) === true && $metadata !== []) {
+            $payload['metadata'] = $metadata;
+        }
+
         $checklist = $this->decodeChecklist(value: ($task['checklist'] ?? null));
         if ($checklist !== null) {
             $payload['checklist'] = $checklist;
@@ -530,6 +564,166 @@ class EngineTaskGateway {
 
         return $decoded;
     }//end decodeChecklist()
+
+    /**
+     * Whether the task engine answers a claim act at all.
+     *
+     * 🔑 ASKED OF THE ENGINE, NOT ASSUMED EITHER WAY. The proposal for this
+     * change was written when the engine had no claim verb, and dossiq was to
+     * declare the candidate group and SAY that nothing honoured it. The verb
+     * landed in openregister meanwhile (`TaskService::claim()`, routed at
+     * `POST /api/flow-tasks/{uuid}/claim`, authorized against the candidate
+     * pool), so the honest surface is one that renders the affordance when the
+     * engine has it and states the gap when it does not — and the only way to
+     * be right on both instances is to ask.
+     *
+     * A duck-typed probe, like every other OpenRegister seam in this app, and
+     * with the same failure mode: a renamed method reads as "no claim act"
+     * rather than as an error. That is why the answer is SHOWN to the
+     * administrator rather than only acted on.
+     *
+     * @return boolean True when a task can be claimed.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    public function supportsClaim(): bool {
+        $service = $this->resolveService();
+        if ($service === null) {
+            return false;
+        }
+
+        return method_exists($service, 'claim');
+    }//end supportsClaim()
+
+    /**
+     * Let one candidate take an unclaimed task.
+     *
+     * The engine rules on whether this caller is in the task's candidate pool
+     * and refuses with its own reason when they are not. Nothing is
+     * re-decided here: a second answer to "may I take this" is how a surface
+     * offers a claim the write then refuses.
+     *
+     * @param string      $taskId The task to claim.
+     * @param string|null $actor  The identity claiming it.
+     *
+     * @return boolean Whether the engine accepted it.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    public function claim(string $taskId, ?string $actor): bool {
+        $id = trim($taskId);
+        if ($id === '' || $this->supportsClaim() === false) {
+            $this->lastError = 'The task engine answers no claim act.';
+
+            return false;
+        }
+
+        try {
+            $this->resolveService()?->claim($id, $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task claim',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end claim()
+
+    /**
+     * Complete one task, with the answers its form asked for.
+     *
+     * 🔑 THE FORM COMPLETION SERVICE, NOT THE BARE TASK SERVICE. OpenRegister
+     * splits the two deliberately: `TaskFormCompletion::complete()` validates
+     * the payload against the form the task declared, writes it to the
+     * subject, and refuses what the declaration does not allow, THEN completes
+     * through the task service. Calling the task service directly with a
+     * payload would complete a task whose verslag was never written and
+     * report success.
+     *
+     * A task with no form still goes through it: the service resolves an
+     * empty declaration and completes, which keeps one path rather than two
+     * that have to agree.
+     *
+     * dossiq checks its OWN declaration before calling this — a required
+     * field left empty, an effect naming a handler nobody registered —
+     * because those are refusals it can make while the handler is still
+     * looking at the form.
+     *
+     * @param string               $taskId  The task to complete.
+     * @param array<string, mixed> $data    The form answers, keyed by field.
+     * @param string               $outcome The outcome word the engine records.
+     * @param string|null          $actor   The identity completing it.
+     *
+     * @return boolean Whether the engine accepted it.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    public function complete(string $taskId, array $data, string $outcome, ?string $actor): bool {
+        $id = trim($taskId);
+        $completion = $this->resolveCompletion();
+        if ($id === '' || $completion === null) {
+            $this->lastError = 'The task engine cannot complete a task on this instance.';
+
+            return false;
+        }
+
+        try {
+            // Positional, not named: this object is resolved by string from
+            // an app that need not be installed, and a named argument here
+            // would bind dossiq to OpenRegister's parameter NAMES as well as
+            // its order.
+            $completion->complete($id, $outcome, null, null, $data, $actor);
+
+            return true;
+        } catch (Throwable $e) {
+            // KEPT, not swallowed: the engine's message names the verb and
+            // the reason, and it is the only part a handler can act on.
+            $this->lastError = $e->getMessage();
+
+            $this->logger->warning(
+                'Dossiq: the engine refused a task completion',
+                ['exception' => $e->getMessage(), 'task' => $id]
+            );
+
+            return false;
+        }
+    }//end complete()
+
+    /**
+     * Resolve OpenRegister's form-aware completion service, or null.
+     *
+     * Protected for the same reason {@see resolveService()} is: OpenRegister
+     * is not autoloadable in dossiq's unit suite, so a test that could not
+     * replace this would exercise nothing below the `class_exists` guard.
+     *
+     * @return object|null The service, or null when unavailable.
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    protected function resolveCompletion(): ?object {
+        if ($this->settings->isOpenRegisterAvailable() === false || class_exists(self::COMPLETION_SERVICE) === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get(self::COMPLETION_SERVICE);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Dossiq: could not resolve the OpenRegister task completion service',
+                ['exception' => $e->getMessage()]
+            );
+
+            return null;
+        }
+    }//end resolveCompletion()
 
     /**
      * Resolve OpenRegister's task service, or null.
