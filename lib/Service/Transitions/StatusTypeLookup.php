@@ -246,6 +246,32 @@ class StatusTypeLookup {
 		return $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
 	}//end statusRowsFor()
 
+	/**
+	 * The statusType ROWS a case of this type can be in, inherited ones included.
+	 *
+	 * `statusesOf()` answers id to name, which is what a status picker needs
+	 * and not what an act needs: finishing a case has to know which statuses
+	 * are terminal, and closing it early has to know which phases it never
+	 * reached, and both of those live on the row rather than in its name.
+	 *
+	 * The same resolver, deliberately. A second read of the same relation
+	 * would be a second answer about which statuses a derived case type has,
+	 * and that question has already been got wrong twice in this class.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function rowsOf(string $caseTypeId): array {
+		if (trim($caseTypeId) === '') {
+			return [];
+		}
+
+		return $this->statusRowsFor(caseTypeId: $caseTypeId);
+	}//end rowsOf()
+
 
 	/**
 	 * Read one object from a configured schema.

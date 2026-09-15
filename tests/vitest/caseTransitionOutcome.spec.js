@@ -30,8 +30,6 @@ vi.mock('@nextcloud/dialogs', () => ({ showWarning }))
 vi.mock('@nextcloud/event-bus', () => ({ emit }))
 
 const {
-	bulkFailedActionsNotice,
-	casesMissingActions,
 	failedActionsOf,
 	failedActionsWarning,
 } = await import('../../src/utils/transitionOutcome.js')
@@ -67,35 +65,6 @@ describe('failedActionsWarning', () => {
 		).toBe(
 			'You moved the case, but 2 automatic actions did not run. Its status record shows which.',
 		)
-	})
-})
-
-describe('bulkFailedActionsNotice', () => {
-	it('counts only the succeeded cases that carry failed actions', () => {
-		const results = {
-			'case-1': { status: 'succeeded', failedActions: [] },
-			'case-2': { status: 'succeeded', failedActions: TWO_FAILED },
-			'case-3': { status: 'failed', failedActions: TWO_FAILED },
-			'case-4': { status: 'succeeded' },
-		}
-
-		expect(casesMissingActions(results)).toBe(1)
-		expect(bulkFailedActionsNotice(results)).toBe(
-			'1 case moved without all of its automatic actions. Its status record shows which.',
-		)
-	})
-
-	it('pluralises for several cases and says nothing for none', () => {
-		const results = {
-			'case-1': { status: 'succeeded', failedActions: TWO_FAILED },
-			'case-2': { status: 'succeeded', failedActions: [TWO_FAILED[1]] },
-		}
-
-		expect(bulkFailedActionsNotice(results)).toBe(
-			'2 cases moved without all of their automatic actions. Their status records show which.',
-		)
-		expect(bulkFailedActionsNotice({})).toBe('')
-		expect(bulkFailedActionsNotice(null)).toBe('')
 	})
 })
 

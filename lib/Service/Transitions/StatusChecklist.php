@@ -35,6 +35,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Task\TaskDeclaration;
+use OCA\Dossiq\Service\Task\TaskDeclarationReader;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -69,14 +71,17 @@ class StatusChecklist {
 	/**
 	 * Constructor.
 	 *
-	 * @param StatusTypeLookup $statusTypeLookup Resolves the status row.
-	 * @param EngineTaskInbox  $engineTasks      Reads the case's tasks off the engine.
-	 * @param LoggerInterface  $logger           Logger.
+	 * @param StatusTypeLookup          $statusTypeLookup Resolves the status row.
+	 * @param EngineTaskInbox           $engineTasks      Reads the case's tasks off the engine.
+	 * @param LoggerInterface           $logger           Logger.
+	 * @param TaskDeclarationReader|null $declarations    The case type's per-task
+	 *                                                    declaration, when one is wired.
 	 */
 	public function __construct(
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly EngineTaskInbox $engineTasks,
 		private readonly LoggerInterface $logger,
+		private readonly ?TaskDeclarationReader $declarations = null,
 	) {
 	}//end __construct()
 
@@ -147,7 +152,7 @@ class StatusChecklist {
 	 * the spelling resolves to is `AssigneeResolver`'s answer, not this
 	 * class's, so the checklist and the flow ask one question.
 	 *
-	 * @return array<int, array{type: string, title: string, workflowStepId: string, assignee: string}> The actions.
+	 * @return array<int, array{type: string, title: string, workflowStepId: string, assignee: string, declaration: array<string, mixed>}> The actions.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -158,6 +163,7 @@ class StatusChecklist {
 		}
 
 		$existing = $this->existingTitles(statusTypeId: $statusTypeId, case: $case, actor: $actor);
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 
 		$actions = [];
 		foreach ($items as $item) {
@@ -168,16 +174,62 @@ class StatusChecklist {
 				continue;
 			}
 
+			$declaration = $this->declarationFor(
+				caseId: $caseId,
+				statusTypeId: $statusTypeId,
+				title: $item['title']
+			);
+
+			// A task this case type switched off is not created at all. Two
+			// case types can share a process and differ on one step, which is
+			// exactly what the per-task block exists for.
+			if ($declaration['enabled'] === false) {
+				continue;
+			}
+
 			$actions[] = [
 				'type' => 'createTask',
 				'title' => $item['title'],
 				'workflowStepId' => $statusTypeId,
 				'assignee' => self::CHECKLIST_ASSIGNEE,
+				// The declaration travels WITH the action rather than being
+				// read again by the handler. The handler would have to know
+				// the case type, the status and the title to find it, which is
+				// three lookups to answer a question this method has already
+				// answered.
+				'declaration' => $declaration,
 			];
 		}
 
 		return $actions;
 	}//end actionsFor()
+
+	/**
+	 * The per-task declaration this case type holds for one checklist item.
+	 *
+	 * Answers the unconfigured default when no reader is wired, which is what
+	 * every caller written before this block existed gets: the task runs, with
+	 * no form, no candidates, no lead time of its own and no effects.
+	 *
+	 * @param string $caseId       The case uuid.
+	 * @param string $statusTypeId The statusType being entered.
+	 * @param string $title        The checklist item's title.
+	 *
+	 * @return array<string, mixed> The declaration.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function declarationFor(string $caseId, string $statusTypeId, string $title): array {
+		if ($this->declarations === null || $caseId === '') {
+			return TaskDeclaration::NONE;
+		}
+
+		return $this->declarations->forTask(
+			caseId: $caseId,
+			statusTypeId: $statusTypeId,
+			title: $title
+		);
+	}//end declarationFor()
 
 	/**
 	 * The titles of the tasks this status already put on this case.

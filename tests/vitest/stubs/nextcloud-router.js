@@ -25,6 +25,18 @@
  * @return {string} The full index.php URL.
  */
 export function generateUrl(url, params) {
+	return '/index.php' + substitute(url, params)
+}
+
+/**
+ * Substitute `{name}` placeholders in a path, shared by generateUrl() and
+ * generateOcsUrl() so the two cannot drift apart.
+ *
+ * @param {string} url App-relative path.
+ * @param {object} [params] Values for `{name}` placeholders in the path.
+ * @return {string} The path with every placeholder replaced.
+ */
+function substitute(url, params) {
 	let path = url
 	if (params && typeof params === 'object') {
 		for (const [key, value] of Object.entries(params)) {
@@ -33,7 +45,7 @@ export function generateUrl(url, params) {
 				.join(encodeURIComponent(String(value)))
 		}
 	}
-	return '/index.php' + path
+	return path
 }
 
 /**
@@ -58,4 +70,58 @@ export function generateUrl(url, params) {
  */
 export function generateRemoteUrl(service) {
 	return '/remote.php/' + service
+}
+
+/**
+ * Mirror Nextcloud's generateFilePath() with the default (web-root '')
+ * instance and no `window.OC.coreApps`: the path is simply the app, the
+ * type and the file, joined with slashes from the root.
+ *
+ * `src/publicPath.js` calls it to set webpack's public path, and
+ * `@nextcloud/vue`'s reference picker calls it through imagePath() below,
+ * at MODULE level, so a missing export is not a value that reads undefined
+ * later on. It throws during import and takes the whole spec file with it.
+ *
+ * @param {string} app App id, e.g. 'dossiq' or 'core'.
+ * @param {string} type Sub-directory, e.g. 'js' or 'img'. May be empty.
+ * @param {string} file File name. May be empty.
+ * @return {string} The root-relative path.
+ */
+export function generateFilePath(app, type, file) {
+	const parts = ['']
+	if (app) {
+		parts.push(app)
+	}
+	if (type) {
+		parts.push(type)
+	}
+	parts.push(file ?? '')
+	return parts.join('/')
+}
+
+/**
+ * Mirror Nextcloud's imagePath(): an extension-less name is taken to be an
+ * SVG, and everything else is used as given, under the app's `img`
+ * directory.
+ *
+ * @param {string} app App id, e.g. 'core'.
+ * @param {string} file Image name, with or without an extension.
+ * @return {string} The root-relative image path.
+ */
+export function imagePath(app, file) {
+	return String(file).includes('.')
+		? generateFilePath(app, 'img', file)
+		: generateFilePath(app, 'img', file + '.svg')
+}
+
+/**
+ * Mirror Nextcloud's generateOcsUrl() at OCS version 2: the same
+ * `{name}` placeholder substitution as generateUrl(), under `/ocs/v2.php`.
+ *
+ * @param {string} url OCS-relative path, e.g. '/apps/files/api/v1/x'.
+ * @param {object} [params] Values for `{name}` placeholders in the path.
+ * @return {string} The full ocs/v2.php URL.
+ */
+export function generateOcsUrl(url, params) {
+	return '/ocs/v2.php' + substitute(url, params)
 }

@@ -48,6 +48,7 @@ class TermijnNotificationService {
 		'extension',
 		'ingebrekestelling-receipt',
 		'dwangsom-payment',
+		'hersteltermijn-request',
 		'doorzending',
 	];
 
@@ -224,6 +225,11 @@ class TermijnNotificationService {
 					. 'De wettelijke begunstigingstermijn (AWB 4:17) eindigt op ' . $graceEnd . ".\n"
 					. 'Indien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.';
 				break;
+			case 'hersteltermijn-request':
+				$rendered = $this->informationRequest(case: $case, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
+				break;
 			case 'doorzending':
 				$rendered = $this->doorzending(case: $case, locale: $locale, context: $context);
 				$subject = $rendered['subject'];
@@ -242,6 +248,56 @@ class TermijnNotificationService {
 
 		return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
 	}//end renderTemplate()
+
+	/**
+	 * The request for missing information, Awb 4:5.
+	 *
+	 * It names what is missing and the date by which it has to arrive, because
+	 * a request that says only "your application is incomplete" makes the
+	 * applicant guess, and a guess is a second incomplete application.
+	 *
+	 * 🔴 NOT RUN THROUGH `IL10N`, for the same reason the acknowledgement is
+	 * not: `IL10N` serves the interface language of the signed-in reader, and
+	 * the reader here is a citizen with no Nextcloud session.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The render context.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 */
+	private function informationRequest(string $case, string $locale, array $context): array {
+		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
+		$due = (string)($context['pauseDeadline'] ?? '-');
+		$english = ($locale === 'en');
+
+		$list = '';
+		foreach ($items as $item) {
+			$list .= '- ' . $item . "\n";
+		}//end foreach
+
+		if ($english === true) {
+			return [
+				'subject' => 'We need something more for case ' . $case,
+				'body' => "Dear applicant,\n\n"
+					. 'We cannot decide on case ' . $case . " yet. Please send us:\n"
+					. $list
+					. "\nWe need this by " . $due . ".\n"
+					. 'The term for your case is paused until your answer arrives (Awb 4:5).',
+			];
+		}
+
+		return [
+			'subject' => 'Wij hebben nog iets nodig voor zaak ' . $case,
+			'body' => "Beste aanvrager,\n\n"
+				. 'Wij kunnen nog niet beslissen over zaak ' . $case . ". Stuur ons:\n"
+				. $list
+				. "\nWij ontvangen dit graag voor " . $due . ".\n"
+				. 'De termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).',
+		];
+	}//end informationRequest()
 
 	/**
 	 * The acknowledgement of receipt, Awb 4:3a.

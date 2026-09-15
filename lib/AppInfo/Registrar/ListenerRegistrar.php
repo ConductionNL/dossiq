@@ -59,9 +59,11 @@ class ListenerRegistrar {
 		(new ImmutabilityListenerRegistrar())->register(context: $context);
 		(new CaseTypeListenerRegistrar())->register(context: $context);
 		(new CasePriorityListenerRegistrar())->register(context: $context);
+		(new DerivedStatusListenerRegistrar())->register(context: $context);
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);
+		(new BulkActionRegistrar())->register(context: $context);
 
 		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen

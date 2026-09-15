@@ -1,99 +1,148 @@
 <!--
-  ReassignSelectionDialog — pick a handler for the cases a user selected.
+  ReassignSelectionDialog. Give the selected cases to another handler.
 
   Opened by the Cases page's `reassign` bulk action. The selection travels in
   as a prop rather than being re-read here: an action that goes and finds out
   what was selected is one re-render away from acting on a different set than
   the user saw highlighted.
 
+  THE REASON IS REQUIRED, and the button stays disabled without one.
+  Reassigning four hundred statutory cases with nothing recorded about why is
+  an audit finding waiting to happen, and a bulk act is exactly when the
+  reason goes unwritten. OpenRegister's job does not know that, because it is
+  a case policy: the action declares it, the hand-off enforces it, and this
+  disabled button says so before the click rather than after it (D-3).
+
+  The act itself runs as a bulk job. dossiq writes no loop over cases.
+
   SPDX-License-Identifier: EUPL-1.2
   SPDX-FileCopyrightText: 2026 Conduction B.V.
+
+  @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 -->
 <template>
 	<NcDialog
 		:name="title"
 		:open="open"
-		size="normal"
+		size="large"
 		data-testid="reassign-selection-dialog"
 		@update:open="$emit('update:open', $event)">
 		<div class="reassign">
-			<p class="reassign__lead">
-				{{ lead }}
-			</p>
+			<template v-if="job === null">
+				<BulkSelectionScope
+					:selectedIds="selectedIds"
+					:total="matchingTotal"
+					:scope="scope"
+					@update:scope="scope = $event" />
 
-			<NcTextField
-				v-model="handler"
-				:label="t('dossiq', 'Reassign to')"
-				:placeholder="t('dossiq', 'User id of the receiving handler')"
-				data-testid="reassign-selection-handler" />
+				<NcTextField
+					v-model="handler"
+					:label="t('dossiq', 'Give the cases to')"
+					:placeholder="t('dossiq', 'User id of the receiving handler')"
+					data-testid="reassign-selection-handler" />
 
-			<NcNoteCard v-if="error" type="error">
-				{{ error }}
-			</NcNoteCard>
+				<NcTextArea
+					v-model="justification"
+					:label="t('dossiq', 'Why these cases are moving')"
+					:placeholder="t('dossiq', 'Recorded with the act and readable afterwards')"
+					data-testid="reassign-selection-justification" />
+
+				<NcNoteCard v-if="error" type="error">
+					{{ error }}
+				</NcNoteCard>
+			</template>
+
+			<BulkJobProgress
+				v-else
+				:job="job"
+				:busy="busy"
+				@update:job="job = $event"
+				@finished="$emit('reassigned', $event)" />
 		</div>
 
 		<template #actions>
 			<NcButton :disabled="busy" @click="$emit('update:open', false)">
-				{{ t('dossiq', 'Cancel') }}
+				{{ job === null ? t('dossiq', 'Cancel') : t('dossiq', 'Close') }}
 			</NcButton>
 			<NcButton
+				v-if="job === null"
 				variant="primary"
-				:disabled="busy || handler.trim() === ''"
+				:disabled="!canRehearse"
 				data-testid="reassign-selection-submit"
-				@click="submit">
-				{{ t('dossiq', 'Reassign') }}
+				@click="rehearse">
+				{{ t('dossiq', 'See what would happen') }}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcDialog, NcNoteCard, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcDialog, NcNoteCard, NcTextArea, NcTextField } from '@nextcloud/vue'
+import BulkJobProgress from '../components/bulk/BulkJobProgress.vue'
+import BulkSelectionScope from '../components/bulk/BulkSelectionScope.vue'
+import { ACTION_REASSIGN, previewBulkJob, readRefusal } from '../services/bulkJobApi.js'
+import { buildSelection, SCOPE_PAGE } from '../utils/selectionScope.js'
 
 export default {
 	name: 'ReassignSelectionDialog',
 
-	components: { NcButton, NcDialog, NcNoteCard, NcTextField },
+	components: {
+		BulkJobProgress,
+		BulkSelectionScope,
+		NcButton,
+		NcDialog,
+		NcNoteCard,
+		NcTextArea,
+		NcTextField,
+	},
 
 	props: {
 		/** Whether the dialog is open. */
 		open: { type: Boolean, default: false },
 		/** The case ids the user selected. */
 		selectedIds: { type: Array, default: () => [] },
+		/** How many cases match the list's current search, when that is known. */
+		matchingTotal: { type: Number, default: 0 },
+		/** The list's current filters, for a whole-result selection. */
+		filters: { type: Object, default: () => ({}) },
 	},
 
 	emits: ['update:open', 'reassigned'],
 
 	data() {
-		return { handler: '', busy: false, error: '' }
+		return {
+			handler: '',
+			justification: '',
+			scope: SCOPE_PAGE,
+			busy: false,
+			error: '',
+			job: null,
+		}
 	},
 
 	computed: {
 		/**
 		 * @return {string} The dialog title.
 		 *
-		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-004
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		title() {
-			return t('dossiq', 'Reassign cases')
+			return t('dossiq', 'Give the cases to another handler')
 		},
 
 		/**
-		 * @return {string} What is about to happen, with the count.
+		 * Both fields are required, and the reason is the one that matters.
 		 *
-		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-004
+		 * @return {boolean} Whether the act can be rehearsed.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
-		lead() {
-			return t(
-				'dossiq',
-				'Reassign {count} selected case(s) to another handler.',
-				{
-					count: this.selectedIds.length,
-				},
+		canRehearse() {
+			return (
+				this.busy === false
+				&& this.handler.trim() !== ''
+				&& this.justification.trim() !== ''
 			)
 		},
 	},
@@ -102,45 +151,42 @@ export default {
 		t,
 
 		/**
-		 * Send the selection to the reassignment endpoint.
+		 * Hand the redistribution to the job and read back what it would do.
 		 *
-		 * @return {Promise<void>} Resolves when the request settles.
+		 * Nothing moves yet. The job comes back rehearsed, saying which cases
+		 * it would move and which it would skip, and the commit is a second
+		 * act inside the progress panel.
 		 *
-		 * @spec openspec/changes/reassignment-is-a-bulk-action/specs/reassignment-bulk-action/spec.md#REQ-RBA-001
+		 * @return {Promise<void>} Resolves when the job has been rehearsed.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
-		async submit() {
+		async rehearse() {
 			this.busy = true
 			this.error = ''
+
 			try {
-				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/reassignments/selection'),
-					{ caseIds: this.selectedIds, toUser: this.handler.trim() },
-				)
-
-				// Report what actually happened, not what was asked for. A
-				// partial run that announced full success is how somebody
-				// believes cases moved that did not.
-				const moved = Number(data?.succeeded ?? 0)
-				const asked = Number(data?.requested ?? this.selectedIds.length)
-				if (moved < asked) {
-					showError(
-						t('dossiq', 'Reassigned {moved} of {asked} cases.', {
-							moved,
-							asked,
-						}),
-					)
-				} else {
-					showSuccess(
-						t('dossiq', 'Reassigned {moved} case(s).', { moved }),
-					)
-				}
-
-				this.$emit('reassigned', data)
-				this.$emit('update:open', false)
+				this.job = await previewBulkJob({
+					action: ACTION_REASSIGN,
+					parameters: {
+						toUser: this.handler.trim(),
+						reason: this.justification.trim(),
+					},
+					selection: buildSelection({
+						scope: this.scope,
+						selectedIds: this.selectedIds,
+						filters: this.filters,
+					}),
+					justification: this.justification.trim(),
+				})
 			} catch (e) {
-				this.error =
-					e?.response?.data?.error
-					|| t('dossiq', 'The reassignment failed.')
+				const { reason, message } = readRefusal(e)
+
+				this.error = (
+					(reason === 'justification-required')
+						? t('dossiq', 'Say why these cases are moving. The reason is kept with the act.')
+						: (message || t('dossiq', 'The cases could not be moved.'))
+				)
 			} finally {
 				this.busy = false
 			}
@@ -155,9 +201,5 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 	padding: 8px 0;
-}
-
-.reassign__lead {
-	color: var(--color-text-maxcontrast);
 }
 </style>
