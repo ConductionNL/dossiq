@@ -2156,7 +2156,7 @@
       "brpPerson": {
         "slug": "brpPerson",
         "icon": "AccountOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Person",
         "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
         "title": "BRP person (test register set)",
@@ -2245,11 +2245,76 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind"
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value"
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key"
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label"
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect"
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note"
+                }
+              }
+            }
           }
         },
         "configuration": {
           "objectNameField": "displayName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "person",
+            "nameProperty": "displayName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators"
+          }
         }
       },
       "callbackRequest": {
@@ -8415,7 +8480,7 @@
       "kvkCompany": {
         "slug": "kvkCompany",
         "icon": "Domain",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
         "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
         "title": "KvK company (test register set)",
@@ -8473,11 +8538,85 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind"
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value"
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key"
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label"
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect"
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note"
+                }
+              }
+            }
+          },
+          "parentOrganisation": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "kvkCompany",
+            "title": "Parent organisation",
+            "description": "The organisation this one belongs to. OpenRegister vetoes a save whose parent would close a cycle or pass the declared depth, on the save rather than in one caller."
           }
         },
         "configuration": {
           "objectNameField": "tradeName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "organisation",
+            "nameProperty": "tradeName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators",
+            "parentProperty": "parentOrganisation",
+            "maxDepth": 10
+          }
         }
       },
       "lhsMatrix": {

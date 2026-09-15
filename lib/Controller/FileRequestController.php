@@ -35,6 +35,7 @@ class FileRequestController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param FileRequestService $fileRequests Sends the request.
+	 * @param PartyIndicatorReader $indicators What the parties' indicators refuse.
 	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
@@ -43,6 +44,7 @@ class FileRequestController extends Controller {
 		IRequest $request,
 		private readonly PersonLinkReader $people,
 		private readonly FileRequestService $fileRequests,
+		private readonly PartyIndicatorReader $indicators,
 		private readonly CaseAccessGuard $access,
 		private readonly IUserSession $userSession,
 	) {
@@ -76,13 +78,25 @@ class FileRequestController extends Controller {
 		$parties = [];
 		foreach ($this->people->peopleOn(caseId: $caseId) as $person) {
 			$email = $this->people->emailOf(link: $person);
+			// A party carrying a refuse-send indicator is listed and cannot
+			// be asked, the same way a party with no address is: a recipient
+			// list that is quietly shorter than the party list is a bug
+			// nobody can see.
+			$refusal = $this->indicators->sendRefusalFor(
+				partyUuid: $this->indicators->partyUuidOf(link: $person)
+			);
+
 			$parties[] = [
 				'id' => (string)($person['contactUid'] ?? ''),
 				'name' => $this->people->nameOf(link: $person),
 				'email' => $email,
 				'role' => (string)($person['role'] ?? ''),
 				'kind' => (string)($person['kind'] ?? 'contact'),
-				'canBeAsked' => ($email !== ''),
+				'canBeAsked' => ($email !== '' && $refusal === null),
+				// The indicator's own label, not a sentence: the dialog writes
+				// the sentence, so it is translated in the reader's language
+				// rather than in whichever one the request carried.
+				'sendRefusal' => $refusal,
 			];
 		}
 

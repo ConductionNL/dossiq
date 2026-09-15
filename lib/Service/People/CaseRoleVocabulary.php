@@ -48,10 +48,12 @@ class CaseRoleVocabulary {
 
 	/**
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
+	 * @param PartyVocabulary $parties The kinds of party a case takes and the roles they may hold.
 	 * @param LoggerInterface $logger Says why a sync did nothing.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly PartyVocabulary $parties,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -62,10 +64,11 @@ class CaseRoleVocabulary {
 	 * @return int How many roles the vocabulary now holds, -1 when it could not be written.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function sync(): int {
 		try {
-			$roles = $this->roleEntries();
+			$roles = $this->vocabulary();
 			$schema = $this->caseSchema();
 		} catch (Throwable $e) {
 			$this->logger->info('Dossiq people: the case role vocabulary was not written: ' . $e->getMessage());
@@ -81,11 +84,14 @@ class CaseRoleVocabulary {
 			$configuration = [];
 		}
 
-		if (($configuration['linkRoles'] ?? null) === $roles) {
+		$kinds = $this->parties->kinds();
+		$current = ($configuration['linkRoles'] ?? null);
+		if ($current === $roles && ($configuration['partyKinds'] ?? null) === $kinds) {
 			return count($roles);
 		}
 
 		$configuration['linkRoles'] = $roles;
+		$configuration['partyKinds'] = $kinds;
 		$schema->setConfiguration($configuration);
 		$stored = $this->schemaMapper()->update($schema);
 
@@ -94,8 +100,11 @@ class CaseRoleVocabulary {
 		// is what made the documented `x-contactRoles` a no-op for a year. An
 		// instance whose OpenRegister predates people-on-objects lands here.
 		$kept = [];
+		$keptKinds = [];
 		if (is_object($stored) === true && is_callable([$stored, 'getConfiguration']) === true) {
-			$kept = (array)(call_user_func([$stored, 'getConfiguration'])['linkRoles'] ?? []);
+			$storedConfiguration = (array)call_user_func([$stored, 'getConfiguration']);
+			$kept = (array)($storedConfiguration['linkRoles'] ?? []);
+			$keptKinds = (array)($storedConfiguration['partyKinds'] ?? []);
 		}
 
 		if ($kept === [] && $roles !== []) {
@@ -107,8 +116,45 @@ class CaseRoleVocabulary {
 			return -1;
 		}
 
+		if ($keptKinds === []) {
+			// Not fatal: an instance whose OpenRegister predates the party
+			// model keeps every person link it has. It simply accepts any
+			// kind of party, which is what it did before this was declared.
+			$this->logger->warning(
+				'Dossiq people: the case schema did not keep its party kinds. This OpenRegister does '
+				. 'not carry the party model yet, so a party of any kind is accepted and the Roles '
+				. 'widget falls back to the role keys.'
+			);
+		}
+
 		return count($roles);
 	}//end sync()
+
+	/**
+	 * The whole link vocabulary: this instance's role types first, then the
+	 * generic party roles every case type offers.
+	 *
+	 * The order is what the picker shows, and an organisation's own seats
+	 * come before the ones the law names, because the first question on a
+	 * case is who is handling it. A role type that already claims a generic
+	 * key wins: the generic entry is not listed twice.
+	 *
+	 * @return array<int, array<string, string>> The entries.
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 */
+	public function vocabulary(): array {
+		$entries = $this->roleEntries();
+		$taken = array_column($entries, 'key');
+
+		foreach ($this->parties->roles() as $role) {
+			if (in_array($role['key'], $taken, true) === false) {
+				$entries[] = $role;
+			}
+		}
+
+		return $entries;
+	}//end vocabulary()
 
 	/**
 	 * The published role types as vocabulary entries, keyed by uuid.
