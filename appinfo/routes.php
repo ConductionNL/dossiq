@@ -373,6 +373,24 @@ $extra = [
     ['name' => 'caseLifecycle#reopen',  'url' => '/api/case/{caseId}/reopen',    'verb' => 'POST'],
     ['name' => 'caseLifecycle#delete',  'url' => '/api/case/{caseId}/delete',    'verb' => 'POST'],
 
+        // The acts on the case itself (lifecycle-acts-on-the-case). Ending is
+        // four acts with four archival consequences rather than one verb; hold
+        // parks the work without touching any statutory term; a draft binds no
+        // term until it is promoted; and incompleteness is recorded rather
+        // than refused at intake. `acts` is the read the one menu is drawn
+        // from: it lists every act INCLUDING the ones this handler may not
+        // perform, with the sentence naming the role, because an act that is
+        // simply absent teaches nobody why.
+    ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+    ['name' => 'caseActs#finish',         'url' => '/api/case/{caseId}/finish',         'verb' => 'POST'],
+    ['name' => 'caseActs#abort',          'url' => '/api/case/{caseId}/abort',          'verb' => 'POST'],
+    ['name' => 'caseActs#archive',        'url' => '/api/case/{caseId}/archive',        'verb' => 'POST'],
+    ['name' => 'caseActs#hold',           'url' => '/api/case/{caseId}/hold',           'verb' => 'POST'],
+    ['name' => 'caseActs#releaseHold',    'url' => '/api/case/{caseId}/release-hold',   'verb' => 'POST'],
+    ['name' => 'caseActs#draft',          'url' => '/api/case/{caseId}/draft',          'verb' => 'POST'],
+    ['name' => 'caseActs#promote',        'url' => '/api/case/{caseId}/promote',        'verb' => 'POST'],
+    ['name' => 'caseActs#incompleteness', 'url' => '/api/case/{caseId}/incompleteness', 'verb' => 'POST'],
+
     // The deleted side of a case (case-recycle-window). Deleting puts the case
     // in OpenRegister's recycle state; restoring and destroying are two
     // separate acts, and destroying needs the role the case type declares.
