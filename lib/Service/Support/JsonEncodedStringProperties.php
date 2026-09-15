@@ -77,7 +77,7 @@ class JsonEncodedStringProperties {
 		'abonnement' => ['kanalen'],
 		'advisoryReport' => ['committeeMembers'],
 		'automaticAction' => ['config'],
-		'case' => ['activity', 'geometry', 'relatedCases', 'statusHistory'],
+		'case' => ['activity', 'geometry', 'missingFields', 'relatedCases', 'skippedPhases', 'statusHistory'],
 		'caseShare' => ['fieldExclusions'],
 		'caseType' => ['referenceProcess', 'relatedCaseTypes'],
 		'document' => ['fileParts'],

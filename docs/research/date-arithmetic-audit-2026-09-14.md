@@ -57,6 +57,13 @@ never the problem itself.
 counts a lawful-purpose retention in months, which is the AVG side of the same question
 `ArchivalNominationDeriver` answers for the Archiefwet, and it carries the same verdict.
 
+`lifecycle-acts-on-the-case` added a fortieth, `lib/Service/Lifecycle/SilenceCloseService.php`.
+It counts the administered period of silence a case type declares (REQ-LIFE-04) and the date
+the applicant is told the case will close on. It is deliberately NOT statutory: nothing in the
+Awb counts sixty days of nobody answering, the period is a gemeente's own setting, and rolling
+it to a working day would move a date nobody is owed. Every other date in that change goes
+through `CaseDateNormaliser`, which is why only this one line matches the patterns.
+
 The set grew by one file, and by nothing else: `lib/Service/TermijnTimerService.php`
 now calls the engine's `SlaCalculator::add()`, which the `->add(` pattern
 matches. It is the bridge, not a term, and its row says so.
@@ -106,6 +113,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
+| `lib/Service/Lifecycle/SilenceCloseService.php` | 131 | neither | | an ADMINISTERED period of silence a case type declares, after which the product closes the case, and the date it announces. Not a term: nothing in the Awb counts sixty days of nobody answering, the number is a gemeente's own setting, and a weekend cannot move an answer to "has anything happened". Same verdict as `RetentionClocks` for the same reason |
 | `lib/Service/QuickActionService.php` | 158 | statutory | engine calendar | Awb 9:11: the six week klacht decision term, written on intake from the KCC |
 | `lib/Service/Stuf/StufOutboundTransport.php` | 298 | neither | | not date arithmetic: `IJobList::add()` matched the `->add(` pattern |
 | `lib/Service/Subsidie/BeschikkingService.php` | 82 | statutory | engine calendar | the bezwaartermijn of a subsidy beschikking |

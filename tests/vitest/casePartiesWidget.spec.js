@@ -299,6 +299,12 @@ describe('the Team column and the Mine chip', () => {
 		const initial = chips.find((chip) => chip.default === true) || chips[0]
 		const scoping = { ...initial.filter }
 		delete scoping.statusHiddenInLists
+		// `isDraft` is the second condition allowed through, added by
+		// `lifecycle-acts-on-the-case`. Same reasoning: a draft is a property
+		// of the CASE, not of the reader. It binds no statutory term and is in
+		// nobody's working list, so excluding it does not narrow the index to
+		// anyone's own work, which is the thing this test guards.
+		delete scoping.isDraft
 		expect(scoping, 'the index must open unfiltered').toEqual({})
 	})
 })
