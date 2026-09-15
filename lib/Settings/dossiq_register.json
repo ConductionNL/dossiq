@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.11.0",
+                "version": "1.12.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -323,6 +323,12 @@
                         "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type",
                         "title": "Default assignee"
                     },
+                    "coordinatorRequiredBeforeSigning": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case of this type needs a coordinator named before its besluit is signed. The Awb answer is signed by the second seat, and a case type that leaves this off never asks for one: most cases have a handler and nobody else.",
+                        "title": "Coordinator required before signing"
+                    },
                     "defaultInformatieobjecttype": {
                         "type": "string",
                         "title": "Default document type",
@@ -483,6 +489,12 @@
                                     "items": {
                                         "type": "string"
                                     }
+                                },
+                                "until": {
+                                    "type": "string",
+                                    "title": "Ends",
+                                    "description": "When the grant this row produces stops answering, as an ISO-8601 moment. Optional: a row without it grants without an end. The key is spelled the way OpenRegister reads it (GrantConstraints::UNTIL_KEY, openregister#3750), so no translation stands between the declaration and the rule; a second spelling is where an end quietly stops arriving. OpenRegister reads it at resolution time, so nothing has to run to take the right away, and an end nobody can parse is treated as already passed. dossiq never compares this to a clock: the clock that decides is OpenRegister's.",
+                                    "maxLength": 64
                                 }
                             }
                         }
@@ -1095,7 +1107,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.20.0",
+                "version": "1.21.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1986,6 +1998,71 @@
                         "title": "Team",
                         "facetable": true,
                         "order": 6
+                    },
+                    "handoverPending": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a handover of this case is waiting for the receiving team to accept it. A projection of the open casetransfer record and never a second custody trail: it exists so the sending team's list can show what it handed on and nobody picked up.",
+                        "title": "Handover pending"
+                    },
+                    "handoverTo": {
+                        "type": "string",
+                        "description": "The team the pending handover named, as a Nextcloud group id. Cleared when the handover is accepted or refused.",
+                        "title": "Handed over to"
+                    },
+                    "externalApplication": {
+                        "type": "string",
+                        "description": "The application this case is homed in, when the work happens somewhere else. The case still carries its type, status, terms and parties, because the central list is what it is for. dossiq does not offer to do the work on a case homed elsewhere.",
+                        "title": "External application"
+                    },
+                    "externalIdentifier": {
+                        "type": "string",
+                        "description": "What the externally homed case is called in the application that holds it, so a handler can quote one number to the specialist team.",
+                        "title": "Identifier there"
+                    },
+                    "externalUrl": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The link to this case in the application that holds it.",
+                        "title": "Link to the work"
+                    },
+                    "handoverRecord": {
+                        "type": "object",
+                        "description": "What a leaver handover did to this case: who held it before, who holds it now, who ran the act and when. Written once per act, so the work of somebody who has left is traceable a year later.",
+                        "title": "Handover record",
+                        "properties": {
+                            "fromUser": {
+                                "type": "string",
+                                "description": "The person whose work was handed over.",
+                                "title": "From"
+                            },
+                            "toUser": {
+                                "type": "string",
+                                "description": "The person who received it.",
+                                "title": "To"
+                            },
+                            "actor": {
+                                "type": "string",
+                                "description": "The administrator who ran the act.",
+                                "title": "By"
+                            },
+                            "seat": {
+                                "type": "string",
+                                "description": "Which seat moved: handler or coordinator.",
+                                "title": "Seat"
+                            },
+                            "batchId": {
+                                "type": "string",
+                                "description": "The act this case moved in, so everything it touched can be read together.",
+                                "title": "Batch"
+                            },
+                            "movedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "When it moved.",
+                                "title": "Moved at"
+                            }
+                        }
                     },
                     "intakeChannel": {
                         "type": "string",
@@ -7292,10 +7369,10 @@
             "casetransfer": {
                 "slug": "casetransfer",
                 "icon": "SwapHorizontal",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Case transfer",
-                "description": "Hand-off of a case from one organisation to another (initiate / accept / reject)",
+                "description": "Hand-off of a case, to another organisation or to another team inside this one (initiate / accept / reject). One record shape answers where a case has been.",
                 "type": "object",
                 "required": [
                     "caseId",
@@ -7320,10 +7397,36 @@
                         "description": "Target partner organisation UUID",
                         "title": "Target Organization"
                     },
+                    "handoverScope": {
+                        "type": "string",
+                        "enum": [
+                            "organisation",
+                            "team"
+                        ],
+                        "default": "organisation",
+                        "description": "Which boundary this hand-off crosses. `organisation` is the federated zaakoverdracht to another gemeente; `team` is the internal handover to another team here. The record shape is the same on purpose, so one read answers where a case has been.",
+                        "title": "Handover Scope"
+                    },
+                    "sourceTeam": {
+                        "type": "string",
+                        "description": "The team the case leaves, as a Nextcloud group id. Set on an internal handover only, and the team the case returns to when the receiving team refuses it.",
+                        "title": "Source Team"
+                    },
+                    "targetTeam": {
+                        "type": "string",
+                        "description": "The team the case goes to, as a Nextcloud group id. Set on an internal handover only. A group that does not exist refuses the handover rather than leaving the case unowned.",
+                        "title": "Target Team"
+                    },
                     "reason": {
                         "type": "string",
                         "description": "Reason for the transfer",
                         "title": "Reason"
+                    },
+                    "doorzending": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this handover is a doorzending under Awb 2:3, which obliges us to tell the applicant where the case went. An internal move between two teams of the same bestuursorgaan is not a doorzending and tells the applicant nothing.",
+                        "title": "Doorzending"
                     },
                     "requestedDate": {
                         "type": "string",
@@ -7372,6 +7475,40 @@
                         "type": "string",
                         "description": "User ID of the transfer initiator",
                         "title": "Initiated By"
+                    },
+                    "acceptedBy": {
+                        "type": "string",
+                        "description": "User id of whoever accepted or refused the handover on the receiving team's behalf.",
+                        "title": "Accepted By"
+                    },
+                    "emptiedSeats": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "seat": {
+                                    "type": "string",
+                                    "enum": [
+                                        "handler",
+                                        "coordinator"
+                                    ],
+                                    "description": "Which seat was emptied.",
+                                    "title": "Seat"
+                                },
+                                "holder": {
+                                    "type": "string",
+                                    "description": "The person who held the seat before the handover.",
+                                    "title": "Holder"
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "Why the seat was emptied, which is always that the holder is not in the receiving team.",
+                                    "title": "Reason"
+                                }
+                            }
+                        },
+                        "description": "Seats this handover emptied because their holder is not in the receiving team. Recorded rather than silently cleared: a case that arrives with nobody on it must say who came off it.",
+                        "title": "Emptied Seats"
                     },
                     "custodyAuditTrail": {
                         "type": "array",

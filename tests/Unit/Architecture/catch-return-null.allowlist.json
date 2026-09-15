@@ -1,6 +1,6 @@
 {
-    "ceiling": 218,
-    "measured": "2026-09-14",
+    "ceiling": 222,
+    "measured": "2026-09-15",
     "window": 3,
     "about": [
         "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
@@ -10,7 +10,8 @@
         "Merging development on 2026-09-14 brought new sites with it, and moved one. #2719 added `Substitution/HumaniqLeaveReader::readLeave#1`. #2732 split `Flow/CaseFlowActions` and added `Flow/PlannedSeriesLedger::optional#1`, `::plannedFlows#1` and `::rowsOf#1`, which is also where `CaseFlowActions::plannedFlows` went, so that entry is removed here rather than kept. The ceiling went 203 to 206 for those four sites and nothing else.",
         "2026-09-14, openspec/changes/one-date-write-path: three nulling date parsers left lib/ (CaseEnricher::normaliseDate, TermijnTimerService::dateOrNull, WorkQueueService::parseDateOnly) and three CaseDateNormaliser sites arrived, two zone-resolution degradations and one read-path reader. The ceiling is unchanged at 206; every write path refuses now instead of answering null.",
         "2026-09-14, openspec/changes/inbound-mail-filters: nine sites arrived with the mail intake path. Eight are degradations of an OPTIONAL app, Nextcloud Mail, which is absent on most instances and whose service, account, attachment, folder and event readers each log at warning and answer the documented empty value; the ninth is the read-miss on an intake log entry. The ceiling went 206 to 215 for those nine and nothing else.",
-        "2026-09-14, openspec/changes/case-grants-name-their-source: four sites arrived with OpenRegisterGrantsGateway, the one place dossiq asks OpenRegister who may do what on a case. All four are degradations of an app that may be absent or may predate openregister#3726, and each logs at warning naming what was absent. The null is load-bearing rather than tolerated: the caller reads null as \"carry on\" and false as \"OpenRegister refused\", and collapsing the two would lock every handler out of every case on an instance that has not upgraded. The ceiling went 215 to 219 for those four and nothing else."
+        "2026-09-14, openspec/changes/case-grants-name-their-source: four sites arrived with OpenRegisterGrantsGateway, the one place dossiq asks OpenRegister who may do what on a case. All four are degradations of an app that may be absent or may predate openregister#3726, and each logs at warning naming what was absent. The null is load-bearing rather than tolerated: the caller reads null as \"carry on\" and false as \"OpenRegister refused\", and collapsing the two would lock every handler out of every case on an instance that has not upgraded. The ceiling went 215 to 219 for those four and nothing else.",
+        "2026-09-15, openspec/changes/handing-a-case-over: four sites arrived with the internal handover. All four read something and answer the documented empty list when the read cannot be made: three are degradations of OpenRegister being absent or unconfigured and each logs at warning naming what it was reading, and the fourth is a read miss on a case. None is a refusal: every rule this change enforces throws RefusedException and is translated by the controller, which is why the handover's own refusals (an unresolvable team, a settled handover, an unreadable case) are nowhere on this list. The ceiling went 219 to 223 for those four and nothing else."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -1543,6 +1544,34 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`unpackSynchronisation()` answers `return null` when a Mail synchronisation event cannot be read, which is how a Mail release that moved the event's shape arrives; the catch logs at warning (\"Dossiq: a Mail synchronisation event could not be read\") and the run ends without messages."
+        },
+        {
+            "file": "lib/Service/People/CaseSeats.php",
+            "method": "rows",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`rows()` answers `return []` when OpenRegister is absent or a schema key is unset; the catch logs at warning naming the schema it was reading (\"a seat lookup could not be answered\"). An empty list reads as \"no coordinator named\", which is the same answer a case with an empty seat gives, so the People tab renders rather than erroring. It is never used to decide who may act: every grant is OpenRegister's, read through OpenRegisterGrantsGateway."
+        },
+        {
+            "file": "lib/Service/People/CoordinatorRequirement.php",
+            "method": "caseOf",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`caseOf()` answers `return []` when the case cannot be read; the catch logs at warning naming the case. The caller reads an empty case as \"no case type, so no requirement\", which fails OPEN on purpose: falling closed here would refuse every signing on an instance whose register is briefly unreadable, which is a worse failure than the one the requirement is for. The requirement itself is a RefusedException thrown from `requireSeatFilled()`."
+        },
+        {
+            "file": "lib/Service/People/LeaverHandoverService.php",
+            "method": "draftsOf",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`draftsOf()` answers `return []` when the case type schema cannot be read; the catch logs at warning naming the person (\"the drafts could not be read\"). The drafts are a LISTING beside the act, not part of it, so an unreadable list must not stop a leaver handover that has cases and tasks to move."
+        },
+        {
+            "file": "lib/Service/Transfer/InternalHandover.php",
+            "method": "outstandingFor",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`outstandingFor()` answers `return []` when the transfer schema cannot be read; the catch logs at warning naming the team (\"the outstanding handovers could not be read\"). This is a read of a lens, and the acts it lists refuse loudly on their own: initiating, accepting and refusing a handover all throw RefusedException rather than answering an empty value."
         }
     ]
 }
