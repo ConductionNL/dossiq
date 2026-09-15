@@ -1034,9 +1034,11 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
 				"filter": {
 					"assignee": "IS NULL",
-					"isFinalStatus": false
+					"isFinalStatus": false,
+					"isTemplate": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1179,6 +1181,10 @@
 				],
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "Same exclusion as the Queue's, and here it is a page-level filter rather than a chip for the same reason: eight lenses would be eight places to forget it. A case template is never work (starter-content-and-templates, D-5).",
+				"filter": {
+					"isTemplate": false
+				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards", "map"],

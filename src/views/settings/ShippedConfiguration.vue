@@ -36,7 +36,7 @@
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Name') }}</th>
 					<th scope="col">{{ t('dossiq', 'State') }}</th>
-					<th scope="col">{{ t('dossiq', 'Set') }}</th>
+					<th scope="col">{{ t('dossiq', 'Shipped set') }}</th>
 					<th scope="col">{{ t('dossiq', 'Version') }}</th>
 					<th scope="col">{{ t('dossiq', 'Newer version') }}</th>
 				</tr>
