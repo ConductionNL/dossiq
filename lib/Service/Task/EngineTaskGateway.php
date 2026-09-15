@@ -529,17 +529,25 @@ class EngineTaskGateway {
             // The case IS the object, and a completion has to know which
             // case it is on to run the effects the task declared against it
             // and to publish the files it was holding.
-            'objectUuid' => (string) ($task->getObjectUuid() ?? ''),
-            'dueDate' => ($task->getDueAt()?->format('c') ?? ''),
+            //
+            // 🔴 EACH GETTER IS ASKED FOR BEFORE IT IS CALLED. The engine's
+            // task is resolved by string from an app that need not be
+            // installed, and an OLDER openregister has fewer of these
+            // columns: calling one it does not have is a fatal
+            // `Call to undefined method`, in the middle of a read that was
+            // working. Absent reads as "the engine does not answer that",
+            // which is exactly what the surfaces already state.
+            'objectUuid' => self::stringFrom(task: $task, getter: 'getObjectUuid'),
+            'dueDate' => self::dateFrom(task: $task, getter: 'getDueAt'),
             // Who the task is OFFERED to, which is a different question from
             // who has it. An empty assignee with a candidate list is a task
             // waiting to be claimed; an empty assignee with no candidates is
             // a task waiting for somebody to notice it.
-            'candidateGroups' => (($task->getCandidateGroups() ?? [])),
-            'candidateUsers' => (($task->getCandidateUsers() ?? [])),
+            'candidateGroups' => self::listFrom(task: $task, getter: 'getCandidateGroups'),
+            'candidateUsers' => self::listFrom(task: $task, getter: 'getCandidateUsers'),
             // What dossiq declared on this task: `form` for the engine to
             // render, `dossiq.effects` for dossiq to run on completion.
-            'metadata' => (($task->getMetadata() ?? [])),
+            'metadata' => self::listFrom(task: $task, getter: 'getMetadata'),
         ];
     }//end find()
 
@@ -679,14 +687,21 @@ class EngineTaskGateway {
      */
     public function complete(string $taskId, array $data, string $outcome, ?string $actor): bool {
         $id = trim($taskId);
-        $completion = $this->resolveCompletion();
-        if ($id === '' || $completion === null) {
+        if ($id === '' || $this->settings->isOpenRegisterAvailable() === false
+            || class_exists(self::COMPLETION_SERVICE) === false
+        ) {
             $this->lastError = 'The task engine cannot complete a task on this instance.';
 
             return false;
         }
 
         try {
+            // Resolved INSIDE the try, so a container that cannot build the
+            // service is the same answer as an engine that refuses: a named
+            // failure on the return, never a null swallowed by a second catch
+            // that would report "no service" as "nothing to do".
+            $completion = $this->container->get(self::COMPLETION_SERVICE);
+
             // Positional, not named: this object is resolved by string from
             // an app that need not be installed, and a named argument here
             // would bind dossiq to OpenRegister's parameter NAMES as well as
@@ -709,35 +724,68 @@ class EngineTaskGateway {
     }//end complete()
 
     /**
-     * Resolve OpenRegister's form-aware completion service, or null.
+     * One string column of an engine task, or '' when the engine has none.
      *
-     * Protected for the same reason {@see resolveService()} is: OpenRegister
-     * is not autoloadable in dossiq's unit suite, so a test that could not
-     * replace this would exercise nothing below the `class_exists` guard.
+     * @param object $task   The engine task.
+     * @param string $getter The accessor.
      *
-     * @return object|null The service, or null when unavailable.
-     *
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
+     * @return string The value.
      *
      * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
      */
-    protected function resolveCompletion(): ?object {
-        if ($this->settings->isOpenRegisterAvailable() === false || class_exists(self::COMPLETION_SERVICE) === false) {
-            return null;
+    private static function stringFrom(object $task, string $getter): string {
+        if (method_exists($task, $getter) === false) {
+            return '';
         }
 
-        try {
-            return $this->container->get(self::COMPLETION_SERVICE);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Dossiq: could not resolve the OpenRegister task completion service',
-                ['exception' => $e->getMessage()]
-            );
+        return (string) ($task->{$getter}() ?? '');
+    }//end stringFrom()
 
-            return null;
+    /**
+     * One date column of an engine task, ISO-formatted, or ''.
+     *
+     * @param object $task   The engine task.
+     * @param string $getter The accessor.
+     *
+     * @return string The value.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    private static function dateFrom(object $task, string $getter): string {
+        if (method_exists($task, $getter) === false) {
+            return '';
         }
-    }//end resolveCompletion()
+
+        $value = $task->{$getter}();
+        if (($value instanceof \DateTimeInterface) === false) {
+            return (string) ($value ?? '');
+        }
+
+        return $value->format('c');
+    }//end dateFrom()
+
+    /**
+     * One array column of an engine task, or [] when the engine has none.
+     *
+     * @param object $task   The engine task.
+     * @param string $getter The accessor.
+     *
+     * @return array<mixed> The value.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+     */
+    private static function listFrom(object $task, string $getter): array {
+        if (method_exists($task, $getter) === false) {
+            return [];
+        }
+
+        $value = $task->{$getter}();
+        if (is_array($value) === false) {
+            return [];
+        }
+
+        return $value;
+    }//end listFrom()
 
     /**
      * Resolve OpenRegister's task service, or null.

@@ -44,8 +44,6 @@ namespace OCA\Dossiq\Service\CaseType;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
-use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads a case type's always-available acts and says which of them this
@@ -69,12 +67,10 @@ class AlwaysAvailableActs {
 	 *
 	 * @param SettingsService $settings The register/schema configuration and the object service.
 	 * @param RoleGuard       $roles    Answers whether this reader holds a role on this case.
-	 * @param LoggerInterface $logger   The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly RoleGuard $roles,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -205,12 +201,22 @@ class AlwaysAvailableActs {
 	}//end decided()
 
 	/**
-	 * Read one configured object by id, or null.
+	 * Read one configured object by id, or null when there is none.
+	 *
+	 * 🔑 A FAILED READ IS NOT AN EMPTY LIST, AND IS NOT CAUGHT HERE. "This
+	 * case type declares no acts" and "the store could not be reached" would
+	 * otherwise be the same answer: a handler looking at an empty list, told
+	 * nothing, concluding there is nothing they may do. So a storage failure
+	 * travels to {@see \OCA\Dossiq\Controller\CaseTaskController}, which
+	 * logs it with the case and answers a 5xx the surface can report.
+	 *
+	 * Null means the object is genuinely absent, which is an ordinary answer:
+	 * a case with no case type declares no acts.
 	 *
 	 * @param string $schemaKey The settings key naming the schema.
 	 * @param string $id        The object's uuid.
 	 *
-	 * @return array<string, mixed>|null The object.
+	 * @return array<string, mixed>|null The object, or null when it does not exist.
 	 */
 	private function readObject(string $schemaKey, string $id): ?array {
 		$objectService = $this->settings->getObjectService();
@@ -220,21 +226,12 @@ class AlwaysAvailableActs {
 			return null;
 		}
 
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: trim($id)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: an object could not be read while listing the always-available acts',
-				['schema' => $schemaKey, 'id' => $id, 'error' => $e->getMessage()]
-			);
-
-			return null;
-		}
+		return $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: trim($id)
+		);
 	}//end readObject()
 
 	/**

@@ -37,7 +37,6 @@ namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
-use Throwable;
 
 /**
  * Resolves the per-task declaration a case's workflow holds for one task.
@@ -72,17 +71,18 @@ class TaskDeclarationReader {
 			return [];
 		}
 
-		try {
-			$definition = $this->definitions->getDefinitionForCase(caseId: trim($caseId));
-		} catch (Throwable) {
-			// A workflow that cannot be read is not a workflow that declares
-			// nothing, but the two have the same consequence here and the
-			// caller falls back to the unconfigured defaults. Failing the
-			// task creation over an unreadable declaration would stop the
-			// case on a field nobody has filled in yet.
-			return [];
-		}
-
+		// 🔴 A WORKFLOW THAT CANNOT BE READ IS NOT A WORKFLOW THAT DECLARES
+		// NOTHING, and the difference is a task created with the WRONG lead
+		// time, the wrong team and none of its effects. That task looks
+		// exactly like a correct one, and the case runs on its date. So a
+		// storage failure travels up and the transition refuses, rather than
+		// being caught here and turned into the unconfigured defaults.
+		//
+		// An ABSENT definition is a different answer and an ordinary one: a
+		// case type that declares no workflow declares no per-task block
+		// either, and every such task keeps the behaviour it had before this
+		// block existed.
+		$definition = $this->definitions->getDefinitionForCase(caseId: trim($caseId));
 		if ($definition === null) {
 			return [];
 		}
