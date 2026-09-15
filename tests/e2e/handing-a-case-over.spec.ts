@@ -27,6 +27,14 @@
  * driven with a group name nothing answers to. A two-real-team handover needs
  * two provisioned groups, which is an instance-setup job rather than a spec's.
  *
+ * WHAT THE CLEANUP CANNOT REACH, said here rather than left to be discovered.
+ * `cleanupRunObjects` finds rows by this run's prefix, and a `casetransfer`
+ * row carries no title to put a prefix in: it is addressed by `caseId`. So the
+ * transfer records this spec writes are orphaned rather than removed when
+ * their cases go. They are inert (a transfer pointing at a case that no longer
+ * exists lists nowhere and blocks nothing), but they do accumulate, and the
+ * fix is a `caseId`-aware sweep in the helper rather than a per-spec loop.
+ *
  * ROWS ARE ADDRESSED BY THEIR RUN PREFIX, NEVER BY POSITION OR COUNT. The
  * Cases index is shared and another session's fixtures land in it mid-run, so
  * "the list shows N rows" is never asserted; "the list holds this case" is.
