@@ -26,6 +26,9 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
+// Who is on the case and in which role, over OpenRegister's party model.
+// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
 // and the stepper is the library `stages` widget, which is also how the case
@@ -653,6 +656,19 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	// --- Who is on the case, and in which role (the party model, #3761). ---
+	// Keyed by the widget's `type` and not by a component name, for the reason
+	// `case-unread` records: a tab child renders through CnTabsWidget, which
+	// resolves `cnRegistry[widget.type]` and renders nothing at all when no key
+	// answers.
+	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	'case-party-roles': {
+		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
+		kind: 'widget',
+		component: CasePartiesWidget,
+		_note: "CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.",
 	},
 
 	'case-notes-pane': {
