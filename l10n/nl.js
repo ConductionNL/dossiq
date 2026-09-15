@@ -4243,7 +4243,27 @@ OC.L10N.register(
         "This case type states no retention for personal data.": "Dit zaaktype noemt geen bewaartermijn voor persoonsgegevens.",
         "Archive action due": "Archiefactie verwacht",
         "No archive action date has been derived for this case.": "Voor deze zaak is geen archiefactiedatum afgeleid.",
-        "The selectielijst sets this date through the result type of the case.": "De selectielijst bepaalt deze datum via het resultaattype van de zaak."
+        "The selectielijst sets this date through the result type of the case.": "De selectielijst bepaalt deze datum via het resultaattype van de zaak.",
+        "Abort": "Intrekken",
+        "An intrekking. There is a result, and it is not a besluit.": "Een intrekking. Er is een resultaat, en dat is geen besluit.",
+        "Finish": "Afronden",
+        "Hold": "In de wacht zetten",
+        "Incomplete": "Onvolledig",
+        "Lifecycle": "Levensloop",
+        "My drafts": "Mijn concepten",
+        "On hold": "In de wacht",
+        "Promote to case": "Omzetten naar zaak",
+        "Reading what this case allows.": "Even kijken wat deze zaak toestaat.",
+        "Result type": "Resultaattype",
+        "State": "Staat",
+        "Take off hold": "Uit de wacht halen",
+        "The case comes back on": "De zaak komt terug op",
+        "The case moves to the retention rule its result type carries.": "De zaak gaat naar de bewaartermijn van haar resultaattype.",
+        "The case reached its result. The result decides what is kept.": "De zaak heeft haar resultaat bereikt. Het resultaat bepaalt wat bewaard blijft.",
+        "The term starts now. The case leaves your drafts.": "De termijn start nu. De zaak verlaat je concepten.",
+        "What you can do with this case": "Wat je met deze zaak kunt doen",
+        "You park the case until a date. The statutory term keeps running.": "Je parkeert de zaak tot een datum. De wettelijke termijn loopt door.",
+        "You pick the case up again before its date.": "Je pakt de zaak weer op, voor de datum."
     },
     "nplurals=2; plural=(n != 1);"
 )

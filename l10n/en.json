@@ -4248,7 +4248,27 @@
         "This case type states no retention for personal data.": "This case type states no retention for personal data.",
         "Archive action due": "Archive action due",
         "No archive action date has been derived for this case.": "No archive action date has been derived for this case.",
-        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case."
+        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case.",
+        "Abort": "Abort",
+        "An intrekking. There is a result, and it is not a besluit.": "An intrekking. There is a result, and it is not a besluit.",
+        "Finish": "Finish",
+        "Hold": "Hold",
+        "Incomplete": "Incomplete",
+        "Lifecycle": "Lifecycle",
+        "My drafts": "My drafts",
+        "On hold": "On hold",
+        "Promote to case": "Promote to case",
+        "Reading what this case allows.": "Reading what this case allows.",
+        "Result type": "Result type",
+        "State": "State",
+        "Take off hold": "Take off hold",
+        "The case comes back on": "The case comes back on",
+        "The case moves to the retention rule its result type carries.": "The case moves to the retention rule its result type carries.",
+        "The case reached its result. The result decides what is kept.": "The case reached its result. The result decides what is kept.",
+        "The term starts now. The case leaves your drafts.": "The term starts now. The case leaves your drafts.",
+        "What you can do with this case": "What you can do with this case",
+        "You park the case until a date. The statutory term keeps running.": "You park the case until a date. The statutory term keeps running.",
+        "You pick the case up again before its date.": "You pick the case up again before its date."
     },
     "plurals": ""
 }

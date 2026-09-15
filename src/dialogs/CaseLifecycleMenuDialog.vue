@@ -46,7 +46,7 @@
 						v-if="entry.disabled && entry.reason"
 						class="case-acts__reason"
 						:data-testid="'case-act-reason-' + entry.id">
-						{{ entry.reason }}
+						{{ refusalOn(entry) }}
 					</span>
 					<span
 						v-else-if="entry.explainer"
@@ -199,23 +199,94 @@ export default {
 		/**
 		 * One translated label.
 		 *
+		 * 🔴 EVERY ACT'S LABEL IS A LITERAL `t()` CALL HERE, not a lookup of
+		 * the string the menu carries. The l10n extractor reads literal calls
+		 * out of the source, so `t('dossiq', entry.label)` gives translators
+		 * nothing at all: the strings would ship English on every instance and
+		 * the check would pass, because there would be no key to miss.
+		 *
+		 * A transition's label is the exception and is passed through: it is
+		 * authored by an administrator in the workflow template, in their own
+		 * language, so there is no key for it and nothing to translate.
+		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The label.
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		label(entry) {
-			return entry.kind === 'transition' ? entry.label : t('dossiq', entry.label)
+			switch (String(entry?.id ?? '')) {
+				case 'suspend':
+					return t('dossiq', 'Suspend')
+				case 'resume':
+					return t('dossiq', 'Resume')
+				case 'extend':
+					return t('dossiq', 'Extend term')
+				case 'reopen':
+					return t('dossiq', 'Reopen')
+				case 'finish':
+					return t('dossiq', 'Finish')
+				case 'abort':
+					return t('dossiq', 'Abort')
+				case 'archive':
+					return t('dossiq', 'Archive')
+				case 'hold':
+					return t('dossiq', 'Hold')
+				case 'release-hold':
+					return t('dossiq', 'Take off hold')
+				case 'promote':
+					return t('dossiq', 'Promote to case')
+				default:
+					return String(entry?.label ?? '')
+			}
 		},
 
 		/**
-		 * One translated explainer.
+		 * One translated explainer, for the same reason label() is a switch.
 		 *
 		 * @param {object} entry A menu entry.
 		 * @return {string} The explainer, empty when the entry carries none.
 		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
 		explainer(entry) {
-			return entry?.explainer ? t('dossiq', entry.explainer) : ''
+			switch (String(entry?.id ?? '')) {
+				case 'finish':
+					return t('dossiq', 'The case reached its result. The result decides what is kept.')
+				case 'abort':
+					return t('dossiq', 'An intrekking. There is a result, and it is not a besluit.')
+				case 'archive':
+					return t('dossiq', 'The case moves to the retention rule its result type carries.')
+				case 'hold':
+					return t('dossiq', 'You park the case until a date. The statutory term keeps running.')
+				case 'release-hold':
+					return t('dossiq', 'You pick the case up again before its date.')
+				case 'promote':
+					return t('dossiq', 'The term starts now. The case leaves your drafts.')
+				default:
+					return ''
+			}
+		},
+
+		/**
+		 * One translated refusal.
+		 *
+		 * The sentences the menu builds for a refused term gesture are the
+		 * same four `refusalMessage` prints for the matching code, so they are
+		 * translated through it: one key per refusal, shared by the menu and
+		 * by the dialog behind it. A refusal the SERVER authored, which is
+		 * every role refusal, is shown as it arrived.
+		 *
+		 * @param {object} entry A menu entry.
+		 * @return {string} The refusal, empty when the entry is not refused.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		refusalOn(entry) {
+			if (!entry?.disabled || !entry?.reason) {
+				return ''
+			}
+
+			return entry.kind === 'gesture'
+				? t('dossiq', entry.reason)
+				: String(entry.reason)
 		},
 
 		/**
