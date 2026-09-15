@@ -23,6 +23,7 @@ view component.
 - **THEN** the list SHALL be unchanged
 
 #### Scenario: a page nobody triages from does not declare it
+@e2e exclude a manifest key no page carries cannot be observed in a browser; asserted in tests/vitest/caseListPlace.spec.js, "declares it on no page anybody merely browses"
 
 - **GIVEN** the case types page
 - **WHEN** its manifest is read
@@ -82,6 +83,7 @@ SHALL NOT offer a second place to set a personal preference.
 - **THEN** dossiq's options SHALL be there
 
 #### Scenario: there is no second settings screen
+@e2e exclude the absence of a screen is a property of the tree, not of a page; asserted in tests/vitest/personalSettings.spec.js, "offers no second place to set a per-person preference"
 
 - **GIVEN** the dossiq tree
 - **WHEN** it is read for a per-person preference screen of its own
