@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCP\IUserSession;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,6 +56,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  */
 class CaseActionProviderTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * A case as OpenRegister hands it to the provider.
@@ -319,6 +322,7 @@ class CaseActionProviderTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			statusChecklist: $this->createMock(StatusChecklist::class),
+			declarations: $this->undeclaredStatuses(),
 		);
 
 		$provider = new CaseActionProvider(

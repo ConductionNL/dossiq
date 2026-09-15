@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -45,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
  */
 final class StatusTransitionServiceFailedActionsTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * The dispatcher whose result rows each test sets.
@@ -129,6 +132,7 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			logger: $this->logger,
 			resultWriter: $resultWriter,
 			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
+			declarations: $this->undeclaredStatuses(),
 		);
 	}//end setUp()
 

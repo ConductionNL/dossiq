@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -76,6 +77,8 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * @var WorkflowTemplateLoader&MockObject
@@ -184,6 +187,7 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			$logger,
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $logger)),
 			$this->statusChecklist,
+			$this->undeclaredStatuses(),
 		);
 	}//end setUp()
 

@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -62,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
+	use MakesStatusDeclarations;
+
 
 	/**
 	 * A BPMN-managed case (no `handlingModel`, an unused `casePlanState`
@@ -120,6 +123,7 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			$logger,
 			new CaseResultWriter($settings, new CaseTypeResolver(new CaseTypeStore($settings)), new ArchivalNominationDeriver($settings, new ArchivalBaseDateResolver($settings), $logger)),
 			$this->createMock(StatusChecklist::class),
+			$this->undeclaredStatuses(),
 		);
 
 		$result = $service->getAvailableTransitions(caseId: 'case-1');
