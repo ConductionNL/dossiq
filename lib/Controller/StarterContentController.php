@@ -162,16 +162,19 @@ class StarterContentController extends Controller {
 
 		return $this->answered(
 			run: function () use ($schema, $objectsKey, $id, $set, $newShipped, $overLocalChange): JSONResponse {
+				// The safe act is the default, so a caller that says nothing
+				// gets the one that refuses rather than the one that
+				// overwrites.
+				$result = $this->shipped->adopt(
+					targetSchema: $schema,
+					objectsKey: $objectsKey,
+					targetObject: $id,
+					set: $set,
+					newShipped: $newShipped,
+				);
+
 				if ($overLocalChange === true) {
 					$result = $this->shipped->adoptOverLocalChange(
-						targetSchema: $schema,
-						objectsKey: $objectsKey,
-						targetObject: $id,
-						set: $set,
-						newShipped: $newShipped,
-					);
-				} else {
-					$result = $this->shipped->adopt(
 						targetSchema: $schema,
 						objectsKey: $objectsKey,
 						targetObject: $id,
