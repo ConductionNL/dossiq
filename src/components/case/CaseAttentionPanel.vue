@@ -55,10 +55,11 @@
 
 		<div class="case-attention__act">
 			<NcTextField
-				:value.sync="reason"
+				:modelValue="reason"
 				:label="reasonLabel"
 				:placeholder="reasonLabel"
 				data-testid="case-attention-reason"
+				@update:modelValue="onReason"
 				@update:value="onReason" />
 			<NcButton
 				variant="tertiary"

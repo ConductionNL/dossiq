@@ -23,6 +23,10 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The flag a person raised, the risk the organisation assessed, and the
+// markers the system raised against a named panel.
+// @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
@@ -40,10 +44,6 @@ import CasePlanPanel from './components/case/CasePlanPanel.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
-// The flag a person raised, the risk the organisation assessed, and the
-// markers the system raised against a named panel.
-// @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
-import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
