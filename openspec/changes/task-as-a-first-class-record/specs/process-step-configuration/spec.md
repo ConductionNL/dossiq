@@ -24,6 +24,7 @@ was missing.
 - **THEN** the advice task SHALL exist on one and not the other
 
 #### Scenario: an unresolvable form refuses publication
+@e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnresolvableFormRefusesPublication.
 
 - **GIVEN** a case type whose task names a form that does not exist
 - **WHEN** it is published
@@ -47,12 +48,14 @@ term.
 - **AND** the always-available three SHALL be marked as such
 
 #### Scenario: an always-available act is not a phase
+@e2e exclude The phase strip and the progress figure read statusTypes, and an always-available act is not one, so there is nothing for a browser to look at. Asserted in tests/vitest/alwaysAvailableActs.spec.js.
 
 - **GIVEN** a case type with always-available acts
 - **WHEN** the phase strip and the progress figure are read
 - **THEN** neither SHALL include them
 
 #### Scenario: an act unavailable on this case says why
+@e2e exclude Playwright signs in as admin, who holds every role, so a refused act cannot be produced in the browser. Asserted in tests/vitest/alwaysAvailableActs.spec.js.
 
 - **GIVEN** an always-available act refused by a guard
 - **WHEN** a handler reads the acts

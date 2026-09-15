@@ -43,6 +43,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
+use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -93,6 +95,8 @@ class StatusTransitionService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
+	 * @param StatusDeclarations $declarations What a status declares about itself
+	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -105,6 +109,8 @@ class StatusTransitionService {
 		private readonly LoggerInterface $logger,
 		private readonly CaseResultWriter $resultWriter,
 		private readonly StatusChecklist $statusChecklist,
+		private readonly StatusDeclarations $declarations,
+		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 	) {
 	}//end __construct()
 
@@ -133,18 +139,29 @@ class StatusTransitionService {
 		// definition the store listed first.
 		$template = $this->templateLoader->getTemplateForCase(case: $case);
 
+		// What the status the case is in DECLARES, beside the moves out of it.
+		// The handler asks both questions in the same breath — what can I do
+		// here, and why is the thing I expected not on offer — so they are
+		// answered in one round trip rather than two.
+		$declared = $this->declarations->panelFor(case: $case);
+
 		$result = [
 			'transitions' => [],
 			'current' => [
 				'statusId' => $currentId,
 				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
 				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+				'waitingOn' => $declared['waitingOn'],
+				'dwell' => $declared['dwell'],
 			],
+			'derivation' => $declared['derivation'],
 		];
 
 		if ($template === null) {
 			return $result;
 		}
+
+		$caseTypeId = (string)($case['caseType'] ?? '');
 
 		$transitions = $template['transitions'] ?? [];
 		if (is_array($transitions) === false) {
@@ -157,6 +174,19 @@ class StatusTransitionService {
 			}
 
 			if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
+				continue;
+			}
+
+			// A DERIVED status is not a move somebody picks. If it could be
+			// both, the two disagree within a week and nobody knows which one
+			// is the record: a handler sets Complete on a file that is not,
+			// the derivation never fires because the case is already there,
+			// and the missing document is never named. Dropping it here is
+			// what makes the derivation the single answer.
+			if ($this->declarations->isDerivedStatus(
+				caseTypeId: $caseTypeId,
+				statusTypeId: (string)($transition['toStatus'] ?? ''),
+			) === true) {
 				continue;
 			}
 
@@ -263,34 +293,19 @@ class StatusTransitionService {
 			currentId: $currentId,
 		);
 
-		// A closing transition carries its result, or it does not happen.
-		//
-		// REQ-STE-12: the question "what came of this case" is asked at the
-		// moment the case closes, not afterwards, and the answer is written in
-		// the SAME save as the status. Refusing here rather than after the
-		// status write is what keeps a closed case from ever existing without
-		// a result: the refusal happens before the mutation, so the case is
-		// untouched.
-		$caseAtSave = $this->applyClosingResult(
-			case: $caseAtSave,
+		[$case, $savedVersion] = $this->writeMove(
+			caseAtSave: $caseAtSave,
 			caseId: $caseId,
 			toStatus: $toStatus,
 			resultTypeId: $resultTypeId,
+			readVersion: $readVersion,
 		);
 
-		// Status mutation BEFORE side-effects per REQ-STE-5-002.
-		// Include @self.version so the store can detect a concurrent modification.
-		$caseAtSave['status'] = $toStatus;
-		if (isset($caseAtSave['@self']) === false || is_array($caseAtSave['@self']) === false) {
-			$caseAtSave['@self'] = [];
-		}
-
-		$caseAtSave['@self']['version'] = $readVersion;
-		$savedCase = $this->store->saveCase(case: $caseAtSave);
-		$savedVersion = (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
-
-		// Alias for the remainder of the method.
-		$case = $savedCase;
+		// Stop the clock on the status the case left, start one on the status
+		// it entered when that status declares a maximum. After the save, and
+		// never before it: a timer armed for a move that then failed to persist
+		// would breach about a status the case is not in.
+		$this->declarations->retime(caseId: $caseId, toStatus: $toStatus);
 
 		[$record, $dispatched] = $this->recordAndDispatch(
 			case: $case,
@@ -373,6 +388,73 @@ class StatusTransitionService {
 
 		return $outcome;
 	}//end actionOutcome()
+
+	/**
+	 * Settle everything this move writes on the case, and write it, once.
+	 *
+	 * Three things land in ONE save, and each of them was a separate write at
+	 * some point in this method's history: the closing result, the dwell
+	 * bookkeeping, and the status itself. Two saves is two chances for one of
+	 * them not to happen, and the one that goes missing is always the
+	 * bookkeeping rather than the status, so the case ends up in a status whose
+	 * arrival nothing recorded.
+	 *
+	 * REQ-STE-12: a closing transition carries its result or it does not
+	 * happen, and the refusal is raised HERE, before the mutation, so a case
+	 * refused for want of a result is left untouched rather than closed and
+	 * then patched.
+	 *
+	 * REQ-STE-5-002: the status mutation happens before any side effect. The
+	 * `@self.version` read at the top of `execute()` travels with the payload,
+	 * so the store still refuses a write that another transition got in front
+	 * of.
+	 *
+	 * @param array<string, mixed> $caseAtSave   The case as re-read immediately before writing.
+	 * @param string               $caseId       Case UUID.
+	 * @param string               $toStatus     The status being entered.
+	 * @param string|null          $resultTypeId The result a closing transition carries.
+	 * @param int                  $readVersion  The version captured at read time.
+	 *
+	 * @return array{0: array<string, mixed>, 1: int} The saved case and its new version.
+	 *
+	 * @throws RuntimeException When a closing transition carries no result type.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function writeMove(
+		array $caseAtSave,
+		string $caseId,
+		string $toStatus,
+		?string $resultTypeId,
+		int $readVersion,
+	): array {
+		$caseAtSave = $this->applyClosingResult(
+			case: $caseAtSave,
+			caseId: $caseId,
+			toStatus: $toStatus,
+			resultTypeId: $resultTypeId,
+		);
+
+		$caseAtSave = $this->declarations->applyStatusChange(case: $caseAtSave, toStatus: $toStatus);
+
+		$caseAtSave['status'] = $toStatus;
+
+		// One branch, not two. `isset() === false || is_array() === false` is
+		// two decision points for one question, and this class sits on PHPMD's
+		// complexity ceiling: the compound spelling is what pushed it over.
+		// A missing key reads as null here, and null is not an array.
+		$self = ($caseAtSave['@self'] ?? null);
+		if (is_array($self) === false) {
+			$self = [];
+		}
+
+		$self['version'] = $readVersion;
+		$caseAtSave['@self'] = $self;
+		$savedCase = $this->store->saveCase(case: $caseAtSave);
+
+		return [$savedCase, (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)))];
+	}//end writeMove()
 
 	/**
 	 * Write the statusRecord for a transition and run its side effects.
@@ -685,11 +767,30 @@ class StatusTransitionService {
 		}
 
 		$caseTypeId = (string)($case['caseType'] ?? '');
+
+		// REQ-LIFE-03. A free-form transition is a status written because an
+		// administrator said so rather than because the process moved, and a
+		// case type that declares `processOwnedStatus` accepts none of those.
+		// It sits HERE and not on `execute()`: a declared transition IS the
+		// process moving the status, so the rule there would refuse the one
+		// way a process-owned status is allowed to change.
+		//
+		// What it does not reach is a PATCH sent straight to OpenRegister.
+		// That boundary is the grants gateway's, and a guard that claimed it
+		// would read complete and not be.
+		$this->processOwnedStatus->requireHandSetAllowed(caseTypeId: $caseTypeId);
+
 		$this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
 		$currentId = (string)($case['status'] ?? '');
+		// The dwell bookkeeping belongs to the MOVE, not to the road into it.
+		// An admin free-form move is still a move, and a case whose dwell reset
+		// only on the guarded path would report months in a status it entered
+		// this morning.
+		$case = $this->declarations->applyStatusChange(case: $case, toStatus: $toStatusId);
 		$case['status'] = $toStatusId;
 		$case = $this->store->saveCase(case: $case);
+		$this->declarations->retime(caseId: $caseId, toStatus: $toStatusId);
 
 		$record = $this->store->writeStatusRecord(
 			caseId: $caseId,

@@ -36,7 +36,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\StatusTransitionController;
-use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
@@ -113,7 +112,6 @@ class StatusTransitionControllerContractTest extends TestCase {
 
 		$this->request = $this->createMock(IRequest::class);
 		$this->transitionEngine = $this->createMock(StatusTransitionService::class);
-		$this->bulkEngine = $this->createMock(BulkStatusTransitionService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
@@ -122,7 +120,6 @@ class StatusTransitionControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			transitionEngine: $this->transitionEngine,
-			bulkEngine: $this->bulkEngine,
 			userSession: $this->userSession,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,

@@ -57,6 +57,13 @@ never the problem itself.
 counts a lawful-purpose retention in months, which is the AVG side of the same question
 `ArchivalNominationDeriver` answers for the Archiefwet, and it carries the same verdict.
 
+`lifecycle-acts-on-the-case` added a fortieth, `lib/Service/Lifecycle/SilenceCloseService.php`.
+It counts the administered period of silence a case type declares (REQ-LIFE-04) and the date
+the applicant is told the case will close on. It is deliberately NOT statutory: nothing in the
+Awb counts sixty days of nobody answering, the period is a gemeente's own setting, and rolling
+it to a working day would move a date nobody is owed. Every other date in that change goes
+through `CaseDateNormaliser`, which is why only this one line matches the patterns.
+
 The set grew by one file, and by nothing else: `lib/Service/TermijnTimerService.php`
 now calls the engine's `SlaCalculator::add()`, which the `->add(` pattern
 matches. It is the bridge, not a term, and its row says so.
@@ -80,6 +87,7 @@ consults for the day a date lands on, after this change.
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |
 | `lib/Flow/DossiqAskPersonNode.php` | 648, 669 | neither | | a flow task due date and a node timeout in minutes, both process plumbing |
+| `lib/Service/Queue/PersonalAgendaItemService.php` | 177 | neither | | the fortnight the personal queue looks ahead for items a person planned on their own calendar. It is a display window on a list, not a date anybody is held to, and moving it off a Saturday would hide a Saturday appointment from the person who booked it (`one-personal-queue`) |
 | `lib/Flow/DossiqRequestDecisionNode.php` | 615 | neither | | a node timeout in minutes |
 | `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
 | `lib/Listener/CaseInheritedDeadlineListener.php` | 181 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
@@ -91,6 +99,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Bezwaar/HearingSchedulePlanner.php` | 106, 153 | neither | | the Awb 7:4 lid 2 inzage floor is a minimum notice counted backwards from the hearing; rolling an end date forward would shorten it |
 | `lib/Service/Bezwaar/HearingService.php` | 570 | neither | | a proposed hearing date two weeks out, which the planner then reschedules |
 | `lib/Service/CaseLifecycleService.php` | 516, 521 | statutory | engine calendar | extends a case end date by the case type's period, which is the term a handler is judged on |
+| `lib/Service/CaseTermsService.php` | 249 | statutory | engine calendar | binds the planned end, the internal target, the phase term and a case type's fixed closing date; every one of them is a date somebody is held to, and `endAfter()` is the single line that turns a day count into one |
 | `lib/Service/ComplaintAnalyticsService.php` | 247 | neither | | a six month reporting window |
 | `lib/Service/ComplaintService.php` | 408 | statutory | `WorkingDayCalculator` | Awb 9:11 klachttermijn in weeks; the service already consults the calculator for working days |
 | `lib/Service/DeadlinePauseService.php` | 93, 172 | statutory | engine calendar | Awb 4:5 and 4:15: the credited suspension and the unused remainder both move `endDateCurrent` |
@@ -105,7 +114,9 @@ consults for the day a date lands on, after this change.
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
+| `lib/Service/Lifecycle/SilenceCloseService.php` | 131 | neither | | an ADMINISTERED period of silence a case type declares, after which the product closes the case, and the date it announces. Not a term: nothing in the Awb counts sixty days of nobody answering, the number is a gemeente's own setting, and a weekend cannot move an answer to "has anything happened". Same verdict as `RetentionClocks` for the same reason |
 | `lib/Service/QuickActionService.php` | 158 | statutory | engine calendar | Awb 9:11: the six week klacht decision term, written on intake from the KCC |
+| `lib/Service/Status/StatusDwellService.php` | 135 | business | `WorkingDayCalculator` | how long a case has sat in one status, a service level and never a term. The BREACH is the engine's: `StatusDwellTimer` arms it in the engine's own `businessDays` unit over the calendar the organisation administers. The count held on the case is the local calculator's, because the engine exposes projection and no count between two dates, so the two can differ by a day on a custom calendar. Closing that needs a count operation in openregister `working-calendar-admin` |
 | `lib/Service/Stuf/StufOutboundTransport.php` | 298 | neither | | not date arithmetic: `IJobList::add()` matched the `->add(` pattern |
 | `lib/Service/Subsidie/BeschikkingService.php` | 82 | statutory | engine calendar | the bezwaartermijn of a subsidy beschikking |
 | `lib/Service/Subsidie/BewijsstukService.php` | 136 | neither | | a record retention period in years |

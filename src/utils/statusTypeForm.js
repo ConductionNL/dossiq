@@ -37,6 +37,49 @@ export const STATUS_ROLES = [
 ]
 
 /**
+ * Who a status may declare the case is waiting on.
+ *
+ * The applicant and a third party are DIFFERENT values, because the Awb treats
+ * them differently: a hersteltermijn suspends the beslistermijn and an advice
+ * request does not. There is no fourth value for "not declared" — an empty
+ * declaration means the case is ours to move, which is what keeps the team
+ * count usable on a case type nobody has annotated.
+ */
+export const STATUS_WAITING_ON = ['us', 'applicant', 'thirdParty']
+
+/**
+ * Whether a value is one of the three the schema enumerates.
+ *
+ * @param {unknown} waitingOn The candidate value.
+ * @return {boolean} True when the value is in the list.
+ *
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ */
+export function isWaitingOn(waitingOn) {
+	return typeof waitingOn === 'string' && STATUS_WAITING_ON.includes(waitingOn)
+}
+
+/**
+ * A maximum dwell as the form holds it.
+ *
+ * Zero, a negative and anything unreadable all become the empty string, which
+ * is "no maximum". A maximum of zero would breach every case the instant it
+ * entered the status, so honouring it would be worse than refusing it.
+ *
+ * @param {unknown} maximumDwell The candidate value.
+ * @return {number|string} A positive whole number, or '' for no maximum.
+ *
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ */
+export function normaliseMaximumDwell(maximumDwell) {
+	const days = Number(maximumDwell)
+	if (!Number.isFinite(days) || days < 1) {
+		return ''
+	}
+	return Math.floor(days)
+}
+
+/**
  * Whether a value is one of the roles the schema enumerates.
  *
  * @param {unknown} role The candidate role.
@@ -65,6 +108,8 @@ export function emptyStatusTypeForm(order = 1) {
 		role: '',
 		colour: '',
 		hiddenInLists: false,
+		waitingOn: '',
+		maximumDwell: '',
 		checklist: [],
 	}
 }
@@ -133,6 +178,8 @@ export function statusTypeToForm(statusType) {
 		role: isStatusRole(row.role) ? row.role : '',
 		colour: STATUS_COLOURS.includes(row.colour) ? row.colour : '',
 		hiddenInLists: row.hiddenInLists === true || row.hiddenInLists === 'true',
+		waitingOn: isWaitingOn(row.waitingOn) ? row.waitingOn : '',
+		maximumDwell: normaliseMaximumDwell(row.maximumDwell),
 		checklist: pruneChecklist(row.checklist),
 	}
 }
@@ -158,6 +205,8 @@ export function formToStatusType(form) {
 		role: isStatusRole(form.role) ? form.role : '',
 		colour: STATUS_COLOURS.includes(form.colour) ? form.colour : '',
 		hiddenInLists: form.hiddenInLists === true,
+		waitingOn: isWaitingOn(form.waitingOn) ? form.waitingOn : '',
+		maximumDwell: normaliseMaximumDwell(form.maximumDwell),
 		checklist: pruneChecklist(form.checklist),
 	}
 
