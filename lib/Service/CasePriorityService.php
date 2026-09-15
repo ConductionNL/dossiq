@@ -174,10 +174,16 @@ class CasePriorityService {
 	 *                                   so a child type inherits its parent's
 	 *                                   matrix without declaring one.
 	 * @param LoggerInterface  $logger   Structured logger.
+	 * @param CaseRiskAssessmentService|null $risk What an assessed risk level
+	 *                                   implies for the impact axis, for a case
+	 *                                   type that asked to read it from there.
+	 *                                   Optional, so a case type that declared
+	 *                                   nothing derives exactly as before.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseRiskAssessmentService $risk = null,
 	) {
 	}//end __construct()
 
@@ -420,6 +426,18 @@ class CasePriorityService {
 
 		$impact = $this->normaliseImpact(value: (string)($case['impact'] ?? ''), fallback: $defaults['impact']);
 		$urgency = $this->normaliseUrgency(value: (string)($case['urgency'] ?? ''), fallback: $defaults['urgency']);
+
+		// REQ-MRK-02: a case type may read its impact from the assessed risk
+		// level instead of from the impact field. It feeds this axis and does
+		// NOT become a fifth priority word: the matrix below still decides,
+		// and still lands in the four values everything reads. The mapping
+		// lives with the assessment rather than here, because what a risk
+		// level means is the assessment's business and what a priority is is
+		// this class's.
+		$assessed = (string)$this->risk?->impactFromRisk(case: $case, caseTypeId: $caseTypeId);
+		if (in_array($assessed, self::IMPACT_VALUES, true) === true) {
+			$impact = $assessed;
+		}
 
 		$derived = $this->derive(
 			impact: $impact,

@@ -1303,6 +1303,29 @@
 						}
 					},
 					{
+						"label": "Needs attention",
+						"_note": "markers-and-assessments-on-the-case, row 2.36. `needsAttention` is a stored, facetable boolean derived from the flag history on every save, so the chip is a real narrowing of the query rather than a search through tags. Deliberately not `_unread`: that one is per reader and clears because somebody looked, this one is the flag a named person raised and only another named person with a written reason can clear.",
+						"filter": {
+							"needsAttention": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Assessed high risk",
+						"_note": "markers-and-assessments-on-the-case, row 2.40. `riskLevel` carries the same declared read rule as the assessment it mirrors, so for a reader without the `dossiq-risk-assessment` group OpenRegister filters the property out and this chip narrows to nothing. That is the right answer: an empty list says no more than that this reader has nothing to see. There is NO risk column beside it, and that is deliberate rather than missing. A column is declared once for every reader, so a reader without the permission would get a header with nothing under it, which tells them an assessment exists and is most of what the permission was for. The column lands when the list can drop one per reader.",
+						"filter": {
+							"riskLevel": [
+								"high",
+								"critical"
+							],
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
@@ -2198,6 +2221,13 @@
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-attention",
+						"type": "case-attention",
+						"title": "Attention",
+						"icon": "FlagOutline",
+						"_note": "markers-and-assessments-on-the-case, rows 2.36, 2.40 and 2.44. Three facts on one strip, kept apart on purpose: the flag a person raised with a written reason and cleared with another, both kept; the risk this organisation assessed, behind a permission declared on the property rather than checked in dossiq code; and the markers the system raised against a named panel. It sits UNDER the unread strip because it says the opposite kind of thing. The unread badge is per reader and clears because somebody looked. A marker is about the world, is not per user, and clears when the work behind it is done. Running the two together into one attention count is how a handler loses the ability to tell a colleague's judgement from a failed virus scan, so each gets its own row and its own lead sentence."
 					}
 				],
 				"layout": [
@@ -2256,10 +2286,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "attention-strip",
+						"widgetId": "case-attention",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2268,7 +2307,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2277,7 +2316,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 8,
+						"gridY": 9,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2285,7 +2324,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2294,7 +2333,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
