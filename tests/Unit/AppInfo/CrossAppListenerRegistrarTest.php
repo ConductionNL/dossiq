@@ -52,9 +52,9 @@ class CrossAppListenerRegistrarTest extends TestCase {
 
 		if (class_exists($event) === false) {
 			$this->assertArrayNotHasKey(
-				$event,
-				$registered,
-				'without OpenRegister the registrar must register nothing, not fail',
+				key: $event,
+				array: $registered,
+				message: 'without OpenRegister the registrar must register nothing, not fail',
 			);
 			return;
 		}
@@ -77,9 +77,9 @@ class CrossAppListenerRegistrarTest extends TestCase {
 
 		if (class_exists($event) === false) {
 			$this->assertArrayNotHasKey(
-				$event,
-				$registered,
-				'without integriq the registrar must register nothing, not fail',
+				key: $event,
+				array: $registered,
+				message: 'without integriq the registrar must register nothing, not fail',
 			);
 			return;
 		}
@@ -105,9 +105,9 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	 */
 	public function testTheCompositeStillRunsTheCrossAppRegistrar(): void {
 		$this->assertStringContainsString(
-			'(new CrossAppListenerRegistrar())->register(',
-			$this->source(class: ListenerRegistrar::class),
-			'ListenerRegistrar no longer runs CrossAppListenerRegistrar, so the flow nodes '
+			needle: '(new CrossAppListenerRegistrar())->register(',
+			haystack: $this->source(class: ListenerRegistrar::class),
+			message: 'ListenerRegistrar no longer runs CrossAppListenerRegistrar, so the flow nodes '
 			. 'and the integriq delivery seam are registered by nobody and fail silently',
 		);
 	}//end testTheCompositeStillRunsTheCrossAppRegistrar()
@@ -126,9 +126,9 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	 */
 	public function testBothCrossAppRegistrationsSurvivedTheMove(string $needle): void {
 		$this->assertStringContainsString(
-			$needle,
-			$this->source(class: CrossAppListenerRegistrar::class),
-			$needle . ' is gone from the registrar, so that surface is dark',
+			needle: $needle,
+			haystack: $this->source(class: CrossAppListenerRegistrar::class),
+			message: $needle . ' is gone from the registrar, so that surface is dark',
 		);
 	}//end testBothCrossAppRegistrationsSurvivedTheMove()
 
@@ -159,7 +159,7 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	 */
 	private function source(string $class): string {
 		$file = (new \ReflectionClass($class))->getFileName();
-		$this->assertIsString($file);
+		$this->assertIsString(actual: $file);
 
 		return (string)file_get_contents($file);
 	}//end source()
