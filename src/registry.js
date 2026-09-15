@@ -71,6 +71,7 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
+import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
@@ -303,6 +304,12 @@ const registry = {
 		kind: 'modal',
 		component: CaseLifecycleActionDialog,
 		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+	},
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	CaseLifecycleMenuDialog: {
+		kind: 'modal',
+		component: CaseLifecycleMenuDialog,
+		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume, which is the one gesture a suspended case needs in front of the handler rather than behind a menu.',
 	},
 
 	// --- Copy a case, from its own page (case-actions-menu, row A24). ---
