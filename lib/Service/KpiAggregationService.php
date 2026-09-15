@@ -83,6 +83,10 @@ class KpiAggregationService {
 	 * the tile above it kept the same number, with nothing on screen to say
 	 * which of the two was lying.
 	 *
+	 * The third condition is REQ-LIFE-14's: a draft binds no statutory term and
+	 * belongs in no working list, count or report. A concept-zaak counted as
+	 * open work is a number a manager acts on for a case nobody has accepted.
+	 *
 	 * 🔴 0 AND NOT `false`. `countObjects()` documents it: a PHP bool reaches
 	 * PostgreSQL as a type it will not compare against the stored JSON and the
 	 * query throws.
@@ -95,7 +99,7 @@ class KpiAggregationService {
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
-	private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0];
+	private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0, 'isDraft' => 0];
 
 	/**
 	 * Constructor.
