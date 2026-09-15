@@ -331,11 +331,19 @@ class CaseActsController extends Controller {
 		$acts = [];
 		foreach (['finish', 'abort', 'archive'] as $act) {
 			$allowed = $this->gate->may(act: $act, case: $case);
+
+			// A permitted act carries no reason, so the menu has nothing to
+			// render beside it. Only a refusal explains itself.
+			$reason = '';
+			if ($allowed === false) {
+				$reason = $this->gate->refusalSentence(act: $act, case: $case);
+			}
+
 			$acts[] = [
 				'act' => $act,
 				'allowed' => $allowed,
 				'role' => $this->gate->roleFor(act: $act, case: $case),
-				'reason' => ($allowed === true ? '' : $this->gate->refusalSentence(act: $act, case: $case)),
+				'reason' => $reason,
 			];
 		}
 

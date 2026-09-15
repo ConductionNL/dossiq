@@ -127,7 +127,7 @@ class StatusTransitionControllerContractTest extends TestCase {
 			userSession: $this->userSession,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,
-			processOwnedStatus: $this->createMock(ProcessOwnedStatusRule::class),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

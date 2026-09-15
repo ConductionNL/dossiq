@@ -74,7 +74,7 @@ class DraftCaseTest extends TestCase {
 			'plannedEndDate' => '2026-10-13',
 		];
 
-		$this->store = $this->createMock(CaseStatusStore::class);
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$this->store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
 		$this->store->method('saveCase')->willReturnCallback(
 			function (array $case): array {
@@ -83,9 +83,9 @@ class DraftCaseTest extends TestCase {
 			}
 		);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		$this->drafts = new DraftCaseActs(
@@ -104,10 +104,10 @@ class DraftCaseTest extends TestCase {
 	public function testADraftBindsNoTerm(): void {
 		$this->drafts->begin(caseId: 'case-1');
 
-		$this->assertTrue($this->case['isDraft']);
-		$this->assertNull($this->case['startDate'], 'a draft that kept its start date is already counting down');
-		$this->assertNull($this->case['deadline']);
-		$this->assertNull($this->case['plannedEndDate']);
+		$this->assertTrue(condition: $this->case['isDraft']);
+		$this->assertNull(actual: $this->case['startDate'], message: 'a draft that kept its start date is already counting down');
+		$this->assertNull(actual: $this->case['deadline']);
+		$this->assertNull(actual: $this->case['plannedEndDate']);
 	}//end testADraftBindsNoTerm()
 
 	/**
@@ -121,7 +121,7 @@ class DraftCaseTest extends TestCase {
 	public function testADraftIsAssignedToItsAuthor(): void {
 		$this->drafts->begin(caseId: 'case-1');
 
-		$this->assertSame('ahmed', $this->case['assignee']);
+		$this->assertSame(expected: 'ahmed', actual: $this->case['assignee']);
 	}//end testADraftIsAssignedToItsAuthor()
 
 	/**
@@ -140,7 +140,7 @@ class DraftCaseTest extends TestCase {
 
 		$this->drafts->begin(caseId: 'case-1');
 
-		$this->assertSame('fatima', $this->case['assignee']);
+		$this->assertSame(expected: 'fatima', actual: $this->case['assignee']);
 	}//end testADraftWithAHandlerKeepsThem()
 
 	/**
@@ -159,10 +159,10 @@ class DraftCaseTest extends TestCase {
 
 		$answer = $this->drafts->promote(caseId: 'case-1');
 
-		$this->assertFalse($this->case['isDraft']);
-		$this->assertSame((new DateTimeImmutable('today'))->format('Y-m-d'), $this->case['startDate']);
-		$this->assertSame($begun, $answer['draftCreatedAt']);
-		$this->assertSame($begun, (string)$this->case['draftCreatedAt']);
+		$this->assertFalse(condition: $this->case['isDraft']);
+		$this->assertSame(expected: (new DateTimeImmutable('today'))->format('Y-m-d'), actual: $this->case['startDate']);
+		$this->assertSame(expected: $begun, actual: $answer['draftCreatedAt']);
+		$this->assertSame(expected: $begun, actual: (string)$this->case['draftCreatedAt']);
 	}//end testPromotingBindsTheClockAndKeepsTheDraftMoment()
 
 	/**
@@ -181,7 +181,7 @@ class DraftCaseTest extends TestCase {
 		$this->drafts->begin(caseId: 'case-1');
 		$this->drafts->promote(caseId: 'case-1');
 
-		$this->assertNull($this->case['deadline'], 'dossiq must not compute the deadline itself');
+		$this->assertNull(actual: $this->case['deadline'], message: 'dossiq must not compute the deadline itself');
 	}//end testPromotingLeavesTheDeadlineToTheRegister()
 
 	/**
@@ -192,8 +192,8 @@ class DraftCaseTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testPromotingANonDraftIsRefused(): void {
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('case_not_a_draft');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'case_not_a_draft');
 
 		$this->drafts->promote(caseId: 'case-1');
 	}//end testPromotingANonDraftIsRefused()
@@ -211,7 +211,7 @@ class DraftCaseTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testTheDraftFlagIsCoerced(mixed $value, bool $expected): void {
-		$this->assertSame($expected, $this->drafts->isDraft(case: ['isDraft' => $value]));
+		$this->assertSame(expected: $expected, actual: $this->drafts->isDraft(case: ['isDraft' => $value]));
 	}//end testTheDraftFlagIsCoerced()
 
 	/**

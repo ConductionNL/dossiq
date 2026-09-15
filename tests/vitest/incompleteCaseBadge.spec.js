@@ -40,7 +40,7 @@ const cellWidgetsSource = fs.readFileSync(
  * @param {number} days How many days from today.
  * @return {string} The date as YYYY-MM-DD.
  */
-const day = (days) => {
+function day(days) {
 	const when = new Date()
 	when.setDate(when.getDate() + days)
 
@@ -53,7 +53,7 @@ const day = (days) => {
  * @param {object} row The case row.
  * @return {Array<string>} The marker keys, in render order.
  */
-const markersOf = (row) => {
+function markersOf(row) {
 	const wrapper = mount(CaseStateMarkersCell, { props: { row } })
 
 	return wrapper

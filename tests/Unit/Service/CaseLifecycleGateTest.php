@@ -60,17 +60,17 @@ class CaseLifecycleGateTest extends TestCase {
 	 * @return LifecycleActorGate The gate under test.
 	 */
 	private function gate(array $roles, array $memberOf = [], bool $admin = false): LifecycleActorGate {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('roleFor')->willReturnCallback(
 			static fn (string $caseTypeId, string $act): string => ($roles[$act] ?? '')
 		);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$groups = $this->createMock(IGroupManager::class);
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
 		$groups->method('isAdmin')->willReturn($admin);
 		$groups->method('isInGroup')->willReturnCallback(
 			static fn (string $uid, string $group): bool => in_array($group, $memberOf, true)
@@ -80,7 +80,7 @@ class CaseLifecycleGateTest extends TestCase {
 			rules: $rules,
 			groupManager: $groups,
 			userSession: $session,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end gate()
 
@@ -94,20 +94,19 @@ class CaseLifecycleGateTest extends TestCase {
 	public function testARefusedActNamesTheRole(): void {
 		$gate = $this->gate(roles: ['archive' => 'archivaris']);
 
-		$this->assertFalse($gate->may(act: 'archive', case: self::CASE));
-		$this->assertSame('archivaris', $gate->roleFor(act: 'archive', case: self::CASE));
+		$this->assertFalse(condition: $gate->may(act: 'archive', case: self::CASE));
+		$this->assertSame(expected: 'archivaris', actual: $gate->roleFor(act: 'archive', case: self::CASE));
 		$this->assertStringContainsString(
-			'archivaris',
-			$gate->refusalSentence(act: 'archive', case: self::CASE),
-			'a refusal that does not name the group cannot be acted on'
-		);
+			needle: 'archivaris',
+			haystack: $gate->refusalSentence(act: 'archive', case: self::CASE),
+			message: 'a refusal that does not name the group cannot be acted on');
 
 		try {
 			$gate->require(act: 'archive', case: self::CASE);
-			$this->fail('the act must be refused');
+			$this->fail(message: 'the act must be refused');
 		} catch (RefusedException $e) {
-			$this->assertSame('archive-role-required', $e->getRule());
-			$this->assertSame(RefusedException::STATUS_FORBIDDEN, $e->getStatus());
+			$this->assertSame(expected: 'archive-role-required', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_FORBIDDEN, actual: $e->getStatus());
 		}
 	}//end testARefusedActNamesTheRole()
 
@@ -121,7 +120,7 @@ class CaseLifecycleGateTest extends TestCase {
 	public function testAHandlerInTheGroupMayAct(): void {
 		$gate = $this->gate(roles: ['archive' => 'archivaris'], memberOf: ['archivaris']);
 
-		$this->assertTrue($gate->may(act: 'archive', case: self::CASE));
+		$this->assertTrue(condition: $gate->may(act: 'archive', case: self::CASE));
 		$gate->require(act: 'archive', case: self::CASE);
 	}//end testAHandlerInTheGroupMayAct()
 
@@ -141,8 +140,8 @@ class CaseLifecycleGateTest extends TestCase {
 			memberOf: ['archivaris'],
 		);
 
-		$this->assertTrue($gate->may(act: 'archive', case: self::CASE));
-		$this->assertFalse($gate->may(act: 'finish', case: self::CASE));
+		$this->assertTrue(condition: $gate->may(act: 'archive', case: self::CASE));
+		$this->assertFalse(condition: $gate->may(act: 'finish', case: self::CASE));
 	}//end testARoleIsPerAct()
 
 	/**
@@ -155,12 +154,12 @@ class CaseLifecycleGateTest extends TestCase {
 	public function testAnUndeclaredRoleFallsTwoDifferentWays(): void {
 		$gate = $this->gate(roles: []);
 
-		$this->assertTrue($gate->may(act: 'finish', case: self::CASE), 'finishing keeps today\'s behaviour');
-		$this->assertTrue($gate->may(act: 'abort', case: self::CASE), 'aborting keeps today\'s behaviour');
-		$this->assertFalse($gate->may(act: 'archive', case: self::CASE), 'archiving commits retention');
+		$this->assertTrue(condition: $gate->may(act: 'finish', case: self::CASE), message: 'finishing keeps today\'s behaviour');
+		$this->assertTrue(condition: $gate->may(act: 'abort', case: self::CASE), message: 'aborting keeps today\'s behaviour');
+		$this->assertFalse(condition: $gate->may(act: 'archive', case: self::CASE), message: 'archiving commits retention');
 		$this->assertStringContainsString(
-			'administrator',
-			$gate->refusalSentence(act: 'archive', case: self::CASE),
+			needle: 'administrator',
+			haystack: $gate->refusalSentence(act: 'archive', case: self::CASE),
 		);
 	}//end testAnUndeclaredRoleFallsTwoDifferentWays()
 
@@ -178,7 +177,7 @@ class CaseLifecycleGateTest extends TestCase {
 		);
 
 		foreach (['finish', 'abort', 'archive'] as $act) {
-			$this->assertTrue($gate->may(act: $act, case: self::CASE), $act.' must be open to an administrator');
+			$this->assertTrue(condition: $gate->may(act: $act, case: self::CASE), message: $act.' must be open to an administrator');
 		}
 	}//end testAnAdministratorMayActWhateverIsDeclared()
 
@@ -190,20 +189,20 @@ class CaseLifecycleGateTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testNoSessionMeansNoAct(): void {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('roleFor')->willReturn('');
 
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn(null);
 
 		$gate = new LifecycleActorGate(
 			rules: $rules,
-			groupManager: $this->createMock(IGroupManager::class),
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
 			userSession: $session,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
-		$this->assertFalse($gate->may(act: 'finish', case: self::CASE));
+		$this->assertFalse(condition: $gate->may(act: 'finish', case: self::CASE));
 	}//end testNoSessionMeansNoAct()
 
 	/**
@@ -217,15 +216,15 @@ class CaseLifecycleGateTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testAnUnresolvableCheckRefuses(): void {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('roleFor')->willReturn('archivaris');
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$groups = $this->createMock(IGroupManager::class);
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
 		$groups->method('isAdmin')->willReturn(false);
 		$groups->method('isInGroup')->willThrowException(new \RuntimeException('LDAP is down'));
 
@@ -233,9 +232,9 @@ class CaseLifecycleGateTest extends TestCase {
 			rules: $rules,
 			groupManager: $groups,
 			userSession: $session,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
-		$this->assertFalse($gate->may(act: 'archive', case: self::CASE));
+		$this->assertFalse(condition: $gate->may(act: 'archive', case: self::CASE));
 	}//end testAnUnresolvableCheckRefuses()
 }//end class

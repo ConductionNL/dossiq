@@ -41,10 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Lifecycle;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
-use Throwable;
 
 /**
  * Puts a case on hold until a date, and takes it off again.
@@ -72,10 +71,12 @@ class CaseHoldActs {
 	 *
 	 * @param CaseStatusStore $store Reads and writes the case.
 	 * @param CaseJournal $journal The case's own record.
+	 * @param CaseDateNormaliser $dates The ONE class allowed to parse and zone a date.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
 		private readonly CaseJournal $journal,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -168,18 +169,15 @@ class CaseHoldActs {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function isHeld(array $case): bool {
-		$until = trim((string)($case[self::UNTIL_FIELD] ?? ''));
-		if ($until === '') {
+		$wake = $this->dates->tryParse(value: ($case[self::UNTIL_FIELD] ?? ''));
+		if ($wake === null) {
+			// An unreadable date reads as NOT held. Painting the marker off a
+			// value nobody can parse would put a state on the case that no act
+			// put there.
 			return false;
 		}
 
-		try {
-			$wake = new DateTimeImmutable($until);
-		} catch (Throwable $e) {
-			return false;
-		}
-
-		return ($wake > new DateTimeImmutable('today'));
+		return ($wake > $this->dates->today());
 	}//end isHeld()
 
 	/**
@@ -202,18 +200,16 @@ class CaseHoldActs {
 			);
 		}
 
-		try {
-			$wake = new DateTimeImmutable($named);
-		} catch (Throwable $e) {
+		$wake = $this->dates->tryParse(value: $named);
+		if ($wake === null) {
 			throw new RefusedException(
 				rule: 'wake-date-unreadable',
 				sentence: 'That date could not be read.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
-				previous: $e,
 			);
 		}
 
-		if ($wake <= new DateTimeImmutable('today')) {
+		if ($wake <= $this->dates->today()) {
 			// A hold that is already over is not a hold; it is a reason
 			// written onto a case nobody parked, and it would read as held
 			// nowhere while claiming to be an act that happened.

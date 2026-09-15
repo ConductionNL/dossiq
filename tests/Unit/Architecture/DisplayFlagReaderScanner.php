@@ -223,8 +223,11 @@ final class DisplayFlagReaderScanner {
 		}
 
 		$schemas = ($register['components']['schemas'] ?? []);
+		if (is_array($schemas) === false) {
+			return [];
+		}
 
-		return (is_array($schemas) === true ? $schemas : []);
+		return $schemas;
 	}//end schemas()
 
 	/**

@@ -100,7 +100,7 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$caseAccessGuard,
-			$this->createMock(ProcessOwnedStatusRule::class),
+			$this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$user = $this->createMock(IUser::class);

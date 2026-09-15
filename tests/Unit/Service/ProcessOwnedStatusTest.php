@@ -44,11 +44,11 @@ class ProcessOwnedStatusTest extends TestCase {
 	 * @return ProcessOwnedStatusRule The rule under test.
 	 */
 	private function rule(bool $owned, string $process): ProcessOwnedStatusRule {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('processOwnsStatus')->willReturn($owned);
 		$rules->method('processOf')->willReturn($process);
 
-		$store = $this->createMock(CaseStatusStore::class);
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$store->method('loadCase')->willReturn(['id' => 'case-1', 'caseType' => 'ct-1']);
 
 		return new ProcessOwnedStatusRule(rules: $rules, store: $store);
@@ -64,11 +64,11 @@ class ProcessOwnedStatusTest extends TestCase {
 	public function testAHandSetStatusIsRefusedWhereTheProcessOwnsIt(): void {
 		try {
 			$this->rule(owned: true, process: 'wf-1')->requireHandSetAllowed(caseTypeId: 'ct-1');
-			$this->fail('a hand-set status must be refused where the process owns it');
+			$this->fail(message: 'a hand-set status must be refused where the process owns it');
 		} catch (RefusedException $e) {
-			$this->assertSame('process-owns-the-status', $e->getRule());
-			$this->assertSame(RefusedException::STATUS_REFUSED, $e->getStatus());
-			$this->assertStringContainsString('transition', $e->getSentence());
+			$this->assertSame(expected: 'process-owns-the-status', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_REFUSED, actual: $e->getStatus());
+			$this->assertStringContainsString(needle: 'transition', haystack: $e->getSentence());
 		}
 	}//end testAHandSetStatusIsRefusedWhereTheProcessOwnsIt()
 
@@ -83,7 +83,7 @@ class ProcessOwnedStatusTest extends TestCase {
 		$rule = $this->rule(owned: false, process: '');
 
 		$rule->requireHandSetAllowed(caseTypeId: 'ct-1');
-		$this->assertTrue($rule->allowsHandSet(caseTypeId: 'ct-1'));
+		$this->assertTrue(condition: $rule->allowsHandSet(caseTypeId: 'ct-1'));
 	}//end testACaseTypeWithoutTheDeclarationAcceptsAHandSet()
 
 	/**
@@ -100,10 +100,10 @@ class ProcessOwnedStatusTest extends TestCase {
 	public function testAnUnresolvableProcessFailsClosed(): void {
 		try {
 			$this->rule(owned: true, process: '')->requireHandSetAllowed(caseTypeId: 'ct-1');
-			$this->fail('an unresolvable process must refuse the hand-set');
+			$this->fail(message: 'an unresolvable process must refuse the hand-set');
 		} catch (RefusedException $e) {
-			$this->assertSame('process-owned-status-unresolvable', $e->getRule());
-			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			$this->assertSame(expected: 'process-owned-status-unresolvable', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $e->getStatus());
 		}
 	}//end testAnUnresolvableProcessFailsClosed()
 
@@ -115,8 +115,8 @@ class ProcessOwnedStatusTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	public function testTheCaseIdFormResolvesTheCaseType(): void {
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('process_owns_the_status');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'process_owns_the_status');
 
 		$this->rule(owned: true, process: 'wf-1')->requireHandSetAllowedOn(caseId: 'case-1');
 	}//end testTheCaseIdFormResolvesTheCaseType()
@@ -133,16 +133,16 @@ class ProcessOwnedStatusTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	public function testAnUnreadableCaseIsLeftToTheWritePath(): void {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('processOwnsStatus')->willReturn(true);
 		$rules->method('processOf')->willReturn('wf-1');
 
-		$store = $this->createMock(CaseStatusStore::class);
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$store->method('loadCase')->willReturn(null);
 
 		$rule = new ProcessOwnedStatusRule(rules: $rules, store: $store);
 
 		$rule->requireHandSetAllowedOn(caseId: 'missing');
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testAnUnreadableCaseIsLeftToTheWritePath()
 }//end class

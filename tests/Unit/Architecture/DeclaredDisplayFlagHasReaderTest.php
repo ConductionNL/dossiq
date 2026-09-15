@@ -96,7 +96,7 @@ class DeclaredDisplayFlagHasReaderTest extends TestCase {
 	 */
 	private function allowlist(): array {
 		$decoded = json_decode((string)file_get_contents(self::ALLOWLIST), true);
-		$this->assertIsArray($decoded, 'the allowlist must be readable JSON');
+		$this->assertIsArray(actual: $decoded, message: 'the allowlist must be readable JSON');
 
 		return $decoded;
 	}//end allowlist()
@@ -241,11 +241,11 @@ class DeclaredDisplayFlagHasReaderTest extends TestCase {
 		);
 
 		$readers = $scanner->readersOf(flag: 'statusType.hiddenInLists');
-		$this->assertNotSame([], $readers, 'the mirrored flag must resolve to readers');
+		$this->assertNotSame(expected: [], actual: $readers, message: 'the mirrored flag must resolve to readers');
 
 		$named = implode(' ', $readers);
-		$this->assertStringContainsString('manifest.json', $named);
-		$this->assertStringContainsString('KpiAggregationService.php', $named);
+		$this->assertStringContainsString(needle: 'manifest.json', haystack: $named);
+		$this->assertStringContainsString(needle: 'KpiAggregationService.php', haystack: $named);
 	}//end testTheStatusFlagIsReadThroughItsCalculatedMirror()
 
 	/**

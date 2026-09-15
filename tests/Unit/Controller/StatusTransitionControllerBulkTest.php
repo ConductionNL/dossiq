@@ -108,7 +108,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
-			$this->createMock(ProcessOwnedStatusRule::class),
+			$this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$user = $this->createMock(IUser::class);
@@ -132,7 +132,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
-			$this->createMock(ProcessOwnedStatusRule::class),
+			$this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$this->bulkEngine->expects($this->never())->method('preview');
@@ -158,7 +158,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
-			$this->createMock(ProcessOwnedStatusRule::class),
+			$this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$this->bulkEngine->expects($this->never())->method('execute');

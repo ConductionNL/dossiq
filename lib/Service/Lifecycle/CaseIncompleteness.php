@@ -180,6 +180,36 @@ class CaseIncompleteness {
 	}//end requireFields()
 
 	/**
+	 * Refuse an act that cannot honestly run on an incomplete case.
+	 *
+	 * The difference from {@see self::requireFields()} is which fields are
+	 * asked about. That one names the fields ONE act needs, and is what a
+	 * caller reaches for when it knows: sending a besluit needs the
+	 * applicant's address and not their telephone number. This one asks about
+	 * everything the case is missing, and is for the acts that cannot be
+	 * partially right.
+	 *
+	 * Finishing is the archetype. Finishing says the case reached its result,
+	 * and a case that never got its required data did not reach anything; the
+	 * record would then claim a completeness the case does not have, which is
+	 * the one thing REQ-LIFE-13 says it must never do. Aborting is deliberately
+	 * NOT gated this way: an intrekking is exactly what happens to a case
+	 * whose data never arrived, and refusing it would strand the case that
+	 * most needs ending.
+	 *
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When anything required is missing, naming it.
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function requireComplete(array $case): void {
+		$this->requireFields(case: $case, needs: $this->missingOn(case: $case));
+	}//end requireComplete()
+
+	/**
 	 * Load the case, or refuse.
 	 *
 	 * @param string $caseId The case UUID.

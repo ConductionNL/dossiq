@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\Lifecycle\CaseIncompleteness;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Lifecycle\LifecycleActorGate;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -95,7 +96,7 @@ class CaseEndingActsTest extends TestCase {
 			'status' => 'st-2',
 		];
 
-		$this->store = $this->createMock(CaseStatusStore::class);
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$this->store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
 		$this->store->method('saveCase')->willReturnCallback(
 			function (array $case): array {
@@ -104,13 +105,13 @@ class CaseEndingActsTest extends TestCase {
 			}
 		);
 
-		$this->results = $this->createMock(CaseResultWriter::class);
+		$this->results = $this->createMock(originalClassName: CaseResultWriter::class);
 		$this->results->method('resolveClosingResult')->willReturn('result-1');
 		$this->results->method('archivalFuture')->willReturn(
 			['archiveNomination' => 'vernietigen', 'archiveActionDate' => '2031-09-15']
 		);
 
-		$this->statuses = $this->createMock(StatusTypeLookup::class);
+		$this->statuses = $this->createMock(originalClassName: StatusTypeLookup::class);
 		$this->statuses->method('rowsOf')->willReturn(
 			[
 				['id' => 'st-1', 'name' => 'Ontvangen', 'order' => 1],
@@ -121,7 +122,7 @@ class CaseEndingActsTest extends TestCase {
 			]
 		);
 
-		$this->gate = $this->createMock(LifecycleActorGate::class);
+		$this->gate = $this->createMock(originalClassName: LifecycleActorGate::class);
 		$this->gate->method('may')->willReturn(true);
 
 		$this->acts = new CaseEndingActs(
@@ -129,8 +130,9 @@ class CaseEndingActsTest extends TestCase {
 			results: $this->results,
 			statuses: $this->statuses,
 			gate: $this->gate,
+			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end setUp()
 
@@ -142,13 +144,30 @@ class CaseEndingActsTest extends TestCase {
 	 * @return IUserSession&MockObject The session.
 	 */
 	private function session(string $uid): IUserSession {
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn($uid);
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		return $session;
 	}//end session()
+
+	/**
+	 * A real incompleteness service over the same store.
+	 *
+	 * Real and not a double, because the acts and the incompleteness record
+	 * read the SAME case: a double would let a finish pass on a case the
+	 * store says is missing a field, which is the disagreement the guard
+	 * exists to prevent.
+	 *
+	 * @return CaseIncompleteness The service.
+	 */
+	private function incompleteness(): CaseIncompleteness {
+		return new CaseIncompleteness(
+			store: $this->store,
+			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
+		);
+	}//end incompleteness()
 
 	/**
 	 * The journal as the case now holds it.
@@ -169,16 +188,15 @@ class CaseEndingActsTest extends TestCase {
 	public function testAnAbortIsNotABesluit(): void {
 		$this->acts->abort(caseId: 'case-1', reason: 'Ingetrokken door aanvrager', resultTypeId: 'rt-withdrawn');
 
-		$this->assertSame('abort', $this->case['endingAct']);
+		$this->assertSame(expected: 'abort', actual: $this->case['endingAct']);
 		$entries = $this->journal();
 		$entry = (array)end($entries);
-		$this->assertSame('abort', $entry['type']);
-		$this->assertFalse($entry['besluit'], 'an abort must never record a besluit');
+		$this->assertSame(expected: 'abort', actual: $entry['type']);
+		$this->assertFalse(condition: $entry['besluit'], message: 'an abort must never record a besluit');
 		$this->assertArrayNotHasKey(
-			'besluitDocument',
-			$this->case,
-			'aborting must not write a decision document onto the case'
-		);
+			key: 'besluitDocument',
+			array: $this->case,
+			message: 'aborting must not write a decision document onto the case');
 	}//end testAnAbortIsNotABesluit()
 
 	/**
@@ -194,11 +212,11 @@ class CaseEndingActsTest extends TestCase {
 	 */
 	public function testFinishingWritesTheArchivalNominationAndAbortingDoesNot(): void {
 		$this->acts->finish(caseId: 'case-1', reason: 'Vergunning verleend', resultTypeId: 'rt-granted');
-		$this->assertSame('vernietigen', $this->case['archiveNomination']);
+		$this->assertSame(expected: 'vernietigen', actual: $this->case['archiveNomination']);
 
 		$this->case = ['id' => 'case-2', 'caseType' => 'ct-1', 'status' => 'st-2'];
 		$this->acts->abort(caseId: 'case-2', reason: 'Ingetrokken', resultTypeId: 'rt-withdrawn');
-		$this->assertArrayNotHasKey('archiveNomination', $this->case);
+		$this->assertArrayNotHasKey(key: 'archiveNomination', array: $this->case);
 	}//end testFinishingWritesTheArchivalNominationAndAbortingDoesNot()
 
 	/**
@@ -215,12 +233,11 @@ class CaseEndingActsTest extends TestCase {
 			resultTypeId: 'rt-inadmissible',
 		);
 
-		$this->assertSame(['Advies', 'Besluit'], $answer['skippedPhases']);
+		$this->assertSame(expected: ['Advies', 'Besluit'], actual: $answer['skippedPhases']);
 		$this->assertSame(
-			['Advies', 'Besluit'],
-			json_decode((string)$this->case['skippedPhases'], true),
-			'the skipped phases belong on the case, not only in the answer'
-		);
+			expected: ['Advies', 'Besluit'],
+			actual: json_decode((string)$this->case['skippedPhases'], true),
+			message: 'the skipped phases belong on the case, not only in the answer');
 	}//end testAnEarlyCloseRecordsTheSkippedPhases()
 
 	/**
@@ -239,8 +256,8 @@ class CaseEndingActsTest extends TestCase {
 
 		$answer = $this->acts->finish(caseId: 'case-1', reason: 'Klaar', resultTypeId: 'rt-granted');
 
-		$this->assertSame([], $answer['skippedPhases']);
-		$this->assertArrayNotHasKey('skippedPhases', $this->case);
+		$this->assertSame(expected: [], actual: $answer['skippedPhases']);
+		$this->assertArrayNotHasKey(key: 'skippedPhases', array: $this->case);
 	}//end testAnOrdinaryCloseRecordsNoSkippedPhases()
 
 	/**
@@ -253,7 +270,7 @@ class CaseEndingActsTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testTheResultGuardStillRunsOnAnEarlyClose(): void {
-		$results = $this->createMock(CaseResultWriter::class);
+		$results = $this->createMock(originalClassName: CaseResultWriter::class);
 		$results->method('resolveClosingResult')->willThrowException(
 			new RefusedException(
 				rule: 'result-type-required',
@@ -267,14 +284,15 @@ class CaseEndingActsTest extends TestCase {
 			results: $results,
 			statuses: $this->statuses,
 			gate: $this->gate,
+			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
 		$this->store->expects($this->never())->method('writeStatusRecord');
 
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('result_type_required');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'result_type_required');
 
 		$acts->finish(caseId: 'case-1', reason: 'Toch afronden', resultTypeId: '');
 	}//end testTheResultGuardStillRunsOnAnEarlyClose()
@@ -287,7 +305,7 @@ class CaseEndingActsTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testAnActTheRoleForbidsNamesTheRole(): void {
-		$gate = $this->createMock(LifecycleActorGate::class);
+		$gate = $this->createMock(originalClassName: LifecycleActorGate::class);
 		$gate->method('may')->willReturn(false);
 		$gate->method('roleFor')->willReturn('archivaris');
 		$gate->method('refusalSentence')->willReturn('This act needs the archivaris group.');
@@ -304,17 +322,18 @@ class CaseEndingActsTest extends TestCase {
 			results: $this->results,
 			statuses: $this->statuses,
 			gate: $gate,
+			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
 		try {
 			$acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
-			$this->fail('an act the role forbids must be refused');
+			$this->fail(message: 'an act the role forbids must be refused');
 		} catch (RefusedException $e) {
-			$this->assertSame('archive-role-required', $e->getRule());
-			$this->assertStringContainsString('archivaris', $e->getSentence());
-			$this->assertSame(RefusedException::STATUS_FORBIDDEN, $e->getStatus());
+			$this->assertSame(expected: 'archive-role-required', actual: $e->getRule());
+			$this->assertStringContainsString(needle: 'archivaris', haystack: $e->getSentence());
+			$this->assertSame(expected: RefusedException::STATUS_FORBIDDEN, actual: $e->getStatus());
 		}
 	}//end testAnActTheRoleForbidsNamesTheRole()
 
@@ -326,8 +345,8 @@ class CaseEndingActsTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testAnOpenCaseCannotBeArchived(): void {
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('case_not_ended');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'case_not_ended');
 
 		$this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
 	}//end testAnOpenCaseCannotBeArchived()
@@ -344,9 +363,9 @@ class CaseEndingActsTest extends TestCase {
 
 		$answer = $this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
 
-		$this->assertSame('vernietigen', $answer['archiveNomination']);
-		$this->assertSame('2031-09-15', $answer['archiveActionDate']);
-		$this->assertSame('archived', $this->case['archiveStatus']);
+		$this->assertSame(expected: 'vernietigen', actual: $answer['archiveNomination']);
+		$this->assertSame(expected: '2031-09-15', actual: $answer['archiveActionDate']);
+		$this->assertSame(expected: 'archived', actual: $this->case['archiveStatus']);
 	}//end testArchivingWritesTheRetentionRule()
 
 	/**
@@ -360,7 +379,7 @@ class CaseEndingActsTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testAnUnderivableRetentionDateIsSaidOutLoud(): void {
-		$results = $this->createMock(CaseResultWriter::class);
+		$results = $this->createMock(originalClassName: CaseResultWriter::class);
 		$results->method('resolveClosingResult')->willReturn('result-1');
 		$results->method('archivalFuture')->willReturn(['archiveNomination' => 'blijvend_bewaren']);
 
@@ -369,14 +388,15 @@ class CaseEndingActsTest extends TestCase {
 			results: $results,
 			statuses: $this->statuses,
 			gate: $this->gate,
+			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
 		$acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
 		$acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
 
-		$this->assertSame('archived_retention_period_unknown', $this->case['archiveStatus']);
+		$this->assertSame(expected: 'archived_retention_period_unknown', actual: $this->case['archiveStatus']);
 	}//end testAnUnderivableRetentionDateIsSaidOutLoud()
 
 	/**
@@ -391,11 +411,55 @@ class CaseEndingActsTest extends TestCase {
 
 		$ending = $this->acts->endingOf(case: $this->case);
 
-		$this->assertSame('finish', $ending['act']);
-		$this->assertSame('ahmed', $ending['by']);
-		$this->assertSame('Verleend', $ending['reason']);
-		$this->assertNotSame('', $ending['at'], 'an ending with no moment cannot answer when');
+		$this->assertSame(expected: 'finish', actual: $ending['act']);
+		$this->assertSame(expected: 'ahmed', actual: $ending['by']);
+		$this->assertSame(expected: 'Verleend', actual: $ending['reason']);
+		$this->assertNotSame(expected: '', actual: $ending['at'], message: 'an ending with no moment cannot answer when');
 	}//end testTheEndingNamesWhoEndedItAndWhen()
+
+	/**
+	 * Finishing a case missing required data is refused, naming the field.
+	 *
+	 * REQ-LIFE-13's third clause, on the act this lane owns. Finishing says
+	 * the case reached its result, and a case that never got its data did
+	 * not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testFinishingAnIncompleteCaseIsRefusedByName(): void {
+		$this->case['isIncomplete'] = true;
+		$this->case['missingFields'] = json_encode(['applicantAddress']);
+
+		try {
+			$this->acts->finish(caseId: 'case-1', reason: 'Toch afronden', resultTypeId: 'rt-granted');
+			$this->fail(message: 'finishing a case missing required data must be refused');
+		} catch (RefusedException $e) {
+			$this->assertSame(expected: 'incomplete-case', actual: $e->getRule());
+			$this->assertStringContainsString(needle: 'applicantAddress', haystack: $e->getSentence());
+		}
+	}//end testFinishingAnIncompleteCaseIsRefusedByName()
+
+	/**
+	 * Aborting an incomplete case is NOT refused.
+	 *
+	 * The control, and a deliberate asymmetry: an intrekking is exactly what
+	 * happens to a case whose data never arrived, and refusing it would
+	 * strand the case that most needs ending.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	public function testAbortingAnIncompleteCaseStillWorks(): void {
+		$this->case['isIncomplete'] = true;
+		$this->case['missingFields'] = json_encode(['applicantAddress']);
+
+		$answer = $this->acts->abort(caseId: 'case-1', reason: 'Nooit aangevuld', resultTypeId: 'rt-withdrawn');
+
+		$this->assertSame(expected: 'abort', actual: $answer['act']);
+	}//end testAbortingAnIncompleteCaseStillWorks()
 
 	/**
 	 * Every ending act refuses an empty reason before it touches anything.
@@ -407,8 +471,8 @@ class CaseEndingActsTest extends TestCase {
 	public function testAnEndingWithoutAReasonIsRefused(): void {
 		$this->store->expects($this->never())->method('saveCase');
 
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('reason_required');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'reason_required');
 
 		$this->acts->finish(caseId: 'case-1', reason: '   ', resultTypeId: 'rt-granted');
 	}//end testAnEndingWithoutAReasonIsRefused()

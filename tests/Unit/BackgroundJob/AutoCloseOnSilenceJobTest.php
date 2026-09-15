@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * What a declared silence period decides, one day at a time.
@@ -42,6 +43,11 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
  */
 class AutoCloseOnSilenceJobTest extends TestCase {
+
+	// The one normaliser, on a stated zone. Real and not a double: every
+	// assertion in this file is about how many DAYS a case has been silent,
+	// and a stubbed parser would be answering that question itself.
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * Today, as every case in this file counts from it.
@@ -68,19 +74,20 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 	 * @return SilenceCloseService The service under test.
 	 */
 	private function service(int $period, int $warning = 7): SilenceCloseService {
-		$rules = $this->createMock(LifecycleCaseTypeRules::class);
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
 		$rules->method('silenceDays')->willReturn($period);
 		$rules->method('warningDays')->willReturn($warning);
 
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn(null);
 
 		return new SilenceCloseService(
-			store: $this->createMock(CaseStatusStore::class),
+			store: $this->createMock(originalClassName: CaseStatusStore::class),
 			rules: $rules,
-			endings: $this->createMock(CaseEndingActs::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
 			journal: new CaseJournal(userSession: $session),
-			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end service()
 
@@ -113,7 +120,7 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			today: $this->today,
 		);
 
-		$this->assertSame('none', $decision['action'], 'a case type declaring nothing must close nothing');
+		$this->assertSame(expected: 'none', actual: $decision['action'], message: 'a case type declaring nothing must close nothing');
 	}//end testOffByDefault()
 
 	/**
@@ -129,9 +136,9 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			today: $this->today,
 		);
 
-		$this->assertSame('close', $decision['action']);
-		$this->assertSame(60, $decision['silentDays']);
-		$this->assertSame(60, $decision['period']);
+		$this->assertSame(expected: 'close', actual: $decision['action']);
+		$this->assertSame(expected: 60, actual: $decision['silentDays']);
+		$this->assertSame(expected: 60, actual: $decision['period']);
 	}//end testACaseReachingItsPeriodIsClosed()
 
 	/**
@@ -147,8 +154,8 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			today: $this->today,
 		);
 
-		$this->assertSame('warn', $decision['action']);
-		$this->assertSame('2026-09-22', $decision['closesOn'], 'the warning has to name the date');
+		$this->assertSame(expected: 'warn', actual: $decision['action']);
+		$this->assertSame(expected: '2026-09-22', actual: $decision['closesOn'], message: 'the warning has to name the date');
 	}//end testTheApplicantIsWarnedFirst()
 
 	/**
@@ -167,7 +174,7 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			today: $this->today,
 		);
 
-		$this->assertSame('none', $decision['action']);
+		$this->assertSame(expected: 'none', actual: $decision['action']);
 	}//end testNothingHappensBeforeTheWarningIsDue()
 
 	/**
@@ -188,7 +195,7 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			],
 		);
 
-		$this->assertSame('none', $this->service(period: 60)->decide(case: $case, today: $this->today)['action']);
+		$this->assertSame(expected: 'none', actual: $this->service(period: 60)->decide(case: $case, today: $this->today)['action']);
 	}//end testTheWarningIsNotRepeatedDaily()
 
 	/**
@@ -216,8 +223,8 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 
 		$decision = $this->service(period: 60)->decide(case: $case, today: $this->today);
 
-		$this->assertSame('close', $decision['action']);
-		$this->assertSame(60, $decision['silentDays'], 'the count must ignore the service\'s own writes');
+		$this->assertSame(expected: 'close', actual: $decision['action']);
+		$this->assertSame(expected: 60, actual: $decision['silentDays'], message: 'the count must ignore the service\'s own writes');
 	}//end testAWarningDoesNotPostponeTheClose()
 
 	/**
@@ -235,8 +242,8 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 
 		$decision = $this->service(period: 60)->decide(case: $case, today: $this->today);
 
-		$this->assertSame('none', $decision['action']);
-		$this->assertSame(2, $decision['silentDays']);
+		$this->assertSame(expected: 'none', actual: $decision['action']);
+		$this->assertSame(expected: 2, actual: $decision['silentDays']);
 	}//end testARealActivityResetsTheSilence()
 
 	/**
@@ -253,7 +260,7 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			'@self' => ['updated' => $this->today->modify('-90 days')->format('c')],
 		];
 
-		$this->assertSame('close', $this->service(period: 60)->decide(case: $case, today: $this->today)['action']);
+		$this->assertSame(expected: 'close', actual: $this->service(period: 60)->decide(case: $case, today: $this->today)['action']);
 	}//end testACaseWithNoJournalCountsFromTheRow()
 
 	/**
@@ -269,6 +276,6 @@ class AutoCloseOnSilenceJobTest extends TestCase {
 			today: $this->today,
 		);
 
-		$this->assertSame('none', $decision['action']);
+		$this->assertSame(expected: 'none', actual: $decision['action']);
 	}//end testACaseWithNoReadableMomentIsLeftAlone()
 }//end class

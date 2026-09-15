@@ -65,7 +65,7 @@ class CaseIncompletenessTest extends TestCase {
 	protected function setUp(): void {
 		$this->case = ['id' => 'case-1', 'caseType' => 'ct-1'];
 
-		$this->store = $this->createMock(CaseStatusStore::class);
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$this->store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
 		$this->store->method('saveCase')->willReturnCallback(
 			function (array $case): array {
@@ -74,9 +74,9 @@ class CaseIncompletenessTest extends TestCase {
 			}
 		);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		$this->incompleteness = new CaseIncompleteness(
@@ -95,10 +95,10 @@ class CaseIncompletenessTest extends TestCase {
 	public function testAPhoneIntakeIsKeptAndNamesWhatIsMissing(): void {
 		$answer = $this->incompleteness->record(caseId: 'case-1', missing: ['applicantAddress']);
 
-		$this->assertTrue($answer['incomplete']);
-		$this->assertSame(['applicantAddress'], $answer['missingFields']);
-		$this->assertTrue($this->case['isIncomplete']);
-		$this->assertSame(['applicantAddress'], $this->incompleteness->missingOn(case: $this->case));
+		$this->assertTrue(condition: $answer['incomplete']);
+		$this->assertSame(expected: ['applicantAddress'], actual: $answer['missingFields']);
+		$this->assertTrue(condition: $this->case['isIncomplete']);
+		$this->assertSame(expected: ['applicantAddress'], actual: $this->incompleteness->missingOn(case: $this->case));
 	}//end testAPhoneIntakeIsKeptAndNamesWhatIsMissing()
 
 	/**
@@ -111,8 +111,8 @@ class CaseIncompletenessTest extends TestCase {
 	public function testACompleteCaseReadsComplete(): void {
 		$answer = $this->incompleteness->record(caseId: 'case-1', missing: []);
 
-		$this->assertFalse($answer['incomplete']);
-		$this->assertFalse($this->case['isIncomplete']);
+		$this->assertFalse(condition: $answer['incomplete']);
+		$this->assertFalse(condition: $this->case['isIncomplete']);
 	}//end testACompleteCaseReadsComplete()
 
 	/**
@@ -131,7 +131,7 @@ class CaseIncompletenessTest extends TestCase {
 			missing: ['applicantAddress', '  ', 'applicantAddress', ' bsn '],
 		);
 
-		$this->assertSame(['applicantAddress', 'bsn'], $answer['missingFields']);
+		$this->assertSame(expected: ['applicantAddress', 'bsn'], actual: $answer['missingFields']);
 	}//end testTheNamedFieldsAreCleanedUp()
 
 	/**
@@ -146,10 +146,10 @@ class CaseIncompletenessTest extends TestCase {
 
 		try {
 			$this->incompleteness->requireFields(case: $this->case, needs: ['applicantAddress']);
-			$this->fail('sending a besluit to an address nobody has must be refused');
+			$this->fail(message: 'sending a besluit to an address nobody has must be refused');
 		} catch (RefusedException $e) {
-			$this->assertSame('incomplete-case', $e->getRule());
-			$this->assertStringContainsString('applicantAddress', $e->getSentence());
+			$this->assertSame(expected: 'incomplete-case', actual: $e->getRule());
+			$this->assertStringContainsString(needle: 'applicantAddress', haystack: $e->getSentence());
 		}
 	}//end testAnActThatNeedsTheFieldIsRefusedByName()
 
@@ -167,7 +167,7 @@ class CaseIncompletenessTest extends TestCase {
 		$this->incompleteness->record(caseId: 'case-1', missing: ['applicantAddress']);
 
 		$this->incompleteness->requireFields(case: $this->case, needs: ['bsn']);
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testAnActThatNeedsSomethingElseStillRuns()
 
 	/**
@@ -182,6 +182,6 @@ class CaseIncompletenessTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testAnUnreadableRecordIsNotAnAccusation(): void {
-		$this->assertSame([], $this->incompleteness->missingOn(case: ['missingFields' => 'not json']));
+		$this->assertSame(expected: [], actual: $this->incompleteness->missingOn(case: ['missingFields' => 'not json']));
 	}//end testAnUnreadableRecordIsNotAnAccusation()
 }//end class

@@ -68,6 +68,7 @@ class StatusTransitionController extends Controller {
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the process owns it
 	 */
 	public function __construct(
 		string $appName,

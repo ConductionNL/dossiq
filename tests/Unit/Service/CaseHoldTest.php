@@ -31,6 +31,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * A case parked until a date, and the term that keeps running.
@@ -38,6 +39,11 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseHoldActs
  */
 class CaseHoldTest extends TestCase {
+
+	// The one normaliser, on a stated zone. Real and not a double: the
+	// assertions here are about which DAY a hold lands on, and a stubbed
+	// parser would be answering the question under test.
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The case as the store currently holds it.
@@ -74,7 +80,7 @@ class CaseHoldTest extends TestCase {
 			'plannedEndDate' => '2026-11-01',
 		];
 
-		$this->store = $this->createMock(CaseStatusStore::class);
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
 		$this->store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
 		$this->store->method('saveCase')->willReturnCallback(
 			function (array $case): array {
@@ -83,14 +89,15 @@ class CaseHoldTest extends TestCase {
 			}
 		);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		$this->holds = new CaseHoldActs(
 			store: $this->store,
 			journal: new CaseJournal(userSession: $session),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 
@@ -117,10 +124,10 @@ class CaseHoldTest extends TestCase {
 
 		$answer = $this->holds->hold(caseId: 'case-1', reason: 'Wacht op de aanvrager', until: $wake);
 
-		$this->assertTrue($answer['held']);
-		$this->assertSame($wake, $this->case['heldUntil']);
-		$this->assertSame('Wacht op de aanvrager', $this->case['holdReason']);
-		$this->assertTrue($this->holds->isHeld(case: $this->case));
+		$this->assertTrue(condition: $answer['held']);
+		$this->assertSame(expected: $wake, actual: $this->case['heldUntil']);
+		$this->assertSame(expected: 'Wacht op de aanvrager', actual: $this->case['holdReason']);
+		$this->assertTrue(condition: $this->holds->isHeld(case: $this->case));
 	}//end testACaseIsParkedUntilADate()
 
 	/**
@@ -133,9 +140,9 @@ class CaseHoldTest extends TestCase {
 	public function testAHoldDoesNotStopTheClock(): void {
 		$this->holds->hold(caseId: 'case-1', reason: 'Wacht op de aanvrager', until: $this->day(offset: '+30 days'));
 
-		$this->assertSame('2026-11-01', $this->case['deadline'], 'a hold must never move the deadline');
-		$this->assertSame('2026-11-01', $this->case['plannedEndDate']);
-		$this->assertArrayNotHasKey('extensionCount', $this->case, 'a hold is not an extension');
+		$this->assertSame(expected: '2026-11-01', actual: $this->case['deadline'], message: 'a hold must never move the deadline');
+		$this->assertSame(expected: '2026-11-01', actual: $this->case['plannedEndDate']);
+		$this->assertArrayNotHasKey(key: 'extensionCount', array: $this->case, message: 'a hold is not an extension');
 	}//end testAHoldDoesNotStopTheClock()
 
 	/**
@@ -152,13 +159,11 @@ class CaseHoldTest extends TestCase {
 	 */
 	public function testAHoldUntilYesterdayIsOver(): void {
 		$this->assertFalse(
-			$this->holds->isHeld(case: ['heldUntil' => $this->day(offset: '-1 day')]),
-			'a case held until yesterday is back in the queue'
-		);
+			condition: $this->holds->isHeld(case: ['heldUntil' => $this->day(offset: '-1 day')]),
+			message: 'a case held until yesterday is back in the queue');
 		$this->assertTrue(
-			$this->holds->isHeld(case: ['heldUntil' => $this->day(offset: '+1 day')]),
-			'the control: a hold that is still ahead reads held'
-		);
+			condition: $this->holds->isHeld(case: ['heldUntil' => $this->day(offset: '+1 day')]),
+			message: 'the control: a hold that is still ahead reads held');
 	}//end testAHoldUntilYesterdayIsOver()
 
 	/**
@@ -182,10 +187,10 @@ class CaseHoldTest extends TestCase {
 
 		try {
 			$this->holds->hold(caseId: 'case-1', reason: $reason, until: $named);
-			$this->fail('this hold should have been refused');
+			$this->fail(message: 'this hold should have been refused');
 		} catch (RefusedException $e) {
-			$this->assertSame($rule, $e->getRule());
-			$this->assertArrayNotHasKey('heldUntil', $this->case, 'a refused hold must write nothing');
+			$this->assertSame(expected: $rule, actual: $e->getRule());
+			$this->assertArrayNotHasKey(key: 'heldUntil', array: $this->case, message: 'a refused hold must write nothing');
 		}
 	}//end testAnImpossibleHoldIsRefused()
 
@@ -211,8 +216,8 @@ class CaseHoldTest extends TestCase {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	 */
 	public function testReleasingACaseThatIsNotHeldIsRefused(): void {
-		$this->expectException(RefusedException::class);
-		$this->expectExceptionMessage('case_not_held');
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'case_not_held');
 
 		$this->holds->release(caseId: 'case-1', reason: 'Toch oppakken');
 	}//end testReleasingACaseThatIsNotHeldIsRefused()
@@ -229,11 +234,11 @@ class CaseHoldTest extends TestCase {
 
 		$answer = $this->holds->release(caseId: 'case-1', reason: 'Aanvulling binnen');
 
-		$this->assertFalse($answer['held']);
-		$this->assertFalse($this->holds->isHeld(case: $this->case));
+		$this->assertFalse(condition: $answer['held']);
+		$this->assertFalse(condition: $this->holds->isHeld(case: $this->case));
 		$entries = (array)json_decode((string)$this->case['activity'], true);
 		$last = (array)end($entries);
-		$this->assertSame('release', $last['type']);
-		$this->assertSame('ahmed', $last['by']);
+		$this->assertSame(expected: 'release', actual: $last['type']);
+		$this->assertSame(expected: 'ahmed', actual: $last['by']);
 	}//end testReleasingClearsTheHold()
 }//end class

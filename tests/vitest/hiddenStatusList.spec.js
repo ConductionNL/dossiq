@@ -53,7 +53,9 @@ const FLAG = 'statusHiddenInLists'
  * @param {string} id The manifest page id.
  * @return {object} The page entry.
  */
-const page = (id) => manifest.pages.find((entry) => entry.id === id)
+function page(id) {
+	return manifest.pages.find((entry) => entry.id === id)
+}
 
 /**
  * One quick-filter chip of a page.
@@ -62,8 +64,9 @@ const page = (id) => manifest.pages.find((entry) => entry.id === id)
  * @param {string} label The chip label.
  * @return {object} The chip entry.
  */
-const chip = (pageId, label) =>
-	page(pageId).config.quickFilters.find((entry) => entry.label === label)
+function chip(pageId, label) {
+	return page(pageId).config.quickFilters.find((entry) => entry.label === label)
+}
 
 /**
  * One widget of a dashboard page.
@@ -72,8 +75,9 @@ const chip = (pageId, label) =>
  * @param {string} widgetId The widget id.
  * @return {object} The widget entry.
  */
-const widget = (pageId, widgetId) =>
-	page(pageId).config.widgets.find((entry) => entry.id === widgetId)
+function widget(pageId, widgetId) {
+	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
+}
 
 describe('a hidden status leaves every working lens', () => {
 	// The chips that list work somebody is expected to do. Closed is absent
@@ -118,7 +122,7 @@ describe('the counts agree with the lists', () => {
 		)
 		expect(kpiSource).toContain('filters: self::OPEN_WORK')
 		expect(kpiSource).toContain(
-			"filters: (self::OPEN_WORK + ['deadline' => ['lt' => \$today]])",
+			'filters: (self::OPEN_WORK + [\'deadline\' => [\'lt\' => $today]])',
 		)
 	})
 

@@ -50,6 +50,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -85,6 +86,7 @@ class SilenceCloseService {
 	 * @param LifecycleCaseTypeRules $rules Reads the declared period and warning.
 	 * @param CaseEndingActs $endings Performs the close as a recorded ending act.
 	 * @param CaseJournal $journal The case's own record.
+	 * @param CaseDateNormaliser $dates The ONE class allowed to parse and zone a date.
 	 * @param LoggerInterface $logger Says what was warned and what was closed.
 	 */
 	public function __construct(
@@ -92,6 +94,7 @@ class SilenceCloseService {
 		private readonly LifecycleCaseTypeRules $rules,
 		private readonly CaseEndingActs $endings,
 		private readonly CaseJournal $journal,
+		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -245,7 +248,7 @@ class SilenceCloseService {
 				continue;
 			}
 
-			$moment = $this->readDate(value: (string)($entry['at'] ?? ''));
+			$moment = $this->dates->tryParse(value: ($entry['at'] ?? ''));
 			if ($moment !== null) {
 				return $moment;
 			}
@@ -253,7 +256,7 @@ class SilenceCloseService {
 
 		$updated = ($case['@self']['updated'] ?? ($case['startDate'] ?? ''));
 
-		return $this->readDate(value: (string)$updated);
+		return $this->dates->tryParse(value: $updated);
 	}//end lastActivity()
 
 	/**
@@ -268,25 +271,4 @@ class SilenceCloseService {
 	private function alreadyWarned(array $case): bool {
 		return ($this->journal->latest(case: $case, types: [self::WARNING_TYPE]) !== []);
 	}//end alreadyWarned()
-
-	/**
-	 * Read a date that may be absent or unparseable.
-	 *
-	 * @param string $value The raw value.
-	 *
-	 * @return DateTimeImmutable|null The date, or null.
-	 *
-	 * @spec exclude a date parse shared by the readers above
-	 */
-	private function readDate(string $value): ?DateTimeImmutable {
-		if (trim($value) === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return null;
-		}
-	}//end readDate()
 }//end class

@@ -85,6 +85,7 @@ class CaseEndingActs {
 	 * @param CaseResultWriter $results Resolves the closing result and the archival future.
 	 * @param StatusTypeLookup $statuses The case type's statuses, with their flags.
 	 * @param LifecycleActorGate $gate Whether this caller may perform this act.
+	 * @param CaseIncompleteness $incompleteness Refuses a finish on a case missing required data.
 	 * @param CaseJournal $journal The case's own record of what was done to it.
 	 * @param LoggerInterface $logger Records what was ended and by whom.
 	 */
@@ -93,6 +94,7 @@ class CaseEndingActs {
 		private readonly CaseResultWriter $results,
 		private readonly StatusTypeLookup $statuses,
 		private readonly LifecycleActorGate $gate,
+		private readonly CaseIncompleteness $incompleteness,
 		private readonly CaseJournal $journal,
 		private readonly LoggerInterface $logger,
 	) {
@@ -197,8 +199,8 @@ class CaseEndingActs {
 		$case = array_merge($case, $future);
 		$case['archiveStatus'] = 'archived';
 		if (($future['archiveActionDate'] ?? '') === '') {
-			// zrc-021 leaves the date underivable when the result type states
-			// no period. The case is archived either way and an archivist can
+			// ZGW rule zrc-021 leaves the date underivable when the result
+			// type states no period. The case is archived either way and an archivist can
 			// see which ones carry no date, which is a better answer than
 			// refusing the act or inventing a destruction date.
 			$case['archiveStatus'] = 'archived_retention_period_unknown';
@@ -279,6 +281,15 @@ class CaseEndingActs {
 		$this->requireReason(reason: $reason);
 		$this->gate->require(act: $act, case: $case);
 
+		if ($act === 'finish') {
+			// REQ-LIFE-13: an act that needs the missing data is refused,
+			// naming the field. Finishing says the case reached its result,
+			// and a case that never got its required data did not reach
+			// anything. Aborting is deliberately not gated: an intrekking is
+			// exactly what happens to a case whose data never arrived.
+			$this->incompleteness->requireComplete(case: $case);
+		}
+
 		$caseTypeId = (string)($case['caseType'] ?? '');
 		$fromStatus = (string)($case['status'] ?? '');
 		$target = $this->terminalStatus(caseTypeId: $caseTypeId, named: $toStatus);
@@ -287,10 +298,15 @@ class CaseEndingActs {
 		// refuses a close with no result on a case type that offers some, and a
 		// refusal after the status had moved would leave a case closed with no
 		// outcome, which is the state nobody can read afterwards.
+		$chosenResult = null;
+		if ($resultTypeId !== '') {
+			$chosenResult = $resultTypeId;
+		}
+
 		$resultId = $this->results->resolveClosingResult(
 			caseId: $caseId,
 			caseTypeId: $caseTypeId,
-			resultTypeId: ($resultTypeId === '' ? null : $resultTypeId),
+			resultTypeId: $chosenResult,
 		);
 
 		$endDate = (new DateTimeImmutable())->format('Y-m-d');
