@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -71,6 +73,7 @@ class CaseEmailService {
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -80,6 +83,7 @@ class CaseEmailService {
 		private readonly CaseContactDirectory $contactDirectory,
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
 		private readonly RecipientAllowlist $allowlist,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -155,6 +159,21 @@ class CaseEmailService {
 			to: $to,
 			subject: $subject,
 			body: $body,
+		);
+
+		// PUBLIC: the recipient already has this message in their own inbox,
+		// so hiding its line from the timeline they are shown would only hide
+		// it from the person who has it.
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::MAIL_OUT,
+			message: $subject,
+			fields: [
+				'recipient' => $to,
+				'subject' => $subject,
+				'documentId' => (string)$messageId,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		$this->logger->info(

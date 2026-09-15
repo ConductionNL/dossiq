@@ -550,6 +550,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  migrated. A credential nobody uses is still a credential in a
                  database backup. -->
             <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
+            <!--
+                The timeline kinds this app writes, declared once. OpenRegister
+                refuses an undeclared kind rather than degrading it to a plain
+                note, so the declaration has to be on the instance before the
+                first contact moment is logged. Idempotent and non-throwing;
+                an OpenRegister without the timeline is a line of output.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -702,6 +710,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  migrated. A credential nobody uses is still a credential in a
                  database backup. -->
             <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
+            <!--
+                The timeline kinds this app writes, declared once. OpenRegister
+                refuses an undeclared kind rather than degrading it to a plain
+                note, so the declaration has to be on the instance before the
+                first contact moment is logged. Idempotent and non-throwing;
+                an OpenRegister without the timeline is a line of output.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
         </install>
     </repair-steps>
 
