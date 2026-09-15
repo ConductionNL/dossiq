@@ -232,6 +232,39 @@
                         "description": "The group whose members may destroy a deleted case of this type. Destroying is a second act after deleting, and it cannot be undone, so the right is named per case type: a melding and a bezwaar do not need the same seniority behind it. A case type that names no group refuses every destruction except an administrator's, which is the same answer OpenRegister's own destroy right gives.",
                         "title": "Destroying role"
                     },
+                    "finishingRole": {
+                        "type": "string",
+                        "description": "The group whose members may finish a case of this type. Finishing is the act that says the case reached its result, and the result decides what is retained. A case type that names no group lets any handler with access to the case finish it, which is today's behaviour.",
+                        "title": "Finishing role"
+                    },
+                    "abortingRole": {
+                        "type": "string",
+                        "description": "The group whose members may abort a case of this type. An abort records an intrekking or a niet-ontvankelijkverklaring: there is a result and it is not a besluit. Named separately from finishing because the two are not the same authority.",
+                        "title": "Aborting role"
+                    },
+                    "archivingRole": {
+                        "type": "string",
+                        "description": "The group whose members may archive a finished case of this type. Archiving writes the retention rule the result type carries, so it is an archivist's act rather than a handler's. A case type that names no group refuses every archive except an administrator's.",
+                        "title": "Archiving role"
+                    },
+                    "processOwnedStatus": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the process owns the status of cases of this type. Where it does, a status only moves through a declared transition and a direct write of the status field is refused. This is a per case type declaration and not a product decision, because a gemeente running both kinds is the normal case.",
+                        "title": "Process owns the status"
+                    },
+                    "autoCloseAfterSilenceDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days of no activity close a case of this type automatically. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
+                        "title": "Close after silence, in days"
+                    },
+                    "autoCloseWarningDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How many days before an automatic close the applicant is warned, through the declared automatic moments. A case type that declares a silence period and no warning gets the default of seven days, because closing without notice is the part that would be indefensible.",
+                        "title": "Warn this many days first"
+                    },
                     "recoveryWindowDays": {
                         "type": "integer",
                         "minimum": 1,
@@ -1911,6 +1944,60 @@
                         "description": "Whether the case sits at a status marked hidden in lists. Computed declaratively by OpenRegister from the linked statusType's hiddenInLists flag (x-openregister-calculations.statusHiddenInLists); the Cases index filters statusHiddenInLists=false on every lens but Closed.",
                         "title": "Status hidden in lists",
                         "facetable": true,
+                        "visible": false
+                    },
+                    "endingAct": {
+                        "type": "string",
+                        "enum": ["finish", "abort", "archive", "autoClose"],
+                        "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
+                        "title": "Ending act",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "skippedPhases": {
+                        "type": "string",
+                        "description": "The phases this case never reached, recorded when it was closed early. A JSON-encoded array of statusType names. An intrekking or a niet-ontvankelijkverklaring arrives mid-process, and the phases it skipped are a fact somebody will ask about.",
+                        "title": "Skipped phases",
+                        "visible": false
+                    },
+                    "heldUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The date a held case returns to the working queue. A hold is a deliberate pause in the WORK and never stops a statutory term: only an opschorting under Awb 4:5 does that, and it has its own act.",
+                        "title": "Held until",
+                        "facetable": true
+                    },
+                    "holdReason": {
+                        "type": "string",
+                        "description": "Why this case is on hold. Required by the act, because a case nobody is working for a reason nobody wrote is a case that gets forgotten rather than parked.",
+                        "title": "Hold reason"
+                    },
+                    "isDraft": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case is still a draft. A draft binds no statutory term, appears in no working list, count or report, and is visible only to its author. Promoting it is one act that binds the term. A concept-zaak whose Awb clock has not started is a real object in a gemeente, and the alternative is a half-filled case that is already overdue.",
+                        "title": "Draft",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "draftCreatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the draft was begun, kept on the case after it is promoted. When the aanvraag arrived is a fact somebody will ask about, and the promotion moment is not it.",
+                        "title": "Draft begun at",
+                        "visible": false
+                    },
+                    "isIncomplete": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether required fields were knowingly left empty. A phone intake cannot always be complete, and refusing it loses the case; what the case must not do is report itself complete. Acts that need the missing data are refused, naming the field.",
+                        "title": "Incomplete",
+                        "facetable": true
+                    },
+                    "missingFields": {
+                        "type": "string",
+                        "description": "The required fields knowingly left empty, as a JSON-encoded array of field names. Named rather than counted, because an act refused for missing data has to say which field is missing.",
+                        "title": "Missing fields",
                         "visible": false
                     },
                     "result": {
