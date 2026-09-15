@@ -1,0 +1,323 @@
+{
+  "_note": "starter-content-and-templates. What a new instance starts with, declared rather than written by hand. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once. FOUR DECISIONS ARE VISIBLE HERE. ONE, provenance is a ledger row (`shippedOrigin`), not a field on every seeded schema. `caseType.origin` is already the initiator action (indienen, aanvragen), so the name is taken, and a seed writes statusType, roleType, resultType and workflowTemplate rows as well as case types: a field per schema would be six edits and six chances to forget the seventh. One row per seeded object carries the set, the version and the fingerprint of what shipped, so `shipped and untouched`, `shipped and changed here` and `ours` are read by comparing the object against the fingerprint rather than by diffing a whole register. TWO, a template is a flag on the thing itself (`caseType.isTemplate`, `case.isTemplate`), so there is one editor, one permission model and one export, per D-5 of the change design. THREE, the handling switches are ONE declared block on the case type (`caseType.handling`) and every reader reads that block; a switch no reader reads cannot be published, which is what keeps the block from filling with fields that do nothing. FOUR, a reusable process step is REFERENCED, not copied (`reusableStep` + `caseType.reusableSteps`), which is the whole difference between it and a copy: changing the step reaches every case type that points at it.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "handling": {
+            "type": "object",
+            "title": "Handling",
+            "description": "How a case of this type is handled: the group it goes to, who it falls to, the messages that go out by themselves, and the screen it is registered on. One block, read from one place. Scattered over four services is how an administrator changes the handling group and one of the four keeps the old answer.",
+            "visible": true,
+            "properties": {
+              "defaultGroup": {
+                "type": "string",
+                "title": "Default group",
+                "description": "The Nextcloud group a new case of this type is routed to when no rule says otherwise."
+              },
+              "defaultHandler": {
+                "type": "string",
+                "title": "Default handler",
+                "description": "The user a new case falls to when the group does not assign one. Leave it empty to leave the case unclaimed."
+              },
+              "automaticMessages": {
+                "type": "array",
+                "title": "Automatic messages",
+                "description": "The messages that go out without anybody sending them. A message not named here is not sent for this case type, which is how a type that corresponds on paper stops mailing.",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ontvangstbevestiging",
+                    "extension",
+                    "ingebrekestelling-receipt",
+                    "dwangsom-payment",
+                    "doorzending"
+                  ]
+                }
+              },
+              "intakeScreen": {
+                "type": "string",
+                "title": "Intake screen",
+                "description": "The manifest page a handler registers a case of this type on. Empty means the standard intake screen."
+              }
+            }
+          },
+          "isTemplate": {
+            "type": "boolean",
+            "default": false,
+            "title": "Is a template",
+            "description": "Whether this case type is offered as a starting point when somebody creates a new one. A template is an ordinary case type, so it keeps one editor and one permission model.",
+            "visible": true
+          },
+          "reusableSteps": {
+            "type": "array",
+            "title": "Reusable steps",
+            "description": "The shared process steps this case type uses. A reference, never a copy: changing the step reaches every case type that names it.",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "reusableStep"
+            }
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "isTemplate": {
+            "type": "boolean",
+            "default": false,
+            "title": "Is a template",
+            "description": "Whether this row is a case template rather than work. A template is never worked, never counted and never given a term. Twelve standaardzaken that differ in four fields are twelve of these.",
+            "visible": true
+          },
+          "templateName": {
+            "type": "string",
+            "title": "Template name",
+            "description": "What this template is called where a handler picks one. Only read when the row is a template.",
+            "maxLength": 255
+          },
+          "startedFromTemplate": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "title": "Started from template",
+            "description": "The case template this case was started from, so a change to the template can be traced to the cases that predate it."
+          }
+        }
+      },
+      "roleType": {
+        "properties": {
+          "shippedSet": {
+            "type": "string",
+            "title": "Shipped set",
+            "description": "The named set this role type was shipped in, for example gemeentelijke-rollen. Empty means the role was authored here.",
+            "facetable": true,
+            "maxLength": 128
+          },
+          "dormant": {
+            "type": "boolean",
+            "default": false,
+            "title": "Dormant",
+            "description": "Whether this role ships without being in use. Twenty-one roles that appear on an upgrade in an instance that already has its own is a support call, so a shipped set waits to be adopted.",
+            "visible": true
+          }
+        }
+      },
+      "shippedOrigin": {
+        "slug": "shippedOrigin",
+        "icon": "PackageVariantClosed",
+        "version": "1.0.0",
+        "title": "Shipped origin",
+        "description": "One row per object dossiq seeded, naming the set it came from, that set's version and a fingerprint of what shipped. An administrator reads three answers off it: shipped and untouched, shipped and changed here, or ours. A seed that writes rows and forgets it did cannot answer any of them, which is why a gemeente that edits a shipped case type and then takes an upgrade cannot be told what moved.",
+        "type": "object",
+        "configuration": {
+          "objectNameField": "set"
+        },
+        "required": [
+          "set",
+          "setVersion",
+          "targetSchema",
+          "targetObject",
+          "fingerprint"
+        ],
+        "properties": {
+          "set": {
+            "type": "string",
+            "title": "Set",
+            "description": "The name of the shipped set, for example vth or gemeentelijke-rollen.",
+            "facetable": true,
+            "maxLength": 128
+          },
+          "setVersion": {
+            "type": "string",
+            "title": "Set version",
+            "description": "The version of the set this object was seeded from.",
+            "facetable": true,
+            "maxLength": 32
+          },
+          "targetSchema": {
+            "type": "string",
+            "title": "Target schema",
+            "description": "The schema slug of the seeded object, for example caseType.",
+            "facetable": true,
+            "maxLength": 128
+          },
+          "targetObject": {
+            "type": "string",
+            "title": "Target object",
+            "description": "The seeded object's id.",
+            "maxLength": 255
+          },
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint",
+            "description": "A hash of the object as it shipped. The object still hashing to this value is what shipped and untouched means.",
+            "maxLength": 128
+          },
+          "seededAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Seeded at",
+            "description": "When the object was written."
+          }
+        }
+      },
+      "starterSetAdoption": {
+        "slug": "starterSetAdoption",
+        "icon": "HandshakeOutline",
+        "version": "1.0.0",
+        "title": "Starter set adoption",
+        "description": "The record that an administrator took a shipped set into use, and who did it. Adoption is one act so it can be undone as one act, and it is undone only while nothing has been granted against what it brought in.",
+        "type": "object",
+        "configuration": {
+          "objectNameField": "set"
+        },
+        "required": [
+          "set",
+          "setVersion",
+          "adoptedBy",
+          "adoptedAt"
+        ],
+        "properties": {
+          "set": {
+            "type": "string",
+            "title": "Set",
+            "description": "The name of the adopted set.",
+            "facetable": true,
+            "maxLength": 128
+          },
+          "setVersion": {
+            "type": "string",
+            "title": "Set version",
+            "description": "The version that was adopted.",
+            "maxLength": 32
+          },
+          "adoptedBy": {
+            "type": "string",
+            "title": "Adopted by",
+            "description": "The user id of the administrator who adopted the set.",
+            "maxLength": 255
+          },
+          "adoptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Adopted at",
+            "description": "When the set was adopted."
+          },
+          "reversedBy": {
+            "type": "string",
+            "title": "Reversed by",
+            "description": "The user id of the administrator who undid the adoption.",
+            "maxLength": 255
+          },
+          "reversedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reversed at",
+            "description": "When the adoption was undone. Empty while the set is in use."
+          }
+        }
+      },
+      "reusableStep": {
+        "slug": "reusableStep",
+        "icon": "ShapeOutline",
+        "version": "1.0.0",
+        "title": "Reusable step",
+        "description": "A process step designed once and used by several case types. The case types reference it, so changing its lead time reaches all of them at once. That reference is what separates it from a copy, and it is also why a step in use is not deleted.",
+        "type": "object",
+        "configuration": {
+          "objectNameField": "name"
+        },
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "What the step is called, for example Ontvankelijkheidstoets.",
+            "x-translatable": true,
+            "facetable": true,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What happens in this step.",
+            "x-translatable": true
+          },
+          "leadTimeDays": {
+            "type": "integer",
+            "title": "Lead time in days",
+            "description": "How many days the step is expected to take."
+          },
+          "assigneeRole": {
+            "type": "string",
+            "title": "Assignee role",
+            "description": "The role that carries the step out."
+          }
+        }
+      },
+      "contentTemplate": {
+        "slug": "contentTemplate",
+        "icon": "FileDocumentMultipleOutline",
+        "version": "1.0.0",
+        "title": "Content template",
+        "description": "One prepared piece of content, offered where that kind of thing is created. The kind says what it is: a task, a note, an approval, a result or a document. Mail keeps its own record in emailTemplate, and the template library reads both, so there is one library and no second mail store to keep in step.",
+        "type": "object",
+        "configuration": {
+          "objectNameField": "name"
+        },
+        "required": [
+          "name",
+          "kind"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "What the template is called where a handler picks one, for example Vraag advies aan juridische zaken.",
+            "x-translatable": true,
+            "facetable": true,
+            "maxLength": 255
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "What this template makes. The kind decides where it is offered.",
+            "facetable": true,
+            "enum": [
+              "document",
+              "mail",
+              "task",
+              "note",
+              "approval",
+              "result"
+            ]
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "The text the template presets.",
+            "x-translatable": true
+          },
+          "caseTypes": {
+            "type": "array",
+            "title": "Case types",
+            "description": "The case types that may use this template. An empty list means every case type, which is what a note template nobody scoped should do.",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "caseType"
+            }
+          },
+          "presets": {
+            "type": "object",
+            "title": "Presets",
+            "description": "The fields the template fills in, for example the task title, the group and the lead time. Read by whichever dialog creates the kind."
+          }
+        }
+      }
+    }
+  }
+}
