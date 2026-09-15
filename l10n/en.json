@@ -4454,7 +4454,19 @@
         "Warn on the planned end, days before": "Warn on the planned end, days before",
         "Warn on the statutory term, days before": "Warn on the statutory term, days before",
         "What was asked for": "What was asked for",
-        "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another.": "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another."
+        "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another.": "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another.",
+        "Live conversation": "Live conversation",
+        "Start a conversation": "Start a conversation",
+        "Declare major": "Declare major",
+        "Open the working channel": "Open the working channel",
+        "Talk is not available": "Talk is not available",
+        "A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.": "A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.",
+        "No conversations yet": "No conversations yet",
+        "Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.": "Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.",
+        "We could not start the conversation": "We could not start the conversation",
+        "We could not find these responders: {names}": "We could not find these responders: {names}",
+        "Unknown error": "Unknown error",
+        "{minutes} min": "{minutes} min"
     },
     "plurals": ""
 }

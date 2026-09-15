@@ -4454,6 +4454,18 @@
         "Phase term in days": "Fasetermijn in dagen",
         "How many working days this phase gets, counted on the calendar your organisation administers. An ontvankelijkheidstoets can have its own two weeks inside an eight week term. The clock starts when a case enters this phase and stops when it leaves. A phase that runs over shows as overdue on the case while the case term still reads on time, and it never moves the case term.": "Hoeveel werkdagen deze fase krijgt, geteld op de kalender die je organisatie beheert. Een ontvankelijkheidstoets kan zijn eigen twee weken hebben binnen een termijn van acht weken. De klok start als een zaak deze fase binnenkomt en stopt als die eruit gaat. Een fase die uitloopt staat op de zaak als verlopen terwijl de zaaktermijn nog op tijd is, en verschuift die zaaktermijn nooit.",
         "Share of the chain term, in percent": "Aandeel van de ketentermijn, in procenten",
-        "This phase's share of the chain term, as a percentage. Use it when the case type declares one term for the whole chain and you want it split over the phases. The shares of the phases after an overrunning one are recomputed, and the chain end stays where it was.": "Het aandeel van deze fase in de ketentermijn, als percentage. Gebruik dit als het zaaktype een termijn voor de hele keten vastlegt en je die over de fasen wilt verdelen. De aandelen van de fasen na een uitgelopen fase worden herberekend, en het einde van de keten blijft waar het was."
+        "This phase's share of the chain term, as a percentage. Use it when the case type declares one term for the whole chain and you want it split over the phases. The shares of the phases after an overrunning one are recomputed, and the chain end stays where it was.": "Het aandeel van deze fase in de ketentermijn, als percentage. Gebruik dit als het zaaktype een termijn voor de hele keten vastlegt en je die over de fasen wilt verdelen. De aandelen van de fasen na een uitgelopen fase worden herberekend, en het einde van de keten blijft waar het was.",
+        "Live conversation": "Live gesprek",
+        "Start a conversation": "Start een gesprek",
+        "Declare major": "Schaal op naar calamiteit",
+        "Open the working channel": "Open het werkkanaal",
+        "Talk is not available": "Talk is niet beschikbaar",
+        "A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.": "Een live gesprek loopt via Nextcloud Talk. Installeer Talk om er een te starten vanuit deze zaak.",
+        "No conversations yet": "Nog geen gesprekken",
+        "Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.": "Elk gesprek dat je vanuit deze zaak start, komt hier te staan. Je ziet wanneer het plaatsvond, wie meededen en hoe lang het duurde.",
+        "We could not start the conversation": "We konden het gesprek niet starten",
+        "We could not find these responders: {names}": "We konden deze opgeroepenen niet vinden: {names}",
+        "Unknown error": "Onbekende fout",
+        "{minutes} min": "{minutes} min"
     }
 }

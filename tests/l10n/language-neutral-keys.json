@@ -57,6 +57,7 @@
         "max {n}",
         "{count} items",
         "{from} – (no end)",
+        "{minutes} min",
         "{percent}%"
     ]
 }
