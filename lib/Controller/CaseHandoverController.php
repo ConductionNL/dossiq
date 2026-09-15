@@ -251,7 +251,7 @@ class CaseHandoverController extends Controller {
 	 * @return array<int, string> The group ids.
 	 */
 	private function teamsOf(IUser $user): array {
-		return array_values(array_map('strval', $this->groups->getUserGroupIds($user)));
+		return array_map('strval', $this->groups->getUserGroupIds($user));
 	}//end teamsOf()
 
 	/**
