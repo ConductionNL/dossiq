@@ -1,0 +1,41 @@
+{
+	"_note": "Mechanisms that are in the inventory and reach no handler's queue. An entry is a CLASSIFICATION, not a waiver: it says this mechanism addresses somebody who has no dossiq queue, or nobody at all. A mechanism that does reach a handler belongs in a queue source's mechanisms() list instead. Every entry is checked against the live tree, so one that stops offending fails the build rather than sitting here.",
+	"entries": [
+		{
+			"mechanism": "notification:onStatusChange",
+			"reason": "The recipient is the applicant, the citizen who filed the case. A citizen reads their case in the portal and has no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "notification:workDigestReady",
+			"reason": "This notification IS the digest. It reports the queue rather than adding to it, and a source for it would put every morning's digest on the queue it summarises."
+		},
+		{
+			"mechanism": "flow:DossiqCallWebhookNode",
+			"reason": "Calls another system over HTTP. Nothing on the other end is a person with an account here, so there is no queue for the call to reach."
+		},
+		{
+			"mechanism": "flow:DossiqTxWebhookNode",
+			"reason": "The transition-side twin of the webhook node, with the same reason: it addresses a system and never a person."
+		},
+		{
+			"mechanism": "flow:DossiqCreateDocumentNode",
+			"reason": "Writes a document onto the case and asks nobody to do anything with it. When somebody has to act on the document, a task node does the asking and that node is covered."
+		},
+		{
+			"mechanism": "flow:DossiqMergeTemplateNode",
+			"reason": "Renders a template into text for another step to use. It addresses no recipient at all, so there is nobody whose queue it could reach."
+		},
+		{
+			"mechanism": "flow:DossiqSendEmailNode",
+			"reason": "Sends mail to a correspondent on the case, who is outside the instance. An external recipient has no queue here, and mail is the whole delivery."
+		},
+		{
+			"mechanism": "flow:DossiqTxSendEmailNode",
+			"reason": "The transition-side twin of the send-email node, with the same reason: the recipient is a correspondent outside the instance."
+		},
+		{
+			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
+			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and DossiqRequestDecisionNode carries that mechanism."
+		}
+	]
+}

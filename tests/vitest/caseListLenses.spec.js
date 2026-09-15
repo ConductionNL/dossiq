@@ -121,25 +121,28 @@ const CASE_LENSES = [
 	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
+	'Stuck',
 ]
 
 /**
- * The three chips the Cases list carries and the Tasks list cannot.
+ * The four chips the Cases list carries and the Tasks list cannot.
  *
  * Named once so the parity test below subtracts exactly these and nothing
- * else: a hand-written `filter` per exception is how a fourth Cases-only lens
+ * else: a hand-written `filter` per exception is how a fifth Cases-only lens
  * would quietly stop being compared at all.
  *
  * Each is Cases-only for its own reason. Unread is a per-USER lens over
  * OpenRegister's read state on the `case` schema. Handed on is about a case
  * moving between teams, which a task does not do on its own. My drafts is a
  * case nobody has accepted yet, and a task belongs to a case that already
- * exists.
+ * exists. Stuck reads `statusDwellBreached`, written when a case sits in a
+ * STATUS longer than that status allows, and a task has neither a status type
+ * nor a maximum dwell.
  */
-const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS]
+const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS, 'Stuck']
 
 describe('Cases index lenses', () => {
-	it('declares the eight chips in order', () => {
+	it('declares the ten chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -206,13 +209,15 @@ describe('Cases index lenses', () => {
 describe('Tasks index lenses', () => {
 	it('declares the same six labels as the Cases list shares with it, in order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
-		// The parity is still asserted, with the two lenses a task list cannot
-		// carry taken out rather than the whole comparison dropped. Unread is a
-		// per-USER lens over OpenRegister's read state on the `case` schema,
-		// and a task is a different object with a read state of its own.
-		// Handed on reads `handoverPending`, which a case carries because a
-		// case is what moves between teams; a task moves with its case. The
-		// day either grows a counterpart, this filter is what says so.
+		// The parity is still asserted, with the three lenses a task list
+		// cannot carry taken out rather than the whole comparison dropped.
+		// Unread is a per-USER lens over OpenRegister's read state on the
+		// `case` schema, and a task is a different object with a read state of
+		// its own. Handed on reads `handoverPending`, which a case carries
+		// because a case is what moves between teams; a task moves with its
+		// case. Stuck reads a case sitting in a STATUS longer than that status
+		// allows, and a task has neither a status type nor a maximum dwell.
+		// The day any of the three grows a counterpart, this filter says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
 			chips('Cases')
 				.map((entry) => entry.label)
