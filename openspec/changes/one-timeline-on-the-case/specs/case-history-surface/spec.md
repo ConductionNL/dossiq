@@ -97,28 +97,36 @@ the entry SHALL be logged and SHALL NOT fail the act being recorded.
 - **THEN** the mail SHALL be sent and recorded as before
 - **AND** the failure SHALL be logged
 
-### Requirement: One note reaches several cases at once (REQ-TL-13)
+### Requirement: One entry reaches every case it is about (REQ-TL-13)
 
-A note written from the case timeline SHALL be writable onto several
-related cases in one act, through OpenRegister's related-objects write,
-so that each case carries the entry and each entry names its siblings. A
-case the author may not write on SHALL refuse the whole write, naming
-that case, and SHALL NOT leave the note on the others.
+An entry recorded against several cases SHALL be written onto each of
+them in one act, through OpenRegister's related-objects write, so that
+each case carries the entry and each entry names its siblings. A contact
+moment logged against a case and its related cases SHALL use that path
+rather than one write per case. A case the author may not write on SHALL
+refuse the whole write, naming that case, and SHALL NOT leave the entry
+on the others. The timeline SHALL say, on an entry that has siblings,
+how many other cases carry it.
 
-#### Scenario: one note, three cases
-@e2e tests/e2e/one-timeline-on-the-case.spec.ts
+#### Scenario: a call about three cases lands on three timelines
 
-- **GIVEN** three related cases the handler may write on
-- **WHEN** they write one note naming all three
-- **THEN** each case SHALL carry the entry
+- **GIVEN** a contact moment logged on a case naming two related cases
+- **WHEN** it is recorded
+- **THEN** each of the three cases SHALL carry the entry
 - **AND** each entry SHALL name the other two
 
-#### Scenario: a case the author may not write on refuses the whole note
+#### Scenario: a related case that cannot be read is named, not skipped in silence
 
-- **GIVEN** three cases, one of which the handler may not write on
-- **WHEN** they write one note naming all three
-- **THEN** the write SHALL be refused naming that case
-- **AND** no entry SHALL be written on any of the three
+- **GIVEN** a related case the writer cannot read
+- **WHEN** the contact moment is recorded
+- **THEN** that case SHALL be logged as not carrying the entry
+
+#### Scenario: an entry that is on other cases says so
+@e2e tests/e2e/one-timeline-on-the-case.spec.ts
+
+- **GIVEN** an entry carried by three cases
+- **WHEN** a handler reads one of those timelines
+- **THEN** the entry SHALL say it is also written on two other cases
 
 ### Requirement: The standard notes are administered text, not retyped (REQ-TL-14)
 
@@ -131,5 +139,14 @@ SHALL be left standing rather than replaced with an empty string.
 @e2e tests/e2e/one-timeline-on-the-case.spec.ts
 
 - **GIVEN** a seeded text block naming the case number
-- **WHEN** a handler picks it in the timeline composer
-- **THEN** the note SHALL carry the case's own number
+- **WHEN** a handler picks it in the timeline composer and saves
+- **THEN** the composer SHALL send the block's name rather than its body
+- **AND** the written note SHALL carry the case's own number
+
+#### Scenario: a handler who may not manage the timeline is not offered the composer
+@e2e tests/e2e/one-timeline-on-the-case.spec.ts
+
+- **GIVEN** a reader without `update` on the case
+- **WHEN** they open the Timeline tab
+- **THEN** the composer SHALL NOT be shown
+- **AND** the pin and follow-up controls SHALL NOT be shown
