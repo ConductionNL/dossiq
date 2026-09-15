@@ -47,12 +47,25 @@ use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use RuntimeException;
 
 /**
  * Beschikking lifecycle orchestrator.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
+ * threshold, and the one that crossed it is `CoordinatorRequirement`: the seat
+ * a case type may insist on before its besluit is signed. The alternatives
+ * were both worse. Checking it in the controller instead leaves the rule on
+ * ONE door, so a second caller of `onderteken()` signs without it, and a rule
+ * that can be walked around is not a rule. Folding the collaborators into a
+ * parameter object hides the dependency list rather than shortening it, which
+ * is the reasoning {@see AcknowledgementService} already records for the same
+ * trade. The thirteen are each injected and each named, so the class is
+ * readable even where it is wide.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
  */
 class BeschikkingService {
 
@@ -68,6 +81,7 @@ class BeschikkingService {
 	 * @param MandaatVerifier $mandateVerifier Mandaat resolution + verification.
 	 * @param AuditPacketBuilder $auditPacket Verifiable audit-pakket assembly.
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
+	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
 	 *
 	 * @return void
 	 */
@@ -81,6 +95,7 @@ class BeschikkingService {
 		private readonly MandaatVerifier $mandateVerifier,
 		private readonly AuditPacketBuilder $auditPacket,
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
+		private readonly CoordinatorRequirement $coordinator,
 	) {
 	}//end __construct()
 
@@ -220,6 +235,12 @@ class BeschikkingService {
 		if ($this->stateMachine->validateTransition($current, 'signed') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
+
+		// BEFORE THE TSP IS CALLED, not after. A signature is minted at a
+		// provider and countersigned onto the file; refusing afterwards would
+		// leave a signed document behind a refused act, which is worse than
+		// either outcome on its own.
+		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
