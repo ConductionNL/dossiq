@@ -53,10 +53,10 @@ class IntakeSourceSeederTest extends TestCase {
 	 * @return IntakeSourceSeeder The seeder.
 	 */
 	private function seeder(): IntakeSourceSeeder {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willThrowException(new RuntimeException('not here'));
 
-		return new IntakeSourceSeeder($container, new NullLogger());
+		return new IntakeSourceSeeder(container: $container, logger: new NullLogger());
 	}//end seeder()
 
 	/**
@@ -68,8 +68,8 @@ class IntakeSourceSeederTest extends TestCase {
 		$slugs = array_column($this->seeder()->catalogue(), 'slug');
 
 		$this->assertSame(
-			['dossiq-mail', 'dossiq-portal', 'dossiq-api', 'dossiq-kcc', 'dossiq-dso'],
-			$slugs
+			expected: ['dossiq-mail', 'dossiq-portal', 'dossiq-api', 'dossiq-kcc', 'dossiq-dso'],
+			actual: $slugs
 		);
 	}//end testCatalogueCarriesTheDeclaredChannels()
 
@@ -85,9 +85,9 @@ class IntakeSourceSeederTest extends TestCase {
 	public function testEveryChannelNamesATransportTheSchemaAccepts(): void {
 		foreach ($this->seeder()->catalogue() as $source) {
 			$this->assertContains(
-				$source['kind'],
-				['watchedFolder', 'mailbox', 'endpoint'],
-				sprintf('%s declares a kind the intake-source schema does not take', $source['slug'])
+				needle: $source['kind'],
+				haystack: ['watchedFolder', 'mailbox', 'endpoint'],
+				message: sprintf('%s declares a kind the intake-source schema does not take', $source['slug'])
 			);
 		}
 	}//end testEveryChannelNamesATransportTheSchemaAccepts()
@@ -99,8 +99,8 @@ class IntakeSourceSeederTest extends TestCase {
 	 */
 	public function testEveryChannelCarriesATitleAndADescription(): void {
 		foreach ($this->seeder()->catalogue() as $source) {
-			$this->assertNotEmpty($source['title'], $source['slug'] . ' has no title');
-			$this->assertNotEmpty($source['description'], $source['slug'] . ' has no description');
+			$this->assertNotEmpty(actual: $source['title'], message: $source['slug'] . ' has no title');
+			$this->assertNotEmpty(actual: $source['description'], message: $source['slug'] . ' has no description');
 		}
 	}//end testEveryChannelCarriesATitleAndADescription()
 
@@ -113,9 +113,9 @@ class IntakeSourceSeederTest extends TestCase {
 		foreach ($this->seeder()->catalogue() as $source) {
 			$row = $this->seeder()->newRow($source);
 
-			$this->assertFalse($row['enabled'], $source['slug'] . ' would start polling on install');
-			$this->assertSame($source['slug'], $row['slug']);
-			$this->assertSame($source['title'], $row['title']);
+			$this->assertFalse(condition: $row['enabled'], message: $source['slug'] . ' would start polling on install');
+			$this->assertSame(expected: $source['slug'], actual: $row['slug']);
+			$this->assertSame(expected: $source['title'], actual: $row['title']);
 		}
 	}//end testANewChannelIsCreatedSwitchedOff()
 
@@ -142,18 +142,18 @@ class IntakeSourceSeederTest extends TestCase {
 		// that refreshed `enabled` would switch every configured channel off on
 		// every upgrade. Driving a trimmed source instead would pass either way,
 		// because the field would simply be absent.
-		$catalogue = $this->catalogueEntry('dossiq-mail');
-		$refreshed = $this->seeder()->refreshedRow($existing, $catalogue);
+		$catalogue = $this->catalogueEntry(slug: 'dossiq-mail');
+		$refreshed = $this->seeder()->refreshedRow(existing: $existing, source: $catalogue);
 
-		$this->assertSame($catalogue['title'], $refreshed['title']);
-		$this->assertSame($catalogue['description'], $refreshed['description']);
+		$this->assertSame(expected: $catalogue['title'], actual: $refreshed['title']);
+		$this->assertSame(expected: $catalogue['description'], actual: $refreshed['description']);
 
 		// The five an administrator owns.
-		$this->assertFalse($refreshed['enabled']);
-		$this->assertSame('mail-kcc', $refreshed['connection']);
-		$this->assertSame('INBOX/Zaken', $refreshed['location']);
-		$this->assertSame('failing', $refreshed['state']);
-		$this->assertSame(['folder' => 'Zaken'], $refreshed['settings']);
+		$this->assertFalse(condition: $refreshed['enabled']);
+		$this->assertSame(expected: 'mail-kcc', actual: $refreshed['connection']);
+		$this->assertSame(expected: 'INBOX/Zaken', actual: $refreshed['location']);
+		$this->assertSame(expected: 'failing', actual: $refreshed['state']);
+		$this->assertSame(expected: ['folder' => 'Zaken'], actual: $refreshed['settings']);
 	}//end testAnUpgradeNeverSwitchesAChannelBackOn()
 
 	/**
@@ -163,11 +163,11 @@ class IntakeSourceSeederTest extends TestCase {
 	 */
 	public function testAnEnabledChannelStaysEnabled(): void {
 		$refreshed = $this->seeder()->refreshedRow(
-			['slug' => 'dossiq-portal', 'enabled' => true],
-			$this->catalogueEntry('dossiq-portal')
+			existing: ['slug' => 'dossiq-portal', 'enabled' => true],
+			source: $this->catalogueEntry(slug: 'dossiq-portal')
 		);
 
-		$this->assertTrue($refreshed['enabled']);
+		$this->assertTrue(condition: $refreshed['enabled']);
 	}//end testAnEnabledChannelStaysEnabled()
 
 	/**
@@ -184,7 +184,7 @@ class IntakeSourceSeederTest extends TestCase {
 			}
 		}
 
-		$this->fail('The catalogue declares no channel ' . $slug);
+		$this->fail(message: 'The catalogue declares no channel ' . $slug);
 	}//end catalogueEntry()
 
 	/**
@@ -199,9 +199,9 @@ class IntakeSourceSeederTest extends TestCase {
 	public function testWithoutOpenRegisterTheSeedReportsRatherThanThrows(): void {
 		$result = $this->seeder()->seed();
 
-		$this->assertFalse($result['available']);
-		$this->assertSame(0, $result['created']);
-		$this->assertSame(0, $result['updated']);
-		$this->assertSame([], $result['refused']);
+		$this->assertFalse(condition: $result['available']);
+		$this->assertSame(expected: 0, actual: $result['created']);
+		$this->assertSame(expected: 0, actual: $result['updated']);
+		$this->assertSame(expected: [], actual: $result['refused']);
 	}//end testWithoutOpenRegisterTheSeedReportsRatherThanThrows()
 }//end class
