@@ -20,7 +20,7 @@
 			<h2 class="personal-queue__title">
 				{{ t('dossiq', 'Your queue') }}
 			</h2>
-			<NcButton type="secondary" @click="openPlanner">
+			<NcButton variant="secondary" @click="openPlanner">
 				{{ t('dossiq', 'Plan an item') }}
 			</NcButton>
 		</div>
@@ -50,7 +50,7 @@
 						{{ group.label }}
 					</h3>
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('dossiq', 'Hide this group until tomorrow')"
 						@click="hideGroup(group.key)">
 						{{ t('dossiq', 'Hide until tomorrow') }}
@@ -85,7 +85,7 @@
 			<NcButton
 				v-for="group in hiddenGroups"
 				:key="group"
-				type="tertiary"
+				variant="tertiary"
 				:data-testid="`queue-hidden-${group}`"
 				@click="showGroup(group)">
 				{{ t('dossiq', 'Show {group} again', { group }) }}

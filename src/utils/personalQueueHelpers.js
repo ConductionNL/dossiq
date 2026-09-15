@@ -78,7 +78,7 @@ export function visibleGroups(groups, hiddenGroups) {
 export function humaniqIsPresent() {
 	const roots = (globalThis.OC?.appswebroots ?? {})
 
-	return Object.prototype.hasOwnProperty.call(roots, 'humaniq')
+	return Object.hasOwn(roots, 'humaniq')
 }
 
 /**

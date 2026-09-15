@@ -125,14 +125,14 @@ import DeelzaakList from './views/cases/DeelzaakList.vue'
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
-import EndOfDayView from './views/queue/EndOfDayView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
-// One personal queue fed by the declared sources (one-personal-queue).
-// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+import EndOfDayView from './views/queue/EndOfDayView.vue'
+// One personal queue fed by the declared sources (one-personal-queue).
+// @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+import PersonalQueueView from './views/queue/PersonalQueueView.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a

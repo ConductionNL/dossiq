@@ -50,7 +50,7 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="primary" :disabled="saving || !canSave" @click="save">
+			<NcButton variant="primary" :disabled="saving || !canSave" @click="save">
 				{{ t('dossiq', 'Plan it') }}
 			</NcButton>
 		</template>

@@ -50,7 +50,7 @@
 					:data-testid="`end-of-day-update-${item.id}`" />
 
 				<NcButton
-					type="secondary"
+					variant="secondary"
 					:disabled="!hasUpdate(item)"
 					:data-testid="`end-of-day-save-${item.id}`"
 					@click="record(item)">
@@ -83,15 +83,15 @@
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard, NcTextField } from '@nextcloud/vue'
 import { leafTab } from '../../integrations/leafTabs.js'
-import { fetchReadState } from '../../services/readStateApi.js'
 import { fetchEndOfDay } from '../../services/personalQueueApi.js'
+import { fetchReadState } from '../../services/readStateApi.js'
+import { recordUpdateOn } from '../../utils/endOfDayHelpers.js'
 import {
 	HOURS_LEAF_ID,
 	humaniqIsPresent,
 	todayOf,
 	touchedToday,
 } from '../../utils/personalQueueHelpers.js'
-import { recordUpdateOn } from '../../utils/endOfDayHelpers.js'
 
 export default {
 	name: 'EndOfDayView',
