@@ -192,6 +192,11 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			$this->statusChecklist,
 			$this->undeclaredStatuses(),
 			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $this->guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()

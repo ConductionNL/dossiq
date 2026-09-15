@@ -115,6 +115,11 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			$this->createMock(StatusChecklist::class),
 			$this->undeclaredStatuses(),
 			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $this->createMock(GuardRegistry::class),
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 

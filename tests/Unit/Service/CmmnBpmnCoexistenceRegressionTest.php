@@ -128,6 +128,11 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			$this->createMock(StatusChecklist::class),
 			$this->undeclaredStatuses(),
 			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 

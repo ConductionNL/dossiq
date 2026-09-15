@@ -52,6 +52,7 @@ use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\OfferedTransitions;
 use OCA\Dossiq\Service\Transitions\TransitionDeclarations;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
@@ -97,7 +98,8 @@ class StatusTransitionService {
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 * @param StatusDeclarations $declarations What a status declares about itself
-	 * @param TransitionDeclarations $transitionDeclarations What a transition declares about itself
+	 * @param TransitionDeclarations $declaredMoves What a transition declares about itself
+	 * @param OfferedTransitions $offered Which moves this case offers and which it withholds
 	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
 	 */
 	public function __construct(
@@ -112,7 +114,8 @@ class StatusTransitionService {
 		private readonly CaseResultWriter $resultWriter,
 		private readonly StatusChecklist $statusChecklist,
 		private readonly StatusDeclarations $declarations,
-		private readonly TransitionDeclarations $transitionDeclarations,
+		private readonly TransitionDeclarations $declaredMoves,
+		private readonly OfferedTransitions $offered,
 		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 	) {
 	}//end __construct()
@@ -172,87 +175,24 @@ class StatusTransitionService {
 			return $result;
 		}
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
-
 		$transitions = $template['transitions'] ?? [];
 		if (is_array($transitions) === false) {
 			return $result;
 		}
 
-		foreach ($transitions as $transition) {
-			if (is_array($transition) === false) {
-				continue;
-			}
+		// Which moves are offered, and which are withheld and why, is ONE
+		// decision about one transition asked five ways, and it lives in its
+		// own class. This engine's job is what happens when a handler TAKES
+		// one.
+		$sorted = $this->offered->from(
+			transitions: $transitions,
+			case: $case,
+			currentId: $currentId,
+			userId: $userId,
+		);
 
-			if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
-				continue;
-			}
-
-			// A DERIVED status is not a move somebody picks. If it could be
-			// both, the two disagree within a week and nobody knows which one
-			// is the record: a handler sets Complete on a file that is not,
-			// the derivation never fires because the case is already there,
-			// and the missing document is never named. Dropping it here is
-			// what makes the derivation the single answer.
-			if ($this->declarations->isDerivedStatus(
-				caseTypeId: $caseTypeId,
-				statusTypeId: (string)($transition['toStatus'] ?? ''),
-			) === true) {
-				continue;
-			}
-
-			$eval = $this->guardRegistry->evaluateAll(
-				guards: $this->evaluateGuards(transition: $transition),
-				case: $case,
-				userId: $userId,
-			);
-
-			// Drop transitions whose role guard hides them silently.
-			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
-				continue;
-			}
-
-			// WITHHOLDING BEATS REFUSING. A transition that is offered and
-			// then refused teaches the handler that the list is unreliable; a
-			// transition that is not offered, with the reason readable in its
-			// place, teaches them what to do next. The information is the
-			// same and only one of the two is usable, so an unsettled
-			// dependency takes the move off the list and puts its reason in
-			// `withheld` beside it.
-			$withheld = $this->transitionDeclarations->withheldReasons(
-				transition: $transition,
-				case: $case,
-			);
-			if ($withheld !== []) {
-				$result['withheld'][] = [
-					'id' => (string)($transition['id'] ?? ''),
-					'label' => (string)($transition['label'] ?? ''),
-					'toStatus' => (string)($transition['toStatus'] ?? ''),
-					'reasons' => $withheld,
-				];
-				continue;
-			}
-
-			$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
-
-			$result['transitions'][] = [
-				'id' => (string)($transition['id'] ?? ''),
-				'label' => (string)($transition['label'] ?? ''),
-				// Additive, and empty for every template shipped today: the
-				// documented StatusTransition shape carries no `description`.
-				// It is published so a template that does write one reaches
-				// CaseActionProvider, which has no other sight of the
-				// transition definition.
-				'description' => (string)($transition['description'] ?? ''),
-				// The sentence an administrator wrote for the moment of
-				// choosing, which is the only moment guidance is worth
-				// anything. Empty renders nothing rather than a blank line.
-				'explanation' => $this->transitionDeclarations->explanationOf(transition: $transition),
-				'toStatus' => (string)($transition['toStatus'] ?? ''),
-				'guardsPassed' => count($failed) === 0,
-				'failedGuards' => $failed,
-			];
-		}//end foreach
+		$result['transitions'] = $sorted['transitions'];
+		$result['withheld'] = $sorted['withheld'];
 
 		return $result;
 	}//end getAvailableTransitions()
@@ -668,7 +608,7 @@ class StatusTransitionService {
 		// are: the list a browser holds was true when it was fetched, and the
 		// advice request can have arrived since. Withholding is the courtesy;
 		// this is the rule.
-		$withheld = $this->transitionDeclarations->withheldReasons(transition: $transition, case: $case);
+		$withheld = $this->declaredMoves->withheldReasons(transition: $transition, case: $case);
 		if ($withheld !== []) {
 			throw new RefusedException(
 				rule: 'transition-dependency-open',
@@ -684,7 +624,7 @@ class StatusTransitionService {
 		// It refuses rather than withholds, deliberately. A colleague opening
 		// the same case must see the move, and a list that hid it per reader
 		// would make two handlers disagree about what the case offers.
-		$refusal = $this->transitionDeclarations->fourEyesRefusal(
+		$refusal = $this->declaredMoves->fourEyesRefusal(
 			transition: $transition,
 			caseId: $caseId,
 			userId: $userId,
@@ -692,7 +632,7 @@ class StatusTransitionService {
 		if ($refusal !== null) {
 			throw new RefusedException(
 				rule: 'transition-four-eyes',
-				sentence: $this->transitionDeclarations->refusalSentence(refusal: $refusal),
+				sentence: $this->declaredMoves->refusalSentence(refusal: $refusal),
 				status: RefusedException::STATUS_FORBIDDEN,
 			);
 		}

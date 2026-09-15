@@ -328,7 +328,12 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			statusChecklist: $this->createMock(StatusChecklist::class),
 			declarations: $this->undeclaredStatuses(),
-			transitionDeclarations: $this->undeclaredTransitions(),
+			declaredMoves: $this->undeclaredTransitions(),
+			offered: $this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 

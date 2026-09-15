@@ -56,4 +56,31 @@ trait MakesTransitionDeclarations {
 
 		return $declarations;
 	}//end undeclaredTransitions()
+
+	/**
+	 * The real offered-transitions reader, over the collaborators the caller
+	 * already has.
+	 *
+	 * NOT a double. This is the class that decides which moves a case offers,
+	 * and every engine test that asserts "the list contains this transition"
+	 * would otherwise be asserting against a stub of the thing under test.
+	 *
+	 * @param \OCA\Dossiq\Service\Transitions\GuardRegistry        $guards   The guard registry.
+	 * @param \OCA\Dossiq\Service\Transitions\TransitionSpecReader $reader   The template dialects.
+	 * @param \OCA\Dossiq\Service\Status\StatusDeclarations        $statuses What a status declares.
+	 *
+	 * @return \OCA\Dossiq\Service\Transitions\OfferedTransitions
+	 */
+	private function offeredTransitions(
+		\OCA\Dossiq\Service\Transitions\GuardRegistry $guards,
+		\OCA\Dossiq\Service\Transitions\TransitionSpecReader $reader,
+		\OCA\Dossiq\Service\Status\StatusDeclarations $statuses,
+	): \OCA\Dossiq\Service\Transitions\OfferedTransitions {
+		return new \OCA\Dossiq\Service\Transitions\OfferedTransitions(
+			guardRegistry: $guards,
+			specReader: $reader,
+			statuses: $statuses,
+			moves: $this->undeclaredTransitions(),
+		);
+	}//end offeredTransitions()
 }//end trait

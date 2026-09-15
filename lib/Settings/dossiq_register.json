@@ -5575,7 +5575,23 @@
                         "final": [
                             "met",
                             "withdrawn"
-                        ]
+                        ],
+                        "transitions": {
+                            "meet": {
+                                "from": [
+                                    "open"
+                                ],
+                                "to": "met",
+                                "description": "The thing that was asked for has been done, and the case is released."
+                            },
+                            "withdraw": {
+                                "from": [
+                                    "open"
+                                ],
+                                "to": "withdrawn",
+                                "description": "The ask is cancelled with a reason. The case is released, and this is never recorded as having been met: an inspection nobody carried out is not an inspection that passed."
+                            }
+                        }
                     },
                     "objectNameField": "title",
                     "x-openregister-references": {
@@ -10292,6 +10308,7 @@
                     "casetransfer",
                     "checklistItem",
                     "consultation",
+                    "obligation",
                     "dossiqIntegration",
                     "inspectionChecklist",
                     "inspectionResult",

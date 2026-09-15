@@ -132,6 +132,7 @@ class CaseStatusStore {
 	 * @param string|null $comment Free-form comment.
 	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots.
 	 * @param bool $noWorkflowTemplate Flag for free-form transitions.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
 	 *
 	 * @return array<string, mixed> The written statusRecord.
 	 *
@@ -304,6 +305,16 @@ class CaseStatusStore {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
+	public function lookupStatusColour(string $statusTypeId): string {
+		$colour = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['colour'] ?? '');
+
+		if (is_string($colour) === false) {
+			return '';
+		}
+
+		return $colour;
+	}//end lookupStatusColour()
+
 	/**
 	 * The explanation an administrator wrote on a status.
 	 *
@@ -322,16 +333,6 @@ class CaseStatusStore {
 	public function lookupStatusDescription(string $statusTypeId): string {
 		return trim((string)($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
 	}//end lookupStatusDescription()
-
-	public function lookupStatusColour(string $statusTypeId): string {
-		$colour = ($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['colour'] ?? '');
-
-		if (is_string($colour) === false) {
-			return '';
-		}
-
-		return $colour;
-	}//end lookupStatusColour()
 
 	/**
 	 * Validate that a statusType belongs to the case's caseType.

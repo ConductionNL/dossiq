@@ -204,7 +204,12 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			resultWriter: $resultWriter,
 			statusChecklist: $checklist,
 			declarations: $this->undeclaredStatuses(),
-			transitionDeclarations: $this->undeclaredTransitions(),
+			declaredMoves: $this->undeclaredTransitions(),
+			offered: $this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
