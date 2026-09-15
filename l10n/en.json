@@ -4248,7 +4248,24 @@
         "This case type states no retention for personal data.": "This case type states no retention for personal data.",
         "Archive action due": "Archive action due",
         "No archive action date has been derived for this case.": "No archive action date has been derived for this case.",
-        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case."
+        "The selectielijst sets this date through the result type of the case.": "The selectielijst sets this date through the result type of the case.",
+        "Assessed high risk": "Assessed high risk",
+        "Assessed risk:": "Assessed risk:",
+        "Attention": "Attention",
+        "Clear the flag": "Clear the flag",
+        "Cleared": "Cleared",
+        "Due for review": "Due for review",
+        "Flag for attention": "Flag for attention",
+        "Flagged as needing attention:": "Flagged as needing attention:",
+        "Needs attention": "Needs attention",
+        "Raised": "Raised",
+        "Why it no longer needs attention": "Why it no longer needs attention",
+        "Why this case needs attention": "Why this case needs attention",
+        "The attention flag could not be changed.": "The attention flag could not be changed.",
+        "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Write down why, and the flag will change. Both raising and clearing keep the reason.",
+        "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
+        "This case is not flagged as needing attention.": "This case is not flagged as needing attention.",
+        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case."
     },
     "plurals": ""
 }
