@@ -526,6 +526,20 @@ class EngineTaskGateway {
             // guard had to decode it; the entity removed that shape, so
             // this arrives ready to read.
             'checklist' => (($task->getChecklist() ?? [])),
+            // The case IS the object, and a completion has to know which
+            // case it is on to run the effects the task declared against it
+            // and to publish the files it was holding.
+            'objectUuid' => (string) ($task->getObjectUuid() ?? ''),
+            'dueDate' => ($task->getDueAt()?->format('c') ?? ''),
+            // Who the task is OFFERED to, which is a different question from
+            // who has it. An empty assignee with a candidate list is a task
+            // waiting to be claimed; an empty assignee with no candidates is
+            // a task waiting for somebody to notice it.
+            'candidateGroups' => (($task->getCandidateGroups() ?? [])),
+            'candidateUsers' => (($task->getCandidateUsers() ?? [])),
+            // What dossiq declared on this task: `form` for the engine to
+            // render, `dossiq.effects` for dossiq to run on completion.
+            'metadata' => (($task->getMetadata() ?? [])),
         ];
     }//end find()
 
