@@ -57,7 +57,7 @@
     "@vue/compat": "^3.5.13",
     "@vueuse/core": "^14.4.0",
     "dexie": "^4.4.5",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.15",
     "gridstack": "^13.2.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
