@@ -70,10 +70,9 @@ job itself on openregister.
 ## Ownership
 
 openregister owns the job, its progress, its cancellation, the simulation
-and the per-row outcome record. Its change is **to be specified in
-openregister, wave 1**; `build-plan.md` proposes the slug
-`bulk-action-jobs`, and this proposal records whichever slug that lane
-opens. dossiq renders, declares the guards and holds the justification.
+and the per-row outcome record. Its change shipped as **`bulk-action-jobs`**
+(openregister#3742, `f88d986b5`), which is the slug `build-plan.md`
+proposed. dossiq renders, declares the guards and holds the justification.
 dossiq ships no job runner.
 
 ## Capabilities

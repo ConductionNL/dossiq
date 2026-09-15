@@ -44,6 +44,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Minimal OpenRegister ObjectService shape used by StatusTransitionService.
@@ -111,6 +112,7 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
 			$this->createMock(StatusChecklist::class),
 			$this->undeclaredStatuses(),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 	}//end setUp()

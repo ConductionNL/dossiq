@@ -40,6 +40,7 @@ use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * A final transition writes a result, or it does not happen.
@@ -136,6 +137,7 @@ class StatusTransitionServiceResultTest extends TestCase {
 			resultWriter: $this->resultWriter,
 			statusChecklist: $this->createMock(StatusChecklist::class),
 			declarations: $this->undeclaredStatuses(),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

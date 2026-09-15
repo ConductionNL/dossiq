@@ -84,6 +84,7 @@ import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
 import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
+import { countMatchingCases } from './services/bulkJobApi.js'
 // The Queue's and Cases' Claim row action, in its own module so a unit test
 // can reach it without importing every page this file mounts.
 // @spec openspec/changes/case-claim-action/specs/case-management/spec.md
@@ -91,6 +92,7 @@ import { claimCase } from './utils/caseClaim.js'
 // Mark a case read or unread from a list row (unread-state-on-the-case).
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
+import { readLocationFilters } from './utils/selectionScope.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with dossiq's offline schema mapping in src/main.js. The custom
@@ -116,11 +118,13 @@ import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  */
-function reassignSelection({ selectedIds }) {
+async function reassignSelection({ selectedIds }) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
 	if (ids.length === 0) {
 		return
 	}
+
+	const { filters, total } = await listScope(ids)
 
 	const host = document.createElement('div')
 	document.body.appendChild(host)
@@ -128,6 +132,8 @@ function reassignSelection({ selectedIds }) {
 	const app = createApp(ReassignSelectionDialog, {
 		open: true,
 		selectedIds: ids,
+		filters,
+		matchingTotal: total,
 		'onUpdate:open': (open) => {
 			if (open === false) {
 				app.unmount()
@@ -145,6 +151,31 @@ function reassignSelection({ selectedIds }) {
 }
 
 /**
+ * What the case list is showing, beyond the rows the handler ticked.
+ *
+ * A bulk handler is called with the selection and nothing else, so the whole
+ * result set has to be found rather than passed. The filters are in the
+ * address bar, and the count comes from OpenRegister.
+ *
+ * A count that cannot be read comes back as zero, which makes the scope
+ * affordance withhold the whole-result offer. That is the right failure: an
+ * offer of "select all 400" that cannot say where 400 came from is the exact
+ * surprise the affordance exists to prevent.
+ *
+ * @param {Array<string>} ids The ticked rows.
+ *
+ * @return {Promise<{filters: object, total: number}>} What the list holds.
+ *
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ */
+async function listScope(ids) {
+	const filters = readLocationFilters()
+	const total = await countMatchingCases(filters)
+
+	return { filters, total: (total > ids.length ? total : 0) }
+}
+
+/**
  * Mount `BulkTransitionDialog` for a selection, in one of its four modes.
  *
  * Mounted here rather than declared in the manifest for the same reason
@@ -158,11 +189,13 @@ function reassignSelection({ selectedIds }) {
  *
  * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
  */
-function openBulkDialog(mode, selectedIds) {
+async function openBulkDialog(mode, selectedIds) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
 	if (ids.length === 0) {
 		return
 	}
+
+	const { filters, total } = await listScope(ids)
 
 	const host = document.createElement('div')
 	document.body.appendChild(host)
@@ -182,6 +215,8 @@ function openBulkDialog(mode, selectedIds) {
 	app = createApp(BulkTransitionDialog, {
 		caseIds: ids,
 		mode,
+		filters,
+		matchingTotal: total,
 		onClose: close,
 		onCompleted: () => {
 			close()

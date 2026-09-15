@@ -87,6 +87,16 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
 const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
 
 /**
+ * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
+ *
+ * A draft binds no statutory term and belongs in no working list, so every
+ * other lens excludes it and My drafts is the only way back to one. It has no
+ * counterpart on a list of tasks, so it is filtered out of the parity check
+ * below exactly as Unread is.
+ */
+const DRAFTS_LENS = 'My drafts'
+
+/**
  * The Cases chips, which carry one lens the Tasks list does not.
  *
  * Unread is a per-USER lens over OpenRegister's read state, not a field of the
@@ -108,28 +118,31 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
+	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
 	'Stuck',
 ]
 
 /**
- * The three chips the Cases list carries and the Tasks list cannot.
+ * The four chips the Cases list carries and the Tasks list cannot.
  *
  * Named once so the parity test below subtracts exactly these and nothing
- * else: a hand-written `filter` per exception is how a fourth Cases-only lens
+ * else: a hand-written `filter` per exception is how a fifth Cases-only lens
  * would quietly stop being compared at all.
  *
- * Unread is a per-USER lens over OpenRegister's read state on the `case`
- * schema. Handed on reads `handoverPending`, which a case carries because a
- * case is what moves between teams. Stuck reads `statusDwellBreached`, written
- * when a case sits in a STATUS longer than that status allows, and a task has
- * neither a status type nor a maximum dwell.
+ * Each is Cases-only for its own reason. Unread is a per-USER lens over
+ * OpenRegister's read state on the `case` schema. Handed on is about a case
+ * moving between teams, which a task does not do on its own. My drafts is a
+ * case nobody has accepted yet, and a task belongs to a case that already
+ * exists. Stuck reads `statusDwellBreached`, written when a case sits in a
+ * STATUS longer than that status allows, and a task has neither a status type
+ * nor a maximum dwell.
  */
-const CASES_ONLY = ['Unread', 'Handed on', 'Stuck']
+const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS, 'Stuck']
 
 describe('Cases index lenses', () => {
-	it('declares the nine chips in order', () => {
+	it('declares the ten chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -143,7 +156,15 @@ describe('Cases index lenses', () => {
 		// opens on. The ONE condition is still the whole filter — no
 		// assignee, no case type, nothing that narrows to a person's own
 		// work — which is what this test has always been guarding.
-		expect(defaults[0].filter).toEqual({ statusHiddenInLists: false })
+		// Two conditions now, and neither narrows to a person's own work,
+		// which is what this test has always been guarding. A hidden status
+		// and a draft are properties of the CASE: one is a status its
+		// administrator marked hidden, the other is a case nobody has accepted
+		// yet. An assignee condition here would still be the defect.
+		expect(defaults[0].filter).toEqual({
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
@@ -168,6 +189,8 @@ describe('Cases index lenses', () => {
 	it('spells the Overdue operator as a flat bracket key', () => {
 		expect(chip('Cases', 'Overdue').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[lt]': '@today',
 		})
 	})
@@ -175,6 +198,8 @@ describe('Cases index lenses', () => {
 	it('gives Due this week the half-open window on deadline', () => {
 		expect(chip('Cases', 'Due this week').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[gte]': '@today',
 			'deadline[lt]': '@today+7d',
 		})

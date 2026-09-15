@@ -16,6 +16,7 @@
 // beside the text — needs markup, and markup means a component. Reach for a
 // formatter first; add an entry here only when the cell has a state to show.
 
+import CaseStateMarkersCell from '../components/cells/CaseStateMarkersCell.vue'
 import DeadlineCountdownCell from '../components/cells/DeadlineCountdownCell.vue'
 import DwellDaysCell from '../components/cells/DwellDaysCell.vue'
 import PriorityBadgeCell from '../components/cells/PriorityBadgeCell.vue'
@@ -53,4 +54,10 @@ export default {
 	// holds a read state of its own.
 	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 	unreadIndicator: UnreadIndicatorCell,
+
+	// lifecycle-acts-on-the-case REQ-LIFE-13 and REQ-LIFE-15: what a row
+	// says about itself besides its status. One column, because three that are
+	// empty on nine rows in ten push the case title off the screen for nothing.
+	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	caseStateMarkers: CaseStateMarkersCell,
 }

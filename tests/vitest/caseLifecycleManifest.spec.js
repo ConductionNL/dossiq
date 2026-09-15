@@ -201,40 +201,42 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 	})
 })
 
-describe('CaseDetail: suspend, resume, extend and reopen', () => {
-	const gestures = [
-		['case-suspend', 'suspend', 'neq'],
-		['case-resume', 'resume', 'neq'],
-		['case-extend', 'extend', 'neq'],
-		['case-reopen', 'reopen', 'eq'],
-	]
+describe('CaseDetail: one menu holds every lifecycle act', () => {
+	// lifecycle-acts-on-the-case REQ-LIFE-10. This block used to assert four
+	// separate header actions, one per gesture, each with its own visibleWhen
+	// on `isFinalStatus`. They were not wrong. They were SCATTERED, beside the
+	// transitions in the stages widget and a delete behind a third control,
+	// each gated differently, so a handler found out what they could do by
+	// trying. One entry replaces them.
 
-	for (const [id, gesture, op] of gestures) {
-		it(`opens the reason dialog for ${gesture}`, () => {
-			expect(action(id)).toBeTruthy()
-			expect(action(id).type).toBe('open-modal')
-			expect(action(id).target).toBe('CaseLifecycleActionDialog')
-			expect(action(id).props.action).toBe(gesture)
-		})
+	it('carries one lifecycle entry and none of the four it replaced', () => {
+		expect(action('case-lifecycle-menu')).toBeTruthy()
+		expect(action('case-lifecycle-menu').type).toBe('open-modal')
+		expect(action('case-lifecycle-menu').target).toBe('CaseLifecycleMenuDialog')
 
-		it(`gates ${gesture} on the case record's own isFinalStatus`, () => {
-			// LOCAL mode only. An `endpoint` predicate is fetched verbatim (no
-			// @objectId interpolation) and an OpenRegister `source` predicate
-			// filtered by id reads the WHOLE table, so either would answer about
-			// a case that is not this one.
-			expect(action(id).visibleWhen).toEqual({
-				field: 'isFinalStatus',
-				op,
-				value: true,
-			})
-			expect(action(id).visibleWhen.endpoint).toBeUndefined()
-			expect(action(id).visibleWhen.source).toBeUndefined()
-		})
-	}
+		for (const gone of ['case-suspend', 'case-resume', 'case-extend', 'case-reopen']) {
+			expect(action(gone), `${gone} is folded into the one menu`).toBeUndefined()
+		}
+	})
 
-	it('registers the dialog as a modal, which open-modal requires', () => {
+	it('carries no visibleWhen, because a refused act is shown and disabled', () => {
+		// The absence IS the requirement, so it is asserted rather than left
+		// unmentioned. A visibleWhen here could only read the case RECORD
+		// anyway, which is why Suspend used to be offered on cases whose TYPE
+		// forbids it: `suspensionAllowed` lives on the case type, and an
+		// OpenRegister `source` predicate filtered by id reads the whole table.
+		expect(action('case-lifecycle-menu').visibleWhen).toBeUndefined()
+	})
+
+	it('registers both dialogs as modals, which open-modal requires', () => {
 		// dispatchAction refuses a target whose registry kind is not "modal",
-		// with a console warning and no dialog. Four dead menu entries.
+		// with a console warning and no dialog: a dead menu entry.
+		expect(registrySource).toMatch(
+			/CaseLifecycleMenuDialog: \{\s*\n\s*kind: 'modal',/,
+		)
+		// The per-gesture dialog stays registered: the stages widget opens it
+		// directly for Resume, which is the one gesture a suspended case needs
+		// in front of the handler rather than behind a menu.
 		expect(registrySource).toMatch(
 			/CaseLifecycleActionDialog: \{\s*\n\s*kind: 'modal',/,
 		)
@@ -245,10 +247,7 @@ describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
 		const named = [
 			widget('case-stages').icon,
-			action('case-suspend').icon,
-			action('case-resume').icon,
-			action('case-extend').icon,
-			action('case-reopen').icon,
+			action('case-lifecycle-menu').icon,
 		]
 		for (const name of named) {
 			expect(name, 'every new widget and action names an icon').toBeTruthy()

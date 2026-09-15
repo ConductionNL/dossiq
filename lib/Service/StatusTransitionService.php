@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -95,6 +96,7 @@ class StatusTransitionService {
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 * @param StatusDeclarations $declarations What a status declares about itself
+	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
 	 */
 	public function __construct(
 		private readonly WorkflowTemplateLoader $templateLoader,
@@ -108,6 +110,7 @@ class StatusTransitionService {
 		private readonly CaseResultWriter $resultWriter,
 		private readonly StatusChecklist $statusChecklist,
 		private readonly StatusDeclarations $declarations,
+		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 	) {
 	}//end __construct()
 
@@ -764,6 +767,19 @@ class StatusTransitionService {
 		}
 
 		$caseTypeId = (string)($case['caseType'] ?? '');
+
+		// REQ-LIFE-03. A free-form transition is a status written because an
+		// administrator said so rather than because the process moved, and a
+		// case type that declares `processOwnedStatus` accepts none of those.
+		// It sits HERE and not on `execute()`: a declared transition IS the
+		// process moving the status, so the rule there would refuse the one
+		// way a process-owned status is allowed to change.
+		//
+		// What it does not reach is a PATCH sent straight to OpenRegister.
+		// That boundary is the grants gateway's, and a guard that claimed it
+		// would read complete and not be.
+		$this->processOwnedStatus->requireHandSetAllowed(caseTypeId: $caseTypeId);
+
 		$this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
 		$currentId = (string)($case['status'] ?? '');

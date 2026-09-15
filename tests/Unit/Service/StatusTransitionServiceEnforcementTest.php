@@ -66,6 +66,7 @@ use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * The role check and the side effects, asked of one execute() call.
@@ -201,6 +202,7 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			resultWriter: $resultWriter,
 			statusChecklist: $checklist,
 			declarations: $this->undeclaredStatuses(),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

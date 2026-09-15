@@ -48,6 +48,7 @@ use OCP\IUserSession;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * @covers \OCA\Dossiq\Service\StatusTransitionService
@@ -124,6 +125,7 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			new CaseResultWriter($settings, new CaseTypeResolver(new CaseTypeStore($settings)), new ArchivalNominationDeriver($settings, new ArchivalBaseDateResolver($settings), $logger)),
 			$this->createMock(StatusChecklist::class),
 			$this->undeclaredStatuses(),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$result = $service->getAvailableTransitions(caseId: 'case-1');
