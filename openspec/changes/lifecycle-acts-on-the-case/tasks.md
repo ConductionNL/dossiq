@@ -68,14 +68,17 @@ engine wait on openregister#3679, the provider write half.
 - [x] 9.2 Record the eight verbs of C-case-core-40 that belong elsewhere,
   with the change that carries each, in the proposal's table, and hand
   openregister#3679 the provider write half.
-  - The table is in the proposal and stands. On #3679, one correction found
-    while building: dossiq's `CaseActionProvider` ALREADY implements
-    `execute()`, in full, and hands the move to `StatusTransitionService`. The
-    missing half is entirely OpenRegister's: `LifecycleActionProviderInterface`
-    declares `availableActions()` alone (`tests/Stubs/Lifecycle/`), so nothing
-    ever calls what dossiq wrote. The write half is a declaration and a
-    provider branch in `applyTransition()`, and no dossiq change is waiting on
-    anything else.
+  - The table is in the proposal and stands. On #3679 the proposal is out of
+    date, and the correction is the useful part. It says the write half "has
+    no slug in the register's `changes_by_repo`" and that a follow-up lane
+    should open it. **openregister#3679 is CLOSED**, fixed by
+    openregister#3682, which added `execute()` to
+    `LifecycleActionProviderInterface` and the provider branch in
+    `applyTransition()`. dossiq's `CaseActionProvider` had implemented
+    `execute()` in full for months, so the only thing that had ever been
+    missing was OpenRegister's declaration. Nothing in this change waits on
+    anything, and dossiq's local stub of that interface is updated here so the
+    analysers see the real contract rather than the pre-#3682 one.
 - [x] 9.3 Dutch and English strings.
 - [x] 9.4 `tests/e2e/lifecycle-acts-on-the-case.spec.ts`: a hidden status
   emptying the list while search still finds it, the one menu with a
