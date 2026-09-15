@@ -604,6 +604,18 @@ $extra = [
     ['name' => 'mailIntake#junk',    'url' => '/api/mail-intake/log/{entryId}/junk',     'verb' => 'POST'],
     ['name' => 'mailIntake#bounce',  'url' => '/api/mail-intake/log/{entryId}/bounce',   'verb' => 'POST'],
     ['name' => 'mailIntake#move',    'url' => '/api/mail-intake/log/{entryId}/move',     'verb' => 'POST'],
+
+    // Intake-triage-and-refusal: what a case type asks for before a case of it
+    // exists, and the three acts an intake worker performs. `requirements` is
+    // the declaration the create form draws itself from and needs only a
+    // session; `refuse` goes through CaseAccessGuard because it mutates a case;
+    // `queue`, `sleep` and `fanOut` are gated on the intake role in the
+    // controller body, because they read and write the triage queue.
+    ['name' => 'intakeTriage#requirements', 'url' => '/api/intake/case-types/{caseTypeId}/requirements', 'verb' => 'GET'],
+    ['name' => 'intakeTriage#refuse',       'url' => '/api/cases/{caseId}/refuse',                       'verb' => 'POST'],
+    ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
+    ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
+    ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
     // Email-to-case matching (email-case-matching): each user's own settings, and the instance's.
     ['name' => 'caseEmailMatch#getSettings',   'url' => '/api/settings/email-case-matching',                             'verb' => 'GET'],
     ['name' => 'caseEmailMatch#saveSettings',  'url' => '/api/settings/email-case-matching',                             'verb' => 'PUT'],
