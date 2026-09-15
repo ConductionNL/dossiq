@@ -71,11 +71,18 @@ class CaseSeatReconciler {
 	}//end __construct()
 
 	/**
-	 * Reconcile both seats against the team receiving the case.
+	 * Which seats this move empties. Changes nothing.
 	 *
-	 * The coordinator binding is removed here, because it is a record of its
-	 * own. The handler is handed back as a case change instead of written, so
-	 * the caller writes the case ONCE with the team and the seat together: two
+	 * 🔑 PLANNING AND APPLYING ARE TWO CALLS, AND THE REASON IS NOT TIDINESS.
+	 * The plan has to be on the transfer record before anything comes off the
+	 * case: a version that cleared the coordinator first and then failed to
+	 * write the record left a case with an empty seat, nobody named on it and
+	 * no trace of who had been. Plan, record, then apply, so the only failure
+	 * left is a seat that stayed filled with the record saying it should not
+	 * have, which is visible rather than silent.
+	 *
+	 * The handler is reported as a case CHANGE rather than written, so the
+	 * caller writes the case once with the team and the seat together. Two
 	 * writes would leave a window in which the case has moved and still names
 	 * a handler who cannot open it.
 	 *
@@ -83,12 +90,11 @@ class CaseSeatReconciler {
 	 * @param string               $team The receiving team's Nextcloud group id.
 	 *
 	 * @return array{emptied: array<int, array<string, string>>, changes: array<string, mixed>}
-	 *         What came off the case, and the case fields the caller must write.
+	 *         What will come off the case, and the case fields the caller must write.
 	 *
 	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
-	public function reconcile(array $case, string $team): array {
-		$caseId = trim((string)($case['id'] ?? ($case['uuid'] ?? '')));
+	public function plan(array $case, string $team): array {
 		$seats = $this->seats->seatsOf(case: $case);
 
 		$emptied = [];
@@ -106,7 +112,6 @@ class CaseSeatReconciler {
 
 		$coordinator = $seats['coordinator'];
 		if ($coordinator !== '' && $this->teams->holds(uid: $coordinator, team: $team) === false) {
-			$this->seats->clearCoordinator(caseId: $caseId);
 			$emptied[] = [
 				'seat' => CaseSeats::COORDINATOR,
 				'holder' => $coordinator,
@@ -115,5 +120,30 @@ class CaseSeatReconciler {
 		}
 
 		return ['emptied' => $emptied, 'changes' => $changes];
-	}//end reconcile()
+	}//end plan()
+
+	/**
+	 * Carry out the plan, once the handover has been recorded.
+	 *
+	 * Only the coordinator is touched here. The handler seat travels in the
+	 * one case write the caller makes, for the reason `plan()` gives.
+	 *
+	 * @param string                          $caseId  The case uuid.
+	 * @param array<int, array<string, string>> $emptied The plan's `emptied` list.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
+	 */
+	public function apply(string $caseId, array $emptied): void {
+		if ($caseId === '') {
+			return;
+		}
+
+		foreach ($emptied as $seat) {
+			if (($seat['seat'] ?? '') === CaseSeats::COORDINATOR) {
+				$this->seats->clearCoordinator(caseId: $caseId);
+			}
+		}
+	}//end apply()
 }//end class

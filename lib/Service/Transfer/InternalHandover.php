@@ -153,7 +153,7 @@ class InternalHandover {
 		$team = $this->teams->require(team: $targetTeam);
 		$sourceTeam = trim((string)($case['assignedGroup'] ?? ''));
 
-		$reconciled = $this->seats->reconcile(case: $case, team: $team);
+		$reconciled = $this->seats->plan(case: $case, team: $team);
 		$now = (new DateTimeImmutable())->format('c');
 
 		$record = [
@@ -180,7 +180,13 @@ class InternalHandover {
 			],
 		];
 
+		// RECORDED FIRST, THEN APPLIED. A seat emptied before the handover is
+		// on the record leaves a case with nobody on it and no trace of who had
+		// been, the day the register refuses the write. This order leaves only
+		// the visible failure instead: a seat still filled with the record
+		// saying it should not be.
 		$saved = $this->saveTransfer(record: $record, uuid: null);
+		$this->seats->apply(caseId: $caseId, emptied: $reconciled['emptied']);
 
 		// ONE write, carrying the team and the seats together. Two writes would
 		// leave a window in which the case has moved and still names a handler

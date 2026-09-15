@@ -36,8 +36,10 @@ namespace OCA\Dossiq\Controller;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Service\People\LeaverHandoverService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -84,6 +86,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function preview(): JSONResponse {
 		$refusal = $this->requireAdministrator();
 		if ($refusal !== null) {
@@ -111,6 +114,7 @@ class LeaverHandoverController extends Controller {
 	 *
 	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-everything-a-leaver-holds-moves-in-one-act-req-hand-07
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function execute(): JSONResponse {
 		$refusal = $this->requireAdministrator();
 		if ($refusal !== null) {
@@ -143,6 +147,13 @@ class LeaverHandoverController extends Controller {
 
 	/**
 	 * Refuse anyone who is not an administrator.
+	 *
+	 * BOTH the attribute and this guard, and neither is redundant.
+	 * `AuthorizedAdminSetting` is what Nextcloud's middleware enforces before
+	 * the method runs, and it is what makes the posture READABLE on the
+	 * endpoint instead of implied by the absence of `#[NoAdminRequired]`. This
+	 * body check is the one that survives a refactor that drops the attribute,
+	 * and it is what names the actor for the record the act writes.
 	 *
 	 * @return JSONResponse|null The refusal, or null when the caller may act.
 	 */
