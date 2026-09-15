@@ -40,6 +40,8 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -131,12 +133,20 @@ class AcknowledgementDutyTest extends TestCase {
 	private array $caseType = [];
 
 	/**
+	 * The mocked timeline seam.
+	 *
+	 * @var CaseTimeline|MockObject
+	 */
+	private CaseTimeline $timeline;
+
+	/**
 	 * Set up the store.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
 		$this->store = new AcknowledgementCaseStore();
+		$this->timeline = $this->createMock(originalClassName: CaseTimeline::class);
 	}//end setUp()
 
 	/**
@@ -185,6 +195,7 @@ class AcknowledgementDutyTest extends TestCase {
 			portal: new PortalContributionProvider(),
 			writer: new CaseFieldWriter(),
 			logger: $logger,
+			timeline: $this->timeline,
 		);
 	}//end service()
 
