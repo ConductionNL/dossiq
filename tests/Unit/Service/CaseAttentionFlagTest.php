@@ -144,8 +144,18 @@ class CaseAttentionFlagTest extends TestCase {
 			$reasons[] = $raised;
 			$reasons[] = $cleared;
 
-			$history[] = $this->row(act: 'raised', reason: $raised, actor: sprintf('handler-%d', $round), moment: sprintf('2026-0%d-01T09:00:00+00:00', $round));
-			$history[] = $this->row(act: 'cleared', reason: $cleared, actor: sprintf('teamleider-%d', $round), moment: sprintf('2026-0%d-14T09:00:00+00:00', $round));
+			$history[] = $this->row(
+				act: 'raised',
+				reason: $raised,
+				actor: sprintf('handler-%d', $round),
+				moment: sprintf('2026-0%d-01T09:00:00+00:00', $round),
+			);
+			$history[] = $this->row(
+				act: 'cleared',
+				reason: $cleared,
+				actor: sprintf('teamleider-%d', $round),
+				moment: sprintf('2026-0%d-14T09:00:00+00:00', $round),
+			);
 		}
 
 		$flag = $this->service()->describe(caseId: 'case-7', case: ['attentionFlagHistory' => $history]);
