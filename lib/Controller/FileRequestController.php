@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
+use OCA\Dossiq\Service\People\PartyIndicatorReader;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;

@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\People;
 
 use OCA\Dossiq\Service\People\FileRequestService;
+use OCA\Dossiq\Service\People\PartyIndicatorReader;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
@@ -119,10 +121,55 @@ class FileRequestServiceTest extends TestCase {
 		$this->service = new FileRequestService(
 			people: $this->people,
 			folders: $this->folders,
+			indicators: $this->indicators(),
 			shares: $this->shares,
 			userSession: $session,
 		);
 	}//end setUp()
+
+	/**
+	 * A party-indicator reader over a doubled OpenRegister guard.
+	 *
+	 * @param string|null $refusal The label refusing a send, null when nothing refuses one.
+	 *
+	 * @return PartyIndicatorReader The reader.
+	 */
+	private function indicators(?string $refusal = null): PartyIndicatorReader {
+		$guard = new class($refusal) {
+			/**
+			 * @param string|null $refusal The refusing indicator's label.
+			 */
+			public function __construct(private ?string $refusal) {
+			}
+
+			/**
+			 * Every indicator on an object.
+			 *
+			 * @param string $objectUuid The object.
+			 *
+			 * @return array<int, array<string, mixed>> The indicators.
+			 */
+			public function indicatorsForObject(string $objectUuid): array {
+				return [];
+			}
+
+			/**
+			 * What refuses a send to one party.
+			 *
+			 * @param string $partyUuid The party.
+			 *
+			 * @return string|null The label.
+			 */
+			public function sendRefusalFor(string $partyUuid): ?string {
+				return $this->refusal;
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($guard);
+
+		return new PartyIndicatorReader(settingsService: $settings);
+	}//end indicators()
 
 	/**
 	 * Put a party and a case folder in place.
@@ -131,9 +178,16 @@ class FileRequestServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	private function party(string $email = 'piet@example.nl'): void {
+	private function party(string $email = 'piet@example.nl', string $partyUuid = ''): void {
 		$this->people->method('personOn')->willReturn(
-			['contactUid' => 'contact-8', 'displayName' => 'Piet Pietersen', 'email' => $email]
+			[
+				'contactUid' => 'contact-8',
+				'displayName' => 'Piet Pietersen',
+				'email' => $email,
+				// A user or contact link written before the party model names
+				// no party, and nothing refuses a send to it.
+				'partyUuid' => $partyUuid,
+			]
 		);
 		$owner = $this->createMock(originalClassName: IUser::class);
 		$owner->method('getUID')->willReturn('admin');
@@ -204,6 +258,51 @@ class FileRequestServiceTest extends TestCase {
 	}//end testAPartyWithoutAnAddressIsRefusedWithTheReason()
 
 	/**
+	 * A party carrying a refuse-send indicator is not sent to, and the
+	 * indicator is named.
+	 *
+	 * The refusal is checked at the act and not only in the dialog that lists
+	 * who can be asked: a caller that never opened the dialog would otherwise
+	 * send the mail anyway.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 */
+	public function testAPartyWhoseIndicatorRefusesASendIsNotSentTo(): void {
+		$this->party(partyUuid: 'party-1');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('handler');
+		$session->method('getUser')->willReturn($user);
+		$service = new FileRequestService(
+			people: $this->people,
+			folders: $this->folders,
+			indicators: $this->indicators(refusal: 'Geheimhouding persoonsgegevens'),
+			shares: $this->shares,
+			userSession: $session,
+		);
+		$this->shares->expects($this->never())->method('createShare');
+
+		try {
+			$service->request(caseId: 'case-1', personUid: 'contact-8');
+			$this->fail(message: 'a party whose indicator refuses a send must not be sent to');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: 403, actual: $e->getCode());
+			$this->assertStringContainsString(
+				needle: 'Geheimhouding persoonsgegevens',
+				haystack: $e->getMessage(),
+				message: 'the refusal names the indicator'
+			);
+			$this->assertStringContainsString(
+				needle: 'Piet Pietersen',
+				haystack: $e->getMessage(),
+				message: 'and the party'
+			);
+		}
+	}//end testAPartyWhoseIndicatorRefusesASendIsNotSentTo()
+
+	/**
 	 * A case with no folder has nowhere to upload to.
 	 *
 	 * @return void
@@ -257,6 +356,7 @@ class FileRequestServiceTest extends TestCase {
 		$service = new FileRequestService(
 			people: $this->people,
 			folders: $this->folders,
+			indicators: $this->indicators(),
 			shares: $this->shares,
 			userSession: $session,
 		);
