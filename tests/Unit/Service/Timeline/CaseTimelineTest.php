@@ -234,7 +234,12 @@ class CaseTimelineTest extends TestCase {
 			}
 		);
 
+		// BOTH PSR-11 methods are stubbed, from the real interface rather than
+		// added to the double: `isAvailable()` asks `has()` and `record()` calls
+		// `get()`, and a double that answered only one of them would let a
+		// change to which method the seam uses pass unnoticed.
 		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturn($writerResolves);
 		$container->method('get')->willReturnCallback(
 			function (string $name) use ($writerResolves): object {
 				if ($writerResolves === false) {

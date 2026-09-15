@@ -44,7 +44,21 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The twelfth and thirteenth
+ * types are CaseTimeline and TimelineKinds, and they replaced nothing: a sent
+ * mail now also records a line on the case timeline, which is a new fact about
+ * this class rather than a new way of doing an old one. Control: per-file phpmd
+ * on this file at 43150ddf is clean, and reports thirteen here, so the two are
+ * exactly what crossed the threshold. The alternatives are worse than the
+ * suppression. Naming the kind as a bare string would drop TimelineKinds and
+ * take the drift guard with it, and an undeclared kind is refused, caught and
+ * logged rather than shown. Moving the call behind a per-writer method on
+ * CaseTimeline would drop TimelineKinds here and make that class know the shape
+ * of every writer in the app, which is the coupling this rule exists to stop,
+ * moved somewhere it is not measured.
+ *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
 

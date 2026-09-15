@@ -107,7 +107,11 @@ class CaseTimeline {
 	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 	 */
 	public function isAvailable(): bool {
-		return $this->writer() !== null;
+		if ($this->settings->isOpenRegisterAvailable() === false) {
+			return false;
+		}
+
+		return $this->container->has(self::WRITE_SERVICE);
 	}//end isAvailable()
 
 	/**
@@ -136,8 +140,7 @@ class CaseTimeline {
 			return '';
 		}
 
-		$writer = $this->writer();
-		if ($writer === null) {
+		if ($this->isAvailable() === false) {
 			return '';
 		}
 
@@ -150,6 +153,8 @@ class CaseTimeline {
 		[$objectService, $register, $schema] = $coordinates;
 
 		try {
+			$writer = $this->writer();
+
 			$object = $objectService->find($caseId, register: $register, schema: $schema);
 			if ($object === null) {
 				$this->soften(caseId: $caseId, kind: $kind, reason: 'the case could not be read');
@@ -244,26 +249,23 @@ class CaseTimeline {
 	}//end relatedObjects()
 
 	/**
-	 * OpenRegister's timeline writer, or null when this instance has none.
+	 * OpenRegister's timeline writer.
 	 *
-	 * @return object|null The writer.
+	 * DELIBERATELY NOT WRAPPED IN A TRY. A catch here that answered null would
+	 * be a swallowing catch in `lib/Service`, which `ServiceCatchReturnsNullTest`
+	 * counts against a ceiling that only goes down, and it would put a SECOND
+	 * place in this class that decides an entry is not going to be written.
+	 * {@see self::record()} already has that place, and it logs what happened.
+	 * So the absence is asked about with `has()`, which answers rather than
+	 * throws, and anything that still goes wrong inside `get()` travels to the
+	 * one catch that reports it.
+	 *
+	 * @return object The writer.
+	 *
+	 * @throws \Throwable When the container cannot build it.
 	 */
-	private function writer(): ?object {
-		if ($this->settings->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			$writer = $this->container->get(self::WRITE_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($writer) === false) {
-			return null;
-		}
-
-		return $writer;
+	private function writer(): object {
+		return $this->container->get(self::WRITE_SERVICE);
 	}//end writer()
 
 	/**
