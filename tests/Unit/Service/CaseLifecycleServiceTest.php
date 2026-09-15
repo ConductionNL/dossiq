@@ -29,6 +29,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 
 /**
  * Suspend, resume, extend and reopen.
@@ -137,6 +138,7 @@ class CaseLifecycleServiceTest extends TestCase {
 			pauseService: $this->pauseService,
 			extensionService: $this->extensionService,
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(CaseEndingActs::class),
 		);
 	}//end setUp()
 
@@ -180,6 +182,7 @@ class CaseLifecycleServiceTest extends TestCase {
 			pauseService: $this->pauseService,
 			extensionService: $this->extensionService,
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(CaseEndingActs::class),
 		);
 
 		$this->expectException(RuntimeException::class);
@@ -243,6 +246,7 @@ class CaseLifecycleServiceTest extends TestCase {
 			pauseService: $pauseService,
 			extensionService: $this->extensionService,
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(CaseEndingActs::class),
 		);
 
 		$service->suspend(caseId: 'case-1', reason: 'Aanvulling gevraagd', days: 14);
@@ -341,6 +345,7 @@ class CaseLifecycleServiceTest extends TestCase {
 			pauseService: $this->pauseService,
 			extensionService: $this->extensionService,
 			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(CaseEndingActs::class),
 		);
 
 		$this->expectException(RuntimeException::class);

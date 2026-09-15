@@ -38,6 +38,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Tests for StatusTransitionController::bulkPreview() and ::bulkExecute().
@@ -107,6 +108,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
+			$this->createMock(ProcessOwnedStatusRule::class),
 		);
 
 		$user = $this->createMock(IUser::class);
@@ -130,6 +132,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
+			$this->createMock(ProcessOwnedStatusRule::class),
 		);
 
 		$this->bulkEngine->expects($this->never())->method('preview');
@@ -155,6 +158,7 @@ final class StatusTransitionControllerBulkTest extends TestCase {
 			$this->userSession,
 			$this->logger,
 			$this->caseAccessGuard,
+			$this->createMock(ProcessOwnedStatusRule::class),
 		);
 
 		$this->bulkEngine->expects($this->never())->method('execute');

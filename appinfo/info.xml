@@ -156,6 +156,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             See openspec/changes/case-status-onto-engine-lifecycle.
         -->
         <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <!--
+            lifecycle-acts-on-the-case REQ-LIFE-04: a case type may declare a
+            period of no activity after which dossiq closes the case. Off by
+            default, announced before it happens, and recorded as the product
+            having done it.
+        -->
+        <job>OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>

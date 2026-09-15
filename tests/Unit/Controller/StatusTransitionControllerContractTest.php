@@ -46,6 +46,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Wire-contract tests for StatusTransitionController::freeform().
@@ -126,6 +127,7 @@ class StatusTransitionControllerContractTest extends TestCase {
 			userSession: $this->userSession,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,
+			processOwnedStatus: $this->createMock(ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 
