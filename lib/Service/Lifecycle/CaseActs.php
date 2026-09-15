@@ -39,7 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCP\IUserSession;
 
 /**
  * One seam over the six classes that own the acts on a case.
@@ -65,6 +67,11 @@ class CaseActs {
 	 * @param LifecycleActorGate $gate Whether an act is permitted, and which role is missing.
 	 * @param ProcessOwnedStatusRule $processStatus Whether a status may be hand-set.
 	 * @param CaseStatusStore $store Reads the case the overview is about.
+	 * @param AlwaysAvailableActs|null $alwaysAvailable The acts the case type allows in every
+	 *                                                  phase. Optional, so a test that predates
+	 *                                                  the half builds the facade as it did.
+	 * @param IUserSession|null $userSession Names the caller the always-available acts are
+	 *                                       decided for.
 	 */
 	public function __construct(
 		private readonly CaseEndingActs $endings,
@@ -74,8 +81,34 @@ class CaseActs {
 		private readonly LifecycleActorGate $gate,
 		private readonly ProcessOwnedStatusRule $processStatus,
 		private readonly CaseStatusStore $store,
+		private readonly ?AlwaysAvailableActs $alwaysAvailable = null,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The acts this case type allows in every phase, decided for this caller.
+	 *
+	 * Answers the empty list when the half is not wired, which is what every
+	 * test constructing this facade seven-argument gets: the half is
+	 * additive, and a test written before it cannot be failed by it.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array<int, array<string, mixed>> The acts, each carrying its verdict.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function alwaysAvailableOn(string $caseId): array {
+		if ($this->alwaysAvailable === null) {
+			return [];
+		}
+
+		return $this->alwaysAvailable->forCase(
+			caseId: $caseId,
+			userId: (string)($this->userSession?->getUser()?->getUID() ?? '')
+		);
+	}//end alwaysAvailableOn()
 
 	/**
 	 * What this handler may do to this case, with a reason on every refusal.
@@ -118,6 +151,17 @@ class CaseActs {
 				caseTypeId: (string)($case['caseType'] ?? '')
 			),
 			'acts' => $this->verdicts(case: $case),
+			// The second half of "what may I do right now": the acts the case
+			// type allows in EVERY phase, beside the acts of the current one.
+			// One answer and one menu, because two lists are two places to
+			// look and one of them gets forgotten.
+			//
+			// 🔑 NOT A PHASE THAT IS ALWAYS ACTIVE. Modelled as a phase, an
+			// always-available act would appear in the phase strip, count
+			// towards the progress figure and be given a phase term, and all
+			// three would be wrong. It is its own declared list, marked, and
+			// it never reaches the status machinery.
+			'alwaysAvailable' => $this->alwaysAvailableOn(caseId: $caseId),
 		];
 	}//end overview()
 

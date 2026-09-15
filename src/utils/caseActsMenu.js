@@ -234,17 +234,54 @@ function stateEntries(acts) {
  * @param {object} answers The three server answers.
  * @param {Array<object>} [answers.transitions] The `/available-transitions` list.
  * @param {object|null} [answers.state] The `/lifecycle` answer.
- * @param {object|null} [answers.acts] The `/acts` answer.
+ * @param {object|null} [answers.acts] The `/acts` answer, carrying both the
+ *   role-gated ending acts and the case type's always-available ones.
  * @return {Array<object>} The menu entries.
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 export function buildActsMenu({ transitions, state, acts } = {}) {
 	return [
 		...transitionEntries(transitions),
+		...alwaysAvailableEntries(acts),
 		...gestureEntries(state),
 		...endingEntries(acts),
 		...stateEntries(acts),
 	]
+}
+
+/**
+ * The acts the case type allows in EVERY phase, marked as such.
+ *
+ * Second in the list, straight after the phase's own moves, because that is
+ * the reading order a handler expects: what this phase is asking of me, then
+ * what I can always do. The ending acts stay last.
+ *
+ * 🔴 THEY ARE NOT PHASES. An always-available act never enters the phase
+ * strip, the progress figure or a term, and it is kept out of all three by
+ * being its own declared list on the case type rather than a status. `kind`
+ * is what a surface reads to mark it, and nothing downstream treats it as a
+ * transition.
+ *
+ * @param {object|null} acts The `/acts` answer.
+ * @return {Array<object>} The entries.
+ * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+ */
+function alwaysAvailableEntries(acts) {
+	const declared = Array.isArray(acts?.alwaysAvailable) ? acts.alwaysAvailable : []
+
+	return declared
+		.filter((act) => String(act?.id ?? '').trim() !== '')
+		.map((act) => ({
+			kind: 'always',
+			id: String(act.id).trim(),
+			label: String(act.label ?? act.id).trim(),
+			explainer: String(act.description ?? '').trim(),
+			// Shown and disabled with the guard's own sentence, never hidden:
+			// an act that vanishes tells the reader the system cannot do it,
+			// where one shown with its reason tells them who to ask.
+			disabled: act.available === false,
+			reason: String(act.reason ?? '').trim(),
+		}))
 }
 
 /**

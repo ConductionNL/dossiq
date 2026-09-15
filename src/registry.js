@@ -23,6 +23,8 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The inline task pane on the case page (task-on-the-case A06).
+// @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
@@ -63,8 +65,6 @@ import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-// The inline task pane on the case page (task-on-the-case A06).
-// @spec openspec/specs/task-management/spec.md
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -465,6 +465,7 @@ const registry = {
 		component: CaseTaskPane,
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
+
 
 	// --- Case panel tabs that were sidebar tabs first. ---
 	//
