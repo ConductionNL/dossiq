@@ -92,6 +92,8 @@ class DomainCopyService {
 	 * @param string $name     What the new domain is called.
 	 *
 	 * @return array{complete: bool, domain: string, carried: array<string, int>, notCarried: array<int, string>, reason: string}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function copy(string $domainId, string $name): array {
 		$result = [

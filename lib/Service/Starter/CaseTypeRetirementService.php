@@ -68,6 +68,8 @@ class CaseTypeRetirementService {
 	 * @param string $caseTypeId The case type's id.
 	 *
 	 * @return array{ok: bool, reason: string, state: string} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function retire(string $caseTypeId): array {
 		$caseType = $this->store->row(configKey: self::CASE_TYPES, id: $caseTypeId);
@@ -104,6 +106,8 @@ class CaseTypeRetirementService {
 	 * @param string $caseTypeId The case type's id.
 	 *
 	 * @return array{ok: bool, reason: string, state: string} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function restore(string $caseTypeId): array {
 		$caseType = $this->store->row(configKey: self::CASE_TYPES, id: $caseTypeId);

@@ -76,6 +76,8 @@ class ReusableProcessStepService {
 	 * @param string $caseTypeId The case type's id.
 	 *
 	 * @return array<int, array<string, mixed>>|null The steps, or null when unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function stepsOf(string $caseTypeId): ?array {
 		$caseType = $this->store->row(configKey: self::CASE_TYPES, id: $caseTypeId);
@@ -106,6 +108,8 @@ class ReusableProcessStepService {
 	 *
 	 * @return array<int, array{id: string, title: string}>|null The case types,
 	 *                                                           or null when unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function usedBy(string $stepId): ?array {
 		$caseTypes = $this->store->rows(configKey: self::CASE_TYPES);
@@ -143,6 +147,8 @@ class ReusableProcessStepService {
 	 * @param string $stepId     The step's id.
 	 *
 	 * @return boolean True when the reference is there afterwards.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function attach(string $caseTypeId, string $stepId): bool {
 		$caseType = $this->store->row(configKey: self::CASE_TYPES, id: $caseTypeId);
@@ -173,6 +179,8 @@ class ReusableProcessStepService {
 	 *
 	 * @return array{ok: bool, reason: string, usedBy: string} What happened, and
 	 *         which case type stopped it when it did not.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function delete(string $stepId): array {
 		$users = $this->usedBy(stepId: $stepId);

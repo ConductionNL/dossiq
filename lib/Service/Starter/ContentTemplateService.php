@@ -125,6 +125,8 @@ class ContentTemplateService {
 	 *
 	 * @return array<int, array<string, mixed>>|null The templates, or null when
 	 *                                               the store is unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function offered(string $kind, string $caseTypeId, string $search = ''): ?array {
 		if (in_array($kind, self::KINDS, true) === false) {
@@ -171,6 +173,8 @@ class ContentTemplateService {
 	 *
 	 * @return array<string, mixed>|null The presets, or null when there is no
 	 *                                   such template.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function apply(string $templateId): ?array {
 		$row = $this->store->row(configKey: self::TEMPLATES, id: $templateId);

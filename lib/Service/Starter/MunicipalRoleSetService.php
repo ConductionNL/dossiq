@@ -128,6 +128,8 @@ class MunicipalRoleSetService {
 	 *
 	 * @return array{seeded: int, skipped: int}|null The tally, or null when the
 	 *                                               store is unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function seed(): ?array {
 		$existing = $this->shippedRoles();
@@ -170,6 +172,8 @@ class MunicipalRoleSetService {
 	 * whether anything has been granted against it.
 	 *
 	 * @return array<string, mixed>|null The offer, or null when unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function offer(): ?array {
 		$roles = $this->shippedRoles();
@@ -202,6 +206,8 @@ class MunicipalRoleSetService {
 	 * Take the set into use.
 	 *
 	 * @return array{ok: bool, reason: string, adopted: int} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function adopt(): array {
 		$roles = $this->shippedRoles();
@@ -254,6 +260,8 @@ class MunicipalRoleSetService {
 	 *
 	 * @return array{ok: bool, reason: string, roleInUse: string} What happened,
 	 *         and which role stopped it when it did not.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function undoAdoption(): array {
 		$roles = $this->shippedRoles();

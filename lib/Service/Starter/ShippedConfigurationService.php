@@ -90,6 +90,8 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $object       The object as it shipped.
 	 *
 	 * @return boolean True when the stamp was written.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function stamp(string $set, string $targetSchema, string $targetObject, array $object): bool {
 		$version = ShippedSets::versionOf(set: $set);
@@ -139,6 +141,8 @@ class ShippedConfigurationService {
 	 * @param array<string, mixed> $object       The object as it stands now.
 	 *
 	 * @return array{state: string, set: string, setVersion: string} The answer.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function stateOf(string $targetSchema, string $targetObject, array $object): array {
 		$row = $this->ledgerRow(targetSchema: $targetSchema, targetObject: $targetObject);
@@ -167,6 +171,8 @@ class ShippedConfigurationService {
 	 *
 	 * @return array<int, array<string, mixed>>|null The rows, or null when the
 	 *                                               store is unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function overview(string $targetSchema, string $objectsKey): ?array {
 		$ledger = $this->store->rows(configKey: self::LEDGER, filters: ['targetSchema' => $targetSchema]);
@@ -234,6 +240,8 @@ class ShippedConfigurationService {
 	 * @param boolean              $accepted     Whether a local change may be overwritten.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened, and why not when it did not.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function adopt(
 		string $targetSchema,

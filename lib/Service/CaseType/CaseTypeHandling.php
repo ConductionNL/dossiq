@@ -99,6 +99,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return array{defaultGroup: string, defaultHandler: string, automaticMessages: array<int, string>, intakeScreen: string}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function of(array $caseType): array {
 		return [
@@ -115,6 +117,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return string The group id, or '' when the type names none.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function defaultGroup(array $caseType): string {
 		$declared = $this->switchValue(caseType: $caseType, name: 'defaultGroup');
@@ -148,6 +152,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return string The user id, or '' when the case stays unclaimed.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function defaultHandler(array $caseType): string {
 		$declared = $this->switchValue(caseType: $caseType, name: 'defaultHandler');
@@ -164,6 +170,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return array<int, string> The message names, in declaration order.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function automaticMessages(array $caseType): array {
 		$declared = $this->switchValue(caseType: $caseType, name: 'automaticMessages');
@@ -192,6 +200,8 @@ final class CaseTypeHandling {
 	 * @param string               $message  The message name.
 	 *
 	 * @return boolean True when the message is sent.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function sends(array $caseType, string $message): bool {
 		return in_array($message, $this->automaticMessages(caseType: $caseType), true);
@@ -203,6 +213,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return string The page id, or '' for the standard intake screen.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function intakeScreen(array $caseType): string {
 		$declared = $this->switchValue(caseType: $caseType, name: 'intakeScreen');
@@ -219,6 +231,8 @@ final class CaseTypeHandling {
 	 * @param array<string, mixed> $caseType The case type row.
 	 *
 	 * @return array<int, string> The unread switch names, sorted.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function unreadSwitches(array $caseType): array {
 		$block = ($caseType[self::PROPERTY] ?? null);

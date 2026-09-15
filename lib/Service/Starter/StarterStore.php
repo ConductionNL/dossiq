@@ -67,6 +67,8 @@ class StarterStore {
 	 * @param string $configKey The app config key naming the schema.
 	 *
 	 * @return boolean True when reads and writes will be attempted.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function available(string $configKey): bool {
 		return ($this->context(configKey: $configKey) !== null);
@@ -79,6 +81,8 @@ class StarterStore {
 	 * @param array<string, mixed> $filters   Equality filters, plus `_limit`.
 	 *
 	 * @return array<int, array<string, mixed>>|null The rows, or null when unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function rows(string $configKey, array $filters = []): ?array {
 		$context = $this->context(configKey: $configKey);
@@ -113,6 +117,8 @@ class StarterStore {
 	 * @param string $id        The row's id.
 	 *
 	 * @return array<string, mixed>|null The row, or null when it is not there.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function row(string $configKey, string $id): ?array {
 		$context = $this->context(configKey: $configKey);
@@ -144,6 +150,8 @@ class StarterStore {
 	 * @param string|null          $id        The id to update, or null to create.
 	 *
 	 * @return array<string, mixed>|null The stored row, or null when the write failed.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function save(string $configKey, array $payload, ?string $id = null): ?array {
 		$context = $this->context(configKey: $configKey);
@@ -175,6 +183,8 @@ class StarterStore {
 	 * @param string $id        The row's id.
 	 *
 	 * @return boolean True when the row is gone.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function delete(string $configKey, string $id): bool {
 		$context = $this->context(configKey: $configKey);
@@ -203,6 +213,8 @@ class StarterStore {
 	 * @param array<string, mixed>|null $row The row.
 	 *
 	 * @return string The id, or the empty string.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function idOf(?array $row): string {
 		if ($row === null) {

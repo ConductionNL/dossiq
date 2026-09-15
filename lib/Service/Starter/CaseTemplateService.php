@@ -82,6 +82,8 @@ class CaseTemplateService {
 	 * @param array<string, mixed> $case The case row.
 	 *
 	 * @return boolean True when the row is a template.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function isTemplate(array $case): bool {
 		return (($case[self::PROPERTY] ?? false) === true);
@@ -97,6 +99,8 @@ class CaseTemplateService {
 	 * @param array<string, mixed> $case The case row.
 	 *
 	 * @return boolean True when a deadline belongs on this case.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function bindsTerm(array $case): bool {
 		return ($this->isTemplate(case: $case) === false);
@@ -109,6 +113,8 @@ class CaseTemplateService {
 	 *
 	 * @return array<int, array<string, mixed>>|null The templates, or null when
 	 *                                               the store is unreachable.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function templates(string $caseTypeId = ''): ?array {
 		$filters = [self::PROPERTY => true];
@@ -138,6 +144,8 @@ class CaseTemplateService {
 	 * @param array<string, mixed> $overrides  Fields the handler set themselves.
 	 *
 	 * @return array{ok: bool, reason: string, case: array<string, mixed>} What happened.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
 	 */
 	public function startFrom(string $templateId, array $overrides = []): array {
 		$template = $this->store->row(configKey: self::CASES, id: $templateId);

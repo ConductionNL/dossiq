@@ -63,6 +63,8 @@ final class CaseTypeLifecycleState {
 	 * @param DateTimeInterface|null $on       The day to judge it on, or null for today.
 	 *
 	 * @return string One of draft, in_use or retired.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function of(array $caseType, ?DateTimeInterface $on = null): string {
 		if (($caseType['isDraft'] ?? false) === true) {
@@ -92,6 +94,8 @@ final class CaseTypeLifecycleState {
 	 * @param DateTimeInterface|null $on       The day to judge it on, or null for today.
 	 *
 	 * @return boolean True when a handler may start a case of this type.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function acceptsNewCases(array $caseType, ?DateTimeInterface $on = null): bool {
 		return ($this->of(caseType: $caseType, on: $on) === self::IN_USE);

@@ -88,6 +88,8 @@ class ConnectionTestService {
 	 * @param string $endpoint The endpoint the connection points at.
 	 *
 	 * @return array{state: string, endpoint: string, status: int, reason: string, measuredAt: string}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
 	 */
 	public function untested(string $endpoint): array {
 		return [
@@ -105,6 +107,8 @@ class ConnectionTestService {
 	 * @param string $endpoint The URL to call.
 	 *
 	 * @return array{state: string, endpoint: string, status: int, reason: string, measuredAt: string, responseTimeMs: int}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
 	 */
 	public function probe(string $endpoint): array {
 		$result = ($this->untested(endpoint: $endpoint) + ['responseTimeMs' => 0]);

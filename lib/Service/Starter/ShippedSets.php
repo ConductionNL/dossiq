@@ -73,6 +73,8 @@ final class ShippedSets {
 	 * @param string $set The set name.
 	 *
 	 * @return string The version, or '' when the set is not declared here.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public static function versionOf(string $set): string {
 		return (self::VERSIONS[$set] ?? '');

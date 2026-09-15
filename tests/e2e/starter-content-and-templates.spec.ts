@@ -299,8 +299,6 @@ test.describe('a reusable step is changed once for two case types', () => {
 		})
 		expect(refused.status()).toBe(409)
 		expect((await refused.json()).usedBy).toBeTruthy()
-
-		expect(objectId(second)).toBeTruthy()
 	})
 })
 

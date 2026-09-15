@@ -60,6 +60,8 @@ final class ShippedFingerprint {
 	 * @param array<string, mixed> $object The object as stored.
 	 *
 	 * @return string A hex sha256 of the object's authored content.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public static function of(array $object): string {
 		$canonical = self::canonical(value: $object);
@@ -78,6 +80,8 @@ final class ShippedFingerprint {
 	 * @param string               $fingerprint The fingerprint recorded at seed time.
 	 *
 	 * @return boolean True when the object is untouched.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public static function matches(array $object, string $fingerprint): bool {
 		if ($fingerprint === '') {
