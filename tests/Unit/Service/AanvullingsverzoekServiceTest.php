@@ -224,7 +224,7 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		$service = $this->service();
 		$service->expects($this->never())->method('write');
 
-		$this->expectException(RefusedException::class);
+		$this->expectException(exception: RefusedException::class);
 
 		$service->ask(
 			caseId: 'case-1',
@@ -273,7 +273,7 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			->method('markCaseWaiting')
 			->with(
 				'case-1',
-				$this->callback(static fn (?string $since): bool => ($since !== null && $since !== ''))
+				$this->callback(callback: static fn (?string $since): bool => ($since !== null && $since !== ''))
 			);
 
 		$service->ask(

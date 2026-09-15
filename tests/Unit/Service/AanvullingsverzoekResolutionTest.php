@@ -235,7 +235,7 @@ class AanvullingsverzoekResolutionTest extends TestCase {
 		$this->requests->method('openFor')->willReturn(null);
 		$this->act->expects($this->never())->method('receive');
 
-		$this->expectException(RefusedException::class);
+		$this->expectException(exception: RefusedException::class);
 
 		$this->service()->recordAnswer(
 			caseId: 'case-1',

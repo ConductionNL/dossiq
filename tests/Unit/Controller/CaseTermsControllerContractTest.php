@@ -114,8 +114,8 @@ class CaseTermsControllerContractTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->terms = $this->createMock(CaseTermsService::class);
-		$this->aanvullingen = $this->createMock(AanvullingsverzoekService::class);
-		$this->resolution = $this->createMock(AanvullingsverzoekResolutionService::class);
+		$this->aanvullingen = $this->createMock(originalClassName: AanvullingsverzoekService::class);
+		$this->resolution = $this->createMock(originalClassName: AanvullingsverzoekResolutionService::class);
 		$this->workload = $this->createMock(OpenWorkloadAgeService::class);
 		$this->guard = $this->createMock(CaseAccessGuard::class);
 		$this->userSession = $this->createMock(IUserSession::class);
@@ -253,12 +253,18 @@ class CaseTermsControllerContractTest extends TestCase {
 		$response = $this->controller->requestInformation(caseId: 'c1');
 
 		self::assertNotSame(
-			Http::STATUS_OK,
-			$response->getStatus(),
-			'A 200 here is read as a successful pause by whatever renders it next.'
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus(),
+			message: 'A 200 here is read as a successful pause by whatever renders it next.'
 		);
-		self::assertSame(RefusedException::STATUS_INDETERMINATE, $response->getStatus());
-		self::assertSame('aanvullingsverzoek-not-sent', $response->getData()['error']);
+		self::assertSame(
+			expected: RefusedException::STATUS_INDETERMINATE,
+			actual: $response->getStatus()
+		);
+		self::assertSame(
+			expected: 'aanvullingsverzoek-not-sent',
+			actual: $response->getData()['error']
+		);
 	}//end testAFailedLetterDoesNotAnswerOk()
 
 	/**
@@ -283,7 +289,7 @@ class CaseTermsControllerContractTest extends TestCase {
 		self::assertTrue($response->getData()['suspended']);
 		// The record is the point of the change: the answer carries what was
 		// asked, not only that something was asked.
-		self::assertSame('open', $response->getData()['request']['state']);
+		self::assertSame(expected: 'open', actual: $response->getData()['request']['state']);
 	}//end testARequestThatWentOutAnswersOk()
 
 	/**
@@ -319,7 +325,7 @@ class CaseTermsControllerContractTest extends TestCase {
 		$response = $this->controller->receiveInformation(caseId: 'c1');
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
-		self::assertSame('answered', $response->getData()['state']);
+		self::assertSame(expected: 'answered', actual: $response->getData()['state']);
 	}//end testTheAanvullingResumesTheTerm()
 
 	/**
@@ -342,6 +348,76 @@ class CaseTermsControllerContractTest extends TestCase {
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 		self::assertSame(3, $response->getData()['openCases']);
 	}//end testTheWorkloadReportAnswersAnAgePerStatus()
+
+	/**
+	 * The requests read answers what is waiting, and how long each has been.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 */
+	public function testTheRequestsReadAnswersWhatIsWaiting(): void {
+		$this->aanvullingen->method('forCase')->willReturn(
+			[
+				['state' => 'answered', 'requestedAt' => '2026-08-01T09:00:00+00:00'],
+				['state' => 'open', 'requestedAt' => '2026-09-01T09:00:00+00:00'],
+			]
+		);
+		$this->aanvullingen->method('daysOpen')->willReturn(14);
+
+		$response = $this->controller->aanvullingsverzoeken(caseId: 'c1');
+		$body = (array)$response->getData();
+
+		self::assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		self::assertTrue(condition: $body['waiting']);
+		self::assertSame(expected: 1, actual: $body['open'], message: 'only the open one counts as waiting');
+		self::assertCount(
+			expectedCount: 2,
+			haystack: $body['requests'],
+			message: 'an answered request stays readable; that is the point of the record'
+		);
+		self::assertSame(
+			expected: 14,
+			actual: $body['requests'][1]['daysOpen'],
+			message: 'the open one carries how long it has been open'
+		);
+		self::assertSame(
+			expected: 0,
+			actual: $body['requests'][0]['daysOpen'],
+			message: 'a closed request is not still counting'
+		);
+	}//end testTheRequestsReadAnswersWhatIsWaiting()
+
+	/**
+	 * The requests read is refused to a caller with no session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md
+	 */
+	public function testTheRequestsReadRefusesAnAnonymousCaller(): void {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(null);
+
+		$controller = new CaseTermsController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			terms: $this->terms,
+			workload: $this->workload,
+			guard: $this->guard,
+			userSession: $session,
+			logger: new NullLogger(),
+			aanvullingen: $this->aanvullingen,
+			resolution: $this->resolution,
+		);
+
+		$this->aanvullingen->expects(self::never())->method('forCase');
+
+		self::assertSame(
+			expected: Http::STATUS_UNAUTHORIZED,
+			actual: $controller->aanvullingsverzoeken(caseId: 'c1')->getStatus()
+		);
+	}//end testTheRequestsReadRefusesAnAnonymousCaller()
 
 	/**
 	 * A request carrying no session at all is refused, guard or no guard.
