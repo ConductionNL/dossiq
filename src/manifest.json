@@ -1,7 +1,9 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"version": "1.2.0",
-	"dependencies": ["openregister"],
+	"dependencies": [
+		"openregister"
+	],
 	"setup": {
 		"enabled": true,
 		"version": 1,
@@ -43,7 +45,9 @@
 				"type": "config-fields",
 				"title": "Dwangsom callback signing secret",
 				"required": false,
-				"configKeys": ["dwangsom_callback_secret"],
+				"configKeys": [
+					"dwangsom_callback_secret"
+				],
 				"schema": {
 					"type": "object",
 					"properties": {
@@ -693,7 +697,9 @@
 								"filter": {
 									"isFinalStatus": false
 								},
-								"extend": ["calculations"],
+								"extend": [
+									"calculations"
+								],
 								"order": {
 									"@self.updated": "asc"
 								},
@@ -889,7 +895,9 @@
 										"lte": "@today+3d"
 									}
 								},
-								"extend": ["calculations"],
+								"extend": [
+									"calculations"
+								],
 								"order": {
 									"deadline": "asc"
 								},
@@ -1027,8 +1035,16 @@
 					"isFinalStatus": false
 				},
 				"allowSavedViews": true,
-				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
-				"viewModes": ["table", "cards"],
+				"excludeFields": [
+					"status",
+					"priority",
+					"priorityOverride",
+					"priorityOverrideReason"
+				],
+				"viewModes": [
+					"table",
+					"cards"
+				],
 				"showViewAction": false,
 				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of customComponents.js, because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
 				"actions": [
@@ -1105,17 +1121,17 @@
 			"actionsComponent": "CaseListExportAction",
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
-				"_bulkActionsNote": "one-case-list A21. Bulk work stopped at Reassign while `BulkTransitionDialog` and `BulkStatusTransitionService` already served the workflow board, so the four gestures a handler does most from a list were reachable only one case at a time. Each handler opens the SAME dialog in its own mode with a required reason: Suspend, Resume and Extend term are statutory acts (Awb 4:5 and 4:14) someone has to justify later, and doing twenty at once is exactly when the justification goes unwritten. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
+				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
 						"id": "reassign",
-						"label": "Reassign",
+						"label": "Give to another handler",
 						"icon": "AccountSwitchOutline",
 						"handler": "reassignSelection"
 					},
 					{
 						"id": "transition",
-						"label": "Transition",
+						"label": "Move to another status",
 						"icon": "SwapHorizontal",
 						"handler": "transitionSelection"
 					},
@@ -1133,7 +1149,7 @@
 					},
 					{
 						"id": "extend-term",
-						"label": "Extend term",
+						"label": "Extend the term",
 						"icon": "CalendarPlus",
 						"handler": "extendTermSelection"
 					}
@@ -1141,12 +1157,24 @@
 				"register": "dossiq",
 				"schema": "case",
 				"allowSavedViews": true,
-				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
-				"viewModes": ["table", "cards", "map"],
+				"excludeFields": [
+					"status",
+					"priority",
+					"priorityOverride",
+					"priorityOverrideReason"
+				],
+				"viewModes": [
+					"table",
+					"cards",
+					"map"
+				],
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
-					"center": [52.1326, 5.2913],
+					"center": [
+						52.1326,
+						5.2913
+					],
 					"basemaps": [
 						{
 							"name": "Standard",
@@ -1185,7 +1213,9 @@
 					}
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
-				"extend": ["assignedGroup"],
+				"extend": [
+					"assignedGroup"
+				],
 				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. It carries no `statusHiddenInLists` of its own, matching its sibling Overdue rather than All.",
 				"quickFilters": [
 					{
@@ -2071,7 +2101,9 @@
 									"props": {
 										"title": "Tags",
 										"columns": 1,
-										"include": ["tags"],
+										"include": [
+											"tags"
+										],
 										"overrides": {
 											"tags": {
 												"widget": "tags"
@@ -2156,7 +2188,9 @@
 						"successMessage": "Contact logged on this case.",
 						"props": {
 							"case": "@objectId",
-							"relatedCases": ["@objectId"],
+							"relatedCases": [
+								"@objectId"
+							],
 							"kccEmployeeId": "@me",
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
@@ -3612,7 +3646,11 @@
 						"content": {
 							"title": "State machine",
 							"columns": 2,
-							"include": ["steps", "transitions", "nodePositions"]
+							"include": [
+								"steps",
+								"transitions",
+								"nodePositions"
+							]
 						}
 					}
 				],
@@ -4517,18 +4555,45 @@
 				],
 				"_includeFieldsNote": "Twelve of the forty-one, and every one of them is also on CaseTypeDetail, so nothing here becomes unreachable by being left off the create form. The cut follows the detail page's own grouping: this is `case-type-core` (title, identifier, description, category, parentCaseType, purpose, trigger, handlingModel, confidentiality, isDraft) plus the two facts from `case-type-terms` that a type cannot sensibly start life without, its statutory `processingDeadline` and the `validFrom` it takes effect on. What is deliberately NOT here: the versioning trio (version, previousVersion, supersededBy) is written by the publish action, not typed; the relation lists (subCaseTypes, decisionTypes, relatedCaseTypes, startableFlows) are built up on the detail page once the thing they point at exists; the AVG block (case-type-privacy) is a data protection officer's pass over an existing type rather than an author's first screen; and the remaining specialist codings (layerIds, iv3TaskField, selectionListProcessType, referenceProcess, verwerkingsactiviteit) are lookups nobody has to hand while naming a new type. `initialStatus` is excluded for a HARDER reason, the same one the CaseTypes-adjacent `case` form records for `status`: it is a $ref to a statusType filtered by `caseType`, and at create time this case type has no id and therefore no statuses, so the picker would fetch unfiltered and offer every OTHER type's statuses. Half of those are called `Received` or `In progress`, which makes them both indistinguishable and wrong. A type's statuses are authored on its detail page, after it exists.",
 				"fieldOverrides": {
-					"title": { "order": 1 },
-					"identifier": { "order": 2 },
-					"category": { "order": 3 },
-					"handlingModel": { "order": 4 },
-					"confidentiality": { "order": 5 },
-					"processingDeadline": { "order": 6 },
-					"validFrom": { "order": 7 },
-					"isDraft": { "order": 8 },
-					"parentCaseType": { "order": 9 },
-					"description": { "order": 10, "widget": "textarea" },
-					"purpose": { "order": 11, "widget": "textarea" },
-					"trigger": { "order": 12, "widget": "textarea" }
+					"title": {
+						"order": 1
+					},
+					"identifier": {
+						"order": 2
+					},
+					"category": {
+						"order": 3
+					},
+					"handlingModel": {
+						"order": 4
+					},
+					"confidentiality": {
+						"order": 5
+					},
+					"processingDeadline": {
+						"order": 6
+					},
+					"validFrom": {
+						"order": 7
+					},
+					"isDraft": {
+						"order": 8
+					},
+					"parentCaseType": {
+						"order": 9
+					},
+					"description": {
+						"order": 10,
+						"widget": "textarea"
+					},
+					"purpose": {
+						"order": 11,
+						"widget": "textarea"
+					},
+					"trigger": {
+						"order": 12,
+						"widget": "textarea"
+					}
 				},
 				"_fieldOverridesNote": "`order` is set here rather than on the register because fieldsFromSchema resolves an override's `order` AHEAD of the property's own, so one manifest map orders every schema-driven surface without a data-model change. It is not cosmetic: not one of caseType's 41 properties carries an `order`, so the sort falls through to alphabetical and a form that opens on `Category` puts `Title` TENTH. The three prose fields are declared `textarea` because caseType leaves them as plain strings with no maxLength, so resolveWidget renders a single-line input for what is a paragraph. That also decides the layout: CnFormDialog spans a textarea across BOTH columns (WIDE_WIDGETS), so the nine single-line fields pair up into rows first and the three prose fields follow full width, which is why the order puts them last. Interleaved, each one would leave the column beside it empty.",
 				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`. CnIndexPage still resolves exactly four sources, register, field, custom and files, and CnFolderSidebar's own validator takes only custom, field and files, so a sidebar declared as a facet falls through to `custom`, finds the (absent) `folders` array and renders an empty pane. THE SECOND HALF OF THIS NOTE WAS TRUE UNTIL nextcloud-vue 2.42.0 AND IS NOT ANY MORE: `field` no longer derives the folders from the distinct `category` values of the loaded rows. Since #1036 it prefers the FACET for `field`, which is computed over the whole query with pagination stripped, and only groups the rows when no facet arrives. That is what makes a category reachable when every row carrying it sits on a later page, and it is why no manifest change is wanted here: `facetable: true` on the property plus `source: \"field\"` is the whole contract, and the object store adds `_facets=extend` on its own once the fetched schema has any facetable property. `x-openregister-facet` is still read by nothing. ⚠️ The facet ARRIVES an hour stale, because OpenRegister caches the response and no object write invalidates it, so a category added today gets no folder today: OpenRegister#3560, and the reason the folder e2e test is parked.",
@@ -5441,7 +5506,10 @@
 					"kind": "objectCount",
 					"register": "dossiq",
 					"schema": "case",
-					"groupBy": ["status", "caseType"]
+					"groupBy": [
+						"status",
+						"caseType"
+					]
 				}
 			},
 			{
