@@ -159,9 +159,18 @@ export default {
 				const { items, unavailable } = await fetchEndOfDay()
 				this.unavailable = unavailable
 
+				// One request per item, in parallel. Sequentially this was a
+				// round trip per candidate, so a handler with twenty open
+				// cases waited for twenty of them in a row before the screen
+				// showed anything.
 				const states = {}
-				for (const item of items) {
-					states[item.id] = await fetchReadState(item.subjectId, 'dossiq', item.subjectType)
+				const read = await Promise.all(
+					items.map((item) => fetchReadState(item.subjectId, 'dossiq', item.subjectType)
+						.then((state) => [item.id, state])
+						.catch(() => [item.id, null])),
+				)
+				for (const [id, state] of read) {
+					states[id] = state
 				}
 
 				this.items = touchedToday(items, states, todayOf())

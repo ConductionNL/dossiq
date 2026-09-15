@@ -118,23 +118,6 @@ class PersonalQueueService {
 	}//end forPerson()
 
 	/**
-	 * How many things are waiting on one person.
-	 *
-	 * The digest asks this before it composes anything, so a person with an
-	 * empty queue costs one read and no message.
-	 *
-	 * @param string                 $userId The person.
-	 * @param DateTimeImmutable|null $now    The moment to score against.
-	 *
-	 * @return integer The number of items waiting.
-	 *
-	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-	 */
-	public function countFor(string $userId, ?DateTimeImmutable $now = null): int {
-		return (int)$this->forPerson(userId: $userId, now: $now)['total'];
-	}//end countFor()
-
-	/**
 	 * Group the ordered items.
 	 *
 	 * The groups keep the queue's order: a group is named by the first item
