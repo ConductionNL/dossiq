@@ -199,11 +199,12 @@ class CaseStateFieldRuleProjector {
 			$lifecycle = [];
 		}
 
-		$merged = $this->mergeStates(
-			live: (is_array(($lifecycle['states'] ?? null)) === true ? $lifecycle['states'] : []),
-			own: $states,
-			ownKeys: $ownKeys
-		);
+		$live = ($lifecycle['states'] ?? []);
+		if (is_array($live) === false) {
+			$live = [];
+		}
+
+		$merged = $this->mergeStates(live: $live, own: $states, ownKeys: $ownKeys);
 
 		if ($merged === ($lifecycle['states'] ?? null)) {
 			return false;
