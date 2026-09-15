@@ -85,29 +85,54 @@ class CaseRoleVocabulary {
 		}
 
 		$kinds = $this->parties->kinds();
-		$current = ($configuration['linkRoles'] ?? null);
-		if ($current === $roles && ($configuration['partyKinds'] ?? null) === $kinds) {
+		if (($configuration['linkRoles'] ?? null) === $roles && ($configuration['partyKinds'] ?? null) === $kinds) {
 			return count($roles);
 		}
 
 		$configuration['linkRoles'] = $roles;
 		$configuration['partyKinds'] = $kinds;
 		$schema->setConfiguration($configuration);
-		$stored = $this->schemaMapper()->update($schema);
 
-		// Read back rather than trust the write: OpenRegister drops a
-		// configuration key its own vocabulary does not know, in silence, which
-		// is what made the documented `x-contactRoles` a no-op for a year. An
-		// instance whose OpenRegister predates people-on-objects lands here.
-		$kept = [];
-		$keptKinds = [];
-		if (is_object($stored) === true && is_callable([$stored, 'getConfiguration']) === true) {
-			$storedConfiguration = (array)call_user_func([$stored, 'getConfiguration']);
-			$kept = (array)($storedConfiguration['linkRoles'] ?? []);
-			$keptKinds = (array)($storedConfiguration['partyKinds'] ?? []);
+		return $this->verdictOn(
+			stored: $this->configurationOf(stored: $this->schemaMapper()->update($schema)),
+			roles: $roles
+		);
+	}//end sync()
+
+	/**
+	 * The configuration a stored schema came back with, [] when it answers none.
+	 *
+	 * Read back rather than trusted: OpenRegister drops a configuration key its
+	 * own vocabulary does not know, in silence, which is what made the
+	 * documented `x-contactRoles` a no-op for a year.
+	 *
+	 * @param mixed $stored Whatever the mapper answered.
+	 *
+	 * @return array<string, mixed> The configuration as stored.
+	 */
+	private function configurationOf(mixed $stored): array {
+		if (is_object($stored) === false || is_callable([$stored, 'getConfiguration']) === false) {
+			return [];
 		}
 
-		if ($kept === [] && $roles !== []) {
+		return (array)call_user_func([$stored, 'getConfiguration']);
+	}//end configurationOf()
+
+	/**
+	 * What the write actually achieved.
+	 *
+	 * Losing the link roles is fatal to this sync: people can be linked in no
+	 * role at all until that OpenRegister carries the people-on-objects
+	 * vocabulary. Losing the party kinds is not: the case then accepts a party
+	 * of any kind, which is exactly what it did before they were declared.
+	 *
+	 * @param array<string, mixed> $stored The configuration as stored.
+	 * @param array<int, array<string, string>> $roles The vocabulary that was written.
+	 *
+	 * @return int How many roles the vocabulary holds, -1 when the roles were dropped.
+	 */
+	private function verdictOn(array $stored, array $roles): int {
+		if ((array)($stored['linkRoles'] ?? []) === [] && $roles !== []) {
 			$this->logger->warning(
 				'Dossiq people: the case schema did not keep its link roles. OpenRegister drops a '
 				. 'configuration key it does not know, so people can be linked in no role until it '
@@ -116,10 +141,7 @@ class CaseRoleVocabulary {
 			return -1;
 		}
 
-		if ($keptKinds === []) {
-			// Not fatal: an instance whose OpenRegister predates the party
-			// model keeps every person link it has. It simply accepts any
-			// kind of party, which is what it did before this was declared.
+		if ((array)($stored['partyKinds'] ?? []) === []) {
 			$this->logger->warning(
 				'Dossiq people: the case schema did not keep its party kinds. This OpenRegister does '
 				. 'not carry the party model yet, so a party of any kind is accepted and the Roles '
@@ -128,7 +150,7 @@ class CaseRoleVocabulary {
 		}
 
 		return count($roles);
-	}//end sync()
+	}//end verdictOn()
 
 	/**
 	 * The whole link vocabulary: this instance's role types first, then the
