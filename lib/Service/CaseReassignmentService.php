@@ -214,11 +214,18 @@ class CaseReassignmentService {
 	 * @param string                    $justification Why the caseload is being moved.
 	 * @param array<string, mixed>|null $filter        Optional filter, e.g. ['caseType' => 'uuid'].
 	 * @param string                    $actorId       The acting coordinator.
+	 * @param bool                      $commit        Whether to start the act, or leave it rehearsed.
 	 *
-	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>}
-	 *         The previewed job over the cases, and what happened to the tasks.
+	 * @return array{job: array<string, mixed>, tasks: array<int, array<string, mixed>>, caseIds: array<int, string>}
+	 *         The job over the cases, what happened to the tasks, and which cases the act was ordered over.
 	 *
 	 * @throws InvalidArgumentException When a handler, the receiver or the reason is missing.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The two gestures differ in
+	 * exactly this: a coordinator RELEASING a caseload reads the rehearsal and
+	 * decides, an administrator handing over a leaver's work is executing an
+	 * act somebody already decided. Splitting them into two methods would
+	 * duplicate the selection build, which is the part that must not drift.
 	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
@@ -228,44 +235,26 @@ class CaseReassignmentService {
 		string $justification,
 		?array $filter = null,
 		string $actorId = '',
+		bool $commit = false,
 	): array {
 		$fromUser = trim($fromUser);
 		$toUser = trim($toUser);
 		$justification = trim($justification);
 
-		if ($fromUser === '' || $toUser === '') {
-			throw new InvalidArgumentException('Both fromUser and toUser are required');
-		}
-
-		if ($fromUser === $toUser) {
-			throw new InvalidArgumentException('Cannot reassign a handler to themselves');
-		}
-
-		if ($justification === '') {
-			throw new InvalidArgumentException('A written justification is required');
-		}
+		$this->assertReleasable(fromUser: $fromUser, toUser: $toUser, justification: $justification);
 
 		$preview = $this->preview(fromUser: $fromUser, filter: $filter);
 		$batchId = $this->generateBatchId();
+		$caseIds = $this->caseIdsOf(cases: $preview['cases']);
 
-		$caseIds = [];
-		foreach ($preview['cases'] as $case) {
-			$id = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-			if ($id !== '') {
-				$caseIds[] = $id;
-			}
-		}
-
-		$job = [];
-		if ($caseIds !== []) {
-			$job = $this->handoff->create(
-				actionId: ReassignCasesAction::ID,
-				parameters: ['toUser' => $toUser, 'reason' => $justification, 'batchId' => $batchId],
-				selection: ['ids' => $caseIds],
-				justification: $justification,
-				actorUid: $actorId,
-			);
-		}
+		$job = $this->handOverCases(
+			caseIds: $caseIds,
+			toUser: $toUser,
+			justification: $justification,
+			batchId: $batchId,
+			actorId: $actorId,
+			commit: $commit,
+		);
 
 		$tasks = $this->releaseTasks(tasks: $preview['tasks'], toUser: $toUser, actorId: $actorId);
 
@@ -285,8 +274,106 @@ class CaseReassignmentService {
 			$this->notifyDigest(toUser: $toUser, fromUser: $fromUser, count: count($tasks), batchId: $batchId);
 		}
 
-		return ['job' => $job, 'tasks' => $tasks];
+		return ['job' => $job, 'tasks' => $tasks, 'caseIds' => $caseIds];
 	}//end releaseCaseload()
+
+	/**
+	 * Refuse a release that names no handler, no receiver or no reason.
+	 *
+	 * @param string $fromUser      The departing handler.
+	 * @param string $toUser        The receiving handler.
+	 * @param string $justification Why the caseload is being moved.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When any of the three is missing.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private function assertReleasable(string $fromUser, string $toUser, string $justification): void {
+		if ($fromUser === '' || $toUser === '') {
+			throw new InvalidArgumentException('Both fromUser and toUser are required');
+		}
+
+		if ($fromUser === $toUser) {
+			throw new InvalidArgumentException('Cannot reassign a handler to themselves');
+		}
+
+		if ($justification === '') {
+			throw new InvalidArgumentException('A written justification is required');
+		}
+	}//end assertReleasable()
+
+	/**
+	 * The uuids of the previewed cases, dropping any row that carries none.
+	 *
+	 * @param array<int, array<string, mixed>> $cases The previewed cases.
+	 *
+	 * @return array<int, string> The case uuids.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private function caseIdsOf(array $cases): array {
+		$caseIds = [];
+		foreach ($cases as $case) {
+			$id = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			if ($id !== '') {
+				$caseIds[] = $id;
+			}
+		}
+
+		return $caseIds;
+	}//end caseIdsOf()
+
+	/**
+	 * Hand the selected cases to the bulk job, rehearsed or started.
+	 *
+	 * An empty selection is handed over to nothing. Creating a job with no
+	 * members would present an empty walk as a finished preview, which reads
+	 * exactly like a handler who had no open cases and exactly like a
+	 * selection that failed to resolve.
+	 *
+	 * @param array<int, string> $caseIds       The cases the act covers.
+	 * @param string             $toUser        The receiving handler.
+	 * @param string             $justification Why the cases are moving.
+	 * @param string             $batchId       The id shared by every case in this act.
+	 * @param string             $actorId       Who ordered it.
+	 * @param bool               $commit        Whether to start the act.
+	 *
+	 * @return array<string, mixed> The job, or an empty array when there was nothing to move.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Carried through from
+	 * `releaseCaseload()`, where the flag is the difference between the two
+	 * gestures rather than a mode switch.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private function handOverCases(
+		array $caseIds,
+		string $toUser,
+		string $justification,
+		string $batchId,
+		string $actorId,
+		bool $commit,
+	): array {
+		if ($caseIds === []) {
+			return [];
+		}
+
+		$job = $this->handoff->create(
+			actionId: ReassignCasesAction::ID,
+			parameters: ['toUser' => $toUser, 'reason' => $justification, 'batchId' => $batchId],
+			selection: ['ids' => $caseIds],
+			justification: $justification,
+			actorUid: $actorId,
+		);
+
+		if ($commit === false) {
+			return $job;
+		}
+
+		return $this->handoff->commit(job: $job, justification: $justification);
+	}//end handOverCases()
 
 	/**
 	 * Hand each open task to the engine's own reassign verb.

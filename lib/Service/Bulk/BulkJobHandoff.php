@@ -61,6 +61,13 @@ class BulkJobHandoff {
 	private const JOB_SERVICE = 'OCA\OpenRegister\Service\BulkJob\BulkJobService';
 
 	/**
+	 * The mapper that loads a job by id. `BulkJobService` has no finder.
+	 *
+	 * @var string
+	 */
+	private const JOB_MAPPER = 'OCA\OpenRegister\Db\BulkJobMapper';
+
+	/**
 	 * The actions dossiq offers over cases, and whether each needs a reason.
 	 *
 	 * Read by the catalogue endpoint so a caller sees dossiq's four without
@@ -140,6 +147,43 @@ class BulkJobHandoff {
 
 		return $this->asArray(job: $job);
 	}//end create()
+
+	/**
+	 * Start a rehearsed job. This is the call that writes.
+	 *
+	 * Offered because one gesture on dossiq's side is not a proposal: an
+	 * administrator handing over a leaver's work is executing an act somebody
+	 * already decided, where a coordinator releasing a caseload is deciding.
+	 * Both reach the same job.
+	 *
+	 * @param array<string, mixed> $job           The previewed job.
+	 * @param string|null          $justification The reason, when one is owed.
+	 *
+	 * @return array<string, mixed> The running job.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	public function commit(array $job, ?string $justification = null): array {
+		$id = ($job['id'] ?? null);
+		if ($id === null) {
+			return $job;
+		}
+
+		// The job is loaded through the MAPPER, not the service: `BulkJobService`
+		// takes a `BulkJob` and has no finder of its own. Reaching for a
+		// `find()` on the service would have been a method the real class does
+		// not have, and a double that added it would have passed.
+		$mapper = $this->settingsService->getOpenRegisterClass(self::JOB_MAPPER);
+		if ($mapper === null) {
+			throw new RuntimeException('OpenRegister is not available, so a bulk act cannot be started');
+		}
+
+		$service = $this->jobService();
+
+		return $this->asArray(job: $service->commit(job: $mapper->find((int)$id), justification: $justification));
+	}//end commit()
 
 	/**
 	 * Run dossiq's own refusals over the selection, before anything is

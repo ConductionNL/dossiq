@@ -62,6 +62,7 @@ class ListenerRegistrar {
 		(new BezwaarListenerRegistrar())->register(context: $context);
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);
+		(new BulkActionRegistrar())->register(context: $context);
 
 		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen
@@ -75,20 +76,6 @@ class ListenerRegistrar {
 			$context->registerEventListener(
 				\OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent::class,
 				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
-			);
-		}
-
-		// Cluster 52: dossiq declares what a bulk act does to ONE case and
-		// writes no loop. The job record, the rehearsal, the progress, the
-		// per-row outcome, the cancel and the retry are OpenRegister's
-		// (ADR-022). Guarded on the event class for the same reason the flow
-		// node listener above is: `::class` is a compile-time string that does
-		// not autoload, so an instance without OpenRegister still boots and
-		// simply offers no bulk actions.
-		if (class_exists(\OCA\OpenRegister\Event\BulkActionRegistrationEvent::class) === true) {
-			$context->registerEventListener(
-				\OCA\OpenRegister\Event\BulkActionRegistrationEvent::class,
-				\OCA\Dossiq\Listener\BulkActionRegistrationListener::class
 			);
 		}
 
