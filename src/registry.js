@@ -106,9 +106,9 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // the email engine, and triggers prefillDraft via the case-email API.
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md

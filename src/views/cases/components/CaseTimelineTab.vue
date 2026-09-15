@@ -27,33 +27,42 @@
 -->
 <template>
 	<div class="case-timeline" data-testid="case-timeline">
-		<form v-if="canManage"
+		<form
+v-if="canManage"
 			class="case-timeline__composer"
 			data-testid="case-timeline-composer"
 			@submit.prevent="submit">
-			<NcSelect v-if="textBlocks.length"
+			<NcSelect
+v-if="textBlocks.length"
 				v-model="chosenBlock"
 				class="case-timeline__filter"
 				:options="blockOptions"
 				:clearable="true"
 				label="label"
-				:input-label="t('dossiq', 'Standard note')"
+				:inputLabel="t('dossiq', 'Standard note')"
 				:placeholder="t('dossiq', 'Write your own')"
 				data-testid="case-timeline-block"
 				@input="pickBlock" />
 
-			<textarea v-model="draft"
+			<label class="case-timeline__draft-label" for="case-timeline-draft">
+				{{ t('dossiq', 'Write a note on this case') }}
+			</label>
+			<textarea
+				id="case-timeline-draft"
+				v-model="draft"
 				class="case-timeline__draft"
 				:placeholder="t('dossiq', 'Write a note on this case')"
 				data-testid="case-timeline-draft" />
 
-			<NcCheckboxRadioSwitch :checked.sync="draftIsPublic"
+			<NcCheckboxRadioSwitch
+v-model="draftIsPublic"
 				data-testid="case-timeline-draft-public">
 				{{ t('dossiq', 'Visible to the applicant') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcButton type="primary"
-				native-type="submit"
+			<NcButton
+variant="primary"
+				type="submit"
 				:disabled="saving || !draft.trim()"
 				data-testid="case-timeline-save">
 				{{ t('dossiq', 'Add to the timeline') }}
@@ -61,23 +70,25 @@
 		</form>
 
 		<div class="case-timeline__controls">
-			<NcSelect v-model="kindFilter"
+			<NcSelect
+v-model="kindFilter"
 				class="case-timeline__filter"
 				:options="kindOptions"
 				:clearable="true"
 				label="label"
-				:input-label="t('dossiq', 'Kind')"
+				:inputLabel="t('dossiq', 'Kind')"
 				:placeholder="t('dossiq', 'Every kind')"
 				data-testid="case-timeline-kind-filter"
 				@input="load" />
 
-			<NcSelect v-if="canManage"
+			<NcSelect
+v-if="canManage"
 				v-model="visibilityFilter"
 				class="case-timeline__filter"
 				:options="visibilityOptions"
 				:clearable="true"
 				label="label"
-				:input-label="t('dossiq', 'Visibility')"
+				:inputLabel="t('dossiq', 'Visibility')"
 				:placeholder="t('dossiq', 'Internal and public')"
 				data-testid="case-timeline-visibility-filter"
 				@input="load" />
@@ -85,19 +96,22 @@
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<NcNoteCard v-else-if="error"
+		<NcNoteCard
+v-else-if="error"
 			type="error"
 			data-testid="case-timeline-error">
 			{{ error }}
 		</NcNoteCard>
 
-		<NcEmptyContent v-else-if="entries.length === 0"
+		<NcEmptyContent
+v-else-if="entries.length === 0"
 			:name="t('dossiq', 'Nothing recorded yet')"
 			:description="t('dossiq', 'Notes, calls and messages on this case appear here in the order they happened.')"
 			data-testid="case-timeline-empty" />
 
 		<ul v-else class="case-timeline__list" data-testid="case-timeline-list">
-			<li v-for="entry in entries"
+			<li
+v-for="entry in entries"
 				:key="entry.id"
 				class="case-timeline__entry"
 				:class="{ 'case-timeline__entry--pinned': entry.pinned }"
@@ -107,12 +121,14 @@
 					<span class="case-timeline__kind">{{ kindLabel(entry) }}</span>
 					<span class="case-timeline__author">{{ entry.author }}</span>
 					<span class="case-timeline__moment">{{ moment(entry.created) }}</span>
-					<span v-if="entry.visibility === 'public'"
+					<span
+v-if="entry.visibility === 'public'"
 						class="case-timeline__badge"
 						data-testid="case-timeline-public">
 						{{ t('dossiq', 'Visible to the applicant') }}
 					</span>
-					<span v-if="entry.followUp === 'open'"
+					<span
+v-if="entry.followUp === 'open'"
 						class="case-timeline__badge case-timeline__badge--open"
 						data-testid="case-timeline-followup-open">
 						{{ t('dossiq', 'Needs an answer') }}
@@ -121,20 +137,23 @@
 
 				<p class="case-timeline__message">{{ entry.message }}</p>
 
-				<p v-if="entry.siblings && entry.siblings.length"
+				<p
+v-if="entry.siblings && entry.siblings.length"
 					class="case-timeline__siblings"
 					data-testid="case-timeline-siblings">
 					{{ n('dossiq', 'Also written on %n other case', 'Also written on %n other cases', entry.siblings.length) }}
 				</p>
 
 				<div v-if="canManage" class="case-timeline__actions">
-					<NcButton type="tertiary"
+					<NcButton
+variant="tertiary"
 						:data-testid="'case-timeline-pin-' + entry.id"
 						@click="togglePin(entry)">
 						{{ entry.pinned ? t('dossiq', 'Unpin') : t('dossiq', 'Pin') }}
 					</NcButton>
-					<NcButton v-if="entry.followUp === 'open'"
-						type="tertiary"
+					<NcButton
+v-if="entry.followUp === 'open'"
+						variant="tertiary"
 						:data-testid="'case-timeline-followup-' + entry.id"
 						@click="closeFollowUp(entry)">
 						{{ t('dossiq', 'Mark as answered') }}
@@ -147,14 +166,14 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { translate as t, translatePlural as n } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 
 export default {
 	name: 'CaseTimelineTab',
@@ -221,6 +240,8 @@ export default {
 		 * buckets meaning the same thing.
 		 *
 		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		kindOptions() {
 			return [{ id: '', label: t('dossiq', 'Note') }].concat(
@@ -235,6 +256,8 @@ export default {
 		 * The seeded standard notes, as picker options.
 		 *
 		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		blockOptions() {
 			return this.textBlocks.map((block) => ({
@@ -247,6 +270,8 @@ export default {
 		 * The visibility filter's two options.
 		 *
 		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		visibilityOptions() {
 			return [
@@ -259,6 +284,8 @@ export default {
 		 * The timeline endpoint for this case.
 		 *
 		 * @return {string} The url, or '' when the case is not addressed yet.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		timelineUrl() {
 			if (!this.objectId || !this.register || !this.schema) {
@@ -274,6 +301,13 @@ export default {
 		objectId: 'load',
 	},
 
+	/**
+	 * Read the declarations and the timeline as soon as the tab is on screen.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
 	mounted() {
 		this.loadKinds()
 		this.loadTextBlocks()
@@ -289,6 +323,8 @@ export default {
 		 * administered rather than as this file happens to spell them.
 		 *
 		 * @return {Promise<void>} Resolves when the kinds are in.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		async loadKinds() {
 			try {
@@ -296,7 +332,7 @@ export default {
 					generateUrl(`${this.apiBase}/timeline/kinds`),
 				)
 				this.kinds = response.data?.results || []
-			} catch (e) {
+			} catch {
 				// The list still reads without the filter's labels.
 				this.kinds = []
 			}
@@ -306,6 +342,8 @@ export default {
 		 * Read the seeded standard notes.
 		 *
 		 * @return {Promise<void>} Resolves when the blocks are in.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		async loadTextBlocks() {
 			try {
@@ -313,7 +351,7 @@ export default {
 					generateUrl(`${this.apiBase}/timeline/text-blocks`),
 				)
 				this.textBlocks = response.data?.results || []
-			} catch (e) {
+			} catch {
 				// Writing your own still works without them.
 				this.textBlocks = []
 			}
@@ -371,7 +409,7 @@ export default {
 				this.chosenBlock = null
 				this.draftIsPublic = false
 				await this.load()
-			} catch (e) {
+			} catch {
 				this.error = t('dossiq', 'That note could not be saved.')
 			} finally {
 				this.saving = false
@@ -402,7 +440,7 @@ export default {
 				const response = await axios.get(this.timelineUrl, { params })
 				this.canManage = response.data?.canManage === true
 				this.entries = this.applyKindFilter(response.data?.results || [])
-			} catch (e) {
+			} catch {
 				this.entries = []
 				this.error = t(
 					'dossiq',
@@ -424,6 +462,8 @@ export default {
 		 * @param {Array<object>} results The entries as read.
 		 *
 		 * @return {Array<object>} The entries to show.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		applyKindFilter(results) {
 			if (!this.kindFilter) {
@@ -440,6 +480,8 @@ export default {
 		 * @param {object} entry The entry.
 		 *
 		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		kindLabel(entry) {
 			if (!entry.kind) {
@@ -456,6 +498,8 @@ export default {
 		 * @param {string} value An ISO 8601 stamp.
 		 *
 		 * @return {string} The formatted moment, or the raw value.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		moment(value) {
 			if (!value) {
@@ -507,12 +551,14 @@ export default {
 		 * @param {object} changes The fields to write.
 		 *
 		 * @return {Promise<void>} Resolves when the timeline is re-read.
+		 *
+		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
 		 */
 		async patch(entry, changes) {
 			try {
 				await axios.patch(`${this.timelineUrl}/${entry.id}`, changes)
 				await this.load()
-			} catch (e) {
+			} catch {
 				this.error = t('dossiq', 'That change could not be saved.')
 			}
 		},
@@ -526,6 +572,10 @@ export default {
 	flex-direction: column;
 	gap: 8px;
 	margin-block-end: 16px;
+}
+
+.case-timeline__draft-label {
+	font-weight: bold;
 }
 
 .case-timeline__draft {

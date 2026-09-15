@@ -147,7 +147,7 @@ class DeclareTimelineKinds implements IRepairStep {
 					'Dossiq timeline: kind {kind} was not declared, {reason}',
 					[
 						'app' => Application::APP_ID,
-						'kind' => ($declaration['slug'] ?? ''),
+						'kind' => $declaration['slug'],
 						'reason' => $e->getMessage(),
 					],
 				);
@@ -178,7 +178,7 @@ class DeclareTimelineKinds implements IRepairStep {
 					'Dossiq timeline: text block {block} was not seeded, {reason}',
 					[
 						'app' => Application::APP_ID,
-						'block' => ($block['slug'] ?? ''),
+						'block' => $block['slug'],
 						'reason' => $e->getMessage(),
 					],
 				);
