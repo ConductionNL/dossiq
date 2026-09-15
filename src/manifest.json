@@ -1001,6 +1001,13 @@
 							"borderless": true,
 							"emptyText": "No cases found"
 						}
+					},
+					{
+						"id": "archival-reviews",
+						"type": "custom",
+						"title": "My archival reviews",
+						"icon": "ArchiveOutline",
+						"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
 					}
 				],
 				"layout": [
@@ -1030,12 +1037,22 @@
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "4",
+						"widgetId": "archival-reviews",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"widget-my-work": "MyWorkWidget"
+				"widget-my-work": "MyWorkWidget",
+				"widget-archival-reviews": "MyArchivalReviews"
 			}
 		},
 		{
@@ -1621,6 +1638,10 @@
 								{
 									"widgetId": "case-related-panel",
 									"label": "Related"
+								},
+								{
+									"widgetId": "case-archival-panel",
+									"label": "Archiving"
 								}
 							]
 						}
@@ -2141,6 +2162,13 @@
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-archival-panel",
+						"type": "custom",
+						"title": "Archiving",
+						"icon": "ArchiveOutline",
+						"_note": "What happens to this case when its business use ends, as openregister decided it (page slot widget-case-archival -> CaseArchivalPanel). Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
 					}
 				],
 				"layout": [
@@ -2466,7 +2494,8 @@
 				]
 			},
 			"slots": {
-				"widget-cmmn-case-plan": "CasePlanPanel"
+				"widget-cmmn-case-plan": "CasePlanPanel",
+				"widget-case-archival": "CaseArchivalPanel"
 			}
 		},
 		{
