@@ -141,11 +141,15 @@ class CaseSeatsController extends Controller {
 		$displayName = trim((string)$this->request->getParam('name', ''));
 
 		try {
+			// An empty participant EMPTIES the seat, which is how a coordinator
+			// is removed without a second endpoint that does one thing.
 			if ($participant === '') {
 				$this->seats->clearCoordinator(caseId: $caseId);
-			} else {
-				$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
+
+				return $this->show(caseId: $caseId);
 			}
+
+			$this->seats->nameCoordinator(caseId: $caseId, participant: $participant, displayName: $displayName);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'CaseSeatsController: the coordinator seat could not be set',

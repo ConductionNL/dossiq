@@ -54,6 +54,18 @@ use RuntimeException;
  * Beschikking lifecycle orchestrator.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T14
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
+ * threshold, and the one that crossed it is `CoordinatorRequirement`: the seat
+ * a case type may insist on before its besluit is signed. The alternatives
+ * were both worse. Checking it in the controller instead leaves the rule on
+ * ONE door, so a second caller of `onderteken()` signs without it, and a rule
+ * that can be walked around is not a rule. Folding the collaborators into a
+ * parameter object hides the dependency list rather than shortening it, which
+ * is the reasoning {@see AcknowledgementService} already records for the same
+ * trade. The thirteen are each injected and each named, so the class is
+ * readable even where it is wide.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
  */
 class BeschikkingService {
 

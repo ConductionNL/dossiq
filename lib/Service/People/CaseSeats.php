@@ -198,12 +198,27 @@ class CaseSeats {
 		$schema = $this->schema(key: 'role_schema');
 
 		if ($uuid === '') {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $schema);
-		} else {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $schema, uuid: $uuid);
+			return $this->idOf(
+				row: $this->asArray(
+					saved: $objectService->saveObject(object: $record, register: $register, schema: $schema)
+				)
+			);
 		}
 
-		return $this->idOf(row: $this->asArray(saved: $saved));
+		// 🔴 A PATCH, NOT A SAVE. Handing OpenRegister a partial object WITH a
+		// uuid replaces the stored one, and this record carries four fields
+		// this method never sets: `description`, `delegate`, `delegateFrom`
+		// and `delegateUntil`. A save would have silently ended a running
+		// delegation every time somebody renamed the coordinator.
+		return $this->idOf(
+			row: (array)$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $uuid,
+				changes: $record,
+			)
+		);
 	}//end nameCoordinator()
 
 	/**
