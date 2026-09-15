@@ -58,6 +58,27 @@
               "format": "uuid",
               "$ref": "reusableStep"
             }
+          },
+          "lifecycleAct": {
+            "type": "string",
+            "title": "Last lifecycle act",
+            "description": "Whether this case type was last retired or restored. Two fields beside it name who did it and when. They sit on the case type because dossiq has no general record of administrative acts yet: statusRecord is shaped for a status transition and carries no actor at all. They move into that record when lifecycle-acts-on-the-case lands.",
+            "enum": [
+              "retired",
+              "restored"
+            ]
+          },
+          "lifecycleActBy": {
+            "type": "string",
+            "title": "Lifecycle act by",
+            "description": "The user id of whoever last retired or restored this case type.",
+            "maxLength": 255
+          },
+          "lifecycleActAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Lifecycle act at",
+            "description": "When this case type was last retired or restored."
           }
         }
       },
