@@ -1323,7 +1323,8 @@
 							"assignee": "IS NULL",
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
-							"isDraft": false
+							"isDraft": false,
+							"isTemplate": false
 						}
 					},
 					{
