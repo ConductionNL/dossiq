@@ -315,6 +315,14 @@ $extra = [
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
         // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
     ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
+        // Live conversation on the case — Talk rooms, captures and the major declaration.
+    ['name' => 'caseConversation#availability',       'url' => '/api/conversations/availability',        'verb' => 'GET'],
+    ['name' => 'caseConversation#start',              'url' => '/api/cases/{caseId}/conversations',      'verb' => 'POST'],
+    ['name' => 'caseConversation#end',                'url' => '/api/cases/{caseId}/conversations/end',  'verb' => 'POST'],
+    ['name' => 'caseConversation#capture',            'url' => '/api/cases/{caseId}/captures',           'verb' => 'POST'],
+    ['name' => 'caseConversation#declareMajor',       'url' => '/api/cases/{caseId}/major',              'verb' => 'POST'],
+    ['name' => 'caseConversation#closeMajorChannel',  'url' => '/api/cases/{caseId}/major/channel',      'verb' => 'DELETE'],
+
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 

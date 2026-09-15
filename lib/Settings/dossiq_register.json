@@ -581,6 +581,14 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "responders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Responders",
+                        "description": "Who is pulled into the working channel when a case of this type is declared major. A user id, or a group as group:<gid>, or a bare group id. A name that does not resolve refuses the declaration rather than opening a channel that is missing the one person who had to be in it (ADR-102). A type that names nobody cannot be declared major."
                     }
                 }
             },
@@ -1192,6 +1200,33 @@
                             "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
                             "en": "New case \"{{title}}\" received via handoff"
                         }
+                    },
+                    "caseDeclaredMajor": {
+                        "trigger": {
+                            "type": "updated",
+                            "filter": {
+                                "field": "isMajor",
+                                "operator": "in",
+                                "values": [
+                                    true
+                                ]
+                            }
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "kind": "field",
+                                "field": "majorResponders"
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Zaak \"{{title}}\" is opgeschaald naar calamiteit",
+                            "en": "Case \"{{title}}\" has been declared major"
+                        },
+                        "x-notes": "Declared rather than dispatched, per ADR-031. The engine's updated trigger carries no field-changed condition (openspec/fleet-notification-plan.md names this gap), so the filter narrows the rule to major cases rather than to the moment of declaration. Narrowing it further waits on that engine change."
                     }
                 },
                 "icon": "FolderAccountOutline",
@@ -2677,6 +2712,50 @@
                         "format": "date-time",
                         "title": "Published at",
                         "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
+                        "visible": false
+                    },
+                    "conversations": {
+                        "type": "array",
+                        "title": "Conversations",
+                        "description": "Live conversations held on this case, one object per conversation: kind (conversation|majorChannel), subject, roomId, roomUrl, startedAt, startedBy, participants, durationSeconds and endedAt. Written by CaseConversationService so the archive sees a call that only Talk would otherwise remember. What a conversation produced is filed separately as a case document, under the case type's visibility declaration.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "visible": false
+                    },
+                    "isMajor": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Major",
+                        "description": "Whether this case has been declared major. Declaring it is the act; the working channel is the consequence. Set by CaseConversationService through a permissioned endpoint, never by hand.",
+                        "facetable": true
+                    },
+                    "majorChannel": {
+                        "type": "object",
+                        "title": "Major channel",
+                        "description": "The one working channel a major declaration opened: roomId, roomUrl, openedAt and closedAt. One channel per case, never one per person who wants one, so a second declaration finds this one. Closing the case closes it and fills closedAt.",
+                        "visible": false
+                    },
+                    "majorDeclaredBy": {
+                        "type": "string",
+                        "title": "Major declared by",
+                        "description": "The user that declared this case major.",
+                        "visible": false
+                    },
+                    "majorDeclaredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Major declared at",
+                        "description": "The moment this case was declared major.",
+                        "visible": false
+                    },
+                    "majorResponders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Major responders",
+                        "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
                         "visible": false
                     }
                 },
