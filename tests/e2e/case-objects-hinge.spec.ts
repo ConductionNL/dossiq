@@ -149,7 +149,14 @@ test.describe('Objects as the hinge between cases', () => {
 		expect(await response.text()).toContain('objectTitle')
 	})
 
-	test('names the case in the reverse view on the object', async ({ request }) => {
+	test('names the case in the reverse view on the object, from the first save', async ({
+		request,
+	}) => {
+		// The link row was created in beforeAll and has not been edited since, so
+		// this also answers the ordering question: the name is written by the save
+		// that creates the record, not by a later one. A calculated mirror of the
+		// case title would be empty here, because metadata is hydrated before the
+		// event that materialises a calculation.
 		const response = await request.get(
 			`${OR}/objects/${REGISTER}/object/${objectUuid}/referenced-by`,
 		)

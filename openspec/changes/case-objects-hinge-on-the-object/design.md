@@ -51,27 +51,36 @@ facet chips and its empty state, and both widgets forward a column's
 content shape to gain nothing this change needs, so the type is left
 alone and the columns are what change.
 
-## D-3 · A link row is named after its case
+## D-3 · A link row is named after its case, through the relation itself
 
-**Decision.** `caseObject` declares `objectNameField: "caseTitle"`, and
-`caseTitle` is a materialised calculation reading `@ref.case.title`,
-coalescing to `objectIdentification` and then to `objectType`.
+**Decision.** `caseObject` declares
+`objectNameField: "case | objectIdentification | objectType"`.
 
 **Why.** `/referenced-by` titles every row with the referencing record's
 stored name. Without a name field a `caseObject` group on a building's
 page is a list of rows with nothing in them. With one, the group answers
 "which cases is this building in" by name.
 
-**Why coalesce.** A name field pointing at a calculation that resolves to
-nothing is a blank name on every row, which is worse than the uuid it
-replaced. The last operand is `objectType`, which the schema requires, so
-there is always a name.
+**Why the relation and not a mirror of it.** The first version of this
+declaration pointed at `caseTitle`, a materialised calculation reading
+`@ref.case.title`. It would have shipped a reverse view of unnamed rows.
+`SaveObject::hydrateObjectMetadata()` writes the name, and it runs before
+`insertObjectEntity()` dispatches `ObjectCreatingEvent`, which is where
+`CalculationOnSaveListener` materialises a calculation. So the mirror is
+empty on exactly the save that names the row, and the name only arrives on
+the next edit. Nothing would have reported that: the row would simply have
+had no name.
 
-**What it costs.** `materialise: true` means the value is written at save
-time, so existing rows carry it only after
-`occ openregister:rematerialise-calculations`. That is the same cost
-`case.isFinalStatus` and `case.statusHiddenInLists` already carry, and
-the property description says so.
+Resolving the relation needs no second save and no mirror.
+`MetadataHydrationHandler::resolveRelationValue()` sees that `case` carries
+a `$ref`, takes the uuid out of it, and asks the name cache for the
+referenced record's own name. One save, one hop, no stored copy.
+
+**Why a chain.** A name field that resolves to nothing falls through to
+the handler's common-field list, `naam`, `name`, `title`, `label`,
+`titel`, and a `caseObject` carries none of them, so the row would be
+unnamed. The chain ends on `objectType`, which the schema requires, so it
+always lands.
 
 ## D-4 · Geometry is inherited, with its provenance, and never copied
 

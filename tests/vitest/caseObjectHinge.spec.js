@@ -141,35 +141,49 @@ describe('the declared list surface of caseObject', () => {
 
 describe('what names a case object', () => {
 	it('is the case, so the reverse view on the object reads as a list of cases', () => {
-		expect(caseObject().configuration.objectNameField).toBe('caseTitle')
+		const chain = caseObject()
+			.configuration.objectNameField.split('|')
+			.map((part) => part.trim())
+		expect(chain[0]).toBe('case')
 	})
 
-	it('declares caseTitle as a property, or the name field points at nothing', () => {
-		expect(caseObject().properties.caseTitle).toBeDefined()
-		expect(caseObject().properties.caseTitle.readOnly).toBe(true)
+	it('names the relation itself, not a mirror of it', () => {
+		// A calculated mirror of the case title was the first design and it is
+		// wrong here. SaveObject hydrates the metadata, which is where the name
+		// is written, BEFORE ObjectCreatingEvent materialises a calculation, so
+		// the mirror is empty on exactly the save that names the row. Resolving
+		// the relation needs no second save: MetadataHydrationHandler sees a
+		// `$ref` property and asks the name cache for the referenced record.
+		const chain = caseObject()
+			.configuration.objectNameField.split('|')
+			.map((part) => part.trim())
+		expect(caseObject().properties[chain[0]].$ref).toBe('case')
+		expect(
+			caseObject().configuration['x-openregister-calculations'],
+		).toBeUndefined()
 	})
 
-	it('calculates it from the case, through a declared reference', () => {
-		const references = caseObject().configuration['x-openregister-references']
-		expect(references.case.schema).toBe('case')
-		expect(references.case.field).toBe('case')
-		expect(caseObject().properties[references.case.field]).toBeDefined()
+	it('falls back to a property the schema requires, so no row is unnamed', () => {
+		// A name field that resolves to nothing leaves the row named by whatever
+		// the common-field fallback finds, and a caseObject has none of those
+		// names. The last link is required, so the chain always lands.
+		const chain = caseObject()
+			.configuration.objectNameField.split('|')
+			.map((part) => part.trim())
+		expect(chain.length).toBeGreaterThan(1)
+		expect(caseObject().required).toContain(chain.at(-1))
 	})
 
-	it('materialises it, because a name is read by a list and not by a render', () => {
-		const calculation =
-			caseObject().configuration['x-openregister-calculations'].caseTitle
-		expect(calculation.materialise).toBe(true)
-	})
-
-	it('coalesces to a property the schema requires, so no row is unnamed', () => {
-		// A name field pointing at a calculation that resolves to nothing is a
-		// blank name on every row, which is worse than the uuid it replaced.
-		const operands = caseObject().configuration[
-			'x-openregister-calculations'
-		].caseTitle.expression.coalesce.map((operand) => operand.prop)
-		expect(operands[0]).toBe('@ref.case.title')
-		expect(caseObject().required).toContain(operands.at(-1))
+	it('names only properties the schema declares, at every link', () => {
+		const chain = caseObject()
+			.configuration.objectNameField.split('|')
+			.map((part) => part.trim())
+		for (const link of chain) {
+			expect(
+				caseObject().properties[link],
+				`the name chain names ${link}, which is not a property`,
+			).toBeDefined()
+		}
 	})
 })
 

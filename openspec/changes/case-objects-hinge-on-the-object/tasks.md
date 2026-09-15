@@ -25,9 +25,11 @@ declaration or a cell.
   search field naming a property the schema declares, and keep the
   Objects index showing the declared columns in the declared order (D-1).
   - `tests/vitest/caseObjectHinge.spec.js`
-- [x] 4.1 `caseObject`: `objectNameField` onto a materialised `caseTitle`
-  calculation reading `@ref.case.title`, coalescing to the identification
-  and then the object type (D-3).
+- [x] 4.1 `caseObject`: `objectNameField` onto the case reference itself,
+  falling back to the identification and then the object type. NOT onto a
+  calculated mirror: metadata is hydrated before the event that
+  materialises a calculation, so a mirror is empty on the save that names
+  the row (D-3).
   - `tests/vitest/caseObjectHinge.spec.js`
 - [x] 4.2 Verify openregister's Referenced by tab on the linked object's
   page rather than rebuilding it. Recorded in the proposal: the group

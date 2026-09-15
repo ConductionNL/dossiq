@@ -63,8 +63,10 @@ declared order, before any column of its own.
 
 A `caseObject` record SHALL be named after the case it belongs to, so the
 reverse view on the linked object lists the cases by name. The name SHALL
-fall back to the object identification and then to the object type, so a
-record is never unnamed.
+be taken from the case reference itself rather than from a stored copy of
+the case's title, and SHALL be written by the same save that creates the
+record. It SHALL fall back to the object identification and then to the
+object type, so a record is never unnamed.
 
 #### Scenario: a building with three cases on it
 @e2e tests/e2e/case-objects-hinge.spec.ts
@@ -73,6 +75,13 @@ record is never unnamed.
 - **WHEN** a handler opens the building's Referenced by tab
 - **THEN** it SHALL list three records
 - **AND** each one SHALL carry the title of its case
+
+#### Scenario: the first save names the record
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case object that has been created and never edited since
+- **WHEN** the reverse view on its object is read
+- **THEN** the record SHALL already carry its case's title
 
 #### Scenario: a case with no title
 
