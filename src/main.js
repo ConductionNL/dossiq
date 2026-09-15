@@ -6,6 +6,7 @@ import {
 	CnPageRenderer,
 	defaultPageTypes,
 	fieldInspectionIntegration,
+	getSharedRegistry,
 	registerBuiltinDashboardWidgets,
 	registerIcons,
 	registerIntegration,
@@ -111,15 +112,22 @@ function tryLoadTranslations() {
 // list, checklist completion, mutation queue and reconnect-replay; dossiq only
 // supplies its `offlineConfig` so the generic core points at dossiq's schemas.
 //
-// Bootstrap-order safety: dossiq's bundle may load before OpenRegister's, so
-// install a minimal `_queue` stub that buffers the registration and replays it
-// once OR's registry attaches. Registering dossiq's mapping FIRST means the
-// AD-13 first-wins collision policy keeps dossiq's `offlineConfig` even when
-// OR later registers the leaf with its canonical defaults. The mapping mirrors
+// OpenRegister's global init script runs on every page BEFORE this bundle, so
+// its `registerBuiltinIntegrations()` (which checks `has()` and skips rather
+// than throwing) has already registered `field-inspection` with its generic
+// defaults by the time this line runs. Registering the AD-13 way — a plain
+// `registerIntegration()` call — would collide with that existing entry and
+// `register()` throws synchronously in dev, aborting this whole script before
+// the app ever mounts. Unregister the generic entry first so dossiq's mapping
+// always wins regardless of bootstrap order. The mapping mirrors
 // `DailySyncService` exactly (fieldInspection / inspectionChecklist /
 // checklistResult, filtered by inspectorRef + scheduledAt).
 //
 // @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+const sharedIntegrationRegistry = getSharedRegistry()
+if (sharedIntegrationRegistry.has('field-inspection')) {
+	sharedIntegrationRegistry.unregister('field-inspection')
+}
 registerIntegration({
 	...fieldInspectionIntegration,
 	offlineConfig: {
