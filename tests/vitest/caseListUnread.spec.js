@@ -115,12 +115,15 @@ describe('the Unread lens on the Cases index', () => {
 		// until REQ-LIFE-01; `statusHiddenInLists: false` is the ONE condition
 		// allowed beside it, and it is allowed because a status an
 		// administrator hid is hidden on every working lens or on none. What
-		// this test still refuses is a third condition that would narrow "what
-		// moved overnight" to a slice of it, which is the question the chip
-		// exists to answer.
+		// this test still refuses is a condition that would narrow "what moved
+		// overnight" to a slice of it, which is the question the chip exists
+		// to answer. `isDraft: false` is the second one allowed through, for
+		// the same reason: a draft is in nobody's working list, so it cannot
+		// be in this one either.
 		expect(chips.find((c) => c.label === 'Unread').filter).toEqual({
 			_unread: true,
 			statusHiddenInLists: false,
+			isDraft: false,
 		})
 	})
 

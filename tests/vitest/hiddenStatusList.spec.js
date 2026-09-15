@@ -102,7 +102,7 @@ describe('a hidden status leaves every working lens', () => {
 		// is on the RETURNED filter object rather than on the file containing
 		// the word: the word appears in the comment above it either way.
 		expect(myWorkSource).toContain(
-			`return { assignee: uid, ${FLAG}: false }`,
+			`return { assignee: uid, ${FLAG}: false, isDraft: false }`,
 		)
 	})
 })
@@ -113,7 +113,8 @@ describe('the counts agree with the lists', () => {
 		// population. Asserted as the constant rather than three call sites,
 		// because that is the shape that cannot drift.
 		expect(kpiSource).toContain(
-			"private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0];",
+			"private const OPEN_WORK = ['isFinalStatus' => 0, "
+				+ "'statusHiddenInLists' => 0, 'isDraft' => 0];",
 		)
 		expect(kpiSource).toContain('filters: self::OPEN_WORK')
 		expect(kpiSource).toContain(

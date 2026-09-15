@@ -183,7 +183,7 @@ export default {
 		 */
 		filter() {
 			const uid = (getCurrentUser() && getCurrentUser().uid) || ''
-			return { assignee: uid, statusHiddenInLists: false }
+			return { assignee: uid, statusHiddenInLists: false, isDraft: false }
 		},
 
 		/**

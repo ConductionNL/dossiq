@@ -542,6 +542,7 @@
 								"query": {
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"deadline[lt]": "@today"
 								}
 							},
@@ -640,7 +641,8 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
-									"statusHiddenInLists": false
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"aggregate": {
 									"groupBy": "status",
@@ -668,7 +670,8 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
-									"statusHiddenInLists": false
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"aggregate": {
 									"groupBy": "caseType",
@@ -695,7 +698,8 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
-									"statusHiddenInLists": false
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"extend": ["calculations"],
 								"order": {
@@ -723,6 +727,7 @@
 								"query": {
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"_order": "[{\"key\":\"@self.updated\",\"order\":\"asc\"}]"
 								}
 							},
@@ -891,6 +896,7 @@
 								"filter": {
 									"isFinalStatus": false,
 									"statusHiddenInLists": false,
+									"isDraft": false,
 									"deadline": {
 										"lte": "@today+3d"
 									}
@@ -936,6 +942,7 @@
 								"query": {
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
+									"isDraft": "false",
 									"deadline[lte]": "@today+3d"
 								}
 							},
@@ -955,7 +962,8 @@
 								"schema": "case",
 								"filter": {
 									"isFinalStatus": false,
-									"statusHiddenInLists": false
+									"statusHiddenInLists": false,
+									"isDraft": false
 								},
 								"order": {
 									"startDate": "desc"
@@ -977,7 +985,8 @@
 								"name": "Cases",
 								"query": {
 									"isFinalStatus": "false",
-									"statusHiddenInLists": "false"
+									"statusHiddenInLists": "false",
+									"isDraft": "false"
 								}
 							},
 							"viewAllLabel": "View all",
@@ -1034,7 +1043,8 @@
 				"filter": {
 					"assignee": "IS NULL",
 					"isFinalStatus": false,
-					"statusHiddenInLists": false
+					"statusHiddenInLists": false,
+					"isDraft": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1236,7 +1246,8 @@
 					{
 						"label": "All",
 						"filter": {
-							"statusHiddenInLists": false
+							"statusHiddenInLists": false,
+							"isDraft": false
 						},
 						"default": true
 					},
@@ -1244,7 +1255,8 @@
 						"label": "Unread",
 						"filter": {
 							"_unread": true,
-							"statusHiddenInLists": false
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
@@ -1252,7 +1264,8 @@
 						"filter": {
 							"assignee": "@me",
 							"isFinalStatus": false,
-							"statusHiddenInLists": false
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
@@ -1260,7 +1273,8 @@
 						"filter": {
 							"assignee": "IS NULL",
 							"isFinalStatus": false,
-							"statusHiddenInLists": false
+							"statusHiddenInLists": false,
+							"isDraft": false
 						}
 					},
 					{
@@ -1270,10 +1284,19 @@
 						}
 					},
 					{
+						"label": "My drafts",
+						"_note": "lifecycle-acts-on-the-case REQ-LIFE-14. A draft binds no statutory term and belongs in no working list, so every other lens excludes it and this one is the only way back to it. Scoped to `@me` because a draft is its author's: the case is created assigned to them and dossiq's own case endpoints go through CaseAccessGuard, which grants a case to its assignee and denies everyone else. The per-object grant inside OpenRegister is NOT part of this change, so a reader who queries OpenRegister directly with a filter naming drafts can still see one. Named here rather than implied to be done.",
+						"filter": {
+							"assignee": "@me",
+							"isDraft": true
+						}
+					},
+					{
 						"label": "Overdue",
 						"filter": {
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
+							"isDraft": false,
 							"deadline[lt]": "@today"
 						}
 					},
@@ -1282,6 +1305,7 @@
 						"filter": {
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
+							"isDraft": false,
 							"deadline[gte]": "@today",
 							"deadline[lt]": "@today+7d"
 						}
@@ -1296,6 +1320,13 @@
 						"_note": "unread-state-on-the-case, task 1.1. `@self.unread` is NOT a stored field: OpenRegister attaches it per reader on the render path and memoises it per request, so four hundred rows cost one query rather than four hundred. It is therefore `sortable: false`: the server has no column to order by, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than as an absent one. Narrowing the list to what is unread is the Unread chip, whose `_unread=true` is resolved INSIDE the query so the page, the total and the facets cannot disagree; a column-side filter would be a post-filter over one page and would give a first page of 25 against a total of 120. A cell WIDGET and not a formatter, for the reason cellWidgets.js gives: a formatter returns a string and a string cannot carry a dot. An absent flag reads as READ, because `@self.unread` is omitted entirely for an anonymous read and treating absence as unread would paint every row on a public page."
 					},
 					"identifier",
+					{
+						"key": "isIncomplete",
+						"label": "State",
+						"widget": "caseStateMarkers",
+						"sortable": false,
+						"_note": "lifecycle-acts-on-the-case, REQ-LIFE-13 and REQ-LIFE-15. ONE column carrying incomplete, on hold and draft, because three columns that are empty on nine rows in ten push the case title off the screen for nothing. Keyed on `isIncomplete` and not on a state field of its own: a column needs a key and the widget reads the whole ROW, so the key is only what the header sorts and filters on. `sortable: false` for the reason the Unread column gives: there is no single column behind the three markers, so a sortable header would send an `_order` the mapper answers by ignoring, which reads as a broken sort rather than an absent one. A marker is a WORD and not a colour (WCAG 2.2 SC 1.4.1), and a row in none of the three states says nothing at all: four hundred rows saying Complete is noise around the three that matter."
+					},
 					"title",
 					{
 						"key": "initiatorDisplayName",
@@ -2254,64 +2285,12 @@
 						"successMessage": "Document added to the case."
 					},
 					{
-						"id": "case-suspend",
+						"id": "case-lifecycle-menu",
 						"type": "open-modal",
-						"label": "Suspend",
-						"icon": "PauseCircleOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "suspend"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-resume",
-						"type": "open-modal",
-						"label": "Resume",
+						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "resume"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-extend",
-						"type": "open-modal",
-						"label": "Extend term",
-						"icon": "CalendarPlus",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "extend"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
-						}
-					},
-					{
-						"id": "case-reopen",
-						"type": "open-modal",
-						"label": "Reopen",
-						"icon": "LockOpenVariantOutline",
-						"target": "CaseLifecycleActionDialog",
-						"props": {
-							"action": "reopen"
-						},
-						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "eq",
-							"value": true
-						}
+						"target": "CaseLifecycleMenuDialog",
+						"_note": "lifecycle-acts-on-the-case REQ-LIFE-10. ONE menu, replacing the four header actions that stood here: Suspend, Resume, Extend term and Reopen. They were not wrong, they were SCATTERED: the same case also carried its transitions in the stages widget and its delete behind a third control, each gated differently, so a handler found out what they could do by trying. The dialog merges /available-transitions, /lifecycle and /acts and derives nothing. It carries NO visibleWhen, and that is the point of the change: an act the case or the handler's role refuses is shown DISABLED with the reason, never hidden, because the reason is what tells them who to ask. A visibleWhen here could only read the case RECORD anyway, which is why Suspend used to be offered on cases whose TYPE forbids it."
 					},
 					{
 						"id": "case-claim",

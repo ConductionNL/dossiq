@@ -274,6 +274,7 @@ describe('my work tables', () => {
 		expect(w.content.source.filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
+			isDraft: false,
 			deadline: { lte: '@today+3d' },
 		})
 		expect(w.content.source.order).toEqual({ deadline: 'asc' })

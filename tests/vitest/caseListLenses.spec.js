@@ -87,6 +87,16 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
 const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
 
 /**
+ * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
+ *
+ * A draft binds no statutory term and belongs in no working list, so every
+ * other lens excludes it and My drafts is the only way back to one. It has no
+ * counterpart on a list of tasks, so it is filtered out of the parity check
+ * below exactly as Unread is.
+ */
+const DRAFTS_LENS = 'My drafts'
+
+/**
  * The Cases chips, which carry one lens the Tasks list does not.
  *
  * Unread is a per-USER lens over OpenRegister's read state, not a field of the
@@ -95,10 +105,19 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
  * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
  * column beside it.
  */
-const CASE_LENSES = ['All', 'Unread', ...LENSES.slice(1)]
+const CASE_LENSES = [
+	'All',
+	'Unread',
+	'Mine',
+	'Unclaimed',
+	'Closed',
+	DRAFTS_LENS,
+	'Overdue',
+	'Due this week',
+]
 
 describe('Cases index lenses', () => {
-	it('declares the seven chips in order', () => {
+	it('declares the eight chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -112,7 +131,15 @@ describe('Cases index lenses', () => {
 		// opens on. The ONE condition is still the whole filter — no
 		// assignee, no case type, nothing that narrows to a person's own
 		// work — which is what this test has always been guarding.
-		expect(defaults[0].filter).toEqual({ statusHiddenInLists: false })
+		// Two conditions now, and neither narrows to a person's own work,
+		// which is what this test has always been guarding. A hidden status
+		// and a draft are properties of the CASE: one is a status its
+		// administrator marked hidden, the other is a case nobody has accepted
+		// yet. An assignee condition here would still be the defect.
+		expect(defaults[0].filter).toEqual({
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
@@ -138,6 +165,7 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Overdue').filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[lt]': '@today',
 		})
 	})
@@ -146,6 +174,7 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Due this week').filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[gte]': '@today',
 			'deadline[lt]': '@today+7d',
 		})
@@ -163,7 +192,7 @@ describe('Tasks index lenses', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
 			chips('Cases')
 				.map((entry) => entry.label)
-				.filter((label) => label !== 'Unread'),
+				.filter((label) => label !== 'Unread' && label !== DRAFTS_LENS),
 		)
 	})
 
