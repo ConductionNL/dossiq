@@ -43,6 +43,18 @@ use PHPUnit\Framework\TestCase;
 class IntakeRequirementsTest extends TestCase {
 
 	/**
+	 * A case type carrying the declaration a new case type is created with.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const DEFAULT_CASE_TYPE = [
+		'title' => 'Melding',
+		'intakeRequirements' => [
+			'requiredBeforeCreation' => ['communicationChannel', 'confidentiality'],
+		],
+	];
+
+	/**
 	 * The reader under test.
 	 *
 	 * @var IntakeRequirements
@@ -60,21 +72,61 @@ class IntakeRequirementsTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * A case type that declares nothing still asks for the two the law asks about.
+	 * A case type with the default declaration asks for both.
+	 *
+	 * This is what the register fragment writes onto a NEW case type, so it is
+	 * driven as a stored declaration rather than as an assumption the reader
+	 * makes.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
 	 */
-	public function testDefaultDeclarationAsksForTheChannelAndTheConfidentiality(): void {
-		$declaration = $this->requirements->declarationFor(caseType: ['title' => 'Melding']);
+	public function testTheDefaultDeclarationAsksForTheChannelAndTheConfidentiality(): void {
+		$declaration = $this->requirements->declarationFor(
+			caseType: [
+				'title' => 'Melding',
+				'intakeRequirements' => [
+					'requiredBeforeCreation' => IntakeRequirements::DEFAULT_FOR_A_NEW_CASE_TYPE,
+				],
+			]
+		);
 
 		$this->assertSame(
 			['communicationChannel', 'confidentiality'],
 			$declaration['requiredBeforeCreation']
 		);
 		$this->assertSame([], $declaration['requiredBeforeComplete']);
-	}//end testDefaultDeclarationAsksForTheChannelAndTheConfidentiality()
+	}//end testTheDefaultDeclarationAsksForTheChannelAndTheConfidentiality()
+
+	/**
+	 * 🔴 A CASE TYPE THAT STORED NOTHING ASKS FOR NOTHING.
+	 *
+	 * The blast radius this pins. Reading an absent declaration as the default
+	 * pair would have made every case type on every existing instance demand
+	 * two fields the minute this shipped, and none of the five existing
+	 * creation paths sends either: the start-case widget, the DSO intake, the
+	 * quick actions, the mail intake and the demo seed all write a case with a
+	 * title, a type and a date. The schema default puts the pair on a NEW case
+	 * type; an existing one is moved onto the list by an administrator.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 */
+	public function testACaseTypeThatDeclaredNothingRefusesNothing(): void {
+		$declaration = $this->requirements->declarationFor(caseType: ['title' => 'Melding']);
+
+		$this->assertSame([], $declaration['requiredBeforeCreation']);
+
+		// The payload the start-case widget writes, verbatim in shape.
+		$this->requirements->assertCreatable(
+			case: ['title' => 'Melding', 'caseType' => 'ct-1', 'startDate' => '2026-09-15'],
+			caseType: ['title' => 'Melding']
+		);
+
+		$this->assertTrue(true, 'An undeclared case type creates the case it always did.');
+	}//end testACaseTypeThatDeclaredNothingRefusesNothing()
 
 	/**
 	 * A case cannot be created without its channel.
@@ -87,7 +139,7 @@ class IntakeRequirementsTest extends TestCase {
 		$case = ['title' => 'Kapotte lantaarnpaal', 'confidentiality' => 'openbaar'];
 
 		$this->expectException(RefusedException::class);
-		$this->requirements->assertCreatable(case: $case, caseType: ['title' => 'Melding']);
+		$this->requirements->assertCreatable(case: $case, caseType: self::DEFAULT_CASE_TYPE);
 	}//end testCreationIsRefusedWithoutTheCommunicationChannel()
 
 	/**
@@ -101,7 +153,7 @@ class IntakeRequirementsTest extends TestCase {
 		$case = ['title' => 'Kapotte lantaarnpaal', 'confidentiality' => 'openbaar'];
 
 		try {
-			$this->requirements->assertCreatable(case: $case, caseType: []);
+			$this->requirements->assertCreatable(case: $case, caseType: self::DEFAULT_CASE_TYPE);
 			$this->fail('The creation should have been refused.');
 		} catch (RefusedException $e) {
 			$this->assertStringContainsString('communicationChannel', $e->getSentence());
@@ -205,22 +257,20 @@ class IntakeRequirementsTest extends TestCase {
 	}//end testABlankStringIsNotAnAnswerAndFalseIs()
 
 	/**
-	 * A declaration that is not a list is read as no declaration.
+	 * A declaration that is not a list is read as no declaration, not the default.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
 	 */
-	public function testAMalformedDeclarationFallsBackToTheDefault(): void {
+	public function testAMalformedDeclarationIsReadAsNoDeclaration(): void {
 		$declaration = $this->requirements->declarationFor(
 			caseType: ['intakeRequirements' => 'communicationChannel']
 		);
 
-		$this->assertSame(
-			['communicationChannel', 'confidentiality'],
-			$declaration['requiredBeforeCreation']
-		);
-	}//end testAMalformedDeclarationFallsBackToTheDefault()
+		$this->assertSame([], $declaration['requiredBeforeCreation']);
+		$this->assertSame([], $declaration['requiredBeforeComplete']);
+	}//end testAMalformedDeclarationIsReadAsNoDeclaration()
 
 	/**
 	 * A declared list is cleaned of blanks and repeats.

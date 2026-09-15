@@ -22,8 +22,21 @@
  * including the internal ones a gemeente uses for its own work, where a
  * communication channel means nothing. Dimpact requires both at creation and
  * the clause says why it matters later: both are what the Woo and the
- * Archiefwet ask about afterwards. So the case type declares its own list, and
- * the default list is the two the law asks about.
+ * Archiefwet ask about afterwards. So the case type declares its own list.
+ *
+ * 🔴 THE DEFAULT IS IN THE SCHEMA, NOT IN THIS READER, AND THAT IS THE WHOLE
+ * DIFFERENCE BETWEEN A NEW CASE TYPE AND AN EXISTING ONE. The spec asks for the
+ * channel and the confidentiality to be required "by default for a NEW case
+ * type", and `caseType.intakeRequirements.requiredBeforeCreation` carries that
+ * default in the register fragment, so a case type made after this change
+ * carries the two. Reading a case type that stored nothing as though it had
+ * stored the two would instead make every case type on every existing instance
+ * demand them the minute this shipped, and every existing creation path writes
+ * neither: the start-case widget, the DSO intake, the quick actions, the mail
+ * intake and the demo seed would all have started refusing. An upgrade that
+ * stops a gemeente opening cases is a worse defect than the one this prevents.
+ * So an absent declaration means the case type has declared nothing, and an
+ * administrator moves an existing case type onto the list deliberately.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Intake
@@ -63,16 +76,16 @@ class IntakeRequirements {
 	public const PROPERTY = 'intakeRequirements';
 
 	/**
-	 * The fields a case type that declares nothing still asks for.
+	 * The list a NEW case type is created with.
 	 *
-	 * The common case is the one the law asks about, so the default is the
-	 * communication channel and the confidentiality. A case type that wants
-	 * neither says so by declaring an empty list, which is a different fact
-	 * from declaring nothing at all.
+	 * The same two names the register fragment carries as the schema default
+	 * for `intakeRequirements.requiredBeforeCreation`, kept here so a caller
+	 * that builds a case type in PHP writes the same list the form does. This
+	 * is NOT what an absent declaration is read as: see the class docblock.
 	 *
 	 * @var array<int, string>
 	 */
-	public const DEFAULT_BEFORE_CREATION = ['communicationChannel', 'confidentiality'];
+	public const DEFAULT_FOR_A_NEW_CASE_TYPE = ['communicationChannel', 'confidentiality'];
 
 	/**
 	 * The rule a creation refused for a missing field names.
@@ -94,7 +107,7 @@ class IntakeRequirements {
 			$declared = [];
 		}
 
-		$beforeCreation = self::DEFAULT_BEFORE_CREATION;
+		$beforeCreation = [];
 		if (array_key_exists('requiredBeforeCreation', $declared) === true
 			&& is_array($declared['requiredBeforeCreation']) === true
 		) {

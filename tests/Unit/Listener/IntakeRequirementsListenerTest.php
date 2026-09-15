@@ -87,7 +87,12 @@ class IntakeRequirementsListenerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->caseType = ['title' => 'Melding openbare ruimte'];
+		$this->caseType = [
+			'title' => 'Melding openbare ruimte',
+			'intakeRequirements' => [
+				'requiredBeforeCreation' => IntakeRequirements::DEFAULT_FOR_A_NEW_CASE_TYPE,
+			],
+		];
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
@@ -302,6 +307,34 @@ class IntakeRequirementsListenerTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testAnUnresolvableCaseTypeLeavesTheSaveAlone()
+
+	/**
+	 * A case type that declared nothing refuses nothing.
+	 *
+	 * The blast-radius control at the enforcement point: the payload every
+	 * existing creation path writes is a title, a type and a date, and an
+	 * upgrade must not start refusing it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 */
+	public function testACaseTypeThatDeclaredNothingRefusesNothing(): void {
+		$this->caseType = ['title' => 'Melding openbare ruimte'];
+		$event = new ObjectCreatingEvent(
+			$this->entity(
+				payload: [
+					'title' => 'Melding',
+					'caseType' => 'ct-1',
+					'startDate' => '2026-09-15',
+				]
+			)
+		);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testACaseTypeThatDeclaredNothingRefusesNothing()
 
 	/**
 	 * A case naming no case type is left alone.
