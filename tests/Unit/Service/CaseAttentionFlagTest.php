@@ -120,7 +120,7 @@ class CaseAttentionFlagTest extends TestCase {
 			condition: $service->isRaised(
 				case: [
 					'needsAttention' => false,
-					'attentionFlagHistory' => [$this->row('raised', 'A neighbour called twice', 'ahmed', '2026-03-01T09:00:00+00:00')],
+					'attentionFlagHistory' => [$this->row(act: 'raised', reason: 'A neighbour called twice', actor: 'ahmed', moment: '2026-03-01T09:00:00+00:00')],
 				]
 			),
 			message: 'a case whose last act was a raising is flagged'
@@ -144,8 +144,8 @@ class CaseAttentionFlagTest extends TestCase {
 			$reasons[] = $raised;
 			$reasons[] = $cleared;
 
-			$history[] = $this->row('raised', $raised, sprintf('handler-%d', $round), sprintf('2026-0%d-01T09:00:00+00:00', $round));
-			$history[] = $this->row('cleared', $cleared, sprintf('teamleider-%d', $round), sprintf('2026-0%d-14T09:00:00+00:00', $round));
+			$history[] = $this->row(act: 'raised', reason: $raised, actor: sprintf('handler-%d', $round), moment: sprintf('2026-0%d-01T09:00:00+00:00', $round));
+			$history[] = $this->row(act: 'cleared', reason: $cleared, actor: sprintf('teamleider-%d', $round), moment: sprintf('2026-0%d-14T09:00:00+00:00', $round));
 		}
 
 		$flag = $this->service()->describe(caseId: 'case-7', case: ['attentionFlagHistory' => $history]);
@@ -173,10 +173,10 @@ class CaseAttentionFlagTest extends TestCase {
 			caseId: 'case-7',
 			case: [
 				'attentionFlagHistory' => [
-					$this->row('raised', 'A neighbour called twice', 'ahmed', '2026-03-01T09:00:00+00:00'),
+					$this->row(act: 'raised', reason: 'A neighbour called twice', actor: 'ahmed', moment: '2026-03-01T09:00:00+00:00'),
 					['act' => 'cleared'],
 					['reason' => 'no act named'],
-					$this->row('invented', 'not one of the two acts', 'ahmed', '2026-03-02T09:00:00+00:00'),
+					$this->row(act: 'invented', reason: 'not one of the two acts', actor: 'ahmed', moment: '2026-03-02T09:00:00+00:00'),
 					'not a row at all',
 				],
 			]
@@ -197,8 +197,8 @@ class CaseAttentionFlagTest extends TestCase {
 			caseId: 'case-7',
 			case: [
 				'attentionFlagHistory' => [
-					$this->row('raised', 'The applicant is in hospital', 'ahmed', '2026-03-01T09:00:00+00:00'),
-					$this->row('cleared', 'They are home and the file is complete', 'nadia', '2026-04-02T11:30:00+00:00'),
+					$this->row(act: 'raised', reason: 'The applicant is in hospital', actor: 'ahmed', moment: '2026-03-01T09:00:00+00:00'),
+					$this->row(act: 'cleared', reason: 'They are home and the file is complete', actor: 'nadia', moment: '2026-04-02T11:30:00+00:00'),
 				],
 			]
 		);

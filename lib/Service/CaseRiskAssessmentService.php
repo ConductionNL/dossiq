@@ -113,7 +113,9 @@ class CaseRiskAssessmentService {
 	 * @param array<string, mixed>   $case The case as this reader sees it.
 	 * @param DateTimeImmutable|null $now  Today, for the review question.
 	 *
-	 * @return array{present: bool, level: string, ground: string, assessor: string, assessedAt: string, reviewDate: string, dueForReview: bool} The assessment.
+	 * @return array{present: bool, level: string, ground: string, assessor: string,
+	 *               assessedAt: string, reviewDate: string, dueForReview: bool}
+	 *               The assessment, as far as this reader may see it.
 	 *
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */
@@ -242,6 +244,10 @@ class CaseRiskAssessmentService {
 
 		$level = $this->levelOf(assessment: $assessment);
 
-		return ['riskLevel' => ($level === '') ? null : $level];
+		if ($level === '') {
+			return ['riskLevel' => null];
+		}
+
+		return ['riskLevel' => $level];
 	}//end resolve()
 }//end class

@@ -95,7 +95,9 @@ class CaseAttentionFlagService {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>, history: array<int, array<string, mixed>>, raisings: int, clearings: int} The flag.
+	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>,
+	 *               history: array<int, array<string, mixed>>, raisings: int,
+	 *               clearings: int} The flag, its history and the two counts.
 	 *
 	 * @throws RuntimeException With code `case_not_found`.
 	 *
@@ -112,7 +114,9 @@ class CaseAttentionFlagService {
 	 * @param string $userId Who is raising it.
 	 * @param string $reason Why the case needs attention.
 	 *
-	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>, history: array<int, array<string, mixed>>, raisings: int, clearings: int} The flag.
+	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>,
+	 *               history: array<int, array<string, mixed>>, raisings: int,
+	 *               clearings: int} The flag, its history and the two counts.
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `already_raised`.
 	 *
@@ -161,7 +165,9 @@ class CaseAttentionFlagService {
 	 * @param string $userId Who is clearing it.
 	 * @param string $reason Why it no longer needs attention.
 	 *
-	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>, history: array<int, array<string, mixed>>, raisings: int, clearings: int} The flag.
+	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>,
+	 *               history: array<int, array<string, mixed>>, raisings: int,
+	 *               clearings: int} The flag, its history and the two counts.
 	 *
 	 * @throws RuntimeException With code `case_not_found`, `reason_required` or `not_raised`.
 	 *
@@ -223,7 +229,9 @@ class CaseAttentionFlagService {
 	 * @param string               $caseId The case UUID.
 	 * @param array<string, mixed> $case   The stored case.
 	 *
-	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>, history: array<int, array<string, mixed>>, raisings: int, clearings: int} The flag.
+	 * @return array{caseId: string, raised: bool, flag: array<string, mixed>,
+	 *               history: array<int, array<string, mixed>>, raisings: int,
+	 *               clearings: int} The flag, its history and the two counts.
 	 *
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */

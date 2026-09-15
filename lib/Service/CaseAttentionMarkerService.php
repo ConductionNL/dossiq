@@ -175,7 +175,10 @@ class CaseAttentionMarkerService {
 			}
 
 			$id = trim((string)($declaration['id'] ?? ''));
-			$named = ($id === '') ? sprintf('marker %d', ((int)$index + 1)) : sprintf('marker "%s"', $id);
+			$named = sprintf('marker "%s"', $id);
+			if ($id === '') {
+				$named = sprintf('marker %d', ((int)$index + 1));
+			}
 
 			if ($id === '') {
 				$problems[] = sprintf('The %s has no id.', $named);

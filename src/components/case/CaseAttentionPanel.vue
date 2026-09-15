@@ -223,32 +223,68 @@ export default {
 			return this.loaded
 		},
 
-		/** @return {string} The lead sentence over a raised flag. */
+		/**
+		 * The lead sentence over a raised flag.
+		 *
+		 * @return {string} The sentence in the reader's language.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		raisedLead() {
 			return t('dossiq', 'Flagged as needing attention:')
 		},
 
-		/** @return {string} What the flag says, in the words of whoever raised it. */
+		/**
+		 * What the flag says, in the words of whoever raised it.
+		 *
+		 * @return {string} The reason, or the empty string.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		flagReason() {
 			return String(this.flag?.reason ?? '')
 		},
 
-		/** @return {string} The lead sentence over the assessment. */
+		/**
+		 * The lead sentence over the assessment.
+		 *
+		 * @return {string} The sentence in the reader's language.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		riskLead() {
 			return t('dossiq', 'Assessed risk:')
 		},
 
-		/** @return {string} The assessed level in the reader's language. */
+		/**
+		 * The assessed level in the reader's language.
+		 *
+		 * @return {string} The label, or the raw value where none is declared.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		levelLabel() {
 			return t('dossiq', LEVEL_LABELS[this.assessment.level] || this.assessment.level)
 		},
 
-		/** @return {string} What a passed review date says. */
+		/**
+		 * What a passed review date says.
+		 *
+		 * @return {string} The label in the reader's language.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		staleLabel() {
 			return t('dossiq', 'Due for review')
 		},
 
-		/** @return {string} The label over the reason field. */
+		/**
+		 * The label over the reason field, which names which act it is for.
+		 *
+		 * @return {string} The label in the reader's language.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		reasonLabel() {
 			if (this.raised) {
 				return t('dossiq', 'Why it no longer needs attention')
@@ -257,7 +293,14 @@ export default {
 			return t('dossiq', 'Why this case needs attention')
 		},
 
-		/** @return {string} The label of the act this strip offers. */
+		/**
+		 * The label of the act this strip offers, which is the other one
+		 * once the flag has been raised.
+		 *
+		 * @return {string} The label in the reader's language.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+		 */
 		actLabel() {
 			if (this.raised) {
 				return t('dossiq', 'Clear the flag')
@@ -308,6 +351,8 @@ export default {
 		 *
 		 * @param {object} state What the endpoint answered.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		apply(state) {
 			this.raised = (state?.raised === true)
@@ -320,6 +365,8 @@ export default {
 		 *
 		 * @param {string} value What is in the field.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		onReason(value) {
 			this.reason = String(value ?? '')
@@ -357,6 +404,8 @@ export default {
 		 *
 		 * @param {object} row The history row.
 		 * @return {string} The act.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		actOf(row) {
 			if (String(row?.act ?? '') === 'cleared') {
@@ -375,6 +424,8 @@ export default {
 		 *
 		 * @param {string} date The date.
 		 * @return {boolean} True when it has passed.
+		 *
+		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		hasPassed(date) {
 			if (String(date ?? '') === '') {
