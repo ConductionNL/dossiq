@@ -90,7 +90,7 @@ test.describe('a live conversation on the case', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request, token, ['case', 'document', 'caseDocument'])
+		await cleanupRunObjects(request, token, ['case', 'document', 'caseDocument', 'complaint', 'hearing'])
 	})
 
 	/**
@@ -127,27 +127,40 @@ test.describe('a live conversation on the case', () => {
 	/**
 	 * @e2e Scenario: the hoorzitting still works as it did
 	 *
-	 * The hearing goes through the same broker now, so what has to stay true
-	 * is that a videogesprek hearing still carries a room URL and that the
-	 * hearing path does not answer differently from the case path. On an
-	 * instance without Talk both degrade to empty, which is also what the
-	 * hearing did before this change.
+	 * The hearing opens its room through the same broker now, so the assertion
+	 * is the one that would catch the lift going wrong: a videogesprek hearing
+	 * scheduled through dossiq's OWN endpoint, which is what runs
+	 * `HearingService::scheduleHearing`, still carries a room URL. Creating a
+	 * `hearing` row over the OpenRegister API instead would prove nothing:
+	 * no dossiq service runs on that path, so the row would carry an empty
+	 * `talkRoomUrl` whether the lift worked or not.
 	 */
 	test('the hoorzitting still works as it did', async ({ request }) => {
-		const seeded = await seedOrdinaryCase(request, token, 'bezwaar met hoorzitting')
-		const id = objectId(seeded)
-
-		const hearing = await createObject(request, token, 'hearingSession', {
-			complaint: id,
-			date: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10),
-			type: 'videogesprek',
+		const complaint = await createObject(request, token, 'complaint', {
+			subject: `${RUN_PREFIX} klacht met hoorgesprek`,
+			description: `${RUN_PREFIX} the complainant asked to be heard`,
+			receiptDate: new Date().toISOString().slice(0, 10),
 		})
 
-		const stored = await showObject(request, 'hearingSession', objectId(hearing))
+		const res = await request.post(`${APP_BASE}/api/complaints/${objectId(complaint)}/hearings`, {
+			headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			data: {
+				date: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10),
+				type: 'videogesprek',
+			},
+		})
+		expect(res.ok(), await res.text()).toBeTruthy()
+		const hearing = await res.json()
+
 		if (await talkAvailable(request)) {
-			expect(stored.talkRoomUrl ?? '').toMatch(/^https?:\/\//)
+			expect(
+				hearing.talkRoomUrl ?? '',
+				'the hearing scheduled no room, so the lift to TalkConversationBroker broke it',
+			).toMatch(/^https?:\/\//)
 		} else {
-			expect(stored.talkRoomUrl ?? '').toBe('')
+			// The hearing degraded to an empty URL before this change too, and
+			// still does. That is the behaviour being kept, not a skip.
+			expect(hearing.talkRoomUrl ?? '').toBe('')
 		}
 	})
 
