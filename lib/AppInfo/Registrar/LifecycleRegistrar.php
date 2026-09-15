@@ -28,6 +28,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -73,6 +74,7 @@ class LifecycleRegistrar {
 				transitionEngine: $container->get(StatusTransitionService::class),
 				resultWriter: $container->get(CaseResultWriter::class),
 				grants: $container->get(OpenRegisterGrantsGateway::class),
+				externalHome: $container->get(ExternalHome::class),
 				logger: $container->get(LoggerInterface::class),
 			)
 		);

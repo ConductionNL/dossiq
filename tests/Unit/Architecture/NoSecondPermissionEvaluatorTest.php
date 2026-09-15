@@ -108,11 +108,26 @@ class NoSecondPermissionEvaluatorTest extends TestCase {
 		// Decides on a SUBSTITUTION ROW, whose holders are named on the row
 		// itself (absentee, substitute, creator). No object grant expresses it.
 		'Service/Substitution/SubstitutionAccessGuard.php' => 'mayView',
-		// 🔴 THIS ONE DOES DECIDE ON A CASE, and it is the one to retire. The
-		// MCP tool provider asks it before answering an assistant. Retiring it
-		// means the provider reads the gateway instead, which is its own change
-		// because an MCP surface that stops checking is worse than one that
-		// checks twice.
+		// 🔴 THIS ONE DOES DECIDE ON A CASE, and it was named here as the one to
+		// retire. Read again against openregister#3744 and #3750, which closed
+		// `permission-provenance-and-deny`, it cannot move without WIDENING the
+		// MCP read surface, so it stays and this is the reason (design D-9).
+		//
+		// `canReadCase()` narrows a read to the case's assignee, a holder of a
+		// role record on the case, or an administrator. OpenRegister's answer is
+		// wider: everybody its rules grant `read`. Swapping one for the other
+		// hands an assistant cases dossiq does not answer for today, in both
+		// callers: `handleGetProcessDetails()` would return one, and
+		// `handleListProcesses()` would stop filtering the list at all.
+		//
+		// `@self.actions` does not close the gap either. openregister#3744
+		// writes it in `ObjectsController::show()`, so it rides a single object
+		// read over HTTP; the MCP reader resolves cases through `ObjectService`
+		// and never sees the field, and a list carries no per-row actions.
+		//
+		// The widening has an owner: the `dossiq-mcp-adoption` change records it
+		// as a breaking change to the access model, with the argument for it. It
+		// belongs there, announced, and not as a side effect of a panel.
 		'Mcp/Tool/DossiqCaseAuthorizer.php' => 'canReadCase',
 		'Mcp/DossiqToolProvider.php' => 'mayRead',
 	];
