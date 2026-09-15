@@ -48,7 +48,15 @@ class RiskFeedsImpactTest extends TestCase {
 		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 
-		return new CasePriorityService(resolver: $resolver, logger: new NullLogger());
+		// The risk service is REAL rather than a double, over the same resolver:
+		// the point of this file is that an assessed level reaches the matrix
+		// and never reaches `priority` directly, and a double for the half that
+		// does the mapping would let that pass without being true.
+		return new CasePriorityService(
+			resolver: $resolver,
+			logger: new NullLogger(),
+			risk: new CaseRiskAssessmentService(resolver: $resolver, logger: new NullLogger())
+		);
 	}//end service()
 
 	/**

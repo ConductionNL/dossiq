@@ -174,10 +174,16 @@ class CasePriorityService {
 	 *                                   so a child type inherits its parent's
 	 *                                   matrix without declaring one.
 	 * @param LoggerInterface  $logger   Structured logger.
+	 * @param CaseRiskAssessmentService|null $risk What an assessed risk level
+	 *                                   implies for the impact axis, for a case
+	 *                                   type that asked to read it from there.
+	 *                                   Optional, so a case type that declared
+	 *                                   nothing derives exactly as before.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseRiskAssessmentService $risk = null,
 	) {
 	}//end __construct()
 
@@ -421,8 +427,15 @@ class CasePriorityService {
 		$impact = $this->normaliseImpact(value: (string)($case['impact'] ?? ''), fallback: $defaults['impact']);
 		$urgency = $this->normaliseUrgency(value: (string)($case['urgency'] ?? ''), fallback: $defaults['urgency']);
 
-		$assessed = $this->impactFromRisk(case: $case, caseTypeId: $caseTypeId);
-		if ($assessed !== '') {
+		// REQ-MRK-02: a case type may read its impact from the assessed risk
+		// level instead of from the impact field. It feeds this axis and does
+		// NOT become a fifth priority word: the matrix below still decides,
+		// and still lands in the four values everything reads. The mapping
+		// lives with the assessment rather than here, because what a risk
+		// level means is the assessment's business and what a priority is is
+		// this class's.
+		$assessed = (string)$this->risk?->impactFromRisk(case: $case, caseTypeId: $caseTypeId);
+		if (in_array($assessed, self::IMPACT_VALUES, true) === true) {
 			$impact = $assessed;
 		}
 
@@ -447,74 +460,6 @@ class CasePriorityService {
 			'priorityOrder' => $this->orderOf(priority: $effective),
 		];
 	}//end resolve()
-
-	/**
-	 * The impact a case's assessed risk level implies, when its case type
-	 * asked for that.
-	 *
-	 * REQ-MRK-02: the assessment feeds the IMPACT axis this matrix already
-	 * reads. It does not become a fifth priority word, and it does not bypass
-	 * the matrix: a case type that reads impact from the risk assessment still
-	 * derives its priority through `derive()` and still lands in the four
-	 * values everything reads. Four priority vocabularies is the defect D-6 of
-	 * `case-priority-impact-urgency` names, and this is what keeps the count at
-	 * one.
-	 *
-	 * A case type that did not declare it, and a case with no assessment,
-	 * answer the empty string and the impact field stands. Deriving from a
-	 * missing assessment would give a case no priority at all, which drops it
-	 * out of every sorted list.
-	 *
-	 * @param array<string, mixed> $case       The case being saved.
-	 * @param string               $caseTypeId The case's case type.
-	 *
-	 * @return string One of IMPACT_VALUES, or the empty string.
-	 *
-	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
-	 */
-	public function impactFromRisk(array $case, string $caseTypeId): string {
-		if ($this->readsImpactFromRisk(caseTypeId: $caseTypeId) === false) {
-			return '';
-		}
-
-		$assessment = ($case['riskAssessment'] ?? []);
-		if (is_array($assessment) === false) {
-			return '';
-		}
-
-		$level = trim((string)($assessment['level'] ?? ''));
-		$impact = (string)(CaseRiskAssessmentService::LEVEL_IMPACT[$level] ?? '');
-		if (in_array($impact, self::IMPACT_VALUES, true) === false) {
-			return '';
-		}
-
-		return $impact;
-	}//end impactFromRisk()
-
-	/**
-	 * Whether this case type reads its impact from the risk assessment.
-	 *
-	 * @param string $caseTypeId The case's case type, or the empty string.
-	 *
-	 * @return boolean True when the case type declared it.
-	 */
-	private function readsImpactFromRisk(string $caseTypeId): bool {
-		if (trim($caseTypeId) === '') {
-			return false;
-		}
-
-		try {
-			$effective = $this->resolver->effectiveCaseType(caseTypeId: trim($caseTypeId));
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not read whether a case type reads impact from risk',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
-			);
-			return false;
-		}
-
-		return (($effective['impactFromRisk'] ?? false) === true);
-	}//end readsImpactFromRisk()
 
 	/**
 	 * The impact and urgency behind a priority a writer already has.

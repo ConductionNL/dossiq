@@ -51,6 +51,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -59,6 +60,25 @@ use Throwable;
  * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
  */
 class CaseRiskAssessmentService {
+
+	/**
+	 * Constructor.
+	 *
+	 * Both collaborators are optional, because most of this class is pure: the
+	 * staleness question, the level vocabulary and the mirror need nothing but
+	 * the case in front of them. Only `impactFromRisk()` has to ask a case type
+	 * whether it wants the assessment read into its matrix.
+	 *
+	 * @param CaseTypeResolver|null $resolver The effective blueprint of a case
+	 *                                        type, so a child type inherits its
+	 *                                        parent's declaration.
+	 * @param LoggerInterface|null  $logger   Structured logger.
+	 */
+	public function __construct(
+		private readonly ?CaseTypeResolver $resolver = null,
+		private readonly ?LoggerInterface $logger = null,
+	) {
+	}//end __construct()
 
 	/**
 	 * The assessed levels, lowest first.
@@ -250,4 +270,70 @@ class CaseRiskAssessmentService {
 
 		return ['riskLevel' => $level];
 	}//end resolve()
+
+	/**
+	 * The impact a case's assessed risk level implies, when its case type
+	 * asked for that.
+	 *
+	 * REQ-MRK-02: the assessment feeds the IMPACT axis this matrix already
+	 * reads. It does not become a fifth priority word, and it does not bypass
+	 * the matrix: a case type that reads impact from the risk assessment still
+	 * derives its priority through `derive()` and still lands in the four
+	 * values everything reads. Four priority vocabularies is the defect D-6 of
+	 * `case-priority-impact-urgency` names, and this is what keeps the count at
+	 * one.
+	 *
+	 * A case type that did not declare it, and a case with no assessment,
+	 * answer the empty string and the impact field stands. Deriving from a
+	 * missing assessment would give a case no priority at all, which drops it
+	 * out of every sorted list.
+	 *
+	 * IT LIVES HERE AND NOT ON `CasePriorityService`, deliberately. What a risk
+	 * level MEANS is the assessment's business; what a priority IS is the
+	 * matrix's. `CasePriorityService::resolve()` is the only caller, and it
+	 * takes the answer as one input to the derivation it already runs, so no
+	 * assessed level ever reaches `priority` without passing through the
+	 * matrix.
+	 *
+	 * @param array<string, mixed> $case       The case being saved.
+	 * @param string               $caseTypeId The case's case type.
+	 *
+	 * @return string One of the impact values, or the empty string.
+	 *
+	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+	 */
+	public function impactFromRisk(array $case, string $caseTypeId): string {
+		$assessment = ($case['riskAssessment'] ?? []);
+		if (is_array($assessment) === false || $this->readsImpactFromRisk(caseTypeId: $caseTypeId) === false) {
+			return '';
+		}
+
+		return (string)(self::LEVEL_IMPACT[$this->levelOf(assessment: $assessment)] ?? '');
+	}//end impactFromRisk()
+
+	/**
+	 * Whether this case type reads its impact from the risk assessment.
+	 *
+	 * @param string $caseTypeId The case's case type, or the empty string.
+	 *
+	 * @return boolean True when the case type declared it.
+	 */
+	private function readsImpactFromRisk(string $caseTypeId): bool {
+		if (trim($caseTypeId) === '') {
+			return false;
+		}
+
+		try {
+			$effective = (array)$this->resolver?->effectiveCaseType(caseTypeId: trim($caseTypeId));
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq: could not read whether a case type reads impact from risk',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return (($effective['impactFromRisk'] ?? false) === true);
+	}//end readsImpactFromRisk()
+
 }//end class
