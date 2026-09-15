@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -57,10 +58,13 @@ class WorkflowDefinitionController extends Controller {
 	 *
 	 * @param IRequest $request The request object
 	 * @param WorkflowDefinitionService $service The workflow definition service
+	 * @param WorkflowLifecycleGuard $guard Holds why a publish was refused, so the
+	 *                                      answer can name the task and what was missing
 	 */
 	public function __construct(
 		IRequest $request,
 		private WorkflowDefinitionService $service,
+		private readonly WorkflowLifecycleGuard $guard,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -85,7 +89,7 @@ class WorkflowDefinitionController extends Controller {
 			// A refused task declaration says WHAT was missing and on WHICH
 			// task. Everything else keeps the message it had, because there
 			// is nothing more specific to say about it here.
-			$refusals = $this->service->lastRefusals();
+			$refusals = $this->guard->lastRefusals();
 			if ($refusals !== []) {
 				return new JSONResponse(
 					[

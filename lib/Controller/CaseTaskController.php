@@ -44,8 +44,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
-use OCA\Dossiq\Service\Task\CaseTaskCompletion;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,8 +79,7 @@ class CaseTaskController extends Controller {
 	 *
 	 * @param string                $appName     The app name.
 	 * @param IRequest              $request     The HTTP request.
-	 * @param CaseTaskCompletion    $completion  Pre-checks and completes a task.
-	 * @param EngineTaskGateway     $engineTasks The one seam onto the task engine.
+	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
 	 * @param TaskAttachmentService $attachments Holds a file against an open task.
 	 * @param AlwaysAvailableActs   $acts        The acts allowed in every phase.
 	 * @param CaseAccessGuard       $caseAccess  Per-case authorization, fails closed.
@@ -91,8 +89,7 @@ class CaseTaskController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTaskCompletion $completion,
-		private readonly EngineTaskGateway $engineTasks,
+		private readonly CaseTaskActions $tasks,
 		private readonly TaskAttachmentService $attachments,
 		private readonly AlwaysAvailableActs $acts,
 		private readonly CaseAccessGuard $caseAccess,
@@ -118,7 +115,7 @@ class CaseTaskController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function capabilities(): JSONResponse {
-		return new JSONResponse(['claim' => $this->engineTasks->supportsClaim()]);
+		return new JSONResponse(['claim' => $this->tasks->engineAnswersClaim()]);
 	}//end capabilities()
 
 	/**
@@ -170,8 +167,8 @@ class CaseTaskController extends Controller {
 
 		return $this->onTask(
 			taskId: $taskId,
-			run: fn (string $caseId): array => $this->completion->complete(
-				taskId: $taskId,
+			run: fn (array $task): array => $this->tasks->complete(
+				taskId: (string)$task['id'],
 				data: $data,
 				outcome: $outcome,
 				actor: $this->currentUid()
@@ -192,13 +189,10 @@ class CaseTaskController extends Controller {
 	public function claim(string $taskId): JSONResponse {
 		return $this->onTask(
 			taskId: $taskId,
-			run: function (string $caseId) use ($taskId): array {
-				if ($this->engineTasks->claim(taskId: $taskId, actor: $this->currentUid()) === false) {
-					throw new RuntimeException($this->engineTasks->lastError());
-				}
-
-				return ['claimed' => true, 'task' => $taskId, 'case' => $caseId];
-			},
+			run: fn (array $task): array => array_merge(
+				$this->tasks->claim(taskId: (string)$task['id'], actor: $this->currentUid()),
+				['case' => (string)$task['objectUuid']]
+			),
 		);
 	}//end claim()
 
@@ -262,8 +256,8 @@ class CaseTaskController extends Controller {
 	 * relationship, and a caller could pass a case they may see to reach a
 	 * task on one they may not.
 	 *
-	 * @param string                           $taskId The task.
-	 * @param callable(string): array<string, mixed> $run The gesture, given the case id.
+	 * @param string                                 $taskId The task.
+	 * @param callable(array<string, mixed>): array<string, mixed> $run The gesture, given the task.
 	 *
 	 * @return JSONResponse The answer, or a refusal. An engine that cannot be
 	 *                      read answers 503, which is not the 404 a missing
@@ -271,7 +265,7 @@ class CaseTaskController extends Controller {
 	 */
 	private function onTask(string $taskId, callable $run): JSONResponse {
 		try {
-			$task = $this->engineTasks->find(taskId: $taskId);
+			$task = $this->tasks->find(taskId: $taskId);
 		} catch (\Throwable $e) {
 			// The gateway answers null for a missing task and keeps its own
 			// failures, so reaching here means the ENGINE could not answer at
@@ -304,7 +298,7 @@ class CaseTaskController extends Controller {
 			);
 		}
 
-		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($caseId));
+		return $this->guarded(caseId: $caseId, write: true, run: static fn (): array => $run($task));
 	}//end onTask()
 
 	/**

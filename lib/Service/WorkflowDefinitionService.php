@@ -67,8 +67,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Task\TaskDeclarationReader;
-use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use OCA\Dossiq\Service\Workflow\TransitionAuthorizationStamper;
 use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
@@ -110,8 +108,6 @@ class WorkflowDefinitionService {
 	 *                                                freezing
 	 * @param WorkflowJsonProperty $json The JSON-string property codec
 	 * @param LoggerInterface $logger The logger
-	 * @param TaskDeclarationValidator|null $taskDeclarations Publish-time check of the
-	 *                                                       per-task declaration blocks
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
@@ -119,33 +115,8 @@ class WorkflowDefinitionService {
 		private readonly TransitionAuthorizationStamper $stamper,
 		private readonly WorkflowJsonProperty $json,
 		private readonly LoggerInterface $logger,
-		private readonly ?TaskDeclarationValidator $taskDeclarations = null,
 	) {
 	}//end __construct()
-
-	/**
-	 * Why the last publish was refused, in the caller's own words.
-	 *
-	 * `publish()` answers null for every refusal, which is the contract its
-	 * callers were written against and is not changed here. What was missing
-	 * is kept beside it, so the controller can say WHICH task named WHICH
-	 * form, group or effect that is not there — the difference between a
-	 * message an administrator can act on and one that sends them to a log.
-	 *
-	 * @var array<int, array{path: string, code: string, message: string}>
-	 */
-	private array $lastRefusals = [];
-
-	/**
-	 * The refusals of the most recent publish attempt, newest call only.
-	 *
-	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	public function lastRefusals(): array {
-		return $this->lastRefusals;
-	}//end lastRefusals()
 
 	/**
 	 * Resolve the active definition for a caseType, or null when none exists.
@@ -318,7 +289,6 @@ class WorkflowDefinitionService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(string $id): ?array {
-		$this->lastRefusals = [];
 		$current = $this->repository->findById(id: $id);
 		if ($current === null) {
 			$this->logger->warning(
@@ -330,21 +300,6 @@ class WorkflowDefinitionService {
 
 		$transitions = $this->json->decodeList(raw: ($current['transitions'] ?? ''));
 		if ($this->guard->isPublishableDraft(current: $current, transitions: $transitions, id: $id) === false) {
-			return null;
-		}
-
-		// A task naming a form, a group or an effect handler that is not
-		// there is refused HERE, because publishing is the last moment
-		// somebody is present to fix it. After it, the same declaration is a
-		// task that reaches no team or cannot be completed, met by the
-		// handler who needed the work to move.
-		$this->lastRefusals = $this->taskRefusals(definition: $current);
-		if ($this->lastRefusals !== []) {
-			$this->logger->warning(
-				'Dossiq: publish() — a task declaration names something that is not there',
-				['app' => Application::APP_ID, 'id' => $id, 'refusals' => $this->lastRefusals]
-			);
-
 			return null;
 		}
 
@@ -386,30 +341,6 @@ class WorkflowDefinitionService {
 
 		return $updated;
 	}//end publish()
-
-	/**
-	 * What the steps of this definition declare that cannot be resolved.
-	 *
-	 * Answers the empty list when no validator is wired, which is what every
-	 * existing unit test constructing this service five-argument gets: the
-	 * check is additive, and a test that never declared a task block cannot
-	 * be failed by one.
-	 *
-	 * @param array<string, mixed> $definition The definition row being published.
-	 *
-	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	private function taskRefusals(array $definition): array {
-		if ($this->taskDeclarations === null) {
-			return [];
-		}
-
-		return $this->taskDeclarations->refusals(
-			steps: TaskDeclarationReader::stepsOf(definition: $definition, json: $this->json)
-		);
-	}//end taskRefusals()
 
 	/**
 	 * Deprecate a published definition. Refuses (returns null + logs) if

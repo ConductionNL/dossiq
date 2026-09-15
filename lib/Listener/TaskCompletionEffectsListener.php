@@ -13,7 +13,7 @@
  * OpenRegister's own API, and dossiq is in the path of only the first. An
  * effect that ran on one surface and not the others would be a feature that
  * works until somebody uses the app a different way.
- * {@see \OCA\Dossiq\Service\Task\CaseTaskCompletion} pre-checks where dossiq
+ * {@see \OCA\Dossiq\Service\Task\CaseTaskActions} pre-checks where dossiq
  * owns the surface, so an unresolvable effect refuses the completion before it
  * happens; this runs whatever surface it came from.
  *

@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Task\TaskDeclarationReader;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
+use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 
@@ -54,7 +55,7 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testOneBlockCarriesEverySetting(): void {
-		$declaration = TaskDeclaration::of(
+		$declaration = (new TaskDeclaration())->forStep(
 			step: [
 				'title' => 'Hoor de belanghebbende',
 				'status' => 'status-1',
@@ -86,7 +87,7 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testAStepWithNoBlockRunsAsItAlwaysDid(): void {
-		$declaration = TaskDeclaration::of(step: ['title' => 'Toets ontvankelijkheid']);
+		$declaration = (new TaskDeclaration())->forStep(step: ['title' => 'Toets ontvankelijkheid']);
 
 		$this->assertSame(expected: TaskDeclaration::NONE, actual: $declaration);
 		$this->assertTrue(condition: $declaration['enabled']);
@@ -99,7 +100,7 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testATaskCanBeSwitchedOff(): void {
-		$declaration = TaskDeclaration::of(
+		$declaration = (new TaskDeclaration())->forStep(
 			step: ['title' => 'Vraag advies', 'task' => ['enabled' => false]]
 		);
 
@@ -112,7 +113,7 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testAKeyBesideTheBlockIsNotRead(): void {
-		$declaration = TaskDeclaration::of(
+		$declaration = (new TaskDeclaration())->forStep(
 			step: [
 				'title' => 'Vraag advies',
 				'leadTimeDays' => 30,
@@ -232,11 +233,11 @@ class PerTaskConfigurationTest extends TestCase {
 			['title' => 'Hoorzitting', 'status' => 'status-b', 'task' => ['leadTimeDays' => 21]],
 		];
 
-		$found = TaskDeclarationReader::matching(steps: $steps, statusTypeId: 'status-b', title: 'Hoorzitting');
+		$found = $this->reader()->matching(steps: $steps, statusTypeId: 'status-b', title: 'Hoorzitting');
 
 		$this->assertNotNull(actual: $found);
-		$this->assertSame(expected: 21, actual: TaskDeclaration::of(step: $found)['leadTimeDays']);
-		$this->assertNull(actual: TaskDeclarationReader::matching(steps: $steps, statusTypeId: 'status-a', title: 'Advies'));
+		$this->assertSame(expected: 21, actual: (new TaskDeclaration())->forStep(step: $found)['leadTimeDays']);
+		$this->assertNull(actual: $this->reader()->matching(steps: $steps, statusTypeId: 'status-a', title: 'Advies'));
 	}
 
 	/**
@@ -245,7 +246,7 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testAStatuslessStepMatchesOnTitleAlone(): void {
-		$found = TaskDeclarationReader::matching(
+		$found = $this->reader()->matching(
 			steps: [['title' => 'Hoorzitting', 'task' => ['leadTimeDays' => 3]]],
 			statusTypeId: 'status-z',
 			title: 'Hoorzitting'
@@ -260,13 +261,29 @@ class PerTaskConfigurationTest extends TestCase {
 	 * @return void
 	 */
 	public function testStepsDecodeFromTheJsonProperty(): void {
-		$steps = TaskDeclarationReader::stepsOf(
-			definition: ['steps' => json_encode([['title' => 'Hoorzitting'], 'not a step'])],
-			json: new WorkflowJsonProperty()
+		$steps = $this->reader()->stepsOf(
+			definition: ['steps' => json_encode([['title' => 'Hoorzitting'], 'not a step'])]
 		);
 
 		$this->assertCount(expectedCount: 1, haystack: $steps);
 		$this->assertSame(expected: 'Hoorzitting', actual: $steps[0]['title']);
+	}
+
+	/**
+	 * A reader over a definition service that answers nothing.
+	 *
+	 * The validator only ever asks it to DECODE a definition it was handed,
+	 * never to look one up, so the lookup half is deliberately a double that
+	 * would fail loudly if anything started using it.
+	 *
+	 * @return TaskDeclarationReader The reader.
+	 */
+	private function reader(): TaskDeclarationReader {
+		return new TaskDeclarationReader(
+			definitions: $this->createMock(originalClassName: WorkflowDefinitionService::class),
+			json: new WorkflowJsonProperty(),
+			declaration: new TaskDeclaration()
+		);
 	}
 
 	/**
@@ -285,6 +302,11 @@ class PerTaskConfigurationTest extends TestCase {
 			static fn (string $group): bool => in_array($group, $groups, true)
 		);
 
-		return new TaskDeclarationValidator(handlers: $registry, groups: $groupManager);
+		return new TaskDeclarationValidator(
+			handlers: $registry,
+			groups: $groupManager,
+			declaration: new TaskDeclaration(),
+			steps: $this->reader()
+		);
 	}
 }//end class

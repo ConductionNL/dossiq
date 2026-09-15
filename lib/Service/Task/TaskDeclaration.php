@@ -59,7 +59,7 @@ namespace OCA\Dossiq\Service\Task;
  *
  * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
  */
-final class TaskDeclaration {
+class TaskDeclaration {
 
 	/**
 	 * The key the block lives under on a workflow step.
@@ -104,7 +104,7 @@ final class TaskDeclaration {
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
-	public static function of(array $step): array {
+	public function forStep(array $step): array {
 		$block = ($step[self::BLOCK] ?? null);
 		if (is_array($block) === false) {
 			return self::NONE;
@@ -116,12 +116,12 @@ final class TaskDeclaration {
 			// existed expects.
 			'enabled' => (($block['enabled'] ?? true) !== false),
 			'leadTimeDays' => max(0, (int)($block['leadTimeDays'] ?? 0)),
-			'candidateGroups' => self::names(value: ($block['candidateGroups'] ?? [])),
-			'candidateUsers' => self::names(value: ($block['candidateUsers'] ?? [])),
-			'form' => self::form(value: ($block['form'] ?? null)),
-			'effects' => self::effects(value: ($block['effects'] ?? [])),
+			'candidateGroups' => $this->names(value: ($block['candidateGroups'] ?? [])),
+			'candidateUsers' => $this->names(value: ($block['candidateUsers'] ?? [])),
+			'form' => $this->form(value: ($block['form'] ?? null)),
+			'effects' => $this->effects(value: ($block['effects'] ?? [])),
 		];
-	}//end of()
+	}//end forStep()
 
 	/**
 	 * The title a step declares, which is the name its task carries.
@@ -132,7 +132,7 @@ final class TaskDeclaration {
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
-	public static function titleOf(array $step): string {
+	public function titleOf(array $step): string {
 		return trim((string)($step['title'] ?? ''));
 	}//end titleOf()
 
@@ -145,7 +145,7 @@ final class TaskDeclaration {
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
-	public static function statusOf(array $step): string {
+	public function statusOf(array $step): string {
 		return trim((string)($step['status'] ?? ''));
 	}//end statusOf()
 
@@ -156,7 +156,7 @@ final class TaskDeclaration {
 	 *
 	 * @return array<int, string> The names.
 	 */
-	private static function names(mixed $value): array {
+	private function names(mixed $value): array {
 		if (is_array($value) === false) {
 			return [];
 		}
@@ -187,7 +187,7 @@ final class TaskDeclaration {
 	 *
 	 * @return array<string, mixed>|null The declaration.
 	 */
-	private static function form(mixed $value): ?array {
+	private function form(mixed $value): ?array {
 		if (is_array($value) === false || $value === []) {
 			return null;
 		}
@@ -206,7 +206,7 @@ final class TaskDeclaration {
 	 *
 	 * @return array<int, array<string, mixed>> The effects.
 	 */
-	private static function effects(mixed $value): array {
+	private function effects(mixed $value): array {
 		if (is_array($value) === false) {
 			return [];
 		}

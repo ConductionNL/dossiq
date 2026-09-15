@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Completing a task from the case page, with everything the task declared.
+ * The acts a handler takes on a task from the case page.
  *
  * A handler finishing "hoor de belanghebbende" on the case page is doing four
  * things at once: answering the form the task asked for, completing the task,
@@ -47,11 +47,17 @@ namespace OCA\Dossiq\Service\Task;
 use RuntimeException;
 
 /**
- * Pre-checks a task completion and hands it to the engine.
+ * Completing and claiming a task, with dossiq's own refusals in front.
+ *
+ * It owns BOTH verbs rather than only the completion, so the controller has
+ * one collaborator for the task acts instead of two and never reaches past it
+ * into the engine seam. A controller that talks to a service for one verb and
+ * to the gateway for the next is where the two paths start disagreeing about
+ * who may do what.
  *
  * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
  */
-class CaseTaskCompletion {
+class CaseTaskActions {
 
 	/**
 	 * Constructor.
@@ -64,6 +70,59 @@ class CaseTaskCompletion {
 		private readonly TaskEffects $effects,
 	) {
 	}//end __construct()
+
+	/**
+	 * Whether the task engine on this instance answers a claim act.
+	 *
+	 * Asked of the engine rather than assumed, and answered to the surface
+	 * rather than only acted on: a claim button that does nothing would be
+	 * worse than none, and a case type promising a candidate group the engine
+	 * ignores would be worse still.
+	 *
+	 * @return boolean True when a task can be claimed.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function engineAnswersClaim(): bool {
+		return $this->engineTasks->supportsClaim();
+	}//end engineAnswersClaim()
+
+	/**
+	 * Read one task, or null when the engine has none by that id.
+	 *
+	 * @param string $taskId The task.
+	 *
+	 * @return array<string, mixed>|null The task.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function find(string $taskId): ?array {
+		return $this->engineTasks->find(taskId: $taskId);
+	}//end find()
+
+	/**
+	 * Let one candidate take an unclaimed task.
+	 *
+	 * The engine rules on whether this caller is in the task's candidate pool
+	 * and refuses with its own reason, which is kept: a generic failure would
+	 * throw away the only part a handler can act on.
+	 *
+	 * @param string $taskId The task.
+	 * @param string $actor  Who is taking it.
+	 *
+	 * @return array{claimed: bool, task: string} What happened.
+	 *
+	 * @throws RuntimeException With the engine's own refusal.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	public function claim(string $taskId, string $actor): array {
+		if ($this->engineTasks->claim(taskId: $taskId, actor: $actor) === false) {
+			throw new RuntimeException($this->engineTasks->lastError());
+		}
+
+		return ['claimed' => true, 'task' => $taskId];
+	}//end claim()
 
 	/**
 	 * Complete one task with the answers its form asked for.
@@ -142,40 +201,73 @@ class CaseTaskCompletion {
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
 	 */
 	public static function missingRequiredField(array $task, array $data): string {
-		$metadata = ($task['metadata'] ?? []);
-		if (is_array($metadata) === false) {
-			return '';
-		}
-
-		$form = ($metadata['form'] ?? []);
-		if (is_array($form) === false) {
-			return '';
-		}
-
-		$fields = ($form['fields'] ?? []);
-		if (is_array($fields) === false) {
-			return '';
-		}
-
-		foreach ($fields as $field) {
-			if (is_array($field) === false || ($field['required'] ?? false) !== true) {
-				continue;
-			}
-
-			$name = trim((string)($field['field'] ?? ''));
-			if ($name === '') {
-				continue;
-			}
-
-			// `0` and `false` are answers. Only an absent key, a null and a
-			// string of spaces are nothing, which is why this is not `empty()`:
-			// a required amount answered with zero is answered.
-			$answer = ($data[$name] ?? null);
-			if ($answer === null || (is_string($answer) === true && trim($answer) === '') || $answer === []) {
+		foreach (self::requiredFields(task: $task) as $name) {
+			if (self::isBlank(answer: ($data[$name] ?? null)) === true) {
 				return $name;
 			}
 		}
 
 		return '';
 	}//end missingRequiredField()
+
+	/**
+	 * The names of the fields the task's form requires, in declared order.
+	 *
+	 * @param array<string, mixed> $task The task.
+	 *
+	 * @return array<int, string> The names.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	private static function requiredFields(array $task): array {
+		$metadata = ($task['metadata'] ?? []);
+		$form = [];
+		if (is_array($metadata) === true) {
+			$form = ($metadata['form'] ?? []);
+		}
+
+		$fields = [];
+		if (is_array($form) === true) {
+			$fields = ($form['fields'] ?? []);
+		}
+
+		if (is_array($fields) === false) {
+			return [];
+		}
+
+		$required = [];
+		foreach ($fields as $field) {
+			if (is_array($field) === false || ($field['required'] ?? false) !== true) {
+				continue;
+			}
+
+			$name = trim((string)($field['field'] ?? ''));
+			if ($name !== '') {
+				$required[] = $name;
+			}
+		}
+
+		return $required;
+	}//end requiredFields()
+
+	/**
+	 * Whether an answer is no answer at all.
+	 *
+	 * 🔑 `0` AND `false` ARE ANSWERS, which is why this is not `empty()`. A
+	 * required amount answered with zero is answered, and telling the handler
+	 * to fill in a field they filled in is how a form stops being trusted.
+	 *
+	 * @param mixed $answer What was given.
+	 *
+	 * @return boolean True when nothing was given.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+	 */
+	private static function isBlank(mixed $answer): bool {
+		if ($answer === null || $answer === []) {
+			return true;
+		}
+
+		return (is_string($answer) === true && trim($answer) === '');
+	}//end isBlank()
 }//end class

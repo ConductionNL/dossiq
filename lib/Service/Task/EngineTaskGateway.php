@@ -64,6 +64,22 @@ use Throwable;
  * {@see unavailableReason()} distinguishes "app not installed" from "class not
  * found": the second is a rename, not a configuration.
  *
+ * WHY THE PUBLIC SURFACE IS WIDE, AND STAYS ONE CLASS
+ * ---------------------------------------------------
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
+ * Not a concession: the invariant at the top of this file is that NOTHING
+ * ELSE in dossiq talks to the engine's task API, so that when the engine
+ * moves there is one file to change and not fifty-seven. Every public method
+ * here is one verb of that API — mirror, reassign, claim, complete, find —
+ * and splitting them into two classes to satisfy a count would put the seam
+ * in two places and make the invariant unenforceable.
+ *
+ * The suppression is NARROW on purpose: the complexity rules that catch a
+ * method doing too much still apply, and did — `toEnginePayload()` was split
+ * rather than suppressed.
+ *
  * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
  */
 class EngineTaskGateway {
@@ -444,27 +460,7 @@ class EngineTaskGateway {
             $payload['candidateGroups'] = [$group];
         }
 
-        // The case type's DECLARED candidates, which are a different thing
-        // from the case's team: the team is where work falls back to, the
-        // candidates are who the task is offered to before anybody has it.
-        // Declared lists win, because an administrator who named a team for
-        // this task meant that team and not the case's.
-        foreach (['candidateGroups', 'candidateUsers'] as $key) {
-            $declared = ($task[$key] ?? null);
-            if (is_array($declared) === true && $declared !== []) {
-                $payload[$key] = array_values($declared);
-            }
-        }
-
-        // `metadata.form` is the engine's own room for a run-less task's form
-        // declaration, read by its TaskFormResolver. `metadata.dossiq` is
-        // dossiq's, read back when the task completes. Both are passed
-        // through whole: translating them here would be a second description
-        // of the same declaration.
-        $metadata = ($task['metadata'] ?? null);
-        if (is_array($metadata) === true && $metadata !== []) {
-            $payload['metadata'] = $metadata;
-        }
+        $payload = $this->withDeclaration(payload: $payload, task: $task);
 
         $checklist = $this->decodeChecklist(value: ($task['checklist'] ?? null));
         if ($checklist !== null) {
@@ -473,6 +469,44 @@ class EngineTaskGateway {
 
         return $payload;
     }//end toEnginePayload()
+
+    /**
+     * Carry the case type's per-task declaration into the engine payload.
+     *
+     * The DECLARED candidates are a different thing from the case's team: the
+     * team is where work falls back to, the candidates are who the task is
+     * offered to before anybody has it. A declared list wins, because an
+     * administrator who named a team for this task meant that team and not
+     * the case's.
+     *
+     * `metadata.form` is the engine's own room for a run-less task's form
+     * declaration, read by its TaskFormResolver. `metadata.dossiq` is
+     * dossiq's, read back when the task completes. Both are passed through
+     * whole: translating them here would be a second description of the same
+     * declaration, and the two would drift.
+     *
+     * @param array<string, mixed> $payload The payload so far.
+     * @param array<string, mixed> $task    The dossiq task.
+     *
+     * @return array<string, mixed> The payload, with whatever was declared.
+     *
+     * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+     */
+    private function withDeclaration(array $payload, array $task): array {
+        foreach (['candidateGroups', 'candidateUsers'] as $key) {
+            $declared = ($task[$key] ?? null);
+            if (is_array($declared) === true && $declared !== []) {
+                $payload[$key] = array_values($declared);
+            }
+        }
+
+        $metadata = ($task['metadata'] ?? null);
+        if (is_array($metadata) === true && $metadata !== []) {
+            $payload['metadata'] = $metadata;
+        }
+
+        return $payload;
+    }//end withDeclaration()
 
     /**
      * Read one engine task, as a plain array, or null when it is gone.

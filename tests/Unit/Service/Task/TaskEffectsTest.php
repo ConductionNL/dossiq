@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
-use OCA\Dossiq\Service\Task\CaseTaskCompletion;
+use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskEffects;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
@@ -39,7 +39,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskEffects
- * @covers \OCA\Dossiq\Service\Task\CaseTaskCompletion
+ * @covers \OCA\Dossiq\Service\Task\CaseTaskActions
  */
 class TaskEffectsTest extends TestCase {
 
@@ -162,15 +162,15 @@ class TaskEffectsTest extends TestCase {
 
 		$this->assertSame(
 			expected: 'verslag',
-			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['aanwezigen' => 'drie'])
+			actual: CaseTaskActions::missingRequiredField(task: $task, data: ['aanwezigen' => 'drie'])
 		);
 		$this->assertSame(
 			expected: 'verslag',
-			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => '   '])
+			actual: CaseTaskActions::missingRequiredField(task: $task, data: ['verslag' => '   '])
 		);
 		$this->assertSame(
 			expected: '',
-			actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['verslag' => 'Gehoord op 3 maart'])
+			actual: CaseTaskActions::missingRequiredField(task: $task, data: ['verslag' => 'Gehoord op 3 maart'])
 		);
 	}
 
@@ -186,8 +186,8 @@ class TaskEffectsTest extends TestCase {
 	public function testZeroAndFalseAreAnswers(): void {
 		$task = ['metadata' => ['form' => ['fields' => [['field' => 'bedrag', 'required' => true]]]]];
 
-		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => 0]));
-		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: $task, data: ['bedrag' => false]));
+		$this->assertSame(expected: '', actual: CaseTaskActions::missingRequiredField(task: $task, data: ['bedrag' => 0]));
+		$this->assertSame(expected: '', actual: CaseTaskActions::missingRequiredField(task: $task, data: ['bedrag' => false]));
 	}
 
 	/**
@@ -196,7 +196,7 @@ class TaskEffectsTest extends TestCase {
 	 * @return void
 	 */
 	public function testATaskWithNoFormAsksForNothing(): void {
-		$this->assertSame(expected: '', actual: CaseTaskCompletion::missingRequiredField(task: ['id' => 't'], data: []));
+		$this->assertSame(expected: '', actual: CaseTaskActions::missingRequiredField(task: ['id' => 't'], data: []));
 	}
 
 	/**

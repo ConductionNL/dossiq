@@ -63,14 +63,35 @@ class TaskDeclarationValidator {
 	/**
 	 * Constructor.
 	 *
-	 * @param ActionHandlerRegistry $handlers The registry an effect names a handler from.
-	 * @param IGroupManager         $groups   Resolves a candidate group.
+	 * @param ActionHandlerRegistry $handlers    The registry an effect names a handler from.
+	 * @param IGroupManager         $groups      Resolves a candidate group.
+	 * @param TaskDeclaration       $declaration Normalises one step's block.
+	 * @param TaskDeclarationReader $steps       Decodes a definition's steps.
 	 */
 	public function __construct(
 		private readonly ActionHandlerRegistry $handlers,
 		private readonly IGroupManager $groups,
+		private readonly TaskDeclaration $declaration,
+		private readonly TaskDeclarationReader $steps,
 	) {
 	}//end __construct()
+
+	/**
+	 * Every refusal one whole workflow definition carries.
+	 *
+	 * The definition is handed in raw and the steps are decoded HERE, so the
+	 * caller publishing it needs to know neither that `steps` is a
+	 * JSON-encoded string nor how a block is shaped.
+	 *
+	 * @param array<string, mixed> $definition The workflow definition row.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}> The refusals; empty when it may be published.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	public function refusalsFor(array $definition): array {
+		return $this->refusals(steps: $this->steps->stepsOf(definition: $definition));
+	}//end refusalsFor()
 
 	/**
 	 * Every refusal the steps of one workflow carry, in reading order.
@@ -103,7 +124,7 @@ class TaskDeclarationValidator {
 	 * @return array<int, array{path: string, code: string, message: string}> The refusals.
 	 */
 	private function refusalsForStep(array $step, int $index): array {
-		$task = TaskDeclaration::titleOf(step: $step);
+		$task = $this->declaration->titleOf(step: $step);
 		if ($task === '') {
 			$task = 'step ' . $index;
 		}
@@ -115,7 +136,7 @@ class TaskDeclarationValidator {
 			return $refusals;
 		}
 
-		$declaration = TaskDeclaration::of(step: $step);
+		$declaration = $this->declaration->forStep(step: $step);
 
 		return array_merge(
 			$refusals,

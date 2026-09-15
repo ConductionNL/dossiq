@@ -37,8 +37,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseTaskController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
-use OCA\Dossiq\Service\Task\CaseTaskCompletion;
-use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -57,16 +56,9 @@ class CaseTaskControllerTest extends TestCase {
 	/**
 	 * The completion seam.
 	 *
-	 * @var CaseTaskCompletion&MockObject
+	 * @var CaseTaskActions&MockObject
 	 */
-	private CaseTaskCompletion $completion;
-
-	/**
-	 * The engine seam.
-	 *
-	 * @var EngineTaskGateway&MockObject
-	 */
-	private EngineTaskGateway $engineTasks;
+	private CaseTaskActions $completion;
 
 	/**
 	 * The attachment hold.
@@ -116,8 +108,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->completion = $this->createMock(originalClassName: CaseTaskCompletion::class);
-		$this->engineTasks = $this->createMock(originalClassName: EngineTaskGateway::class);
+		$this->completion = $this->createMock(originalClassName: CaseTaskActions::class);
 		$this->attachments = $this->createMock(originalClassName: TaskAttachmentService::class);
 		$this->acts = $this->createMock(originalClassName: AlwaysAvailableActs::class);
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
@@ -148,8 +139,7 @@ class CaseTaskControllerTest extends TestCase {
 		return new CaseTaskController(
 			appName: 'dossiq',
 			request: $this->request,
-			completion: $this->completion,
-			engineTasks: $this->engineTasks,
+			tasks: $this->completion,
 			attachments: $this->attachments,
 			acts: $this->acts,
 			caseAccess: $this->guard,
@@ -164,7 +154,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testCapabilitiesAnswerTheEngine(): void {
-		$this->engineTasks->method('supportsClaim')->willReturn(true);
+		$this->completion->method('engineAnswersClaim')->willReturn(true);
 
 		$response = $this->controller()->capabilities();
 
@@ -207,7 +197,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMissingTaskIsRefusedByName(): void {
-		$this->engineTasks->method('find')->willReturn(null);
+		$this->completion->method('find')->willReturn(null);
 
 		$response = $this->controller()->complete(taskId: 'task-9');
 
@@ -221,7 +211,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGuardIsAskedAboutTheTasksOwnCase(): void {
-		$this->engineTasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
+		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
 		$this->guard->expects($this->once())
 			->method('hasCaseMutationAccess')
 			->with('case-7')
@@ -239,7 +229,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlankRequiredFieldNamesTheField(): void {
-		$this->engineTasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
+		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->completion->method('complete')->willThrowException(new RuntimeException('required_field:verslag'));
 
@@ -260,7 +250,7 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnresolvableEffectRefusesTheCompletion(): void {
-		$this->engineTasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
+		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->completion->method('complete')->willThrowException(
 			new RuntimeException('unresolvable_effect:teleport')
@@ -282,10 +272,11 @@ class CaseTaskControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefusedClaimKeepsTheEnginesReason(): void {
-		$this->engineTasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
+		$this->completion->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'case-7']);
 		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->engineTasks->method('claim')->willReturn(false);
-		$this->engineTasks->method('lastError')->willReturn('The task engine answers no claim act.');
+		$this->completion->method('claim')->willThrowException(
+			new RuntimeException('The task engine answers no claim act.')
+		);
 
 		$response = $this->controller()->claim(taskId: 'task-1');
 

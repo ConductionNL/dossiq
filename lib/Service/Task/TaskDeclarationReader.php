@@ -50,10 +50,12 @@ class TaskDeclarationReader {
 	 *
 	 * @param WorkflowDefinitionService $definitions Resolves the case's bound workflow.
 	 * @param WorkflowJsonProperty      $json        Decodes the JSON-encoded `steps` property.
+	 * @param TaskDeclaration           $declaration Normalises one step's block.
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionService $definitions,
 		private readonly WorkflowJsonProperty $json,
+		private readonly TaskDeclaration $declaration,
 	) {
 	}//end __construct()
 
@@ -87,7 +89,7 @@ class TaskDeclarationReader {
 			return [];
 		}
 
-		return self::stepsOf(definition: $definition, json: $this->json);
+		return $this->stepsOf(definition: $definition);
 	}//end stepsForCase()
 
 	/**
@@ -102,7 +104,7 @@ class TaskDeclarationReader {
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
 	public function forTask(string $caseId, string $statusTypeId, string $title): array {
-		$step = self::matching(
+		$step = $this->matching(
 			steps: $this->stepsForCase(caseId: $caseId),
 			statusTypeId: $statusTypeId,
 			title: $title
@@ -111,7 +113,7 @@ class TaskDeclarationReader {
 			return TaskDeclaration::NONE;
 		}
 
-		return TaskDeclaration::of(step: $step);
+		return $this->declaration->forStep(step: $step);
 	}//end forTask()
 
 	/**
@@ -129,14 +131,14 @@ class TaskDeclarationReader {
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
-	public static function matching(array $steps, string $statusTypeId, string $title): ?array {
+	public function matching(array $steps, string $statusTypeId, string $title): ?array {
 		$wanted = trim($title);
 		foreach ($steps as $step) {
-			if (is_array($step) === false || TaskDeclaration::titleOf(step: $step) !== $wanted) {
+			if (is_array($step) === false || $this->declaration->titleOf(step: $step) !== $wanted) {
 				continue;
 			}
 
-			$status = TaskDeclaration::statusOf(step: $step);
+			$status = $this->declaration->statusOf(step: $step);
 			if ($status === '' || $status === trim($statusTypeId)) {
 				return $step;
 			}
@@ -148,20 +150,18 @@ class TaskDeclarationReader {
 	/**
 	 * A definition's steps, decoded.
 	 *
-	 * Static so the publish validator can read the steps of a definition it
-	 * already holds without a second lookup, and so the decoding rule lives
-	 * in one place rather than in every caller.
+	 * One place decodes the property, so a store that round-trips it through
+	 * a text column is read the same way wherever the steps are needed.
 	 *
-	 * @param array<string, mixed>     $definition The workflow definition row.
-	 * @param WorkflowJsonProperty     $json       The decoder.
+	 * @param array<string, mixed> $definition The workflow definition row.
 	 *
 	 * @return array<int, array<string, mixed>> The steps.
 	 *
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
-	public static function stepsOf(array $definition, WorkflowJsonProperty $json): array {
+	public function stepsOf(array $definition): array {
 		$steps = [];
-		foreach ($json->decodeList(raw: ($definition['steps'] ?? '')) as $step) {
+		foreach ($this->json->decodeList(raw: ($definition['steps'] ?? '')) as $step) {
 			if (is_array($step) === true) {
 				$steps[] = $step;
 			}

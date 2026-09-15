@@ -231,12 +231,9 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			return $task;
 		}
 
-		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
-		if ($leadTime > 0 && $this->workingDays !== null && trim((string)($task['dueDate'] ?? '')) === '') {
-			$task['dueDate'] = $this->workingDays->addWorkingDays(
-				start: new DateTimeImmutable('today'),
-				days: $leadTime
-			)->format('c');
+		$due = $this->declaredDueDate(declaration: $declaration, task: $task);
+		if ($due !== '') {
+			$task['dueDate'] = $due;
 		}
 
 		foreach (['candidateGroups', 'candidateUsers'] as $key) {
@@ -246,6 +243,30 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			}
 		}
 
+		$metadata = self::declaredMetadata(declaration: $declaration);
+		if ($metadata !== []) {
+			$task['metadata'] = $metadata;
+		}
+
+		return $task;
+	}//end declared()
+
+	/**
+	 * The form and the effects, in the shapes their readers expect.
+	 *
+	 * `form` is OpenRegister's own declaration shape, read by its task form
+	 * resolver off `metadata.form`; `dossiq.effects` is dossiq's, read back by
+	 * {@see \OCA\Dossiq\Listener\TaskCompletionEffectsListener} when the
+	 * task completes. Neither is translated on the way in: a second
+	 * description of the same declaration is one that can disagree.
+	 *
+	 * @param array<string, mixed> $declaration The per-task declaration.
+	 *
+	 * @return array<string, mixed> The metadata, empty when nothing is declared.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private static function declaredMetadata(array $declaration): array {
 		$metadata = [];
 		if (is_array(($declaration['form'] ?? null)) === true) {
 			$metadata['form'] = $declaration['form'];
@@ -256,12 +277,39 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			$metadata['dossiq'] = ['effects' => array_values($effects)];
 		}
 
-		if ($metadata !== []) {
-			$task['metadata'] = $metadata;
+		return $metadata;
+	}//end declaredMetadata()
+
+	/**
+	 * The due date a declared lead time gives this task, or ''.
+	 *
+	 * Counted in working days from today, through the same administered
+	 * calendar the case terms use. It OVERRIDES nothing: an action that named
+	 * its own date keeps it, and a declaration naming no lead time leaves the
+	 * task with whatever it had.
+	 *
+	 * @param array<string, mixed> $declaration The per-task declaration.
+	 * @param array<string, mixed> $task        The task being built.
+	 *
+	 * @return string The ISO date-time, or '' when nothing declares one.
+	 *
+	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
+	 */
+	private function declaredDueDate(array $declaration, array $task): string {
+		$leadTime = (int)($declaration['leadTimeDays'] ?? 0);
+		if ($leadTime < 1 || $this->workingDays === null) {
+			return '';
 		}
 
-		return $task;
-	}//end declared()
+		if (trim((string)($task['dueDate'] ?? '')) !== '') {
+			return '';
+		}
+
+		return $this->workingDays->addWorkingDays(
+			start: new DateTimeImmutable('today'),
+			days: $leadTime
+		)->format('c');
+	}//end declaredDueDate()
 
 	/**
 	 * The identity the engine write is authorized as.
