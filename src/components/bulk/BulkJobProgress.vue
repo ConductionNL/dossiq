@@ -158,6 +158,8 @@ export default {
 	computed: {
 		/**
 		 * @return {boolean} Whether the job is rehearsed but not yet committed.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		isPreviewed() {
 			return this.job.state === 'previewed'
@@ -165,6 +167,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the job is still walking cases.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		isRunning() {
 			return ['running', 'cancelling'].includes(String(this.job.state))
@@ -175,6 +179,8 @@ export default {
 		 * finished one cannot, and neither can one still moving.
 		 *
 		 * @return {boolean} Whether running the rest is on offer.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		canRetry() {
 			return (
@@ -185,6 +191,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the report is worth offering yet.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		canDownload() {
 			return Number(this.job.total || 0) > 0
@@ -192,6 +200,8 @@ export default {
 
 		/**
 		 * @return {string} Where the report downloads from.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		reportUrl() {
 			return bulkJobReportUrl(this.job.id)
@@ -199,6 +209,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether a bar says anything useful.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		showsProgress() {
 			return (this.isRunning || isFinished(this.job)) && Number(this.job.total || 0) > 0
@@ -206,6 +218,8 @@ export default {
 
 		/**
 		 * @return {number} How far along the job is, as a percentage.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		percentage() {
 			const total = Number(this.job.total || 0)
@@ -224,6 +238,8 @@ export default {
 		 * about to commit needs to know that before they read the counts.
 		 *
 		 * @return {string} What is happening.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		stateSentence() {
 			const total = Number(this.job.total || 0)
@@ -247,6 +263,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether any case has an outcome yet.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		hasOutcomes() {
 			return Object.values(this.counts).some((count) => count > 0)
@@ -254,6 +272,8 @@ export default {
 
 		/**
 		 * @return {object} The four counts, defaulted so a missing key is zero.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		counts() {
 			const counts = (this.job.counts || {})
@@ -273,6 +293,8 @@ export default {
 		 * the skip list should find it saying "none" rather than not find it.
 		 *
 		 * @return {Array<{outcome: string, label: string}>} The tabs.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		outcomeTabs() {
 			return [
@@ -291,6 +313,8 @@ export default {
 		 * cases change.
 		 *
 		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		commitLabel() {
 			return t('dossiq', 'Apply to {total} cases', { total: Number(this.job.total || 0) })
@@ -298,6 +322,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the open outcome has rows past this page.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		moreRows() {
 			return this.rows.length < this.rowTotal
@@ -309,6 +335,8 @@ export default {
 		 * Follow the job while it moves, and stop following when it stops.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		job: {
 			immediate: true,
@@ -337,6 +365,8 @@ export default {
 		 * Re-read the job's position until it stops moving.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		startPolling() {
 			if (this.timer !== null) {
@@ -361,6 +391,8 @@ export default {
 		 * Stop re-reading.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		stopPolling() {
 			if (this.timer !== null) {
@@ -377,6 +409,8 @@ export default {
 		 * @param {boolean} [options.reset] Whether to discard the rows already shown.
 		 *
 		 * @return {Promise<void>} Resolves when the page has been read.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async open(outcome, { reset = false } = {}) {
 			if (this.openOutcome === outcome && reset === false) {
@@ -404,6 +438,8 @@ export default {
 		 * Read the next page of the open outcome.
 		 *
 		 * @return {Promise<void>} Resolves when the page has been added.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async loadMore() {
 			this.loadingRows = true
@@ -426,6 +462,8 @@ export default {
 		 * Write the act. This is the only button here that changes a case.
 		 *
 		 * @return {Promise<void>} Resolves when the job is running.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async commit() {
 			this.error = ''
@@ -440,6 +478,8 @@ export default {
 		 * Stop the job before the next case.
 		 *
 		 * @return {Promise<void>} Resolves when the job is stopping.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async cancel() {
 			this.error = ''
@@ -454,6 +494,8 @@ export default {
 		 * Run the cases a stopped job never reached.
 		 *
 		 * @return {Promise<void>} Resolves when the job is running again.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async retry() {
 			this.error = ''
@@ -472,6 +514,8 @@ export default {
 		 * @param {string} fallback What to say when the server said nothing.
 		 *
 		 * @return {string} The message.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		messageOf(error, fallback) {
 			return String(error?.response?.data?.error || fallback)

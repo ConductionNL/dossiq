@@ -116,6 +116,8 @@ class CaseAssigneeWriter {
 	 * A fresh batch id, for a caller that is about to start one act.
 	 *
 	 * @return string The batch id.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function newBatchId(): string {
 		return $this->generateBatchId();

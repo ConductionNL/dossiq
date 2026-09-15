@@ -3,7 +3,7 @@
 /**
  * Stub of OpenRegister's BulkActionResult.
  *
- * dossiq's four case bulk actions RETURN this type, so without the stub they
+ * Dossiq's four case bulk actions RETURN this type, so without the stub they
  * cannot be loaded in a unit test on a host where OpenRegister is absent.
  * Mirrors openregister `lib/BulkAction/BulkActionResult.php` verbatim.
  *

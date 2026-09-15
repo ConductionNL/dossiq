@@ -54,6 +54,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * The action id every caller names.
 	 *
 	 * @var string
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:lifecycle-cases';
 
@@ -65,6 +67,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * which is the only write path for `case.status`.
 	 *
 	 * @var array<string, string>
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private const GESTURES = [
 		'suspend' => 'canSuspend',
@@ -79,6 +83,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @param IL10N                $l10n      Localisation, for the label an operator reads.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseLifecycleService $lifecycle,
@@ -90,6 +96,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * The action id.
 	 *
 	 * @return string The id.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -99,6 +107,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * The label.
 	 *
 	 * @return string The label.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Suspend, resume or extend the term');
@@ -108,6 +118,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * What the action does.
 	 *
 	 * @return string The description.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Applies one statutory lifecycle gesture to every selected case, with the reason recorded on each.');
@@ -117,6 +129,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * A statutory act somebody accounts for later needs a written reason.
 	 *
 	 * @return bool True.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -127,6 +141,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * over the selection as a whole.
 	 *
 	 * @return array<int, string> No guards.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [];
@@ -140,6 +156,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the gesture is unknown or the reason is empty.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		$gesture = trim((string)($parameters['gesture'] ?? ''));
@@ -166,6 +184,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * rehearsal and the commit is the design property of D-1.
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The lifecycle service
 	 * reads the acting user from the session; the job runs as that user.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
 		$caseId = $this->caseId(object: $object);
@@ -200,6 +220,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @param array<string, mixed> $parameters The job parameters.
 	 *
 	 * @return BulkActionResult What happened.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, string $gesture, array $parameters): BulkActionResult {
 		$reason = trim((string)($parameters['reason'] ?? ''));
@@ -233,6 +255,8 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 * @param array<string, mixed> $state   The case's lifecycle state.
 	 *
 	 * @return string The refusal code.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function refusalCode(string $gesture, array $state): string {
 		if (($state['isFinalStatus'] ?? false) === true && $gesture !== 'resume') {

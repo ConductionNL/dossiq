@@ -40,22 +40,26 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 *
 	 * @param string             $caseTypeTitle The case type the selection is split across.
 	 * @param array<int, int>    $versions      The versions present, ascending.
-	 * @param array<string, int> $counts        How many cases sit on each version.
+	 * @param array<array-key, int> $counts     How many cases sit on each version, keyed by version.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly string $caseTypeTitle,
 		private readonly array $versions,
 		private readonly array $counts,
 	) {
-		parent::__construct('mixed_case_type_versions');
+		parent::__construct(message: 'mixed_case_type_versions');
 	}//end __construct()
 
 	/**
 	 * The case type the selection is split across.
 	 *
 	 * @return string The title.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getCaseTypeTitle(): string {
 		return $this->caseTypeTitle;
@@ -65,6 +69,8 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	 * The versions present in the selection.
 	 *
 	 * @return array<int, int> The versions, ascending.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getVersions(): array {
 		return $this->versions;
@@ -73,7 +79,14 @@ class MixedCaseTypeVersionsException extends RuntimeException {
 	/**
 	 * How many cases sit on each version.
 	 *
-	 * @return array<string, int> Version to count.
+	 * ⚠️ Keyed by the version, which PHP stores as an INT however it was
+	 * written: a numeric string key is cast on the way in. The controller
+	 * hands this to a JSON response, where an int-keyed array serialises as a
+	 * list, so it stringifies the keys there rather than trusting them here.
+	 *
+	 * @return array<array-key, int> Version to count.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getCounts(): array {
 		return $this->counts;

@@ -55,6 +55,8 @@ class BulkJobHandoff {
 	 * without it.
 	 *
 	 * @var string
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private const JOB_SERVICE = 'OCA\OpenRegister\Service\BulkJob\BulkJobService';
 
@@ -65,6 +67,8 @@ class BulkJobHandoff {
 	 * having to know OpenRegister's whole registry.
 	 *
 	 * @var array<int, string>
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public const ACTIONS = [
 		TransitionCasesAction::ID,
@@ -81,6 +85,8 @@ class BulkJobHandoff {
 	 * @param LoggerInterface     $logger          The logger.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -155,6 +161,8 @@ class BulkJobHandoff {
 	 * @return void
 	 *
 	 * @throws MixedCaseTypeVersionsException When the selection spans case type versions.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function guardSelection(string $actionId, array $selection): void {
 		if ($actionId !== SetCaseAttributeAction::ID) {
@@ -179,6 +187,8 @@ class BulkJobHandoff {
 	 * @return array{0: int, 1: int} The register id and the schema id.
 	 *
 	 * @throws RuntimeException When either cannot be resolved.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function scope(): array {
 		$registerId = $this->registerId(slug: (string)$this->settingsService->getConfigValue('register'));
@@ -200,6 +210,8 @@ class BulkJobHandoff {
 	 * @param string $slug The register slug or id.
 	 *
 	 * @return int The numeric id, or 0 when it cannot be resolved.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function registerId(string $slug): int {
 		$slug = trim($slug);
@@ -236,6 +248,8 @@ class BulkJobHandoff {
 	 * @return object The job service.
 	 *
 	 * @throws RuntimeException When OpenRegister is not installed or enabled.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function jobService(): object {
 		$service = $this->settingsService->getOpenRegisterClass(self::JOB_SERVICE);
@@ -252,6 +266,8 @@ class BulkJobHandoff {
 	 * @param mixed $job Whatever the job service returned.
 	 *
 	 * @return array<string, mixed> The job.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $job): array {
 		if (is_array($job) === true) {
@@ -261,7 +277,9 @@ class BulkJobHandoff {
 		if (is_object($job) === true && method_exists($job, 'jsonSerialize') === true) {
 			$serialised = $job->jsonSerialize();
 
-			return (is_array($serialised) === true) ? $serialised : [];
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
 		}
 
 		return [];

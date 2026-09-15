@@ -51,10 +51,10 @@ class BulkActionRegistrationListenerTest extends TestCase {
 	 * @return ContainerInterface|\PHPUnit\Framework\MockObject\MockObject The container.
 	 */
 	private function container(array $failing = []) {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			function (string $class) use ($l10n, $failing): object {
 				if (in_array($class, $failing, true) === true) {
@@ -63,19 +63,19 @@ class BulkActionRegistrationListenerTest extends TestCase {
 
 				return match ($class) {
 					TransitionCasesAction::class => new TransitionCasesAction(
-						engine: $this->createMock(StatusTransitionService::class),
+						engine: $this->createMock(originalClassName: StatusTransitionService::class),
 						l10n: $l10n,
 					),
 					LifecycleCasesAction::class => new LifecycleCasesAction(
-						lifecycle: $this->createMock(CaseLifecycleService::class),
+						lifecycle: $this->createMock(originalClassName: CaseLifecycleService::class),
 						l10n: $l10n,
 					),
 					ReassignCasesAction::class => new ReassignCasesAction(
-						writer: $this->createMock(CaseAssigneeWriter::class),
+						writer: $this->createMock(originalClassName: CaseAssigneeWriter::class),
 						l10n: $l10n,
 					),
 					default => new SetCaseAttributeAction(
-						settingsService: $this->createMock(SettingsService::class),
+						settingsService: $this->createMock(originalClassName: SettingsService::class),
 						l10n: $l10n,
 					),
 				};
@@ -97,19 +97,19 @@ class BulkActionRegistrationListenerTest extends TestCase {
 
 		(new BulkActionRegistrationListener(
 			container: $this->container(),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		))->handle($event);
 
 		$ids = array_map(static fn (object $action): string => $action->getId(), $event->getActions());
 
 		$this->assertSame(
-			[
+			expected: [
 				TransitionCasesAction::ID,
 				LifecycleCasesAction::ID,
 				ReassignCasesAction::ID,
 				SetCaseAttributeAction::ID,
 			],
-			$ids
+			actual: $ids
 		);
 	}//end testAllFourCaseActionsAreRegistered()
 
@@ -125,7 +125,7 @@ class BulkActionRegistrationListenerTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testOneUnbuildableActionDoesNotTakeTheOthersWithIt(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error');
 
 		$event = new BulkActionRegistrationEvent();
@@ -138,8 +138,8 @@ class BulkActionRegistrationListenerTest extends TestCase {
 		$ids = array_map(static fn (object $action): string => $action->getId(), $event->getActions());
 
 		$this->assertSame(
-			[TransitionCasesAction::ID, LifecycleCasesAction::ID, SetCaseAttributeAction::ID],
-			$ids
+			expected: [TransitionCasesAction::ID, LifecycleCasesAction::ID, SetCaseAttributeAction::ID],
+			actual: $ids
 		);
 	}//end testOneUnbuildableActionDoesNotTakeTheOthersWithIt()
 
@@ -160,7 +160,7 @@ class BulkActionRegistrationListenerTest extends TestCase {
 
 		(new BulkActionRegistrationListener(
 			container: $this->container(),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		))->handle($event);
 
 		$declared = [];
@@ -171,12 +171,12 @@ class BulkActionRegistrationListenerTest extends TestCase {
 			];
 		}
 
-		$this->assertTrue($declared[ReassignCasesAction::ID]['reason']);
-		$this->assertTrue($declared[LifecycleCasesAction::ID]['reason']);
-		$this->assertFalse($declared[TransitionCasesAction::ID]['reason']);
-		$this->assertFalse($declared[SetCaseAttributeAction::ID]['reason']);
+		$this->assertTrue(condition: $declared[ReassignCasesAction::ID]['reason']);
+		$this->assertTrue(condition: $declared[LifecycleCasesAction::ID]['reason']);
+		$this->assertFalse(condition: $declared[TransitionCasesAction::ID]['reason']);
+		$this->assertFalse(condition: $declared[SetCaseAttributeAction::ID]['reason']);
 
-		$this->assertSame(['homogeneity'], $declared[SetCaseAttributeAction::ID]['guards']);
-		$this->assertSame([], $declared[ReassignCasesAction::ID]['guards']);
+		$this->assertSame(expected: ['homogeneity'], actual: $declared[SetCaseAttributeAction::ID]['guards']);
+		$this->assertSame(expected: [], actual: $declared[ReassignCasesAction::ID]['guards']);
 	}//end testTheCatalogueSaysWhichActsNeedAReasonAndWhichIsGuarded()
 }//end class

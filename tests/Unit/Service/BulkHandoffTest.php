@@ -118,7 +118,7 @@ class BulkHandoffTest extends TestCase {
 			}
 		};
 
-		$this->settings = $this->createMock(SettingsService::class);
+		$this->settings = $this->createMock(originalClassName: SettingsService::class);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
 				'register' => '3',
@@ -127,10 +127,16 @@ class BulkHandoffTest extends TestCase {
 			}
 		);
 		$this->settings->method('getOpenRegisterClass')->willReturnCallback(
-			fn (string $class): ?object => (($class === 'OCA\OpenRegister\Service\BulkJob\BulkJobService') ? $this->jobService : null)
+			function (string $class): ?object {
+				if ($class === 'OCA\OpenRegister\Service\BulkJob\BulkJobService') {
+					return $this->jobService;
+				}
+
+				return null;
+			}
 		);
 
-		$this->versionGuard = $this->createMock(CaseTypeVersionGuard::class);
+		$this->versionGuard = $this->createMock(originalClassName: CaseTypeVersionGuard::class);
 	}//end setUp()
 
 	/**
@@ -142,7 +148,7 @@ class BulkHandoffTest extends TestCase {
 		return new BulkJobHandoff(
 			settingsService: $this->settings,
 			versionGuard: $this->versionGuard,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end handoff()
 
@@ -166,15 +172,15 @@ class BulkHandoffTest extends TestCase {
 			actorUid: 'coordinator-1',
 		);
 
-		$this->assertSame('previewed', $job['state']);
-		$this->assertCount(1, $this->jobService->calls);
+		$this->assertSame(expected: 'previewed', actual: $job['state']);
+		$this->assertCount(expectedCount: 1, haystack: $this->jobService->calls);
 
 		$call = $this->jobService->calls[0];
-		$this->assertSame(TransitionCasesAction::ID, $call['actionId']);
-		$this->assertSame(3, $call['registerId']);
-		$this->assertSame(11, $call['schemaId']);
-		$this->assertSame('coordinator-1', $call['actorUid']);
-		$this->assertSame(['ids' => ['case-1', 'case-2']], $call['selection']);
+		$this->assertSame(expected: TransitionCasesAction::ID, actual: $call['actionId']);
+		$this->assertSame(expected: 3, actual: $call['registerId']);
+		$this->assertSame(expected: 11, actual: $call['schemaId']);
+		$this->assertSame(expected: 'coordinator-1', actual: $call['actorUid']);
+		$this->assertSame(expected: ['ids' => ['case-1', 'case-2']], actual: $call['selection']);
 	}//end testTheActIsHandedOverScopedToTheCaseRegisterAndSchema()
 
 	/**
@@ -193,7 +199,7 @@ class BulkHandoffTest extends TestCase {
 			actorUid: 'coordinator-1',
 		);
 
-		$this->assertSame('Team reorganised on 1 October', $this->jobService->calls[0]['justification']);
+		$this->assertSame(expected: 'Team reorganised on 1 October', actual: $this->jobService->calls[0]['justification']);
 	}//end testTheJustificationTravelsWithARedistribution()
 
 	/**
@@ -208,7 +214,7 @@ class BulkHandoffTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testAnActionDossiqDoesNotDeclareIsRefused(): void {
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 
 		$this->handoff()->create(
 			actionId: 'openregister:set-properties',
@@ -248,13 +254,13 @@ class BulkHandoffTest extends TestCase {
 				justification: null,
 				actorUid: 'coordinator-1',
 			);
-			$this->fail('The mixed-version selection was not refused');
+			$this->fail(message: 'The mixed-version selection was not refused');
 		} catch (MixedCaseTypeVersionsException $e) {
-			$this->assertSame([2, 3], $e->getVersions());
-			$this->assertSame('Bezwaar', $e->getCaseTypeTitle());
+			$this->assertSame(expected: [2, 3], actual: $e->getVersions());
+			$this->assertSame(expected: 'Bezwaar', actual: $e->getCaseTypeTitle());
 		}
 
-		$this->assertSame([], $this->jobService->calls, 'The job was created despite the refusal');
+		$this->assertSame(expected: [], actual: $this->jobService->calls, message: 'The job was created despite the refusal');
 	}//end testAMixedVersionSelectionIsRefusedBeforeTheJobIsCreated()
 
 	/**
@@ -279,7 +285,7 @@ class BulkHandoffTest extends TestCase {
 			actorUid: 'coordinator-1',
 		);
 
-		$this->assertCount(1, $this->jobService->calls);
+		$this->assertCount(expectedCount: 1, haystack: $this->jobService->calls);
 	}//end testOnlyTheAttributeWriteIsVersionGuarded()
 
 	/**
@@ -291,17 +297,17 @@ class BulkHandoffTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testAnInstanceWithoutOpenRegisterRefusesTheAct(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getConfigValue')->willReturn('3');
 		$settings->method('getOpenRegisterClass')->willReturn(null);
 
 		$handoff = new BulkJobHandoff(
 			settingsService: $settings,
 			versionGuard: $this->versionGuard,
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
-		$this->expectException(RuntimeException::class);
+		$this->expectException(exception: RuntimeException::class);
 
 		$handoff->create(
 			actionId: TransitionCasesAction::ID,

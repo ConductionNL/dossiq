@@ -4288,7 +4288,8 @@ OC.L10N.register(
         "Why these cases are moving": "Waarom deze zaken verhuizen",
         "Recorded with the act and readable afterwards": "Vastgelegd bij de actie en later leesbaar",
         "Say why these cases are moving. The reason is kept with the act.": "Zeg waarom deze zaken verhuizen. De reden wordt bij de actie bewaard.",
-        "The cases could not be moved.": "De zaken konden niet verplaatst worden."
+        "The cases could not be moved.": "De zaken konden niet verplaatst worden.",
+        "Give to another handler": "Geef aan een andere behandelaar"
     },
     "nplurals=2; plural=(n != 1);"
 )

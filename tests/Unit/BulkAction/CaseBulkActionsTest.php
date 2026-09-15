@@ -72,7 +72,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @return IL10N|\PHPUnit\Framework\MockObject\MockObject The double.
 	 */
 	private function l10n() {
-		$l10n = $this->createMock(IL10N::class);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
 		return $l10n;
@@ -87,7 +87,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testARehearsedTransitionThatIsNotOfferedIsSkipped(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('getAvailableTransitions')->willReturn(['transitions' => [['id' => 'to-closed', 'guardsPassed' => true]]]);
 		$engine->expects($this->never())->method('execute');
 
@@ -97,8 +97,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: false,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_SKIPPED, $result->getOutcome());
-		$this->assertSame('transition_not_available', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'transition_not_available', actual: $result->getReason());
 	}//end testARehearsedTransitionThatIsNotOfferedIsSkipped()
 
 	/**
@@ -109,7 +109,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testARehearsedTransitionWhoseGuardFailsIsRefusedWithTheGuardMessage(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('getAvailableTransitions')->willReturn([
 			'transitions' => [
 				[
@@ -126,8 +126,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: false,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_REFUSED, $result->getOutcome());
-		$this->assertSame('A decision document is required', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'A decision document is required', actual: $result->getReason());
 	}//end testARehearsedTransitionWhoseGuardFailsIsRefusedWithTheGuardMessage()
 
 	/**
@@ -139,7 +139,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testACommittedTransitionGoesThroughTheEngine(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->expects($this->once())
 			->method('execute')
 			->with('case-1', 'to-decided', 'Handled in bulk')
@@ -151,7 +151,7 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_APPLIED, $result->getOutcome());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
 	}//end testACommittedTransitionGoesThroughTheEngine()
 
 	/**
@@ -163,9 +163,9 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testACommittedTransitionRefusedByAGuardIsRefusedNotFailed(): void {
-		$engine = $this->createMock(StatusTransitionService::class);
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
 		$engine->method('execute')->willThrowException(
-			new GuardFailedException([['message' => 'The term has not expired']])
+			new GuardFailedException(failedGuards: [['message' => 'The term has not expired']])
 		);
 
 		$result = (new TransitionCasesAction(engine: $engine, l10n: $this->l10n()))->apply(
@@ -174,8 +174,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_REFUSED, $result->getOutcome());
-		$this->assertSame('The term has not expired', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_REFUSED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'The term has not expired', actual: $result->getReason());
 	}//end testACommittedTransitionRefusedByAGuardIsRefusedNotFailed()
 
 	/**
@@ -186,10 +186,10 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testATransitionWithoutATransitionIdIsRefusedBeforeAJobExists(): void {
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 
 		(new TransitionCasesAction(
-			engine: $this->createMock(StatusTransitionService::class),
+			engine: $this->createMock(originalClassName: StatusTransitionService::class),
 			l10n: $this->l10n(),
 		))->validateParameters(['comment' => 'no id here']);
 	}//end testATransitionWithoutATransitionIdIsRefusedBeforeAJobExists()
@@ -203,7 +203,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testALifecycleGestureTheCaseTypeForbidsIsSkipped(): void {
-		$lifecycle = $this->createMock(CaseLifecycleService::class);
+		$lifecycle = $this->createMock(originalClassName: CaseLifecycleService::class);
 		$lifecycle->method('state')->willReturn(['canSuspend' => false, 'suspended' => false, 'isFinalStatus' => false]);
 		$lifecycle->expects($this->never())->method('suspend');
 
@@ -213,8 +213,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_SKIPPED, $result->getOutcome());
-		$this->assertSame('suspension_not_allowed', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'suspension_not_allowed', actual: $result->getReason());
 	}//end testALifecycleGestureTheCaseTypeForbidsIsSkipped()
 
 	/**
@@ -225,7 +225,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testAPermittedLifecycleGestureWritesWithItsReason(): void {
-		$lifecycle = $this->createMock(CaseLifecycleService::class);
+		$lifecycle = $this->createMock(originalClassName: CaseLifecycleService::class);
 		$lifecycle->method('state')->willReturn(['canSuspend' => true, 'suspended' => false, 'isFinalStatus' => false]);
 		$lifecycle->expects($this->once())
 			->method('suspend')
@@ -238,7 +238,7 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_APPLIED, $result->getOutcome());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
 	}//end testAPermittedLifecycleGestureWritesWithItsReason()
 
 	/**
@@ -250,7 +250,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testARehearsedLifecycleGestureWritesNothing(): void {
-		$lifecycle = $this->createMock(CaseLifecycleService::class);
+		$lifecycle = $this->createMock(originalClassName: CaseLifecycleService::class);
 		$lifecycle->method('state')->willReturn(['canSuspend' => true, 'suspended' => false, 'isFinalStatus' => false]);
 		$lifecycle->expects($this->never())->method('suspend');
 
@@ -260,7 +260,7 @@ class CaseBulkActionsTest extends TestCase {
 			commit: false,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_APPLIED, $result->getOutcome());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_APPLIED, actual: $result->getOutcome());
 	}//end testARehearsedLifecycleGestureWritesNothing()
 
 	/**
@@ -273,13 +273,13 @@ class CaseBulkActionsTest extends TestCase {
 	 */
 	public function testALifecycleGestureDeclaresThatItNeedsAJustification(): void {
 		$action = new LifecycleCasesAction(
-			lifecycle: $this->createMock(CaseLifecycleService::class),
+			lifecycle: $this->createMock(originalClassName: CaseLifecycleService::class),
 			l10n: $this->l10n(),
 		);
 
-		$this->assertTrue($action->requiresJustification());
+		$this->assertTrue(condition: $action->requiresJustification());
 
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 		$action->validateParameters(['gesture' => 'suspend', 'reason' => '   ']);
 	}//end testALifecycleGestureDeclaresThatItNeedsAJustification()
 
@@ -294,13 +294,13 @@ class CaseBulkActionsTest extends TestCase {
 	 */
 	public function testARedistributionWithoutAWrittenReasonIsRefused(): void {
 		$action = new ReassignCasesAction(
-			writer: $this->createMock(CaseAssigneeWriter::class),
+			writer: $this->createMock(originalClassName: CaseAssigneeWriter::class),
 			l10n: $this->l10n(),
 		);
 
-		$this->assertTrue($action->requiresJustification());
+		$this->assertTrue(condition: $action->requiresJustification());
 
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 		$action->validateParameters(['toUser' => 'handler-2', 'reason' => '']);
 	}//end testARedistributionWithoutAWrittenReasonIsRefused()
 
@@ -315,7 +315,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testACaseAlreadyHeldByTheReceiverIsSkipped(): void {
-		$writer = $this->createMock(CaseAssigneeWriter::class);
+		$writer = $this->createMock(originalClassName: CaseAssigneeWriter::class);
 		$writer->expects($this->never())->method('reassignOne');
 
 		$result = (new ReassignCasesAction(writer: $writer, l10n: $this->l10n()))->apply(
@@ -324,8 +324,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_SKIPPED, $result->getOutcome());
-		$this->assertSame('already_assigned', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'already_assigned', actual: $result->getReason());
 	}//end testACaseAlreadyHeldByTheReceiverIsSkipped()
 
 	/**
@@ -337,7 +337,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testARedistributionWriteThatDoesNotLandIsFailed(): void {
-		$writer = $this->createMock(CaseAssigneeWriter::class);
+		$writer = $this->createMock(originalClassName: CaseAssigneeWriter::class);
 		$writer->method('newBatchId')->willReturn('batch-1');
 		$writer->method('reassignOne')->willReturn(false);
 
@@ -347,7 +347,7 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_FAILED, $result->getOutcome());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
 	}//end testARedistributionWriteThatDoesNotLandIsFailed()
 
 	/**
@@ -361,11 +361,11 @@ class CaseBulkActionsTest extends TestCase {
 	 */
 	public function testTheAttributeWriteDeclaresTheHomogeneityGuard(): void {
 		$action = new SetCaseAttributeAction(
-			settingsService: $this->createMock(SettingsService::class),
+			settingsService: $this->createMock(originalClassName: SettingsService::class),
 			l10n: $this->l10n(),
 		);
 
-		$this->assertSame(['homogeneity'], $action->getGuards());
+		$this->assertSame(expected: ['homogeneity'], actual: $action->getGuards());
 	}//end testTheAttributeWriteDeclaresTheHomogeneityGuard()
 
 	/**
@@ -382,11 +382,11 @@ class CaseBulkActionsTest extends TestCase {
 	 */
 	public function testAFieldWithItsOwnWritePathIsNotSetInBulk(string $property): void {
 		$action = new SetCaseAttributeAction(
-			settingsService: $this->createMock(SettingsService::class),
+			settingsService: $this->createMock(originalClassName: SettingsService::class),
 			l10n: $this->l10n(),
 		);
 
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(exception: InvalidArgumentException::class);
 		$action->validateParameters(['property' => $property, 'value' => 'anything']);
 	}//end testAFieldWithItsOwnWritePathIsNotSetInBulk()
 
@@ -407,7 +407,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testACaseAlreadyCarryingTheValueIsSkipped(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->expects($this->never())->method('getObjectService');
 
 		$result = (new SetCaseAttributeAction(settingsService: $settings, l10n: $this->l10n()))->apply(
@@ -416,8 +416,8 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_SKIPPED, $result->getOutcome());
-		$this->assertSame('already_set', $result->getReason());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'already_set', actual: $result->getReason());
 	}//end testACaseAlreadyCarryingTheValueIsSkipped()
 
 	/**
@@ -429,7 +429,7 @@ class CaseBulkActionsTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testAnAttributeWriteWithoutOpenRegisterFailsThatMemberOnly(): void {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 		$settings->method('getConfigValue')->willReturn('3');
 
@@ -439,7 +439,7 @@ class CaseBulkActionsTest extends TestCase {
 			commit: true,
 		);
 
-		$this->assertSame(BulkJobMember::OUTCOME_FAILED, $result->getOutcome());
+		$this->assertSame(expected: BulkJobMember::OUTCOME_FAILED, actual: $result->getOutcome());
 	}//end testAnAttributeWriteWithoutOpenRegisterFailsThatMemberOnly()
 
 	/**
@@ -462,9 +462,9 @@ class CaseBulkActionsTest extends TestCase {
 			SetCaseAttributeAction::ID,
 		];
 
-		$this->assertSame($ids, array_values(array_unique($ids)));
+		$this->assertSame(expected: $ids, actual: array_values(array_unique($ids)));
 		foreach ($ids as $id) {
-			$this->assertStringStartsWith('dossiq:', $id);
+			$this->assertStringStartsWith(prefix: 'dossiq:', string: $id);
 		}
 	}//end testTheFourActionsCarryFourDistinctDossiqIds()
 }//end class

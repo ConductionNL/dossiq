@@ -4288,7 +4288,8 @@ OC.L10N.register(
         "Why these cases are moving": "Why these cases are moving",
         "Recorded with the act and readable afterwards": "Recorded with the act and readable afterwards",
         "Say why these cases are moving. The reason is kept with the act.": "Say why these cases are moving. The reason is kept with the act.",
-        "The cases could not be moved.": "The cases could not be moved."
+        "The cases could not be moved.": "The cases could not be moved.",
+        "Give to another handler": "Give to another handler"
     },
     "nplurals=2; plural=(n != 1);"
 )

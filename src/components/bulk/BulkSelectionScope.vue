@@ -71,6 +71,8 @@ export default {
 	computed: {
 		/**
 		 * @return {boolean} Whether the whole result is what is selected.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		isWholeResult() {
 			return this.scope === SCOPE_RESULT
@@ -78,6 +80,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether widening can honestly be offered.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		offersWholeResult() {
 			return (
@@ -88,6 +92,8 @@ export default {
 
 		/**
 		 * @return {string} What the handler has, in words.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		sentence() {
 			return describeScope(
@@ -98,6 +104,8 @@ export default {
 
 		/**
 		 * @return {string} The label on the widening button.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		wideningLabel() {
 			return widenLabel({ total: this.total }, t)
@@ -111,6 +119,8 @@ export default {
 		 * Take the whole result instead of the page.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		widen() {
 			this.$emit('update:scope', SCOPE_RESULT)
@@ -120,6 +130,8 @@ export default {
 		 * Go back to the rows the handler ticked.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		narrow() {
 			this.$emit('update:scope', SCOPE_PAGE)

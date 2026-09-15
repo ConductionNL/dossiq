@@ -54,6 +54,8 @@ class BulkActionRegistrationListener implements IEventListener {
 	 * The four actions, in the order an operator meets them.
 	 *
 	 * @var array<int, class-string>
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private const ACTIONS = [
 		TransitionCasesAction::class,
@@ -69,6 +71,8 @@ class BulkActionRegistrationListener implements IEventListener {
 	 * @param LoggerInterface    $logger    The logger.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,

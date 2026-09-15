@@ -120,7 +120,10 @@ class NoBulkLoopOverCasesTest extends TestCase {
 		$count = count($matches[0]);
 		for ($index = 0; $index < $count; $index++) {
 			$start = $matches[0][$index][1];
-			$end = (($index + 1) < $count) ? $matches[0][($index + 1)][1] : strlen($source);
+			$end = strlen($source);
+			if (($index + 1) < $count) {
+				$end = $matches[0][($index + 1)][1];
+			}
 			$bodies[$matches[1][$index][0]] = substr($source, $start, ($end - $start));
 		}
 
@@ -151,9 +154,9 @@ class NoBulkLoopOverCasesTest extends TestCase {
 		$unexpected = array_diff(array_keys($this->loopsOverACaseList()), array_keys(self::READERS));
 
 		$this->assertSame(
-			[],
-			array_values($unexpected),
-			"dossiq has grown a bulk loop over cases again.\n"
+			expected: [],
+			actual: array_values($unexpected),
+			message: "dossiq has grown a bulk loop over cases again.\n"
 			. "A bulk act belongs to OpenRegister's job, which records what it did to each case,\n"
 			. "can be cancelled and survives the tab closing. Declare an action instead\n"
 			. "(see lib/BulkAction/), or, if this really is a read, add it to\n"
@@ -177,7 +180,7 @@ class NoBulkLoopOverCasesTest extends TestCase {
 		$actual = array_keys($this->loopsOverACaseList());
 
 		foreach (array_keys(self::READERS) as $reader) {
-			$this->assertContains($reader, $actual, $reader . ' is allowlisted but no longer walks a case list');
+			$this->assertContains(needle: $reader, haystack: $actual, message: $reader . ' is allowlisted but no longer walks a case list');
 		}
 	}//end testEveryDeclaredReaderStillWalksAListOfCases()
 
@@ -191,7 +194,7 @@ class NoBulkLoopOverCasesTest extends TestCase {
 	public function testTheTwoLoopingServicesAreGone(): void {
 		$root = dirname(__DIR__, 3);
 
-		$this->assertFileDoesNotExist($root . '/lib/Service/BulkStatusTransitionService.php');
-		$this->assertFileDoesNotExist($root . '/lib/Service/SelectionReassignmentService.php');
+		$this->assertFileDoesNotExist(filename: $root . '/lib/Service/BulkStatusTransitionService.php');
+		$this->assertFileDoesNotExist(filename: $root . '/lib/Service/SelectionReassignmentService.php');
 	}//end testTheTwoLoopingServicesAreGone()
 }//end class

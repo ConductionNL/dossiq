@@ -168,6 +168,8 @@ export default {
 		 * mode picks the fields, the title and the job's parameters. The
 		 * rehearsal, the per-case outcome and the skip list are deliberately
 		 * identical across all four.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		mode: {
 			type: String,
@@ -215,6 +217,8 @@ export default {
 		 * the column.
 		 *
 		 * @return {Array<{id: string, label: string}>} The options.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		transitionOptions() {
 			return this.transitions.map((tr) => ({
@@ -225,6 +229,8 @@ export default {
 
 		/**
 		 * @return {boolean} Whether this dialog is running a status transition.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		isTransition() {
 			return this.mode === 'transition'
@@ -236,6 +242,8 @@ export default {
 		 * thing a reader clicks through and then cannot explain afterwards.
 		 *
 		 * @return {string} The title.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		title() {
 			const count = this.caseIds.length
@@ -263,6 +271,8 @@ export default {
 		 * recorded reason is the failure this prevents.
 		 *
 		 * @return {boolean} Whether the act can be rehearsed.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		canRehearse() {
 			if (this.starting === true || this.reason.trim().length === 0) {
@@ -283,6 +293,8 @@ export default {
 	 * A lifecycle gesture has nothing to pick, so it is ready at once.
 	 *
 	 * @return {Promise<void>} Resolves when the dialog is usable.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	async mounted() {
 		if (this.isTransition === false) {
@@ -301,6 +313,8 @@ export default {
 		 * what fills the picker.
 		 *
 		 * @return {Promise<void>} Resolves when the picker is filled.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async loadTransitions() {
 			this.loadingTransitions = true
@@ -336,6 +350,8 @@ export default {
 		 * per case, and the commit lives in the progress panel underneath.
 		 *
 		 * @return {Promise<void>} Resolves when the job has been rehearsed.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		async rehearse() {
 			this.starting = true
@@ -363,6 +379,8 @@ export default {
 		 * The parameters the chosen act needs.
 		 *
 		 * @return {object} The job parameters.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		parameters() {
 			if (isLifecycleGesture(this.mode) === true) {
@@ -386,6 +404,8 @@ export default {
 		 * @param {object} err The axios error.
 		 *
 		 * @return {string} What to show.
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		refusalSentence(err) {
 			const { reason, message, details } = readRefusal(err)
@@ -415,6 +435,8 @@ export default {
 		 * Tell the list the cases have moved, once the job has stopped.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		onFinished() {
 			this.$emit('completed', this.job)
@@ -424,6 +446,8 @@ export default {
 		 * Close the dialog.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		onClose() {
 			this.$emit('close')

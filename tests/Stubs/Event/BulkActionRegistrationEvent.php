@@ -3,7 +3,7 @@
 /**
  * Stub of OpenRegister's BulkActionRegistrationEvent.
  *
- * dossiq's listener registers its four case actions on this event, so the
+ * Dossiq's listener registers its four case actions on this event, so the
  * listener's test needs a class to dispatch. Mirrors openregister
  * `lib/Event/BulkActionRegistrationEvent.php`, minus the registry: the stub
  * keeps what was registered so a test can read it back.

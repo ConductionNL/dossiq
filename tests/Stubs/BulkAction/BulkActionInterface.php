@@ -3,7 +3,7 @@
 /**
  * Stub of OpenRegister's BulkActionInterface.
  *
- * dossiq's four case bulk actions IMPLEMENT this interface, so without the
+ * Dossiq's four case bulk actions IMPLEMENT this interface, so without the
  * stub they cannot be loaded at all in a unit test on a host where
  * OpenRegister is absent. Mirrors openregister
  * `lib/BulkAction/BulkActionInterface.php` verbatim; if that contract changes,

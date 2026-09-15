@@ -59,6 +59,8 @@ class BulkJobHandoffController extends Controller {
 	 * @param LoggerInterface $logger      The logger.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -94,12 +96,17 @@ class BulkJobHandoffController extends Controller {
 		$selection = $this->arrayParam(name: 'selection');
 		$justification = trim((string)$this->request->getParam('justification', ''));
 
+		$reason = null;
+		if ($justification !== '') {
+			$reason = $justification;
+		}
+
 		try {
 			$job = $this->handoff->create(
 				actionId: $action,
 				parameters: $parameters,
 				selection: $selection,
-				justification: (($justification === '') ? null : $justification),
+				justification: $reason,
 				actorUid: $user->getUID(),
 			);
 		} catch (MixedCaseTypeVersionsException $e) {
@@ -132,6 +139,8 @@ class BulkJobHandoffController extends Controller {
 	 * @param MixedCaseTypeVersionsException $exception The refusal.
 	 *
 	 * @return JSONResponse The 422.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function versionRefusal(MixedCaseTypeVersionsException $exception): JSONResponse {
 		return new JSONResponse(
@@ -141,12 +150,34 @@ class BulkJobHandoffController extends Controller {
 				'details' => [
 					'caseType' => $exception->getCaseTypeTitle(),
 					'versions' => $exception->getVersions(),
-					'counts' => $exception->getCounts(),
+					// Stringified HERE, not in the exception: PHP casts a numeric
+					// string key back to int, so an int-keyed array reaches a
+					// JSON response and serialises as a LIST, losing which
+					// count belongs to which version.
+					'counts' => self::byVersion(counts: $exception->getCounts()),
 				],
 			],
 			Http::STATUS_UNPROCESSABLE_ENTITY,
 		);
 	}//end versionRefusal()
+
+	/**
+	 * The per-version counts, keyed by the version as a string.
+	 *
+	 * @param array<array-key, int> $counts Version to count.
+	 *
+	 * @return array<string, int> The same map, safe to serialise as an object.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	 */
+	private static function byVersion(array $counts): array {
+		$byVersion = [];
+		foreach ($counts as $version => $count) {
+			$byVersion[(string)$version] = $count;
+		}
+
+		return $byVersion;
+	}//end byVersion()
 
 	/**
 	 * Pass OpenRegister's own refusal through with its reason intact.
@@ -160,6 +191,8 @@ class BulkJobHandoffController extends Controller {
 	 * @param string           $action    The action that was asked for.
 	 *
 	 * @return JSONResponse The 422, or a 503 when OpenRegister is simply absent.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function engineRefusal(RuntimeException $exception, string $action): JSONResponse {
 		if (method_exists($exception, 'getReason') === false) {
@@ -198,10 +231,16 @@ class BulkJobHandoffController extends Controller {
 	 * @param string $name The parameter name.
 	 *
 	 * @return array<string, mixed> The parameter.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function arrayParam(string $name): array {
 		$value = $this->request->getParam($name, []);
 
-		return (is_array($value) === true) ? $value : [];
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
 	}//end arrayParam()
 }//end class

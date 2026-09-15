@@ -59,6 +59,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * The action id every caller names.
 	 *
 	 * @var string
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:set-case-attribute';
 
@@ -72,6 +74,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * another vocabulary, which is a rebind and not an attribute change.
 	 *
 	 * @var array<int, string>
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private const NOT_WRITABLE = [
 		'id',
@@ -89,6 +93,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @param IL10N           $l10n            Localisation, for the label an operator reads.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -100,6 +106,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * The action id.
 	 *
 	 * @return string The id.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -109,6 +117,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * The label.
 	 *
 	 * @return string The label.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Set one field on the cases');
@@ -118,6 +128,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * What the action does.
 	 *
 	 * @return string The description.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Writes one value into one field on every selected case, refusing a selection that spans two case type versions.');
@@ -127,6 +139,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * An attribute change carries its own meaning and needs no separate reason.
 	 *
 	 * @return bool False.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return false;
@@ -136,6 +150,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * The selection must be one version, or the value means two things.
 	 *
 	 * @return array<int, string> The homogeneity guard.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [BulkActionInterface::GUARD_HOMOGENEITY];
@@ -149,6 +165,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When the property is absent, reserved, or no value is given.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		$property = trim((string)($parameters['property'] ?? ''));
@@ -179,6 +197,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * rehearsal and the commit is the design property of D-1.
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The object service reads
 	 * the acting user from the session; the job runs as that user.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
 		$caseId = $this->caseId(object: $object);
@@ -217,6 +237,8 @@ class SetCaseAttributeAction implements BulkActionInterface {
 	 * @return void
 	 *
 	 * @throws RuntimeException When OpenRegister or the case schema is not configured.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function write(string $caseId, array $case): void {
 		$objectService = $this->settingsService->getObjectService();

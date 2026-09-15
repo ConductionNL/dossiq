@@ -56,6 +56,8 @@ class CaseTypeVersionGuard {
 	 * @param CaseTypeStore   $caseTypes       Case type reads.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -106,19 +108,10 @@ class CaseTypeVersionGuard {
 			$versions = array_map('intval', array_keys($counts));
 			sort($versions);
 
-			// Keyed by the version as a STRING. The exception hands these
-			// straight to a JSON response, where an integer-keyed PHP array
-			// serialises as a list and the version each count belongs to is
-			// lost.
-			$byVersion = [];
-			foreach ($counts as $version => $count) {
-				$byVersion[(string)$version] = (int)$count;
-			}
-
 			throw new MixedCaseTypeVersionsException(
 				caseTypeTitle: $family['title'],
 				versions: $versions,
-				counts: $byVersion,
+				counts: array_map('intval', $counts),
 			);
 		}
 	}//end assertOneVersion()
@@ -133,6 +126,8 @@ class CaseTypeVersionGuard {
 	 * @param array<int, string> $caseIds The selected case uuids.
 	 *
 	 * @return array<string, int> Case type uuid to case count.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function caseTypeIdsOf(array $caseIds): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -179,6 +174,8 @@ class CaseTypeVersionGuard {
 	 * @param string               $caseTypeId The row's own uuid.
 	 *
 	 * @return string The family key.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function familyOf(array $caseType, string $caseTypeId): string {
 		$current = $caseType;
@@ -210,6 +207,8 @@ class CaseTypeVersionGuard {
 	 * @param mixed $value Whatever the object service returned.
 	 *
 	 * @return array<string, mixed> The row.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function asArray(mixed $value): array {
 		if (is_array($value) === true) {
@@ -219,13 +218,19 @@ class CaseTypeVersionGuard {
 		if (is_object($value) === true && method_exists($value, 'getObject') === true) {
 			$object = $value->getObject();
 
-			return (is_array($object) === true) ? $object : [];
+			if (is_array($object) === true) {
+				return $object;
+			}
+
+			return [];
 		}
 
 		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
 			$serialised = $value->jsonSerialize();
 
-			return (is_array($serialised) === true) ? $serialised : [];
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
 		}
 
 		return [];

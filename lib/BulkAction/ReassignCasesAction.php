@@ -55,6 +55,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * The action id every caller names.
 	 *
 	 * @var string
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public const ID = 'dossiq:reassign-cases';
 
@@ -65,6 +67,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * @param IL10N              $l10n   Localisation, for the label an operator reads.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseAssigneeWriter $writer,
@@ -76,6 +80,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * The action id.
 	 *
 	 * @return string The id.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -85,6 +91,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * The label.
 	 *
 	 * @return string The label.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Give the cases to another handler');
@@ -94,6 +102,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * What the action does.
 	 *
 	 * @return string The description.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getDescription(): string {
 		return $this->l10n->t('Moves every selected case to one handler, recording on each case who it came from.');
@@ -103,6 +113,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * Reassigning cases in bulk needs a written reason.
 	 *
 	 * @return bool True.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function requiresJustification(): bool {
 		return true;
@@ -113,6 +125,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * would refuse a selection it has no reason to refuse.
 	 *
 	 * @return array<int, string> No guards.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function getGuards(): array {
 		return [];
@@ -126,6 +140,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 * @return void
 	 *
 	 * @throws InvalidArgumentException When either is missing.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function validateParameters(array $parameters): void {
 		if (trim((string)($parameters['toUser'] ?? '')) === '') {
@@ -149,6 +165,8 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One executor for the
 	 * rehearsal and the commit is the design property of D-1.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {
 		$caseId = $this->caseId(object: $object);

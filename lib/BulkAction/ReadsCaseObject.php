@@ -44,6 +44,8 @@ trait ReadsCaseObject {
 	 * @param ObjectEntity $object The object the job is walking.
 	 *
 	 * @return string The case uuid, or an empty string when the object has none.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function caseId(ObjectEntity $object): string {
 		$uuid = trim((string)($object->getUuid() ?? ''));
@@ -62,6 +64,8 @@ trait ReadsCaseObject {
 	 * @param ObjectEntity $object The object the job is walking.
 	 *
 	 * @return array<string, mixed> The case payload.
+	 *
+	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function caseData(ObjectEntity $object): array {
 		return $object->getObject();
