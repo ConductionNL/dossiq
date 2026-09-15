@@ -36,7 +36,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseTaskController;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Http;
@@ -66,13 +65,6 @@ class CaseTaskControllerTest extends TestCase {
 	 * @var TaskAttachmentService&MockObject
 	 */
 	private TaskAttachmentService $attachments;
-
-	/**
-	 * The always-available acts.
-	 *
-	 * @var AlwaysAvailableActs&MockObject
-	 */
-	private AlwaysAvailableActs $acts;
 
 	/**
 	 * The per-case guard.
@@ -110,7 +102,6 @@ class CaseTaskControllerTest extends TestCase {
 	protected function setUp(): void {
 		$this->completion = $this->createMock(originalClassName: CaseTaskActions::class);
 		$this->attachments = $this->createMock(originalClassName: TaskAttachmentService::class);
-		$this->acts = $this->createMock(originalClassName: AlwaysAvailableActs::class);
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
 		$this->request = $this->createMock(originalClassName: IRequest::class);
@@ -141,7 +132,6 @@ class CaseTaskControllerTest extends TestCase {
 			request: $this->request,
 			tasks: $this->completion,
 			attachments: $this->attachments,
-			acts: $this->acts,
 			caseAccess: $this->guard,
 			userSession: $this->userSession,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
@@ -161,35 +151,6 @@ class CaseTaskControllerTest extends TestCase {
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(expected: ['claim' => true], actual: $response->getData());
 	}//end testCapabilitiesAnswerTheEngine()
-
-	/**
-	 * A reader who may not read the case is refused the acts.
-	 *
-	 * @return void
-	 */
-	public function testActsAreRefusedWithoutReadAccess(): void {
-		$this->guard->method('hasCaseReadAccess')->willReturn(false);
-		$this->acts->expects($this->never())->method('forCase');
-
-		$response = $this->controller()->acts(caseId: 'case-1');
-
-		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
-	}//end testActsAreRefusedWithoutReadAccess()
-
-	/**
-	 * The acts come back under their own key, marked by the service.
-	 *
-	 * @return void
-	 */
-	public function testActsAnswerTheAlwaysAvailableHalf(): void {
-		$this->guard->method('hasCaseReadAccess')->willReturn(true);
-		$this->acts->method('forCase')->willReturn([['id' => 'withdraw', 'alwaysAvailable' => true]]);
-
-		$response = $this->controller()->acts(caseId: 'case-1');
-
-		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-		$this->assertCount(expectedCount: 1, haystack: $response->getData()['alwaysAvailable']);
-	}//end testActsAnswerTheAlwaysAvailableHalf()
 
 	/**
 	 * A task nobody can find is a 404 carrying the envelope, not a 500.
@@ -340,9 +301,9 @@ class CaseTaskControllerTest extends TestCase {
 		$userSession = $this->createMock(originalClassName: IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 		$this->userSession = $userSession;
-		$this->guard->expects($this->never())->method('hasCaseReadAccess');
+		$this->guard->expects($this->never())->method('hasCaseMutationAccess');
 
-		$response = $this->controller()->acts(caseId: 'case-1');
+		$response = $this->controller()->attach(caseId: 'case-1', taskId: 'task-1');
 
 		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testNoSessionIsRefused()

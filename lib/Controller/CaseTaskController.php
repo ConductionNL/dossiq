@@ -5,7 +5,6 @@
  *
  * The things a handler does to a task from the case page, without leaving it:
  *
- *  - GET  /api/case/{caseId}/acts                          the two halves of "what may I do right now"
  *  - GET  /api/case-tasks/capabilities                     what the task engine on this instance answers
  *  - POST /api/case-tasks/{taskId}/complete                complete, with the form's answers
  *  - POST /api/case-tasks/{taskId}/claim                   take an unclaimed task
@@ -43,7 +42,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskAttachmentService;
 use OCP\AppFramework\Controller;
@@ -81,7 +79,6 @@ class CaseTaskController extends Controller {
 	 * @param IRequest              $request     The HTTP request.
 	 * @param CaseTaskActions       $tasks       Completes and claims a task, with dossiq's refusals in front.
 	 * @param TaskAttachmentService $attachments Holds a file against an open task.
-	 * @param AlwaysAvailableActs   $acts        The acts allowed in every phase.
 	 * @param CaseAccessGuard       $caseAccess  Per-case authorization, fails closed.
 	 * @param IUserSession          $userSession The current session.
 	 * @param LoggerInterface       $logger      The logger.
@@ -91,7 +88,6 @@ class CaseTaskController extends Controller {
 		IRequest $request,
 		private readonly CaseTaskActions $tasks,
 		private readonly TaskAttachmentService $attachments,
-		private readonly AlwaysAvailableActs $acts,
 		private readonly CaseAccessGuard $caseAccess,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -117,32 +113,6 @@ class CaseTaskController extends Controller {
 	public function capabilities(): JSONResponse {
 		return new JSONResponse(['claim' => $this->tasks->engineAnswersClaim()]);
 	}//end capabilities()
-
-	/**
-	 * The acts available on this case, in two halves.
-	 *
-	 * The always-available half only: the phase's own acts are OpenRegister's
-	 * `available-actions` answer, published by
-	 * {@see \OCA\Dossiq\Lifecycle\CaseActionProvider}, and duplicating them
-	 * here would be a second list that can disagree with the first. The
-	 * surface asks for both and renders them together, marked.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return JSONResponse `{alwaysAvailable: [...]}`.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	#[NoAdminRequired]
-	public function acts(string $caseId): JSONResponse {
-		return $this->guarded(
-			caseId: $caseId,
-			write: false,
-			run: fn (): array => [
-				'alwaysAvailable' => $this->acts->forCase(caseId: $caseId, userId: $this->currentUid()),
-			],
-		);
-	}//end acts()
 
 	/**
 	 * Complete one task with the answers its form asked for.

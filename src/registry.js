@@ -25,7 +25,6 @@
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
-import CaseActsPane from './components/case/CaseActsPane.vue'
 // The case's own locations on a map, on the Data tab.
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
@@ -444,18 +443,6 @@ const registry = {
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
 
-	// "What may I do right now", in two halves: the acts of the current phase
-	// and the acts the case type allows in every phase, rendered together and
-	// marked apart. An always-available act is NOT a phase that is always
-	// active: as a phase it would show in the phase strip, count towards the
-	// progress figure and be given a term, and all three would be wrong.
-	// @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	'case-acts-pane': {
-		// @custom-widget-ratchet exclude no configured widget reads TWO sources: the acts of the phase come from OpenRegister's available-actions and the always-available ones from the case type, and CnObjectListWidget has neither a second source nor a reason column for an act it must show disabled. It is deleted when lifecycle-acts-on-the-case lands its one lifecycle menu on CaseDetail and this becomes that menu's always-available half.
-		kind: 'widget',
-		component: CaseActsPane,
-		_note: 'CaseDetail Work tab: one administered list answering what a handler may do on this case, with the phase-specific acts first and the always-available ones marked. A refused act is shown and disabled with the guard sentence rather than hidden, because an act that vanishes reads as a thing the system cannot do.',
-	},
 
 	// --- Case panel tabs that were sidebar tabs first. ---
 	//

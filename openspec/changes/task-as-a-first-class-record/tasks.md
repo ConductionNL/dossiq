@@ -60,8 +60,12 @@ nextcloud-vue.
 form, group or effect at publish and names the task
 (`TaskDeclarationValidator`, wired into `WorkflowDefinitionService::publish`);
 2.1 declares the always-available acts on the case type and answers them
-beside the phase's own (`AlwaysAvailableActs`, `GET /api/case/{id}/acts`,
-`src/utils/caseActs.js`); 3.1 writes the declared candidates to the engine's
+beside the phase's own, in ONE menu: `lifecycle-acts-on-the-case` (#2831)
+landed the single lifecycle menu while this change was in flight and already
+read `GET /api/case/{id}/acts`, so `AlwaysAvailableActs` answers there and
+`buildActsMenu()` folds the half in, marked `kind: 'always'`. The separate
+pane this change first built was deleted rather than merged: two surfaces
+answering "what may I do" is what both designs argue against; 3.1 writes the declared candidates to the engine's
 own candidate columns and renders the claim affordance only where the engine
 answers a claim act; 4.1 and 4.2 run the declared effects on the engine's
 terminal event and refuse a completion whose handler cannot be resolved
