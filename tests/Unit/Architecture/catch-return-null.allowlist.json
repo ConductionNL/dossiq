@@ -1,5 +1,5 @@
 {
-    "ceiling": 222,
+    "ceiling": 225,
     "measured": "2026-09-15",
     "window": 3,
     "about": [
@@ -11,7 +11,8 @@
         "2026-09-14, openspec/changes/one-date-write-path: three nulling date parsers left lib/ (CaseEnricher::normaliseDate, TermijnTimerService::dateOrNull, WorkQueueService::parseDateOnly) and three CaseDateNormaliser sites arrived, two zone-resolution degradations and one read-path reader. The ceiling is unchanged at 206; every write path refuses now instead of answering null.",
         "2026-09-14, openspec/changes/inbound-mail-filters: nine sites arrived with the mail intake path. Eight are degradations of an OPTIONAL app, Nextcloud Mail, which is absent on most instances and whose service, account, attachment, folder and event readers each log at warning and answer the documented empty value; the ninth is the read-miss on an intake log entry. The ceiling went 206 to 215 for those nine and nothing else.",
         "2026-09-14, openspec/changes/case-grants-name-their-source: four sites arrived with OpenRegisterGrantsGateway, the one place dossiq asks OpenRegister who may do what on a case. All four are degradations of an app that may be absent or may predate openregister#3726, and each logs at warning naming what was absent. The null is load-bearing rather than tolerated: the caller reads null as \"carry on\" and false as \"OpenRegister refused\", and collapsing the two would lock every handler out of every case on an instance that has not upgraded. The ceiling went 215 to 219 for those four and nothing else.",
-        "2026-09-15, openspec/changes/handing-a-case-over: four sites arrived with the internal handover. All four read something and answer the documented empty list when the read cannot be made: three are degradations of OpenRegister being absent or unconfigured and each logs at warning naming what it was reading, and the fourth is a read miss on a case. None is a refusal: every rule this change enforces throws RefusedException and is translated by the controller, which is why the handover's own refusals (an unresolvable team, a settled handover, an unreadable case) are nowhere on this list. The ceiling went 219 to 223 for those four and nothing else."
+        "2026-09-15, openspec/changes/handing-a-case-over: four sites arrived with the internal handover. All four read something and answer the documented empty list when the read cannot be made: three are degradations of OpenRegister being absent or unconfigured and each logs at warning naming what it was reading, and the fourth is a read miss on a case. None is a refusal: every rule this change enforces throws RefusedException and is translated by the controller, which is why the handover's own refusals (an unresolvable team, a settled handover, an unreadable case) are nowhere on this list. The ceiling went 219 to 223 for those four and nothing else.",
+        "2026-09-15, openspec/changes/dependent-term-follows-predecessor (REQ-RCL-12/13): three sites arrived with the typed relation labels and the derived sub-case. Two are degradations of OpenRegister answering badly rather than being absent, and each logs at warning naming what could not be read: the relation rows behind the Related cases tab, and the parentCase inheritance declaration. The third is a read miss on the parent of a sub-case. None is a refusal: every rule this change enforces is a guard in DeelzaakService or CaseRelationService that answers a reason the controller translates, which is why the duplicate, the self-relation, the hierarchy overlap and the case-type refusal are nowhere on this list. Merging development took the ceiling to 222 first, so it went 222 to 225 for those three and nothing else."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -1572,6 +1573,27 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`outstandingFor()` answers `return []` when the transfer schema cannot be read; the catch logs at warning naming the team (\"the outstanding handovers could not be read\"). This is a read of a lens, and the acts it lists refuse loudly on their own: initiating, accepting and refusing a handover all throw RefusedException rather than answering an empty value."
+        },
+        {
+            "file": "lib/Service/Relation/CaseRelationStore.php",
+            "method": "relationRows",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`relationRows()` answers `return []` when OpenRegister's `/uses` or `/used` throws; the catch logs at warning naming the case and the direction (\"OpenRegister could not answer the relation rows for a case\"), and the Related cases tab renders without its typed groups. Throwing would take down a case page over a panel on it, and answering a refusal would claim the case has no relations, which is a different and worse sentence than \"we could not ask\"."
+        },
+        {
+            "file": "lib/Service/Deelzaak/SubCaseDeriver.php",
+            "method": "declaration",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`declaration()` answers `return []` when OpenRegister cannot read what `case.parentCase` declares a child inherits; the catch logs at warning (\"the parentCase relation declaration could not be read\"). The empty declaration is not silent: `derive()` carries it into the answer as `inheritanceApplied`, so the caller is told the sub-case inherited nothing rather than being handed a result that looks complete."
+        },
+        {
+            "file": "lib/Service/Deelzaak/SubCaseDeriver.php",
+            "method": "findParent",
+            "occurrence": 1,
+            "class": "read-miss",
+            "reason": "`findParent()` answers `return null` when the parent case cannot be read, which is how OpenRegister reports a miss; the catch logs at debug naming the uuid and `derive()` turns the null into the `parent_not_found` refusal the controller answers as 409. The rule that says which parents may take a sub-case lives in `DeelzaakService::validateCreate()` and refuses ahead of this."
         }
     ]
 }
