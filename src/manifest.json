@@ -1621,7 +1621,7 @@
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries SIX, which is what the placement work asked for. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries TEN: it went to SIX, which is what the placement work asked for, and then Notes (2026-09-12) and Timeline (one-timeline-on-the-case) were each added on a reason recorded in their own entry. Timeline is the one tab here that does NOT own a collection: it reads the entries the tabs beside it write, which is why it adds a tab rather than replacing three. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
@@ -1636,6 +1636,10 @@
 								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-timeline-panel",
+									"label": "Timeline"
 								},
 								{
 									"widgetId": "case-people-panel",
@@ -1840,6 +1844,13 @@
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
 						}
+					},
+					{
+						"id": "case-timeline-panel",
+						"type": "case-timeline-pane",
+						"title": "Timeline",
+						"icon": "Timeline",
+						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. Rendered by TYPE (case-timeline-pane in registry.js) because a tab child resolves from cnRegistry[widget.type] and a component:-only entry draws an empty panel and logs nothing, which this page has shipped twice."
 					},
 					{
 						"id": "case-notes-panel",

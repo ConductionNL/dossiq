@@ -42,6 +42,8 @@ namespace OCA\Dossiq\Service\Email;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -118,11 +120,13 @@ class IntakeLog {
 	 * @param SettingsService $settingsService Register and schema resolution.
 	 * @param ITimeFactory    $time            Clock.
 	 * @param LoggerInterface $logger          Logger.
+	 * @param CaseTimeline    $timeline        The one seam that writes a timeline entry.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -227,8 +231,63 @@ class IntakeLog {
 			return '';
 		}
 
-		return (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
+		$entryId = (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
+		$this->recordOnTimeline(message: $message, outcome: $outcome, caseId: $caseId, entryId: $entryId);
+
+		return $entryId;
 	}//end record()
+
+	/**
+	 * Put a message that reached a case on that case's timeline.
+	 *
+	 * Only a message that BECAME a case gets a line. A message the filters
+	 * refused, junked or bounced has no case to hang on, and the intake log
+	 * page is where those are read; putting them somewhere else would make
+	 * the case timeline a spam folder.
+	 *
+	 * The entry is INTERNAL even though a citizen wrote the message. It
+	 * carries the intake outcome and points at the log entry, which hold the
+	 * filter verdict and the four authentication results: facts about this
+	 * instance rather than about the sender, and not the applicant's to read.
+	 *
+	 * @param InboundMessage $message The message.
+	 * @param string         $outcome What became of it.
+	 * @param string         $caseId  The case it reached, or ''.
+	 * @param string         $entryId The log entry just written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	private function recordOnTimeline(
+		InboundMessage $message,
+		string $outcome,
+		string $caseId,
+		string $entryId,
+	): void {
+		if (trim($caseId) === '') {
+			return;
+		}
+
+		$subject = mb_substr($message->subject, 0, 255);
+		$text = trim($subject);
+		if ($text === '') {
+			$text = 'Bericht ontvangen zonder onderwerp';
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::MAIL_IN,
+			message: $text,
+			fields: [
+				'sender' => $message->senderAddress(),
+				'subject' => $subject,
+				'outcome' => $outcome,
+				'intakeEntryId' => $entryId,
+			],
+			visibility: CaseTimeline::INTERNAL,
+		);
+	}//end recordOnTimeline()
 
 	/**
 	 * Write a few fields onto an entry that already exists.
