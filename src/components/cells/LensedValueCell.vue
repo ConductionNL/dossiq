@@ -85,6 +85,8 @@ export default {
 		 * The value as text.
 		 *
 		 * @return {string} The value, stringified.
+		 *
+		 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
 		 */
 		text() {
 			return String(this.value ?? '')
@@ -94,6 +96,8 @@ export default {
 		 * What a withheld cell says.
 		 *
 		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
 		 */
 		withheldLabel() {
 			return t('dossiq', 'Withheld')
@@ -103,6 +107,8 @@ export default {
 		 * What the cell says on hover, and to a screen reader.
 		 *
 		 * @return {string} The hint, or the empty string.
+		 *
+		 * @spec openspec/changes/case-objects-hinge-on-the-object/specs/case-management/spec.md
 		 */
 		hint() {
 			if (this.state !== 'withheld') return ''
