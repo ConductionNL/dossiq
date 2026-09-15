@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseAttentionConditionService;
 use OCA\Dossiq\Service\CaseAttentionMarkerService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use PHPUnit\Framework\TestCase;
@@ -65,11 +66,17 @@ class CaseAttentionMarkerTest extends TestCase {
 		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 
-		// No settings service: `contextFor()` is not under test here and would
-		// need a store. Every test below hands `evaluate()` its context
-		// directly, which is also what keeps these assertions about the
-		// CONDITIONS rather than about a query.
-		return new CaseAttentionMarkerService(resolver: $resolver, logger: new NullLogger());
+		// The condition service is REAL rather than a double, and deliberately
+		// so: the conditions are what these tests are about, and a double
+		// would let this file pass over a `reasonFor()` that answers the empty
+		// string for every condition in the vocabulary. It is built without a
+		// settings service, so `contextFor()` fetches nothing and every test
+		// below hands `evaluate()` its context directly.
+		return new CaseAttentionMarkerService(
+			resolver: $resolver,
+			logger: new NullLogger(),
+			conditions: new CaseAttentionConditionService(logger: new NullLogger())
+		);
 	}//end service()
 
 	/**

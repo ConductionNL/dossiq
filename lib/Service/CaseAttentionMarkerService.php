@@ -68,8 +68,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -79,8 +77,6 @@ use Throwable;
  * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
  */
 class CaseAttentionMarkerService {
-
-	use SearchesObjects;
 
 	/**
 	 * The panels of the case page a marker may point at.
@@ -112,25 +108,17 @@ class CaseAttentionMarkerService {
 	 *
 	 * @var array<int, string>
 	 */
-	public const RAISE_CONDITIONS = [
-		'advice-request-overdue',
-		'aanvullingsverzoek-open',
-		'term-exceeded',
-	];
+	public const RAISE_CONDITIONS = CaseAttentionConditionService::CONDITIONS;
 
 	/**
 	 * The context key each condition reads, for the conditions that need one.
 	 *
-	 * A condition absent from this map reads the case payload and can always be
-	 * answered. A condition present in it can only be answered when its rows
-	 * were fetched, and is skipped, with any standing marker kept, when they
-	 * were not.
+	 * One copy, held by the class that evaluates the conditions, because two
+	 * copies of a map like this drift without anything failing.
 	 *
 	 * @var array<string, string>
 	 */
-	public const CONDITION_CONTEXT = [
-		'advice-request-overdue' => 'adviceRequests',
-	];
+	public const CONDITION_CONTEXT = CaseAttentionConditionService::CONTEXT;
 
 	/**
 	 * The only clearing a marker may declare.
@@ -174,28 +162,24 @@ class CaseAttentionMarkerService {
 	 *                                          type, so a child type inherits
 	 *                                          its parent's markers without
 	 *                                          declaring them.
-	 * @param LoggerInterface  $logger          Structured logger.
-	 * @param SettingsService  $settingsService The OpenRegister seam, for the
-	 *                                          rows a condition reads that are
-	 *                                          not on the case itself.
+	 * @param LoggerInterface  $logger     Structured logger.
+	 * @param CaseAttentionConditionService|null $conditions What is true about a
+	 *                                          case, and the rows it reads that
+	 *                                          are not on the case itself.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
-		private readonly ?SettingsService $settingsService = null,
+		private readonly ?CaseAttentionConditionService $conditions = null,
 	) {
 	}//end __construct()
 
 	/**
 	 * The related rows the conditions read, for one case.
 	 *
-	 * ONE query, on the same footing as the case-type read the priority
-	 * derivation beside this already makes on every save. A failure answers an
-	 * EMPTY context rather than an empty row set, and the difference matters:
-	 * an empty context means "not asked", which keeps a standing marker,
-	 * where an empty row set would mean "asked, and there is nothing", which
-	 * clears one. A store that was briefly unreachable must not look like work
-	 * somebody finished.
+	 * Pass-through to {@see CaseAttentionConditionService::contextFor()}, so a
+	 * caller that has this service has everything it needs to derive a marker
+	 * set and does not have to know which class fetches what.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -204,33 +188,7 @@ class CaseAttentionMarkerService {
 	 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 	 */
 	public function contextFor(string $caseId): array {
-		$caseId = trim($caseId);
-		if ($caseId === '' || $this->settingsService === null) {
-			return [];
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: 'adviceRequest',
-				filters: ['case' => $caseId, '_limit' => 100]
-			);
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: could not read the advice requests behind a marker: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'caseId' => $caseId]
-			);
-			return [];
-		}
-
-		return ['adviceRequests' => $rows];
+		return ($this->conditions?->contextFor(caseId: $caseId) ?? []);
 	}//end contextFor()
 
 	/**
@@ -257,41 +215,78 @@ class CaseAttentionMarkerService {
 			}
 
 			$id = trim((string)($declaration['id'] ?? ''));
-			$named = sprintf('marker "%s"', $id);
-			if ($id === '') {
-				$named = sprintf('marker %d', ((int)$index + 1));
-			}
-
-			if ($id === '') {
-				$problems[] = sprintf('The %s has no id.', $named);
-			}
-
-			if ($id !== '' && in_array($id, $seen, true) === true) {
-				$problems[] = sprintf('The %s is declared twice.', $named);
-			}
+			$problems = array_merge(
+				$problems,
+				$this->problemsWith(
+					declaration: $declaration,
+					named: $this->name(id: $id, index: (int)$index),
+					duplicate: ($id !== '' && in_array($id, $seen, true) === true)
+				)
+			);
 
 			if ($id !== '') {
 				$seen[] = $id;
-			}
-
-			$tab = trim((string)($declaration['tab'] ?? ''));
-			if (in_array($tab, self::PANELS, true) === false) {
-				$problems[] = sprintf('The %s points at no panel of the case page.', $named);
-			}
-
-			$raise = trim((string)($declaration['raiseWhen'] ?? ''));
-			if (in_array($raise, self::RAISE_CONDITIONS, true) === false) {
-				$problems[] = sprintf('The %s names no condition that raises it.', $named);
-			}
-
-			$clear = trim((string)($declaration['clearWhen'] ?? ''));
-			if ($clear !== self::CLEAR_CONDITION) {
-				$problems[] = sprintf('The %s names no condition that clears it.', $named);
 			}
 		}//end foreach
 
 		return $problems;
 	}//end validateDeclarations()
+
+	/**
+	 * What one declaration names itself, for a refusal to quote back.
+	 *
+	 * @param string  $id    The declared id, possibly empty.
+	 * @param integer $index Its place in the list, for a declaration with no id.
+	 *
+	 * @return string The name.
+	 */
+	private function name(string $id, int $index): string {
+		if ($id === '') {
+			return sprintf('marker %d', ($index + 1));
+		}
+
+		return sprintf('marker "%s"', $id);
+	}//end name()
+
+	/**
+	 * What is wrong with ONE declaration.
+	 *
+	 * Every sentence NAMES the marker, because a refusal that says only that
+	 * something is wrong sends an administrator through the whole list looking
+	 * for the row it meant.
+	 *
+	 * @param array<string, mixed> $declaration The declared marker.
+	 * @param string               $named       What to call it in a sentence.
+	 * @param boolean              $duplicate   Whether its id is already taken.
+	 *
+	 * @return array<int, string> The reasons, empty when the declaration is whole.
+	 */
+	private function problemsWith(array $declaration, string $named, bool $duplicate): array {
+		$problems = [];
+
+		if (trim((string)($declaration['id'] ?? '')) === '') {
+			$problems[] = sprintf('The %s has no id.', $named);
+		}
+
+		if ($duplicate === true) {
+			$problems[] = sprintf('The %s is declared twice.', $named);
+		}
+
+		if (in_array(trim((string)($declaration['tab'] ?? '')), self::PANELS, true) === false) {
+			$problems[] = sprintf('The %s points at no panel of the case page.', $named);
+		}
+
+		$raise = trim((string)($declaration['raiseWhen'] ?? ''));
+		if (in_array($raise, self::RAISE_CONDITIONS, true) === false) {
+			$problems[] = sprintf('The %s names no condition that raises it.', $named);
+		}
+
+		if (trim((string)($declaration['clearWhen'] ?? '')) !== self::CLEAR_CONDITION) {
+			$problems[] = sprintf('The %s names no condition that clears it.', $named);
+		}
+
+		return $problems;
+	}//end problemsWith()
 
 	/**
 	 * The markers a case type declares, or the shipped set.
@@ -379,8 +374,9 @@ class CaseAttentionMarkerService {
 			$condition = (string)$declaration['raiseWhen'];
 			$id = (string)$declaration['id'];
 
-			$needs = (string)(self::CONDITION_CONTEXT[$condition] ?? '');
-			if ($needs !== '' && array_key_exists($needs, $context) === false) {
+			if ($this->conditions === null
+				|| $this->conditions->unanswerable(condition: $condition, context: $context) === true
+			) {
 				// The rows this condition reads were not fetched, so this save
 				// learnt nothing about it. Keep what was standing; clearing it
 				// would say the work was done on no evidence at all.
@@ -392,7 +388,7 @@ class CaseAttentionMarkerService {
 				continue;
 			}
 
-			$reason = $this->reasonFor(
+			$reason = $this->conditions->reasonFor(
 				condition: $condition,
 				case: $case,
 				now: $now,
@@ -462,109 +458,6 @@ class CaseAttentionMarkerService {
 	}//end resolve()
 
 	/**
-	 * Why a condition is true on this case, or the empty string.
-	 *
-	 * One sentence a handler can act on, rather than the condition's own name:
-	 * "two advice requests are past the date they were asked for" sends
-	 * somebody to the right request, and `advice-request-overdue` sends them
-	 * to a glossary.
-	 *
-	 * @param string               $condition One of RAISE_CONDITIONS.
-	 * @param array<string, mixed> $case      The case.
-	 * @param DateTimeImmutable    $now       Today.
-	 * @param array<string, mixed> $context   The related rows.
-	 *
-	 * @return string The reason, or the empty string when the condition is false.
-	 */
-	private function reasonFor(
-		string $condition,
-		array $case,
-		DateTimeImmutable $now,
-		array $context = [],
-	): string {
-		return match ($condition) {
-			'advice-request-overdue' => $this->adviceOverdue(context: $context, now: $now),
-			'aanvullingsverzoek-open' => $this->openAanvullingsverzoek(case: $case),
-			'term-exceeded' => $this->termExceeded(case: $case, now: $now),
-			default => '',
-		};
-	}//end reasonFor()
-
-	/**
-	 * Advice requests on this case that are past their date.
-	 *
-	 * `adviceRequest` is a register object pointing back at the case, never a
-	 * property of it, so the rows arrive in the context rather than on `$case`.
-	 *
-	 * @param array<string, mixed> $context The related rows.
-	 * @param DateTimeImmutable    $now     Today.
-	 *
-	 * @return string The reason, or the empty string.
-	 */
-	private function adviceOverdue(array $context, DateTimeImmutable $now): string {
-		$overdue = 0;
-		foreach ($this->rows(context: $context, key: 'adviceRequests') as $request) {
-			$status = strtolower(trim((string)($request['status'] ?? '')));
-			if (in_array($status, ['received', 'closed', 'withdrawn', 'expired'], true) === true) {
-				continue;
-			}
-
-			$due = trim((string)($request['deadline'] ?? ''));
-			if ($due === '' || $this->hasPassed(date: $due, now: $now) === false) {
-				continue;
-			}
-
-			$overdue++;
-		}
-
-		if ($overdue === 0) {
-			return '';
-		}
-
-		return sprintf('%d advice request(s) are past the date they were asked for.', $overdue);
-	}//end adviceOverdue()
-
-	/**
-	 * Whether this case is waiting on an applicant.
-	 *
-	 * Reads the derived flag `aanvullingsverzoek-as-a-record` writes. It is a
-	 * declared condition here so a case type can point a marker at it; the
-	 * record and the flag belong to that change and are not restated.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return string The reason, or the empty string.
-	 */
-	private function openAanvullingsverzoek(array $case): string {
-		if (($case['waitingOnApplicant'] ?? false) !== true) {
-			return '';
-		}
-
-		return 'This case is waiting on the applicant to complete their submission.';
-	}//end openAanvullingsverzoek()
-
-	/**
-	 * Whether this case is past the date it had to be decided by.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 * @param DateTimeImmutable    $now  Today.
-	 *
-	 * @return string The reason, or the empty string.
-	 */
-	private function termExceeded(array $case, DateTimeImmutable $now): string {
-		$deadline = trim((string)($case['deadline'] ?? ($case['deadlineDate'] ?? '')));
-		if ($deadline === '' || $this->hasPassed(date: $deadline, now: $now) === false) {
-			return '';
-		}
-
-		if (($case['isFinalStatus'] ?? false) === true) {
-			return '';
-		}
-
-		return 'The date this case had to be decided by has passed.';
-	}//end termExceeded()
-
-	/**
 	 * When each marker standing on this case first became true.
 	 *
 	 * @param array<string, mixed> $case The case.
@@ -594,48 +487,6 @@ class CaseAttentionMarkerService {
 
 		return $moments;
 	}//end standing()
-
-	/**
-	 * The related rows under one context key, each one an array.
-	 *
-	 * @param array<string, mixed> $context The context.
-	 * @param string               $key     The key.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function rows(array $context, string $key): array {
-		$rows = ($context[$key] ?? []);
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$readable = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === true) {
-				$readable[] = $row;
-			}
-		}
-
-		return $readable;
-	}//end rows()
-
-	/**
-	 * Whether a stored date is behind today.
-	 *
-	 * @param string            $date The date.
-	 * @param DateTimeImmutable $now  Today.
-	 *
-	 * @return boolean True when it has passed.
-	 */
-	private function hasPassed(string $date, DateTimeImmutable $now): bool {
-		try {
-			$moment = new DateTimeImmutable($date);
-		} catch (Throwable) {
-			return false;
-		}
-
-		return ($moment->format('Y-m-d') < $now->format('Y-m-d'));
-	}//end hasPassed()
 
 	/**
 	 * The id a reference carries, whether it arrived as a uuid or as a row.
