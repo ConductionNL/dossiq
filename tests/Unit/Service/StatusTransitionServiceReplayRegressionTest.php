@@ -116,7 +116,7 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			$this->undeclaredStatuses(),
 			$this->undeclaredTransitions(),
 			$this->offeredTransitions(
-				guards: $this->createMock(GuardRegistry::class),
+				guards: $this->createMock(originalClassName: GuardRegistry::class),
 				reader: new TransitionSpecReader(),
 				statuses: $this->undeclaredStatuses(),
 			),
