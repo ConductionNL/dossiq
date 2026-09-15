@@ -2417,7 +2417,6 @@
 						"label": "Hand to another team",
 						"icon": "SwapHorizontal",
 						"target": "CaseHandoverDialog",
-						"_note": "handing-a-case-over REQ-HAND-01. A modal rather than an api-call: the act needs a team, a reason and the Awb 2:3 declaration, and an api-call carries a fixed body. The declaration is the one field nobody can default, because getting it wrong either mails a citizen about an internal rearrangement or leaves a doorzending unannounced.",
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "neq",
