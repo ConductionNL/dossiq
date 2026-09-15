@@ -164,26 +164,25 @@
 						"sinceVersion": "0.2.17",
 						"placement": "right",
 						"body": "Your work lives here: today's tasks, deadlines and open cases in one place.",
-						"task": "Open My work in the menu",
+						"task": "This is your My work section",
 						"target": {
 							"kind": "nav-item",
-							"ref": "WorkGroup"
+							"ref": "MyWorkHome"
 						},
 						"advanceOn": {
-							"type": "route-match",
-							"route": "MyWorkHome"
+							"type": "manual"
 						}
 					},
 					{
 						"id": "done",
 						"sinceVersion": "0.2.17",
-						"placement": "center",
+						"placement": "top",
 						"title": "Your first case is on the board",
 						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
-						"task": "Open the documentation to keep going",
+						"task": "Open the documentation",
 						"target": {
-							"kind": "nav-item",
-							"ref": "Documentation"
+							"kind": "selector",
+							"selector": "[data-testid=\"cn-nav-entry-Documentation\"]"
 						},
 						"advanceOn": {
 							"type": "manual"
