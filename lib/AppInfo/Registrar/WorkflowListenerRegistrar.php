@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
 use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -223,6 +224,21 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: TaskTerminalEvent::class,
 			listener: TaskCompletionResumeListener::class
+		);
+
+		// The SAME event, a second listener, deliberately. Resuming the run a
+		// task was blocking and doing what the case type declared completing
+		// it does are two different jobs with two different failure modes: a
+		// refused signal is an authorization answer, a failed effect is a
+		// letter that was not sent. One listener doing both would have to
+		// decide which failure silences the other.
+		//
+		// It listens rather than living in the completion call because a task
+		// can be completed from the case page, the task page, the inbox or
+		// OpenRegister's own API, and dossiq is in the path of only the first.
+		$context->registerEventListener(
+			event: TaskTerminalEvent::class,
+			listener: TaskCompletionEffectsListener::class
 		);
 
 	}//end registerHumanStepListeners()
