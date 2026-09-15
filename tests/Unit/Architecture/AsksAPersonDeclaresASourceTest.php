@@ -100,9 +100,12 @@ class AsksAPersonDeclaresASourceTest extends TestCase {
 	 * @return array<int, string> The declared mechanisms.
 	 */
 	private function declared(): array {
-		return QueueSourceScanner::declaredMechanisms(
-			sourceFiles: (glob($this->root . '/lib/Service/Queue/Source/*.php') ?: [])
-		);
+		$files = glob($this->root . '/lib/Service/Queue/Source/*.php');
+		if ($files === false) {
+			$files = [];
+		}
+
+		return QueueSourceScanner::declaredMechanisms(sourceFiles: $files);
 	}
 
 	/**

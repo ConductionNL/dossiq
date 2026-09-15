@@ -176,10 +176,17 @@ class QueueSourceScanner {
 	private static function jsonFiles(string $root): array {
 		$root = rtrim($root, '/');
 
-		return array_merge(
-			(glob($root . '/*.json') ?: []),
-			(glob($root . '/*/*.json') ?: [])
-		);
+		$here = glob($root . '/*.json');
+		if ($here === false) {
+			$here = [];
+		}
+
+		$nested = glob($root . '/*/*.json');
+		if ($nested === false) {
+			$nested = [];
+		}
+
+		return array_merge($here, $nested);
 	}
 
 	/**
