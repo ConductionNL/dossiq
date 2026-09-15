@@ -42,7 +42,6 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Middleware\MandateDeniedException;
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
 use OCA\Dossiq\Service\BeschikkingService;
-use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\MandaatEscalatieService;
@@ -105,7 +104,6 @@ class RefusalCarriesAStatusTest extends TestCase {
 			appName: 'dossiq',
 			request: $request,
 			transitionEngine: $engine,
-			bulkEngine: $this->createMock(originalClassName: BulkStatusTransitionService::class),
 			userSession: $this->session(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),

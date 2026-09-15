@@ -145,9 +145,10 @@ class LeaverHandoverService {
 	 * @param string $toUser   The person receiving the work.
 	 * @param string $actor    The administrator running the act.
 	 *
-	 * @return array{batchId: string, succeeded: int, failed: int, coordinatorSeats: int,
-	 *               drafts: array<int, array<string, mixed>>, results: array<int, array<string, mixed>>}
-	 *         What moved.
+	 * @return array{batchId: string, job: array<string, mixed>, succeeded: int, failed: int,
+	 *               coordinatorSeats: int, drafts: array<int, array<string, mixed>>,
+	 *               tasks: array<int, array<string, mixed>>}
+	 *         What moved, and the job that is moving the cases.
 	 *
 	 * @throws InvalidArgumentException When a person is missing, or is their own successor.
 	 *
@@ -171,8 +172,23 @@ class LeaverHandoverService {
 		$coordinated = $this->seats->casesCoordinatedBy(uid: $fromUser);
 		$drafts = $this->draftsOf(uid: $fromUser);
 
-		$batch = $this->reassignment->execute(fromUser: $fromUser, toUser: $toUser, filter: null, actorId: $actor);
-		$batchId = (string)($batch['batchId'] ?? '');
+		// The cases move as one bulk job, committed here rather than rehearsed:
+		// a leaver handover is an act somebody already decided, not a proposal
+		// waiting for a coordinator to read it. The job walks them in the
+		// background and reports per case what it did
+		// (bulk-actions-report-progress, D-1).
+		$reason = 'Handover of ' . $fromUser . '\'s work to ' . $toUser . ', ordered by ' . $actor;
+		$batch = $this->reassignment->releaseCaseload(
+			fromUser: $fromUser,
+			toUser: $toUser,
+			justification: $reason,
+			filter: null,
+			actorId: $actor,
+			commit: true,
+		);
+		$job = (array)($batch['job'] ?? []);
+		$caseIds = (array)($batch['caseIds'] ?? []);
+		$batchId = (string)($job['uuid'] ?? ($job['id'] ?? ''));
 		$now = (new DateTimeImmutable())->format('c');
 
 		$seatsMoved = 0;
@@ -182,8 +198,16 @@ class LeaverHandoverService {
 			}
 		}
 
+		// ⚠️ Recorded against the cases the act was ORDERED over, not against
+		// the ones the job has finished writing. The job walks in the
+		// background, so there is no per-case outcome to read here without
+		// waiting for it, and waiting would make this call's duration depend
+		// on the size of the caseload. The handover record therefore says
+		// "this person's work was handed over on this date", which is what an
+		// auditor asks; what happened to each individual case is the job's own
+		// report, at /api/bulk-jobs/{id}/members.
 		$this->recordOnCases(
-			cases: (array)($batch['results'] ?? []),
+			cases: $caseIds,
 			fromUser: $fromUser,
 			toUser: $toUser,
 			actor: $actor,
@@ -198,7 +222,8 @@ class LeaverHandoverService {
 				'from' => $fromUser,
 				'to' => $toUser,
 				'actor' => $actor,
-				'cases' => (int)($batch['succeeded'] ?? 0),
+				'cases' => count($caseIds),
+				'job' => $batchId,
 				'coordinatorSeats' => $seatsMoved,
 				'draftsNotMoved' => count($drafts),
 			],
@@ -206,11 +231,12 @@ class LeaverHandoverService {
 
 		return [
 			'batchId' => $batchId,
-			'succeeded' => (int)($batch['succeeded'] ?? 0),
-			'failed' => (int)($batch['failed'] ?? 0),
+			'job' => $job,
+			'succeeded' => count($caseIds),
+			'failed' => 0,
 			'coordinatorSeats' => $seatsMoved,
 			'drafts' => $drafts,
-			'results' => (array)($batch['results'] ?? []),
+			'tasks' => (array)($batch['tasks'] ?? []),
 		];
 	}//end execute()
 
@@ -260,13 +286,13 @@ class LeaverHandoverService {
 	}//end moveCoordinatorSeat()
 
 	/**
-	 * Write the handover record onto every case the batch moved.
+	 * Write the handover record onto every case the act was ordered over.
 	 *
-	 * The record is what makes the act traceable a year later: a case that
-	 * moved says who held it, who holds it now and whose act moved it. Without
-	 * it, the only evidence is a log line nobody reading the case will find.
+	 * The record is what makes the act traceable a year later: a case says who
+	 * held it, who holds it now and whose act moved it. Without it, the only
+	 * evidence is a log line nobody reading the case will find.
 	 *
-	 * @param array<int, array<string, mixed>> $cases    The batch's per-item results.
+	 * @param array<int, string>               $cases    The case uuids the act covers.
 	 * @param string                           $fromUser Who held the case.
 	 * @param string                           $toUser   Who holds it now.
 	 * @param string                           $actor    Who ran the act.
@@ -276,13 +302,9 @@ class LeaverHandoverService {
 	 * @return void
 	 */
 	private function recordOnCases(array $cases, string $fromUser, string $toUser, string $actor, string $batchId, string $now): void {
-		foreach ($cases as $result) {
-			if (is_array($result) === false || ($result['type'] ?? '') !== 'case' || ($result['success'] ?? false) !== true) {
-				continue;
-			}
-
+		foreach ($cases as $caseId) {
 			$this->recordOnCase(
-				caseId: (string)($result['id'] ?? ''),
+				caseId: (string)$caseId,
 				record: [
 					'fromUser' => $fromUser,
 					'toUser' => $toUser,
