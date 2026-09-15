@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -58,6 +59,7 @@ class CaseTypePublishService {
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
 	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
+	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -66,6 +68,7 @@ class CaseTypePublishService {
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeAcknowledgement $acknowledgement,
 		private readonly UnreadTriggerService $unreadTriggers,
+		private readonly CaseStateFieldRuleProjector $fieldRules,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -220,6 +223,15 @@ class CaseTypePublishService {
 		}
 
 		$this->retire(caseType: $caseType, caseTypeId: $caseTypeId);
+
+		// What each status asks of the fields goes onto the case schema HERE,
+		// at the one moment a case type stops being a draft. Any earlier and a
+		// half-written status would start refusing saves on cases already
+		// running; any later and there is no later, because publication is the
+		// only write dossiq owns on a case type. It never fails the publish: a
+		// projection that cannot be written is logged and the declarations wait
+		// on the rows for the next publish.
+		$this->fieldRules->publish(caseTypeId: $caseTypeId);
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 

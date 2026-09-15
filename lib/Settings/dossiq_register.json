@@ -587,11 +587,11 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.4.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
-                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). A status that declares none of the three behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, and it has no maximum. See openspec/changes/what-a-status-declares.",
+                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). V1.5 additive: a status declares which case fields it requires, hides and locks (fieldRules), published onto the case schema for OpenRegister to enforce. A status that declares none of the four behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, it has no maximum, and it asks nothing of any field. See openspec/changes/what-a-status-declares.",
                 "type": "object",
                 "required": [
                     "name",
@@ -774,6 +774,87 @@
                         "minimum": 1,
                         "description": "How many working days a case may sit here before the dwell is reported as breached. Counted on the organisation's working calendar. Entering the status arms an engine timer and leaving it cancels the timer, so the breach is an event rather than something a nightly sweep discovers. A dwell breach is not a term breach: it never touches the case's statutory term or its state, and it is what catches the case that is stuck inside a term that is long. Leave it empty for a status with no maximum.",
                         "title": "Maximum dwell"
+                    },
+                    "fieldRules": {
+                        "type": "array",
+                        "description": "Which case fields this status requires, hides and locks. Publishing the case type writes these onto the case schema's x-openregister-lifecycle.states.<statusType>.fields, where OpenRegister decides and refuses them (field-rules-by-state). Dossiq evaluates nothing of its own: a second evaluator is a second answer. An entry that names no groups applies to everyone, administrators included. An entry may carry a condition in the same vocabulary derivedWhen uses, so a field is required only when the condition holds and a branch needs no status of its own. See openspec/changes/what-a-status-declares.",
+                        "title": "Field rules",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "rule",
+                                "field"
+                            ],
+                            "properties": {
+                                "rule": {
+                                    "type": "string",
+                                    "enum": [
+                                        "required",
+                                        "hidden",
+                                        "readOnly"
+                                    ],
+                                    "description": "What this status does to the field. required: it may not be left empty while the case sits here. hidden: it is kept out of the read and refused on write. readOnly: it is shown and refused on change.",
+                                    "title": "Rule"
+                                },
+                                "field": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "The case property the rule applies to. A property of the case schema, or one this case type declares through its own fields.",
+                                    "title": "Field"
+                                },
+                                "groups": {
+                                    "type": "array",
+                                    "description": "The Nextcloud groups the rule applies to. Leave it empty and the rule applies to everyone, administrators included, which is the honest reading of a rule that names nobody.",
+                                    "title": "Groups",
+                                    "items": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    }
+                                },
+                                "condition": {
+                                    "type": "object",
+                                    "description": "When the rule applies. Written in the same three kinds derivedWhen uses, so a case type has one condition vocabulary rather than two.",
+                                    "title": "Condition",
+                                    "properties": {
+                                        "kind": {
+                                            "type": "string",
+                                            "enum": [
+                                                "fieldPresent",
+                                                "fieldEquals",
+                                                "documentPresent"
+                                            ],
+                                            "description": "Which question is asked. fieldPresent: the case carries a value for the named field. fieldEquals: that value is the one named. documentPresent: a document of the named type hangs on the case.",
+                                            "title": "Kind"
+                                        },
+                                        "field": {
+                                            "type": "string",
+                                            "maxLength": 255,
+                                            "description": "The case property the condition reads, for fieldPresent and fieldEquals.",
+                                            "title": "Field"
+                                        },
+                                        "value": {
+                                            "type": "string",
+                                            "maxLength": 255,
+                                            "description": "The value the field must carry, for fieldEquals.",
+                                            "title": "Value"
+                                        },
+                                        "documentType": {
+                                            "type": "string",
+                                            "maxLength": 255,
+                                            "description": "The documentType the case must carry a document of, for documentPresent. A uuid or the type's slug.",
+                                            "title": "Document type"
+                                        }
+                                    }
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "description": "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.",
+                                    "x-translatable": true,
+                                    "title": "Message"
+                                }
+                            }
+                        }
                     }
                 }
             },
