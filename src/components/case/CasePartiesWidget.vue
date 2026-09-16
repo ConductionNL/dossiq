@@ -417,12 +417,10 @@ export default {
 			if (!record) {
 				return []
 			}
-			return (record.indicators || [])
-				.filter(Boolean)
-				.map((indicator) => ({
-					...indicatorVerdict(indicator),
-					key: indicator.key,
-				}))
+			return (record.indicators || []).filter(Boolean).map((indicator) => ({
+				...indicatorVerdict(indicator),
+				key: indicator.key,
+			}))
 		},
 
 		/**

@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,10 +48,7 @@ class ProcessOwnedStatusTest extends TestCase {
 		$rules->method('processOwnsStatus')->willReturn($owned);
 		$rules->method('processOf')->willReturn($process);
 
-		$store = $this->createMock(originalClassName: CaseStatusStore::class);
-		$store->method('loadCase')->willReturn(['id' => 'case-1', 'caseType' => 'ct-1']);
-
-		return new ProcessOwnedStatusRule(rules: $rules, store: $store);
+		return new ProcessOwnedStatusRule(rules: $rules);
 	}//end rule()
 
 	/**
@@ -108,42 +104,4 @@ class ProcessOwnedStatusTest extends TestCase {
 		}
 	}//end testAnUnresolvableProcessFailsClosed()
 
-	/**
-	 * The caseId form resolves the case's type and refuses on it.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
-	 */
-	public function testTheCaseIdFormResolvesTheCaseType(): void {
-		$this->expectException(exception: RefusedException::class);
-		$this->expectExceptionMessage(message: 'process_owns_the_status');
-
-		$this->rule(owned: true, process: 'wf-1')->requireHandSetAllowedOn(caseId: 'case-1');
-	}//end testTheCaseIdFormResolvesTheCaseType()
-
-	/**
-	 * A case that cannot be read is not this rule's refusal to make.
-	 *
-	 * The write path behind it refuses an unreadable case with its own
-	 * message; a second not-found from a rule about something else would tell
-	 * the caller the wrong thing about why their request failed.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
-	 */
-	public function testAnUnreadableCaseIsLeftToTheWritePath(): void {
-		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
-		$rules->method('processOwnsStatus')->willReturn(true);
-		$rules->method('processOf')->willReturn('wf-1');
-
-		$store = $this->createMock(originalClassName: CaseStatusStore::class);
-		$store->method('loadCase')->willReturn(null);
-
-		$rule = new ProcessOwnedStatusRule(rules: $rules, store: $store);
-
-		$rule->requireHandSetAllowedOn(caseId: 'missing');
-		$this->addToAssertionCount(count: 1);
-	}//end testAnUnreadableCaseIsLeftToTheWritePath()
 }//end class
