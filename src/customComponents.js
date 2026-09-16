@@ -29,6 +29,7 @@ import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
@@ -172,7 +173,7 @@ async function listScope(ids) {
 	const filters = readLocationFilters()
 	const total = await countMatchingCases(filters)
 
-	return { filters, total: (total > ids.length ? total : 0) }
+	return { filters, total: total > ids.length ? total : 0 }
 }
 
 /**
@@ -283,7 +284,8 @@ function extendTermSelection({ selectedIds }) {
 /**
  * Where Add integration lands: integriq's overview, preset and linking.
  */
-export const INTEGRIQ_CONNECTIONS_PATH = '/apps/integriq/connections?app=dossiq&link=1'
+export const INTEGRIQ_CONNECTIONS_PATH =
+	'/apps/integriq/connections?app=dossiq&link=1'
 
 /**
  * The Integrations page's Add integration header action.
@@ -395,6 +397,7 @@ export default {
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,
+	CaseTimelineTab,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }

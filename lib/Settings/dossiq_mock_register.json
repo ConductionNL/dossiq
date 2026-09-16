@@ -2156,7 +2156,7 @@
       "brpPerson": {
         "slug": "brpPerson",
         "icon": "AccountOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Person",
         "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
         "title": "BRP person (test register set)",
@@ -2245,11 +2245,82 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
+                }
+              }
+            }
           }
         },
         "configuration": {
           "objectNameField": "displayName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "person",
+            "nameProperty": "displayName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators"
+          }
         }
       },
       "callbackRequest": {
@@ -2366,7 +2437,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.10.0",
+        "version": "1.11.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2691,7 +2762,61 @@
                 }
               }
             }
-          }
+          },
+          "x-openregister-relation-types": [
+            {
+              "key": "deelzaak",
+              "label": {
+                "nl": "deelzaak van",
+                "en": "sub-case of"
+              },
+              "inverseLabel": {
+                "nl": "heeft deelzaak",
+                "en": "has sub-case"
+              }
+            },
+            {
+              "key": "vervolg",
+              "label": {
+                "nl": "vervolg op",
+                "en": "follow-up to"
+              },
+              "inverseLabel": {
+                "nl": "heeft vervolg",
+                "en": "has follow-up"
+              }
+            },
+            {
+              "key": "subject",
+              "label": {
+                "nl": "gaat over",
+                "en": "is about"
+              },
+              "inverseLabel": {
+                "nl": "onderwerp van",
+                "en": "subject of"
+              }
+            },
+            {
+              "key": "bijdrage",
+              "label": {
+                "nl": "draagt bij aan",
+                "en": "contributes to"
+              },
+              "inverseLabel": {
+                "nl": "krijgt bijdrage van",
+                "en": "receives a contribution from"
+              }
+            },
+            {
+              "key": "samenhang",
+              "label": {
+                "nl": "hangt samen met",
+                "en": "related to"
+              },
+              "symmetric": true
+            }
+          ]
         },
         "required": [
           "title",
@@ -2850,7 +2975,14 @@
             "$ref": "case",
             "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": true
+            "visible": true,
+            "x-openregister-relation": {
+              "type": "deelzaak",
+              "inherits": {
+                "confidentiality": "confidentiality",
+                "responsible": "assignee"
+              }
+            }
           },
           "relatedCases": {
             "type": "string",
@@ -3117,6 +3249,62 @@
             "title": "Published at",
             "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
             "visible": false
+          },
+          "followUpCases": {
+            "type": "array",
+            "title": "Follow-up cases",
+            "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "vervolg"
+              }
+            }
+          },
+          "subjectCases": {
+            "type": "array",
+            "title": "Subject cases",
+            "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "subject"
+              }
+            }
+          },
+          "contributingCases": {
+            "type": "array",
+            "title": "Contributing cases",
+            "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "bijdrage"
+              }
+            }
+          },
+          "associatedCases": {
+            "type": "array",
+            "title": "Associated cases",
+            "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "samenhang"
+              }
+            }
           }
         },
         "searchable": true
@@ -8415,7 +8603,7 @@
       "kvkCompany": {
         "slug": "kvkCompany",
         "icon": "Domain",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
         "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
         "title": "KvK company (test register set)",
@@ -8473,11 +8661,91 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
+                }
+              }
+            }
+          },
+          "parentOrganisation": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "kvkCompany",
+            "title": "Parent organisation",
+            "description": "The organisation this one belongs to. OpenRegister vetoes a save whose parent would close a cycle or pass the declared depth, on the save rather than in one caller."
           }
         },
         "configuration": {
           "objectNameField": "tradeName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "organisation",
+            "nameProperty": "tradeName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators",
+            "parentProperty": "parentOrganisation",
+            "maxDepth": 10
+          }
         }
       },
       "lhsMatrix": {
@@ -17001,6 +17269,65 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-1-1",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a01"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "advice",
+        "title": "Voorbeeld adviesaanvraag bij de commissie",
+        "placedOn": "Voorbeeld Behandelaar 1",
+        "placedOnGroup": "Voorbeeld Adviescommissie",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "open",
+        "dueAt": "2026-03-15",
+        "source": "7469134a-eb38-496e-85b6-821bbd4238b9"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-2-2",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a02"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "inspection",
+        "title": "Voorbeeld inspectie ter plaatse",
+        "placedOnGroup": "Voorbeeld Toezicht",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "met",
+        "dueAt": "2026-03-10",
+        "metAt": "2026-03-08T11:00:00+00:00",
+        "settlementNote": "Voorbeeld inspectierapport vastgelegd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-3-3",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a03"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "fee",
+        "title": "Voorbeeld openstaande leges",
+        "placedOnGroup": "Voorbeeld Financien",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "withdrawn",
+        "withdrawnAt": "2026-03-09T11:00:00+00:00",
+        "withdrawalReason": "Voorbeeld: de leges zijn kwijtgescholden"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "consultation",
           "slug": "consultation-consultation-1-1",
           "id": "7469134a-eb38-496e-85b6-821bbd4238b9"
@@ -24335,6 +24662,321 @@
         "threadingResult": "none",
         "outcome": "inbox",
         "reason": "No case and no case type claimed this message, so it is waiting in the intake inbox."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-1-1",
+          "id": "0f3b2e64-5c1a-4f8e-9d20-7a1c4b6e9d01"
+        },
+        "person": "Voorbeeld Person 1",
+        "day": "2026-03-01",
+        "waiting": 4,
+        "late": 1,
+        "summary": "Voorbeeld Summary 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-2-2",
+          "id": "1a7d5c92-8b34-4e17-ae55-3c2f8d4a7b12"
+        },
+        "person": "Voorbeeld Person 2",
+        "day": "2026-03-02",
+        "waiting": 11,
+        "late": 3,
+        "summary": "Voorbeeld Summary 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-3-3",
+          "id": "2c9e4a18-6f72-4b03-8c19-5d8b1e7f3a23"
+        },
+        "person": "Voorbeeld Person 3",
+        "day": "2026-03-03",
+        "waiting": 2,
+        "late": 0,
+        "summary": "Voorbeeld Summary 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-1-1",
+          "id": "3e1f7b26-9d48-4c85-b740-6a3c2e9d8f34"
+        },
+        "person": "Voorbeeld Person 1",
+        "actor": "Voorbeeld Actor 1",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 1",
+        "noteId": "Voorbeeld Noteid 1",
+        "mentionedAt": "2026-03-01T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-2-2",
+          "id": "4b8c3d95-1e60-4a72-9f38-7c5d4b1a2e45"
+        },
+        "person": "Voorbeeld Person 2",
+        "actor": "Voorbeeld Actor 2",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 2",
+        "noteId": "Voorbeeld Noteid 2",
+        "mentionedAt": "2026-03-02T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-3-3",
+          "id": "5d2a6e83-4f19-4d56-a821-8e6f3c2b1d56"
+        },
+        "person": "Voorbeeld Person 3",
+        "actor": "Voorbeeld Actor 3",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 3",
+        "noteId": "Voorbeeld Noteid 3",
+        "mentionedAt": "2026-03-03T09:00:00+01:00",
+        "acknowledgedAt": "2026-03-03T17:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-1-1",
+          "id": "b41e7d92-0c85-4a63-9f17-2d3e8a5c6014"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "targetSchema": "caseType",
+        "targetObject": "Voorbeeld Targetobject 1",
+        "fingerprint": "0f2c1a7e5b83d46092af1c3e7d508b6419a2c7f03e5d18b64a90c2f7e315d8b04",
+        "seededAt": "2026-03-01T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-2-2",
+          "id": "c52f8e03-1d96-4b74-8a28-3e4f9b6d7125"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "targetSchema": "statusType",
+        "targetObject": "Voorbeeld Targetobject 2",
+        "fingerprint": "1a3d2b8f6c94e5710bc02d4f8e619c7520b3d8016f4e29c75ba1d308f426e9c15",
+        "seededAt": "2026-03-02T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-3-3",
+          "id": "d63a9f14-2e07-4c85-9b39-4f501c7e8236"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "targetSchema": "roleType",
+        "targetObject": "Voorbeeld Targetobject 3",
+        "fingerprint": "2b4e3c9076a5f6821cd13e509f72ad8631c4e9127054f3ad86cb2e419053f7d26",
+        "seededAt": "2026-03-03T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-1-1",
+          "id": "e74b0a25-3f18-4d96-8c40-5a612d8f9347"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 1",
+        "adoptedAt": "2026-03-01T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-2-2",
+          "id": "f85c1b36-4a29-4e07-9d51-6b723e901458"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 2",
+        "adoptedAt": "2026-03-02T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-3-3",
+          "id": "0916d247-5b30-4f18-8e62-7c834a012569"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 3",
+        "adoptedAt": "2026-03-03T10:15:00+01:00",
+        "reversedBy": "Voorbeeld Reversedby 3",
+        "reversedAt": "2026-03-04T11:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-1-1",
+          "id": "1a27e358-6c41-4029-9f73-8d945b12367a"
+        },
+        "name": "Voorbeeld Name 1",
+        "description": "Voorbeeld Description 1",
+        "leadTimeDays": 5,
+        "assigneeRole": "Voorbeeld Assigneerole 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-2-2",
+          "id": "2b38f469-7d52-4130-8a84-9e056c23478b"
+        },
+        "name": "Voorbeeld Name 2",
+        "description": "Voorbeeld Description 2",
+        "leadTimeDays": 10,
+        "assigneeRole": "Voorbeeld Assigneerole 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-3-3",
+          "id": "3c49057a-8e63-4241-9b95-0f167d34589c"
+        },
+        "name": "Voorbeeld Name 3",
+        "description": "Voorbeeld Description 3",
+        "leadTimeDays": 15,
+        "assigneeRole": "Voorbeeld Assigneerole 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-1-1",
+          "id": "4d5a168b-9f74-4352-8ca6-10278e45690d"
+        },
+        "name": "Voorbeeld Name 1",
+        "kind": "document",
+        "body": "Voorbeeld Body 1",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-2-2",
+          "id": "5e6b279c-0a85-4463-9db7-21389f56701e"
+        },
+        "name": "Voorbeeld Name 2",
+        "kind": "task",
+        "body": "Voorbeeld Body 2",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-3-3",
+          "id": "6f7c38ad-1b96-4574-8ec8-324a0067812f"
+        },
+        "name": "Voorbeeld Name 3",
+        "kind": "result",
+        "body": "Voorbeeld Body 3",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-1-1",
+          "id": "5c4af069-024a-4642-98f5-7fb4db6977f1"
+        },
+        "case": "Voorbeeld Zaak 1",
+        "summary": "Bankafschrift laatste drie maanden",
+        "party": "Voorbeeld Aanvrager 1",
+        "recipient": "aanvrager1@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bankafschrift laatste drie maanden",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar1",
+        "requestedAt": "2026-09-01T09:00:00+00:00",
+        "hersteltermijn": "2026-10-01",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-2-1",
+          "id": "57aea7b6-5afd-4ff2-95a0-86d26c78501c"
+        },
+        "case": "Voorbeeld Zaak 2",
+        "summary": "Huurcontract",
+        "party": "Voorbeeld Aanvrager 2",
+        "recipient": "aanvrager2@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Huurcontract",
+            "received": true
+          }
+        ],
+        "requestedBy": "behandelaar2",
+        "requestedAt": "2026-09-02T09:00:00+00:00",
+        "hersteltermijn": "2026-10-08",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-3-1",
+          "id": "8546eb50-7fc2-4db5-9ae4-863946dfeda6"
+        },
+        "case": "Voorbeeld Zaak 3",
+        "summary": "Bewijs van inschrijving",
+        "party": "Voorbeeld Aanvrager 3",
+        "recipient": "aanvrager3@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bewijs van inschrijving",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar3",
+        "requestedAt": "2026-09-03T09:00:00+00:00",
+        "hersteltermijn": "2026-07-01",
+        "state": "expired",
+        "pauseDays": 14
       }
     ]
   }

@@ -85,10 +85,9 @@ describe('a case type with no narrowing keeps every choice', () => {
 	})
 
 	it('offers every person it was given', () => {
-		expect(narrowUsers(['jdevries', 'mbakker'], { caseType: 'ct-melding' })).toEqual([
-			'jdevries',
-			'mbakker',
-		])
+		expect(
+			narrowUsers(['jdevries', 'mbakker'], { caseType: 'ct-melding' }),
+		).toEqual(['jdevries', 'mbakker'])
 	})
 })
 
@@ -107,7 +106,9 @@ describe('teams and people are separate axes', () => {
 		}
 
 		expect(narrowGroups(EVERY_TEAM, peopleOnly)).toEqual(EVERY_TEAM)
-		expect(narrowUsers(['jdevries', 'mbakker'], peopleOnly)).toEqual(['jdevries'])
+		expect(narrowUsers(['jdevries', 'mbakker'], peopleOnly)).toEqual([
+			'jdevries',
+		])
 	})
 })
 

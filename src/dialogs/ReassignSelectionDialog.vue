@@ -44,7 +44,9 @@
 				<NcTextArea
 					v-model="justification"
 					:label="t('dossiq', 'Why these cases are moving')"
-					:placeholder="t('dossiq', 'Recorded with the act and readable afterwards')"
+					:placeholder="
+						t('dossiq', 'Recorded with the act and readable afterwards')
+					"
 					data-testid="reassign-selection-justification" />
 
 				<NcNoteCard v-if="error" type="error">
@@ -78,10 +80,20 @@
 
 <script>
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcNoteCard, NcTextArea, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcNoteCard,
+	NcTextArea,
+	NcTextField,
+} from '@nextcloud/vue'
 import BulkJobProgress from '../components/bulk/BulkJobProgress.vue'
 import BulkSelectionScope from '../components/bulk/BulkSelectionScope.vue'
-import { ACTION_REASSIGN, previewBulkJob, readRefusal } from '../services/bulkJobApi.js'
+import {
+	ACTION_REASSIGN,
+	previewBulkJob,
+	readRefusal,
+} from '../services/bulkJobApi.js'
 import { buildSelection, SCOPE_PAGE } from '../utils/selectionScope.js'
 
 export default {
@@ -182,11 +194,13 @@ export default {
 			} catch (e) {
 				const { reason, message } = readRefusal(e)
 
-				this.error = (
-					(reason === 'justification-required')
-						? t('dossiq', 'Say why these cases are moving. The reason is kept with the act.')
-						: (message || t('dossiq', 'The cases could not be moved.'))
-				)
+				this.error =
+					reason === 'justification-required'
+						? t(
+								'dossiq',
+								'Say why these cases are moving. The reason is kept with the act.',
+							)
+						: message || t('dossiq', 'The cases could not be moved.')
 			} finally {
 				this.busy = false
 			}

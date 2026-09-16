@@ -3,6 +3,19 @@
 		<Settings />
 
 		<CnSettingsSection
+			id="section-first-run"
+			:name="t('dossiq', 'First run')"
+			:description="
+				t(
+					'dossiq',
+					'What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.',
+				)
+			"
+			:loading="!storesReady">
+			<FirstRunTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Case Type Management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
@@ -108,6 +121,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-archival"
+			:name="t('dossiq', 'Archiving')"
+			:description="
+				t(
+					'dossiq',
+					'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
+				)
+			"
+			:loading="!storesReady">
+			<ArchivalSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-mailbox"
 			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
@@ -160,6 +186,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-shipped-configuration"
+			:name="t('dossiq', 'What shipped with dossiq')"
+			:description="
+				t(
+					'dossiq',
+					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
+				)
+			"
+			:loading="!storesReady">
+			<ShippedConfiguration v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-stuf"
 			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
@@ -204,13 +243,16 @@ import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import Settings from './Settings.vue'
+import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
+import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
@@ -222,6 +264,7 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		FirstRunTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
@@ -229,6 +272,7 @@ export default {
 		CaseTypeAdmin,
 		ZgwMappingSettings,
 		AiSettingsTab,
+		ArchivalSettingsTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
@@ -239,6 +283,7 @@ export default {
 		EmailSettings,
 		KccIntegrationSettings,
 		DecisionTablesTab,
+		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
 	},

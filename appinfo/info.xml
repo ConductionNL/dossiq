@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.23-unstable.20260914175550</version>
+    <version>0.4.26-unstable.20260916053929</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -187,6 +187,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
              triage item's life, and a timer armed against an entry that is
              gone wakes nobody and says nothing. -->
         <job>OCA\Dossiq\BackgroundJob\TriageWakeJob</job>
+        <!-- Hourly, not daily: the hour a digest arrives is the reader's own
+             choice, and a job that wakes once a day sends everybody's at
+             whatever hour the runner happened to fire.
+             See openspec/changes/one-personal-queue. -->
+        <job>OCA\Dossiq\BackgroundJob\DailyDigestJob</job>
     </background-jobs>
 
     <repair-steps>
@@ -435,6 +440,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
+            <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell a rename from a back-fill. Covers every renamed property
                 together: a register-scoped step that moved some owners and not others
@@ -550,6 +567,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  migrated. A credential nobody uses is still a credential in a
                  database backup. -->
             <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
+            <!--
+                The timeline kinds this app writes, declared once. OpenRegister
+                refuses an undeclared kind rather than degrading it to a plain
+                note, so the declaration has to be on the instance before the
+                first contact moment is logged. Idempotent and non-throwing;
+                an OpenRegister without the timeline is a line of output.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -687,6 +712,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
+            <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
                 ships are imported by OpenRegister while the register above is,
                 and they arrive `owner = NULL, enabled = false` by that engine's
@@ -702,6 +739,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  migrated. A credential nobody uses is still a credential in a
                  database backup. -->
             <step>OCA\Dossiq\Repair\RetireImapCredentials</step>
+            <!--
+                The timeline kinds this app writes, declared once. OpenRegister
+                refuses an undeclared kind rather than degrading it to a plain
+                note, so the declaration has to be on the instance before the
+                first contact moment is logged. Idempotent and non-throwing;
+                an OpenRegister without the timeline is a line of output.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
         </install>
     </repair-steps>
 

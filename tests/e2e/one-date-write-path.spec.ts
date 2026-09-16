@@ -59,7 +59,7 @@ const DAY = '2028-01-31'
  * offset, and the same instant written in UTC. Every write path must store the
  * same calendar day for all four.
  */
-const SHAPES: Array<{ label: string, value: string }> = [
+const SHAPES: Array<{ label: string; value: string }> = [
 	{ label: 'a bare date', value: DAY },
 	{ label: 'a local time with no offset', value: `${DAY}T00:00:00` },
 	{ label: 'an offset-carrying value', value: `${DAY}T00:00:00+01:00` },
@@ -89,18 +89,15 @@ async function post(
 	token: string,
 	route: string,
 	body: unknown,
-): Promise<{ status: number, json: any, text: string }> {
-	const response = await request.post(
-		`/index.php/apps/${REGISTER}${route}`,
-		{
-			headers: {
-				requesttoken: token,
-				'OCS-APIRequest': 'true',
-				'Content-Type': 'application/json',
-			},
-			data: body,
+): Promise<{ status: number; json: any; text: string }> {
+	const response = await request.post(`/index.php/apps/${REGISTER}${route}`, {
+		headers: {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
 		},
-	)
+		data: body,
+	})
 
 	const text = await response.text()
 	let json: any
@@ -179,7 +176,9 @@ test.describe('Every date on a case is written through one path', () => {
 	})
 
 	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
-	test('the same date through every write path stores one value', async ({ request }) => {
+	test('the same date through every write path stores one value', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const stored: Record<string, string> = {}
 
@@ -236,21 +235,18 @@ test.describe('Every date on a case is written through one path', () => {
 	})
 
 	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#the-same-date-through-every-write-path-stores-one-value
-	test('each stored value carries the offset the tenant zone gives that date', async ({ request }) => {
+	test('each stored value carries the offset the tenant zone gives that date', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseId = cases['a bare date']
 
-		const created = await post(
-			request,
-			token,
-			'/api/contactmomenten',
-			{
-				notificationChannel: 'telefoon',
-				direction: 'inbound',
-				callerIdentification: `${RUN_PREFIX} beller`,
-				case: caseId,
-			},
-		)
+		const created = await post(request, token, '/api/contactmomenten', {
+			notificationChannel: 'telefoon',
+			direction: 'inbound',
+			callerIdentification: `${RUN_PREFIX} beller`,
+			case: caseId,
+		})
 		expect(
 			created.status,
 			`the contact moment was refused: ${created.text}`,
@@ -283,10 +279,7 @@ test.describe('Every date on a case is written through one path', () => {
 			{ advisor: 'admin', deadline: '31-01-2028', question: 'Mag dit?' },
 		)
 
-		expect(
-			refused.status,
-			`31-01-2028 was accepted: ${refused.text}`,
-		).toBe(400)
+		expect(refused.status, `31-01-2028 was accepted: ${refused.text}`).toBe(400)
 		expect(
 			refused.text,
 			'the refusal must name the field the caller has to fix',
@@ -302,10 +295,9 @@ test.describe('Every date on a case is written through one path', () => {
 			{ headers: { requesttoken: token, 'OCS-APIRequest': 'true' } },
 		)
 		const body = await requests.text()
-		expect(
-			body,
-			'a refused write left an advice request behind',
-		).not.toContain('31-01-2028')
+		expect(body, 'a refused write left an advice request behind').not.toContain(
+			'31-01-2028',
+		)
 	})
 
 	// @e2e openspec/changes/one-date-write-path/specs/case-management/spec.md#a-belgian-tenant-gets-belgian-timestamps
@@ -339,35 +331,33 @@ test.describe('Every date on a case is written through one path', () => {
 		}
 
 		const token = await getRequestToken(request)
-		const tenant = await showObject(request, 'tenantConfiguration', BRUSSELS_TENANT)
+		const tenant = await showObject(
+			request,
+			'tenantConfiguration',
+			BRUSSELS_TENANT,
+		)
 		expect(
 			String((tenant as any)?.timezone ?? ''),
 			`DOSSIQ_E2E_BRUSSELS_TENANT names ${BRUSSELS_TENANT}, whose zone is not Europe/Brussels`,
 		).toBe('Europe/Brussels')
 
-		const created = await post(
-			request,
-			token,
-			'/api/contactmomenten',
-			{
-				notificationChannel: 'telefoon',
-				direction: 'inbound',
-				callerIdentification: `${RUN_PREFIX} Belgische beller`,
-				tenantRef: BRUSSELS_TENANT,
-			},
-		)
+		const created = await post(request, token, '/api/contactmomenten', {
+			notificationChannel: 'telefoon',
+			direction: 'inbound',
+			callerIdentification: `${RUN_PREFIX} Belgische beller`,
+			tenantRef: BRUSSELS_TENANT,
+		})
 		expect(created.status, created.text).toBeLessThan(300)
-		expect(String(created.json?.startTime ?? '').slice(-6)).toMatch(/^\+0[12]:00$/)
+		expect(String(created.json?.startTime ?? '').slice(-6)).toMatch(
+			/^\+0[12]:00$/,
+		)
 
 		// The StUF half: a message built for this tenant carries the same
 		// offset, rather than the Europe/Amsterdam literal the five StUF sites
 		// used to hard-code.
-		const stuf = await post(
-			request,
-			token,
-			'/api/stuf/zkn/tijdstip-bericht',
-			{ tenantRef: BRUSSELS_TENANT },
-		)
+		const stuf = await post(request, token, '/api/stuf/zkn/tijdstip-bericht', {
+			tenantRef: BRUSSELS_TENANT,
+		})
 		if (stuf.status < 300) {
 			expect(
 				String(stuf.json?.tijdstipBericht ?? ''),

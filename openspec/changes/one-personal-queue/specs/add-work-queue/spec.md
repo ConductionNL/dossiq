@@ -19,6 +19,7 @@ entry.
 - **AND** no queue page SHALL be changed
 
 #### Scenario: a mechanism that asks and declares nothing fails the build
+@e2e exclude This scenario IS a build-time failure and has no browser surface by definition. Covered by `AsksAPersonDeclaresASourceTest::testANewMechanismWithNoSourceFails`, with its mirror `testTheSameMechanismDeclaredPasses` so the red is not coming from the name.
 
 - **GIVEN** a mechanism assigning work to a person
 - **WHEN** it declares no source and is not allowlisted
@@ -26,6 +27,7 @@ entry.
 - **AND** it SHALL name the mechanism
 
 #### Scenario: a source that cannot be read says so
+@e2e exclude Needs a live source to fail on demand, which the e2e instance cannot arrange without breaking the register for every other suite on it. Covered by `QueueSourceContractTest::testAnUnreadableSourceIsNamedAndTheRestStillAnswer` and `testAnUnreadableSourceIsNotAnEmptyQueue`.
 
 - **GIVEN** a declared source whose read fails
 - **WHEN** a person opens their queue

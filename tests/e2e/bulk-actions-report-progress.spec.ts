@@ -100,9 +100,12 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 	})
 
 	test('dossiq declares its bulk actions, and each says whether it needs a reason', async () => {
-		const response = await api.get('/index.php/apps/openregister/api/bulk-actions', {
-			headers: { 'OCS-APIRequest': 'true' },
-		})
+		const response = await api.get(
+			'/index.php/apps/openregister/api/bulk-actions',
+			{
+				headers: { 'OCS-APIRequest': 'true' },
+			},
+		)
 		expect(response.status()).toBe(200)
 
 		const body = await response.json()
@@ -169,9 +172,12 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 		})
 		const job = await created.json()
 
-		const skipped = await api.get(`${JOBS}/${job.id}/members?outcome=skipped&limit=100`, {
-			headers: { 'OCS-APIRequest': 'true' },
-		})
+		const skipped = await api.get(
+			`${JOBS}/${job.id}/members?outcome=skipped&limit=100`,
+			{
+				headers: { 'OCS-APIRequest': 'true' },
+			},
+		)
 		expect(skipped.status()).toBe(200)
 		expect((await skipped.json()).results).toHaveLength(seeded.length)
 
@@ -217,7 +223,9 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 
 		// A refusal, not a 500 and not a job that quietly ran anyway.
 		expect([400, REFUSED]).toContain(response.status())
-		expect(JSON.stringify(await response.json()).toLowerCase()).toContain('reason')
+		expect(JSON.stringify(await response.json()).toLowerCase()).toContain(
+			'reason',
+		)
 	})
 
 	test('an act dossiq does not declare never reaches the job', async () => {
@@ -290,7 +298,9 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 			data: {
 				action: 'dossiq:set-case-attribute',
 				parameters: { property: 'confidentiality', value: 'openbaar' },
-				selection: { ids: [`${RUN_PREFIX}-missing-a`, `${RUN_PREFIX}-missing-b`] },
+				selection: {
+					ids: [`${RUN_PREFIX}-missing-a`, `${RUN_PREFIX}-missing-b`],
+				},
 			},
 		})
 
@@ -355,7 +365,10 @@ test.describe('A bulk act on cases is a job that reports what it skipped', () =>
 		expect(body.counts).toBeTruthy()
 	})
 
-	test('someone else\'s job is not readable, and says not found rather than forbidden', async ({ playwright, baseURL }) => {
+	test("someone else's job is not readable, and says not found rather than forbidden", async ({
+		playwright,
+		baseURL,
+	}) => {
 		// A 403 would confirm the job exists, which is a different leak from
 		// the one the 404 avoids.
 		const anonymous = await playwright.request.newContext({ baseURL })

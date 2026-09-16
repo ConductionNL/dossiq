@@ -68,6 +68,10 @@ export const CASE_PANELS = {
 		tab: /^Communication$/,
 		section: 'case-section-case-communication',
 	},
+	conversations: {
+		tab: /^Communication$/,
+		section: 'case-section-case-conversations',
+	},
 	email: { tab: /^Email$/, section: null },
 	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },
 	appointments: { tab: /^Work$/, section: 'case-section-case-calendar' },

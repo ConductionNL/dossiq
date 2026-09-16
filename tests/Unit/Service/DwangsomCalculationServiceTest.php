@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\DwangsomCalculationService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DwangsomCalculationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

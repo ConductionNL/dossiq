@@ -82,7 +82,8 @@ vi.mock('@nextcloud/vue', () => ({
 			return h('input', {
 				class: 'NcTextField',
 				value: this.modelValue,
-				onInput: (event) => this.$emit('update:modelValue', event.target.value),
+				onInput: (event) =>
+					this.$emit('update:modelValue', event.target.value),
 			})
 		},
 	},
@@ -186,9 +187,13 @@ describe('the intake log', () => {
 
 		const wrapper = await mountLog()
 
-		expect(wrapper.find('[data-testid="intake-log-forbidden"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="intake-log-forbidden"]').exists()).toBe(
+			true,
+		)
 		expect(wrapper.find('[data-testid="intake-log-table"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="intake-log-sender"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="intake-log-sender"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('finds a message by its sender', async () => {
@@ -231,7 +236,9 @@ describe('the intake log', () => {
 		serve({ results: [entry({ junkRule: 'spam-header' })] })
 
 		const wrapper = await mountLog()
-		await wrapper.find('[data-testid="intake-log-not-junk-entry-1"]').trigger('click')
+		await wrapper
+			.find('[data-testid="intake-log-not-junk-entry-1"]')
+			.trigger('click')
 		await flushPromises()
 
 		const correction = calls.find((call) => call.url.includes('/junk'))
@@ -249,10 +256,16 @@ describe('the intake log', () => {
 		})
 
 		const wrapper = await mountLog()
-		expect(wrapper.find('[data-testid="intake-log-release-held"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="intake-log-release-filed"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="intake-log-release-held"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="intake-log-release-filed"]').exists(),
+		).toBe(false)
 
-		await wrapper.find('[data-testid="intake-log-release-held"]').trigger('click')
+		await wrapper
+			.find('[data-testid="intake-log-release-held"]')
+			.trigger('click')
 		await flushPromises()
 
 		expect(calls.some((call) => call.url.endsWith('/held/release'))).toBe(true)

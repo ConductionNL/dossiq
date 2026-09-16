@@ -78,7 +78,9 @@ describe('the declaration shapes', () => {
 		// Exactly the maximum is not a breach, and that decision lives on the
 		// server. A client that compared days against maximum would be a second
 		// place for it to be decided differently.
-		expect(isDwellBreached({ days: 20, maximum: 20, breached: false })).toBe(false)
+		expect(isDwellBreached({ days: 20, maximum: 20, breached: false })).toBe(
+			false,
+		)
 		expect(isDwellBreached({ days: 21, maximum: 20, breached: true })).toBe(true)
 	})
 
@@ -123,9 +125,9 @@ describe('the case strip', () => {
 		expect(missing).toHaveLength(2)
 		expect(missing[0].text()).toBe('the site drawing')
 		expect(missing[1].text()).toBe('the signed consent form')
-		expect(wrapper.find('[data-testid="case-status-derivation"]').text()).toContain(
-			'Complete',
-		)
+		expect(
+			wrapper.find('[data-testid="case-status-derivation"]').text(),
+		).toContain('Complete')
 	})
 
 	it('says who the case is waiting on and how long it has been here', async () => {
@@ -137,7 +139,9 @@ describe('the case strip', () => {
 			derivation: null,
 		})
 
-		expect(wrapper.find('[data-testid="case-status-waiting"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-status-waiting"]').exists()).toBe(
+			true,
+		)
 		const dwell = wrapper.find('[data-testid="case-status-dwell"]')
 		expect(dwell.text()).toContain('25')
 		expect(dwell.classes()).toContain('is-breached')
@@ -147,13 +151,16 @@ describe('the case strip', () => {
 
 	it('renders nothing at all on a case with nothing to say', async () => {
 		const wrapper = await mountWith({
-			current: { waitingOn: 'us', dwell: { days: 0, maximum: null, breached: false } },
+			current: {
+				waitingOn: 'us',
+				dwell: { days: 0, maximum: null, breached: false },
+			},
 			derivation: null,
 		})
 
-		expect(wrapper.find('[data-testid="case-status-declaration"]').exists()).toBe(
-			false,
-		)
+		expect(
+			wrapper.find('[data-testid="case-status-declaration"]').exists(),
+		).toBe(false)
 	})
 
 	it('renders nothing rather than erroring when the engine cannot answer', async () => {
@@ -163,8 +170,8 @@ describe('the case strip', () => {
 		})
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="case-status-declaration"]').exists()).toBe(
-			false,
-		)
+		expect(
+			wrapper.find('[data-testid="case-status-declaration"]').exists(),
+		).toBe(false)
 	})
 })

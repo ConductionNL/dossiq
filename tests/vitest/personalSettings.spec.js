@@ -68,7 +68,9 @@ describe('the one personal settings screen', () => {
 
 	it('is registered with Nextcloud rather than being an app page', () => {
 		expect(
-			fs.existsSync(path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php')),
+			fs.existsSync(
+				path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php'),
+			),
 			'dossiq registers no personal settings section, so nothing mounts the bundle',
 		).toBe(true)
 	})

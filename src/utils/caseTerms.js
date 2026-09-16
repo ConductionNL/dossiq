@@ -52,7 +52,10 @@ export function kindLabel(kind, t) {
 export function kindHint(kind, t) {
 	const hints = {
 		statutory: t('dossiq', 'The date the applicant was told about.'),
-		planned: t('dossiq', 'What your team gave itself. The applicant was not told this.'),
+		planned: t(
+			'dossiq',
+			'What your team gave itself. The applicant was not told this.',
+		),
 		internal: t('dossiq', 'A team target. It never reaches the applicant.'),
 		phase: t('dossiq', 'This phase only. It never moves the case term.'),
 	}

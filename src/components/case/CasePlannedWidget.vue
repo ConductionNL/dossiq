@@ -44,7 +44,10 @@
 			:store="store"
 			:extraSections="extraSections" />
 
-		<ul v-if="series.length > 0" class="case-planned__series" data-testid="case-planned-series">
+		<ul
+			v-if="series.length > 0"
+			class="case-planned__series"
+			data-testid="case-planned-series">
 			<li
 				v-for="row in series"
 				:key="row.key"
@@ -52,12 +55,16 @@
 				:data-testid="`case-planned-series-${row.key}`">
 				<div class="case-planned__row-body">
 					<span class="case-planned__label">{{ row.label }}</span>
-					<ul v-if="row.occurrences.length > 0" class="case-planned__occurrences">
+					<ul
+						v-if="row.occurrences.length > 0"
+						class="case-planned__occurrences">
 						<li
 							v-for="occurrence in row.occurrences"
 							:key="occurrence.id"
 							:data-testid="`case-planned-occurrence-${occurrence.id}`">
-							<a :href="caseLink(occurrence.id)">{{ occurrence.title || occurrence.id }}</a>
+							<a :href="caseLink(occurrence.id)">{{
+								occurrence.title || occurrence.id
+							}}</a>
 						</li>
 					</ul>
 				</div>
@@ -102,10 +109,8 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CasePlanFollowUpDialog from '../../dialogs/CasePlanFollowUpDialog.vue'
-import {
-	caseActionRefusal,
-	plannedRows,
-} from '../../utils/caseActionsHelpers.js'
+import { caseActionRefusal, plannedRows } from '../../utils/caseActionsHelpers.js'
+import { relationSections } from '../../utils/caseRelationHelpers.js'
 
 export default {
 	name: 'CasePlannedWidget',
@@ -158,6 +163,7 @@ export default {
 	data() {
 		return {
 			planned: [],
+			relations: [],
 			planning: false,
 			stopping: '',
 			stopError: '',
@@ -182,6 +188,12 @@ export default {
 					icon: 'CalendarClock',
 					items: this.rows,
 				},
+				// One group per label, so the heading says what the link is
+				// called from THIS case. The library's own Objects group merges
+				// /uses and /used into one deduped list and reads no label off
+				// the rows, so a follow-up and the case it follows land under
+				// the same word there. These sections are where the pair shows.
+				...relationSections(this.relations),
 			]
 		},
 
@@ -236,6 +248,8 @@ export default {
 				this.planned = []
 				return
 			}
+			this.loadRelations(id)
+
 			try {
 				const { data } = await axios.get(
 					generateUrl(
@@ -263,6 +277,38 @@ export default {
 				// eslint-disable-next-line no-console
 				console.error(
 					`[CasePlannedWidget] could not read the planned follow-ups for case ${id}`,
+					error,
+				)
+			}
+		},
+
+		/**
+		 * Read the typed peer relations, so each one can be shown under the
+		 * name it has from this case.
+		 *
+		 * Separate from the planned read on purpose: either can fail without
+		 * emptying the other, and neither empties the library's own content.
+		 *
+		 * @param {string} id The case id.
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/specs/related-case-linking/spec.md
+		 */
+		async loadRelations(id) {
+			try {
+				const { data } = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(id)}/relations`,
+					),
+				)
+				this.relations = Array.isArray(data?.results) ? data.results : []
+			} catch (error) {
+				this.relations = []
+
+				// Same rule as the planned read above: a read that throws must
+				// not look like a case with no relations.
+				// eslint-disable-next-line no-console
+				console.error(
+					`[CasePlannedWidget] could not read the typed relations for case ${id}`,
 					error,
 				)
 			}

@@ -4,11 +4,13 @@
 
 A case type SHALL declare candidate groups and candidate users per task. A
 task with candidates and no assignee SHALL be offered to every candidate
-and SHALL be claimable by one of them, with the claim recorded. Until the
-task engine answers a claim act, dossiq SHALL render no claim affordance
-and SHALL state on the case type screen that the declaration is not yet
-honoured by the engine. dossiq SHALL NOT silently assign a task it
-presented as claimable.
+and SHALL be claimable by one of them, with the claim recorded. Whether the
+task engine answers a claim act SHALL be asked of the engine rather than
+assumed: where it answers one, the claim affordance SHALL be rendered on
+every task waiting for a candidate; where it does not, no affordance SHALL
+be rendered and the surface showing the task SHALL say that nobody can pick
+it up there yet. dossiq SHALL NOT silently assign a task it presented as
+claimable.
 
 #### Scenario: a task sits with a team until somebody takes it
 @e2e tests/e2e/task-as-a-first-class-record.spec.ts
@@ -27,10 +29,12 @@ presented as claimable.
 - **AND** the claim SHALL record who and when
 
 #### Scenario: an unhonoured declaration is stated, not faked
+@e2e exclude The engine on the e2e instance answers a claim act, so the unhonoured branch cannot be produced there. Asserted in tests/Unit/Service/Task/TaskCandidatesTest.php::testAnEngineWithoutAClaimActSaysSoRatherThanAssigning.
 
 - **GIVEN** a task engine that answers no claim act
-- **WHEN** an administrator declares a candidate group
-- **THEN** the case type screen SHALL say the engine does not yet honour it
+- **WHEN** a handler opens a case carrying a task with a candidate group
+- **THEN** the task SHALL name the group it is meant for
+- **AND** it SHALL say that nobody can pick it up there yet
 - **AND** no claim affordance SHALL be rendered
 
 ### Requirement: A task type declares what completing it does (REQ-TASK-043)
@@ -43,20 +47,21 @@ without the effect. Resuming a suspended term SHALL be one of the
 available effects.
 
 #### Scenario: finishing the task sends the letter
-@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+@e2e exclude Sending needs a mail server the e2e instance does not have, so a green assertion here would prove the handler ran and not that a letter left. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testCompletingRunsTheDeclaredEffects.
 
 - **GIVEN** a task declaring a send effect
 - **WHEN** a handler completes it
 - **THEN** the letter SHALL be sent
 
 #### Scenario: finishing the aanvulling task resumes the term
-@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+@e2e exclude Needs a paused statutory term, which takes the whole aanvulling flow to produce. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php and lib/Service/Transitions/ResumeTermHandler.php's own path in tests/Unit/Service/DeadlinePauseExtensionServiceTest.php.
 
 - **GIVEN** a suspended term and a task declaring the resume effect
 - **WHEN** the task is completed
 - **THEN** the term SHALL resume
 
 #### Scenario: an unresolvable effect refuses the completion
+@e2e exclude A handler cannot be unregistered on a running instance. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testAnUnresolvableEffectIsNamed.
 
 - **GIVEN** a task whose declared handler cannot be resolved
 - **WHEN** a handler completes it
@@ -64,6 +69,7 @@ available effects.
 - **AND** the refusal SHALL name the handler
 
 #### Scenario: an unknown handler refuses publication
+@e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnknownEffectRefusesPublication.
 
 - **GIVEN** a case type declaring an effect the registry does not have
 - **WHEN** it is published
@@ -94,6 +100,7 @@ library provides a row action.
 - **AND** completing it SHALL store the verslag on the task
 
 #### Scenario: a blank required field refuses
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
 
 - **GIVEN** a task form with a required field left empty
 - **WHEN** a handler completes the task
@@ -123,6 +130,7 @@ produced it. A file SHALL NOT remain reachable only from a closed task.
 - **AND** it SHALL record the task it came from
 
 #### Scenario: a file is removed while the task is open
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
 
 - **GIVEN** an open task with an uploaded file
 - **WHEN** a handler removes it
@@ -143,6 +151,7 @@ number and a lock are not available, and SHALL NOT invent either.
 - **THEN** both SHALL show that number
 
 #### Scenario: a missing number is stated, not invented
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
 
 - **GIVEN** a task engine answering no number
 - **WHEN** the task is shown

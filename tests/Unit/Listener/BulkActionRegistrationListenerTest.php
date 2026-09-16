@@ -25,7 +25,7 @@ use OCA\Dossiq\Service\CaseLifecycleService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Support\CaseAssigneeWriter;
-use OCA\OpenRegister\Event\BulkActionRegistrationEvent;
+use OCA\Dossiq\Tests\Support\RecordingBulkActionRegistrationEvent;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -93,14 +93,14 @@ class BulkActionRegistrationListenerTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testAllFourCaseActionsAreRegistered(): void {
-		$event = new BulkActionRegistrationEvent();
+		$event = new RecordingBulkActionRegistrationEvent();
 
 		(new BulkActionRegistrationListener(
 			container: $this->container(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		))->handle($event);
 
-		$ids = array_map(static fn (object $action): string => $action->getId(), $event->getActions());
+		$ids = array_map(static fn (object $action): string => $action->getId(), $event->recordedActions());
 
 		$this->assertSame(
 			expected: [
@@ -128,14 +128,14 @@ class BulkActionRegistrationListenerTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('error');
 
-		$event = new BulkActionRegistrationEvent();
+		$event = new RecordingBulkActionRegistrationEvent();
 
 		(new BulkActionRegistrationListener(
 			container: $this->container(failing: [ReassignCasesAction::class]),
 			logger: $logger,
 		))->handle($event);
 
-		$ids = array_map(static fn (object $action): string => $action->getId(), $event->getActions());
+		$ids = array_map(static fn (object $action): string => $action->getId(), $event->recordedActions());
 
 		$this->assertSame(
 			expected: [TransitionCasesAction::ID, LifecycleCasesAction::ID, SetCaseAttributeAction::ID],
@@ -156,7 +156,7 @@ class BulkActionRegistrationListenerTest extends TestCase {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function testTheCatalogueSaysWhichActsNeedAReasonAndWhichIsGuarded(): void {
-		$event = new BulkActionRegistrationEvent();
+		$event = new RecordingBulkActionRegistrationEvent();
 
 		(new BulkActionRegistrationListener(
 			container: $this->container(),
@@ -164,7 +164,7 @@ class BulkActionRegistrationListenerTest extends TestCase {
 		))->handle($event);
 
 		$declared = [];
-		foreach ($event->getActions() as $action) {
+		foreach ($event->recordedActions() as $action) {
 			$declared[$action->getId()] = [
 				'reason' => $action->requiresJustification(),
 				'guards' => $action->getGuards(),

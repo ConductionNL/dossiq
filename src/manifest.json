@@ -208,6 +208,13 @@
 			"order": 10
 		},
 		{
+			"id": "PersonalQueueMenu",
+			"label": "Your queue",
+			"icon": "ClipboardListOutline",
+			"route": "PersonalQueue",
+			"order": 12
+		},
+		{
 			"id": "Queue",
 			"label": "Queue",
 			"icon": "TrayFull",
@@ -270,6 +277,13 @@
 			"icon": "FormatListChecks",
 			"route": "Tasks",
 			"order": 32
+		},
+		{
+			"id": "EndOfDayMenu",
+			"label": "Close out your day",
+			"icon": "ClipboardCheckOutline",
+			"route": "EndOfDay",
+			"order": 34
 		},
 		{
 			"id": "WorkflowBoard",
@@ -1000,6 +1014,13 @@
 							"borderless": true,
 							"emptyText": "No cases found"
 						}
+					},
+					{
+						"id": "archival-reviews",
+						"type": "custom",
+						"title": "My archival reviews",
+						"icon": "ArchiveOutline",
+						"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
 					}
 				],
 				"layout": [
@@ -1029,12 +1050,33 @@
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "4",
+						"widgetId": "archival-reviews",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"widget-my-work": "MyWorkWidget"
+				"widget-my-work": "MyWorkWidget",
+				"widget-archival-reviews": "MyArchivalReviews"
+			}
+		},
+		{
+			"id": "PersonalQueue",
+			"route": "/my-queue",
+			"type": "custom",
+			"title": "Your queue",
+			"component": "PersonalQueueView",
+			"_note": "Everything waiting on the reader, in one place, fed by the declared queue sources. type:\"custom\" and NOT type:\"index\": an index page names one register and one schema, and this list spans cases, engine tasks, consultations, advice requests, mentions, work covered for an absent colleague, and calendar items the reader planned for themselves. No manifest key names a set that crosses four stores and a calendar. It is also not a second index over (dossiq, case), so gate-68 has nothing to answer: the page never reads the case schema directly. READ THE NAME COLLISION: the `Queue` page below is the UNCLAIMED POOL, every open case nobody has picked up, and it is a team surface; this one is personal and nobody else can see it. The component hard-codes NO source. Every group, its heading and the sentence saying what closes it come from the server, which builds them from the declared queue sources, so a ninth mechanism reaches this page by declaring itself rather than by an edit here.",
+			"config": {
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
@@ -1051,11 +1093,13 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
 				"filter": {
 					"assignee": "IS NULL",
 					"isFinalStatus": false,
 					"statusHiddenInLists": false,
-					"isDraft": false
+					"isDraft": false,
+					"isTemplate": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1198,6 +1242,10 @@
 				],
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "Same exclusion as the Queue's, and here it is a page-level filter rather than a chip for the same reason: eight lenses would be eight places to forget it. A case template is never work (starter-content-and-templates, D-5).",
+				"filter": {
+					"isTemplate": false
+				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards", "map"],
@@ -1277,6 +1325,39 @@
 						}
 					},
 					{
+						"label": "Waiting on the applicant",
+						"_note": "aanvullingsverzoek-as-a-record, row 1.17. `waitingOnApplicant` is a derived boolean the ask writes and the answer clears, so the chip is a query rather than a reading of timers. It is a READ CONVENIENCE and not a second truth: the COUNT comes from the aanvullingsverzoek rows themselves, which is why the case page shows the days from the request and not from this field. Deliberately not `isIncomplete`, which is a different fact: that one is about required fields a handler knowingly left empty at intake, this one is about something the APPLICANT still owes.",
+						"filter": {
+							"waitingOnApplicant": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Needs attention",
+						"_note": "markers-and-assessments-on-the-case, row 2.36. `needsAttention` is a stored, facetable boolean derived from the flag history on every save, so the chip is a real narrowing of the query rather than a search through tags. Deliberately not `_unread`: that one is per reader and clears because somebody looked, this one is the flag a named person raised and only another named person with a written reason can clear.",
+						"filter": {
+							"needsAttention": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Assessed high risk",
+						"_note": "markers-and-assessments-on-the-case, row 2.40. `riskLevel` carries the same declared read rule as the assessment it mirrors, so for a reader without the `dossiq-risk-assessment` group OpenRegister filters the property out and this chip narrows to nothing. That is the right answer: an empty list says no more than that this reader has nothing to see. There is NO risk column beside it, and that is deliberate rather than missing. A column is declared once for every reader, so a reader without the permission would get a header with nothing under it, which tells them an assessment exists and is most of what the permission was for. The column lands when the list can drop one per reader.",
+						"filter": {
+							"riskLevel": [
+								"high",
+								"critical"
+							],
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
 						"label": "Mine",
 						"filter": {
 							"assignee": "@me",
@@ -1291,7 +1372,8 @@
 							"assignee": "IS NULL",
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
-							"isDraft": false
+							"isDraft": false,
+							"isTemplate": false
 						}
 					},
 					{
@@ -1595,7 +1677,7 @@
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries SIX, which is what the placement work asked for. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries TEN: it went to SIX, which is what the placement work asked for, and then Notes (2026-09-12) and Timeline (one-timeline-on-the-case) were each added on a reason recorded in their own entry. Timeline is the one tab here that does NOT own a collection: it reads the entries the tabs beside it write, which is why it adds a tab rather than replacing three. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
@@ -1610,6 +1692,10 @@
 								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-timeline-panel",
+									"label": "Timeline"
 								},
 								{
 									"widgetId": "case-people-panel",
@@ -1634,6 +1720,10 @@
 								{
 									"widgetId": "case-related-panel",
 									"label": "Related"
+								},
+								{
+									"widgetId": "case-archival-panel",
+									"label": "Archiving"
 								}
 							]
 						}
@@ -1816,6 +1906,13 @@
 						}
 					},
 					{
+						"id": "case-timeline-panel",
+						"type": "case-timeline-pane",
+						"title": "Timeline",
+						"icon": "Timeline",
+						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. Rendered by TYPE (case-timeline-pane in registry.js) because a tab child resolves from cnRegistry[widget.type] and a component:-only entry draws an empty panel and logs nothing, which this page has shipped twice."
+					},
+					{
 						"id": "case-notes-panel",
 						"type": "case-notes-pane",
 						"title": "Notes",
@@ -1839,6 +1936,16 @@
 										"title": "Parties",
 										"icon": "AccountKeyOutline",
 										"_note": "people-on-the-case: everyone involved in THIS case, read as OpenRegister person links rather than raw `role` rows. A person is a Nextcloud user or a contact, linked in one of the case schema's declared role types (SyncCaseRoleVocabulary writes them from the instance's role types), and PersonLinkListener projects the link onto a `role` record, so the resolver, the mandate matrix and the routing rules read what they always read. The contacts integration renders the people grouped by role type with avatar, email, validity window and note, and its picker offers users and contacts; the object-list this replaced showed a roleType uuid and a participant string nobody could act on."
+									}
+								},
+								{
+									"label": "Roles",
+									"widget": {
+										"id": "case-party-roles",
+										"type": "case-party-roles",
+										"title": "Roles",
+										"icon": "AccountKeyOutline",
+										"_note": "The party model OpenRegister shipped in #3761, which is the half the Parties section below cannot carry: a melder with no Nextcloud account, a gemachtigde acting for the applicant under Awb 2:1, an organisation naming a parent, and the indicators any of them hold. It reads GET /api/objects/{r}/{s}/{id}/parties, which answers the links grouped by role together with the kinds and roles the case schema declares, so a role renders under its label rather than under its key. The primary party is rendered first and its role group first, because the primary party is the one the case is filed against and a handler opening this tab is looking for that name before any other. TYPE names the registry key rather than \"custom\": a tab child renders through CnTabsWidget, which resolves cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. It sits BESIDE Parties and does not replace it: the contacts integration renders the person links people-on-the-case (#2683) writes, and a party with no account is invisible to it."
 									}
 								},
 								{
@@ -1956,6 +2063,16 @@
 												}
 											}
 										}
+									}
+								},
+								{
+									"label": "Live conversation",
+									"widget": {
+										"id": "case-conversations",
+										"type": "case-conversations-pane",
+										"title": "Live conversation",
+										"icon": "PhoneInTalk",
+										"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
 									}
 								}
 							]
@@ -2112,6 +2229,7 @@
 										"title": "Objects",
 										"icon": "CubeOutline",
 										"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+										"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
 										"content": {
 											"register": "dossiq",
 											"schema": "caseObject",
@@ -2125,8 +2243,18 @@
 											"limit": 25,
 											"columns": [
 												{
+													"key": "objectTitle",
+													"label": "Object",
+													"widget": "lensedValue"
+												},
+												{
 													"key": "objectType",
 													"label": "Object type"
+												},
+												{
+													"key": "objectStatus",
+													"label": "Object status",
+													"widget": "lensedValue"
 												},
 												{
 													"key": "objectIdentification",
@@ -2161,6 +2289,20 @@
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-archival-panel",
+						"type": "custom",
+						"title": "Archiving",
+						"icon": "ArchiveOutline",
+						"_note": "What happens to this case when its business use ends, as openregister decided it (page slot widget-case-archival -> CaseArchivalPanel). Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
+					},
+					{
+						"id": "case-attention",
+						"type": "case-attention",
+						"title": "Attention",
+						"icon": "FlagOutline",
+						"_note": "markers-and-assessments-on-the-case, rows 2.36, 2.40 and 2.44. Three facts on one strip, kept apart on purpose: the flag a person raised with a written reason and cleared with another, both kept; the risk this organisation assessed, behind a permission declared on the property rather than checked in dossiq code; and the markers the system raised against a named panel. It sits UNDER the unread strip because it says the opposite kind of thing. The unread badge is per reader and clears because somebody looked. A marker is about the world, is not per user, and clears when the work behind it is done. Running the two together into one attention count is how a handler loses the ability to tell a colleague's judgement from a failed virus scan, so each gets its own row and its own lead sentence."
 					}
 				],
 				"layout": [
@@ -2219,10 +2361,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "attention-strip",
+						"widgetId": "case-attention",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2231,7 +2382,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2240,7 +2391,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 8,
+						"gridY": 9,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2248,7 +2399,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2257,7 +2408,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 13,
+						"gridY": 14,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
@@ -2502,7 +2653,8 @@
 				]
 			},
 			"slots": {
-				"widget-cmmn-case-plan": "CasePlanPanel"
+				"widget-cmmn-case-plan": "CasePlanPanel",
+				"widget-case-archival": "CaseArchivalPanel"
 			}
 		},
 		{
@@ -3033,6 +3185,17 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "EndOfDay",
+			"route": "/end-of-day",
+			"type": "custom",
+			"title": "Close out your day",
+			"component": "EndOfDayView",
+			"_note": "One screen listing what the reader opened today, with a place to write what happened on each. \"Touched\" is OpenRegister's per-reader read state, asked per item: dossiq keeps no second record of who saw what (unread-state-on-the-case), and \"changed today\" would have been the wrong question anyway, since it lists a colleague's afternoon as yours. The time box is humaniq's hours leaf, placed per item; on an instance without humaniq there is no time field at all, because a dossiq one would become a second hours store the day humaniq arrives (ADR-011). An update is written on the thing it is about, so it is there tomorrow for whoever opens the case.",
+			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},

@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\MentionNotificationService;
+use OCA\Dossiq\Service\Queue\MentionQueueRecords;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -67,6 +68,13 @@ class MentionNotificationServiceTest extends TestCase {
 	private INotification $notification;
 
 	/**
+	 * The mocked queue record writer.
+	 *
+	 * @var MentionQueueRecords|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private MentionQueueRecords $queueRecords;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -86,8 +94,11 @@ class MentionNotificationServiceTest extends TestCase {
 			->method('createNotification')
 			->willReturn($this->notification);
 
+		$this->queueRecords = $this->createMock(MentionQueueRecords::class);
+
 		$this->service = new MentionNotificationService(
 			$this->notificationManager,
+			$this->queueRecords,
 			$this->logger,
 		);
 	}//end setUp()

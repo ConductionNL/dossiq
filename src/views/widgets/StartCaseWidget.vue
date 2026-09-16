@@ -50,10 +50,7 @@
 			@confirm="onRequirementsAnswered"
 			@close="cancelRequirements" />
 
-		<NcNoteCard
-			v-if="refusal"
-			type="error"
-			data-testid="start-case-refusal">
+		<NcNoteCard v-if="refusal" type="error" data-testid="start-case-refusal">
 			{{ refusal }}
 		</NcNoteCard>
 	</div>

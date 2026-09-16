@@ -70,6 +70,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 final class IntakeTriageControllerTest extends TestCase {
 
@@ -475,7 +476,6 @@ final class IntakeTriageControllerTest extends TestCase {
 			[
 				'created' => [['id' => 'case-1', 'department' => 'handhaving']],
 				'failed' => [['destination' => 'Onderhoud', 'reason' => 'The case type has been retired.']],
-				'relationHasNoInverse' => true,
 			]
 		);
 
@@ -487,6 +487,6 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$this->assertCount(1, $body['created']);
 		$this->assertSame('Onderhoud', $body['failed'][0]['destination']);
-		$this->assertTrue($body['relationHasNoInverse']);
+		$this->assertArrayNotHasKey('relationHasNoInverse', $body);
 	}//end testTheFanOutReportsTheFailedDestinationBesideTheCreated()
 }//end class

@@ -46,3 +46,41 @@ transition names the act, and the engine reads who performed it.
 "You may not do this" sends the handler to a colleague to ask why. "You
 prepared this decision on 3 March, so somebody else approves it" sends them
 to the right colleague. The case type may name who that is.
+
+## D-8. Four eyes is declared on the transition, not in the rights matrix
+
+Task 4.3 asked for the rule as an ADR-023 action mapping. It is not one, and
+the reason is D-6 restated at the level of where a declaration lives.
+
+`caseType.rightsMatrix` is a positive grant: this department, in this role, at
+this confidentiality, may do these verbs. Four eyes grants nothing. It removes
+one person from one move on one case, on the strength of something they did
+earlier on that same case. There is no row that expresses it, because the row
+would have to name a role, and the person it refuses holds exactly the same
+role as the colleague it permits.
+
+Writing it as a matrix row anyway would mean minting a synthetic role per case,
+"the author of case Z/2026/41", which is the combinatorial explosion the
+matrix's own description warns about two properties higher up.
+
+So it is declared on the transition, which is where the case type author is
+already writing what that move means, and where an administrator reading the
+workflow finds it beside the guards it sits with. What is still missing is a
+place to read every such rule at once, and that belongs in the effective
+blueprint alongside `obligationKinds` rather than in a matrix that answers a
+different question.
+
+## D-9. The obligation blocks before it is placed anywhere
+
+An obligation has three parts and this change ships two and a half: it is
+declared, it blocks, and meeting it releases. What it does not yet do is reach
+the person it is placed on, because that means an engine task, and an engine
+task means an acting identity and an assignee resolution that
+`CreateTaskHandler` already owns.
+
+Shipping the blocking half first is deliberate rather than partial. The failure
+the row describes is a case that closes with an advice request still open, and
+that failure is closed the moment the declaration is read. A case whose
+obligation nobody was told about still cannot be closed, and the handler can
+see why on the case. The reverse order, telling somebody and not blocking,
+would have left the hole open while looking finished.

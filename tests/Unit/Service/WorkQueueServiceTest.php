@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
