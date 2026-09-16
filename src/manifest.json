@@ -2005,7 +2005,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files.",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers.",
 						"props": {
 							"rowActions": [
 								{
@@ -2025,7 +2025,19 @@
 									"target": "FileRequestDialog"
 								}
 							],
-							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
+							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
+							"columns": [
+								{
+									"id": "sender",
+									"label": "Sender",
+									"property": "senderName"
+								},
+								{
+									"id": "recipients",
+									"label": "Recipients",
+									"property": "recipientNames"
+								}
+							]
 						}
 					},
 					{
