@@ -1351,6 +1351,9 @@
 			},
 			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
+			"slots": {
+				"below-header": "CaseSearchRefusal"
+			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
@@ -1565,6 +1568,14 @@
 						"label": "Closed",
 						"filter": {
 							"isFinalStatus": true
+						}
+					},
+					{
+						"label": "Closed with no result",
+						"_note": "case-search-declares-its-fields REQ-CSD-04. The register's own example for the missing-value facet: \"twelve cases have no result type\" is a data quality report nobody has to write. `result_isnull=true` is openregister's declared null grammar (MagicSearchHandler::COMPARISON_OPERATORS), answered server-side, so this is one query and not a page of twenty-five filtered after the fact. A LENS AND NOT A FACET CHIP: a terms facet now carries facet.missing.results, and normalizeFacets() in nextcloud-vue rebuilds the facet from `buckets` alone and drops it, so the count never reaches a consumer (ConductionNL/nextcloud-vue#1176). Reading the raw facet payload beside the normalised one, per app, is the drift the shared normaliser exists to remove. This lens needs no facet payload at all. Deliberately NOT folded into Closed: a closed case with its result recorded is finished work, and burying the ones without it is what lets a year of them pile up unnoticed.",
+						"filter": {
+							"isFinalStatus": true,
+							"result_isnull": true
 						}
 					},
 					{
@@ -2668,6 +2679,13 @@
 							"label": "Sharing",
 							"icon": "ShareVariant",
 							"component": "CaseSharingTab"
+						},
+						{
+							"id": "avg",
+							"label": "AVG",
+							"icon": "ShieldLockOutline",
+							"_note": "data-subject-requests-drive-the-platform REQ-AVG-DSR-01: what OpenRegister reported about this case's data subject, and the acts dossiq drives on it. Declared on every case rather than only on a data subject request, because a sidebar tab list is one declaration on the case page and gating it on a field would need a per-case condition the host does not evaluate here. The panel reads the request kind itself and shows the erasure half, the export half, or an empty state saying this case is not a data subject request; the empty state is what stops one platform request per case opened. A `component:` tab and not a `widgets[]` one, because none of CnObjectSidebar's built-ins can call the AVG endpoints or render a protected item with its ground and its remedy.",
+							"component": "DataSubjectRequestTab"
 						},
 						{
 							"id": "tags",
