@@ -171,3 +171,36 @@ export function matchRow(match, cases, translate) {
 		readable: Boolean(found),
 	}
 }
+
+/**
+ * The candidate to send to the check, with every blank left out.
+ *
+ * 🔴 AN EMPTY STRING IS NOT AN ABSENT FIELD TO THE SCORER. OpenRegister scores
+ * an absent field as 0, because a missing value is not scalar, but it scores
+ * two empty strings as a perfect match, because they are scalar and equal. A
+ * form sends `''` for every field nobody filled in, and `permitApplicationRef`
+ * is empty on every case that did not arrive from the DSO. Sending the blanks
+ * would therefore score every pair of ordinary cases as a partial match on
+ * fields neither of them has, and the panel would open on almost every case.
+ *
+ * The stored side of that comparison is OpenRegister's to fix. This closes the
+ * half dossiq sends.
+ *
+ * @param {object} payload The form's values.
+ * @return {object} The candidate.
+ *
+ * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+ */
+export function candidateFrom(payload) {
+	const source = payload || {}
+
+	return Object.fromEntries(
+		Object.entries(source).filter(([, value]) => {
+			if (value === null || value === undefined || value === '') {
+				return false
+			}
+
+			return Array.isArray(value) === false || value.length > 0
+		}),
+	)
+}

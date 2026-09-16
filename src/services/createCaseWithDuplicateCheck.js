@@ -32,7 +32,7 @@ import { useObjectStore } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { createApp } from 'vue'
 import DuplicateWarningModal from '../modals/DuplicateWarningModal.vue'
-import { affordancesFor } from '../utils/duplicateWarning.js'
+import { affordancesFor, candidateFrom } from '../utils/duplicateWarning.js'
 import { normaliseDeclaration } from '../utils/intakeRequirements.js'
 import { checkForDuplicates, fetchMatchedCases } from './duplicateCheckApi.js'
 import { fetchIntakeRequirements } from './intakeTriageApi.js'
@@ -137,7 +137,7 @@ export async function createCaseWithDuplicateCheck(payload, context) {
 	const candidate = { ...payload }
 
 	const [{ matches, checked }, policy] = await Promise.all([
-		checkForDuplicates(candidate),
+		checkForDuplicates(candidateFrom(candidate)),
 		duplicatePolicyFor(candidate.caseType),
 	])
 

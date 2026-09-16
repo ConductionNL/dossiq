@@ -129,4 +129,40 @@ class ZaakportaalFragmentTest extends TestCase {
 		$this->assertArrayHasKey('messageBoxActive', $properties);
 		$this->assertArrayHasKey('subjectRef', $properties);
 	}//end testPreferenceSchemaHasBerichtenbox()
+
+	/**
+	 * The portal intake is scored by the same declared rules as the desk.
+	 *
+	 * 🔴 THIS IS WHAT CARRIES THE RULES INTO THE PORTAL, AND IT IS THE ONLY
+	 * THING THAT DOES. `PortalContributionProvider` contributes no dedup key,
+	 * because Portaliq reads none and an unknown key on a contribution is
+	 * passed through untouched: it would sit there looking enforced for ever.
+	 * What is real is the write. `PortalObjectWriter` creates through
+	 * OpenRegister's `saveObject()`, the same path the desk uses, and that is
+	 * where `x-openregister-dedup` is evaluated. So a declaration on this schema
+	 * IS the portal half, and its absence would be a silent no-op.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 */
+	public function testPortalRequestsDeclareTheSameKindOfDedupRules(): void {
+		$dedup = $this->merged['components']['schemas']['portaalVerzoek']['configuration']['x-openregister-dedup'] ?? null;
+
+		$this->assertIsArray($dedup, 'portaalVerzoek must declare dedup rules for the portal intake');
+		$this->assertSame(['submitterRef', 'kind'], $dedup['blockingKeys']);
+		$this->assertSame('warn', $dedup['onCreate'], 'a citizen is warned, never refused, by the schema');
+
+		$properties = $this->merged['components']['schemas']['portaalVerzoek']['properties'];
+		foreach ($dedup['matchRules'] as $rule) {
+			$this->assertArrayHasKey(
+				$rule['field'],
+				$properties,
+				'a rule naming a property the schema does not declare compares nothing and reports nothing'
+			);
+		}
+
+		$total = array_sum(array_column($dedup['matchRules'], 'weight'));
+		$this->assertSame(1.0, round($total, 4));
+	}//end testPortalRequestsDeclareTheSameKindOfDedupRules()
 }//end class

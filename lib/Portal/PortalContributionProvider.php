@@ -266,9 +266,30 @@ class PortalContributionProvider {
 	 * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
 	 * the DigiD broker lands and cases carry Wdo-level assurance.
 	 *
+	 * 🔴 THE DUPLICATE RULES ARE NOT CONTRIBUTED HERE, AND THAT IS THE POINT.
+	 * `duplicate-warning-at-intake` asks the portal intake to carry the same
+	 * rules as the desk. A `dedup` key on one of these entries would read as
+	 * having done that, and nothing in Portaliq reads such a key: the manifest
+	 * normaliser passes unknown keys through untouched, so it would sit in the
+	 * contract for ever, look enforced, and enforce nothing.
+	 *
+	 * What actually carries the rules is the WRITE. `PortalObjectWriter` creates
+	 * through OpenRegister's `ObjectService::saveObject()`, which is the same
+	 * path the desk uses and the one `x-openregister-dedup` is evaluated on. So
+	 * `createKlacht` is already scored against the rules `portaalVerzoek`
+	 * declares in `register.d/50-zaakportaal.json`: the same applicant filing
+	 * the same kind of request with the same subject is one pair the sweep finds
+	 * and one the applicant can be warned about.
+	 *
+	 * What is still missing is the WARNING, not the rule. Showing a citizen the
+	 * matches before they submit is a Portaliq surface, and Portaliq has none
+	 * today. Until it does, a second complaint is filed and found rather than
+	 * refused, which is the `onCreate: warn` the schema declares.
+	 *
 	 * @return array<string, mixed> The citizen manifest.
 	 *
 	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
 		return [

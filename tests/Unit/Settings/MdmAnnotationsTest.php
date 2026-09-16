@@ -55,11 +55,39 @@ class MdmAnnotationsTest extends TestCase {
 		return $schema;
 	}
 
+	/**
+	 * The dedup block, wherever the schema declares it.
+	 *
+	 * OpenRegister reads this block off `Schema::getConfiguration()`. A
+	 * top-level declaration reaches the same place, because `Schema::hydrate()`
+	 * folds every top-level `x-openregister-*` key into the configuration. Both
+	 * spellings are therefore live, and this reader accepts either so a schema
+	 * moving its block does not look like a schema losing it.
+	 *
+	 * `case` declares it inside `configuration` on purpose: that is the only
+	 * spelling `SchemaAnnotationReconciler` carries onto an instance that
+	 * imported the schema before the block existed.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function dedup(string $slug): array {
+		$schema = $this->schema($slug);
+		$dedup = ($schema['configuration']['x-openregister-dedup'] ?? $schema['x-openregister-dedup'] ?? null);
+		$this->assertIsArray($dedup, "{$slug} must declare dedup rules");
+
+		return $dedup;
+	}
+
 	public function testAnnotatedSchemasCarryQualityAndDedup(): void {
+		// The two party schemas score two records of one organisation, where a
+		// single exact identifier is close to proof. `case` scores two filings,
+		// where no field is proof and the cut-off is what makes one strong
+		// signal enough to ask the question (duplicate-warning-at-intake D-1).
+		$thresholds = ['case' => 0.3, 'supplier' => 0.7, 'partnerOrganization' => 0.7];
+
 		foreach (self::ANNOTATED_SCHEMAS as $slug) {
 			$schema = $this->schema($slug);
 			$this->assertArrayHasKey('x-openregister-quality', $schema, "{$slug} must declare quality rules");
-			$this->assertArrayHasKey('x-openregister-dedup', $schema, "{$slug} must declare dedup rules");
 
 			$quality = $schema['x-openregister-quality'];
 			$this->assertSame('qualityScore', $quality['field']);
@@ -67,28 +95,70 @@ class MdmAnnotationsTest extends TestCase {
 			$this->assertSame(['good' => 0.8, 'fair' => 0.5], $quality['thresholds']);
 			$this->assertNotEmpty($quality['rules']);
 
-			$dedup = $schema['x-openregister-dedup'];
-			$this->assertSame(0.7, $dedup['threshold']);
+			$dedup = $this->dedup($slug);
+			$this->assertSame($thresholds[$slug], $dedup['threshold']);
 			$this->assertNotEmpty($dedup['matchRules']);
 		}
 	}
 
-	public function testCaseDedupGuardsDsoDoubleIntake(): void {
-		$dedup = $this->schema('case')['x-openregister-dedup'];
+	public function testCaseDeclaresItsDedupInsideConfiguration(): void {
+		// 🔴 THE PLACEMENT IS THE BUG THIS PINS. `SchemaAnnotationReconciler`
+		// reads `configuration` and nothing else, so a block declared beside
+		// `properties` is never carried onto an instance that imported the case
+		// schema before the block existed. The dedup endpoint then answers an
+		// empty match list there, which reads as "nothing looks like this case".
+		$schema = $this->schema('case');
+		$this->assertArrayHasKey('x-openregister-dedup', $schema['configuration']);
+		$this->assertArrayNotHasKey('x-openregister-dedup', $schema);
+	}
+
+	public function testCaseDedupDeclaresWhoMayFileOverAWarning(): void {
+		$dedup = $this->dedup('case');
+		$this->assertSame('warn', $dedup['onCreate'], 'the per-case-type policy decides blocking, not the schema');
+		$this->assertSame(['dossiq-coordinators'], $dedup['overrideGroups']);
+		$this->assertSame(['dossiq-coordinators'], $dedup['dismissGroups']);
+	}
+
+	public function testTheCaseTypeDeclaresItsDuplicatePolicy(): void {
+		$policy = $this->schema('caseType')['properties']['duplicatePolicy'] ?? null;
+		$this->assertIsArray($policy, 'caseType must declare duplicatePolicy');
+		$this->assertSame(['warn', 'block'], $policy['enum']);
+		$this->assertSame('warn', $policy['default'], 'a case type that says nothing must keep today behaviour');
+		$this->assertNotEmpty($policy['title'] ?? '');
+		$this->assertNotEmpty($policy['description'] ?? '');
+	}
+
+	public function testCaseDedupGuardsDsoDoubleIntakeAndTheSecondFiling(): void {
+		$dedup = $this->dedup('case');
 		$this->assertSame(['caseType'], $dedup['blockingKeys'], 'case candidates must be blocked per zaaktype');
 
 		$byField = [];
 		foreach ($dedup['matchRules'] as $rule) {
 			$byField[$rule['field']][] = $rule;
 		}
-		$this->assertSame('exact', $byField['identifier'][0]['method']);
-		$this->assertSame(0.4, $byField['identifier'][0]['weight']);
+
 		$this->assertSame('exact', $byField['permitApplicationRef'][0]['method'], 'DSO re-delivery must match on vergunningaanvraagRef');
+		$this->assertSame('exact', $byField['requester'][0]['method'], 'the same applicant filing twice is the intake warning');
 		$this->assertCount(2, $byField['title'], 'title must match normalized + levenshtein');
+
+		// `identifier` is deliberately NOT a rule any more. The case number is
+		// minted per case by the platform sequence, so two cases never carry the
+		// same one; as an `exact` rule it could only ever score 0 and pull the
+		// weighted average DOWN, which is the opposite of what a match rule is
+		// for.
+		$this->assertArrayNotHasKey('identifier', $byField);
+
+		// Each single signal has to clear the cut-off on its own, and no signal
+		// may clear it on a near miss. That is the whole of D-1 expressed in
+		// the one vocabulary OpenRegister has: a weighted average.
+		$total = array_sum(array_column($dedup['matchRules'], 'weight'));
+		$this->assertSame(1.0, round($total, 4), 'the weights must sum to one, or the cut-off means nothing');
+		$this->assertGreaterThanOrEqual($dedup['threshold'], $byField['requester'][0]['weight']);
+		$this->assertGreaterThanOrEqual($dedup['threshold'], $byField['permitApplicationRef'][0]['weight']);
 	}
 
 	public function testSupplierDedupMatchesOrgMasterRules(): void {
-		$dedup = $this->schema('supplier')['x-openregister-dedup'];
+		$dedup = $this->dedup('supplier');
 		$methods = [];
 		foreach ($dedup['matchRules'] as $rule) {
 			$methods[$rule['field'] . ':' . $rule['method']] = $rule['weight'];
@@ -107,7 +177,7 @@ class MdmAnnotationsTest extends TestCase {
 	}
 
 	public function testPartnerOrganizationDedupMatchesOinFirst(): void {
-		$dedup = $this->schema('partnerOrganization')['x-openregister-dedup'];
+		$dedup = $this->dedup('partnerOrganization');
 		$first = $dedup['matchRules'][0];
 		$this->assertSame(['oin', 'exact', 0.5], [$first['field'], $first['method'], $first['weight']]);
 
@@ -122,7 +192,7 @@ class MdmAnnotationsTest extends TestCase {
 		foreach (self::ANNOTATED_SCHEMAS as $slug) {
 			$schema = $this->schema($slug);
 			$properties = $schema['properties'] ?? [];
-			foreach ($schema['x-openregister-dedup']['matchRules'] as $rule) {
+			foreach ($this->dedup($slug)['matchRules'] as $rule) {
 				$this->assertArrayHasKey($rule['field'], $properties, "{$slug} dedup field {$rule['field']} must be a declared property");
 			}
 			foreach ($schema['x-openregister-quality']['rules'] as $rule) {

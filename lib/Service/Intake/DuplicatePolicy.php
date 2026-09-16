@@ -338,11 +338,23 @@ class DuplicatePolicy {
 	}//end uuidsOf()
 
 	/**
-	 * The candidate body, with dossiq's own override bookkeeping removed.
+	 * The candidate body, with dossiq's own override bookkeeping removed and
+	 * every empty value dropped.
 	 *
 	 * The two override fields are a record of THIS decision, never something to
 	 * compare cases on. Leaving them in would make a case filed over a warning
 	 * score against the next one on the reason somebody typed.
+	 *
+	 * 🔴 AN EMPTY STRING IS NOT AN ABSENT FIELD TO THE SCORER, AND THE
+	 * DIFFERENCE DECIDES WHETHER MOST CASES MATCH EACH OTHER.
+	 * `SimilarityCalculator::similarity()` answers 0.0 when either side is not
+	 * scalar, so an ABSENT field never contributes. Two EMPTY STRINGS are both
+	 * scalar and equal, so an `exact` rule on them scores a perfect 1.0.
+	 * `permitApplicationRef` is empty on every case that did not arrive from the
+	 * DSO, which is nearly all of them, so leaving the blank in would score
+	 * every pair of ordinary cases as a partial match on a field neither of them
+	 * has. Dropping the blanks here makes the candidate side immune; the stored
+	 * side is OpenRegister's to fix and is reported as such.
 	 *
 	 * @param array<string, mixed> $case The case as it would be written.
 	 *
@@ -350,6 +362,12 @@ class DuplicatePolicy {
 	 */
 	private function candidateFrom(array $case): array {
 		unset($case[self::FIELD_REASON], $case[self::FIELD_OVER]);
+
+		foreach ($case as $field => $value) {
+			if ($value === null || $value === '' || $value === []) {
+				unset($case[$field]);
+			}
+		}
 
 		return $case;
 	}//end candidateFrom()
