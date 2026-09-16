@@ -119,3 +119,70 @@ export function todayOf(now = new Date()) {
 
 	return `${now.getFullYear()}-${month}-${day}`
 }
+
+/**
+ * Who a queue item is waiting on, for how long, and how often it was chased.
+ *
+ * 🔴 NO ARITHMETIC ON A DATE LIVES HERE. The day count arrives computed, the
+ * same way every other number in this queue does. What this chooses is the
+ * words: which party, singular or plural, and whether the reminders are worth
+ * a clause at all.
+ *
+ * A case waiting on nobody returns an empty string, so the caller renders
+ * nothing rather than a line that says nothing.
+ *
+ * @param {object} item The queue item as the server answered it.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
+ *
+ * @return {string} The sentence, empty when nobody is being waited on.
+ * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ */
+export function waitingSentence(item, t) {
+	const waiting = item && item.waiting
+	if (!waiting || typeof waiting !== 'object' || !waiting.on) {
+		return ''
+	}
+
+	const days = Number.isFinite(waiting.days) ? waiting.days : 0
+	const chases = Number.isFinite(waiting.chases) ? waiting.chases : 0
+	const party = waitingParty(waiting.on, t)
+
+	if (chases === 0) {
+		return t('dossiq', 'Waiting on {party} for {days} days', { party, days })
+	}
+
+	if (chases === 1) {
+		return t('dossiq', 'Waiting on {party} for {days} days, chased once', {
+			party,
+			days,
+		})
+	}
+
+	return t('dossiq', 'Waiting on {party} for {days} days, chased {chases} times', {
+		party,
+		days,
+		chases,
+	})
+}
+
+/**
+ * The party a case is waiting on, in the reader's language.
+ *
+ * A value this module does not know is passed through rather than dropped, so
+ * a queue stays readable when the server learns a fourth party before the
+ * browser bundle does.
+ *
+ * @param {string} on One of the declared waiting-on values.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
+ *
+ * @return {string} The party.
+ * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ */
+export function waitingParty(on, t) {
+	const parties = {
+		applicant: t('dossiq', 'the applicant'),
+		thirdParty: t('dossiq', 'a third party'),
+		us: t('dossiq', 'us'),
+	}
+	return parties[on] || on
+}

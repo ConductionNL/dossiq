@@ -1,5 +1,5 @@
 {
-    "ceiling": 232,
+    "ceiling": 233,
     "measured": "2026-09-16",
     "window": 3,
     "about": [
@@ -1646,6 +1646,13 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`sendRefusalFor()` answers `return null` when the guard throws; the catch logs at warning naming the party. Null means \"nothing here refuses it\", and the refusal OpenRegister makes at the send itself is unaffected, so a reader that cannot ask never turns into a send that was refused and happened anyway."
+        },
+        {
+            "file": "lib/Service/Status/CaseStateFieldRuleProjector.php",
+            "method": "liveCaseSchema",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`liveCaseSchema()` answers `return null` when the container has no OpenRegister SchemaMapper; the catch logs at INFO naming the exception, because an instance without OpenRegister is a configuration, not a fault. Its one caller, `publish()`, answers false and the case type still publishes: the per-status field rules stay declared on the statusType rows and are projected on the next publish, so nothing is lost and nothing is reported green that did not happen. A refusal would make a case type unpublishable on an instance that never had the platform half."
         }
     ]
 }

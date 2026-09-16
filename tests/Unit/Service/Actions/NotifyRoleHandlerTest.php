@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Actions\NotifyRoleHandler;
+use OCA\Dossiq\Service\Notification\RoleRecipients;
 use OCP\Notification\IManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\TestCase;
@@ -84,7 +85,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager->method('createNotification')->willReturn($notification);
 		$manager->expects(self::exactly(2))->method('notify')->with($notification);
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: [
@@ -134,7 +135,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager->method('createNotification')->willReturn($notification);
 		$manager->expects(self::once())->method('notify');
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: [
@@ -158,7 +159,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager = $this->createMock(IManager::class);
 		$manager->expects(self::never())->method('notify');
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'notifyRole', 'roleSlug' => 'behandelaar', 'messageTemplate' => 'Hoi'],
@@ -179,7 +180,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager = $this->createMock(IManager::class);
 		$manager->expects(self::never())->method('notify');
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'notifyRole', 'roleSlug' => 'behandelaar', 'messageTemplate' => 'Hoi'],
@@ -203,7 +204,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager = $this->createMock(IManager::class);
 		$manager->expects(self::never())->method('notify');
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'notifyRole', 'roleSlug' => 'behandelaar', 'messageTemplate' => 'Hoi'],
@@ -225,7 +226,7 @@ class NotifyRoleHandlerTest extends TestCase {
 		$manager->method('createNotification')->willReturn($this->fluentNotification());
 		$manager->method('notify')->willThrowException(new RuntimeException('no notifier'));
 
-		$handler = new NotifyRoleHandler(notificationManager: $manager, logger: new NullLogger());
+		$handler = new NotifyRoleHandler(notificationManager: $manager, roleRecipients: $this->unrouted(), logger: new NullLogger());
 
 		$result = $handler->handle(
 			actionConfig: ['type' => 'notifyRole', 'roleSlug' => 'behandelaar', 'messageTemplate' => 'Hoi'],
@@ -236,4 +237,20 @@ class NotifyRoleHandlerTest extends TestCase {
 		self::assertFalse($result->succeeded);
 		self::assertSame('notify_role_failed', $result->error);
 	}//end testAFailedDispatchIsReportedAsAFailure()
+
+	/**
+	 * A seam that cannot ask the platform, so the local walk decides.
+	 *
+	 * These cases are about the handler's own behaviour on a case object, which
+	 * is the fallback path. What the platform answers instead is asserted in
+	 * NotificationRoutingFragmentTest and in openregister's own resolver tests.
+	 *
+	 * @return RoleRecipients The seam.
+	 */
+	private function unrouted(): RoleRecipients {
+		$seam = $this->createMock(originalClassName: RoleRecipients::class);
+		$seam->method('forRole')->willReturn(null);
+
+		return $seam;
+	}//end unrouted()
 }//end class

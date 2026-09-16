@@ -125,11 +125,21 @@ describe('what an indicator refuses', () => {
 
 	it('finds the indicator that refuses publication, and stamps its party', () => {
 		const indicators = indicatorsOf([
-			{ id: 'p-jan', name: 'Jan de Vries', indicators: [{ key: 'x', effect: 'warn' }] },
+			{
+				id: 'p-jan',
+				name: 'Jan de Vries',
+				indicators: [{ key: 'x', effect: 'warn' }],
+			},
 			{
 				id: 'p-buur',
 				name: 'De buurman',
-				indicators: [{ key: 'geheim', label: 'Geheimhouding', effect: 'refuse-publication' }],
+				indicators: [
+					{
+						key: 'geheim',
+						label: 'Geheimhouding',
+						effect: 'refuse-publication',
+					},
+				],
 			},
 		])
 
@@ -147,10 +157,9 @@ describe('resolving an address before a second party is created', () => {
 
 		const party = await resolvePartyByAddress(' jan@example.nl ')
 
-		expect(get).toHaveBeenCalledWith(
-			'/apps/openregister/api/parties/resolve',
-			{ params: { address: 'jan@example.nl' } },
-		)
+		expect(get).toHaveBeenCalledWith('/apps/openregister/api/parties/resolve', {
+			params: { address: 'jan@example.nl' },
+		})
 		expect(party.id).toBe('p-jan')
 	})
 

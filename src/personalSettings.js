@@ -13,6 +13,7 @@
 import { CnSettingsSection } from '@conduction/nextcloud-vue'
 import { createApp, h } from 'vue'
 import CaseEmailMatchSettings from './views/settings/CaseEmailMatchSettings.vue'
+import NotificationRoutingSettings from './views/settings/NotificationRoutingSettings.vue'
 import SubstitutionSettings from './views/settings/SubstitutionSettings.vue'
 import WorkDigestSettings from './views/settings/WorkDigestSettings.vue'
 import pinia from './pinia.js'
@@ -64,3 +65,25 @@ const workDigest = createApp({
 workDigest.config.globalProperties.t = t
 workDigest.config.globalProperties.n = n
 workDigest.mount('#dossiq-personal-work-digest')
+
+// Which notices reach you, and which layer decided that (notifications routed
+// by role and domain). It reads OpenRegister's preferences directly: the
+// deciding layer is the platform's answer, and a dossiq copy of it could only
+// disagree.
+const notificationRouting = createApp({
+	render: () =>
+		h(
+			CnSettingsSection,
+			{
+				name: t('dossiq', 'Which notices reach me'),
+				description: t(
+					'dossiq',
+					'Every setting says who decided it. A setting your team made is one you can still change for yourself.',
+				),
+			},
+			[h(NotificationRoutingSettings)],
+		),
+})
+notificationRouting.config.globalProperties.t = t
+notificationRouting.config.globalProperties.n = n
+notificationRouting.mount('#dossiq-personal-notification-routing')

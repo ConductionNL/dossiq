@@ -171,7 +171,12 @@ class CaseNumberServiceTest extends TestCase {
 	}//end testTheSequenceGrowsPastItsPadding()
 
 	/**
-	 * The year comes from the start date, as the calculation's does.
+	 * The year comes from the start date.
+	 *
+	 * This is where the backfill and the platform's annotation differ: the
+	 * annotation renders the FILING year and reads no property, while this has
+	 * no counter of its own and has to scope its MAX to something the case
+	 * carries. It only matters on an instance old enough to need the backfill.
 	 *
 	 * @return void
 	 */
@@ -194,8 +199,9 @@ class CaseNumberServiceTest extends TestCase {
 	/**
 	 * A case that already holds a number is left alone.
 	 *
-	 * This is what makes the backfill safe beside OpenRegister's own `sequence`
-	 * calculation: when the register filled the field, nothing here writes.
+	 * This is what makes the backfill safe beside OpenRegister's own
+	 * `x-openregister-generated` annotation: when the register filled the
+	 * field, nothing here writes.
 	 *
 	 * @return void
 	 */
