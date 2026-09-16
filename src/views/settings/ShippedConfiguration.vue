@@ -15,7 +15,12 @@
 <template>
 	<div class="shipped-configuration">
 		<p class="shipped-configuration__intro">
-			{{ t('dossiq', 'Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.') }}
+			{{
+				t(
+					'dossiq',
+					'Dossiq ships case types, statuses, results and roles. This is what arrived, and what you changed since.',
+				)
+			}}
 		</p>
 
 		<label class="shipped-configuration__picker" for="shipped-schema">
@@ -26,12 +31,17 @@
 			v-model="schema"
 			data-testid="shipped-schema"
 			@change="reload">
-			<option v-for="option in schemas" :key="option.slug" :value="option.slug">
+			<option
+				v-for="option in schemas"
+				:key="option.slug"
+				:value="option.slug">
 				{{ option.label }}
 			</option>
 		</select>
 
-		<table class="shipped-configuration__table" data-testid="shipped-configuration-table">
+		<table
+			class="shipped-configuration__table"
+			data-testid="shipped-configuration-table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('dossiq', 'Name') }}</th>
@@ -80,7 +90,11 @@ import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import { adoptShipped, listShipped } from '../../services/starterApi.js'
-import { adoptionLosesLocalChange, hasUpdate, shippedLabel } from '../../utils/starterStates.js'
+import {
+	adoptionLosesLocalChange,
+	hasUpdate,
+	shippedLabel,
+} from '../../utils/starterStates.js'
 
 export default {
 	name: 'ShippedConfiguration',
@@ -119,7 +133,10 @@ export default {
 				// screen beside an error message would read as the current
 				// state of the register, which is exactly what it is not.
 				this.rows = []
-				this.loadError = t('dossiq', 'Could not read the shipped configuration')
+				this.loadError = t(
+					'dossiq',
+					'Could not read the shipped configuration',
+				)
 				showError(this.loadError)
 			}
 		},
@@ -152,7 +169,9 @@ export default {
 		 */
 		adoptLabel(row) {
 			return adoptionLosesLocalChange(row)
-				? t('dossiq', 'Take {version} and lose your change', { version: row.latestVersion })
+				? t('dossiq', 'Take {version} and lose your change', {
+						version: row.latestVersion,
+					})
 				: t('dossiq', 'Take {version}', { version: row.latestVersion })
 		},
 
@@ -171,7 +190,10 @@ export default {
 				showSuccess(t('dossiq', 'The newer version was taken'))
 				await this.reload()
 			} catch (e) {
-				showError(e.response?.data?.reason || t('dossiq', 'The newer version was not taken'))
+				showError(
+					e.response?.data?.reason
+						|| t('dossiq', 'The newer version was not taken'),
+				)
 			}
 		},
 	},

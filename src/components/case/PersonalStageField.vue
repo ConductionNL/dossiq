@@ -21,7 +21,12 @@
 		<NcTextField
 			v-model="stage"
 			:label="t('dossiq', 'Your own stage')"
-			:helperText="t('dossiq', 'Only you can see this. It does not change the case status.')"
+			:helperText="
+				t(
+					'dossiq',
+					'Only you can see this. It does not change the case status.',
+				)
+			"
 			data-testid="personal-stage-input"
 			@blur="save" />
 	</div>
@@ -30,7 +35,10 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcTextField } from '@nextcloud/vue'
-import { fetchPersonalStage, savePersonalStage } from '../../services/personalQueueApi.js'
+import {
+	fetchPersonalStage,
+	savePersonalStage,
+} from '../../services/personalQueueApi.js'
 
 export default {
 	name: 'PersonalStageField',

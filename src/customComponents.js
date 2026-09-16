@@ -173,7 +173,7 @@ async function listScope(ids) {
 	const filters = readLocationFilters()
 	const total = await countMatchingCases(filters)
 
-	return { filters, total: (total > ids.length ? total : 0) }
+	return { filters, total: total > ids.length ? total : 0 }
 }
 
 /**
@@ -284,7 +284,8 @@ function extendTermSelection({ selectedIds }) {
 /**
  * Where Add integration lands: integriq's overview, preset and linking.
  */
-export const INTEGRIQ_CONNECTIONS_PATH = '/apps/integriq/connections?app=dossiq&link=1'
+export const INTEGRIQ_CONNECTIONS_PATH =
+	'/apps/integriq/connections?app=dossiq&link=1'
 
 /**
  * The Integrations page's Add integration header action.

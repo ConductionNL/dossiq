@@ -93,7 +93,13 @@ test.describe('handing a case over', () => {
 		token = await getRequestToken(api)
 		caseTypeId = (await ensureCaseType(api, token)).id
 
-		for (const key of ['moved', 'refused', 'outstanding', 'doorzending', 'seats']) {
+		for (const key of [
+			'moved',
+			'refused',
+			'outstanding',
+			'doorzending',
+			'seats',
+		]) {
 			const seeded = await seedCase(api, token, {
 				title: `${RUN_PREFIX} ${key}`,
 				caseType: caseTypeId,
@@ -160,7 +166,10 @@ test.describe('handing a case over', () => {
 
 		const response = await api.post(
 			`/index.php/apps/${REGISTER}/api/case/${cases.refused}/handover/${transferId}/refuse`,
-			{ headers: { requesttoken: token }, data: { reason: 'Dit is wel onze zaak' } },
+			{
+				headers: { requesttoken: token },
+				data: { reason: 'Dit is wel onze zaak' },
+			},
 		)
 		expect(response.ok()).toBeTruthy()
 
@@ -180,7 +189,9 @@ test.describe('handing a case over', () => {
 	/**
 	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
 	 */
-	test('an unaccepted handover is listed as outstanding for the sending team', async ({ page }) => {
+	test('an unaccepted handover is listed as outstanding for the sending team', async ({
+		page,
+	}) => {
 		await hand(cases.outstanding, RECEIVING_TEAM)
 
 		await page.goto(CASES_URL, PAGE_LOAD)
@@ -200,7 +211,9 @@ test.describe('handing a case over', () => {
 	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-doorzending-tells-the-applicant-where-the-case-went-req-hand-03
 	 */
 	test('a doorzending tells the applicant, and an internal move does not', async () => {
-		const announced = await (await hand(cases.doorzending, RECEIVING_TEAM, true)).json()
+		const announced = await (
+			await hand(cases.doorzending, RECEIVING_TEAM, true)
+		).json()
 		expect(announced.doorzending).toBe(true)
 		// `announced` is false here for a case carrying no address, which is a
 		// legitimate outcome and is reported as `no-address` rather than as a
@@ -209,7 +222,9 @@ test.describe('handing a case over', () => {
 			announced.announcement.reason,
 		)
 
-		const internal = await (await hand(cases.seats, RECEIVING_TEAM, false)).json()
+		const internal = await (
+			await hand(cases.seats, RECEIVING_TEAM, false)
+		).json()
 		expect(internal.doorzending).toBe(false)
 		expect(internal.announcement.reason).toBe('internal-move')
 	})
@@ -217,7 +232,9 @@ test.describe('handing a case over', () => {
 	/**
 	 * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md#requirement-a-case-carries-a-handler-and-a-coordinator-req-hand-05
 	 */
-	test('a case carries a handler and a coordinator, and the People tab shows both', async ({ page }) => {
+	test('a case carries a handler and a coordinator, and the People tab shows both', async ({
+		page,
+	}) => {
 		const roleTypes = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/roleType?_limit=100`,
 		)
@@ -267,7 +284,9 @@ test.describe('handing a case over', () => {
 	/**
 	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
 	 */
-	test('an externally homed case is in the same list and points at its home', async ({ page }) => {
+	test('an externally homed case is in the same list and points at its home', async ({
+		page,
+	}) => {
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -286,7 +305,10 @@ test.describe('handing a case over', () => {
 		const actions = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case/${cases.elsewhere}/available-actions`,
 		)
-		test.skip(!actions.ok(), 'This OpenRegister does not publish available-actions.')
+		test.skip(
+			!actions.ok(),
+			'This OpenRegister does not publish available-actions.',
+		)
 
 		const published = (await actions.json()).results ?? []
 		test.skip(published.length === 0, 'This case type declares no transitions.')
@@ -325,7 +347,10 @@ test.describe('handing a case over', () => {
 	test('the leaver handover refuses a person handed their own work', async () => {
 		const response = await api.post(
 			`/index.php/apps/${REGISTER}/api/leaver-handover/execute`,
-			{ headers: { requesttoken: token }, data: { fromUser: 'admin', toUser: 'admin' } },
+			{
+				headers: { requesttoken: token },
+				data: { fromUser: 'admin', toUser: 'admin' },
+			},
 		)
 
 		// 🔑 THE ACT ITSELF IS NOT RUN HERE. Executing a real leaver handover

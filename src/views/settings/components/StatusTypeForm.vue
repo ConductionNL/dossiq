@@ -319,7 +319,8 @@ export default {
 		 */
 		selectedWaitingOn() {
 			return (
-				this.waitingOnOptions.find((o) => o.id === this.form.waitingOn) || null
+				this.waitingOnOptions.find((o) => o.id === this.form.waitingOn)
+				|| null
 			)
 		},
 

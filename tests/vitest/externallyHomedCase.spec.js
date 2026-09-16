@@ -30,8 +30,8 @@ const REGISTER_PATH = path.resolve(
 	'../../lib/Settings/dossiq_register.json',
 )
 
-function caseSchema () {
-  return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas.case
+function caseSchema() {
+	return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas.case
 }
 
 /**
@@ -61,13 +61,20 @@ describe('the externally homed declaration', () => {
 	it('binds all three to properties the case schema declares', () => {
 		const properties = caseSchema().properties
 
-		for (const field of ['externalApplication', 'externalIdentifier', 'externalUrl']) {
+		for (const field of [
+			'externalApplication',
+			'externalIdentifier',
+			'externalUrl',
+		]) {
 			expect(properties[field], `case.${field} must exist`).toBeDefined()
 		}
 	})
 
 	it('offers the link as a link rather than as a string nobody can click', () => {
-		expect(panels.caseWidget('case-external-home').content.overrides.externalUrl.widget).toBe('link')
+		expect(
+			panels.caseWidget('case-external-home').content.overrides.externalUrl
+				.widget,
+		).toBe('link')
 	})
 
 	it('stays out of the way on a case dossiq handles itself', () => {
@@ -121,6 +128,8 @@ describe('the handover gesture', () => {
 		)
 
 		expect(registry).toContain('CaseHandoverDialog: {')
-		expect(registry).toContain("import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'")
+		expect(registry).toContain(
+			"import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'",
+		)
 	})
 })

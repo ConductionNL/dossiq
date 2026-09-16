@@ -99,22 +99,36 @@ test.describe('A case names the source of every grant on it', () => {
 			'an empty catalogue and a missing catalogue render identically',
 		).toBeGreaterThan(0)
 		for (const permission of published.permissions) {
-			expect(permission.action, 'a verb with no name cannot be shown to a person').toBeTruthy()
-			expect(permission.description, 'a verb with no sentence is not an answer to an auditor').toBeTruthy()
+			expect(
+				permission.action,
+				'a verb with no name cannot be shown to a person',
+			).toBeTruthy()
+			expect(
+				permission.description,
+				'a verb with no sentence is not an answer to an auditor',
+			).toBeTruthy()
 		}
 
-		const scopes = await api.get(`${SCOPES}?register=${REGISTER}&schema=${SCHEMA}`)
+		const scopes = await api.get(
+			`${SCOPES}?register=${REGISTER}&schema=${SCHEMA}`,
+		)
 		expect(scopes.status()).toBe(200)
 
 		const body = await scopes.json()
 		const entry = body.scopes?.find((row: any) => row.schema === SCHEMA)
-		expect(entry, 'the case schema must appear in the caller\'s own scopes').toBeTruthy()
+		expect(
+			entry,
+			"the case schema must appear in the caller's own scopes",
+		).toBeTruthy()
 
 		// `actions` keeps its old shape and `provenance` sits BESIDE it. A
 		// build that moved provenance inside `actions` would break every
 		// feature gate in the fleet, and this is where that shows.
 		expect(Array.isArray(entry.actions)).toBe(true)
-		expect(entry.provenance, 'a grant with no provenance is a grant nobody can trace').toBeTruthy()
+		expect(
+			entry.provenance,
+			'a grant with no provenance is a grant nobody can trace',
+		).toBeTruthy()
 
 		for (const [action, record] of Object.entries<any>(entry.provenance)) {
 			expect(
@@ -132,7 +146,9 @@ test.describe('A case names the source of every grant on it', () => {
 	// exists to retire, so the assertion is on the NAMED rule and never on the
 	// status alone.
 	test('a handler is told why, not just no', async () => {
-		const scopes = await api.get(`${SCOPES}?register=${REGISTER}&schema=${SCHEMA}`)
+		const scopes = await api.get(
+			`${SCOPES}?register=${REGISTER}&schema=${SCHEMA}`,
+		)
 		const body = await scopes.json()
 		const entry = body.scopes?.find((row: any) => row.schema === SCHEMA)
 
@@ -212,7 +228,10 @@ test.describe('A case names the source of every grant on it', () => {
 
 		const stored = await updated.json()
 		const row = stored.rightsMatrix?.[0]
-		expect(row, 'a rights matrix the store dropped leaves an editor showing nothing real').toBeTruthy()
+		expect(
+			row,
+			'a rights matrix the store dropped leaves an editor showing nothing real',
+		).toBeTruthy()
 		expect(row.confidentiality).toBe('openbaar')
 		expect(
 			row.role,

@@ -61,7 +61,8 @@
 					{{ entry.title || entry.entryId }}
 				</p>
 				<p class="archival-reviews__due">
-					{{ t('dossiq', 'Disposal date') }}: {{ entry.archiefactiedatum || '' }}
+					{{ t('dossiq', 'Disposal date') }}:
+					{{ entry.archiefactiedatum || '' }}
 				</p>
 
 				<NcSelect
@@ -169,7 +170,7 @@ export default {
 		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 		 */
 		draftFor(entry) {
-			return (this.drafts[entry.entryId] ?? { answer: '', reason: '', date: '' })
+			return this.drafts[entry.entryId] ?? { answer: '', reason: '', date: '' }
 		},
 
 		/**
@@ -266,7 +267,9 @@ export default {
 				return false
 			}
 
-			return draft.answer !== 'retain' || String(draft.date ?? '').trim() !== ''
+			return (
+				draft.answer !== 'retain' || String(draft.date ?? '').trim() !== ''
+			)
 		},
 
 		/**
@@ -292,10 +295,13 @@ export default {
 					entryId: entry.entryId,
 					answer: draft.answer,
 					reason: String(draft.reason).trim(),
-					newArchiefactiedatum: (draft.answer === 'retain' ? draft.date : null),
+					newArchiefactiedatum:
+						draft.answer === 'retain' ? draft.date : null,
 				})
 
-				this.entries = this.entries.filter((row) => row.entryId !== entry.entryId)
+				this.entries = this.entries.filter(
+					(row) => row.entryId !== entry.entryId,
+				)
 			} catch (e) {
 				this.error = String(e?.message ?? e)
 			}

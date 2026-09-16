@@ -463,7 +463,9 @@ export default {
 			}
 			const candidates = candidatesOf(task).join(', ')
 			if (this.capabilities.claim) {
-				return t('dossiq', 'Waiting for someone from {candidates}', { candidates })
+				return t('dossiq', 'Waiting for someone from {candidates}', {
+					candidates,
+				})
 			}
 			// The declaration is honoured by the case type and not yet by the
 			// engine. Said plainly rather than hidden, because a handler
@@ -553,7 +555,11 @@ export default {
 				}
 
 				await this.load()
-				showSuccess(t('dossiq', 'Task {title} is yours', { title: this.titleOf(task) }))
+				showSuccess(
+					t('dossiq', 'Task {title} is yours', {
+						title: this.titleOf(task),
+					}),
+				)
 			} finally {
 				this.busy = false
 			}

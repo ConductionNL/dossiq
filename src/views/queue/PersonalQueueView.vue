@@ -32,13 +32,22 @@
 			:key="source.source"
 			type="warning"
 			:data-testid="`queue-source-unavailable-${source.source}`">
-			{{ t('dossiq', '{source} could not be read, so this list is incomplete.', { source: source.label }) }}
+			{{
+				t(
+					'dossiq',
+					'{source} could not be read, so this list is incomplete.',
+					{ source: source.label },
+				)
+			}}
 		</NcNoteCard>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<template v-else>
-			<p v-if="!groups.length" class="personal-queue__empty" data-testid="queue-empty">
+			<p
+				v-if="!groups.length"
+				class="personal-queue__empty"
+				data-testid="queue-empty">
 				{{ t('dossiq', 'Nothing is waiting on you.') }}
 			</p>
 
@@ -66,15 +75,26 @@
 						v-for="item in group.items"
 						:key="item.id"
 						class="personal-queue__item"
-						:class="{ 'personal-queue__item--late': item.tier === 'overdue' }"
+						:class="{
+							'personal-queue__item--late': item.tier === 'overdue',
+						}"
 						:data-testid="`queue-item-${item.id}`">
-						<a href="#" class="personal-queue__link" @click.prevent="open(item)">
+						<a
+							href="#"
+							class="personal-queue__link"
+							@click.prevent="open(item)">
 							{{ item.title }}
 						</a>
 						<span v-if="item.covered" class="personal-queue__covered">
-							{{ t('dossiq', 'Covering for {person}', { person: item.coveredFor }) }}
+							{{
+								t('dossiq', 'Covering for {person}', {
+									person: item.coveredFor,
+								})
+							}}
 						</span>
-						<span v-if="item.dueAt" class="personal-queue__due">{{ item.dueAt }}</span>
+						<span v-if="item.dueAt" class="personal-queue__due">{{
+							item.dueAt
+						}}</span>
 					</li>
 				</ul>
 			</section>
@@ -97,7 +117,10 @@
 		<!-- Mounted by `v-if`, never by an `open` prop: a dialog whose own
 		     `open` defaults to false renders nothing at all and says nothing
 		     about why. -->
-		<PlanItemDialog v-if="planning" @close="planning = false" @planned="onPlanned" />
+		<PlanItemDialog
+			v-if="planning"
+			@close="planning = false"
+			@planned="onPlanned" />
 	</div>
 </template>
 

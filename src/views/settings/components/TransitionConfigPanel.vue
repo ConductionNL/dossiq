@@ -38,7 +38,10 @@
 					class="transition-config-panel__input"
 					rows="2"
 					:placeholder="
-						t('dossiq', 'What a handler should know before taking this step')
+						t(
+							'dossiq',
+							'What a handler should know before taking this step',
+						)
 					"
 					@input="emitUpdate" />
 				<p class="transition-config-panel__hint">

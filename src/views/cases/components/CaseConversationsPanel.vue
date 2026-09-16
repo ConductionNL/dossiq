@@ -23,7 +23,12 @@
 		<NcEmptyContent
 			v-else-if="talkUnavailable"
 			:name="t('dossiq', 'Talk is not available')"
-			:description="t('dossiq', 'A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.')">
+			:description="
+				t(
+					'dossiq',
+					'A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.',
+				)
+			">
 			<template #icon>
 				<PhoneOff :size="48" />
 			</template>
@@ -66,23 +71,41 @@
 				</NcButton>
 			</div>
 
-			<NcNoteCard v-if="error" type="error" :heading="t('dossiq', 'We could not start the conversation')">
+			<NcNoteCard
+				v-if="error"
+				type="error"
+				:heading="t('dossiq', 'We could not start the conversation')">
 				{{ error }}
 			</NcNoteCard>
 
 			<NcEmptyContent
 				v-if="!conversations.length"
 				:name="t('dossiq', 'No conversations yet')"
-				:description="t('dossiq', 'Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.')">
+				:description="
+					t(
+						'dossiq',
+						'Every conversation you start from this case lands here. You see when it was held, who joined and how long it lasted.',
+					)
+				">
 				<template #icon>
 					<PhoneInTalk :size="48" />
 				</template>
 			</NcEmptyContent>
 
-			<ul v-else class="case-conversations__list" data-testid="conversation-records">
-				<li v-for="record in conversations" :key="record.roomId" class="case-conversations__record">
-					<span class="case-conversations__subject">{{ record.subject }}</span>
-					<span class="case-conversations__meta">{{ recordSummary(record) }}</span>
+			<ul
+				v-else
+				class="case-conversations__list"
+				data-testid="conversation-records">
+				<li
+					v-for="record in conversations"
+					:key="record.roomId"
+					class="case-conversations__record">
+					<span class="case-conversations__subject">{{
+						record.subject
+					}}</span>
+					<span class="case-conversations__meta">{{
+						recordSummary(record)
+					}}</span>
 				</li>
 			</ul>
 		</template>
@@ -93,12 +116,7 @@
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import {
-	NcButton,
-	NcEmptyContent,
-	NcLoadingIcon,
-	NcNoteCard,
-} from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import PhoneInTalk from 'vue-material-design-icons/PhoneInTalk.vue'
 import PhoneOff from 'vue-material-design-icons/PhoneOff.vue'
@@ -176,7 +194,9 @@ export default {
 			if (!value) {
 				return
 			}
-			this.conversations = Array.isArray(value.conversations) ? value.conversations : []
+			this.conversations = Array.isArray(value.conversations)
+				? value.conversations
+				: []
 			this.isMajor = value.isMajor === true
 			this.majorChannelUrl = value.majorChannel?.roomUrl || ''
 		},
@@ -191,7 +211,9 @@ export default {
 		async loadAvailability() {
 			this.loading = true
 			try {
-				const { data } = await axios.get(generateUrl('/apps/dossiq/api/conversations/availability'))
+				const { data } = await axios.get(
+					generateUrl('/apps/dossiq/api/conversations/availability'),
+				)
 				this.talkUnavailable = data?.available !== true
 			} catch {
 				this.talkUnavailable = true
@@ -215,7 +237,9 @@ export default {
 			this.error = ''
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/{caseId}/conversations', { caseId: this.resolvedCaseId }),
+					generateUrl('/apps/dossiq/api/cases/{caseId}/conversations', {
+						caseId: this.resolvedCaseId,
+					}),
 					{},
 				)
 				this.conversations = [...this.conversations, data.conversation]
@@ -223,7 +247,8 @@ export default {
 					window.open(data.conversation.roomUrl, '_blank', 'noopener')
 				}
 			} catch (e) {
-				this.error = e?.response?.data?.reason || t('dossiq', 'Unknown error')
+				this.error =
+					e?.response?.data?.reason || t('dossiq', 'Unknown error')
 			} finally {
 				this.starting = false
 			}
@@ -244,7 +269,9 @@ export default {
 			this.error = ''
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/dossiq/api/cases/{caseId}/major', { caseId: this.resolvedCaseId }),
+					generateUrl('/apps/dossiq/api/cases/{caseId}/major', {
+						caseId: this.resolvedCaseId,
+					}),
 					{},
 				)
 				this.isMajor = true
@@ -252,9 +279,14 @@ export default {
 				this.openMajorChannel()
 			} catch (e) {
 				const unresolved = e?.response?.data?.unresolved
-				this.error = Array.isArray(unresolved) && unresolved.length
-					? t('dossiq', 'We could not find these responders: {names}', { names: unresolved.join(', ') })
-					: e?.response?.data?.reason || t('dossiq', 'Unknown error')
+				this.error =
+					Array.isArray(unresolved) && unresolved.length
+						? t(
+								'dossiq',
+								'We could not find these responders: {names}',
+								{ names: unresolved.join(', ') },
+							)
+						: e?.response?.data?.reason || t('dossiq', 'Unknown error')
 			} finally {
 				this.declaring = false
 			}
@@ -286,12 +318,18 @@ export default {
 			if (record?.startedAt) {
 				parts.push(new Date(record.startedAt).toLocaleString())
 			}
-			const participants = Array.isArray(record?.participants) ? record.participants : []
+			const participants = Array.isArray(record?.participants)
+				? record.participants
+				: []
 			if (participants.length) {
 				parts.push(participants.join(', '))
 			}
 			if (record?.durationSeconds) {
-				parts.push(t('dossiq', '{minutes} min', { minutes: Math.round(record.durationSeconds / 60) }))
+				parts.push(
+					t('dossiq', '{minutes} min', {
+						minutes: Math.round(record.durationSeconds / 60),
+					}),
+				)
 			}
 			return parts.join(' · ')
 		},

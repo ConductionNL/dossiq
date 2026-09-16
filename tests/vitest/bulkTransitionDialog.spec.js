@@ -93,7 +93,7 @@ function field(name) {
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text, vars) =>
 		String(text).replace(/\{(\w+)\}/g, (match, key) =>
-			(vars && key in vars ? String(vars[key]) : match),
+			vars && key in vars ? String(vars[key]) : match,
 		),
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
 }))
@@ -156,15 +156,16 @@ vi.mock('../../src/services/bulkJobApi.js', () => ({
 	commitBulkJob: (...args) => commitBulkJob(...args),
 	fetchBulkJob: vi.fn(),
 	fetchBulkJobMembers: vi.fn().mockResolvedValue({ results: [], total: 0 }),
-	isFinished: (job) => ['completed', 'failed', 'cancelled'].includes(String(job?.state)),
+	isFinished: (job) =>
+		['completed', 'failed', 'cancelled'].includes(String(job?.state)),
 	previewBulkJob: (...args) => previewBulkJob(...args),
 	readRefusal: (error) => {
-		const body = ((error && error.response && error.response.data) || {})
+		const body = (error && error.response && error.response.data) || {}
 
 		return {
 			reason: String(body.reason || ''),
 			message: String(body.error || ''),
-			details: (body.details || {}),
+			details: body.details || {},
 		}
 	},
 	retryBulkJob: vi.fn(),
@@ -241,7 +242,8 @@ describe('BulkTransitionDialog, the three lifecycle modes', () => {
 
 			await typeReason(wrapper, 'Awaiting documents')
 			if (mode === 'extend') {
-				await wrapper.find('[data-testid="bulk-new-deadline"]')
+				await wrapper
+					.find('[data-testid="bulk-new-deadline"]')
 					.setValue('2026-12-01')
 			}
 			await flush()
@@ -267,7 +269,11 @@ describe('BulkTransitionDialog, the three lifecycle modes', () => {
 
 		expect(previewBulkJob).toHaveBeenCalledWith({
 			action: 'dossiq:lifecycle-cases',
-			parameters: { gesture: 'suspend', reason: 'Awaiting documents', days: 21 },
+			parameters: {
+				gesture: 'suspend',
+				reason: 'Awaiting documents',
+				days: 21,
+			},
 			selection: { ids: ['case-1', 'case-2'] },
 			justification: 'Awaiting documents',
 		})
@@ -276,7 +282,9 @@ describe('BulkTransitionDialog, the three lifecycle modes', () => {
 	it('extend hands the new deadline and no days', async () => {
 		const wrapper = await open('extend')
 		await typeReason(wrapper, 'Complex case')
-		await wrapper.find('[data-testid="bulk-new-deadline"]').setValue('2026-12-01')
+		await wrapper
+			.find('[data-testid="bulk-new-deadline"]')
+			.setValue('2026-12-01')
 		await rehearse(wrapper).trigger('click')
 		await flush()
 
@@ -319,7 +327,11 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 				data: {
 					reason: 'case-type-versions',
 					error: 'refused',
-					details: { caseType: 'Bezwaar', versions: [2, 3], counts: { 2: 18, 3: 4 } },
+					details: {
+						caseType: 'Bezwaar',
+						versions: [2, 3],
+						counts: { 2: 18, 3: 4 },
+					},
 				},
 			},
 		})
@@ -337,7 +349,11 @@ describe('BulkTransitionDialog, the rehearsal is not the act', () => {
 	it('a ceiling refusal says the ceiling and what was selected', async () => {
 		previewBulkJob.mockRejectedValue({
 			response: {
-				data: { reason: 'ceiling', error: 'refused', details: { ceiling: 500, count: 900 } },
+				data: {
+					reason: 'ceiling',
+					error: 'refused',
+					details: { ceiling: 500, count: 900 },
+				},
 			},
 		})
 
@@ -401,7 +417,8 @@ describe('BulkTransitionDialog, the transition mode', () => {
 		await rehearse(wrapper).trigger('click')
 		await flush()
 
-		expect(previewBulkJob.mock.calls[0][0].selection)
-			.toEqual({ query: { caseType: 'bezwaar' } })
+		expect(previewBulkJob.mock.calls[0][0].selection).toEqual({
+			query: { caseType: 'bezwaar' },
+		})
 	})
 })

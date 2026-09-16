@@ -76,10 +76,20 @@ async function talkAvailable(api: APIRequestContext): Promise<boolean> {
  * @param title The case title.
  * @return The created case.
  */
-async function seedOrdinaryCase(api: APIRequestContext, token: string, title: string): Promise<any> {
+async function seedOrdinaryCase(
+	api: APIRequestContext,
+	token: string,
+	title: string,
+): Promise<any> {
 	const types = await adoptableCaseTypes(api)
-	expect(types.length, 'the instance carries no case type to seed a case on').toBeGreaterThan(0)
-	return seedCase(api, token, { title: `${RUN_PREFIX} ${title}`, caseType: objectId(types[0]) })
+	expect(
+		types.length,
+		'the instance carries no case type to seed a case on',
+	).toBeGreaterThan(0)
+	return seedCase(api, token, {
+		title: `${RUN_PREFIX} ${title}`,
+		caseType: objectId(types[0]),
+	})
 }
 
 test.describe('a live conversation on the case', () => {
@@ -90,14 +100,24 @@ test.describe('a live conversation on the case', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request, token, ['case', 'document', 'caseDocument', 'complaint', 'hearing'])
+		await cleanupRunObjects(request, token, [
+			'case',
+			'document',
+			'caseDocument',
+			'complaint',
+			'hearing',
+		])
 	})
 
 	/**
 	 * @e2e Scenario: a conversation starts from an ordinary case
 	 */
 	test('a conversation starts from an ordinary case', async ({ request }) => {
-		const seeded = await seedOrdinaryCase(request, token, 'vergunning met gesprek')
+		const seeded = await seedOrdinaryCase(
+			request,
+			token,
+			'vergunning met gesprek',
+		)
 		const id = objectId(seeded)
 
 		const res = await request.post(`${APP_BASE}/api/cases/${id}/conversations`, {
@@ -117,7 +137,9 @@ test.describe('a live conversation on the case', () => {
 		}
 
 		expect(res.ok(), await res.text()).toBeTruthy()
-		expect(body.conversation.roomUrl, 'a room was reported with no URL').toMatch(/^https?:\/\//)
+		expect(body.conversation.roomUrl, 'a room was reported with no URL').toMatch(
+			/^https?:\/\//,
+		)
 
 		const stored = await showObject(request, 'case', id)
 		expect(stored.conversations).toHaveLength(1)
@@ -142,13 +164,18 @@ test.describe('a live conversation on the case', () => {
 			receiptDate: new Date().toISOString().slice(0, 10),
 		})
 
-		const res = await request.post(`${APP_BASE}/api/complaints/${objectId(complaint)}/hearings`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: {
-				date: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10),
-				type: 'videogesprek',
+		const res = await request.post(
+			`${APP_BASE}/api/complaints/${objectId(complaint)}/hearings`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {
+					date: new Date(Date.now() + 86_400_000)
+						.toISOString()
+						.slice(0, 10),
+					type: 'videogesprek',
+				},
 			},
-		})
+		)
 		expect(res.ok(), await res.text()).toBeTruthy()
 		const hearing = await res.json()
 
@@ -167,26 +194,47 @@ test.describe('a live conversation on the case', () => {
 	/**
 	 * @e2e Scenario: who was heard, and when
 	 */
-	test('the case records the moment, the participants and the duration', async ({ request }) => {
-		test.skip((await talkAvailable(request)) === false, 'Talk is absent, so no conversation can be recorded')
+	test('the case records the moment, the participants and the duration', async ({
+		request,
+	}) => {
+		test.skip(
+			(await talkAvailable(request)) === false,
+			'Talk is absent, so no conversation can be recorded',
+		)
 
-		const seeded = await seedOrdinaryCase(request, token, 'gesprek met twee deelnemers')
+		const seeded = await seedOrdinaryCase(
+			request,
+			token,
+			'gesprek met twee deelnemers',
+		)
 		const id = objectId(seeded)
 
-		const start = await request.post(`${APP_BASE}/api/cases/${id}/conversations`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: {},
-		})
+		const start = await request.post(
+			`${APP_BASE}/api/cases/${id}/conversations`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {},
+			},
+		)
 		const { conversation } = await start.json()
 
-		const end = await request.post(`${APP_BASE}/api/cases/${id}/conversations/end`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: { roomId: conversation.roomId, participants: ['admin', 'belanghebbende'], durationSeconds: 1800 },
-		})
+		const end = await request.post(
+			`${APP_BASE}/api/cases/${id}/conversations/end`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {
+					roomId: conversation.roomId,
+					participants: ['admin', 'belanghebbende'],
+					durationSeconds: 1800,
+				},
+			},
+		)
 		expect(end.ok(), await end.text()).toBeTruthy()
 
 		const stored = await showObject(request, 'case', id)
-		const record = stored.conversations.find((c: any) => c.roomId === conversation.roomId)
+		const record = stored.conversations.find(
+			(c: any) => c.roomId === conversation.roomId,
+		)
 		expect(record.participants).toEqual(['admin', 'belanghebbende'])
 		expect(record.durationSeconds).toBe(1800)
 		expect(record.startedAt).not.toBe('')
@@ -197,8 +245,14 @@ test.describe('a live conversation on the case', () => {
 	 * @e2e Scenario: a recording becomes a case document
 	 * @e2e Scenario: a constatering ter plaatse is a photo and a voice note
 	 */
-	test('a capture on a toezichtzaak becomes a document on the case', async ({ request }) => {
-		const seeded = await seedOrdinaryCase(request, token, 'toezichtzaak met spraaknotitie')
+	test('a capture on a toezichtzaak becomes a document on the case', async ({
+		request,
+	}) => {
+		const seeded = await seedOrdinaryCase(
+			request,
+			token,
+			'toezichtzaak met spraaknotitie',
+		)
 		const id = objectId(seeded)
 
 		const res = await request.post(`${APP_BASE}/api/cases/${id}/captures`, {
@@ -221,7 +275,9 @@ test.describe('a live conversation on the case', () => {
 	/**
 	 * @e2e Scenario: a capture on a task follows the task
 	 */
-	test('a capture made for a task still files on the case, and says which task', async ({ request }) => {
+	test('a capture made for a task still files on the case, and says which task', async ({
+		request,
+	}) => {
 		const seeded = await seedOrdinaryCase(request, token, 'taak met opname')
 		const id = objectId(seeded)
 
@@ -250,8 +306,13 @@ test.describe('a live conversation on the case', () => {
 	 * that does not resolve is refused, which the unit suite asserts and this
 	 * one does not repeat over the network.
 	 */
-	test('a major case opens one channel, and closing the case closes it', async ({ request }) => {
-		test.skip((await talkAvailable(request)) === false, 'Talk is absent, so no channel can be opened')
+	test('a major case opens one channel, and closing the case closes it', async ({
+		request,
+	}) => {
+		test.skip(
+			(await talkAvailable(request)) === false,
+			'Talk is absent, so no channel can be opened',
+		)
 
 		const types = await adoptableCaseTypes(request)
 		const calamiteit = await createObject(request, token, 'caseType', {
@@ -279,16 +340,22 @@ test.describe('a live conversation on the case', () => {
 			data: {},
 		})
 		const again = await second.json()
-		expect(again.alreadyMajor, 'a second declaration opened a second channel').toBe(true)
+		expect(
+			again.alreadyMajor,
+			'a second declaration opened a second channel',
+		).toBe(true)
 		expect(again.channel.roomId).toBe(opened.channel.roomId)
 
 		const stored = await showObject(request, 'case', id)
 		expect(stored.isMajor).toBe(true)
 		expect(stored.majorResponders).toContain('admin')
 
-		const closed = await request.delete(`${APP_BASE}/api/cases/${id}/major/channel`, {
-			headers: { requesttoken: token },
-		})
+		const closed = await request.delete(
+			`${APP_BASE}/api/cases/${id}/major/channel`,
+			{
+				headers: { requesttoken: token },
+			},
+		)
 		expect(closed.ok(), await closed.text()).toBeTruthy()
 
 		const after = await showObject(request, 'case', id)
@@ -305,8 +372,15 @@ test.describe('a live conversation on the case', () => {
 	 * logs nothing. So the panel is reached through the tab, not asserted from
 	 * the manifest.
 	 */
-	test('the live conversation section is on the Communication tab', async ({ page, request }) => {
-		const seeded = await seedOrdinaryCase(request, token, 'zaak met communicatietab')
+	test('the live conversation section is on the Communication tab', async ({
+		page,
+		request,
+	}) => {
+		const seeded = await seedOrdinaryCase(
+			request,
+			token,
+			'zaak met communicatietab',
+		)
 		await page.goto(`${APP_BASE}/cases/${objectId(seeded)}`)
 
 		const panel = await openCasePanel(page, 'conversations')
@@ -315,7 +389,9 @@ test.describe('a live conversation on the case', () => {
 		if (await talkAvailable(request)) {
 			await expect(panel.getByTestId('start-conversation')).toBeVisible()
 		} else {
-			await expect(panel.getByText(/Talk is not available|Talk is niet beschikbaar/)).toBeVisible()
+			await expect(
+				panel.getByText(/Talk is not available|Talk is niet beschikbaar/),
+			).toBeVisible()
 		}
 	})
 })
