@@ -25,6 +25,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\DerivedStatusListener;
+use OCA\Dossiq\Listener\DerivedStatusTimelineListener;
+use OCA\Dossiq\Service\Status\DerivedStatusJournal;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -65,10 +68,29 @@ class DerivedStatusListenerRegistrar {
 	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		// ONE journal for the two listeners. An autowired class is built again
+		// for every consumer, and two empty journals would stage into one and
+		// take from the other, so the derived move would never be recorded and
+		// nothing would say why. `registerService()` memoises; that is the
+		// whole reason this registration is explicit.
+		$context->registerService(
+			DerivedStatusJournal::class,
+			static function (): DerivedStatusJournal {
+				return new DerivedStatusJournal();
+			}
+		);
+
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: DerivedStatusListener::class,
 			priority: self::DERIVATION_PRIORITY
+		);
+
+		// The post-persist half: it records the staged move on the case
+		// timeline once the save that carried it has actually landed.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: DerivedStatusTimelineListener::class
 		);
 	}//end register()
 }//end class

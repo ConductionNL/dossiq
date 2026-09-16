@@ -221,12 +221,36 @@ describe('useEngineTaskStore', () => {
 	})
 
 	it('invokes a lifecycle verb and lets the engine decide', async () => {
+		post.mockResolvedValue({ data: { uuid: 't1', state: 'available' } })
+		const store = useEngineTaskStore()
+
+		const task = await store.invoke('t1', 'claim', { comment: 'mine' })
+
+		expect(post.mock.calls[0][0]).toContain('/flow-tasks/t1/claim')
+		expect(post.mock.calls[0][1]).toEqual({ comment: 'mine' })
+		expect(task.state).toBe('available')
+	})
+
+	it('sends complete to dossiq, which owns the refusals the engine cannot make', async () => {
+		// `task-as-a-first-class-record` (#2840) gave completing a task a
+		// dossiq half: the case type declares a form whose required fields
+		// must be answered and effects that must resolve, and REQ-TASK-043
+		// requires the completion to be REFUSED when a declared handler
+		// cannot be resolved, rather than completing without the effect.
+		// Neither refusal is the engine's to make, so complete goes to
+		// dossiq's endpoint, which makes them and then hands the completion
+		// on. There is still exactly one completion path.
+		//
+		// This test exists because the split shipped with none: the verb test
+		// above was the only assertion on the URL, and it had been rewritten
+		// to the new route rather than made to say which verb goes where.
 		post.mockResolvedValue({ data: { uuid: 't1', state: 'completed' } })
 		const store = useEngineTaskStore()
 
 		const task = await store.invoke('t1', 'complete', { comment: 'done' })
 
-		expect(post.mock.calls[0][0]).toContain('/flow-tasks/t1/complete')
+		expect(post.mock.calls[0][0]).toContain('/apps/dossiq/api/case-tasks/t1/complete')
+		expect(post.mock.calls[0][0]).not.toContain('/flow-tasks/')
 		expect(post.mock.calls[0][1]).toEqual({ comment: 'done' })
 		expect(task.state).toBe('completed')
 	})
