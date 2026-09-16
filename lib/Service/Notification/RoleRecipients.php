@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Notification;
 
 use OCA\Dossiq\Service\SettingsService;
-use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Who holds a role on a case, answered by the platform's own resolver.
@@ -65,13 +63,11 @@ class RoleRecipients {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService OpenRegister access (ADR-083).
-	 * @param LoggerInterface $logger          Says why a resolve answered nothing.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -144,13 +140,11 @@ class RoleRecipients {
 			return [];
 		}
 
-		try {
-			$schema = $mapper->find($slug);
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq notifications: the case schema was not read: ' . $e->getMessage());
-			return [];
-		}
-
+		// A schema read that THROWS propagates, for the same reason the resolve
+		// above does: answering "this schema assigns no roles" when the truth is
+		// "I could not read it" turns a fault into a rule that quietly reaches
+		// fewer people.
+		$schema = $mapper->find($slug);
 		if (is_object($schema) === false || method_exists($schema, 'getAuthorization') === false) {
 			return [];
 		}
@@ -160,7 +154,17 @@ class RoleRecipients {
 			return [];
 		}
 
-		$roles = ($authorization['roles'] ?? null);
+		return $this->normaliseRoles(roles: ($authorization['roles'] ?? null));
+	}//end roleGroups()
+
+	/**
+	 * One role-to-groups map with every unusable entry dropped.
+	 *
+	 * @param mixed $roles The assignment as the schema carries it.
+	 *
+	 * @return array<string, array<int, string>> The assignment.
+	 */
+	private function normaliseRoles(mixed $roles): array {
 		if (is_array($roles) === false) {
 			return [];
 		}
@@ -171,11 +175,16 @@ class RoleRecipients {
 				continue;
 			}
 
-			$out[$role] = array_values(
-				array_filter($groups, static fn (mixed $g): bool => (is_string($g) === true && $g !== ''))
-			);
+			$named = [];
+			foreach ($groups as $group) {
+				if (is_string($group) === true && $group !== '') {
+					$named[] = $group;
+				}
+			}
+
+			$out[$role] = $named;
 		}
 
 		return $out;
-	}//end roleGroups()
+	}//end normaliseRoles()
 }//end class

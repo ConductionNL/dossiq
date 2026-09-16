@@ -124,13 +124,12 @@ class NotificationRouting {
 			$scopes[] = $scope;
 		}
 
-		try {
-			$entries = $service->getEffectiveForUser(userId: $userId, scopes: $scopes);
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq notifications: the effective preferences were not read: ' . $e->getMessage());
-			return null;
-		}
-
+		// A platform that THROWS propagates. Answering null here would say
+		// "nothing routes on this instance", which is a different fact, and it
+		// would silently hand every reader back to the local mirror the moment
+		// the register had a bad minute. The caller that owns a sensible
+		// default is the one that decides: DigestPreferences::forUser().
+		$entries = $service->getEffectiveForUser(userId: $userId, scopes: $scopes);
 		if (is_array($entries) === false) {
 			return null;
 		}

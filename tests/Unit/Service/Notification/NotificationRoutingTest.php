@@ -320,13 +320,13 @@ class NotificationRoutingTest extends TestCase {
 	}//end testTheSwitchIsWrittenAsTheirOwnOverride()
 
 	/**
-	 * A platform that throws does not take the caller with it.
+	 * A read that throws propagates rather than reading as unrouted.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
-	public function testAThrowingPlatformIsReportedAsNotRouted(): void {
+	public function testAThrowingReadPropagatesRatherThanReadingAsUnrouted(): void {
 		$angry = new class {
 			/**
 			 * Always throws.
@@ -364,7 +364,59 @@ class NotificationRoutingTest extends TestCase {
 
 		$routing = $this->routing(service: $angry);
 
-		$this->assertNull(actual: $routing->effectiveFor(userId: 'alice'));
-		$this->assertFalse(condition: $routing->setDigestEnabled(userId: 'alice', enabled: true));
-	}//end testAThrowingPlatformIsReportedAsNotRouted()
+		// The READ propagates: answering null would say "nothing routes here",
+		// which is a different fact and would hand every reader back to the
+		// local mirror on a bad minute.
+		$this->expectException(\RuntimeException::class);
+		$routing->effectiveFor(userId: 'alice');
+	}//end testAThrowingReadPropagatesRatherThanReadingAsUnrouted()
+
+	/**
+	 * A write that throws is reported as not routed, not as success.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
+	 */
+	public function testAThrowingWriteIsReportedAsNotRouted(): void {
+		$angry = new class {
+			/**
+			 * Answers, so the seam reads as available.
+			 *
+			 * @param string            $userId The person.
+			 * @param array<int,string> $scopes The scopes.
+			 *
+			 * @return array<int, mixed> Nothing.
+			 */
+			public function getEffectiveForUser(string $userId, array $scopes = []): array {
+				return [];
+			}
+
+			/**
+			 * Always throws.
+			 *
+			 * @param string      $userId          The person.
+			 * @param string      $schemaSlug      The schema.
+			 * @param string      $notificationKey The rule.
+			 * @param array|null  $override        The value.
+			 * @param string|null $scope           The scope.
+			 *
+			 * @return void
+			 */
+			public function setOverride(
+				string $userId,
+				string $schemaSlug,
+				string $notificationKey,
+				?array $override,
+				?string $scope = null
+			): void {
+				throw new \RuntimeException('the register is down');
+			}
+		};
+
+		$this->assertFalse(
+			condition: $this->routing(service: $angry)->setDigestEnabled(userId: 'alice', enabled: true),
+			message: 'A write that did not land must not report that it did.'
+		);
+	}//end testAThrowingWriteIsReportedAsNotRouted()
 }//end class

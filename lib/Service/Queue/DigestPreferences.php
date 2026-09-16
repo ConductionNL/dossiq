@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Queue;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Notification\NotificationRouting;
 use InvalidArgumentException;
+use Throwable;
 use OCP\Config\IUserConfig;
 use Psr\Log\LoggerInterface;
 
@@ -121,9 +122,15 @@ class DigestPreferences {
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function forUser(string $userId): array {
-		$routed = $this->routing->digestEnabledFor(userId: $userId);
-		$decided = ($this->routing->digestDecidedBy(userId: $userId) ?? ['source' => 'dossiq', 'scope' => 'global']);
+		$enabled = true;
+		$hour = self::DEFAULT_HOUR;
+		$decided = ['source' => 'dossiq', 'scope' => 'global'];
 
+		// THE ONLY PLACE THAT DEGRADES, and deliberately the one with a usable
+		// default. The seam onto the platform lets a fault through rather than
+		// answering "nothing routes", so a bad minute on the register cannot
+		// silently flip every reader back to the local mirror. Here it is a
+		// caught fault with a named fallback instead, and the job keeps running.
 		try {
 			$enabled = $this->userConfig->getValueBool($userId, Application::APP_ID, self::PREF_ENABLED, true);
 			$hour = $this->hourInRange(
@@ -134,15 +141,16 @@ class DigestPreferences {
 					self::DEFAULT_HOUR
 				)
 			);
+
+			$routed = $this->routing->digestEnabledFor(userId: $userId);
+			if ($routed !== null) {
+				$enabled = $routed;
+				$decided = ($this->routing->digestDecidedBy(userId: $userId) ?? $decided);
+			}
 		} catch (InvalidArgumentException $e) {
 			$this->logger->warning('Dossiq: the digest settings could not be read: ' . $e->getMessage());
-
-			$enabled = true;
-			$hour = self::DEFAULT_HOUR;
-		}
-
-		if ($routed !== null) {
-			$enabled = $routed;
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the routed digest switch could not be read: ' . $e->getMessage());
 		}
 
 		return [
