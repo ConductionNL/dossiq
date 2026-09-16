@@ -507,3 +507,85 @@ export function grantRows({
 
 	return rows
 }
+
+/**
+ * The schema a case type is an object of.
+ *
+ * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ */
+export const CASE_TYPE_SCHEMA = 'caseType'
+
+/**
+ * The case, and the field rules its type declares per role.
+ *
+ * TWO READS AND NOT ONE, BECAUSE THEY ANSWER DIFFERENT QUESTIONS. The case
+ * carries `@self.fieldRules`, which is what OpenRegister decided for THIS
+ * reader in THIS state. The case type carries the declaration, which is the
+ * rule behind that decision and the sentence its author wrote. A panel with
+ * only the first can say a field is missing and nothing else; a panel with only
+ * the second can say what the rules are and not whether any of them is why the
+ * reader is looking at a gap.
+ *
+ * Neither is evaluated here. The decision is read, never recomputed: it is
+ * resolved per user and per state on OpenRegister's render path, and a second
+ * evaluator would eventually disagree with the one that actually withheld the
+ * field.
+ *
+ * A failed read answers null, never an empty list, for the reason the whole
+ * module gives: "we could not ask" and "there is no rule" are opposite answers.
+ *
+ * @param {string} caseId The case uuid.
+ *
+ * @return {Promise<{decided: object|null, declared: Array<object>|null}>} The answer.
+ * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ */
+export async function fetchFieldRoleRules(caseId) {
+	if (!caseId) {
+		return { decided: null, declared: null }
+	}
+
+	const caseObject = await read(
+		`apps/openregister/api/objects/${CASE_REGISTER}/${CASE_SCHEMA}/${caseId}`,
+	)
+	if (caseObject === null) {
+		return { decided: null, declared: null }
+	}
+
+	const decided = caseObject['@self']?.fieldRules ?? null
+	const caseTypeId = referenceId(caseObject.caseType)
+	if (!caseTypeId) {
+		return { decided, declared: null }
+	}
+
+	const caseType = await read(
+		`apps/openregister/api/objects/${CASE_REGISTER}/${CASE_TYPE_SCHEMA}/${caseTypeId}`,
+	)
+	if (caseType === null) {
+		return { decided, declared: null }
+	}
+
+	return {
+		decided,
+		declared: Array.isArray(caseType.fieldRoleRules) ? caseType.fieldRoleRules : [],
+	}
+}
+
+/**
+ * The id a reference carries, whichever shape it arrived in.
+ *
+ * A `$ref` reaches the browser as a uuid string on a plain read and as an
+ * expanded object when somebody asked for it. Reading only the string shape is
+ * how the second read silently never happens.
+ *
+ * @param {unknown} value The reference.
+ *
+ * @return {string} The id, or the empty string.
+ * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+ */
+function referenceId(value) {
+	if (value && typeof value === 'object') {
+		return String(value['@self']?.id ?? value.id ?? value.uuid ?? '')
+	}
+
+	return String(value ?? '')
+}
