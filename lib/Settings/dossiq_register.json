@@ -1391,6 +1391,9 @@
                             {
                                 "kind": "field",
                                 "field": "majorResponders"
+                            },
+                            {
+                                "watchers": true
                             }
                         ],
                         "subject": {
@@ -1424,10 +1427,29 @@
                             "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
                             "en": "New case \"{{title}}\" received via handoff"
                         }
+                    },
+                    "caseMovedForItsFollowers": {
+                        "trigger": {
+                            "type": "transition"
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "watchers": true
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Zaak \"{{title}}\" is van status veranderd",
+                            "en": "Case \"{{title}}\" moved to another status"
+                        },
+                        "x-notes": "case-followers, row 13.18. What a follower actually hears. `{\"watchers\": true}` names a subscription list rather than a value to look up, which is why it carries no `kind`; NotificationRecipientResolver normalises it to the `watchers` kind and resolves the list at DISPATCH time, dropping anyone who has since lost read on the case. So this rule cannot leak a sensitive case to a colleague whose group changed, and dossiq dispatches nothing of its own. The trigger is `transition` and not `updated`: ObjectTransitionedEvent fires when the status engine moves the case, where `updated` fires on every save, and a follower who hears about every field edit stops reading the ones that matter. The recipients are the watchers ALONE. The handler and the team already hear through their own rules, and a second rule addressing them would arrive as a second notification about one move. The subject deliberately names no status: a case status reaches this template as the stored value rather than the label an administrator gave it, and a notification reading \"moved to 7f3a-...\" is worse than one that says to go and look."
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.23.0",
+                "version": "1.24.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
