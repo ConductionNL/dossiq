@@ -5288,7 +5288,15 @@ OC.L10N.register(
         "Tables in scope": "Tabellen in bereik",
         "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "De indexen waar het zoeken op zaken uit leest. Ze leven in OpenRegister, dat de querylaag bezit; dossiq houdt geen kopie van hun staat bij. Een verouderde index is een zaak die niemand vindt.",
         "We could not read this search from character {position}.": "We konden deze zoekopdracht niet lezen vanaf teken {position}.",
-        "We could not read this search.": "We konden deze zoekopdracht niet lezen."
+        "We could not read this search.": "We konden deze zoekopdracht niet lezen.",
+        "{groups} cannot change this field.": "{groups} kunnen dit veld niet wijzigen.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} kunnen dit veld niet wijzigen. {heldBy} wel.",
+        "{groups} do not see this field.": "{groups} zien dit veld niet.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} zien dit veld niet. {heldBy} wel.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "Ontbreekt er een veld bij deze zaak, dan komt dat door een regel hieronder en niet doordat het leeg is.",
+        "applies to you": "geldt voor jou",
+        "Which fields each role reads": "Welke velden elke rol leest",
+        "Who it affects": "Voor wie het geldt"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -5288,7 +5288,15 @@ OC.L10N.register(
         "Tables in scope": "Tables in scope",
         "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.",
         "We could not read this search from character {position}.": "We could not read this search from character {position}.",
-        "We could not read this search.": "We could not read this search."
+        "We could not read this search.": "We could not read this search.",
+        "{groups} cannot change this field.": "{groups} cannot change this field.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} cannot change this field. {heldBy} can.",
+        "{groups} do not see this field.": "{groups} do not see this field.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} do not see this field. {heldBy} do.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "A field missing from this case is missing because of a rule below, not because it is empty.",
+        "applies to you": "applies to you",
+        "Which fields each role reads": "Which fields each role reads",
+        "Who it affects": "Who it affects"
     },
     "nplurals=2; plural=(n != 1);"
 )

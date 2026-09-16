@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -40,13 +41,15 @@ class InitializeSettings implements IRepairStep {
 	/**
 	 * Constructor for InitializeSettings.
 	 *
-	 * @param SettingsService $settingsService The settings service
-	 * @param LoggerInterface $logger The logger interface
+	 * @param SettingsService         $settingsService The settings service
+	 * @param CaseFieldRoleProjector  $fieldRoles     Puts the per-role field rules back after an import
+	 * @param LoggerInterface         $logger The logger interface
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
+		private CaseFieldRoleProjector $fieldRoles,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -117,6 +120,18 @@ class InitializeSettings implements IRepairStep {
 			$output->info(
 				'Dossiq declarative schema configuration reconciled (' . $reconciledCount . ' written)'
 			);
+
+			// 🔴 THE IMPORT REWRITES A SCHEMA'S PROPERTIES, AND THE PER-ROLE
+			// FIELD RULES LIVE ON THEM. The reconcile above puts the schema-level
+			// annotation blocks back; nothing puts back the
+			// `properties.<field>.authorization` blocks a case type projected,
+			// and OpenRegister answers a stripped field again the moment they are
+			// gone. Nothing errors when that happens: the field is simply in the
+			// response, for the role the rule exists to keep it from. So the
+			// ledger is re-applied on every upgrade, idempotently.
+			if ($this->fieldRoles->reapply() === true) {
+				$output->info('Dossiq per-role field rules re-applied to the case schema');
+			}
 
 			if ($result['success'] === true) {
 				$version = ($result['version'] ?? 'unknown');
