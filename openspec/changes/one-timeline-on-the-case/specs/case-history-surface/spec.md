@@ -150,3 +150,100 @@ SHALL be left standing rather than replaced with an empty string.
 - **WHEN** they open the Timeline tab
 - **THEN** the composer SHALL NOT be shown
 - **AND** the pin and follow-up controls SHALL NOT be shown
+
+### Requirement: Every status move records itself on the timeline (REQ-TL-15)
+
+Every move of a case from one status to another SHALL write a
+`statuswijziging` entry naming both statuses, who made the move, what
+they said about it and the `statusRecord` it wrote. The entry SHALL be
+internal. A guarded transition, an admin free-form move, an ending act
+and a reopen SHALL all be recorded, because all four write a
+`statusRecord`. A derived move writes no `statusRecord` and SHALL be
+recorded after the save that carried it has landed, never before. No move
+SHALL be recorded twice. A failure to write the entry SHALL be logged and
+SHALL NOT fail the move.
+
+The sentence a handler reads SHALL name the two statuses. The entry's
+`fields` SHALL carry their ids, so a reader filters on the id and reads
+the name.
+
+#### Scenario: a handler reads why the case moved and who moved it
+@e2e tests/e2e/one-timeline-on-the-case.spec.ts
+
+- **GIVEN** a case a handler moves to another status with a comment
+- **WHEN** the move is made
+- **THEN** a `statuswijziging` entry SHALL be written
+- **AND** it SHALL carry the status it left, the status it entered, the handler and the comment
+
+#### Scenario: a case that closes says so on its own timeline
+@e2e exclude The ending acts reach the same seam as a guarded transition, so an e2e over the acts would re-measure the write the scenario above already measures on a running instance.
+
+- **GIVEN** a case a handler finishes
+- **WHEN** the ending act writes its status record
+- **THEN** a `statuswijziging` entry SHALL be written naming the terminal status
+
+#### Scenario: a status that became true is recorded once the save landed
+@e2e exclude A derived status needs a case type declaring its conditions and a write that makes one true, which is the subject of what-a-status-declares and is covered by its own suite; this scenario is about the ordering of the two listeners, which is unit work.
+
+- **GIVEN** a case type declaring the conditions of a status
+- **WHEN** a write makes those conditions true and the case is saved
+- **THEN** a `statuswijziging` entry SHALL be written after the save
+- **AND** it SHALL name no actor and invent no explanation
+
+#### Scenario: a move nobody derived is not written twice
+@e2e exclude The absence of a second entry is counted against a double in the unit suite; an e2e would assert a count on a live timeline that other suites also write to.
+
+- **GIVEN** a handler making an ordinary guarded transition
+- **WHEN** the case is saved and the status record is written
+- **THEN** exactly one `statuswijziging` entry SHALL exist for that move
+
+#### Scenario: the move still lands when the timeline write fails
+@e2e exclude The failing timeline is induced by refusing the seam, which is a double's answer rather than a state a running instance can be put into without breaking every other suite in the file.
+
+- **GIVEN** an instance whose timeline write fails
+- **WHEN** a handler moves a case to another status
+- **THEN** the case SHALL move and the status record SHALL be written as before
+- **AND** the failure SHALL be logged
+
+### Requirement: Every term event records itself on the timeline (REQ-TL-16)
+
+Every term event SHALL write a `termijngebeurtenis` entry carrying the
+event, when it happened, when the term started, when it now falls due and
+the term instance it belongs to. The entry SHALL be internal. A term
+starting, pausing, resuming, being extended, being exceeded and being
+completed SHALL all be recorded, and so SHALL the aanvullingsverzoek ask
+and its answer. A phase term, a planned end and an internal target write
+no term event of their own, and their start SHALL be recorded where the
+term instance is written. Re-binding a term that is already running SHALL
+NOT be recorded as a start. A failure to write the entry SHALL be logged
+and SHALL NOT fail the act.
+
+#### Scenario: a suspended term reaches the timeline
+@e2e tests/e2e/one-timeline-on-the-case.spec.ts
+
+- **GIVEN** a case with a running statutory term
+- **WHEN** the term is suspended for an aanvullingsverzoek
+- **THEN** a `termijngebeurtenis` entry SHALL be written
+- **AND** it SHALL carry the event, the new due date and the term instance
+
+#### Scenario: a phase clock says it started
+@e2e exclude A phase term needs a case type declaring a phase lead time, which phase-terms-and-the-internal-target seeds in its own suite; the write itself has no second answer a running instance could give.
+
+- **GIVEN** a case type declaring a lead time on a phase
+- **WHEN** the case enters that phase
+- **THEN** a `termijngebeurtenis` entry SHALL be written naming the phase clock and its due date
+
+#### Scenario: moving a running term's end date is not a new start
+@e2e exclude Whether a start is announced is counted against a double; a live instance would need two writes of the same term to tell the two apart.
+
+- **GIVEN** a case whose fixed end date moves
+- **WHEN** the running term is re-bound to the new date
+- **THEN** no `termijngebeurtenis` entry SHALL announce a start
+
+#### Scenario: the term event is kept when the timeline refuses it
+@e2e exclude The refusal is a double's answer, as in REQ-TL-15.
+
+- **GIVEN** an instance whose timeline write fails
+- **WHEN** a term is suspended
+- **THEN** the TermijnGebeurtenis SHALL be written as before
+- **AND** the failure SHALL be logged
