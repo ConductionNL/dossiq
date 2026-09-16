@@ -185,14 +185,22 @@ class TermijnTimerService {
 	 * has no single-timer cancel, so a helper outliving an on-time
 	 * aanvulling is dropped by the listener's still-paused guard instead.
 	 *
+	 * A pause reason with a chasing schedule adds one `preBreach` rung per
+	 * reminder inside its budget, so the engine fires the reminders on the same
+	 * clock it fires the expiry on and dossiq keeps no schedule of its own. The
+	 * rungs are advisory in the same way the expiry rung is: the listener
+	 * re-reads the instance and lets {@see \OCA\Dossiq\Service\Pause\ChaseSchedule}
+	 * decide, so a rung that fires after a resume, or twice, sends nothing.
+	 *
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 * @param int $durationDays The hersteltermijn length in days.
+	 * @param array<int, int> $chaseOffsets Days before the pause ends, one per reminder.
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
-	public function armHersteltermijn(array $instance, int $durationDays): ?string {
+	public function armHersteltermijn(array $instance, int $durationDays, array $chaseOffsets = []): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
 		if ($instanceId === '' || $durationDays <= 0) {
 			return null;
@@ -209,18 +217,21 @@ class TermijnTimerService {
 				'value' => $durationDays,
 				'unit' => 'calendarDays',
 			],
-			'escalationRules' => [
+			'escalationRules' => array_merge(
 				[
-					'trigger' => 'slaBreached',
-					'offset' => 0,
-					'offsetUnit' => 'calendarDays',
-					'notifyRole' => ['handler'],
-					'escalateToRole' => [],
-					'priority' => 'high',
-					'message' => 'pauze-verlopen',
-					'openIncident' => false,
+					[
+						'trigger' => 'slaBreached',
+						'offset' => 0,
+						'offsetUnit' => 'calendarDays',
+						'notifyRole' => ['handler'],
+						'escalateToRole' => [],
+						'priority' => 'high',
+						'message' => 'pauze-verlopen',
+						'openIncident' => false,
+					],
 				],
-			],
+				$this->chaseRules(offsets: $chaseOffsets)
+			),
 			'anchorEvent' => 'hersteltermijn_start',
 			'metadata' => [
 				'source' => self::METADATA_SOURCE,
@@ -233,6 +244,44 @@ class TermijnTimerService {
 
 		return $this->arm(config: $config, context: 'hersteltermijn', instanceId: $instanceId);
 	}//end armHersteltermijn()
+
+	/**
+	 * The engine rules for the reminders on one pause.
+	 *
+	 * `preBreach` rather than a negative `slaBreached` offset, because
+	 * `preBreach:<days>` is the rung shape the fired listener already parses
+	 * and a second shape would need a second parser. The message is
+	 * `pauze-chase` so a human reading the engine's own log can tell a reminder
+	 * from the expiry beside it.
+	 *
+	 * @param array<int, int> $offsets Days before the pause ends, one per reminder.
+	 *
+	 * @return array<int, array<string, mixed>> The rules, empty when the reason does not chase.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function chaseRules(array $offsets): array {
+		$rules = [];
+		foreach ($offsets as $offset) {
+			$days = (int)$offset;
+			if ($days <= 0) {
+				continue;
+			}
+
+			$rules[] = [
+				'trigger' => 'preBreach',
+				'offset' => $days,
+				'offsetUnit' => 'calendarDays',
+				'notifyRole' => [],
+				'escalateToRole' => [],
+				'priority' => 'normal',
+				'message' => 'pauze-chase',
+				'openIncident' => false,
+			];
+		}//end foreach
+
+		return $rules;
+	}//end chaseRules()
 
 	/**
 	 * Suspend the beslistermijn timer (opschorting, AWB 4:5).

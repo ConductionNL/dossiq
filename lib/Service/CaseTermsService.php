@@ -268,7 +268,8 @@ class CaseTermsService {
 	 *
 	 * @return array<int, array{id: string, kind: string, startDate: string, endDate: string,
 	 *               status: string, statusType: string, plannedStartDate: string,
-	 *               daysLeft: int, overdue: bool, citizenVisible: bool}>
+	 *               daysLeft: int, overdue: bool, citizenVisible: bool,
+	 *               pauseReason: string, pauseWaitingOn: string, chasesSent: int}>
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
@@ -292,6 +293,13 @@ class CaseTermsService {
 				'daysLeft' => $daysLeft,
 				'overdue' => ($end !== '' && $daysLeft < 0 && $this->isRunning(row: $row) === true),
 				'citizenVisible' => TermKind::isCitizenVisible($kind),
+				// A suspended clock reads differently from a stopped one: the
+				// panel has to say WHY it stopped and what has been tried since,
+				// or a handler looking at a case that has sat still for nine
+				// days cannot tell a reminder is already overdue.
+				'pauseReason' => (string)($row['pauseReason'] ?? ''),
+				'pauseWaitingOn' => (string)($row['pauseWaitingOn'] ?? ''),
+				'chasesSent' => max(0, (int)($row['chasesSent'] ?? 0)),
 			];
 		}//end foreach
 

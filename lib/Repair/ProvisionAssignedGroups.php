@@ -124,6 +124,15 @@ class ProvisionAssignedGroups implements IRepairStep {
 		'controllers',
 		'kcc',
 		'klantcontact',
+		// Assigned a notification role by the case schema's
+		// `authorization.roles` (register.d/66-notification-routing.json).
+		// `behandelaars` above already carries the behandelaar role. A role
+		// assigned a group the server does not have is not a quiet team: the
+		// resolver reports it and the dispatcher records `recipient-unresolved`
+		// on every firing, so an unprovisioned group here is a fault row per
+		// case rather than a missing notice. AuthorizationRolesAreProvisioned
+		// Test sweeps the shipped roles against this list.
+		'coordinatoren',
 	];
 
 	/**

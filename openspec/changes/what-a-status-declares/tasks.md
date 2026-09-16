@@ -56,6 +56,60 @@ was planned: this repo's PHP suite lives under `tests/Unit/`, not `tests/unit/`.
   fires and one that explains itself, a queue count by who we wait on, a
   dwell breach inside a healthy term, a work list sorted by dwell.
 
+- [x] 6.1 `lib/Settings/dossiq_register.json`: `statusType.fieldRules`, which
+  case fields a status requires, hides and locks, each entry with optional
+  groups, an optional condition and the sentence a refusal shows. Schema
+  version moved to 1.5.0.
+  - `@spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md`
+  - The condition reuses the three `derivedWhen` kinds rather than a second
+    vocabulary, which is what this change's own residue asked for.
+- [x] 6.2 The declarations are published onto the case schema at publish time,
+  in the shape OpenRegister's `field-rules-by-state` reads.
+  - `lib/Service/Status/StatusFieldRuleDeclaration.php`,
+    `lib/Service/Status/CaseStateFieldRuleProjector.php`, called from
+    `CaseTypePublishService::publish()`
+  - `tests/Unit/Service/Status/StatusFieldRuleDeclarationTest.php`,
+    `tests/Unit/Service/Status/CaseStateFieldRuleProjectorTest.php`
+  - The state key is the statusType UUID, because that is what `case.status`
+    carries. The write merges per state, so publishing one case type cannot
+    unpublish another's rules.
+  - A condition is translated to JSONLogic, not re-evaluated. `documentPresent`
+    is published without a condition rather than as a node reading a property
+    nothing writes.
+- [x] 6.3 `SchemaAnnotationReconciler` carries the projected `states` forward,
+  through `CaseStateFieldRuleProjector::carryForwardStates()`.
+  - Without it the next reconcile replaces the lifecycle with the declared one
+    and every per-status field rule stops being enforced, in silence.
+- [x] 6.4 A property's `requiredAtStatus` is published as a `required` entry of
+  that status, so the control that has been in the Properties tab since case
+  types shipped is enforced rather than given a rival.
+- [x] 6.5 The status form declares the rules: which field, which of the three,
+  which groups, an optional condition, and the sentence a refusal shows.
+  - `src/utils/statusFieldRules.js`,
+    `src/views/settings/components/StatusTypeForm.vue`,
+    `src/views/settings/tabs/StatusesTab.vue`
+  - `tests/vitest/statusFieldRules.spec.js`
+  - `formToStatusType` and `statusTypeToForm` gained `fieldRules` AND
+    `derivedWhen`: the second was a live bug, see the residue below.
+- [x] 6.6 The case page renders what the platform decided, read off
+  `@self.fieldRules` and never recomputed.
+  - `src/components/case/CaseStatusDeclarationPanel.vue`
+  - `tests/vitest/caseFieldRulesPanel.spec.js`
+  - A refused save shows the refusal code's own sentence, through
+    `stateFieldRefusal()` in `refusalMessage()`.
+- [x] 6.7 A Rules tab per case type lists `GET /api/schemas/{schema}/rules` and
+  tries a rule against one case with the trace.
+  - `src/services/schemaRules.js`, `src/views/settings/tabs/RulesTab.vue`,
+    registered in `CaseTypeDetail.vue`
+  - `tests/vitest/caseTypeRules.spec.js`
+  - Kinds are labelled from `GET /api/rules/vocabulary`, so a kind added after
+    this release renders instead of blanking. Rules are addressed by id, never
+    by position.
+- [x] 6.8 `tests/e2e/case-types-declare-field-rules.spec.ts`: a required field
+  refusing a move, the same move succeeding once filled, `@self.fieldRules` on
+  the read, `requiredAtStatus` enforced, the inventory carrying the rule, and a
+  trial that writes nothing.
+
 ## What was left out, and why
 
 **The count and the breach are on two calendars.** The BREACH is the engine's:
@@ -77,11 +131,30 @@ page now reads. Putting the record back needs a post-persist listener that
 compares the two statuses; that is the shape to reach for the day the case
 timeline is asked to show derivations.
 
-**`derivedWhen` has no authoring surface.** `waitingOn` and `maximumDwell` are
-on the status form; the conditions are authored in register JSON. A condition
-editor is a list of rows with a kind, a field and a label per row, and it
-belongs beside the `field-rules-by-state` editor rather than as a second one in
-this form.
+**`derivedWhen` still has no authoring surface, and no longer loses its data.**
+The conditions are still authored in register JSON. What changed is that they
+survive: `formToStatusType` writes back a whitelist, `derivedWhen` was not on
+it, and opening a status and pressing Save, or simply dragging a status to
+reorder it, wrote the row back without its conditions and the derivation
+quietly stopped. It is carried through untouched now and asserted in
+`tests/vitest/statusFieldRules.spec.js`. The editor itself is still the right
+shape and still unbuilt: a list of rows with a kind, a field and a label,
+beside the field-rule editor task 6.5 added rather than as a second one.
+
+**The condition on a field rule is one row, not a group.** `field-rules-by-state`
+accepts `and` and `or` over clauses, and this editor writes a single condition.
+A second clause is a second row today. Grouping is a UI for an expression
+tree and it belongs with the `derivedWhen` editor above, which needs the same
+one: building two of them is how the two vocabularies drift apart, which is
+exactly what reusing the three kinds was meant to prevent.
+
+**`documentPresent` is stored and not published.** A document hangs off the case
+as a related object, and the condition document OpenRegister evaluates carries
+only the object, the previous object, the user and the transition. Publishing a
+node reading a property nothing writes would make the rule silently never
+apply, so the rule is published unconditionally instead. Closing it needs
+either a computed property on the case counting its documents, or a condition
+operand that can reach a relation, and the second is openregister's.
 
 **No `relatedOpen` condition kind.** "Waiting on advice while an advice
 request is open" is a dependency on another object, and that is exactly what

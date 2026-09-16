@@ -79,6 +79,7 @@ class TimedJobDeadlineThresholdTest extends TestCase {
 		'BezwaarTermijnJob' => 'bezwaartermijn scheduler; moves to anchor-shaped FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.2)',
 		'DsoDeadlineJob' => 'DSO deadline engine advancing case status from cron; becomes a FlowTimerFiredEvent consumer in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.3)',
 		'BottleneckDetectionJob' => 'stalled-milestone detector; moves to businessDays FlowTimers in phase 3 of openspec/changes/termijnbewaking-op-engine-timers (tasks 3.1)',
+		'PauseChaseJob' => 'the reminder sweep on a suspended term. Its PRIMARY path is already the engine: openspec/changes/pause-reason-with-chasing arms one preBreach rung per reminder on the hersteltermijn helper that phase 1 of openspec/changes/termijnbewaking-op-engine-timers introduced, and TermijnTimerFiredListener consumes the fire. This job is the fallback while OpenRegister remains an OPTIONAL runtime dependency, because armHersteltermijn() arms nothing without it; it retires when the phase that makes the engine required lands. The job itself computes no threshold: it calls PauseChaseService::sweep(), and the interval arithmetic lives in ChaseSchedule against the count the instance carries',
 	];
 
 	/**

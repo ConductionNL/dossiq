@@ -168,7 +168,12 @@ export async function savePersonalStage(caseId, stage) {
 export async function fetchDigestSettings() {
 	const { data } = await axios.get(generateUrl(`${BASE}/digest`))
 
-	return { enabled: data?.enabled !== false, hour: Number(data?.hour ?? 8) }
+	return {
+		enabled: data?.enabled !== false,
+		hour: Number(data?.hour ?? 8),
+		source: String(data?.source ?? 'dossiq'),
+		scope: String(data?.scope ?? 'global'),
+	}
 }
 
 /**
@@ -186,5 +191,10 @@ export async function saveDigestSettings(enabled, hour) {
 		hour,
 	})
 
-	return { enabled: data?.enabled !== false, hour: Number(data?.hour ?? 8) }
+	return {
+		enabled: data?.enabled !== false,
+		hour: Number(data?.hour ?? 8),
+		source: String(data?.source ?? 'dossiq'),
+		scope: String(data?.scope ?? 'global'),
+	}
 }
