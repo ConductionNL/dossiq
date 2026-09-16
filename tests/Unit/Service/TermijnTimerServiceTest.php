@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TermijnTimerServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

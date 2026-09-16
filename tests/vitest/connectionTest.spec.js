@@ -55,7 +55,9 @@ describe('what a connection reads as', () => {
 	})
 
 	it('still says something when a failure carried no reason', () => {
-		expect(connectionLabel({ state: 'failed' }).label).toBe('The endpoint did not answer')
+		expect(connectionLabel({ state: 'failed' }).label).toBe(
+			'The endpoint did not answer',
+		)
 	})
 
 	it('carries the moment a week-old result was measured', () => {
@@ -79,7 +81,9 @@ describe('connectionTestApi.testStufEndpoint', () => {
 
 		const result = await testStufEndpoint('ep-1')
 
-		expect(axios.post).toHaveBeenCalledWith('/index.php/apps/dossiq/api/connections/stuf/ep-1/test')
+		expect(axios.post).toHaveBeenCalledWith(
+			'/index.php/apps/dossiq/api/connections/stuf/ep-1/test',
+		)
 		expect(result.state).toBe('reachable')
 	})
 })

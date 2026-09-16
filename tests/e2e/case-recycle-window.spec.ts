@@ -123,7 +123,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 	// page is `CasesDeleted` (src/views/cases/DeletedCasesView.vue), a custom
 	// page on dossiq's history-mode router, so the URL is a PATH: `#/cases/deleted`
 	// would render the Dashboard under this assertion.
-	test('CasesDeleted (DeletedCasesView) renders the case and the date its window ends', async ({ page }) => {
+	test('CasesDeleted (DeletedCasesView) renders the case and the date its window ends', async ({
+		page,
+	}) => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} shown in the lens`,
 			caseType: caseTypeId,
@@ -166,7 +168,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		const refused = await tryDeleteObject(api, token, 'case', heldId)
 		expect(refused.status).toBe(HOOK_STOPPED)
 
-		const rows = ((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any).results ?? []
+		const rows =
+			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
+				.results ?? []
 		expect(
 			rows.some((r: any) => r.id === heldId),
 			'a refused delete must not put the case in the trash',
@@ -194,7 +198,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(restored.status()).toBe(200)
 		expect(((await restored.json()) as any).success).toBe(true)
 
-		const rows = ((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any).results ?? []
+		const rows =
+			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
+				.results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a restored case must leave the trash',
@@ -262,7 +268,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(refused.status()).toBe(409)
 		expect(((await refused.json()) as any).code).toBe('recovery_window_open')
 
-		const rows = ((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any).results ?? []
+		const rows =
+			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
+				.results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a refused destruction must leave the case in the trash',

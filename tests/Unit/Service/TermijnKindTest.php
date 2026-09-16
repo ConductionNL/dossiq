@@ -38,6 +38,10 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\TermKind
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\TermCalendarGuard
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
  */
 class TermijnKindTest extends TestCase {
 	use MakesCaseDateNormaliser;

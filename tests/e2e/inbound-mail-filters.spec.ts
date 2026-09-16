@@ -70,7 +70,8 @@ function entryBody(overrides: Record<string, unknown>): Record<string, unknown> 
 		dkimResult: 'unavailable',
 		dmarcResult: 'unavailable',
 		threadingResult: 'none',
-		original: 'From: aanvrager@voorbeeld.nl\r\nSubject: Bezwaar\r\n\r\nIk maak bezwaar.',
+		original:
+			'From: aanvrager@voorbeeld.nl\r\nSubject: Bezwaar\r\n\r\nIk maak bezwaar.',
 		...overrides,
 	}
 }
@@ -83,7 +84,12 @@ test.describe('Inbound mail filters', () => {
 		const token = await getRequestToken(api)
 
 		const seed = async (key: string, overrides: Record<string, unknown>) => {
-			const row = await createObject(api, token, ENTRY_SCHEMA, entryBody(overrides))
+			const row = await createObject(
+				api,
+				token,
+				ENTRY_SCHEMA,
+				entryBody(overrides),
+			)
 			entries[key] = objectId(row)
 		}
 
@@ -125,14 +131,20 @@ test.describe('Inbound mail filters', () => {
 
 		// The whole point of D12: the credential left dossiq. A password field
 		// anywhere on this page means it came back.
-		await expect(page.locator('.email-settings input[type="password"]')).toHaveCount(0)
-		await expect(page.locator('.email-settings #email_imap_password')).toHaveCount(0)
+		await expect(
+			page.locator('.email-settings input[type="password"]'),
+		).toHaveCount(0)
+		await expect(
+			page.locator('.email-settings #email_imap_password'),
+		).toHaveCount(0)
 
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
 	})
 
 	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#somebody-says-they-mailed-us
-	test('a message that became no case is found by its sender', async ({ page }) => {
+	test('a message that became no case is found by its sender', async ({
+		page,
+	}) => {
 		await navToRoute(page, LOG_ROUTE)
 
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
@@ -166,7 +178,9 @@ test.describe('Inbound mail filters', () => {
 		await navToRoute(page, LOG_ROUTE)
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
 
-		const button = page.locator(`[data-testid="intake-log-not-junk-${entries.junked}"]`)
+		const button = page.locator(
+			`[data-testid="intake-log-not-junk-${entries.junked}"]`,
+		)
 		await expect(button).toBeVisible({ timeout: 30_000 })
 		await button.click()
 
@@ -184,7 +198,9 @@ test.describe('Inbound mail filters', () => {
 			.toBe('')
 
 		const entry = await showObject(api, ENTRY_SCHEMA, entries.junked)
-		expect(entry.reason, 'the correction names who made it').toContain('not junk')
+		expect(entry.reason, 'the correction names who made it').toContain(
+			'not junk',
+		)
 		await api.dispose()
 	})
 
@@ -197,7 +213,9 @@ test.describe('Inbound mail filters', () => {
 		await navToRoute(page, LOG_ROUTE)
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
 
-		const button = page.locator(`[data-testid="intake-log-release-${entries.held}"]`)
+		const button = page.locator(
+			`[data-testid="intake-log-release-${entries.held}"]`,
+		)
 		await expect(button).toBeVisible({ timeout: 30_000 })
 		await button.click()
 

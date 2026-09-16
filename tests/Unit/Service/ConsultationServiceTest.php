@@ -28,6 +28,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Obligations\ObligationDeclaration;
+use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -102,6 +104,8 @@ interface ConsultationObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -156,6 +160,17 @@ class ConsultationServiceTest extends TestCase {
 			repository: $repository,
 			dependencyGraph: new ConsultationDependencyGraph($repository),
 			dates: $this->caseDates(),
+			// A REAL ObligationService over the same mocked SettingsService,
+			// not a double. Every assertion in this file is about behaviour
+			// the advice request keeps now that the blocking is one declared
+			// mechanism, and a double would let that behaviour be asserted
+			// against a stub of itself.
+			obligations: new ObligationService(
+				settingsService: $this->settings,
+				declaration: new ObligationDeclaration(),
+				dates: $this->caseDates(),
+				logger: $this->logger,
+			),
 		);
 
 	}//end setUp()

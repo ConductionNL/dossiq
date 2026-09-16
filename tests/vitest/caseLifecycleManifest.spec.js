@@ -145,13 +145,18 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// are the top row and the panels take the rows under it, with no gutter
 		// row between.
 		//
-		// TWO ROWS NOW SIT BETWEEN THEM, and neither is a gutter. The unread
+		// THREE ROWS NOW SIT BETWEEN THEM, and none is a gutter. The unread
 		// strip says what changed on this case since the handler last looked
 		// and which panel holds it. The declaration strip says what the status
 		// the case is in is still waiting for, which is the only place that
 		// can be said at all: a derived status is not a move a handler picks,
 		// so an unmet derivation leaves nothing in the panels to read. Both
 		// are read BEFORE the panels for the same reason the tiles are. The
+		// attention strip joined them on 2026-09-15
+		// (markers-and-assessments-on-the-case, #2837): the flag a person
+		// raised with a written reason, the risk this organisation assessed,
+		// and the markers pointing at a named panel of this page. It is read
+		// before the panels because it says WHICH panel to open. The
 		// assertion therefore allows exactly the rows that carry a widget and
 		// still refuses an empty one, which is what it was guarding.
 		const layout = caseDetail().config.layout
@@ -161,11 +166,13 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(panels.gridX).toBe(0)
 
 		const tileRows = Math.max(...tiles.map((c) => c.gridHeight))
-		const between = layout.filter((c) => c.gridY >= tileRows && c.gridY < panels.gridY)
+		const between = layout.filter(
+			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
+		)
 		expect(
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
-		).toEqual(['case-unread', 'case-status-declaration'])
+		).toEqual(['case-unread', 'case-status-declaration', 'case-attention'])
 		expect(panels.gridY).toBe(
 			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
 		)
@@ -214,8 +221,16 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 		expect(action('case-lifecycle-menu').type).toBe('open-modal')
 		expect(action('case-lifecycle-menu').target).toBe('CaseLifecycleMenuDialog')
 
-		for (const gone of ['case-suspend', 'case-resume', 'case-extend', 'case-reopen']) {
-			expect(action(gone), `${gone} is folded into the one menu`).toBeUndefined()
+		for (const gone of [
+			'case-suspend',
+			'case-resume',
+			'case-extend',
+			'case-reopen',
+		]) {
+			expect(
+				action(gone),
+				`${gone} is folded into the one menu`,
+			).toBeUndefined()
 		}
 	})
 

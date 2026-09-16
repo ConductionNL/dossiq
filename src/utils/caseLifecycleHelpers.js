@@ -276,7 +276,9 @@ export function refusalMessage(body, translate) {
 			// is a kebab-case rule slug meant for code, and `message` is the
 			// sentence the refusal authored. Reading `error` first would put
 			// "transition-from-status-mismatch" in front of a handler.
-			return String(body?.message ?? body?.error ?? t('The case could not be changed.'))
+			return String(
+				body?.message ?? body?.error ?? t('The case could not be changed.'),
+			)
 	}
 }
 

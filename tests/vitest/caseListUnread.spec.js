@@ -157,7 +157,9 @@ describe('the Unread column on both case lists', () => {
 		for (const id of ['Cases', 'Queue']) {
 			expect(unreadColumn(id).widget).toBe('unreadIndicator')
 		}
-		expect(cellWidgetsSource).toMatch(/\n\tunreadIndicator: UnreadIndicatorCell,\n/)
+		expect(cellWidgetsSource).toMatch(
+			/\n\tunreadIndicator: UnreadIndicatorCell,\n/,
+		)
 		expect(cellWidgetsSource).toContain(
 			"import UnreadIndicatorCell from '../components/cells/UnreadIndicatorCell.vue'",
 		)
@@ -190,7 +192,9 @@ describe('an absent unread flag reads as read', () => {
 		// A row with no counts and a row whose every tab is read are different
 		// claims, and a caller that cannot tell them apart renders "nothing
 		// new" for a case it never asked about.
-		expect(unreadCountsOf({ '@self': { unreadCounts: { files: 2 } } })).toEqual({ files: 2 })
+		expect(unreadCountsOf({ '@self': { unreadCounts: { files: 2 } } })).toEqual({
+			files: 2,
+		})
 		expect(unreadCountsOf({ '@self': {} })).toBeNull()
 		expect(unreadCountsOf({})).toBeNull()
 	})
@@ -215,9 +219,10 @@ describe('both marks are offered on a row', () => {
 		for (const id of ['Cases', 'Queue']) {
 			for (const actionId of ['mark-unread', 'mark-read']) {
 				const icon = action(page(id).config.actions, actionId).icon
-				expect(iconsSource, `${icon} is not registered in src/icons.js`).toContain(
-					`\n\t${icon},\n`,
-				)
+				expect(
+					iconsSource,
+					`${icon} is not registered in src/icons.js`,
+				).toContain(`\n\t${icon},\n`)
 			}
 		}
 	})
@@ -254,14 +259,18 @@ describe('the row handlers write to OpenRegister and nowhere else', () => {
 		expect(axios.delete.mock.calls[0][0]).toBe(
 			'/index.php/apps/openregister/api/objects/dossiq/case/case-7/read-state',
 		)
-		expect(mockShowSuccess).toHaveBeenCalledWith('You will see this as unread again.')
+		expect(mockShowSuccess).toHaveBeenCalledWith(
+			'You will see this as unread again.',
+		)
 	})
 
 	it('marks a case read with a PUT carrying no sub-resource', async () => {
 		// No sub-resource on purpose: OpenRegister stamps only the one a PUT
 		// names, so marking the case read from a row must not silently stamp
 		// its panels as well and take the Documents badge with it.
-		axios.put.mockResolvedValue({ data: { unread: false, notificationsCleared: 2 } })
+		axios.put.mockResolvedValue({
+			data: { unread: false, notificationsCleared: 2 },
+		})
 
 		await markCaseRead({ actionId: 'mark-read', item: { id: 'case-7' } })
 
@@ -275,7 +284,10 @@ describe('the row handlers write to OpenRegister and nowhere else', () => {
 	it('reads the id off the metadata when the row carries no plain one', async () => {
 		axios.delete.mockResolvedValue({ data: { unread: true } })
 
-		await markCaseUnread({ actionId: 'mark-unread', item: { '@self': { id: 'case-9' } } })
+		await markCaseUnread({
+			actionId: 'mark-unread',
+			item: { '@self': { id: 'case-9' } },
+		})
 
 		expect(axios.delete.mock.calls[0][0]).toBe(
 			'/index.php/apps/openregister/api/objects/dossiq/case/case-9/read-state',
@@ -292,7 +304,10 @@ describe('the row handlers write to OpenRegister and nowhere else', () => {
 
 	it('shows the refusal the server wrote, unchanged', async () => {
 		axios.delete.mockRejectedValue({
-			response: { status: 403, data: { message: 'A read state is your own.' } },
+			response: {
+				status: 403,
+				data: { message: 'A read state is your own.' },
+			},
 		})
 
 		await markCaseUnread({ actionId: 'mark-unread', item: { id: 'case-7' } })

@@ -93,6 +93,11 @@ interface RoundTripObjectStoreStub {
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
  * @covers \OCA\Dossiq\Service\WOODeadlineService
+ * @uses \OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard
+ * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
+ * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class OneDateWritePathRoundTripTest extends TestCase {
 	use MakesCaseDateNormaliser;

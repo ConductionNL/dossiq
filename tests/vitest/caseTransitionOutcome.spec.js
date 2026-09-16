@@ -29,10 +29,8 @@ const { showWarning, emit } = vi.hoisted(() => ({
 vi.mock('@nextcloud/dialogs', () => ({ showWarning }))
 vi.mock('@nextcloud/event-bus', () => ({ emit }))
 
-const {
-	failedActionsOf,
-	failedActionsWarning,
-} = await import('../../src/utils/transitionOutcome.js')
+const { failedActionsOf, failedActionsWarning } =
+	await import('../../src/utils/transitionOutcome.js')
 const CaseTransitionConfirmDialog = (
 	await import('../../src/dialogs/CaseTransitionConfirmDialog.vue')
 ).default
@@ -53,7 +51,10 @@ describe('failedActionsWarning', () => {
 
 	it('names one action in the singular', () => {
 		expect(
-			failedActionsWarning({ status: 'partial', failedActions: [TWO_FAILED[0]] }),
+			failedActionsWarning({
+				status: 'partial',
+				failedActions: [TWO_FAILED[0]],
+			}),
 		).toBe(
 			'You moved the case, but 1 automatic action did not run. Its status record shows which.',
 		)
@@ -84,7 +85,11 @@ describe('the case-page transition dialog', () => {
 		const wrapper = shallowMount(CaseTransitionConfirmDialog, {
 			props: {
 				caseId: 'case-1',
-				transition: { id: 't1', label: 'Start behandeling', toStatus: 'st-progress' },
+				transition: {
+					id: 't1',
+					label: 'Start behandeling',
+					toStatus: 'st-progress',
+				},
 				closing: false,
 			},
 		})

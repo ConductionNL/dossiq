@@ -53,10 +53,7 @@
 				<template v-if="warnings.length > 0">
 					<p class="case-type-publish__explainer">
 						{{
-							t(
-								'dossiq',
-								'You can publish this, but read this first.',
-							)
+							t('dossiq', 'You can publish this, but read this first.')
 						}}
 					</p>
 					<ul

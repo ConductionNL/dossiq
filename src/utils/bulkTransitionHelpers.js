@@ -92,7 +92,7 @@ export function clearSelection() {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function transitionParameters(transitionId, comment) {
-	return { transitionId: (transitionId || ''), comment: (comment || '') }
+	return { transitionId: transitionId || '', comment: comment || '' }
 }
 
 /**
@@ -114,18 +114,18 @@ export function transitionParameters(transitionId, comment) {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function lifecycleParameters(gesture, fields) {
-	const given = (fields || {})
+	const given = fields || {}
 	const parameters = {
-		gesture: (gesture || ''),
+		gesture: gesture || '',
 		reason: (given.reason || '').trim(),
 	}
 
 	if (gesture === 'suspend') {
-		parameters.days = (Number(given.days) || 0)
+		parameters.days = Number(given.days) || 0
 	}
 
 	if (gesture === 'extend') {
-		parameters.newEndDate = (given.newEndDate || '')
+		parameters.newEndDate = given.newEndDate || ''
 	}
 
 	return parameters
