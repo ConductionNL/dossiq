@@ -367,7 +367,7 @@ class NotificationRoutingTest extends TestCase {
 		// The READ propagates: answering null would say "nothing routes here",
 		// which is a different fact and would hand every reader back to the
 		// local mirror on a bad minute.
-		$this->expectException(\RuntimeException::class);
+		$this->expectException(exception: \RuntimeException::class);
 		$routing->effectiveFor(userId: 'alice');
 	}//end testAThrowingReadPropagatesRatherThanReadingAsUnrouted()
 
