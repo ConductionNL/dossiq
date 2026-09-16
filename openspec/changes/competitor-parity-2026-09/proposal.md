@@ -562,6 +562,16 @@ declared on the case type.
 | `decision-outcomes-on-the-case` | decidiq `the-decision-as-a-walked-process` (decidiq#1316), cluster 22 | C-decisions-1, C-decisions-13, C-decisions-25 |
 | `widget-roles-declared` | launchpad `dashboards-and-who-may-see-them` (launchpad#637), cluster 12, ledger row 10.1 | C-reporting-22 |
 | `fees-and-payments-on-the-case` | shillinq `fees-payments-and-the-contract-register` (shillinq#1608), cluster 55, ledger rows 1.11 and 12.12 | C-intake-44, C-intake-7, C-deadlines-10, C-parties-and-contacts-1 |
+| `case-objects-hinge-on-the-object` | openregister `objects-as-the-hinge-between-cases` (openregister#3765, merged), cluster 5, ledger row 2.15 | the row's own candidates; the register holds the list |
+
+**Row 2.15's reason is out of date and the change says so.** The ledger
+rates dossiq partial on "custom objects linked to cases" because it reads
+"the `caseObject` schema only, no page or widget". Both shipped in
+`custom-objects-on-the-case`, archived 2026-09-08: the `case-objects`
+widget is a section of the Related tab and `CaseObjects` is an index at
+`/case-objects`, both asserted by `tests/vitest/caseObjects.spec.js`. The
+gap is what the surface can say, which is why the consumer half is a set
+of declarations rather than a page.
 
 The fourth, integriq `outbound-sender-identity-and-deliverability`
 (integriq#2012, cluster 61, candidate C-communication-44), is a sibling

@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds NINE tabs, and keeps holding nine.
+ * The case page holds TEN tabs, and keeps holding ten.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -72,6 +72,7 @@ const tabs = () => widget('case-panels').content.tabs
  *   6 -> 7  2026-09-12  the Notes tab joined the strip beside Files
  *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
  *                       left the SIDEBAR
+ *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
  *
  * The second move is not the growth this ceiling guards against. Nothing was
  * added to the page: the sidebar lost exactly the three tabs the strip gained
@@ -79,10 +80,17 @@ const tabs = () => widget('case-panels').content.tabs
  * held. What the ceiling is for is UNWATCHED growth, the strip going from ten
  * to fourteen with nothing counting it, and an exact assertion somebody has to
  * edit on purpose is the thing that stops that.
+ *
+ * The third move IS growth, and it is recorded as such rather than waved
+ * through. Archiving is a surface the case did not have: what happens to it
+ * when its business use ends, as openregister decided. It came in on #2850
+ * with this file left at nine, so the strip and the ceiling disagreed and the
+ * suite was red on development until this line was edited. That is the
+ * mechanism working, one PR late.
  */
-const TAB_CEILING = 9
+const TAB_CEILING = 10
 
-/** The nine labels, in the order a handler reads them. */
+/** The ten labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
@@ -93,6 +101,7 @@ const EXPECTED_TABS = [
 	['case-work-panel', 'Work'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
+	['case-archival-panel', 'Archiving'],
 ]
 
 /**
@@ -150,7 +159,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the nine tabs, in order', () => {
+	it('names the ten tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -268,10 +277,15 @@ describe('the container type this change depends on', () => {
 	})
 
 	it('is the type every group widget declares', () => {
-		// Four tabs are a single surface rather than a group of sections: Files
-		// (the case folder through the `files` leaf) and the three panes that
-		// came out of the sidebar. Every other tab is a group and declares
-		// `case-sections`.
+		// Five tabs are a single surface rather than a group of sections: Files
+		// (the case folder through the `files` leaf), the three panes that came
+		// out of the sidebar, and Archiving. Every other tab is a group and
+		// declares `case-sections`.
+		//
+		// Archiving is `custom` on purpose and the manifest says why: every
+		// value on it is read off `@self._retention`, which openregister wrote
+		// at closure. A data widget would build its fields from the schema's own
+		// properties instead, which is a second derivation of the same answer.
 		//
 		// The three panes are keyed by TYPE in registry.js, not by component
 		// name. That distinction is the whole bug behind an empty Notes tab:
@@ -289,6 +303,18 @@ describe('the container type this change depends on', () => {
 			if (widgetId === 'case-files') {
 				expect(widget(widgetId).type).toBe('integration')
 				expect(widget(widgetId).integrationId).toBe('files')
+				continue
+			}
+			if (widgetId === 'case-archival-panel') {
+				expect(widget(widgetId).type).toBe('custom')
+				// And the component it resolves to through the page slot is
+				// actually registered. Without this the assertion above passes
+				// on a manifest whose Archiving tab renders nothing.
+				expect(
+					registry,
+					'CaseArchivalPanel is named by the manifest but registered nowhere, '
+					+ 'so the Archiving tab renders nothing',
+				).toContain('CaseArchivalPanel: {')
 				continue
 			}
 			if (PANES[widgetId]) {
