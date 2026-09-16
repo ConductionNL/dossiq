@@ -5219,7 +5219,18 @@ OC.L10N.register(
         "Remove from favourites": "Remove from favourites",
         "Removed from your favourites.": "Removed from your favourites.",
         "Star a case to find it here": "Star a case to find it here",
-        "Your favourites": "Your favourites"
+        "Your favourites": "Your favourites",
+        "Closed with no result": "Closed with no result",
+        "Correct that character, or search for plain words. AND, OR and NOT work in capitals, and quotes make a phrase.": "Correct that character, or search for plain words. AND, OR and NOT work in capitals, and quotes make a phrase.",
+        "Indexes on them": "Indexes on them",
+        "No, a rebuild locks the table it is on": "No, a rebuild locks the table it is on",
+        "Rebuild without locking": "Rebuild without locking",
+        "Run {command} status on the server for the same figures, and {command} rebuild --apply after a schema change.": "Run {command} status on the server for the same figures, and {command} rebuild --apply after a schema change.",
+        "Search index": "Search index",
+        "Tables in scope": "Tables in scope",
+        "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.",
+        "We could not read this search from character {position}.": "We could not read this search from character {position}.",
+        "We could not read this search.": "We could not read this search."
     },
     "nplurals=2; plural=(n != 1);"
 )
