@@ -38,7 +38,10 @@ namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Cases\ExternalHome;
+use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -98,9 +101,28 @@ class CaseActionProviderExecuteTest extends TestCase {
 			resultWriter: $this->createMock(CaseResultWriter::class),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerOver()
+
+	/**
+	 * A REAL approval gate over a case type that declares no gates.
+	 *
+	 * The real class rather than a double: a mocked gate would answer whatever
+	 * this file told it to, and the assertions below are about the engine's
+	 * failures reaching OpenRegister unchanged, which only holds if the gate in
+	 * front of them genuinely lets an ungated act through.
+	 *
+	 * @return ApprovalGate
+	 */
+	private function ungatedApprovals(): ApprovalGate {
+		return new ApprovalGate(
+			caseTypes: $this->createMock(CaseTypeResolver::class),
+			decisions: $this->createMock(ContractDecisionDelegationService::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
+	}//end ungatedApprovals()
 
 	/**
 	 * An engine whose write throws the given failure.
