@@ -52,6 +52,8 @@ use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
+use OCA\Dossiq\Service\Transitions\OfferedTransitions;
+use OCA\Dossiq\Service\Transitions\TransitionDeclarations;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -96,6 +98,8 @@ class StatusTransitionService {
 	 * @param CaseResultWriter $resultWriter Closing-result reader/writer
 	 * @param StatusChecklist $statusChecklist The checklist a status brings with it
 	 * @param StatusDeclarations $declarations What a status declares about itself
+	 * @param TransitionDeclarations $declaredMoves What a transition declares about itself
+	 * @param OfferedTransitions $offered Which moves this case offers and which it withholds
 	 * @param ProcessOwnedStatusRule $processOwnedStatus Refuses a hand-set status where the case type gives it to the process
 	 */
 	public function __construct(
@@ -110,6 +114,8 @@ class StatusTransitionService {
 		private readonly CaseResultWriter $resultWriter,
 		private readonly StatusChecklist $statusChecklist,
 		private readonly StatusDeclarations $declarations,
+		private readonly TransitionDeclarations $declaredMoves,
+		private readonly OfferedTransitions $offered,
 		private readonly ProcessOwnedStatusRule $processOwnedStatus,
 	) {
 	}//end __construct()
@@ -147,10 +153,18 @@ class StatusTransitionService {
 
 		$result = [
 			'transitions' => [],
+			// Always present, even when nothing is withheld: a caller that had
+			// to test for the key would read an absent list as "nothing is in
+			// the way", which is the one wrong answer that looks right.
+			'withheld' => [],
 			'current' => [
 				'statusId' => $currentId,
 				'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId),
 				'statusColour' => $this->store->lookupStatusColour(statusTypeId: $currentId),
+				// What this status MEANS, written by an administrator and
+				// rendered on the case. Published beside the name because both
+				// come off the same row.
+				'statusDescription' => $this->store->lookupStatusDescription(statusTypeId: $currentId),
 				'waitingOn' => $declared['waitingOn'],
 				'dwell' => $declared['dwell'],
 			],
@@ -161,62 +175,24 @@ class StatusTransitionService {
 			return $result;
 		}
 
-		$caseTypeId = (string)($case['caseType'] ?? '');
-
 		$transitions = $template['transitions'] ?? [];
 		if (is_array($transitions) === false) {
 			return $result;
 		}
 
-		foreach ($transitions as $transition) {
-			if (is_array($transition) === false) {
-				continue;
-			}
+		// Which moves are offered, and which are withheld and why, is ONE
+		// decision about one transition asked five ways, and it lives in its
+		// own class. This engine's job is what happens when a handler TAKES
+		// one.
+		$sorted = $this->offered->from(
+			transitions: $transitions,
+			case: $case,
+			currentId: $currentId,
+			userId: $userId,
+		);
 
-			if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
-				continue;
-			}
-
-			// A DERIVED status is not a move somebody picks. If it could be
-			// both, the two disagree within a week and nobody knows which one
-			// is the record: a handler sets Complete on a file that is not,
-			// the derivation never fires because the case is already there,
-			// and the missing document is never named. Dropping it here is
-			// what makes the derivation the single answer.
-			if ($this->declarations->isDerivedStatus(
-				caseTypeId: $caseTypeId,
-				statusTypeId: (string)($transition['toStatus'] ?? ''),
-			) === true) {
-				continue;
-			}
-
-			$eval = $this->guardRegistry->evaluateAll(
-				guards: $this->evaluateGuards(transition: $transition),
-				case: $case,
-				userId: $userId,
-			);
-
-			// Drop transitions whose role guard hides them silently.
-			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
-				continue;
-			}
-
-			$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
-
-			$result['transitions'][] = [
-				'id' => (string)($transition['id'] ?? ''),
-				'label' => (string)($transition['label'] ?? ''),
-				// Additive, and empty for every template shipped today: the
-				// documented StatusTransition shape carries no `description`.
-				// It is published so a template that does write one reaches
-				// CaseActionProvider, which has no other sight of the
-				// transition definition.
-				'description' => (string)($transition['description'] ?? ''),
-				'toStatus' => (string)($transition['toStatus'] ?? ''),
-				'guardsPassed' => count($failed) === 0,
-				'failedGuards' => $failed,
-			];
-		}//end foreach
+		$result['transitions'] = $sorted['transitions'];
+		$result['withheld'] = $sorted['withheld'];
 
 		return $result;
 	}//end getAvailableTransitions()
@@ -495,6 +471,7 @@ class StatusTransitionService {
 			comment: $comment,
 			evaluatedGuards: $evaluatedGuards,
 			noWorkflowTemplate: false,
+			actor: $userId,
 		);
 
 		$statusRecordId = (string)($record['id'] ?? '');
@@ -624,6 +601,39 @@ class StatusTransitionService {
 				rule: 'transition-from-status-mismatch',
 				sentence: 'This move does not start from the status the case is in.',
 				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		// The dependency is re-asked on the server, for the reason the guards
+		// are: the list a browser holds was true when it was fetched, and the
+		// advice request can have arrived since. Withholding is the courtesy;
+		// this is the rule.
+		$withheld = $this->declaredMoves->withheldReasons(transition: $transition, case: $case);
+		if ($withheld !== []) {
+			throw new RefusedException(
+				rule: 'transition-dependency-open',
+				sentence: 'This move is waiting on ' . $withheld[0] . '.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		// 🔑 FOUR EYES IS A NEGATIVE RULE ABOUT AN ACT, NOT A ROLE. The same
+		// person legitimately approves other cases they did not prepare, so
+		// there is no role to withhold this from: the engine reads who
+		// performed the named earlier act ON THIS CASE and refuses them.
+		// It refuses rather than withholds, deliberately. A colleague opening
+		// the same case must see the move, and a list that hid it per reader
+		// would make two handlers disagree about what the case offers.
+		$refusal = $this->declaredMoves->fourEyesRefusal(
+			transition: $transition,
+			caseId: $caseId,
+			userId: $userId,
+		);
+		if ($refusal !== null) {
+			throw new RefusedException(
+				rule: 'transition-four-eyes',
+				sentence: $this->declaredMoves->refusalSentence(refusal: $refusal),
+				status: RefusedException::STATUS_FORBIDDEN,
 			);
 		}
 
@@ -800,6 +810,7 @@ class StatusTransitionService {
 			comment: $comment,
 			evaluatedGuards: [],
 			noWorkflowTemplate: true,
+			actor: $userId,
 		);
 
 		// A status brings its checklist however the case arrived. This path
