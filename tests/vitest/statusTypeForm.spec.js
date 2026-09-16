@@ -220,7 +220,9 @@ describe('formToStatusType', () => {
 			fieldRules: [
 				{ rule: 'required', field: 'motivering', groups: [], message: '' },
 			],
-			derivedWhen: [{ kind: 'fieldPresent', field: 'description', label: 'the summary' }],
+			derivedWhen: [
+				{ kind: 'fieldPresent', field: 'description', label: 'the summary' },
+			],
 		}
 
 		expect(formToStatusType(statusTypeToForm(stored))).toEqual(stored)
@@ -237,8 +239,12 @@ describe('formToStatusType', () => {
 		expect(form.maximumDwell).toBe('')
 		expect(formToStatusType(form).waitingOn).toBe('')
 		expect(formToStatusType(form).maximumDwell).toBe('')
-		expect(formToStatusType(statusTypeToForm({ maximumDwell: 0 })).maximumDwell).toBe('')
-		expect(formToStatusType(statusTypeToForm({ waitingOn: 'nobody' })).waitingOn).toBe('')
+		expect(
+			formToStatusType(statusTypeToForm({ maximumDwell: 0 })).maximumDwell,
+		).toBe('')
+		expect(
+			formToStatusType(statusTypeToForm({ waitingOn: 'nobody' })).waitingOn,
+		).toBe('')
 	})
 
 	it('carries the reorder path through the same mapping', () => {

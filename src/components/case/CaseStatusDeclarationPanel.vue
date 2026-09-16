@@ -113,10 +113,7 @@ import {
 	withheldSentence,
 	withheldTransitions,
 } from '../../utils/statusDeclaration.js'
-import {
-	fieldRulesOf,
-	hasFieldRules,
-} from '../../utils/statusFieldRules.js'
+import { fieldRulesOf, hasFieldRules } from '../../utils/statusFieldRules.js'
 
 export default {
 	name: 'CaseStatusDeclarationPanel',

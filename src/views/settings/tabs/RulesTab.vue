@@ -51,14 +51,22 @@
 					<th scope="col">{{ t('dossiq', 'Kind') }}</th>
 					<th scope="col">{{ t('dossiq', 'On') }}</th>
 					<th scope="col">{{ t('dossiq', 'Last run') }}</th>
-					<th scope="col"><span class="hidden-visually">{{ t('dossiq', 'Try') }}</span></th>
+					<th scope="col">
+						<span class="hidden-visually">{{ t('dossiq', 'Try') }}</span>
+					</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr v-for="rule in rules" :key="rule.id" data-testid="rules-row">
 					<th scope="row">{{ rule.label || rule.key || rule.id }}</th>
 					<td data-testid="rules-kind">{{ kindLabel(rule) }}</td>
-					<td>{{ rule.enabled === false ? t('dossiq', 'Off') : t('dossiq', 'On') }}</td>
+					<td>
+						{{
+							rule.enabled === false
+								? t('dossiq', 'Off')
+								: t('dossiq', 'On')
+						}}
+					</td>
 					<td>{{ rule.lastRun || t('dossiq', 'Never') }}</td>
 					<td>
 						<NcButton
@@ -224,8 +232,14 @@ export default {
 				this.rules = []
 				this.error =
 					Number(e?.response?.status) === 403
-						? t('dossiq', 'Only an administrator can read the rules of a case.')
-						: t('dossiq', 'The rules could not be read. Ask an administrator.')
+						? t(
+								'dossiq',
+								'Only an administrator can read the rules of a case.',
+							)
+						: t(
+								'dossiq',
+								'The rules could not be read. Ask an administrator.',
+							)
 			}
 
 			this.loading = false

@@ -155,9 +155,7 @@
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:caseTypeId="caseTypeId" />
-				<RulesTab
-					v-else-if="activeTab === 'rules'"
-					:isCreate="isCreate" />
+				<RulesTab v-else-if="activeTab === 'rules'" :isCreate="isCreate" />
 				<EmailTemplateAdmin
 					v-else-if="activeTab === 'emailTemplates'"
 					:caseTypeId="caseTypeId" />

@@ -79,7 +79,10 @@ describe('what a trial decided', () => {
 	})
 
 	it('falls back to the sentence a refusal carries when there is no trace', () => {
-		const trace = traceOf({ ok: false, error: { message: 'That rule is not on this schema.' } })
+		const trace = traceOf({
+			ok: false,
+			error: { message: 'That rule is not on this schema.' },
+		})
 
 		expect(trace.message).toBe('That rule is not on this schema.')
 		expect(trace.verdict).toBe('')

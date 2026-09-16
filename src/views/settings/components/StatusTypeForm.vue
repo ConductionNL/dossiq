@@ -213,14 +213,16 @@
 				:key="index"
 				class="status-type-form__rule">
 				<div class="status-type-form__row">
-					<div class="status-type-form__field status-type-form__field--rule">
+					<div
+						class="status-type-form__field status-type-form__field--rule">
 						<NcSelect
 							:modelValue="selectedRule(rule)"
 							:options="ruleOptions"
 							:inputLabel="t('dossiq', 'This field')"
 							:data-testid="`status-type-rule-kind-${index}`"
 							@update:modelValue="
-								(v) => updateRule(index, 'rule', v ? v.id : 'required')
+								(v) =>
+									updateRule(index, 'rule', v ? v.id : 'required')
 							" />
 					</div>
 					<div class="status-type-form__field">
@@ -239,7 +241,9 @@
 							:modelValue="rule.field"
 							:label="t('dossiq', 'Field')"
 							:data-testid="`status-type-rule-field-${index}`"
-							@update:modelValue="(v) => updateRule(index, 'field', v)" />
+							@update:modelValue="
+								(v) => updateRule(index, 'field', v)
+							" />
 					</div>
 					<NcButton
 						variant="tertiary"
@@ -277,12 +281,19 @@
 					<div class="status-type-form__field">
 						<NcTextField
 							:modelValue="rule.message"
-							:label="t('dossiq', 'What to say when the save is refused')"
+							:label="
+								t('dossiq', 'What to say when the save is refused')
+							"
 							:placeholder="
-								t('dossiq', 'Fill in the motivation before deciding.')
+								t(
+									'dossiq',
+									'Fill in the motivation before deciding.',
+								)
 							"
 							:data-testid="`status-type-rule-message-${index}`"
-							@update:modelValue="(v) => updateRule(index, 'message', v)" />
+							@update:modelValue="
+								(v) => updateRule(index, 'message', v)
+							" />
 					</div>
 				</div>
 
@@ -304,7 +315,11 @@
 							:data-testid="`status-type-rule-kind-of-${index}`"
 							@update:modelValue="
 								(v) =>
-									updateCondition(index, 'kind', v ? v.id : 'fieldPresent')
+									updateCondition(
+										index,
+										'kind',
+										v ? v.id : 'fieldPresent',
+									)
 							" />
 					</div>
 					<div class="status-type-form__field">
@@ -487,7 +502,8 @@ export default {
 		 */
 		selectedWaitingOn() {
 			return (
-				this.waitingOnOptions.find((o) => o.id === this.form.waitingOn) || null
+				this.waitingOnOptions.find((o) => o.id === this.form.waitingOn)
+				|| null
 			)
 		},
 
@@ -747,7 +763,10 @@ export default {
 		 */
 		updateCondition(index, field, value) {
 			const rule = this.fieldRules[index]
-			const condition = { ...(rule?.condition || ruleCondition()), [field]: value }
+			const condition = {
+				...(rule?.condition || ruleCondition()),
+				[field]: value,
+			}
 			this.updateRule(index, 'condition', condition)
 		},
 

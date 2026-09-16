@@ -73,7 +73,10 @@ test.describe('A case type declares field rules per status', () => {
 				data: { changeNote: 'field rules e2e' },
 			},
 		)
-		expect(res.ok(), `publish -> ${res.status()} ${await res.text()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`publish -> ${res.status()} ${await res.text()}`,
+		).toBeTruthy()
 		return res.json()
 	}
 
@@ -85,7 +88,8 @@ test.describe('A case type declares field rules per status', () => {
 				{
 					rule: 'required',
 					field: 'description',
-					message: 'Write down what this case is about before taking it on.',
+					message:
+						'Write down what this case is about before taking it on.',
 				},
 			],
 		})
@@ -106,7 +110,11 @@ test.describe('A case type declares field rules per status', () => {
 			`/index.php/apps/openregister/api/objects/dossiq/case/${objectId(seeded)}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },
-				data: { ...seeded, description: '', status: machine.statusInProgress },
+				data: {
+					...seeded,
+					description: '',
+					status: machine.statusInProgress,
+				},
 			},
 		)
 
@@ -179,15 +187,18 @@ test.describe('A case type declares field rules per status', () => {
 		// `requiredAtStatus` has been in the Properties tab since case types
 		// shipped and was enforced by nothing. This is the assertion that it
 		// now means something.
-		await api.post('/index.php/apps/openregister/api/objects/dossiq/propertyDefinition', {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: {
-				name: 'description',
-				caseType: machine.caseTypeId,
-				propertyType: 'string',
-				requiredAtStatus: machine.statusDone,
+		await api.post(
+			'/index.php/apps/openregister/api/objects/dossiq/propertyDefinition',
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {
+					name: 'description',
+					caseType: machine.caseTypeId,
+					propertyType: 'string',
+					requiredAtStatus: machine.statusDone,
+				},
 			},
-		})
+		)
 
 		await publish(machine.caseTypeId)
 

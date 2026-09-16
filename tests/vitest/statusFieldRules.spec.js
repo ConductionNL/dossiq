@@ -45,7 +45,9 @@ describe('the rules a status declares', () => {
 	it('drops a rule whose kind the platform does not read', () => {
 		// `readonly` is not refused by anything: it simply never matches, and
 		// the administrator goes on believing the field is locked.
-		expect(pruneFieldRules([{ rule: 'readonly', field: 'confidentiality' }])).toEqual([])
+		expect(
+			pruneFieldRules([{ rule: 'readonly', field: 'confidentiality' }]),
+		).toEqual([])
 	})
 
 	it('keeps a condition written in the vocabulary derivedWhen uses', () => {
@@ -53,7 +55,11 @@ describe('the rules a status declares', () => {
 			{
 				rule: 'required',
 				field: 'motivering',
-				condition: { kind: 'fieldEquals', field: 'outcome', value: 'refused' },
+				condition: {
+					kind: 'fieldEquals',
+					field: 'outcome',
+					value: 'refused',
+				},
 			},
 		])
 
@@ -67,7 +73,11 @@ describe('the rules a status declares', () => {
 
 	it('drops a condition whose kind is not one of the three', () => {
 		const rules = pruneFieldRules([
-			{ rule: 'required', field: 'motivering', condition: { kind: 'invented' } },
+			{
+				rule: 'required',
+				field: 'motivering',
+				condition: { kind: 'invented' },
+			},
 		])
 
 		expect(rules[0].condition).toBeUndefined()
@@ -99,7 +109,13 @@ describe('the status form round trip', () => {
 			id: 's2',
 			name: 'Complete',
 			order: 2,
-			derivedWhen: [{ kind: 'documentPresent', documentType: 'advies', label: 'the advice' }],
+			derivedWhen: [
+				{
+					kind: 'documentPresent',
+					documentType: 'advies',
+					label: 'the advice',
+				},
+			],
 		}
 
 		const saved = formToStatusType(statusTypeToForm(stored))
@@ -108,7 +124,9 @@ describe('the status form round trip', () => {
 	})
 
 	it('writes no rules for a status that declares none', () => {
-		expect(formToStatusType(statusTypeToForm({ name: 'Received' })).fieldRules).toEqual([])
+		expect(
+			formToStatusType(statusTypeToForm({ name: 'Received' })).fieldRules,
+		).toEqual([])
 	})
 })
 

@@ -4441,7 +4441,6 @@ OC.L10N.register(
         "Days in status": "Dagen in status",
         "Waiting on {reason}": "Wacht op {reason}",
         "{move} is waiting on {reason}": "{move} wacht op {reason}",
-        "Explanation": "Toelichting",
         "What a handler should know before taking this step": "Wat een behandelaar moet weten voordat die deze stap zet",
         "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Wordt bij deze stap getoond terwijl de behandelaar kiest. Dat is het enige moment waarop uitleg helpt: een notitie bij de status wordt pas gelezen als de zaak er al staat.",
         "What this status asks for": "Wat deze status nog vraagt",
@@ -5083,7 +5082,16 @@ OC.L10N.register(
         "Try it": "Probeer het",
         "What this status asks of the case": "Wat deze status van de zaak vraagt",
         "What this status asks of the case. Publishing the case type hands these to the platform, which refuses a save that breaks one.": "Wat deze status van de zaak vraagt. Bij publicatie van het zaaktype gaan deze naar het platform, dat een opslag weigert die er een schendt.",
-        "What to say when the save is refused": "Wat te zeggen als het opslaan wordt geweigerd"
+        "What to say when the save is refused": "Wat te zeggen als het opslaan wordt geweigerd",
+        "Condition": "Voorwaarde",
+        "Field rules": "Veldregels",
+        "Groups": "Groepen",
+        "The Nextcloud groups the rule applies to. Leave it empty and the rule applies to everyone, administrators included, which is the honest reading of a rule that names nobody.": "De Nextcloud-groepen waarvoor de regel geldt. Laat het leeg en de regel geldt voor iedereen, ook voor beheerders, want dat is wat een regel die niemand noemt eerlijk gezegd betekent.",
+        "The case property the rule applies to. A property of the case schema, or one this case type declares through its own fields.": "Het zaakveld waarvoor de regel geldt. Een veld van het zaakschema, of een veld dat dit zaaktype zelf vastlegt.",
+        "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.": "Wat de behandelaar leest als het opslaan wordt geweigerd. Schrijf op wat er nodig is, niet wat de regel heet: \"er is een motivering nodig voordat dit besluit genomen kan worden\" in plaats van \"verplicht veld ontbreekt\". Laat u het leeg, dan schrijft OpenRegister zelf een zin met het veld en de status erin.",
+        "What this status does to the field. required: it may not be left empty while the case sits here. hidden: it is kept out of the read and refused on write. readOnly: it is shown and refused on change.": "Wat deze status met het veld doet. required: het mag niet leeg blijven zolang de zaak hier staat. hidden: het blijft buiten het lezen en wordt geweigerd bij het schrijven. readOnly: het wordt getoond en een wijziging wordt geweigerd.",
+        "When the rule applies. Written in the same three kinds derivedWhen uses, so a case type has one condition vocabulary rather than two.": "Wanneer de regel geldt. Geschreven in dezelfde drie soorten die derivedWhen gebruikt, zodat een zaaktype één taal voor voorwaarden heeft en niet twee.",
+        "Which case fields this status requires, hides and locks. Publishing the case type writes these onto the case schema's x-openregister-lifecycle.states.<statusType>.fields, where OpenRegister decides and refuses them (field-rules-by-state). Dossiq evaluates nothing of its own: a second evaluator is a second answer. An entry that names no groups applies to everyone, administrators included. An entry may carry a condition in the same vocabulary derivedWhen uses, so a field is required only when the condition holds and a branch needs no status of its own. See openspec/changes/what-a-status-declares.": "Welke zaakvelden deze status verplicht stelt, verbergt en vastzet. Bij publicatie van het zaaktype gaan deze naar x-openregister-lifecycle.states.<statusType>.fields op het zaakschema, waar OpenRegister ze beoordeelt en weigert (field-rules-by-state). Dossiq beoordeelt zelf niets: een tweede beoordelaar is een tweede antwoord. Een regel die geen groepen noemt geldt voor iedereen, ook voor beheerders. Een regel kan een voorwaarde dragen in dezelfde taal die derivedWhen gebruikt, zodat een veld alleen verplicht is wanneer de voorwaarde geldt en een aftakking geen eigen status nodig heeft. Zie openspec/changes/what-a-status-declares."
     },
     "nplurals=2; plural=(n != 1);"
 )

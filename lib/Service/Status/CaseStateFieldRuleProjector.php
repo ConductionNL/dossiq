@@ -54,8 +54,6 @@ use Throwable;
 /**
  * Projects a case type's per-status field rules onto the live case schema.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */
 class CaseStateFieldRuleProjector {

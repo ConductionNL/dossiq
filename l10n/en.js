@@ -4412,7 +4412,6 @@ OC.L10N.register(
         "Days in status": "Days in status",
         "Waiting on {reason}": "Waiting on {reason}",
         "{move} is waiting on {reason}": "{move} is waiting on {reason}",
-        "Explanation": "Explanation",
         "What a handler should know before taking this step": "What a handler should know before taking this step",
         "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.",
         "What this status asks for": "What this status asks for",
@@ -5083,7 +5082,16 @@ OC.L10N.register(
         "Try it": "Try it",
         "What this status asks of the case": "What this status asks of the case",
         "What this status asks of the case. Publishing the case type hands these to the platform, which refuses a save that breaks one.": "What this status asks of the case. Publishing the case type hands these to the platform, which refuses a save that breaks one.",
-        "What to say when the save is refused": "What to say when the save is refused"
+        "What to say when the save is refused": "What to say when the save is refused",
+        "Condition": "Condition",
+        "Field rules": "Field rules",
+        "Groups": "Groups",
+        "The Nextcloud groups the rule applies to. Leave it empty and the rule applies to everyone, administrators included, which is the honest reading of a rule that names nobody.": "The Nextcloud groups the rule applies to. Leave it empty and the rule applies to everyone, administrators included, which is the honest reading of a rule that names nobody.",
+        "The case property the rule applies to. A property of the case schema, or one this case type declares through its own fields.": "The case property the rule applies to. A property of the case schema, or one this case type declares through its own fields.",
+        "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.": "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.",
+        "What this status does to the field. required: it may not be left empty while the case sits here. hidden: it is kept out of the read and refused on write. readOnly: it is shown and refused on change.": "What this status does to the field. required: it may not be left empty while the case sits here. hidden: it is kept out of the read and refused on write. readOnly: it is shown and refused on change.",
+        "When the rule applies. Written in the same three kinds derivedWhen uses, so a case type has one condition vocabulary rather than two.": "When the rule applies. Written in the same three kinds derivedWhen uses, so a case type has one condition vocabulary rather than two.",
+        "Which case fields this status requires, hides and locks. Publishing the case type writes these onto the case schema's x-openregister-lifecycle.states.<statusType>.fields, where OpenRegister decides and refuses them (field-rules-by-state). Dossiq evaluates nothing of its own: a second evaluator is a second answer. An entry that names no groups applies to everyone, administrators included. An entry may carry a condition in the same vocabulary derivedWhen uses, so a field is required only when the condition holds and a branch needs no status of its own. See openspec/changes/what-a-status-declares.": "Which case fields this status requires, hides and locks. Publishing the case type writes these onto the case schema's x-openregister-lifecycle.states.<statusType>.fields, where OpenRegister decides and refuses them (field-rules-by-state). Dossiq evaluates nothing of its own: a second evaluator is a second answer. An entry that names no groups applies to everyone, administrators included. An entry may carry a condition in the same vocabulary derivedWhen uses, so a field is required only when the condition holds and a branch needs no status of its own. See openspec/changes/what-a-status-declares."
     },
     "nplurals=2; plural=(n != 1);"
 )

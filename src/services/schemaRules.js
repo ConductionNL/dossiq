@@ -28,7 +28,9 @@ import { generateUrl } from '@nextcloud/router'
  *
  * @type {string}
  */
-export const RULE_VOCABULARY_URL = generateUrl('/apps/openregister/api/rules/vocabulary')
+export const RULE_VOCABULARY_URL = generateUrl(
+	'/apps/openregister/api/rules/vocabulary',
+)
 
 /**
  * The inventory of one schema's rules, in the order they are evaluated.
@@ -114,7 +116,9 @@ export function kindsByName(vocabulary) {
 export async function fetchRuleVocabulary() {
 	try {
 		const { data } = await axios.get(RULE_VOCABULARY_URL)
-		return isRuleVocabulary(data) ? data : { kinds: [], verdicts: [], actions: [] }
+		return isRuleVocabulary(data)
+			? data
+			: { kinds: [], verdicts: [], actions: [] }
 	} catch {
 		return { kinds: [], verdicts: [], actions: [] }
 	}

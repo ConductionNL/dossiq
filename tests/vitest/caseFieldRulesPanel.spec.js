@@ -55,7 +55,12 @@ describe('what this status asks of the case', () => {
 	it('names the fields to fill in', async () => {
 		const wrapper = await mountWith({
 			'@self': {
-				fieldRules: { state: 's2', hidden: [], readOnly: [], required: ['motivering'] },
+				fieldRules: {
+					state: 's2',
+					hidden: [],
+					readOnly: [],
+					required: ['motivering'],
+				},
 			},
 		})
 
@@ -88,24 +93,41 @@ describe('what this status asks of the case', () => {
 
 	it('still says so when the transition engine refuses', async () => {
 		const wrapper = await mountWith({
-			'@self': { fieldRules: { state: 's2', hidden: [], readOnly: [], required: ['motivering'] } },
+			'@self': {
+				fieldRules: {
+					state: 's2',
+					hidden: [],
+					readOnly: [],
+					required: ['motivering'],
+				},
+			},
 		})
 
-		expect(wrapper.find('[data-testid="case-status-field-rules"]').exists()).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-status-field-rules"]').exists(),
+		).toBe(true)
 	})
 
 	it('says nothing about a case whose read carries no answer', async () => {
 		const wrapper = await mountWith({ '@self': {} })
 
-		expect(wrapper.find('[data-testid="case-status-field-rules"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="case-status-declaration"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-status-field-rules"]').exists(),
+		).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-status-declaration"]').exists(),
+		).toBe(false)
 	})
 
 	it('says nothing when every published list is empty', async () => {
 		const wrapper = await mountWith({
-			'@self': { fieldRules: { state: 's2', hidden: [], readOnly: [], required: [] } },
+			'@self': {
+				fieldRules: { state: 's2', hidden: [], readOnly: [], required: [] },
+			},
 		})
 
-		expect(wrapper.find('[data-testid="case-status-field-rules"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-status-field-rules"]').exists(),
+		).toBe(false)
 	})
 })
