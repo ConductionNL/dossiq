@@ -2,13 +2,30 @@
 
 ## D-1: the format keeps four digits, not the six the brief offered
 
-`{seq:4}`, not `{seq:6}`. The shape `YYYY-NNNN` is not cosmetic in dossiq: the
-inbound mail matcher's default pattern is `/\d{4}-\d{4}/`, the demo cases are
-seeded in it, and `tests/e2e/case-identity.spec.ts` asserts it. Widening the
-pad to six would not fail loudly. `\d{4}-\d{4}` matches the first eight
-characters of `2026-000042`, so the matcher would go on matching, on the wrong
-prefix, and link mail to whatever case holds `2026-0000`. A silently wrong
-match on a statutory case file is worse than a narrow number.
+`{seq:4}`, not `{seq:6}`, and the reason is continuity rather than the mail
+matcher.
+
+The matcher was the first suspect and it is innocent, which is worth writing
+down so nobody re-derives it. `CaseNumberRecognizer::DEFAULT_PATTERN` is
+`/(?<![\w-])(?:\[)?(?:[A-Z]{2,10}-)?((?:19|20)\d{2}-\d{4,6})(?:\])?(?![\w-])/u`.
+It already accepts four to six digits, and the look-arounds stop it settling
+for a prefix. A six-digit number would be read correctly by the shipped
+default.
+
+What does constrain the pad is that `YYYY-NNNN` is the shape of every number
+this app has already issued. The seeded demo cases are in it,
+`tests/e2e/case-identity.spec.ts` asserts it and so does
+`tests/vitest/caseIdentityManifest.spec.js`. Widening the pad would leave one
+install holding both shapes with no way to reconcile them: renumbering an
+already-issued identifier is REQ-GID-006 of openregister's own change and has
+not shipped.
+
+There is a second, quieter cost. An administrator who narrows the pattern to
+`/\d{4}-\d{4}/`, which is exactly what this repo's own test fixtures write,
+loses the boundary guards, and a bare `\d{4}-\d{4}` matches the first eight
+characters of `2026-000042`. Mail would go on being matched, to whatever case
+holds `2026-0000`. That is a narrow case and it needs an administrator to walk
+into it, but it costs nothing to stay out of.
 
 `{seq:n}` grows past its pad rather than wrapping, so a year with more than
 9,999 cases keeps counting and the number stays unique. That is the same

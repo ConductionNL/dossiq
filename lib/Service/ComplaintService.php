@@ -123,8 +123,10 @@ class ComplaintService {
 
 		$receiptDate = $data['receiptDate'];
 
-		// Generate klachtnummer.
-		$data['complaintNumber'] = $this->generateComplaintNumber();
+		// The klachtnummer is NOT set here. `complaintNumber` declares
+		// `x-openregister-generated` (sequence `complaint`, KL-{year}-{seq:4}),
+		// so OpenRegister issues it under a lock inside the create transaction
+		// and refuses any later change to it.
 		$data['status'] = 'received';
 		$data['postponementPossible'] = true;
 
@@ -134,16 +136,21 @@ class ComplaintService {
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
+		if (is_array($complaint) === true) {
+			$saved = $complaint;
+		} else {
+			$saved = array_merge($data, (array)$complaint->getObject(), ['id' => $complaint->getUuid()]);
+		}
+
+		// The number is read off the SAVED complaint, never off `$data`: `$data`
+		// never held one, and a log line that invented its own would name a
+		// number no complaint carries.
 		$this->logger->info(
-			'Complaint created: ' . $data['complaintNumber'],
+			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
 			['app' => Application::APP_ID],
 		);
 
-		if (is_array($complaint) === true) {
-			return $complaint;
-		}
-
-		return array_merge($data, ['id' => $complaint->getUuid()]);
+		return $saved;
 	}//end createComplaint()
 
 	/**
@@ -420,44 +427,6 @@ class ComplaintService {
 	public function isWorkingDay(\DateTimeImmutable $date): bool {
 		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
-
-	/**
-	 * Generate the next sequential klachtnummer for the current year.
-	 *
-	 * @return string Klachtnummer in format KL-{year}-{sequence}
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
-	 */
-	private function generateComplaintNumber(): string {
-		$year = $this->dates->now()->format('Y');
-		$objectService = $this->settingsService->getObjectService();
-
-		if ($objectService === null) {
-			return 'KL-' . $year . '-' . str_pad((string)rand(1, 9999), 4, '0', STR_PAD_LEFT);
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return 'KL-' . $year . '-0001';
-		}
-
-		// Count existing complaints this year.
-		$yearStart = $year . '-01-01';
-		$yearEnd = $year . '-12-31';
-
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['ontvangstdatum>=' => $yearStart, 'ontvangstdatum<=' => $yearEnd, '_limit' => 10000]
-		);
-
-		$count = count($existing);
-
-		return 'KL-' . $year . '-' . str_pad((string)($count + 1), 4, '0', STR_PAD_LEFT);
-	}//end generateKlachtnummer()
 
 	/**
 	 * Validate that required fields are present and non-empty.
