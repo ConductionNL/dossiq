@@ -158,6 +158,7 @@ export default {
 				this.object?.erasureOutcome?.complete === undefined
 					? null
 					: this.object.erasureOutcome,
+
 			exportState: {
 				exportId: '',
 				downloadable: false,
