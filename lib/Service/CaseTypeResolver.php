@@ -97,6 +97,7 @@ class CaseTypeResolver {
 		'defaultImpact',
 		'defaultUrgency',
 		'priorityMatrix',
+		'duplicatePolicy',
 	];
 
 	/**

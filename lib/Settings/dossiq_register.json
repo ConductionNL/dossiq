@@ -2768,6 +2768,25 @@
                         "title": "Override reason",
                         "order": 24
                     },
+                    "duplicateOverrideOf": {
+                        "type": "array",
+                        "readOnly": true,
+                        "title": "Filed over",
+                        "description": "The cases this one was filed over after the duplicate warning. Written once, when a coordinator files a case the case type would otherwise have blocked. Dossiq has no case-note store, so the reason lives on the case beside this list rather than in a note nobody can query.",
+                        "order": 25,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case"
+                        }
+                    },
+                    "duplicateOverrideReason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Filed over a duplicate warning",
+                        "description": "Why this case was filed although one like it already existed. Typed by the coordinator who filed it, because the next handler reading two near-identical cases needs to know which of them was meant.",
+                        "order": 26
+                    },
                     "parentCase": {
                         "type": "string",
                         "format": "uuid",
