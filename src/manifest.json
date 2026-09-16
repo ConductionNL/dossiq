@@ -1379,21 +1379,25 @@
 					"geoField": "geometry",
 					"popupField": "title",
 					"center": [52.1326, 5.2913],
+					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
 					"basemaps": [
 						{
 							"name": "Standard",
 							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors"
+							"attribution": "© OpenStreetMap contributors",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						},
 						{
 							"name": "Humanitarian",
 							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, tiles by HOT"
+							"attribution": "© OpenStreetMap contributors, tiles by HOT",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						},
 						{
 							"name": "Terrain",
 							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap"
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						}
 					]
 				},
