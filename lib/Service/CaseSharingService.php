@@ -28,7 +28,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTime;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
-use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
@@ -39,8 +39,9 @@ use Psr\Log\LoggerInterface;
  * Dossiq shares a case in three distinct ways, each with its own trust model,
  * and this class is the seam between them:
  *
- *  - a PUBLIC token link, delegated to {@see CaseTokenShareService}, which
- *    mints nothing itself and defers entirely to OpenRegister's shares leaf;
+ *  - a PUBLIC access link, delegated to {@see CaseAccessLinkService}, which
+ *    mints nothing itself: OpenRegister owns the anchor, the expiry, the
+ *    password and the revoke (openregister#3817);
  *  - a PARTNER-organisation hand-off, owned here, because org-to-org case
  *    hand-off inside one instance is zaak-domain logic and carries no public
  *    token (ADR-022);
@@ -83,7 +84,7 @@ class CaseSharingService {
 	 * @param SettingsService $settingsService The settings service
 	 * @param OpenRegisterSharingGateway $gateway OpenRegister resolution for the sharing surface
 	 * @param CaseAccessPolicy $accessPolicy Per-case access decisions
-	 * @param CaseTokenShareService $tokenShares Public "track your case" token links
+	 * @param CaseAccessLinkService $accessLinks Public access links over the case
 	 * @param FederatedCaseShareService $federatedShares Cross-org (OCM) case shares
 	 * @param LoggerInterface $logger The logger
 	 *
@@ -93,7 +94,7 @@ class CaseSharingService {
 		private SettingsService $settingsService,
 		private OpenRegisterSharingGateway $gateway,
 		private CaseAccessPolicy $accessPolicy,
-		private CaseTokenShareService $tokenShares,
+		private CaseAccessLinkService $accessLinks,
 		private FederatedCaseShareService $federatedShares,
 		private LoggerInterface $logger,
 	) {
@@ -114,64 +115,292 @@ class CaseSharingService {
 	}//end canUserAccessCase()
 
 	/**
-	 * Create a public "track your case" token link through OpenRegister's
-	 * shares integration leaf.
+	 * Share a case with somebody who has no account, by minting an
+	 * OpenRegister access link over it.
+	 *
+	 * Each document named on the share mints its own `file` link, so an
+	 * outsider who needs one report does not receive the dossier.
 	 *
 	 * @param string $caseId The UUID of the case to share
 	 * @param string $label Human-readable label for the link
-	 * @param string $createdBy User ID of the creator (audit log)
-	 * @param string|null $expiresAt ISO 8601 expiration datetime, or null
-	 *                               for a non-expiring link
+	 * @param string $createdBy User ID of the creator
+	 * @param string|null $expiresAt ISO 8601 date the share stops opening
+	 * @param array<int, string> $capabilities What the holder may do
+	 * @param string|null $password An optional password, checked at use
+	 * @param array<int, string> $sharedDocuments File ids to share beside the case
+	 * @param array<string, mixed> $extra Extra fields to record on the share
 	 *
-	 * @return array The minted token metadata + public resolve URL, or an
-	 *               error array when the leaf is unavailable.
+	 * @return array The stored share plus the link, or an error array.
 	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function createTokenShare(
 		string $caseId,
 		string $label,
 		string $createdBy,
 		?string $expiresAt = null,
+		array $capabilities = CaseAccessLinkService::DEFAULT_CAPABILITIES,
+		?string $password = null,
+		array $sharedDocuments = [],
+		array $extra = [],
 	): array {
-		return $this->tokenShares->createTokenShare(
+		$link = $this->accessLinks->mintCaseLink(
+			caseId: $caseId,
+			userId: $createdBy,
+			capabilities: $capabilities,
+			expiresAt: $expiresAt,
+			password: $password,
+			label: ($label === '' ? null : $label)
+		);
+
+		if (isset($link['error']) === true) {
+			return $link;
+		}
+
+		$documents = [];
+		foreach ($sharedDocuments as $fileId) {
+			$fileLink = $this->accessLinks->mintFileLink(
+				caseId: $caseId,
+				fileId: (string)$fileId,
+				userId: $createdBy,
+				expiresAt: ($link['expiresAt'] ?? $expiresAt),
+				password: $password,
+				label: ($label === '' ? null : $label)
+			);
+
+			if (isset($fileLink['error']) === true) {
+				$this->logger->warning(
+					'Dossiq: a document named on a case share did not get a link',
+					['caseId' => $caseId, 'fileId' => $fileId, 'error' => $fileLink['error']]
+				);
+				continue;
+			}
+
+			$documents[] = [
+				'fileId' => (string)$fileId,
+				'linkId' => ($fileLink['id'] ?? null),
+				'linkUuid' => ($fileLink['uuid'] ?? null),
+				'url' => ($fileLink['url'] ?? null),
+			];
+		}//end foreach
+
+		$stored = $this->storeShare(
 			caseId: $caseId,
 			label: $label,
 			createdBy: $createdBy,
-			expiresAt: $expiresAt
+			link: $link,
+			documents: $documents,
+			extra: $extra
 		);
+
+		if (isset($stored['error']) === true) {
+			return $stored;
+		}
+
+		return ['share' => $stored, 'link' => $link, 'url' => ($link['url'] ?? '')];
 	}//end createTokenShare()
 
 	/**
-	 * Resolve whether a leaf-minted token belongs to the given case.
+	 * Whether an access link is one this case minted.
 	 *
-	 * @param string $tokenId The leaf token id (numeric) or opaque token.
+	 * The IDOR guard in front of every revoke, pause and preview: a handler
+	 * of case A must not reach case B's link by naming its id.
+	 *
+	 * @param int $linkId The OpenRegister access link id.
 	 * @param string $caseId The candidate case UUID.
 	 *
-	 * @return bool True when the token is one of the case's minted tokens.
+	 * @return bool True when the case carries a share holding that link.
 	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	public function tokenBelongsToCase(string $tokenId, string $caseId): bool {
-		return $this->tokenShares->tokenBelongsToCase(tokenId: $tokenId, caseId: $caseId);
-	}//end tokenBelongsToCase()
+	public function linkBelongsToCase(int $linkId, string $caseId): bool {
+		foreach ($this->listLinkShares(caseId: $caseId) as $share) {
+			if ((int)($share['accessLinkId'] ?? 0) === $linkId && $linkId > 0) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end linkBelongsToCase()
 
 	/**
-	 * Revoke a public "track your case" token link through the OR shares leaf.
+	 * Every access-link share on a case, each carrying the state of its link.
 	 *
-	 * The caller MUST have already authorised the revoke against the owning
-	 * case (see {@see tokenBelongsToCase()} + {@see canUserAccessCase()}).
+	 * @param string $caseId The case UUID.
 	 *
-	 * @param string $tokenId The token id (or the opaque token) minted by
-	 *                        the leaf.
+	 * @return array<int, array<string, mixed>> The shares.
 	 *
-	 * @return bool True when the leaf accepted the revoke.
-	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
-	public function revokeTokenShare(string $tokenId): bool {
-		return $this->tokenShares->revokeTokenShare(tokenId: $tokenId);
+	public function listLinkShares(string $caseId): array {
+		$objectService = $this->gateway->objectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+		if (empty($register) === true || empty($shareSchema) === true) {
+			return [];
+		}
+
+		try {
+			$found = $objectService->findAll(
+				[
+					'filters' => [
+						'register' => (int)$register,
+						'schema' => (int)$shareSchema,
+						'caseId' => $caseId,
+						'shareType' => 'link',
+					],
+				]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseSharingService: could not list the case access links',
+				['caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$shares = [];
+		foreach ((array)$found as $candidate) {
+			$share = $this->gateway->toArray($candidate);
+			if ($share === []) {
+				continue;
+			}
+
+			$share['state'] = $this->accessLinks->stateOf(link: $share);
+			$shares[] = $share;
+		}
+
+		return $shares;
+	}//end listLinkShares()
+
+	/**
+	 * Revoke the access link a share was minted as.
+	 *
+	 * The caller MUST have already authorised this against the owning case
+	 * (see {@see linkBelongsToCase()} and {@see canUserAccessCase()}).
+	 *
+	 * @param int $linkId The OpenRegister access link id.
+	 * @param string $userId The principal asking.
+	 *
+	 * @return bool True when OpenRegister revoked it.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	public function revokeTokenShare(int $linkId, string $userId): bool {
+		return $this->accessLinks->revokeLink(linkId: $linkId, userId: $userId);
 	}//end revokeTokenShare()
+
+	/**
+	 * Switch a share's link off, or back on.
+	 *
+	 * @param int $linkId The OpenRegister access link id.
+	 * @param string $userId The principal asking.
+	 * @param bool $paused True to switch it off.
+	 *
+	 * @return array<string, mixed>|null The updated link, or null.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	public function pauseTokenShare(int $linkId, string $userId, bool $paused): ?array {
+		return $this->accessLinks->setPaused(linkId: $linkId, userId: $userId, paused: $paused);
+	}//end pauseTokenShare()
+
+	/**
+	 * What the holder of a share's link reads.
+	 *
+	 * @param string $anchor The link anchor.
+	 *
+	 * @return array<string, mixed>|null The body a holder is served, or null.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 */
+	public function holderPreview(string $anchor): ?array {
+		return $this->accessLinks->holderPreview(anchor: $anchor);
+	}//end holderPreview()
+
+	/**
+	 * Write the share record that points at a minted link.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $label What the share is called.
+	 * @param string $createdBy Who minted it.
+	 * @param array<string, mixed> $link The minted link.
+	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
+	 * @param array<string, mixed> $extra Extra fields to record.
+	 *
+	 * @return array<string, mixed> The stored share, or an error array.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function storeShare(
+		string $caseId,
+		string $label,
+		string $createdBy,
+		array $link,
+		array $documents,
+		array $extra,
+	): array {
+		$objectService = $this->gateway->objectService();
+		if ($objectService === null) {
+			return ['error' => 'OpenRegister is not available'];
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_share_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return ['error' => 'Service unavailable'];
+		}
+
+		$capabilities = (array)($link['capabilities'] ?? []);
+
+		$shareData = array_merge(
+			$extra,
+			[
+				'caseId' => $caseId,
+				'shareType' => 'link',
+				'permissionLevel' => (in_array('comment', $capabilities, true) === true ? 'bekijken_reageren' : 'bekijken'),
+				'label' => $label,
+				'status' => 'active',
+				'createdBy' => $createdBy,
+				'accessLinkId' => (int)($link['id'] ?? 0),
+				'accessLinkUuid' => (string)($link['uuid'] ?? ''),
+				'accessLinkUrl' => (string)($link['url'] ?? ''),
+				'capabilities' => implode(',', $capabilities),
+				'expiresAt' => (string)($link['expiresAt'] ?? ''),
+				'sharedDocuments' => json_encode($documents),
+			]
+		);
+
+		try {
+			$result = $objectService->saveObject(
+				object: $shareData,
+				register: (int)$register,
+				schema: (int)$schema,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'CaseSharingService: the link was minted and the share record was not written',
+				['caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return ['error' => 'Could not record the share'];
+		}
+
+		$this->logger->info(
+			'Dossiq: case access link minted',
+			[
+				'caseId' => $caseId,
+				'createdBy' => $createdBy,
+				'capabilities' => $capabilities,
+				'documents' => count($documents),
+			]
+		);
+
+		return $this->gateway->toArray($result);
+	}//end storeShare()
 
 	/**
 	 * Create a partner organization-based case share.
@@ -312,6 +541,8 @@ class CaseSharingService {
 			$shareData = $shareObj->jsonSerialize();
 		}
 
+		$refused = $this->revokeLinksOf(share: $shareData, userId: $userId);
+
 		$shareData['status'] = 'revoked';
 		$shareData['revokedBy'] = $userId;
 		$shareData['revokedAt'] = (new DateTime())->format('c');
@@ -323,12 +554,62 @@ class CaseSharingService {
 			['shareId' => $shareId, 'revokedBy' => $userId]
 		);
 
-		if (is_array($result) === true) {
-			return $result;
+		$revoked = $this->gateway->toArray($result);
+		if ($refused !== []) {
+			$revoked['linksNotRevoked'] = $refused;
 		}
 
-		return $result->jsonSerialize();
+		return $revoked;
 	}//end revokeShare()
+
+	/**
+	 * Revoke every access link a share was minted as, and name the ones
+	 * OpenRegister refused.
+	 *
+	 * OpenRegister revokes a link only for the colleague who minted it. A
+	 * refusal is carried back to the caller rather than logged and forgotten,
+	 * because a share marked revoked whose link still opens is the worst of
+	 * the three possible outcomes.
+	 *
+	 * @param array<string, mixed> $share The share record.
+	 * @param string $userId The principal asking.
+	 *
+	 * @return array<int, int> The link ids that were not revoked.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 */
+	private function revokeLinksOf(array $share, string $userId): array {
+		$ids = [];
+		$caseLinkId = (int)($share['accessLinkId'] ?? 0);
+		if ($caseLinkId > 0) {
+			$ids[] = $caseLinkId;
+		}
+
+		$documents = ($share['sharedDocuments'] ?? '');
+		if (is_string($documents) === true) {
+			$documents = json_decode($documents, true);
+		}
+
+		foreach ((array)$documents as $document) {
+			if (is_array($document) === false) {
+				continue;
+			}
+
+			$fileLinkId = (int)($document['linkId'] ?? 0);
+			if ($fileLinkId > 0) {
+				$ids[] = $fileLinkId;
+			}
+		}
+
+		$refused = [];
+		foreach ($ids as $id) {
+			if ($this->accessLinks->revokeLink(linkId: $id, userId: $userId) === false) {
+				$refused[] = $id;
+			}
+		}
+
+		return $refused;
+	}//end revokeLinksOf()
 
 	/**
 	 * Create a federated case share: a purpose-built, field-scoped snapshot

@@ -568,7 +568,17 @@ $extra = [
         // `GET /apps/openregister/api/public/case-tokens/{token}` — an
         // audited, RBAC-respecting surface (only public-group-readable
         // fields), not a hand-maintained dossiq auth surface.
+        //
+        // A public case link is now an OpenRegister access link (#3817):
+        // createShare mints it, listLinks reports the state of every link on
+        // the case, pauseLink switches one off and back on, previewLink shows
+        // the handler what its holder reads, and revokeShare revokes it.
+        // OpenRegister revokes a link only for the colleague who minted it,
+        // so a refusal here is reported rather than swallowed.
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
+    ['name' => 'caseSharing#listLinks',        'url' => '/api/shares/case/{caseId}',     'verb' => 'GET'],
+    ['name' => 'caseSharing#previewLink',      'url' => '/api/shares/{shareId}/preview', 'verb' => 'GET'],
+    ['name' => 'caseSharing#pauseLink',        'url' => '/api/shares/{shareId}',         'verb' => 'PUT'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
     ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
