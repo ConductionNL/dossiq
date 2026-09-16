@@ -51,6 +51,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\UnreadTriggerService
+ * @uses \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
  */
 class CaseTypePublishValidationTest extends TestCase {
 
