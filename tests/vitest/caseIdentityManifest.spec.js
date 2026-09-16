@@ -257,7 +257,14 @@ describe('the English demo seed', () => {
 		expect(demoCases.length).toBeGreaterThan(0)
 		for (const demo of demoCases) {
 			expect(demo.identifier, demo['@self'].slug).toMatch(/^\d{4}-\d{4}$/)
-			// The year half is the start year, as `year(startDate)` gives it.
+			// The year half is the START year here, and that is now a property
+			// of the SEED rather than of the mechanism. The retired
+			// `x-openregister-calculations` expression read `year(startDate)`;
+			// `x-openregister-generated` renders `{year}` from the creation
+			// moment and reads no property (case-number-and-favourites, D-2).
+			// A supplied number is kept and pushes the counter past it, so
+			// these rows are a floor for the register's own counter rather
+			// than something it will ever overwrite.
 			expect(demo.identifier.slice(0, 4)).toBe(demo.startDate.slice(0, 4))
 		}
 	})

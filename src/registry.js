@@ -30,6 +30,9 @@ import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
+// The star on the case page (case-number-and-favourites, row 2.19).
+// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -71,6 +74,9 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
+// A search openregister refused, said where the term was typed.
+// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -133,6 +139,9 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
+// The AVG panel on a data subject request case
+// (data-subject-requests-drive-the-platform).
+import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -229,6 +238,14 @@ import { leafTab } from './integrations/leafTabs.js'
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
+	// --- A refused search, said rather than rendered as an empty list. ---
+	// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+	CaseSearchRefusal: {
+		kind: 'page',
+		component: CaseSearchRefusal,
+		_note: "Cases-page below-header slot. OpenRegister refuses a malformed _search term with 400 {error, position, term} rather than running it as a literal, precisely because a literal returns zero rows and reads as an honest empty result. useObjectStore.fetchCollection() then records the refusal on errors['dossiq-case'] and returns [] anyway, so CnIndexPage draws its empty state over it and the reader retypes a word that was never the problem. Mounted through pages[].slots because the search box is CnIndexPage's; deleted the day the library renders the store's own error above the list.",
+	},
+
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
@@ -760,7 +777,20 @@ const registry = {
 		// @custom-widget-ratchet exclude the derivation verdict is not a field of the case and no declarative widget can compute one: what is missing for a derived status is evaluated per case against the status type's declared conditions, and it reaches the page on the transition engine's own answer rather than on the object. A data widget could render `waitingOn` and `currentStatusDwellDays` alone, and that would be two of the three lines with the one that matters left dark
 		kind: 'widget',
 		component: CaseStatusDeclarationPanel,
-		_note: 'CaseDetail: what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The first is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. All three come from /available-transitions in one round trip. Silent on a case that is ours to move, inside its maximum, with no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
+		_note: 'CaseDetail: what this status asks of the fields on the case, what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The field rules are the one of the four that costs no round trip: OpenRegister decides them per reader and per state on the render path and publishes them as `@self.fieldRules`, so the strip reads the answer off the case object the page already holds and says them even on an instance whose transition engine refuses. The other three come from /available-transitions in one round trip, and the derivation is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. Silent on a case that asks nothing of its fields, is ours to move, is inside its maximum and has no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
+	},
+
+	// --- The star on the case page (case-number-and-favourites). ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason case-unread is one:
+	// CnDetailPage resolves a grid item's renderer from `cnRegistry[widget.type]`
+	// when the app supplies no `widget-<id>` slot, and dossiq supplies none.
+	// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+	'case-favourite': {
+		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to star and DELETE to unstar, and no declarative widget or action writes two methods: `CnActionButtons`' `toggle` type flips a boolean and PUTs it with one `method`, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.favourite` is attached per reader on the render path, so a data widget over a property would render nothing at all. Deleted the day the library takes a two-verb toggle or a favourite affordance of its own, which is where this belongs for every index and detail page in the fleet
+		kind: 'widget',
+		component: CaseFavouriteStrip,
+		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
 	},
 
 	'case-unread': {
@@ -780,7 +810,7 @@ const registry = {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',
 		component: CasePartiesWidget,
-		_note: "CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.",
+		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
 	},
 
 	'case-timeline-pane': {
@@ -822,6 +852,17 @@ const registry = {
 		kind: 'page',
 		component: CaseAccessTab,
 		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
+	// --- The AVG panel (data-subject-requests-drive-the-platform). ---
+	// A `component:` tab for the same reason CaseAccessTab is: none of
+	// CnObjectSidebar's four built-ins can call the AVG endpoints or render a
+	// protected item with its ground. kind `page`, so it adds nothing to the
+	// ADR-049 widget count.
+	// @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	DataSubjectRequestTab: {
+		kind: 'page',
+		component: DataSubjectRequestTab,
+		_note: 'What OpenRegister reported about a data subject, and the acts dossiq drives on it. The protected items are rendered in full, ground and basis and remedy, because a count of what cannot be erased is not an answer a handler can give the person who asked. dossiq computes no erasure here: every value is one the server read back from the platform.',
 	},
 	// --- The four clocks on the case (phase-terms-and-the-internal-target). ---
 	// A `component:` tab and not a `widgets[]` one, for the same reason

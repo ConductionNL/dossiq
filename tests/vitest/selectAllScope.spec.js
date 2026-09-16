@@ -146,6 +146,42 @@ describe('readListFilters', () => {
 			caseType: 'bezwaar',
 		})
 	})
+
+	// 🔴 A SEARCH TERM NARROWS THE RESULT, SO IT IS A FILTER.
+	// It sat in NOT_A_FILTER beside the paging keys, so widening a selection
+	// to the whole result dropped it and the job acted on every case in the
+	// register while the button read "Select all 400 cases matching this
+	// search". `BulkSelectionResolver::resolveQuery()` passes the stored query
+	// into `ObjectService::searchObjects()`, so `_search` resolves there
+	// exactly as it does on the list.
+	// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+	it('keeps the search term, which narrows the result', () => {
+		expect(
+			readListFilters({
+				caseType: 'bezwaar',
+				_search: 'dakkapel AND NOT geweigerd',
+				_page: '2',
+				_limit: '25',
+			}),
+		).toEqual({ caseType: 'bezwaar', _search: 'dakkapel AND NOT geweigerd' })
+	})
+
+	it('reads the search term off the address bar too', () => {
+		expect(readLocationFilters('?caseType=bezwaar&_search=dakkapel&_page=3')).toEqual({
+			caseType: 'bezwaar',
+			_search: 'dakkapel',
+		})
+	})
+
+	it('hands the job the term along with the filters', () => {
+		expect(
+			buildSelection({
+				scope: SCOPE_RESULT,
+				selectedIds: ['1', '2'],
+				filters: readLocationFilters('?status=open&_search=dakkapel&_order=title'),
+			}),
+		).toEqual({ query: { status: 'open', _search: 'dakkapel' } })
+	})
 })
 
 describe('BulkSelectionScope', () => {
