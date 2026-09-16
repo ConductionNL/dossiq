@@ -129,7 +129,7 @@ describe('CaseDetail — the audit log is not also a body tab (task 4.1)', () =>
 		expect(tabs.map((tab) => tab.widgetId)).not.toContain('case-timeline')
 	})
 
-	it('gives the Timeline tab OpenRegister\'s timeline, not the audit log', () => {
+	it("gives the Timeline tab OpenRegister's timeline, not the audit log", () => {
 		// A Timeline tab arrived with `one-timeline-on-the-case` (#2846), whose
 		// own requirement REQ-TL-10 ends "The change history SHALL stay in the
 		// audit sidebar". So the label is taken now, and what A05 was actually

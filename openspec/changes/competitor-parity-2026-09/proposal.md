@@ -358,8 +358,8 @@ change that already covers the area.
 |---|---|---|---|
 | 1.1 | portaliq | `dossiq/openspec/changes/leaf-integrations/proposal.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
 | 1.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | accept the start-a-case offer (mailObjectTemplate from leaf-integrations) and the link offer |
-| 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` | declare case.identifier as generated YYYY-NNNN and drop the free-text field from the forms |
-| 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` | two lenses on Cases (Favourites, Recent) over the new endpoints |
+| 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` (merged #3785) | `case-number-and-favourites`: case.identifier and complaint.complaintNumber declare x-openregister-generated; ComplaintService's own counter retired |
+| 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` (merged #3766) | `case-number-and-favourites`: a star on the case and on every row, Favourites and Recently opened chips on Cases and the same two as dashboard tiles |
 | 3.1 | openregister | `openregister/openspec/changes/flow-bpmn-interchange/proposal.md` | workflow-definitions-to-flow moves dossiq's templates onto it; retire-cmmn-caseplanstate does the CMMN half |
 | 3.4 | openregister | `openregister/openspec/changes/flow-task-forms/proposal.md` | replace DossiqAskPersonNode's bare task with a user-task node declaring the fields |
 | 3.12 | buildiq | `buildiq/openspec/specs/form-editor-logic/spec.md` | author the registration form per case type there; the internal task form is OpenRegister's flow-task-forms |
@@ -577,6 +577,19 @@ The fourth, integriq `outbound-sender-identity-and-deliverability`
 (integriq#2012, cluster 61, candidate C-communication-44), is a sibling
 requirement on `inbound-mail-filters` rather than a change, because its
 noun is outbound mail and REQ-IMF-12 is where that already sits.
+
+### Consumer half of openregister's search change
+
+openregister `search-quality-operators-and-facets` merged on 2026-09-15 as
+#3768 and #3806: a missing-value facet, boolean operators and wildcards in
+the term, a declared match type and input control per property, and an
+administered index rebuild. dossiq's half is
+`case-search-declares-its-fields` (rows 9.2, 9.1 and 9.12): the case
+declares how each of its fields is searched, a refused term says where it
+broke instead of rendering an empty list, and the admin reaches the index
+status. The not-set chip in the facet sidebar is nextcloud-vue#1176 and is
+named rather than built, because `normalizeFacets()` drops the count before
+any app can read it.
 
 ### Changes this wave asks another repo to open
 

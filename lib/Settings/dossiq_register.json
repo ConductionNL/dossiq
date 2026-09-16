@@ -1427,7 +1427,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.22.0",
+                "version": "1.23.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1610,33 +1610,6 @@
                             "description": "The case type's processing deadline, copied onto the case so a data widget can read it. A data widget builds its fields from the schema's own properties, so an include path like caseType.processingDeadline matches no property and renders nothing at all; the same is true of a stat caption, which interpolates only an endpoint payload. Materialised for the reason deadline is: cross-object @ref lookups resolve in OpenRegister's save-time listener and nowhere else. A case type whose deadline changes later needs occ openregister:rematerialise-calculations, exactly as deadline does.",
                             "expression": {
                                 "prop": "@ref.caseType.processingDeadline"
-                            }
-                        },
-                        "identifier": {
-                            "type": "string",
-                            "materialise": true,
-                            "expression": {
-                                "coalesce": [
-                                    {
-                                        "prop": "identifier"
-                                    },
-                                    {
-                                        "concat": [
-                                            {
-                                                "year": {
-                                                    "prop": "startDate"
-                                                }
-                                            },
-                                            "-",
-                                            {
-                                                "sequence": {
-                                                    "scope": "yearly",
-                                                    "pad": 4
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ]
                             }
                         },
                         "isFinalStatus": {
@@ -2233,7 +2206,12 @@
                     "identifier": {
                         "type": "string",
                         "readOnly": true,
-                        "description": "The case number. Filled declaratively by OpenRegister (x-openregister-calculations.identifier) as YEAR-NNNN, e.g. 2026-0042, where the year comes from startDate and NNNN from a yearly sequence. A number supplied on create is KEPT: the expression coalesces the given value ahead of the sequence, so an imported or migrated case keeps the number it already had. The sequence is not consumed in that case, because coalesce stops at the first non-null operand.",
+                        "x-openregister-generated": {
+                            "sequence": "case",
+                            "format": "{year}-{seq:4}",
+                            "resetOn": "year"
+                        },
+                        "description": "The case number, e.g. 2026-0042. Issued by OpenRegister from the named counter `case` under a lock inside the create transaction (x-openregister-generated), so two cases filed in the same second cannot be given the same number. {year} is the year the case was FILED, not the year of its start date: the annotation renders the creation moment and reads no property. A number supplied on create is KEPT and pushes the counter past it, so a seeded or imported number is a floor rather than a collision waiting to happen. A gap is allowed (a rolled-back create spends a number); a repeat is not. Changing the number afterwards is refused with 422. The pad stays FOUR digits for continuity: every number this app has issued is YYYY-NNNN, the demo cases are seeded in it and two test suites assert it, and renumbering an already-issued identifier is not a thing OpenRegister can do yet (REQ-GID-006, unshipped).",
                         "title": "Identifier"
                     },
                     "tags": {
@@ -8737,7 +8715,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
@@ -8750,7 +8728,12 @@
                 "properties": {
                     "complaintNumber": {
                         "type": "string",
-                        "description": "Auto-generated complaint number in format KL-{year}-{sequence}, e.g. KL-2026-0042",
+                        "x-openregister-generated": {
+                            "sequence": "complaint",
+                            "format": "KL-{year}-{seq:4}",
+                            "resetOn": "year"
+                        },
+                        "description": "The klachtnummer, e.g. KL-2026-0042. Issued by OpenRegister from the counter `complaint` under a lock (x-openregister-generated), replacing ComplaintService::generateComplaintNumber, which counted this year's complaints and added one and could therefore hand a live complaint a number another complaint already held. The counter is the complaint's OWN and not the case counter: a klachtnummer is quoted to a citizen under the Awb, and drawing it from the case counter would let anybody holding two letters read off how many cases were filed in between.",
                         "readOnly": true,
                         "title": "Complaint Number"
                     },

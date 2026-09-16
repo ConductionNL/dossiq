@@ -249,7 +249,9 @@ describe('useEngineTaskStore', () => {
 
 		const task = await store.invoke('t1', 'complete', { comment: 'done' })
 
-		expect(post.mock.calls[0][0]).toContain('/apps/dossiq/api/case-tasks/t1/complete')
+		expect(post.mock.calls[0][0]).toContain(
+			'/apps/dossiq/api/case-tasks/t1/complete',
+		)
 		expect(post.mock.calls[0][0]).not.toContain('/flow-tasks/')
 		expect(post.mock.calls[0][1]).toEqual({ comment: 'done' })
 		expect(task.state).toBe('completed')

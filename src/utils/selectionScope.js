@@ -30,6 +30,16 @@ export const SCOPE_RESULT = 'result'
  * into a whole-result selection would narrow it back down to the page it is
  * meant to escape.
  *
+ * 🔴 `_search` IS NOT ONE OF THEM, AND USED TO BE. A search term describes the
+ * result set as squarely as a case type does. Dropping it handed the job every
+ * case in the register while the button said "Select all 400 cases matching
+ * this search", which is the exact surprise this module was written to
+ * prevent, arriving through the module itself.
+ *
+ * It resolves server-side: `BulkSelectionResolver::resolveQuery()` passes the
+ * stored query straight into `ObjectService::searchObjects()`, the same call
+ * the list itself makes.
+ *
  * @type {Array<string>}
  */
 const NOT_A_FILTER = [
@@ -38,7 +48,6 @@ const NOT_A_FILTER = [
 	'_offset',
 	'_order',
 	'_sort',
-	'_search',
 	'page',
 	'limit',
 	'offset',

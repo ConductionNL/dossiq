@@ -710,6 +710,80 @@
 						}
 					},
 					{
+						"id": "favourite-cases",
+						"type": "object-table",
+						"title": "Your favourites",
+						"_note": "case-number-and-favourites, row 2.19. The cases this reader starred, over OpenRegister's `_favourite` lens (favourites-and-recent, openregister#3766). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the star sits on the case row. No `isFinalStatus` filter: a case you starred and then closed is exactly the one you want back. View all leads to the Favourites chip on Cases, which is the same lens, so the tile and the list cannot show different sets.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_favourite": true
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_favourite": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Star a case to find it here"
+						}
+					},
+					{
+						"id": "recent-cases",
+						"type": "object-table",
+						"title": "Recently opened",
+						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_recent": true
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_recent": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Cases you open show up here"
+						}
+					},
+					{
 						"id": "stalled-cases",
 						"type": "object-table",
 						"title": "Stalled Cases",
@@ -822,6 +896,24 @@
 						"id": "10",
 						"widgetId": "stalled-cases",
 						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "14",
+						"widgetId": "favourite-cases",
+						"gridX": 4,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "15",
+						"widgetId": "recent-cases",
+						"gridX": 8,
 						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 4,
@@ -1136,6 +1228,13 @@
 						"icon": "EmailOpenOutline",
 						"handler": "markCaseRead",
 						"type": "handler"
+					},
+					{
+						"id": "favourite",
+						"label": "Add to or remove from favourites",
+						"icon": "StarOutline",
+						"handler": "toggleCaseFavourite",
+						"type": "handler"
 					}
 				],
 				"columns": [
@@ -1206,6 +1305,9 @@
 			},
 			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
+			"slots": {
+				"below-header": "CaseSearchRefusal"
+			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
 				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
@@ -1303,6 +1405,13 @@
 						"icon": "EmailOpenOutline",
 						"handler": "markCaseRead",
 						"type": "handler"
+					},
+					{
+						"id": "favourite",
+						"label": "Add to or remove from favourites",
+						"icon": "StarOutline",
+						"handler": "toggleCaseFavourite",
+						"type": "handler"
 					}
 				],
 				"_teamColumnNote": "`assignedGroup` is a $ref to an organisatieRol and CnIndexPage renders a plain key raw, so the column would show a uuid. `extend` asks OpenRegister to expand the reference on the fetch and the column reads the expanded row's `roleName`, the same shape the Tasks index uses for `case.title`; the server cannot sort on a nested field, so the column is not sortable. The Team FACET in the sidebar comes from `facetable: true` on the property itself, and lists-that-answer found that it is NOT the working interim this note used to claim. Two defects in the library, both outside dossiq and both one line. `useObjectStore` normalises a facet bucket as `{ value: b.key, count: b.count }`, but OpenRegister's bucket carries `results`, not `count`, so every option's count resolves to 0 and `CnIndexSidebar` renders it, because 0 is not undefined. The same normalisation drops `b.label`, and `getFilterOptions` renders `String(v.value)`, so a $ref facet lists uuids even on the fields where OpenRegister does resolve a name. The Team facet therefore reads as `<uuid> (0)` per team. The COLUMN is correct and is the real interim; the facet is a bug report. Do not cite it as coverage for the Team chip.",
@@ -1323,6 +1432,22 @@
 							"_unread": true,
 							"statusHiddenInLists": false,
 							"isDraft": false
+						}
+					},
+					{
+						"label": "Favourites",
+						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
+						"filter": {
+							"_favourite": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Recently opened",
+						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
+						"filter": {
+							"_recent": true
 						}
 					},
 					{
@@ -1388,6 +1513,14 @@
 						"label": "Closed",
 						"filter": {
 							"isFinalStatus": true
+						}
+					},
+					{
+						"label": "Closed with no result",
+						"_note": "case-search-declares-its-fields REQ-CSD-04. The register's own example for the missing-value facet: \"twelve cases have no result type\" is a data quality report nobody has to write. `result_isnull=true` is openregister's declared null grammar (MagicSearchHandler::COMPARISON_OPERATORS), answered server-side, so this is one query and not a page of twenty-five filtered after the fact. A LENS AND NOT A FACET CHIP: a terms facet now carries facet.missing.results, and normalizeFacets() in nextcloud-vue rebuilds the facet from `buckets` alone and drops it, so the count never reaches a consumer (ConductionNL/nextcloud-vue#1176). Reading the raw facet payload beside the normalised one, per app, is the drift the shared normaliser exists to remove. This lens needs no facet payload at all. Deliberately NOT folded into Closed: a closed case with its result recorded is finished work, and burying the ones without it is what lets a year of them pile up unnoticed.",
+						"filter": {
+							"isFinalStatus": true,
+							"result_isnull": true
 						}
 					},
 					{
@@ -2285,6 +2418,13 @@
 						"_note": "what-a-status-declares, tasks 1.3, 2.1 and 3.1. A status the case type DERIVES is not a move a handler can pick, so when it has not fired there is nothing on the page to press and nothing to read: the case sits where it is for a reason nobody can see. This strip names the missing document, which turns that into an errand. Beside it, who the case is waiting on and how long it has been here, both read in the same round trip because a handler asks all three at the same moment. It asks /available-transitions rather than an endpoint of its own: the engine publishes the three declarations beside the moves, so a second endpoint would be a second round trip for one strip and a second place for the derivation verdict to be computed. Renders nothing at all on a case that is ours to move, inside its maximum, with no derivation pending."
 					},
 					{
+						"id": "case-favourite",
+						"type": "case-favourite",
+						"title": "Favourite",
+						"icon": "StarOutline",
+						"_note": "case-number-and-favourites, row 2.19. The per-reader star, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/favourite (favourites-and-recent, openregister#3766). It sits directly under the identity tiles and above the unread strip because it is part of what identifies this case TO YOU, where every strip below it is about the case rather than about you. Starring writes NOTHING to the case: the star lives in OpenRegister's own table, so no version is cut, no audit entry is written and no colleague can see it. The widget renders from `@self.favourite`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT a header action because the gesture is two verbs on one path: CnActionButtons' `toggle` type writes with one `method`, and a `handler` action is handed action.args verbatim with no token resolved, so it would run with no case to act on."
+					},
+					{
 						"id": "case-unread",
 						"type": "case-unread",
 						"title": "New since you last looked",
@@ -2344,10 +2484,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "favourite-strip",
+						"widgetId": "case-favourite",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "unread-strip",
 						"widgetId": "case-unread",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2356,7 +2505,7 @@
 						"id": "status-declaration-strip",
 						"widgetId": "case-status-declaration",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 4,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2365,7 +2514,7 @@
 						"id": "attention-strip",
 						"widgetId": "case-attention",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2374,7 +2523,7 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 5,
+						"gridY": 6,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2383,7 +2532,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 5,
+						"gridY": 6,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2392,7 +2541,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 9,
+						"gridY": 10,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2400,7 +2549,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 14,
+						"gridY": 15,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2409,7 +2558,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 14,
+						"gridY": 15,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
