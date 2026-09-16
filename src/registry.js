@@ -32,6 +32,7 @@ import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
+import CaseBannerStack from './components/case/CaseBannerStack.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
@@ -913,6 +914,15 @@ const registry = {
 		component: CaseAttentionPanel,
 		...STRIP_WIDGET_META,
 		_note: 'CaseDetail: the flag a person raised with a written reason, the risk this organisation assessed and the markers the system raised against a named panel. Three different facts kept apart on purpose. Sits under the unread strip and says the opposite kind of thing: a marker survives opening the panel it points at and goes when the work behind it is done, where the unread badge goes because somebody looked.',
+	},
+
+	// --- The four strips above, in one grid row. ---
+	'case-banner-stack': {
+		// @custom-widget-ratchet exclude this adds no capability and reads nothing: it is a CONTAINER over the four strips already excluded above, each of which keeps its own fetch, its own conditions and its own tests. It exists because a grid row is reserved from the LAYOUT before a component renders and decides it has nothing to say, and three of the four are a root v-if -- so an ordinary case reserved three empty full-width rows that no CSS could reclaim, the engine positioning items absolutely from gridY/gridHeight. Deleted the day a widget can tell the grid it drew nothing, at which point the four go back to four rows
+		kind: 'widget',
+		component: CaseBannerStack,
+		...STRIP_WIDGET_META,
+		_note: 'CaseDetail: Favourite, New since you last looked, What this status asks for and Attention in ONE grid row rather than four. Three of the four render conditionally, so four rows meant three reserved empty ones on an ordinary case — nothing new, nothing flagged, status fine — and a visible gap where they were. The row carries `sizeToContent` (nextcloud-vue CnDashboardGrid) so its height is whatever actually rendered, down to nothing. The four widget types stay registered: they are still valid placements, this is just the one the page uses.',
 	},
 
 	'case-notes-pane': {

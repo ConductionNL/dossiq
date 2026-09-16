@@ -246,20 +246,34 @@ describe('the row action', () => {
 })
 
 describe('the star is declared on the case page', () => {
-	it('is a widget on the layout, above the unread strip and the panels', () => {
-		const star = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-favourite',
-		)
-		const unread = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-unread',
+	it('rides the banner row, above the panels', () => {
+		// The four strips share ONE grid row now (case-banner-stack): three of
+		// them are a root v-if, so four rows reserved three empty ones on an
+		// ordinary case. Their ORDER is the component's, asserted below.
+		const banners = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-banner-stack',
 		)
 		const panels = caseDetail.config.layout.find(
 			(l) => l.widgetId === 'case-panels',
 		)
 
-		expect(star, 'the favourite strip is missing from the layout').toBeTruthy()
-		expect(star.gridY).toBeLessThan(unread.gridY)
-		expect(star.gridY).toBeLessThan(panels.gridY)
+		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
+		expect(banners.gridY).toBeLessThan(panels.gridY)
+		// The row is only as tall as whatever rendered; without this an empty
+		// stack costs its whole authored height back again.
+		expect(banners.sizeToContent).toBe(true)
+	})
+
+	it('is the first strip in the banner stack', () => {
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
+		)
+		const order = ['CaseFavouriteStrip', 'CaseUnreadPanel', 'CaseStatusDeclarationPanel', 'CaseAttentionPanel']
+			.map((c) => stack.indexOf(`<${c}`))
+
+		expect(order.every((i) => i > -1)).toBe(true)
+		expect([...order].sort((a, b) => a - b)).toEqual(order)
 	})
 
 	it('declares a widget whose type the registry answers', () => {
@@ -267,11 +281,14 @@ describe('the star is declared on the case page', () => {
 		// a renderer from `cnRegistry[widget.type]` and renders NOTHING,
 		// silently, when no key answers.
 		const widget = caseDetail.config.widgets.find(
-			(w) => w.id === 'case-favourite',
+			(w) => w.id === 'case-banner-stack',
 		)
 
 		expect(widget).toBeTruthy()
-		expect(widget.type).toBe('case-favourite')
+		expect(widget.type).toBe('case-banner-stack')
+		expect(registrySource).toContain("'case-banner-stack': {")
+		// The star's own type stays registered: still a valid placement, just
+		// not the one this page uses.
 		expect(registrySource).toContain("'case-favourite': {")
 		expect(registrySource).toContain('component: CaseFavouriteStrip,')
 		expect(iconsSource).toContain(`\n\t${widget.icon},\n`)

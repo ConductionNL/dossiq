@@ -180,10 +180,10 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
 		).toEqual([
-			'case-favourite',
-			'case-unread',
-			'case-status-declaration',
-			'case-attention',
+			// ONE row, not four. Three of the four strips are a root v-if, so four
+			// rows reserved three empty ones on an ordinary case; CaseBannerStack
+			// holds all four and the row carries `sizeToContent`.
+			'case-banner-stack',
 		])
 		expect(panels.gridY).toBe(
 			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
