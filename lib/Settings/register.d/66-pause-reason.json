@@ -1,0 +1,165 @@
+{
+  "_note": "pause-reason-with-chasing (row 2.25, Awb 4:5 and 4:15). A pause already stopped the clock and said why in free text. Nobody reminded the person it was waiting on, so the handler learned of the silence on the last day. WHAT IS DECLARED HERE IS A VOCABULARY, NOT A SENTENCE: `caseType.pauseReasons` names each reason a case type allows, who it waits on, the legal basis, and the chasing schedule that belongs to it. A schedule that lives on the reason is a schedule an administrator can change without a deploy, and it is the same schedule for every case paused for that reason (design D-1). THE RATIONALE STAYS BESIDE IT, never instead of it: the reason is the rule and the rationale is the note, and a free-text field alone can be counted by nobody. WHY THE FOUR CATEGORIES: an applicant wait and a third-party wait are different facts under the Awb, an internal wait is nobody's statutory suspension, and a statutory wait is one the law itself imposes. `statusType.waitingOn` already splits applicant from third party for the queue, so `pauseReasons[].waitingOn` reuses exactly those three values and never invents a fourth spelling. WHAT THE INSTANCE CARRIES is the reason in force and the chasing that has actually happened: `chasesSent` is the count the schedule is measured against, so two triggers reaching the same instance cannot both send the same chase (design D-2). WHAT THE CASE CARRIES is a read convenience and never a second truth, the same rule `markCaseWaiting` already follows: the queue has to say 'waiting on the applicant for 9 days, chased twice' without reading every term instance of every case. A fragment of its own rather than an edit to 60-termijnbewaking.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "pauseReasons": {
+            "type": "array",
+            "title": "Pause reasons",
+            "description": "The reasons this case type allows a term to be suspended for, each with the chasing that belongs to it. A case type that declares none keeps behaving exactly as it did: a pause takes a free-text rationale and nobody is chased.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key",
+                  "description": "The short name the pause records. Stored on the term instance and on the request, so it never changes once cases carry it."
+                },
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "What a handler picks from the list, in their own words."
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "applicant",
+                    "thirdParty",
+                    "internal",
+                    "statutory"
+                  ],
+                  "default": "applicant",
+                  "title": "Category",
+                  "description": "What kind of wait this is. An applicant wait suspends the beslistermijn under Awb 4:5. A third-party wait is an advice or a document somebody else owes. An internal wait is ours and stops no statutory clock. A statutory wait is one the law itself imposes."
+                },
+                "waitingOn": {
+                  "type": "string",
+                  "enum": [
+                    "us",
+                    "applicant",
+                    "thirdParty"
+                  ],
+                  "default": "applicant",
+                  "title": "Waiting on",
+                  "description": "Who is actually being waited on, in the same three values statusType.waitingOn uses. The queue counts on these words, so a second spelling here would split one bucket in two."
+                },
+                "legalBasis": {
+                  "type": "string",
+                  "title": "Legal basis",
+                  "description": "The article the suspension rests on, Awb 4:5 or Awb 4:15. Recorded on every event this reason produces, so the file shows the ground and not only the date."
+                },
+                "chaseIntervalDays": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Chase interval",
+                  "description": "How many days pass between reminders. Zero means this reason never chases, which is the right answer for a wait nobody can be reminded about."
+                },
+                "chaseBudget": {
+                  "type": "integer",
+                  "default": 0,
+                  "title": "Maximum chases",
+                  "description": "How many reminders go out at most. After the last one the case escalates instead of chasing again, because a reminder nobody answers twice is not answered by a third."
+                },
+                "countsWorkingDays": {
+                  "type": "boolean",
+                  "default": true,
+                  "title": "Working days",
+                  "description": "Whether the interval counts working days. The administered calendar answers it, so a reminder never lands on a day the office is shut."
+                },
+                "chaseText": {
+                  "type": "string",
+                  "title": "Reminder text",
+                  "description": "What the reminder says. Written once per reason so every applicant asked for the same thing reads the same words."
+                },
+                "escalateTo": {
+                  "type": "string",
+                  "title": "Escalate to",
+                  "description": "Who hears about the silence after the last reminder. A role or a user id, recorded on the escalation so the file names who was told."
+                }
+              }
+            }
+          }
+        }
+      },
+      "deadlineInstance": {
+        "properties": {
+          "pauseReason": {
+            "type": "string",
+            "title": "Pause reason",
+            "description": "The key of the reason the running pause was registered under. Empty on a pause registered before the case type declared any reason.",
+            "facetable": true
+          },
+          "pauseWaitingOn": {
+            "type": "string",
+            "enum": [
+              "us",
+              "applicant",
+              "thirdParty"
+            ],
+            "title": "Waiting on",
+            "description": "Who the running pause waits on, taken from the reason in force. Held here as well as on the reason because a reason can be re-declared and a pause that already ran has to keep reading the way it was registered.",
+            "facetable": true
+          },
+          "chasesSent": {
+            "type": "integer",
+            "default": 0,
+            "title": "Reminders sent",
+            "description": "How many reminders have gone out on the running pause. The count the schedule is measured against, so the same reminder cannot go out twice.",
+            "facetable": true
+          },
+          "lastChasedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last reminder",
+            "description": "When the last reminder went out. The interval is counted from here rather than from the pause start, so a reminder that went late does not drag the next one forward."
+          },
+          "chaseEscalatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Escalated at",
+            "description": "When the silence was escalated, after the last reminder in the budget. Set once, so an escalation is not repeated every day the pause runs on."
+          }
+        }
+      },
+      "termijnGebeurtenis": {
+        "properties": {
+          "type": {
+            "enum": [
+              "chased",
+              "chase-escalated"
+            ]
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "pauseWaitingOn": {
+            "type": "string",
+            "enum": [
+              "us",
+              "applicant",
+              "thirdParty"
+            ],
+            "title": "Waiting on",
+            "description": "Who this case is waiting on right now, from the reason of the running pause. A read convenience over the term instances, never a second truth: the queue has to narrow on it without reading every instance of every case.",
+            "facetable": true
+          },
+          "waitingSince": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Waiting since",
+            "description": "When the running pause started. Cleared when the term resumes, so a case that is nobody's wait carries no date."
+          },
+          "chasesSent": {
+            "type": "integer",
+            "default": 0,
+            "title": "Reminders sent",
+            "description": "How many reminders have gone out on the running pause. Shown in the queue so a handler reads what has already been tried before picking the case up.",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}
