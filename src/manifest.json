@@ -2055,6 +2055,16 @@
 											}
 										}
 									}
+								},
+								{
+									"label": "Live conversation",
+									"widget": {
+										"id": "case-conversations",
+										"type": "case-conversations-pane",
+										"title": "Live conversation",
+										"icon": "PhoneInTalk",
+										"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
+									}
 								}
 							]
 						}
