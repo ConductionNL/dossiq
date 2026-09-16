@@ -2256,7 +2256,12 @@
                     },
                     "endingAct": {
                         "type": "string",
-                        "enum": ["finish", "abort", "archive", "autoClose"],
+                        "enum": [
+                            "finish",
+                            "abort",
+                            "archive",
+                            "autoClose"
+                        ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
                         "facetable": true,
@@ -5644,6 +5649,10 @@
                                 "label": "Linked object"
                             }
                         ]
+                    },
+                    "x-openregister-party": {
+                        "kind": "address",
+                        "nameProperty": "label"
                     }
                 },
                 "properties": {
@@ -5717,12 +5726,6 @@
                         ],
                         "description": "Provenance of this location (bag = validated against BAG; pdok-reverse = reverse-geocoded; gps = field capture; free = manual; geocoded = forward-geocoded; import = CSV importer)",
                         "title": "Source"
-                    }
-                },
-                "configuration": {
-                    "x-openregister-party": {
-                        "kind": "address",
-                        "nameProperty": "label"
                     }
                 }
             },
