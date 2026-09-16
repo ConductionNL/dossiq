@@ -1,0 +1,72 @@
+{
+	"_note": "decision-outcomes-on-the-case. The dossiq consumer half of decidiq the-decision-as-a-walked-process (decidiq#1316). decidiq walks the approval, holds the approvers and decides the threshold; dossiq declares WHICH of its own acts wait for one, and records WHICH decidiq decision each act waits on. THREE declarations land on caseType. ONE, approvalGates: the acts that may not be performed while a walked approval is outstanding, each naming the decidiq decision type that answers it. TWO, admissibilityJudgement: intake ends with an ontvankelijkheid verdict, and an inadmissible one closes the case through the ordinary close act with the declared result type. THREE, remedy: the rechtsmiddel open against this case type's decisions, its term in days and the body it is lodged with, so a besluit prints its bezwaarclausule from the declaration rather than from a template somebody edited. The case gains approvalRefs, which is the LINK and nothing more: an act and the decidiq decision id it waits on. dossiq stores no approver, no threshold and no outcome (ADR-011), because a second answer to a question decidiq already answers is the one that will disagree. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+	"components": {
+		"schemas": {
+			"caseType": {
+				"properties": {
+					"approvalGates": {
+						"type": "array",
+						"title": "Acts that wait for an approval",
+						"description": "The acts of this case type that may not be performed while a walked approval is still open in decidiq. Each entry names the act, the decidiq decision type that answers it, and what to call the approval in the refusal. An act named here is refused with the approval named until decidiq reports it granted. An outcome dossiq cannot read leaves the act refused, never allowed: a case that proceeds because decidiq was briefly unreachable is the failure this declaration exists to prevent (ADR-102).",
+						"items": {
+							"type": "object",
+							"properties": {
+								"act": {
+									"type": "string",
+									"title": "Act",
+									"description": "The transition id or act id this gate applies to, as availableActions publishes it. An entry naming no act gates nothing and is dropped."
+								},
+								"decisionType": {
+									"type": "string",
+									"title": "Decision type",
+									"description": "The decidiq decision type slug the approval is walked as, for example besluit-approval. Recorded so a handler can find the walk in decidiq."
+								},
+								"label": {
+									"type": "string",
+									"title": "What the approval is called",
+									"description": "The name the refusal uses, for example Approval by the teamleider. Empty falls back to the decision type."
+								},
+								"enabled": {
+									"type": "boolean",
+									"default": true,
+									"title": "Active",
+									"description": "Off leaves the declaration in place and stops it gating anything, so a gate can be lifted without losing what it said."
+								}
+							}
+						}
+					}
+				}
+			},
+			"case": {
+				"properties": {
+					"approvalRefs": {
+						"type": "array",
+						"title": "Approvals this case waits on",
+						"description": "Which decidiq decision each gated act of this case waits on. The link and nothing else: the approvers, the threshold and the outcome stay in decidiq and are read from there on every gate evaluation. An act with no entry here has no approval raised yet, which is itself a reason to refuse it.",
+						"items": {
+							"type": "object",
+							"properties": {
+								"act": {
+									"type": "string",
+									"title": "Act",
+									"description": "The act this approval gates."
+								},
+								"decisionRef": {
+									"type": "string",
+									"title": "Decision reference",
+									"description": "The decidiq decision id. The correlation key, and the only thing dossiq stores about the walk."
+								},
+								"raisedAt": {
+									"type": "string",
+									"format": "date-time",
+									"title": "Raised at",
+									"description": "When the approval was asked for."
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
