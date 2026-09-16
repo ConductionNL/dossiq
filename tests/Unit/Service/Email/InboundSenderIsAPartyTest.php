@@ -81,7 +81,13 @@ class InboundSenderIsAPartyTest extends TestCase {
 
 		$people = $this->createMock(originalClassName: PersonLinkReader::class);
 		$people->method('peopleOn')->willReturnCallback(
-			static fn (string $caseId): array => ($caseId === 'case-1' ? self::PARTIES : [])
+			static function (string $caseId): array {
+				if ($caseId === 'case-1') {
+					return self::PARTIES;
+				}
+
+				return [];
+			}
 		);
 
 		$this->archival = new EmailArchivalService(

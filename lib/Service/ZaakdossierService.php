@@ -589,10 +589,22 @@ class ZaakdossierService {
 		}
 
 		$caseId = $this->caseOfDocument(infoObjectId: $infoObjectId);
+		// An edit that names one field keeps the OTHER as it stands, which is
+		// what makes "set the sender" leave the addressees alone.
+		$sender = ($current['sender'] ?? null);
+		if ($namesSender === true) {
+			$sender = $metadata['sender'];
+		}
+
+		$recipients = ($current['recipients'] ?? null);
+		if ($namesRecipients === true) {
+			$recipients = $metadata['recipients'];
+		}
+
 		$resolved = $this->correspondents->resolveFor(
 			caseId: $caseId,
-			sender: ($namesSender === true ? $metadata['sender'] : ($current['sender'] ?? null)),
-			recipients: ($namesRecipients === true ? $metadata['recipients'] : ($current['recipients'] ?? null)),
+			sender: $sender,
+			recipients: $recipients,
 			direction: $direction,
 		);
 

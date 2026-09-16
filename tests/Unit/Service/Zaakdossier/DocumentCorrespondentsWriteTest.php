@@ -173,7 +173,13 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 
 		$people = $this->createMock(originalClassName: PersonLinkReader::class);
 		$people->method('peopleOn')->willReturnCallback(
-			static fn (string $caseId): array => ($caseId === 'case-1' ? self::PARTIES : [])
+			static function (string $caseId): array {
+				if ($caseId === 'case-1') {
+					return self::PARTIES;
+				}
+
+				return [];
+			}
 		);
 
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
@@ -181,7 +187,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			settingsService: $settings,
 			accessGuard: new InformatieobjectAccessGuard(
 				settingsService: $settings,
-				groupManager: $this->createMock(IGroupManager::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class),
 				logger: $logger,
 			),
 			statusLifecycle: new InformatieobjectStatusLifecycle(settingsService: $settings, logger: $logger),

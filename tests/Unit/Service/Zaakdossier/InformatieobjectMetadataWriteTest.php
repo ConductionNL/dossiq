@@ -128,7 +128,7 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 			new DocumentRecordStore(settingsService: $settings),
 			new CorrespondentWriter(
 				rules: new DocumentCorrespondents(),
-				people: $this->createMock(PersonLinkReader::class),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $settings,
 			),
 		);
