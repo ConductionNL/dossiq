@@ -45,11 +45,12 @@ import {
 } from './helpers/auth.ts'
 import {
 	cleanupRunObjects,
-	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	seedStateMachine,
+	updateObject,
 } from './helpers/fixtures.ts'
 
 /** The register cases live in. */
@@ -204,14 +205,38 @@ test.describe('field rules per role', () => {
 		await ensureMembership(provisioning, HOLDING_GROUP, OFFICER)
 		await provisioning.dispose()
 
-		const caseType = await ensureCaseType(adminApi, adminToken, {
-			title: `${RUN_PREFIX} field rules`,
+		// 🔴 A CASE TYPE OF ITS OWN, AND IT HAS TO BE PUBLISHED. `ensureCaseType`
+		// REUSES whatever publishable type the instance already has, so the
+		// rules would land on nothing. And nothing is projected onto the schema
+		// until the type is published: that is the one moment the projector
+		// runs. A suite that skipped the publish would read an unrestricted
+		// case, see the field, and report a rule that was never written.
+		const machine = await seedStateMachine(adminApi, adminToken)
+		await updateObject(adminApi, adminToken, 'caseType', machine.caseTypeId, {
+			initialStatus: machine.statusReceived,
 			fieldRoleRules: FIELD_ROLE_RULES,
 		})
 
+		const published = await adminApi.post(
+			`/index.php/apps/dossiq/api/case-types/${machine.caseTypeId}/publish`,
+			{
+				headers: { requesttoken: adminToken },
+				data: { changeNote: 'e2e: field rules per role' },
+			},
+		)
+		expect(
+			published.ok(),
+			`the case type must publish, or nothing is projected; got ${published.status()} ${await published.text()}`,
+		).toBeTruthy()
+		expect(
+			(await published.json())?.published,
+			'the publish must report published: true, or the findings below say why',
+		).toBe(true)
+
 		const seeded = await seedCase(adminApi, adminToken, {
 			title: `${RUN_PREFIX} Zaak met veldregels`,
-			caseType: objectId(caseType),
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
 			[HIDDEN_FIELD]: 7,
 			[READ_ONLY_FIELD]: 'intern',
 		})
