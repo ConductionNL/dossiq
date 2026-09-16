@@ -30,9 +30,6 @@ namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\People\CaseRoleProjection;
-use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
-use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IAppConfig;
 use OCP\IUserSession;
@@ -45,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MergeTemplateHandler implements ActionHandlerInterface {
+	use AddressesTheCase;
 	use HandlesTemplates;
 
 	/**
@@ -357,43 +355,4 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 
 		return null;
 	}//end resolveZaakdossierService()
-
-	/**
-	 * The parties a generated letter is addressed to.
-	 *
-	 * Resolved through the container for the same reason the dossier service
-	 * is: this handler is constructed in tests that know nothing about the
-	 * party model, and an unavailable writer must leave the letter filed
-	 * rather than refuse to file it.
-	 *
-	 * @param string $caseId The case the letter is on.
-	 *
-	 * @return array<int, string> The addressed parties, [] when there are none.
-	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
-	 */
-	private function addressedParties(string $caseId): array {
-		try {
-			$writer = $this->container->get(CorrespondentWriter::class);
-		} catch (\Throwable) {
-			return [];
-		}
-
-		if (($writer instanceof CorrespondentWriter) === false) {
-			return [];
-		}
-
-		return $writer->addressedParties(
-			caseId: $caseId,
-			// Most specific first: somebody who wrote `geadresseerde` on a
-			// party meant this letter. The requester is the fallback, and
-			// `initiator` is what the same person is called on a case whose
-			// links predate the generic roles.
-			roles: [
-				DocumentCorrespondents::ROLE_RECIPIENT,
-				'aanvrager',
-				CaseRoleProjection::INITIATOR,
-			],
-		);
-	}//end addressedParties()
 }//end class
