@@ -42,6 +42,7 @@ class AuditTrailMapper {
 	 * @param array<string, mixed> $context Additional context data
 	 * @param string|null $actorId Explicit actor id, bypassing the session user
 	 * @param string|null $actorName Explicit actor display name, paired with $actorId
+	 * @param string|null $ipAddress Explicit client address, mirroring the real signature
 	 *
 	 * @return object A lightweight audit-trail-like object
 	 */
@@ -51,6 +52,7 @@ class AuditTrailMapper {
 		array $context = [],
 		?string $actorId = null,
 		?string $actorName = null,
+		?string $ipAddress = null,
 	): object {
 		return (object)[
 			'objectUuid' => $object->getUuid(),

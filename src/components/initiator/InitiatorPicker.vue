@@ -64,6 +64,14 @@
 
 		<NcLoadingIcon v-if="searching" :size="24" />
 
+		<NcNoteCard
+			v-else-if="refusal"
+			type="warning"
+			data-testid="initiator-picker-refusal">
+			<p>{{ refusalHeadline }}</p>
+			<p>{{ refusal.message }}</p>
+		</NcNoteCard>
+
 		<NcEmptyContent
 			v-else-if="query.trim() !== '' && results.length === 0"
 			:name="emptyTitle"
@@ -101,6 +109,7 @@ import {
 	NcCheckboxRadioSwitch,
 	NcEmptyContent,
 	NcLoadingIcon,
+	NcNoteCard,
 	NcTextField,
 } from '@nextcloud/vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
@@ -115,6 +124,10 @@ import {
 	searchContacts,
 } from '../../services/initiatorSearch.js'
 import { useObjectStore } from '../../store/modules/object.js'
+import {
+	readSearchRefusal,
+	searchRefusalHeadline,
+} from '../../utils/searchRefusal.js'
 
 export default {
 	name: 'InitiatorPicker',
@@ -122,6 +135,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcEmptyContent,
 		NcLoadingIcon,
+		NcNoteCard,
 		NcTextField,
 		AccountOutline,
 		Domain,
@@ -148,6 +162,15 @@ export default {
 			results: [],
 			searching: false,
 			searchTimer: null,
+			/**
+			 * The refusal the register answered the typed term with, or null.
+			 *
+			 * 🔴 `fetchCollection()` DOES NOT THROW ON A 400. It records the
+			 * failure on the store and returns `[]`, so the catch below never
+			 * sees a refused search term and the picker used to say "No
+			 * results" for a bracket the reader forgot to close.
+			 */
+			refusal: null,
 			/** The row `value` names, resolved for display. */
 			resolvedValue: null,
 		}
@@ -204,6 +227,16 @@ export default {
 		},
 
 		/** @spec openspec/specs/initiator-selection/spec.md */
+		/**
+		 * The sentence above a refused term.
+		 *
+		 * @return {string} The headline, empty when the term was readable.
+		 * @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+		 */
+		refusalHeadline() {
+			return searchRefusalHeadline(this.refusal, t)
+		},
+
 		emptyTitle() {
 			return this.activeTab === 'contact'
 				? t('dossiq', 'No contacts found')
@@ -264,27 +297,34 @@ export default {
 		 */
 		async runSearch() {
 			const query = this.query.trim()
+			this.refusal = null
 			if (query === '') {
 				this.results = []
 				return
 			}
 			this.searching = true
 			try {
-				if (this.activeTab === 'person') {
-					const rows = await this.objectStore.fetchCollection(
-						'brpPerson',
-						{ _search: query, _limit: 20 },
-					)
-					this.results = (rows || []).map(personResult)
-				} else if (this.activeTab === 'company') {
-					const rows = await this.objectStore.fetchCollection(
-						'kvkCompany',
-						{ _search: query, _limit: 20 },
-					)
-					this.results = (rows || []).map(companyResult)
-				} else {
+				if (this.activeTab === 'contact') {
 					this.results = await searchContacts(query)
+					return
 				}
+
+				const type = this.activeTab === 'person' ? 'brpPerson' : 'kvkCompany'
+				const shape =
+					this.activeTab === 'person' ? personResult : companyResult
+				const rows = await this.objectStore.fetchCollection(type, {
+					_search: query,
+					_limit: 20,
+				})
+
+				// The term openregister could not parse, said rather than
+				// rendered as an empty list. The store holds the refusal
+				// because the fetch swallowed it.
+				this.refusal = readSearchRefusal({
+					error: this.objectStore?.errors?.[type] ?? null,
+					term: query,
+				})
+				this.results = this.refusal === null ? (rows || []).map(shape) : []
 			} catch (err) {
 				console.error('[InitiatorPicker] search failed', err)
 				this.results = []

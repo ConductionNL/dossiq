@@ -135,6 +135,10 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
+	// The closed cases that ended without a result (b210638, the search change
+	// that made the no-result closures a lens of their own). It sits after
+	// Closed because it narrows that set.
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
@@ -164,12 +168,14 @@ const CASES_ONLY = [
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	// A case closes with or without a result; a task completes and has none.
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the fifteen chips in order', () => {
+	it('declares the sixteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 

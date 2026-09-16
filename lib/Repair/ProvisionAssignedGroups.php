@@ -133,6 +133,19 @@ class ProvisionAssignedGroups implements IRepairStep {
 		// case rather than a missing notice. AuthorizationRolesAreProvisioned
 		// Test sweeps the shipped roles against this list.
 		'coordinatoren',
+		// Named by a field rule rather than by a flow step: a case type's
+		// `fieldRoleRules` hands these two the fields it takes off the
+		// handlers, and OpenRegister's property RBAC reads the membership.
+		// An authorization group the server does not have fails the other way
+		// round from an assignment group: nobody qualifies for the allow list,
+		// so the field is withheld from everyone who is not an administrator,
+		// and the person who lost it has nothing to look at. `dossiq-risk-
+		// assessment` (register.d/38-markers-and-assessments.json) has been in
+		// that state since it shipped and is provisioned here for the same
+		// reason.
+		'dossiq-coordinators',
+		'dossiq-quality',
+		'dossiq-risk-assessment',
 	];
 
 	/**
