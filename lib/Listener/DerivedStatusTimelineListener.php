@@ -131,6 +131,17 @@ class DerivedStatusTimelineListener implements IEventListener {
 			$message = 'Status ging van ' . $from . ' naar ' . $to . ' omdat de zaak daaraan voldoet';
 		}
 
+		// A derived move announces itself exactly as a made one does: in the
+		// public words the status carries, and only when it carries some. The
+		// reason it was derived is the workflow's business, so it does not
+		// travel with the public sentence.
+		$publicLabel = $this->publicLabel(statusTypeId: $staged['to']);
+		$visibility = CaseTimeline::INTERNAL;
+		if ($publicLabel !== '') {
+			$message = 'Status: ' . $publicLabel;
+			$visibility = CaseTimeline::PUBLIC_ENTRY;
+		}
+
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::STATUS_CHANGE,
@@ -143,9 +154,33 @@ class DerivedStatusTimelineListener implements IEventListener {
 				'label' => 'Afgeleide status',
 				'statusRecordId' => '',
 			],
-			visibility: CaseTimeline::INTERNAL,
+			visibility: $visibility,
 		);
 	}//end handle()
+
+	/**
+	 * The words this status is announced to the applicant in, if any.
+	 *
+	 * Soft like {@see self::statusName()}: a lookup that cannot answer leaves
+	 * the entry internal, which is the safe direction to fail in.
+	 *
+	 * @param string $statusTypeId The statusType uuid, or ''.
+	 *
+	 * @return string The public label, or ''.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function publicLabel(string $statusTypeId): string {
+		if ($statusTypeId === '') {
+			return '';
+		}
+
+		try {
+			return trim($this->statuses->publicLabelOf(statusTypeId: $statusTypeId));
+		} catch (Throwable $e) {
+			return '';
+		}
+	}//end publicLabel()
 
 	/**
 	 * The administered name of a statusType, or its id when the name is not readable.

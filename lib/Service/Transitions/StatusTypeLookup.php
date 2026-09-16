@@ -75,6 +75,28 @@ class StatusTypeLookup {
 	}//end nameFor()
 
 	/**
+	 * The words a status is announced to the applicant in, when it is announced.
+	 *
+	 * THE EMPTY STRING IS THE ANSWER THAT MATTERS. A status carries a
+	 * `publicLabel` only when the organisation decided the applicant may be
+	 * told about it, so the absence of one is a decision rather than a gap:
+	 * the status move stays inside. `name` is NOT the fallback here, exactly
+	 * because falling back would announce every internal status the moment a
+	 * case type forgot to fill one in.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The public label, or '' when the status is not announced.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function publicLabelOf(string $statusTypeId): string {
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+
+		return trim((string)($statusType['publicLabel'] ?? ''));
+	}//end publicLabelOf()
+
+	/**
 	 * The whole statusType row, for the callers that need more than its name.
 	 *
 	 * The checklist a status brings with it is read here rather than through a

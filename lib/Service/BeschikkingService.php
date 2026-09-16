@@ -48,6 +48,8 @@ use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use RuntimeException;
 
 /**
@@ -82,6 +84,7 @@ class BeschikkingService {
 	 * @param AuditPacketBuilder $auditPacket Verifiable audit-pakket assembly.
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
 	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
 	 *
 	 * @return void
 	 */
@@ -96,6 +99,7 @@ class BeschikkingService {
 		private readonly AuditPacketBuilder $auditPacket,
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
 		private readonly CoordinatorRequirement $coordinator,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -325,8 +329,52 @@ class BeschikkingService {
 			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
 		);
 
+		$this->recordDelivery(decision: $saved, dispatch: $dispatch, decisionId: $decisionId);
+
 		return $saved;
 	}//end verzend()
+
+	/**
+	 * Put the delivered beschikking on the case timeline, for both readers.
+	 *
+	 * PUBLIC BY CONSTRUCTION, NOT BY A TICKED BOX. The applicant is holding
+	 * this letter: it reached their berichtenbox or their doormat, and the six
+	 * weeks they have to object started the day it went. A timeline that showed
+	 * them everything except the decision they are objecting to would be the
+	 * one entry worth hiding least.
+	 *
+	 * The entry carries the channel and the day it went, and nothing about the
+	 * addressee. Who it was sent to is on the beschikking; a public line is the
+	 * last place to repeat it.
+	 *
+	 * @param array<string, mixed> $decision   The saved beschikking.
+	 * @param array<string, mixed> $dispatch   What the routing service answered.
+	 * @param string               $decisionId The beschikking uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function recordDelivery(array $decision, array $dispatch, string $decisionId): void {
+		$caseId = trim((string)($decision['caseId'] ?? ''));
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::DECISION_SENT,
+			message: 'Beschikking verzonden',
+			fields: [
+				'channel' => (string)($dispatch['notificationChannel'] ?? ''),
+				'sentOn' => (string)($dispatch['sentOn'] ?? ''),
+				'decisionType' => (string)($decision['decisionType'] ?? ''),
+				'reference' => (string)($decision['reference'] ?? ''),
+				'beschikkingId' => $decisionId,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end recordDelivery()
 
 	/**
 	 * Field-edit a beschikking, honouring the immutability contract. [T11]

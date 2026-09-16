@@ -566,6 +566,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::ACKNOWLEDGEMENT,
 			TimelineKinds::STATUS_CHANGE,
 			TimelineKinds::TERM_EVENT,
+			TimelineKinds::DECISION_SENT,
 		];
 
 		foreach ($named as $slug) {

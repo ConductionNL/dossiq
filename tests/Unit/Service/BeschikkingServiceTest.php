@@ -39,6 +39,8 @@ use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -155,6 +157,20 @@ class BeschikkingServiceTest extends TestCase {
 	private FakeObjectService $objects;
 
 	/**
+	 * The mocked timeline seam, and what it was handed.
+	 *
+	 * @var CaseTimeline|MockObject
+	 */
+	private CaseTimeline $timeline;
+
+	/**
+	 * Every payload the seam was handed.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $entries = [];
+
+	/**
 	 * The service under test.
 	 *
 	 * @var BeschikkingService
@@ -167,6 +183,23 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->entries = [];
+		$this->timeline = $this->createMock(CaseTimeline::class);
+		$this->timeline->method('record')->willReturnCallback(
+			function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			): string {
+				$this->entries[] = compact('caseId', 'kind', 'message', 'fields', 'visibility');
+
+				return 'entry-' . count($this->entries);
+			}
+		);
+
 		$this->objects = new FakeObjectService();
 
 		$settings = $this->createMock(SettingsService::class);
@@ -201,6 +234,7 @@ class BeschikkingServiceTest extends TestCase {
 			new AuditPacketBuilder($settings, $signingAdapter, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
 			$this->createMock(CoordinatorRequirement::class),
+			$this->timeline,
 		);
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
@@ -312,6 +346,44 @@ class BeschikkingServiceTest extends TestCase {
 		$logs = $this->objects->searchObjectsBySlug('dossiq', 'stateMachineLog', ['decisionId' => $id]);
 		$this->assertGreaterThanOrEqual(4, count($logs));
 	}//end testFullLifecycle()
+
+	/**
+	 * A delivered beschikking lands on the case timeline, and it lands public.
+	 *
+	 * The applicant is holding the letter and the six weeks to object started
+	 * the day it went, so this is the one entry the public timeline may not be
+	 * missing. The entry carries the channel and the day, and the assertion
+	 * says so field by field rather than counting entries: an entry written
+	 * internal looks exactly like one written public until someone reads the
+	 * flag.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testADeliveredBeschikkingIsOnThePublicTimeline(): void {
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
+
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$delivered = array_values(
+			array_filter(
+				$this->entries,
+				static fn (array $entry): bool => $entry['kind'] === 'beschikking-verzonden'
+			)
+		);
+
+		$this->assertCount(1, $delivered);
+		$this->assertSame('zaak-2026-wmo-1', $delivered[0]['caseId']);
+		$this->assertSame('public', $delivered[0]['visibility']);
+		$this->assertNotSame('', $delivered[0]['fields']['channel']);
+		$this->assertNotSame('', $delivered[0]['fields']['sentOn']);
+		$this->assertSame($id, $delivered[0]['fields']['beschikkingId']);
+		$this->assertSame('toekenning', $delivered[0]['fields']['decisionType']);
+	}//end testADeliveredBeschikkingIsOnThePublicTimeline()
 
 	/**
 	 * Mandaat is rejected when the approver level cannot cover the bedrag. [V03]
