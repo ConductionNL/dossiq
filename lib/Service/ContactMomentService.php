@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -61,12 +63,14 @@ class ContactMomentService {
 	 * @param IUserSession $userSession The session, for the handling employee default.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -134,8 +138,61 @@ class ContactMomentService {
 			throw new RuntimeException('Could not create contactmoment');
 		}
 
-		return $this->normalize(result: $created);
+		$record = $this->normalize(result: $created);
+		$this->recordOnTimeline(contactmoment: $record, data: $data);
+
+		return $record;
 	}//end createContactMoment()
+
+	/**
+	 * Put the logged contact on the case's timeline.
+	 *
+	 * The contactmoment object stays where it is: the Communication tab is
+	 * still the place a call is logged and read in full. The entry is the
+	 * line in the one chronology, carrying the record's own id so the detail
+	 * is one hop away rather than copied.
+	 *
+	 * The same entry goes onto every case in `relatedCases`, because a call
+	 * about three cases belongs on three timelines and the KCC voorblad
+	 * already treats that list as the contact's reach.
+	 *
+	 * @param array<string, mixed> $contactmoment The stored record.
+	 * @param array<string, mixed> $data          The fields as supplied.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	private function recordOnTimeline(array $contactmoment, array $data): void {
+		$caseId = trim((string)($data['case'] ?? ''));
+		if ($caseId === '') {
+			return;
+		}
+
+		$related = [];
+		foreach ((array)($data['relatedCases'] ?? []) as $relatedCase) {
+			$related[] = (string)$relatedCase;
+		}
+
+		$summary = trim((string)($data['summary'] ?? ''));
+		if ($summary === '') {
+			$summary = 'Contactmoment geregistreerd';
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::CONTACTMOMENT,
+			message: $summary,
+			fields: [
+				'channel' => (string)($contactmoment['notificationChannel'] ?? ($data['notificationChannel'] ?? '')),
+				'direction' => (string)($contactmoment['direction'] ?? ($data['direction'] ?? 'inbound')),
+				'nature' => (string)($contactmoment['nature'] ?? ($data['nature'] ?? '')),
+				'contactmomentId' => (string)($contactmoment['@self']['id'] ?? ($contactmoment['id'] ?? '')),
+			],
+			visibility: CaseTimeline::INTERNAL,
+			relatedCaseIds: $related,
+		);
+	}//end recordOnTimeline()
 
 	/**
 	 * The fields a contact logged from a case leaves out, with their defaults.

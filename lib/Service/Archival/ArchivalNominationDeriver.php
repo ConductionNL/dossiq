@@ -24,6 +24,24 @@
  * the resultaattype says the case is nominated for and when that falls due,
  * which is the ZGW zaak contract a consumer reads.
  *
+ *
+ * 🔴 THIS CLASS STANDS IN FOR OPENREGISTER, AND ITS REMOVAL IS BLOCKED.
+ * Decision D7 puts the archiving process in openregister, which derives a
+ * nomination from `ArchivalNominationListener` when an object reaches a state
+ * its schema declares in `x-openregister-lifecycle.final`. That cannot fire for
+ * a case: `case.status` is a `$ref` to a `statusType` row, so the value reaching
+ * the event is a per-instance uuid, and `final` is a static list validated
+ * against the field's enum. `initial` has a dynamic `{from, field}` form on the
+ * same annotation and `final` has no analogue. Deleting this class before
+ * openregister can answer finality for a provider-mode schema would leave every
+ * closing case with no archiefactiedatum at all, which is a silent regression
+ * rather than a delegation.
+ *
+ * What unblocks it: a dynamic `final`, or a finality predicate on
+ * `LifecycleActionProviderInterface`, where a provider-mode state machine
+ * already lives. See
+ * openspec/changes/the-case-archives-through-openregister/design.md, D-1.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\Archival
  *
