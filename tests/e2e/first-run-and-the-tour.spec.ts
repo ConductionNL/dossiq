@@ -46,7 +46,10 @@ const APP_BASE = '/index.php/apps/dossiq'
  */
 async function status(api: APIRequestContext): Promise<any> {
 	const res = await api.get(`${APP_BASE}/api/setup/status`)
-	expect(res.ok(), `the setup status is missing: ${res.status()} ${await res.text()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`the setup status is missing: ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
 	const body = await res.json()
 	expect(
 		Array.isArray(body.readiness),
@@ -82,7 +85,9 @@ test.describe('the first run names the minimum', () => {
 	/**
 	 * @e2e Scenario: an administrator sees what is still missing
 	 */
-	test('every declared item is reported, with done and a screen', async ({ request }) => {
+	test('every declared item is reported, with done and a screen', async ({
+		request,
+	}) => {
 		const body = await status(request)
 
 		expect(body.readiness.map((entry: any) => entry.id)).toEqual([
@@ -94,7 +99,10 @@ test.describe('the first run names the minimum', () => {
 		])
 
 		for (const entry of body.readiness) {
-			expect(typeof entry.done, `${entry.id} does not say whether it is done`).toBe('boolean')
+			expect(
+				typeof entry.done,
+				`${entry.id} does not say whether it is done`,
+			).toBe('boolean')
 			expect(entry.screen, `${entry.id} leads nowhere`).toBeTruthy()
 			expect(entry.title, `${entry.id} has no title`).toBeTruthy()
 		}
@@ -107,9 +115,14 @@ test.describe('the first run names the minimum', () => {
 	 * cannot pass: the item follows the tree in BOTH directions, without the
 	 * app being reinstalled or the wizard being reopened.
 	 */
-	test('an item follows the tree rather than a stored flag', async ({ request }) => {
+	test('an item follows the tree rather than a stored flag', async ({
+		request,
+	}) => {
 		const types = await adoptableCaseTypes(request)
-		expect(types.length, 'the instance carries no case type to work from').toBeGreaterThan(0)
+		expect(
+			types.length,
+			'the instance carries no case type to work from',
+		).toBeGreaterThan(0)
 
 		const draft = await createObject(request, token, 'caseType', {
 			title: `${RUN_PREFIX} concept`,
@@ -135,11 +148,16 @@ test.describe('the first run names the minimum', () => {
 	/**
 	 * @e2e Scenario: an item leads somewhere
 	 */
-	test('the mail account item leads to the mail settings screen', async ({ request, page }) => {
+	test('the mail account item leads to the mail settings screen', async ({
+		request,
+		page,
+	}) => {
 		const mail = item(await status(request), 'mail-account')
 		expect(mail.screen).toContain('settings')
 
-		await page.goto(`${APP_BASE}${mail.screen.startsWith('/') ? mail.screen : '/' + mail.screen}`)
+		await page.goto(
+			`${APP_BASE}${mail.screen.startsWith('/') ? mail.screen : '/' + mail.screen}`,
+		)
 		await expect(page).toHaveURL(/settings/)
 	})
 
@@ -151,10 +169,12 @@ test.describe('the first run names the minimum', () => {
 	test('an unconfigured item does not gate the app', async ({ page }) => {
 		await page.goto(`${APP_BASE}/settings`)
 
-		await expect(
-			page.getByText(/First run|Eerste keer/).first(),
-		).toBeVisible({ timeout: 30_000 })
-		await expect(page.getByTestId('first-run-readiness')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByText(/First run|Eerste keer/).first()).toBeVisible({
+			timeout: 30_000,
+		})
+		await expect(page.getByTestId('first-run-readiness')).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	/**
@@ -166,8 +186,12 @@ test.describe('the first run names the minimum', () => {
 	 * is what makes the runner offer them the whole tour; app config would be
 	 * one value for everybody and the second person would be taught nothing.
 	 */
-	test('tour completion is recorded per person, not once for the app', async ({ request }) => {
-		const res = await request.get(`${APP_BASE}/api/preferences/walkthrough_completed_version`)
+	test('tour completion is recorded per person, not once for the app', async ({
+		request,
+	}) => {
+		const res = await request.get(
+			`${APP_BASE}/api/preferences/walkthrough_completed_version`,
+		)
 		expect(
 			res.ok(),
 			`the per-user walkthrough preference is unreachable: ${res.status()}`,
@@ -183,12 +207,19 @@ test.describe('the first run names the minimum', () => {
 	/**
 	 * @e2e Scenario: a step that lost its surface is reported
 	 */
-	test('a tour step whose surface is gone is reported beside the items', async ({ request }) => {
+	test('a tour step whose surface is gone is reported beside the items', async ({
+		request,
+	}) => {
 		const body = await status(request)
 
-		expect(Array.isArray(body.tourSteps), 'the status reports no tour steps at all').toBeTruthy()
+		expect(
+			Array.isArray(body.tourSteps),
+			'the status reports no tour steps at all',
+		).toBeTruthy()
 
-		const missing = body.tourSteps.filter((step: any) => step.state === 'missing')
+		const missing = body.tourSteps.filter(
+			(step: any) => step.state === 'missing',
+		)
 		expect(
 			missing,
 			`the shipped tour names a surface that is gone: ${missing.map((s: any) => `${s.step} -> ${s.surface}`).join(', ')}`,

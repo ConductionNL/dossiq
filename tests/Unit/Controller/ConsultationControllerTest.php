@@ -28,7 +28,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Controller\AdvisoryBodyController;
 use OCA\Dossiq\Controller\ConsultationController;
-use OCA\Dossiq\Controller\ConsultationPublicController;
 use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
 use OCA\Dossiq\Service\ConsultationService;
@@ -39,14 +38,12 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for ConsultationController.
  *
  * @covers \OCA\Dossiq\Controller\ConsultationController
  * @covers \OCA\Dossiq\Controller\AdvisoryBodyController
- * @covers \OCA\Dossiq\Controller\ConsultationPublicController
  *
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccessGuard
  */
@@ -88,13 +85,6 @@ class ConsultationControllerTest extends TestCase {
 	private IGroupManager $groupManager;
 
 	/**
-	 * Mocked LoggerInterface.
-	 *
-	 * @var LoggerInterface|MockObject
-	 */
-	private LoggerInterface $logger;
-
-	/**
 	 * Controller under test.
 	 *
 	 * @var ConsultationController
@@ -107,13 +97,6 @@ class ConsultationControllerTest extends TestCase {
 	 * @var AdvisoryBodyController
 	 */
 	private AdvisoryBodyController $advisoryBodyController;
-
-	/**
-	 * Public (token) consultation controller under test.
-	 *
-	 * @var ConsultationPublicController
-	 */
-	private ConsultationPublicController $publicController;
 
 	/**
 	 * Set up test fixtures.
@@ -130,7 +113,6 @@ class ConsultationControllerTest extends TestCase {
 		$this->advisoryBodyService = $this->createMock(AdvisoryBodyService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
-		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$accessGuard = new ConsultationAccessGuard(
 			request: $this->request,
@@ -151,13 +133,6 @@ class ConsultationControllerTest extends TestCase {
 			request: $this->request,
 			advisoryBodyService: $this->advisoryBodyService,
 			userSession: $this->userSession,
-		);
-
-		$this->publicController = new ConsultationPublicController(
-			appName: Application::APP_ID,
-			request: $this->request,
-			consultationService: $this->consultationService,
-			logger: $this->logger,
 		);
 
 	}//end setUp()
@@ -215,57 +190,6 @@ class ConsultationControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
 	}//end testCreateReturns401WhenNotAuthenticated()
-
-	/**
-	 * publicResponseGet returns 400 when token is empty.
-	 *
-	 * @return void
-	 */
-	public function testPublicResponseGetReturns400ForEmptyToken(): void {
-		$response = $this->publicController->publicResponseGet(token:'');
-
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-
-	}//end testPublicResponseGetReturns400ForEmptyToken()
-
-	/**
-	 * publicResponseGet returns 404 when token is invalid.
-	 *
-	 * @return void
-	 */
-	public function testPublicResponseGetReturns404ForInvalidToken(): void {
-		$this->consultationService->method('findBySecureToken')
-			->willReturn(null);
-
-		$response = $this->publicController->publicResponseGet(token:'invalid-token-value');
-
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-
-	}//end testPublicResponseGetReturns404ForInvalidToken()
-
-	/**
-	 * publicResponseGet returns consultation data for a valid token.
-	 *
-	 * @return void
-	 */
-	public function testPublicResponseGetReturnsConsultationForValidToken(): void {
-		$consultation = [
-			'id' => 'con-uuid',
-			'status' => 'in_handling',
-			'subject' => 'Brandveiligheidsadvies',
-			'latestResponseDate' => '2026-08-01',
-		];
-
-		$this->consultationService->method('findBySecureToken')
-			->willReturn($consultation);
-
-		$response = $this->publicController->publicResponseGet(token:str_repeat('a', 64));
-		$data = $response->getData();
-
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('con-uuid', $data['id']);
-
-	}//end testPublicResponseGetReturnsConsultationForValidToken()
 
 	/**
 	 * listAdvisoryBodies returns 401 when user is not authenticated.

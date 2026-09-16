@@ -28,6 +28,7 @@
 // @spec openspec/specs/case-types/spec.md
 
 import { STATUS_COLOURS } from './statusColour.js'
+import { pruneFieldRules } from './statusFieldRules.js'
 
 /**
  * The roles a status may declare, in the schema's own order.
@@ -121,6 +122,8 @@ export function emptyStatusTypeForm(order = 1) {
 		waitingOn: '',
 		maximumDwell: '',
 		checklist: [],
+		fieldRules: [],
+		derivedWhen: [],
 	}
 }
 
@@ -194,6 +197,8 @@ export function statusTypeToForm(statusType) {
 		waitingOn: isWaitingOn(row.waitingOn) ? row.waitingOn : '',
 		maximumDwell: normaliseMaximumDwell(row.maximumDwell),
 		checklist: pruneChecklist(row.checklist),
+		fieldRules: pruneFieldRules(row.fieldRules),
+		derivedWhen: Array.isArray(row.derivedWhen) ? row.derivedWhen : [],
 	}
 }
 
@@ -203,6 +208,14 @@ export function statusTypeToForm(statusType) {
  * The inverse of `statusTypeToForm`: it writes back exactly the properties the
  * schema declares and nothing else, so a row that arrived carrying dead
  * properties leaves without them.
+ *
+ * 🔴 A SCHEMA PROPERTY MISSING FROM BOTH HALVES IS DESTROYED ON THE NEXT SAVE,
+ * in silence. `derivedWhen` shipped on the schema with no authoring surface and
+ * was absent here, so opening a status and pressing Save, or simply dragging a
+ * status to reorder it, wrote the row back without its conditions and the
+ * derivation quietly stopped. It is carried through untouched now, and
+ * `fieldRules` was added to both halves the same day it was added to the
+ * schema. Add a property to the schema, add it here.
  *
  * @param {object} form The form.
  * @return {object} The object to save.
@@ -223,6 +236,8 @@ export function formToStatusType(form) {
 		waitingOn: isWaitingOn(form.waitingOn) ? form.waitingOn : '',
 		maximumDwell: normaliseMaximumDwell(form.maximumDwell),
 		checklist: pruneChecklist(form.checklist),
+		fieldRules: pruneFieldRules(form.fieldRules),
+		derivedWhen: Array.isArray(form.derivedWhen) ? form.derivedWhen : [],
 	}
 
 	if (form.id) {

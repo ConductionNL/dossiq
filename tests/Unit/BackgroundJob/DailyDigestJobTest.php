@@ -37,6 +37,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\DailyDigestJob;
 use OCA\Dossiq\Service\Queue\DailyDigestComposer;
 use OCA\Dossiq\Service\Queue\DigestDispatcher;
+use OCA\Dossiq\Service\Notification\NotificationRouting;
 use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCP\App\IAppManager;
@@ -168,7 +169,8 @@ class DailyDigestJobTest extends TestCase {
 			appManager: $appManager,
 			settings: new DigestPreferences(
 				userConfig: $this->userConfig(),
-				logger: $this->createMock(LoggerInterface::class)
+				routing: $this->unrouted(),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
 			),
 			composer: new DailyDigestComposer(queue: $queue),
 			dispatcher: $dispatcher,
@@ -305,7 +307,8 @@ class DailyDigestJobTest extends TestCase {
 			appManager: $appManager,
 			settings: new DigestPreferences(
 				userConfig: $this->userConfig(),
-				logger: $this->createMock(LoggerInterface::class)
+				routing: $this->unrouted(),
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
 			),
 			composer: new DailyDigestComposer(queue: $this->createMock(PersonalQueueService::class)),
 			dispatcher: $this->createMock(DigestDispatcher::class),
@@ -336,4 +339,21 @@ class DailyDigestJobTest extends TestCase {
 		self::assertSame(12, $this->sent[0]['waiting']);
 		self::assertCount(DailyDigestComposer::NAMED_ITEMS, $this->sent[0]['named']);
 	}
+
+	/**
+	 * A routing seam that says this instance routes nothing.
+	 *
+	 * These cases are about the job's own scheduling on dossiq's stored value.
+	 * What a routed team default does to the same decision is asserted in
+	 * tests/Unit/Service/Queue/DigestPreferencesRoutingTest.php.
+	 *
+	 * @return NotificationRouting The seam.
+	 */
+	private function unrouted(): NotificationRouting {
+		$routing = $this->createMock(originalClassName: NotificationRouting::class);
+		$routing->method('digestEnabledFor')->willReturn(null);
+		$routing->method('digestDecidedBy')->willReturn(null);
+
+		return $routing;
+	}//end unrouted()
 }//end class

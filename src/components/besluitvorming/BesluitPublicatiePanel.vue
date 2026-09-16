@@ -165,9 +165,7 @@ export default {
 				),
 			]
 			const records = await Promise.all(uuids.map((uuid) => fetchParty(uuid)))
-			this.refusal = publicationRefusal(
-				indicatorsOf(records.filter(Boolean)),
-			)
+			this.refusal = publicationRefusal(indicatorsOf(records.filter(Boolean)))
 		},
 
 		/**

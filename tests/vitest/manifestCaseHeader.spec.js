@@ -68,7 +68,12 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 50 -> 51: `case-recycle-window` adds CasesDeleted, the deleted lens.
 		// It is a page rather than a chip on the case list because the objects
 		// endpoint those chips filter excludes soft-deleted rows by design.
-		expect(manifest.pages).toHaveLength(51)
+		// 51 -> 53: `one-personal-queue` (#2842) adds PersonalQueue, the one
+		// list of everything waiting on the reader across four stores, and
+		// EndOfDay, the screen that closes the day against what they opened
+		// in it. Neither is a lens on an existing page: both cross stores no
+		// index page can name.
+		expect(manifest.pages).toHaveLength(53)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
@@ -267,16 +272,26 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// lost the three tabs that carried the last two, so the page gained no
 		// surface; `case-core` became a section of `case-data-panel`, which also
 		// holds the locations map.
+		//
+		// Timeline joined on 2026-09-16 (one-timeline-on-the-case, #2846) and
+		// does NOT contradict the paragraph above: that one is about the AUDIT
+		// log, which stays in the sidebar. This is OpenRegister's timeline of
+		// every note, logged call and message, the one place they are read in
+		// one order. Archiving joined with it (#2850): what happens to the
+		// case when its business use ends, as openregister decided it. It
+		// comes last because it is the only tab about a case that is over.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
 			'case-notes-panel',
+			'case-timeline-panel',
 			'case-people-panel',
 			'case-communication-panel',
 			'case-email-panel',
 			'case-work-panel',
 			'case-decisions-panel',
 			'case-related-panel',
+			'case-archival-panel',
 		])
 	})
 

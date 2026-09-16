@@ -1,5 +1,5 @@
 {
-    "ceiling": 232,
+    "ceiling": 235,
     "measured": "2026-09-16",
     "window": 3,
     "about": [
@@ -15,7 +15,8 @@
         "2026-09-15, openspec/changes/dependent-term-follows-predecessor (REQ-RCL-12/13): three sites arrived with the typed relation labels and the derived sub-case. Two are degradations of OpenRegister answering badly rather than being absent, and each logs at warning naming what could not be read: the relation rows behind the Related cases tab, and the parentCase inheritance declaration. The third is a read miss on the parent of a sub-case. None is a refusal: every rule this change enforces is a guard in DeelzaakService or CaseRelationService that answers a reason the controller translates, which is why the duplicate, the self-relation, the hierarchy overlap and the case-type refusal are nowhere on this list. Merging development took the ceiling to 222 first, so it went 222 to 225 for those three and nothing else.",
         "2026-09-15, openspec/changes/markers-and-assessments-on-the-case: ONE site arrived with CaseAttentionConditionService::contextFor, the read of the advice requests a marker condition asks about. It is a degradation of a read that may be unavailable, it logs at warning naming the case, and the empty value is load-bearing rather than tolerated: an empty CONTEXT means \"not asked\" and leaves every marker standing, where an empty ROW SET would mean \"asked, and there is nothing\" and would clear one. Collapsing the two would report a handler's work as done on no evidence, on every unrelated save. The ceiling went 225 to 226 for that one site and nothing else.",
         "2026-09-15, openspec/changes/starter-content-and-templates: four sites arrived with the starter-content services. Three are StarterStore, the one OpenRegister seam nine services in that change read and write through, and the fourth is the mail half of the template library. The null there is load-bearing rather than tolerated: every caller reads null as \"could not look\" and the empty value as \"looked, found none\", and collapsing the two is how an undo strips access nobody checked for and how the shipped-configuration screen reports \"nothing shipped\" on an instance that could not read. Nothing on this list is a refusal: the refusals in that change are named reasons on the result (`not_found`, `changed_locally`, `role_in_use`, `in_use`) that the controllers translate to 404 and 409. The ceiling went 226 to 230 for those four and nothing else.",
-        "2026-09-15, openspec/changes/gemachtigde-role-on-every-case-type: two sites arrived with PartyIndicatorReader, the one place dossiq asks OpenRegister what a party's indicators refuse. Both are degradations of an OpenRegister that is absent or predates openregister#3761, and each logs at warning naming the read it could not make. The empty answer is deliberately fail-open: the same two refusals are enforced inside OpenRegister at the publication and at the send, so this reader is the sentence a handler sees rather than the only thing standing in the way, and refusing every publication on an instance with no party model would stop work that was never refused. The ceiling went 230 to 232 for those two and nothing else."
+        "2026-09-15, openspec/changes/gemachtigde-role-on-every-case-type: two sites arrived with PartyIndicatorReader, the one place dossiq asks OpenRegister what a party's indicators refuse. Both are degradations of an OpenRegister that is absent or predates openregister#3761, and each logs at warning naming the read it could not make. The empty answer is deliberately fail-open: the same two refusals are enforced inside OpenRegister at the publication and at the send, so this reader is the sentence a handler sees rather than the only thing standing in the way, and refusing every publication on an instance with no party model would stop work that was never refused. The ceiling went 230 to 232 for those two and nothing else.",
+        "2026-09-16, openspec/changes/case-sharing-mints-access-links: four sites arrived with the case access links and two left. All four are degradations of an OpenRegister that may be absent or may predate openregister#3817, and each logs naming what it could not do. Two entries were removed rather than moved: `ConsultationRepository::findBySecureToken` and `OpenRegisterSharingGateway::caseTokenService` went with the token surface this change deleted, which nothing could enter because nothing minted its token. None of the four is a refusal, and one candidate was converted rather than listed: reading the comments on a case now throws when the read cannot be made, because answering \"nothing new\" would tell a handler the advisory body had not replied when its advice was sitting there unread. The ceiling went 233 to 235 for those four and nothing else."
     ],
     "classes": {
         "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -407,13 +408,6 @@
             "occurrence": 1,
             "class": "read-miss",
             "reason": "`lookupRelationViaBrp()` answers `return null` when the read fails; the catch logs at warning (\"BRP relationship lookup failed\"), so a failed read and an absent record are the same answer."
-        },
-        {
-            "file": "lib/Service/Consultation/ConsultationRepository.php",
-            "method": "findBySecureToken",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`findBySecureToken()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: failed to find consultation by token\"), so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/ContactMomentService.php",
@@ -834,13 +828,6 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`objectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseSharingService: ObjectService unavailable\") and the caller carries on without it."
-        },
-        {
-            "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
-            "method": "caseTokenService",
-            "occurrence": 1,
-            "class": "degradation",
-            "reason": "`caseTokenService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)\") and the caller carries on without it."
         },
         {
             "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
@@ -1646,6 +1633,41 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`sendRefusalFor()` answers `return null` when the guard throws; the catch logs at warning naming the party. Null means \"nothing here refuses it\", and the refusal OpenRegister makes at the send itself is unaffected, so a reader that cannot ask never turns into a send that was refused and happened anyway."
+        },
+        {
+            "file": "lib/Service/Status/CaseStateFieldRuleProjector.php",
+            "method": "liveCaseSchema",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`liveCaseSchema()` answers `return null` when the container has no OpenRegister SchemaMapper; the catch logs at INFO naming the exception, because an instance without OpenRegister is a configuration, not a fault. Its one caller, `publish()`, answers false and the case type still publishes: the per-status field rules stay declared on the statusType rows and are projected on the next publish, so nothing is lost and nothing is reported green that did not happen. A refusal would make a case type unpublishable on an instance that never had the platform half."
+        },
+        {
+            "file": "lib/Service/Sharing/OpenRegisterSharingGateway.php",
+            "method": "resolve",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`resolve()` is the one place the sharing surface asks the container for an OpenRegister service, and it answers `return null` when the class is not bound; the catch logs at warning naming the class (\"OpenRegister service unavailable\"). Each caller states its own policy over that uniform null, which is why it is one site rather than four. It replaces `caseTokenService#1`, removed above, and dossiq genuinely runs against OpenRegister builds that predate the access-link classes."
+        },
+        {
+            "file": "lib/Service/Sharing/CaseAccessLinkService.php",
+            "method": "setPaused",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`setPaused()` answers `return null` when OpenRegister throws on switching a link off; the catch logs at error naming the link. Null is NOT read as \"done\": CaseAccessLinkController::pause answers 502 and tells the handler the link was not changed, so a pause that did not happen never reads as one that did."
+        },
+        {
+            "file": "lib/Service/Sharing/CaseAccessLinkService.php",
+            "method": "holderPreview",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`holderPreview()` answers `return null` when OpenRegister's reader is absent or throws while assembling what a link holder sees; the catch logs at error. The preview is a convenience beside the link, never the grant, so a failed read costs the handler the preview and nothing else. The controller says \"could not show what this link publishes\" rather than claiming the link is dead, which is the conflation this class of entry exists to name."
+        },
+        {
+            "file": "lib/Service/Sharing/CaseLinkShares.php",
+            "method": "readRecords",
+            "occurrence": 1,
+            "class": "degradation",
+            "reason": "`readRecords()` answers `return []` when OpenRegister cannot be asked for the caseShare rows of a case; the catch logs at warning naming the case (\"could not list the case access links\"). The empty list is what the Sharing tab renders as \"nobody outside can open this case yet\". It is the one read behind every link action, and its callers guard rather than trust it: belongsToCase() answers false on an empty list, so a read that failed refuses a revoke instead of allowing one."
         }
     ]
 }

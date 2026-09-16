@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Actions;
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Service\Notification\RoleRecipients;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 
@@ -53,12 +54,14 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 	 * Constructor for NotifyRoleHandler.
 	 *
 	 * @param IManager $notificationManager Nextcloud notification manager.
+	 * @param RoleRecipients $roleRecipients Who holds a role, answered by the platform.
 	 * @param LoggerInterface $logger PSR-3 logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IManager $notificationManager,
+		private readonly RoleRecipients $roleRecipients,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -93,7 +96,14 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 				case: $case
 			);
 
-			$recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
+			// The platform resolves both the field kinds this handler used to walk
+			// itself and the schema's role assignment, so one resolver decides who
+			// is told. A null answer means it could not be asked, which is not the
+			// same as nobody holding the role: only then does the local walk run.
+			$recipients = $this->roleRecipients->forRole(roleSlug: $roleSlug, case: $case);
+			if ($recipients === null) {
+				$recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
+			}
 			$preview = [
 				'roleSlug' => $roleSlug,
 				'recipients' => $recipients,
@@ -172,9 +182,11 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 	/**
 	 * Resolve a role slug to a list of user identifiers on the case.
 	 *
-	 * V1 strategy: look up `case.<roleSlug>` for a single user, or
-	 * `case.<roleSlug>Members[]` for a collection. RoleResolverService will
-	 * supersede this lookup once role-based-step-routing lands.
+	 * THE FALLBACK, not the strategy. {@see RoleRecipients} asks OpenRegister,
+	 * which resolves the same two fields plus the schema's role assignment. This
+	 * walk runs only where that cannot be asked at all, so an instance without
+	 * OpenRegister's routing keeps the behaviour it had: `case.<roleSlug>` for a
+	 * single user, or `case.<roleSlug>Members[]` for a collection.
 	 *
 	 * @param string $roleSlug Role slug.
 	 * @param array $case Case object.

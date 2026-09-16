@@ -73,6 +73,22 @@
 		</p>
 
 		<p
+			v-if="fieldRuleLines.length > 0"
+			class="case-status-declaration__fields"
+			data-testid="case-status-field-rules">
+			<span class="case-status-declaration__heading">{{
+				t('dossiq', 'What this status asks of the case')
+			}}</span>
+			<span
+				v-for="line in fieldRuleLines"
+				:key="line"
+				class="case-status-declaration__missing"
+				data-testid="case-status-field-rule">
+				{{ line }}
+			</span>
+		</p>
+
+		<p
 			v-if="dwellText"
 			class="case-status-declaration__dwell"
 			:class="{ 'is-breached': breached }"
@@ -97,6 +113,7 @@ import {
 	withheldSentence,
 	withheldTransitions,
 } from '../../utils/statusDeclaration.js'
+import { fieldRulesOf, hasFieldRules } from '../../utils/statusFieldRules.js'
 
 export default {
 	name: 'CaseStatusDeclarationPanel',
@@ -106,6 +123,19 @@ export default {
 		objectId: {
 			type: [String, Number],
 			default: '',
+		},
+
+		/**
+		 * The case as OpenRegister answered it, bound by CnDetailWidgetHost.
+		 *
+		 * It carries `@self.fieldRules`, already decided for this reader and
+		 * this status. The strip reads it and nothing else: re-deciding it here
+		 * would be a second evaluator, and the one on the screen is the one that
+		 * would be wrong.
+		 */
+		objectData: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 
@@ -216,6 +246,50 @@ export default {
 		},
 
 		/**
+		 * What this status requires, locks and hides, as sentences.
+		 *
+		 * Three lines at most, one per kind, each naming its fields. One line
+		 * per FIELD would run to a paragraph on a status that locks eight of
+		 * them, and the handler is reading this to find out whether to go and
+		 * fill something in.
+		 *
+		 * @return {Array<string>} The lines, empty when the status asks nothing.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		fieldRuleLines() {
+			const rules = fieldRulesOf(this.objectData)
+			if (hasFieldRules(rules) === false) {
+				return []
+			}
+
+			const lines = []
+			if (rules.required.length > 0) {
+				lines.push(
+					t('dossiq', 'Fill in: {fields}', {
+						fields: rules.required.join(', '),
+					}),
+				)
+			}
+			if (rules.readOnly.length > 0) {
+				lines.push(
+					t('dossiq', 'Cannot be changed here: {fields}', {
+						fields: rules.readOnly.join(', '),
+					}),
+				)
+			}
+			if (rules.hidden.length > 0) {
+				lines.push(
+					t('dossiq', 'Not shown to you here: {fields}', {
+						fields: rules.hidden.join(', '),
+					}),
+				)
+			}
+
+			return lines
+		},
+
+		/**
 		 * Whether the strip has anything to say at all.
 		 *
 		 * @return {boolean} True when at least one of the three lines has text.
@@ -223,6 +297,15 @@ export default {
 		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 		 */
 		show() {
+			// The field rules are NOT behind `loaded`: they ride on the case
+			// object the page already holds, not on the transition endpoint, so
+			// an instance whose engine refuses still says what the status asks
+			// of the fields. Gating them on `loaded` would have made the one
+			// half that needs no round trip depend on the one that does.
+			if (this.fieldRuleLines.length > 0) {
+				return true
+			}
+
 			return (
 				this.loaded
 				&& (this.reasons !== null
