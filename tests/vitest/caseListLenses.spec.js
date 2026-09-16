@@ -348,7 +348,7 @@ describe('Tasks index lenses', () => {
 		const config = page('Tasks').config
 		expect(config.sidebar.enabled).toBe(true)
 
-		const filters = Object.entries(config.schema.properties)
+		const filters = Object.entries(config.sidebar.fields)
 			.filter(([, prop]) => prop.facetable === true)
 			.map(([key]) => key)
 		expect(filters).toEqual(['objectUuid', 'state', 'priority', 'dueAt'])

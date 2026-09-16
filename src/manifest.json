@@ -3263,18 +3263,14 @@
 				],
 				"sidebar": {
 					"enabled": true,
-					"showMetadata": true
-				},
-				"_searchNote": "task-search-fields (row 9.11). The lenses answer six questions; these four let you ask your own. Every property here is a FILTER and not a column: `visible: false` keeps them out of the Columns tab, where they would offer a column the table does not have, and `facetable: true` is what puts them in the sidebar. `inputControl` is the property's own answer to how it wants to be asked for, the same word openregister's PropertySearchProfile reads, so the declaration is one sentence rather than a widget choice repeated per surface. \ud83d\udd34 EVERY KEY IS THE INBOX'S OWN ARGUMENT NAME. `objectUuid`, `state` and `priority` go over the wire unchanged and `dueAt` becomes the `dueAfter`/`dueBefore` pair; the mapping lives on the `tasks` entity source in nextcloud-vue, because every app running its work on OpenRegister's one task store needs the same one. A key nothing maps logs at ERROR naming itself rather than filtering nothing in silence. \ud83d\udd34 ASSIGNEE IS MISSING ON PURPOSE. `TaskInboxCriteria` has no assignee predicate: `scope` is the only assignee-shaped narrowing and it resolves to the calling user, and `useTaskInboxStore`'s allowlist drops the key a second time so no config can widen whose inbox this is. A picker here would answer about everybody and look like it answered about one person. It lands when openregister grows the parameter. Measured 2026-09-16, recorded in openspec/changes/task-search-fields/tasks.md task 1.1.",
-				"schema": {
-					"title": "Tasks",
-					"properties": {
+					"showMetadata": true,
+					"_fieldsNote": "task-search-fields (row 9.11). The lenses answer six questions; these four let you ask your own. `fields` is a SIDEBAR key and not the page's schema: `config.schema` names the OpenRegister schema a page self-fetches from, and this page fetches from the task engine instead, which has no register or schema to point at. Declaring them here also keeps them out of the Columns tab, where they would offer a column the task table does not have. `inputControl` is the property's own answer to how it wants to be asked for, the same word openregister's PropertySearchProfile reads, so the declaration is one sentence rather than a widget choice repeated per surface. \ud83d\udd34 EVERY KEY IS THE INBOX'S OWN ARGUMENT NAME. `objectUuid`, `state` and `priority` go over the wire unchanged and `dueAt` becomes the `dueAfter`/`dueBefore` pair; the mapping lives on the `tasks` entity source in nextcloud-vue, because every app running its work on OpenRegister's one task store needs the same one. A key nothing maps logs at ERROR naming itself rather than filtering nothing in silence. \ud83d\udd34 ASSIGNEE IS MISSING ON PURPOSE. `TaskInboxCriteria` has no assignee predicate: `scope` is the only assignee-shaped narrowing and it resolves to the calling user, and `useTaskInboxStore`'s allowlist drops the key a second time so no config can widen whose inbox this is. A picker here would answer about everybody and look like it answered about one person. It lands when openregister grows the parameter. Measured 2026-09-16, recorded in openspec/changes/task-search-fields/tasks.md task 1.1.",
+					"fields": {
 						"objectUuid": {
 							"type": "string",
 							"title": "Case",
 							"description": "Show only the tasks on one case.",
 							"facetable": true,
-							"visible": false,
 							"order": 1,
 							"inputControl": "reference",
 							"optionsSource": {
@@ -3289,7 +3285,6 @@
 							"title": "State",
 							"description": "Where the task is in its lifecycle.",
 							"facetable": true,
-							"visible": false,
 							"order": 2,
 							"inputControl": "multiselect",
 							"enum": [
@@ -3314,7 +3309,6 @@
 							"title": "Priority",
 							"description": "How urgent the task is.",
 							"facetable": true,
-							"visible": false,
 							"order": 3,
 							"inputControl": "select",
 							"enum": [
@@ -3336,7 +3330,6 @@
 							"title": "Due between",
 							"description": "Tasks with a deadline inside this window.",
 							"facetable": true,
-							"visible": false,
 							"order": 4,
 							"inputControl": "date-range"
 						}

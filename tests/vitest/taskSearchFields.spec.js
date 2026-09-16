@@ -32,8 +32,7 @@ const manifest = JSON.parse(
 )
 
 const tasksPage = manifest.pages.find((entry) => entry.id === 'Tasks')
-const declaredSchema = tasksPage.config.schema
-const declaredProperties = declaredSchema.properties
+const declaredProperties = tasksPage.config.sidebar.fields
 
 /**
  * The property keys the sidebar offers as filters.
@@ -53,7 +52,7 @@ describe('the Tasks index declares its search fields', () => {
 
 	it('gives each field the widget its question needs', () => {
 		const byKey = Object.fromEntries(
-			filtersFromSchema(declaredSchema).map((filter) => [filter.key, filter]),
+			filtersFromSchema({ properties: declaredProperties }).map((filter) => [filter.key, filter]),
 		)
 
 		expect(byKey.objectUuid.type).toBe('reference')
@@ -73,15 +72,18 @@ describe('the Tasks index declares its search fields', () => {
 	})
 
 	/**
-	 * The sidebar reads ONE schema for both its tabs. Without `visible:
-	 * false` these four would also appear in the Columns tab, offering to
-	 * show a column the task table does not have: the toggle would tick and
-	 * nothing would happen, which is the same silent shape as a dead filter.
+	 * `sidebar.fields` and NOT `config.schema`, for two reasons that both
+	 * bite. The manifest schema types `config.schema` as a STRING, because it
+	 * names the OpenRegister schema a page self-fetches from, and this page
+	 * fetches from the task engine. And a schema feeds BOTH sidebar tabs, so
+	 * a filter declared there would also appear in the Columns tab, offering
+	 * a column the task table does not have: the toggle would tick and
+	 * nothing would happen, the same silent shape as a dead filter.
 	 */
-	it('keeps the filters out of the Columns tab', () => {
-		for (const key of declaredFilterKeys()) {
-			expect(declaredProperties[key].visible).toBe(false)
-		}
+	it('declares the fields on the sidebar, not as the page schema', () => {
+		expect(tasksPage.config.schema).toBeUndefined()
+		expect(tasksPage.config.sidebar.enabled).toBe(true)
+		expect(Object.keys(tasksPage.config.sidebar.fields).length).toBeGreaterThan(0)
 	})
 })
 
