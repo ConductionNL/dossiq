@@ -47,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Intake\TriageSleep
  *
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class TriageSleepTest extends TestCase {
 

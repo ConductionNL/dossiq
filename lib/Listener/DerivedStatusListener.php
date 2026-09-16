@@ -48,6 +48,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Status\DerivedStatusJournal;
 use OCA\Dossiq\Service\Status\DerivedStatusService;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -91,12 +92,14 @@ class DerivedStatusListener implements IEventListener {
 	 * @param DerivedStatusService $derived         Which status the case type derives.
 	 * @param StatusDeclarations   $declarations    The dwell bookkeeping a move carries.
 	 * @param LoggerInterface      $logger          Structured logger.
+	 * @param DerivedStatusJournal|null $journal    Where a decided move waits for the save to land.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly DerivedStatusService $derived,
 		private readonly StatusDeclarations $declarations,
 		private readonly LoggerInterface $logger,
+		private readonly ?DerivedStatusJournal $journal = null,
 	) {
 	}//end __construct()
 
@@ -143,11 +146,19 @@ class DerivedStatusListener implements IEventListener {
 			)
 		);
 
+		$caseId = (string)($payload['id'] ?? ($payload['@self']['id'] ?? ''));
+		$from = (string)($payload['status'] ?? '');
+
+		// STAGED, NOT WRITTEN. This runs before the save, and a timeline entry
+		// written here would outlive a save that then failed. The journal holds
+		// the move until `DerivedStatusTimelineListener` sees the write land.
+		$this->journal?->stage(caseId: $caseId, fromStatus: $from, toStatus: $target);
+
 		$this->logger->info(
 			'Dossiq: a declared status became true and the case moved into it',
 			[
-				'case' => (string)($payload['id'] ?? ($payload['@self']['id'] ?? '')),
-				'from' => (string)($payload['status'] ?? ''),
+				'case' => $caseId,
+				'from' => $from,
 				'to' => $target,
 			]
 		);

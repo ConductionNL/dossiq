@@ -36,9 +36,11 @@ import { generateUrl } from '@nextcloud/router'
  * @return {string} The absolute url.
  */
 function attentionUrl(id, tail = '') {
-	const suffix = (tail === '') ? '' : `/${tail}`
+	const suffix = tail === '' ? '' : `/${tail}`
 
-	return generateUrl(`/apps/dossiq/api/case/${encodeURIComponent(id)}/attention${suffix}`)
+	return generateUrl(
+		`/apps/dossiq/api/case/${encodeURIComponent(id)}/attention${suffix}`,
+	)
 }
 
 /**
@@ -52,7 +54,7 @@ function attentionUrl(id, tail = '') {
 export async function fetchAttention(id) {
 	const response = await axios.get(attentionUrl(id))
 
-	return (response?.data ?? {})
+	return response?.data ?? {}
 }
 
 /**
@@ -67,7 +69,7 @@ export async function fetchAttention(id) {
 export async function raiseAttention(id, reason) {
 	const response = await axios.post(attentionUrl(id, 'raise'), { reason })
 
-	return (response?.data ?? {})
+	return response?.data ?? {}
 }
 
 /**
@@ -82,5 +84,5 @@ export async function raiseAttention(id, reason) {
 export async function clearAttention(id, reason) {
 	const response = await axios.post(attentionUrl(id, 'clear'), { reason })
 
-	return (response?.data ?? {})
+	return response?.data ?? {}
 }

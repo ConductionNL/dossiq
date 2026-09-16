@@ -137,7 +137,15 @@ test.describe('Lifecycle acts on the case', () => {
 		})
 		hiddenStatus = objectId(hidden)
 
-		for (const key of ['hidden', 'menu', 'abort', 'early', 'hold', 'draft', 'incomplete']) {
+		for (const key of [
+			'hidden',
+			'menu',
+			'abort',
+			'early',
+			'hold',
+			'draft',
+			'incomplete',
+		]) {
 			const seeded = await seedCase(request, token, {
 				title: `${RUN_PREFIX} ${key}`,
 				caseType: machine.caseTypeId,
@@ -167,8 +175,13 @@ test.describe('Lifecycle acts on the case', () => {
 		// property that does not exist and would pass for the wrong reason.
 		await expect
 			.poll(
-				async () => (await showObject(request, 'case', cases.hidden)).statusHiddenInLists,
-				{ timeout: 30_000, message: 'OpenRegister materialises statusHiddenInLists' },
+				async () =>
+					(await showObject(request, 'case', cases.hidden))
+						.statusHiddenInLists,
+				{
+					timeout: 30_000,
+					message: 'OpenRegister materialises statusHiddenInLists',
+				},
 			)
 			.toBe(true)
 
@@ -199,7 +212,14 @@ test.describe('Lifecycle acts on the case', () => {
 		// Every act the provider publishes, plus the term gestures, plus the
 		// three ways to end it. Asserted by presence rather than by count, so
 		// a case type with a different workflow does not fail the suite.
-		for (const id of ['finish', 'abort', 'archive', 'hold', 'suspend', 'extend']) {
+		for (const id of [
+			'finish',
+			'abort',
+			'archive',
+			'hold',
+			'suspend',
+			'extend',
+		]) {
 			await expect(
 				page.getByTestId(`case-act-${id}`),
 				`${id} is in the one menu`,
@@ -225,7 +245,9 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(response.status(), await response.text()).toBe(200)
 
 		const aborted = await showObject(request, 'case', cases.abort)
-		expect(aborted.endingAct, 'the act that ended it is on the record').toBe('abort')
+		expect(aborted.endingAct, 'the act that ended it is on the record').toBe(
+			'abort',
+		)
 		expect(
 			aborted.besluitDocument ?? '',
 			'an intrekking is not a decision that was taken',
@@ -250,7 +272,9 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(tooEarly.status()).toBe(409)
 		expect((await tooEarly.json()).error).toBe('case-not-ended')
 
-		const finished = await act(request, cases.early, 'abort', { reason: 'Niet-ontvankelijk' })
+		const finished = await act(request, cases.early, 'abort', {
+			reason: 'Niet-ontvankelijk',
+		})
 		expect(finished.status(), await finished.text()).toBe(200)
 
 		const archived = await act(request, cases.early, 'archive', {
@@ -277,7 +301,9 @@ test.describe('Lifecycle acts on the case', () => {
 		// because the record of who ended the case is what a reopen must keep.
 		expect([200, 405]).toContain(ended.status())
 
-		const reopened = await act(request, cases.abort, 'reopen', { reason: 'Beroep gegrond' })
+		const reopened = await act(request, cases.abort, 'reopen', {
+			reason: 'Beroep gegrond',
+		})
 		// 403 when this handler is not in the reopen authority, which is the
 		// admin group. The act is still recorded either way, and the assertion
 		// below is about what SURVIVES the reopen rather than about who may.
@@ -285,8 +311,13 @@ test.describe('Lifecycle acts on the case', () => {
 			const back = await showObject(request, 'case', cases.abort)
 			expect(back.isFinalStatus).toBe(false)
 			const journal = JSON.parse(String(back.activity ?? '[]'))
-			const entry = journal.reverse().find((row: Record<string, unknown>) => row.type === 'reopen')
-			expect(entry?.reopenedFrom?.act, 'the reopen names the act that ended it').toBe('abort')
+			const entry = journal
+				.reverse()
+				.find((row: Record<string, unknown>) => row.type === 'reopen')
+			expect(
+				entry?.reopenedFrom?.act,
+				'the reopen names the act that ended it',
+			).toBe('abort')
 			expect(entry?.reopenedFrom?.by, 'and who ended it').toBeTruthy()
 		}
 	})
@@ -328,7 +359,9 @@ test.describe('Lifecycle acts on the case', () => {
 	})
 
 	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	test('a draft binds no term, and promoting it binds one', async ({ request }) => {
+	test('a draft binds no term, and promoting it binds one', async ({
+		request,
+	}) => {
 		const drafted = await act(request, cases.draft, 'draft')
 		expect(drafted.status(), await drafted.text()).toBe(200)
 
@@ -349,14 +382,20 @@ test.describe('Lifecycle acts on the case', () => {
 		// deliberately writes no deadline of its own.
 		await expect
 			.poll(
-				async () => String((await showObject(request, 'case', cases.draft)).deadline ?? ''),
+				async () =>
+					String(
+						(await showObject(request, 'case', cases.draft)).deadline
+							?? '',
+					),
 				{ timeout: 30_000, message: 'promoting binds the statutory term' },
 			)
 			.not.toBe('')
 
 		const live = await showObject(request, 'case', cases.draft)
 		expect(live.isDraft).toBe(false)
-		expect(String(live.draftCreatedAt ?? ''), 'the draft moment survives').toBe(begunAt)
+		expect(String(live.draftCreatedAt ?? ''), 'the draft moment survives').toBe(
+			begunAt,
+		)
 	})
 
 	// @e2e openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
@@ -369,8 +408,12 @@ test.describe('Lifecycle acts on the case', () => {
 		expect(recorded.status(), await recorded.text()).toBe(200)
 
 		const marked = await showObject(request, 'case', cases.incomplete)
-		expect(marked.isIncomplete, 'the case does not report itself complete').toBe(true)
-		expect(JSON.parse(String(marked.missingFields ?? '[]'))).toEqual(['applicantAddress'])
+		expect(marked.isIncomplete, 'the case does not report itself complete').toBe(
+			true,
+		)
+		expect(JSON.parse(String(marked.missingFields ?? '[]'))).toEqual([
+			'applicantAddress',
+		])
 
 		// And the case still exists. Refusing the intake is the behaviour this
 		// replaces: the caller hangs up and the gemeente has no record.

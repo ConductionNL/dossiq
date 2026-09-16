@@ -91,7 +91,10 @@ test.describe('A case answers who holds which right, and who held it then', () =
 		).toBe(200)
 
 		const set = await answer.json()
-		expect(set.object, 'a set that does not name its object cannot be filed as evidence').toBeTruthy()
+		expect(
+			set.object,
+			'a set that does not name its object cannot be filed as evidence',
+		).toBeTruthy()
 		expect(Array.isArray(set.holders)).toBe(true)
 		expect(Array.isArray(set.denied)).toBe(true)
 
@@ -104,7 +107,10 @@ test.describe('A case answers who holds which right, and who held it then', () =
 		).toContain(set.denyEnforcement)
 
 		for (const holder of set.holders) {
-			expect(holder.principal, 'a holder with no name is not an answer').toBeTruthy()
+			expect(
+				holder.principal,
+				'a holder with no name is not an answer',
+			).toBeTruthy()
 			expect(Array.isArray(holder.verbs)).toBe(true)
 			expect(
 				holder.rules?.length,
@@ -112,7 +118,10 @@ test.describe('A case answers who holds which right, and who held it then', () =
 			).toBeGreaterThan(0)
 
 			for (const rule of holder.rules) {
-				expect(rule.action, 'a rule that grants no named verb cannot be rendered').toBeTruthy()
+				expect(
+					rule.action,
+					'a rule that grants no named verb cannot be rendered',
+				).toBeTruthy()
 				expect(
 					['object', 'schema', 'register'],
 					`the rule for "${rule.action}" is written at a level the panel cannot label`,
@@ -132,7 +141,9 @@ test.describe('A case answers who holds which right, and who held it then', () =
 	// refusal arriving as something OTHER than 403, because the panel keys its
 	// sentence on that status and every other code renders as a failed read.
 	test('a reader without the right to review access is told so', async () => {
-		const unknown = await api.get(objectPermissions('00000000-0000-0000-0000-000000000000'))
+		const unknown = await api.get(
+			objectPermissions('00000000-0000-0000-0000-000000000000'),
+		)
 		expect(
 			[403, 404],
 			'an object the caller cannot resolve must not leak its existence',
@@ -143,7 +154,10 @@ test.describe('A case answers who holds which right, and who held it then', () =
 
 		if (answer.status() === 403) {
 			const body = await answer.json()
-			expect(body.message, 'a refusal with no sentence is the 403 this change exists to retire').toBeTruthy()
+			expect(
+				body.message,
+				'a refusal with no sentence is the 403 this change exists to retire',
+			).toBeTruthy()
 		}
 	})
 
@@ -197,7 +211,9 @@ test.describe('A case answers who holds which right, and who held it then', () =
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },
 				data: {
 					'@self': {
-						authorization: { read: [{ group: 'waarnemers', until: ends }] },
+						authorization: {
+							read: [{ group: 'waarnemers', until: ends }],
+						},
 					},
 				},
 			},
@@ -205,14 +221,22 @@ test.describe('A case answers who holds which right, and who held it then', () =
 
 		// An instance that refuses the write has nothing to report, and saying
 		// so beats asserting against a case whose block never changed.
-		test.skip(written.status() >= 400, 'this caller may not write the case authorization block')
+		test.skip(
+			written.status() >= 400,
+			'this caller may not write the case authorization block',
+		)
 
 		const answer = await api.get(objectPermissions(caseId))
 		expect(answer.status()).toBe(200)
 
 		const set = await answer.json()
-		const holder = set.holders?.find((row: any) => row.principal === 'waarnemers')
-		expect(holder, 'the grant just written is not in the set that came back').toBeTruthy()
+		const holder = set.holders?.find(
+			(row: any) => row.principal === 'waarnemers',
+		)
+		expect(
+			holder,
+			'the grant just written is not in the set that came back',
+		).toBeTruthy()
 
 		const rule = holder.rules.find((entry: any) => entry.action === 'read')
 		const carried = JSON.stringify(rule?.rule ?? {})

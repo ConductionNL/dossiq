@@ -33,7 +33,10 @@ export async function listShipped(schema) {
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export async function adoptShipped(schema, id, payload) {
-	const { data } = await axios.post(base('/api/starter/shipped/' + schema + '/' + id + '/adopt'), payload)
+	const { data } = await axios.post(
+		base('/api/starter/shipped/' + schema + '/' + id + '/adopt'),
+		payload,
+	)
 	return data
 }
 
@@ -78,7 +81,9 @@ export async function undoRoleSet() {
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export async function retireCaseType(caseTypeId) {
-	const { data } = await axios.post(base('/api/starter/case-types/' + caseTypeId + '/retire'))
+	const { data } = await axios.post(
+		base('/api/starter/case-types/' + caseTypeId + '/retire'),
+	)
 	return data
 }
 
@@ -90,7 +95,9 @@ export async function retireCaseType(caseTypeId) {
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export async function restoreCaseType(caseTypeId) {
-	const { data } = await axios.post(base('/api/starter/case-types/' + caseTypeId + '/restore'))
+	const { data } = await axios.post(
+		base('/api/starter/case-types/' + caseTypeId + '/restore'),
+	)
 	return data
 }
 
@@ -103,7 +110,10 @@ export async function restoreCaseType(caseTypeId) {
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export async function copyDomain(domainId, name) {
-	const { data } = await axios.post(base('/api/starter/domains/' + domainId + '/copy'), { name })
+	const { data } = await axios.post(
+		base('/api/starter/domains/' + domainId + '/copy'),
+		{ name },
+	)
 	return data
 }
 
@@ -115,7 +125,9 @@ export async function copyDomain(domainId, name) {
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 export async function stepUsedBy(stepId) {
-	const { data } = await axios.get(base('/api/starter/steps/' + stepId + '/used-by'))
+	const { data } = await axios.get(
+		base('/api/starter/steps/' + stepId + '/used-by'),
+	)
 	return data
 }
 

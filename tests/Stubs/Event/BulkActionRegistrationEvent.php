@@ -38,9 +38,16 @@ class BulkActionRegistrationEvent extends Event {
 	/**
 	 * What has been registered so far.
 	 *
+	 * PROTECTED, not public, and with no public reader beside it. The real
+	 * class hands each action straight to a `BulkActionRegistry` and offers no
+	 * way to read them back, so a public `getActions()` here would be a method
+	 * dossiq could write against and never find live. A test that needs to see
+	 * what was registered extends this class instead; see
+	 * {@see \OCA\Dossiq\Tests\Support\RecordingBulkActionRegistrationEvent}.
+	 *
 	 * @var array<int, BulkActionInterface>
 	 */
-	private array $actions = [];
+	protected array $actions = [];
 
 	/**
 	 * Register a bulk action.
@@ -52,13 +59,4 @@ class BulkActionRegistrationEvent extends Event {
 	public function registerAction(BulkActionInterface $action): void {
 		$this->actions[] = $action;
 	}//end registerAction()
-
-	/**
-	 * Read back what was registered.
-	 *
-	 * @return array<int, BulkActionInterface> The registered actions.
-	 */
-	public function getActions(): array {
-		return $this->actions;
-	}//end getActions()
 }//end class

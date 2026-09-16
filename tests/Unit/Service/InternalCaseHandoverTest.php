@@ -51,6 +51,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Transfer\InternalHandover
  * @covers \OCA\Dossiq\Service\Transfer\TeamDirectory
  * @covers \OCA\Dossiq\Service\Transfer\CaseSeatReconciler
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\People\CaseSeats
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

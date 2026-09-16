@@ -50,7 +50,8 @@ const stubs = {
 	NcButton: { template: '<button v-bind="$attrs"><slot /></button>' },
 	NcTextField: {
 		props: ['value'],
-		template: '<input v-bind="$attrs" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
+		template:
+			'<input v-bind="$attrs" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
 	},
 }
 
@@ -94,7 +95,9 @@ describe('a marker names the panel where the work is', () => {
 			},
 		])
 
-		const marker = wrapper.find('[data-testid="case-marker-advice-request-overdue"]')
+		const marker = wrapper.find(
+			'[data-testid="case-marker-advice-request-overdue"]',
+		)
 		expect(marker.exists()).toBe(true)
 		expect(marker.attributes('data-tab')).toBe('case-work-panel')
 		expect(marker.text()).toContain('Work')
@@ -104,28 +107,50 @@ describe('a marker names the panel where the work is', () => {
 	it('says nothing at all on a case carrying no marker', async () => {
 		const wrapper = await mountWithMarkers([])
 
-		expect(wrapper.find('[data-testid="case-attention-markers"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-attention-markers"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('draws one row per marker, each naming its own panel', async () => {
 		const wrapper = await mountWithMarkers([
-			{ marker: 'term-exceeded', tab: 'case-data-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
-			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'b', raisedAt: '2026-06-02T09:00:00+00:00' },
+			{
+				marker: 'term-exceeded',
+				tab: 'case-data-panel',
+				reason: 'a',
+				raisedAt: '2026-06-01T09:00:00+00:00',
+			},
+			{
+				marker: 'advice-request-overdue',
+				tab: 'case-work-panel',
+				reason: 'b',
+				raisedAt: '2026-06-02T09:00:00+00:00',
+			},
 		])
 
 		const rows = wrapper.findAll('[data-testid="case-attention-markers"] li')
 		expect(rows).toHaveLength(2)
-		expect(rows.map((r) => r.attributes('data-tab'))).toEqual(['case-data-panel', 'case-work-panel'])
+		expect(rows.map((r) => r.attributes('data-tab'))).toEqual([
+			'case-data-panel',
+			'case-work-panel',
+		])
 	})
 
 	it('shows the marker id rather than nothing when a panel has no label', async () => {
 		// A marker nobody can label is still a marker somebody should see. The
 		// alternative is a blank row, which reads as a rendering bug.
 		const wrapper = await mountWithMarkers([
-			{ marker: 'invented', tab: 'case-something-new', reason: 'a reason', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{
+				marker: 'invented',
+				tab: 'case-something-new',
+				reason: 'a reason',
+				raisedAt: '2026-06-01T09:00:00+00:00',
+			},
 		])
 
-		expect(wrapper.find('[data-testid="case-marker-invented"]').text()).toContain('case-something-new')
+		expect(
+			wrapper.find('[data-testid="case-marker-invented"]').text(),
+		).toContain('case-something-new')
 	})
 })
 
@@ -140,10 +165,19 @@ describe('the marker is not the unread badge', () => {
 		// strip must not: writing one would clear the other panel's badge as a
 		// side effect of drawing a marker.
 		const wrapper = await mountWithMarkers([
-			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{
+				marker: 'advice-request-overdue',
+				tab: 'case-work-panel',
+				reason: 'a',
+				raisedAt: '2026-06-01T09:00:00+00:00',
+			},
 		])
 
-		expect(wrapper.find('[data-testid="case-marker-advice-request-overdue"]').exists()).toBe(true)
+		expect(
+			wrapper
+				.find('[data-testid="case-marker-advice-request-overdue"]')
+				.exists(),
+		).toBe(true)
 		expect(axios.put).not.toHaveBeenCalled()
 		expect(axios.delete).not.toHaveBeenCalled()
 
@@ -155,16 +189,27 @@ describe('the marker is not the unread badge', () => {
 		// Clearing is doing the work. A dismissal button would be the per-user
 		// unread badge again, wearing the marker's clothes.
 		const wrapper = await mountWithMarkers([
-			{ marker: 'advice-request-overdue', tab: 'case-work-panel', reason: 'a', raisedAt: '2026-06-01T09:00:00+00:00' },
+			{
+				marker: 'advice-request-overdue',
+				tab: 'case-work-panel',
+				reason: 'a',
+				raisedAt: '2026-06-01T09:00:00+00:00',
+			},
 		])
 
-		const marker = wrapper.find('[data-testid="case-marker-advice-request-overdue"]')
+		const marker = wrapper.find(
+			'[data-testid="case-marker-advice-request-overdue"]',
+		)
 		expect(marker.findAll('button')).toHaveLength(0)
 	})
 
 	it('is drawn in its own strip, below the one the unread counts use', () => {
-		const unread = caseDetail.config.layout.find((l) => l.widgetId === 'case-unread')
-		const attention = caseDetail.config.layout.find((l) => l.widgetId === 'case-attention')
+		const unread = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-unread',
+		)
+		const attention = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-attention',
+		)
 
 		expect(unread.widgetId).not.toBe(attention.widgetId)
 		expect(unread.gridY).toBeLessThan(attention.gridY)
@@ -175,11 +220,19 @@ describe('the declared panels are panels the page renders', () => {
 	it('offers no panel in the schema the tab strip does not carry', () => {
 		const fragment = JSON.parse(
 			fs.readFileSync(
-				path.join(ROOT, 'lib', 'Settings', 'register.d', '38-markers-and-assessments.json'),
+				path.join(
+					ROOT,
+					'lib',
+					'Settings',
+					'register.d',
+					'38-markers-and-assessments.json',
+				),
 				'utf8',
 			),
 		)
-		const declared = fragment.components.schemas.caseType.properties.attentionMarkers.items.properties.tab.enum
+		const declared =
+			fragment.components.schemas.caseType.properties.attentionMarkers.items
+				.properties.tab.enum
 
 		expect(declared.filter((id) => panelIds.includes(id) === false)).toEqual([])
 	})
@@ -187,11 +240,19 @@ describe('the declared panels are panels the page renders', () => {
 	it('offers exactly one clearing, and it is not a dismissal', () => {
 		const fragment = JSON.parse(
 			fs.readFileSync(
-				path.join(ROOT, 'lib', 'Settings', 'register.d', '38-markers-and-assessments.json'),
+				path.join(
+					ROOT,
+					'lib',
+					'Settings',
+					'register.d',
+					'38-markers-and-assessments.json',
+				),
 				'utf8',
 			),
 		)
-		const clearing = fragment.components.schemas.caseType.properties.attentionMarkers.items.properties.clearWhen
+		const clearing =
+			fragment.components.schemas.caseType.properties.attentionMarkers.items
+				.properties.clearWhen
 
 		expect(clearing.enum).toEqual(['condition-no-longer-true'])
 	})

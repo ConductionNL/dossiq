@@ -37,6 +37,8 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\PhaseTermService
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\ChainTermSplitter
+ * @uses \OCA\Dossiq\Service\TermKind
  */
 class PhaseTermTest extends TestCase {
 	use BindsTermFixtures;

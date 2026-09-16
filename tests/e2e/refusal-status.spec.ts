@@ -89,7 +89,7 @@ test.describe('A refusal carries a status', () => {
 
 		expect(
 			refused.status,
-			'a move that does not start from the case\'s status is a conflict, not a bad request',
+			"a move that does not start from the case's status is a conflict, not a bad request",
 		).toBe(409)
 		expect(
 			refused.body?.error,

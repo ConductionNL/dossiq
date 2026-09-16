@@ -55,7 +55,12 @@
 				v-if="archiveStateDisagrees"
 				type="warning"
 				data-testid="case-archival-disagreement">
-				{{ t('dossiq', 'This case and openregister do not agree on whether it is archived.') }}
+				{{
+					t(
+						'dossiq',
+						'This case and openregister do not agree on whether it is archived.',
+					)
+				}}
 			</NcNoteCard>
 
 			<NcNoteCard
@@ -70,14 +75,22 @@
 				v-else-if="hasNoNomination"
 				data-testid="case-archival-none"
 				:name="t('dossiq', 'This case has not been closed yet')"
-				:description="t('dossiq', 'Its archival future is decided when it closes.')">
+				:description="
+					t('dossiq', 'Its archival future is decided when it closes.')
+				">
 				<template #icon>
 					<ArchiveOutline :size="20" />
 				</template>
 			</NcEmptyContent>
 
-			<dl v-else class="case-archival__facts" data-testid="case-archival-facts">
-				<div v-for="fact in facts" :key="fact.key" class="case-archival__fact">
+			<dl
+				v-else
+				class="case-archival__facts"
+				data-testid="case-archival-facts">
+				<div
+					v-for="fact in facts"
+					:key="fact.key"
+					class="case-archival__fact">
 					<dt>{{ fact.label }}</dt>
 					<dd :data-testid="`case-archival-${fact.key}`">
 						{{ fact.value }}
@@ -85,13 +98,19 @@
 				</div>
 			</dl>
 
-			<div v-if="outcome" class="case-archival__outcome" data-testid="case-archival-outcome">
+			<div
+				v-if="outcome"
+				class="case-archival__outcome"
+				data-testid="case-archival-outcome">
 				<h4>{{ t('dossiq', 'Outcome') }}</h4>
 				<p data-testid="case-archival-outcome-kind">
 					{{ outcomeSentence }}
 				</p>
-				<p v-if="outcome.transferListUuid" data-testid="case-archival-transfer-list">
-					{{ t('dossiq', 'Transfer list') }}: {{ outcome.transferListUuid }}
+				<p
+					v-if="outcome.transferListUuid"
+					data-testid="case-archival-transfer-list">
+					{{ t('dossiq', 'Transfer list') }}:
+					{{ outcome.transferListUuid }}
 				</p>
 			</div>
 
@@ -109,7 +128,9 @@
 						data-testid="case-archival-reason"
 						:label="t('dossiq', 'Why are you recomputing this?')"
 						@update:modelValue="(v) => (reason = v)" />
-					<p class="case-archival__attribution" data-testid="case-archival-attribution">
+					<p
+						class="case-archival__attribution"
+						data-testid="case-archival-attribution">
 						{{ attribution }}
 					</p>
 					<NcButton
@@ -176,7 +197,7 @@ export default {
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
 		nomination() {
-			return (this.retention?.nomination ?? null)
+			return this.retention?.nomination ?? null
 		},
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
@@ -211,7 +232,7 @@ export default {
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
 		archivedSentence() {
-			const a = (this.archived ?? {})
+			const a = this.archived ?? {}
 
 			return this.t('dossiq', 'Archived on {at} by {by}. {reason}', {
 				at: String(a.at ?? ''),
@@ -240,7 +261,7 @@ export default {
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
 		outcome() {
-			return (this.retention?.outcome ?? null)
+			return this.retention?.outcome ?? null
 		},
 
 		/**
@@ -250,21 +271,50 @@ export default {
 		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 		 */
 		facts() {
-			const r = (this.retention ?? {})
+			const r = this.retention ?? {}
 
 			return [
-				{ key: 'appraisal', label: this.t('dossiq', 'Appraisal'), value: r.appraisal },
-				{ key: 'disposal-date', label: this.t('dossiq', 'Disposal date'), value: r.disposalDate },
-				{ key: 'retention-period', label: this.t('dossiq', 'Retention period'), value: r.retentionPeriod },
-				{ key: 'selection-list-row', label: this.t('dossiq', 'Selectielijst row'), value: r.selectionListRow },
-				{ key: 'rule', label: this.t('dossiq', 'Decided by'), value: this.nomination?.rule },
-				{ key: 'decided-at', label: this.t('dossiq', 'Written on'), value: this.nomination?.at },
-			].filter((fact) => fact.value !== undefined && fact.value !== null && fact.value !== '')
+				{
+					key: 'appraisal',
+					label: this.t('dossiq', 'Appraisal'),
+					value: r.appraisal,
+				},
+				{
+					key: 'disposal-date',
+					label: this.t('dossiq', 'Disposal date'),
+					value: r.disposalDate,
+				},
+				{
+					key: 'retention-period',
+					label: this.t('dossiq', 'Retention period'),
+					value: r.retentionPeriod,
+				},
+				{
+					key: 'selection-list-row',
+					label: this.t('dossiq', 'Selectielijst row'),
+					value: r.selectionListRow,
+				},
+				{
+					key: 'rule',
+					label: this.t('dossiq', 'Decided by'),
+					value: this.nomination?.rule,
+				},
+				{
+					key: 'decided-at',
+					label: this.t('dossiq', 'Written on'),
+					value: this.nomination?.at,
+				},
+			].filter(
+				(fact) =>
+					fact.value !== undefined
+					&& fact.value !== null
+					&& fact.value !== '',
+			)
 		},
 
 		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
 		outcomeSentence() {
-			const o = (this.outcome ?? {})
+			const o = this.outcome ?? {}
 
 			return this.t('dossiq', 'Handed over as {kind} on {at} by {by}.', {
 				kind: String(o.kind ?? ''),
@@ -289,7 +339,7 @@ export default {
 				return true
 			}
 
-			const groups = (user?.groups ?? [])
+			const groups = user?.groups ?? []
 
 			return Array.isArray(groups) && groups.includes('archivaris')
 		},

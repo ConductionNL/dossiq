@@ -320,7 +320,7 @@ describe('the container type this change depends on', () => {
 				expect(
 					registry,
 					'CaseArchivalPanel is named by the manifest but registered nowhere, '
-					+ 'so the Archiving tab renders nothing',
+						+ 'so the Archiving tab renders nothing',
 				).toContain('CaseArchivalPanel: {')
 				continue
 			}

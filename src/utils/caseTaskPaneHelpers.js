@@ -287,10 +287,10 @@ export function missingRequiredField(row, answers = {}) {
 	for (const field of requiredFieldsOf(row)) {
 		const answer = answers?.[field]
 		const blank =
-			answer === undefined ||
-			answer === null ||
-			(typeof answer === 'string' && answer.trim() === '') ||
-			(Array.isArray(answer) && answer.length === 0)
+			answer === undefined
+			|| answer === null
+			|| (typeof answer === 'string' && answer.trim() === '')
+			|| (Array.isArray(answer) && answer.length === 0)
 		if (blank) {
 			return field
 		}

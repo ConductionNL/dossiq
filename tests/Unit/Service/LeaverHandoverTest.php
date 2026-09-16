@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * What one act moves, what it only names, and what it records.
  *
  * @covers \OCA\Dossiq\Service\People\LeaverHandoverService
+ * @uses \OCA\Dossiq\Service\People\CaseSeats
  *
  * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */

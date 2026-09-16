@@ -126,8 +126,12 @@ test.describe('A transition declares what it demands', () => {
 		})
 
 		const withheld = await getAvailableTransitions(api, token, caseId)
-		expect(withheld.body.transitions.map((entry: any) => entry.id)).not.toContain('t2')
-		const entry = (withheld.body.withheld ?? []).find((row: any) => row.id === 't2')
+		expect(
+			withheld.body.transitions.map((entry: any) => entry.id),
+		).not.toContain('t2')
+		const entry = (withheld.body.withheld ?? []).find(
+			(row: any) => row.id === 't2',
+		)
 		expect(entry, 'the withheld move is published with its reason').toBeTruthy()
 		expect(entry.reasons).toContain('the advice request')
 	})
@@ -144,12 +148,18 @@ test.describe('A transition declares what it demands', () => {
 		})
 
 		const blocked = await getAvailableTransitions(api, token, caseId)
-		expect(blocked.body.transitions.map((entry: any) => entry.id)).not.toContain('t2')
+		expect(blocked.body.transitions.map((entry: any) => entry.id)).not.toContain(
+			't2',
+		)
 
-		await updateObject(api, token, 'obligation', objectId(obligation), { state: 'met' })
+		await updateObject(api, token, 'obligation', objectId(obligation), {
+			state: 'met',
+		})
 
 		const released = await getAvailableTransitions(api, token, caseId)
-		expect(released.body.transitions.map((entry: any) => entry.id)).toContain('t2')
+		expect(released.body.transitions.map((entry: any) => entry.id)).toContain(
+			't2',
+		)
 		expect(released.body.withheld ?? []).toEqual([])
 	})
 
@@ -164,10 +174,16 @@ test.describe('A transition declares what it demands', () => {
 			blocks: ['closing'],
 		})
 
-		const withdrawn = await updateObject(api, token, 'obligation', objectId(obligation), {
-			state: 'withdrawn',
-			withdrawalReason: 'The fee was waived.',
-		})
+		const withdrawn = await updateObject(
+			api,
+			token,
+			'obligation',
+			objectId(obligation),
+			{
+				state: 'withdrawn',
+				withdrawalReason: 'The fee was waived.',
+			},
+		)
 
 		// Released, and NOT recorded as met: an inspection nobody carried out
 		// is not an inspection that passed, and the reason survives.
@@ -176,7 +192,9 @@ test.describe('A transition declares what it demands', () => {
 		expect(String(withdrawn.metAt ?? '')).toBe('')
 
 		const released = await getAvailableTransitions(api, token, caseId)
-		expect(released.body.transitions.map((entry: any) => entry.id)).toContain('t2')
+		expect(released.body.transitions.map((entry: any) => entry.id)).toContain(
+			't2',
+		)
 	})
 
 	test('the handler reads the explanation at the moment of choosing', async () => {
@@ -206,15 +224,20 @@ test.describe('A transition declares what it demands', () => {
 		})
 
 		const answer = await getAvailableTransitions(api, token, objectId(seeded))
-		const offered = answer.body.transitions.find((entry: any) => entry.id === 't1')
+		const offered = answer.body.transitions.find(
+			(entry: any) => entry.id === 't1',
+		)
 		expect(offered).toBeTruthy()
-		expect(offered.explanation).toBe('Check the drawings before you send this out.')
+		expect(offered.explanation).toBe(
+			'Check the drawings before you send this out.',
+		)
 	})
 
 	test('the status explanation reaches the case', async () => {
 		const machine = await seedStateMachine(api, token)
 		await updateObject(api, token, 'statusType', machine.statusReceived, {
-			description: 'The application has arrived and nobody has looked at it yet.',
+			description:
+				'The application has arrived and nobody has looked at it yet.',
 		})
 
 		const seeded = await seedCase(api, token, {
@@ -224,7 +247,9 @@ test.describe('A transition declares what it demands', () => {
 		})
 
 		const answer = await getAvailableTransitions(api, token, objectId(seeded))
-		expect(answer.body.current.statusDescription).toContain('nobody has looked at it')
+		expect(answer.body.current.statusDescription).toContain(
+			'nobody has looked at it',
+		)
 	})
 
 	test('the engine records who made each move, which is what four eyes reads', async () => {
@@ -259,8 +284,13 @@ test.describe('A transition declares what it demands', () => {
 		expect(history.status()).toBe(200)
 
 		const records = (await history.json()).history ?? []
-		const moved = records.find((row: any) => String(row.transitionLabel ?? '') !== '')
+		const moved = records.find(
+			(row: any) => String(row.transitionLabel ?? '') !== '',
+		)
 		expect(moved, 'the move was recorded').toBeTruthy()
-		expect(String(moved.actor ?? ''), 'the record names who made the move').not.toBe('')
+		expect(
+			String(moved.actor ?? ''),
+			'the record names who made the move',
+		).not.toBe('')
 	})
 })

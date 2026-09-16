@@ -62,6 +62,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ZrcControllerContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

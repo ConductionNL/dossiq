@@ -50,7 +50,7 @@ export const CASE_SCHEMA = 'case'
 function readStateUrl(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	return generateUrl(
 		`/apps/openregister/api/objects/${encodeURIComponent(register)}`
-		+ `/${encodeURIComponent(schema)}/${encodeURIComponent(id)}/read-state`,
+			+ `/${encodeURIComponent(schema)}/${encodeURIComponent(id)}/read-state`,
 	)
 }
 
@@ -64,14 +64,18 @@ function readStateUrl(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
-export async function fetchReadState(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
+export async function fetchReadState(
+	id,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
 	const { data } = await axios.get(readStateUrl(id, register, schema))
 
 	return {
 		unread: data?.unread === true,
-		lastSeenAt: (data?.lastSeenAt ?? null),
-		subSeen: (data?.subSeen ?? {}),
-		unreadCounts: (data?.unreadCounts ?? {}),
+		lastSeenAt: data?.lastSeenAt ?? null,
+		subSeen: data?.subSeen ?? {},
+		unreadCounts: data?.unreadCounts ?? {},
 	}
 }
 
@@ -86,8 +90,13 @@ export async function fetchReadState(id, register = CASE_REGISTER, schema = CASE
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
-export async function markRead(id, subResource = null, register = CASE_REGISTER, schema = CASE_SCHEMA) {
-	const body = (subResource ? { subResource } : {})
+export async function markRead(
+	id,
+	subResource = null,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
+	const body = subResource ? { subResource } : {}
 	const { data } = await axios.put(readStateUrl(id, register, schema), body)
 
 	return {
@@ -111,10 +120,14 @@ export async function markRead(id, subResource = null, register = CASE_REGISTER,
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
-export async function markUnread(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
+export async function markUnread(
+	id,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
 	const { data } = await axios.delete(readStateUrl(id, register, schema))
 
-	return { unread: (data?.unread !== false) }
+	return { unread: data?.unread !== false }
 }
 
 /**
@@ -131,9 +144,9 @@ export async function markUnread(id, register = CASE_REGISTER, schema = CASE_SCH
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
 export function unreadCountsOf(row) {
-	const counts = (row?.['@self']?.unreadCounts ?? null)
+	const counts = row?.['@self']?.unreadCounts ?? null
 
-	return ((counts && typeof counts === 'object') ? counts : null)
+	return counts && typeof counts === 'object' ? counts : null
 }
 
 /**
@@ -150,5 +163,5 @@ export function unreadCountsOf(row) {
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
  */
 export function isUnread(row) {
-	return (row?.['@self']?.unread === true)
+	return row?.['@self']?.unread === true
 }

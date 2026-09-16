@@ -46,7 +46,7 @@ const connections = declaration.connections
 const byKey = Object.fromEntries(connections.map((c) => [c.key, c]))
 
 describe('the Integrations page', () => {
-	it('is declared, admin only, and reads integriq\'s app_connection schema', () => {
+	it("is declared, admin only, and reads integriq's app_connection schema", () => {
 		expect(page).toBeDefined()
 		expect(page.permission).toBe('admin')
 		expect(page.route).toBe('/settings/integrations')
@@ -119,7 +119,7 @@ describe('the Integrations page', () => {
 		expect(customComponentsSource).toContain('function openIntegriqConnections(')
 		expect(customComponentsSource).toMatch(/^\topenIntegriqConnections,$/m)
 		expect(customComponentsSource).toContain(
-			'\'/apps/integriq/connections?app=dossiq&link=1\'',
+			"'/apps/integriq/connections?app=dossiq&link=1'",
 		)
 		expect(iconsSource).toContain(`\n\t${add.icon},`)
 	})
@@ -144,7 +144,7 @@ describe('the Integrations menu entry', () => {
 	// THE PRESET. integriq's schema holds every app's rows. The query is what
 	// makes this dossiq's page, and a bare key is the spelling the objects
 	// endpoint reads as a filter.
-	it('presets the list to dossiq\'s own rows', () => {
+	it("presets the list to dossiq's own rows", () => {
 		expect(menuEntry.query).toEqual({ app: 'dossiq' })
 	})
 
@@ -216,7 +216,9 @@ describe('the connection declaration', () => {
 
 	it('names the adapter key of the two mock-backed seams', () => {
 		expect(byKey.berichtenbox.adapter.configKey).toBe('berichtenbox_adapter')
-		expect(byKey.templates.adapter.configKey).toBe('beschikking_template_adapter')
+		expect(byKey.templates.adapter.configKey).toBe(
+			'beschikking_template_adapter',
+		)
 		for (const key of ['berichtenbox', 'templates']) {
 			expect(byKey[key].adapter.simulatedMessage).toMatch(/mock/i)
 			expect(byKey[key].settingsUrl).toBeUndefined()
@@ -251,7 +253,9 @@ describe('the connection declaration', () => {
 		expect(linked).toHaveLength(7)
 		for (const connection of linked) {
 			const anchor = connection.settingsUrl.split('#')[1]
-			expect(connection.settingsUrl.startsWith('/settings/admin/dossiq#')).toBe(true)
+			expect(
+				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}
 	})
@@ -276,7 +280,9 @@ describe('the old dossiqIntegration schema', () => {
 	it('is seeded by no register.d fragment', () => {
 		const dir = path.join(ROOT, 'lib', 'Settings', 'register.d')
 		for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.json'))) {
-			const fragment = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'))
+			const fragment = JSON.parse(
+				fs.readFileSync(path.join(dir, file), 'utf8'),
+			)
 			const objects = fragment?.components?.objects ?? []
 			expect(
 				objects.filter((o) => o?.['@self']?.schema === 'dossiqIntegration'),

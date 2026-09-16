@@ -38,6 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -64,11 +65,13 @@ class TermijnService {
 	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
+	 * @param TermEventEntry|null $termEntry The timeline entry a term event writes.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly ?TermEventEntry $termEntry = null,
 	) {
 	}//end __construct()
 
@@ -328,7 +331,17 @@ class TermijnService {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
-		return $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
+		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
+
+		// A REWRITE IS NOT A START. `bindStatutory()` re-binds a term that is
+		// already running when the case type's fixed end date moves, and a
+		// timeline announcing a start each time would report clocks that never
+		// started. The row as it was handed in tells the two apart, so the
+		// writer is given the fact rather than a verdict and this method keeps
+		// no branch of its own.
+		$this->termEntry?->recordStart(instance: (array)$saved, requested: $instance);
+
+		return $saved;
 	}//end saveTermInstance()
 
 	/**
@@ -526,7 +539,23 @@ class TermijnService {
 			$event['items'] = array_values($items);
 		}
 
-		return $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
+		$saved = $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
+
+		// The event row names its instance, and the instance names the case.
+		// That read belongs here: this is the only class that knows how to
+		// reach a term instance, and the entry writer asking for it would
+		// depend on the class that depends on it. An instance that cannot be
+		// read arrives as an empty array and the writer declines it, which is
+		// a guard there rather than a branch this class has to carry.
+		$this->termEntry?->recordEvent(
+			instance: (array)$this->getTermijnInstance(termInstanceId: $termInstanceId),
+			type: $type,
+			basis: $basis,
+			rationale: $rationale,
+			moment: $moment,
+		);
+
+		return $saved;
 	}//end recordEvent()
 
 	/**

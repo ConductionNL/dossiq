@@ -40,12 +40,16 @@ import type { APIRequestContext, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
+	createObject,
+	deleteObject,
 	ensureCaseType,
+	executeTransition,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedStateMachine,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -63,6 +67,12 @@ let siblingCaseId = ''
 
 /** The CSRF token for every write below. */
 let token = ''
+
+/** dossiq's own API, which owns the status engine and the term engine. */
+const APP = '/index.php/apps/dossiq/api'
+
+/** Term instances seeded by this file, cleaned up by id. */
+const seededTerms: string[] = []
 
 /**
  * The timeline of one case.
@@ -95,7 +105,11 @@ async function readTimeline(
  *
  * @return The raw response, so a test may assert on a refusal.
  */
-async function writeEntry(api: APIRequestContext, id: string, body: Record<string, unknown>) {
+async function writeEntry(
+	api: APIRequestContext,
+	id: string,
+	body: Record<string, unknown>,
+) {
 	return api.post(`${OR}/objects/${REGISTER}/${SCHEMA}/${id}/timeline`, {
 		headers: { requesttoken: token, 'Content-Type': 'application/json' },
 		data: body,
@@ -120,15 +134,42 @@ test.beforeAll(async ({ request }) => {
 })
 
 test.afterAll(async ({ request }) => {
+	for (const id of seededTerms) {
+		await deleteObject(request, token, 'deadlineInstance', id)
+	}
 	await cleanupRunObjects(request, token)
 })
 
+/**
+ * The entries of one case whose kind is the given one.
+ *
+ * @param api  The request context.
+ * @param id   The case uuid.
+ * @param kind The declared kind to keep.
+ *
+ * @return The matching entries, as the read returned them.
+ */
+async function entriesOfKind(
+	api: APIRequestContext,
+	id: string,
+	kind: string,
+): Promise<any[]> {
+	const body = await readTimeline(api, id)
+	const rows = (body.results ?? []) as any[]
+
+	return rows.filter((row: any) => String(row?.kind ?? '') === kind)
+}
+
 test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
-	test('every kind dossiq names is declared on the instance', async ({ request }) => {
+	test('every kind dossiq names is declared on the instance', async ({
+		request,
+	}) => {
 		const response = await request.get(`${OR}/timeline/kinds`)
 		expect(response.ok()).toBeTruthy()
 
-		const declared = ((await response.json()).results || []).map((kind: any) => kind.slug)
+		const declared = ((await response.json()).results || []).map(
+			(kind: any) => kind.slug,
+		)
 
 		for (const slug of [
 			'contactmoment',
@@ -143,7 +184,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		}
 	})
 
-	test('an inbound mail entry opens a follow-up and a contact moment does not', async ({ request }) => {
+	test('an inbound mail entry opens a follow-up and a contact moment does not', async ({
+		request,
+	}) => {
 		const inbound = await writeEntry(request, caseId, {
 			kind: 'mail-inkomend',
 			message: `${RUN_PREFIX} bericht ontvangen`,
@@ -161,7 +204,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		expect((await call.json()).followUp).toBeNull()
 	})
 
-	test('a kind nobody declared is refused rather than filed as a plain note', async ({ request }) => {
+	test('a kind nobody declared is refused rather than filed as a plain note', async ({
+		request,
+	}) => {
 		const response = await writeEntry(request, caseId, {
 			kind: 'nobody-declared-this',
 			message: `${RUN_PREFIX} should not land`,
@@ -170,7 +215,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		expect(response.status()).toBe(400)
 	})
 
-	test('the contact moment kind accepts the channel dossiq actually stores', async ({ request }) => {
+	test('the contact moment kind accepts the channel dossiq actually stores', async ({
+		request,
+	}) => {
 		// The drift this guards: the kind declaring telefoon/balie/email/post
 		// while ContactMomentService validates and stores phone/email/
 		// webformulier/chat/social_media/balie. The refusal is caught and
@@ -188,7 +235,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 })
 
 test.describe('REQ-TL-12 every communication writer records on the timeline', () => {
-	test('an entry keeps the fields its kind declares across the round trip', async ({ request }) => {
+	test('an entry keeps the fields its kind declares across the round trip', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			kind: 'mail-uitgaand',
 			message: `${RUN_PREFIX} beschikking verzonden`,
@@ -207,7 +256,9 @@ test.describe('REQ-TL-12 every communication writer records on the timeline', ()
 		expect(entry.fields.documentId).toBe('doc-1')
 	})
 
-	test('a field the kind does not declare is dropped, not stored', async ({ request }) => {
+	test('a field the kind does not declare is dropped, not stored', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			kind: 'portaalbericht',
 			message: `${RUN_PREFIX} portaalbericht`,
@@ -218,15 +269,22 @@ test.describe('REQ-TL-12 every communication writer records on the timeline', ()
 
 		const entry = await written.json()
 		expect(entry.fields.messageId).toBe('m-1')
-		expect(entry.fields.bsn, 'the portaalbericht kind declares no bsn').toBeUndefined()
+		expect(
+			entry.fields.bsn,
+			'the portaalbericht kind declares no bsn',
+		).toBeUndefined()
 	})
 })
 
 test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
-	test('a note written on two cases names its siblings on each', async ({ request }) => {
+	test('a note written on two cases names its siblings on each', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			message: `${RUN_PREFIX} over beide zaken`,
-			relatedObjects: [{ register: REGISTER, schema: SCHEMA, id: siblingCaseId }],
+			relatedObjects: [
+				{ register: REGISTER, schema: SCHEMA, id: siblingCaseId },
+			],
 		})
 		expect(written.status()).toBe(201)
 
@@ -243,13 +301,19 @@ test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
 		expect(found, 'the second case carries the entry').toBeTruthy()
 	})
 
-	test('a related case that cannot be reached leaves nothing written anywhere', async ({ request }) => {
+	test('a related case that cannot be reached leaves nothing written anywhere', async ({
+		request,
+	}) => {
 		const before = (await readTimeline(request, caseId)).total
 
 		const response = await writeEntry(request, caseId, {
 			message: `${RUN_PREFIX} should not land anywhere`,
 			relatedObjects: [
-				{ register: REGISTER, schema: SCHEMA, id: '00000000-0000-0000-0000-000000000000' },
+				{
+					register: REGISTER,
+					schema: SCHEMA,
+					id: '00000000-0000-0000-0000-000000000000',
+				},
 			],
 		})
 		expect(response.status()).toBe(404)
@@ -257,7 +321,9 @@ test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
 		const after = await readTimeline(request, caseId)
 		expect(after.total).toBe(before)
 		expect(
-			after.results.some((entry: any) => entry.message.includes('should not land anywhere')),
+			after.results.some((entry: any) =>
+				entry.message.includes('should not land anywhere'),
+			),
 		).toBeFalsy()
 	})
 })
@@ -267,12 +333,16 @@ test.describe('REQ-TL-14 the standard notes are administered text', () => {
 		const response = await request.get(`${OR}/timeline/text-blocks`)
 		expect(response.ok()).toBeTruthy()
 
-		const slugs = ((await response.json()).results || []).map((block: any) => block.slug)
+		const slugs = ((await response.json()).results || []).map(
+			(block: any) => block.slug,
+		)
 		expect(slugs).toContain('dossiq-terugbelverzoek')
 		expect(slugs).toContain('dossiq-stukken-opgevraagd')
 	})
 
-	test('a standard note is written with the case substituted into it', async ({ request }) => {
+	test('a standard note is written with the case substituted into it', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			textBlock: 'dossiq-terugbelverzoek',
 		})
@@ -280,9 +350,10 @@ test.describe('REQ-TL-14 the standard notes are administered text', () => {
 
 		const entry = await written.json()
 		expect(entry.message).toContain('terug te bellen')
-		expect(entry.message, 'the case number is substituted, not left in braces').not.toContain(
-			'{{identifier}}',
-		)
+		expect(
+			entry.message,
+			'the case number is substituted, not left in braces',
+		).not.toContain('{{identifier}}')
 	})
 })
 
@@ -317,7 +388,9 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 		await expect(entries.first()).toContainText('pin me')
 	})
 
-	test('a read that fails says so rather than showing an empty case', async ({ page }) => {
+	test('a read that fails says so rather than showing an empty case', async ({
+		page,
+	}) => {
 		await page.route(`**${OR}/objects/**/timeline*`, (route) =>
 			route.fulfill({ status: 500, body: '{"message":"no"}' }),
 		)
@@ -328,7 +401,10 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 		await expect(page.getByTestId('case-timeline-empty')).toHaveCount(0)
 	})
 
-	test('the kind filter narrows the list to one kind', async ({ page, request }) => {
+	test('the kind filter narrows the list to one kind', async ({
+		page,
+		request,
+	}) => {
 		await writeEntry(request, caseId, {
 			kind: 'ontvangstbevestiging',
 			message: `${RUN_PREFIX} ontvangst bevestigd`,
@@ -387,3 +463,106 @@ async function openTimelineTab(page: Page, id: string): Promise<void> {
 	await page.getByRole('tab', { name: 'Timeline' }).click()
 	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
 }
+
+test.describe('REQ-TL-15 every status move records itself on the timeline', () => {
+	test('a guarded transition writes the two statuses, the mover and the comment', async ({
+		request,
+	}) => {
+		const machine = await seedStateMachine(request, token)
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} status on the timeline`,
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
+		})
+		const movedCase = objectId(seeded)
+
+		const moved = await executeTransition(
+			request,
+			token,
+			movedCase,
+			't1',
+			`${RUN_PREFIX} stukken compleet`,
+		)
+		expect(
+			moved.status,
+			`the transition must be accepted: ${JSON.stringify(moved.body)}`,
+		).toBe(200)
+
+		const entries = await entriesOfKind(request, movedCase, 'statuswijziging')
+		expect(entries).toHaveLength(1)
+
+		// The FIELDS are the point. An undeclared field is dropped rather than
+		// refused, so a writer whose declaration did not move with it stores an
+		// entry that looks right and carries nothing.
+		const fields = entries[0].fields ?? {}
+		expect(fields.from).toBe(machine.statusReceived)
+		expect(fields.to).toBe(machine.statusInProgress)
+		expect(fields.explanation).toContain('stukken compleet')
+		// The IDENTITY, not merely something non-empty. A writer that stamped
+		// every line with the row's owner, or with the string 'system', would
+		// pass a not-empty assertion and name the wrong person on every move.
+		expect(fields.actor).toBe(process.env.ADMIN_USER ?? 'admin')
+		expect(String(fields.statusRecordId ?? '')).not.toBe('')
+	})
+
+	test('the sentence a handler reads names the statuses, not their uuids', async ({
+		request,
+	}) => {
+		const machine = await seedStateMachine(request, token)
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} status sentence`,
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
+		})
+		const movedCase = objectId(seeded)
+
+		const moved = await executeTransition(request, token, movedCase, 't1')
+		expect(moved.status).toBe(200)
+
+		const [entry] = await entriesOfKind(request, movedCase, 'statuswijziging')
+		expect(entry.message).toContain('In behandeling')
+		expect(entry.message).not.toContain(machine.statusInProgress)
+	})
+})
+
+test.describe('REQ-TL-16 every term event records itself on the timeline', () => {
+	test('a suspended term writes the event, the new due date and the instance', async ({
+		request,
+	}) => {
+		const caseTypeId = (await ensureCaseType(request, token)).id
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} term on the timeline`,
+			caseType: caseTypeId,
+		})
+		const termCase = objectId(seeded)
+
+		const term = await createObject(request, token, 'deadlineInstance', {
+			case: termCase,
+			status: 'lopend',
+			startDate: '2026-01-05T09:00:00+00:00',
+			endDateCalculated: '2026-03-02',
+			endDateCurrent: '2026-03-02',
+		})
+		const termId = objectId(term)
+		seededTerms.push(termId)
+
+		const paused = await request.post(`${APP}/termijn/instances/${termId}/pauze`, {
+			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			data: { duurDagen: 14, rationale: `${RUN_PREFIX} aanvulling gevraagd` },
+		})
+		expect(
+			paused.ok(),
+			`the pause must be accepted: ${await paused.text()}`,
+		).toBeTruthy()
+
+		const entries = await entriesOfKind(request, termCase, 'termijngebeurtenis')
+		expect(entries).toHaveLength(1)
+
+		const fields = entries[0].fields ?? {}
+		expect(fields.event).toBe('pause')
+		expect(fields.termijnId).toBe(termId)
+		expect(String(fields.dueAt ?? '')).not.toBe('')
+		expect(String(fields.occurredAt ?? '')).not.toBe('')
+		expect(entries[0].message).toContain('aanvulling gevraagd')
+	})
+})

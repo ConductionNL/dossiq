@@ -46,11 +46,16 @@ describe('starting a case from a template', () => {
 			data: { ok: true, case: { id: 'case-9', startedFromTemplate: 'tpl-1' } },
 		})
 
-		const result = await startFromTemplate('tpl-1', { title: 'Sloopmelding Kerkstraat 4' })
-
-		expect(axios.post).toHaveBeenCalledWith(`${BASE}/api/case-templates/tpl-1/start`, {
-			overrides: { title: 'Sloopmelding Kerkstraat 4' },
+		const result = await startFromTemplate('tpl-1', {
+			title: 'Sloopmelding Kerkstraat 4',
 		})
+
+		expect(axios.post).toHaveBeenCalledWith(
+			`${BASE}/api/case-templates/tpl-1/start`,
+			{
+				overrides: { title: 'Sloopmelding Kerkstraat 4' },
+			},
+		)
 		expect(result.case.startedFromTemplate).toBe('tpl-1')
 	})
 
@@ -59,18 +64,27 @@ describe('starting a case from a template', () => {
 
 		await startFromTemplate('tpl-1')
 
-		expect(axios.post).toHaveBeenCalledWith(`${BASE}/api/case-templates/tpl-1/start`, {
-			overrides: {},
-		})
+		expect(axios.post).toHaveBeenCalledWith(
+			`${BASE}/api/case-templates/tpl-1/start`,
+			{
+				overrides: {},
+			},
+		)
 	})
 
 	it('asks the library for one kind, scoped to the case being worked on', async () => {
 		axios.get.mockResolvedValue({ data: { items: [], total: 0 } })
 
-		await listContentTemplates('task', { caseType: 'ct-bezwaar', case: 'case-1' })
-
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/api/content-templates/task`, {
-			params: { caseType: 'ct-bezwaar', case: 'case-1' },
+		await listContentTemplates('task', {
+			caseType: 'ct-bezwaar',
+			case: 'case-1',
 		})
+
+		expect(axios.get).toHaveBeenCalledWith(
+			`${BASE}/api/content-templates/task`,
+			{
+				params: { caseType: 'ct-bezwaar', case: 'case-1' },
+			},
+		)
 	})
 })

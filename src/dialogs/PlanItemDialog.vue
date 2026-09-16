@@ -22,7 +22,12 @@
 		@closing="$emit('close')">
 		<div class="plan-item">
 			<p class="plan-item__explainer">
-				{{ t('dossiq', 'This goes on your own calendar and on your queue. It is not a case.') }}
+				{{
+					t(
+						'dossiq',
+						'This goes on your own calendar and on your queue. It is not a case.',
+					)
+				}}
 			</p>
 
 			<NcSelect
@@ -100,7 +105,10 @@ export default {
 		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 		 */
 		templateOptions() {
-			return TEMPLATES.map((entry) => ({ id: entry.id, label: t('dossiq', entry.label) }))
+			return TEMPLATES.map((entry) => ({
+				id: entry.id,
+				label: t('dossiq', entry.label),
+			}))
 		},
 
 		/**
@@ -108,7 +116,7 @@ export default {
 		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 		 */
 		canSave() {
-			return (this.title.trim() !== '' && this.startsAt.trim() !== '')
+			return this.title.trim() !== '' && this.startsAt.trim() !== ''
 		},
 	},
 
@@ -141,12 +149,13 @@ export default {
 				await planItem({
 					title: this.title,
 					startsAt: this.startsAt,
-					template: (this.template?.id ?? ''),
+					template: this.template?.id ?? '',
 				})
 				this.$emit('planned')
 			} catch (error) {
-				this.failure = (error?.response?.data?.error
-					|| t('dossiq', 'The item could not be planned.'))
+				this.failure =
+					error?.response?.data?.error
+					|| t('dossiq', 'The item could not be planned.')
 			} finally {
 				this.saving = false
 			}

@@ -47,11 +47,7 @@ import {
 	seedCase,
 	updateObject,
 } from './helpers/fixtures.ts'
-import {
-	clickHeaderAction,
-	PAGE_LOAD,
-	trackDossiqErrors,
-} from './helpers/nav.ts'
+import { clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /** The case type a follow-up of this suite is planned as. */
 let followUpType = ''
@@ -281,7 +277,9 @@ test.describe('A planned follow-up that repeats', () => {
 			(row: any) => String(row?.name ?? '').includes(plannedTitle) === true,
 		)
 		expect(mine.length).toBe(1)
-		const fields = String(mine[0]?.cron ?? '').trim().split(/\s+/)
+		const fields = String(mine[0]?.cron ?? '')
+			.trim()
+			.split(/\s+/)
 		expect(Number(fields[2])).toBe(Number(firstDue.slice(8, 10)))
 		expect(Number(fields[3])).toBe(Number(firstDue.slice(5, 7)))
 
