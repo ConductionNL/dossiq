@@ -136,6 +136,14 @@ class ContactMomentTimelineListener implements IEventListener {
 	 * the handler, and the applicant reads it only when someone ticked the box
 	 * on the form. An absent field is an unticked box, not an unknown answer.
 	 *
+	 * THE TICKED SPELLINGS ARE LISTED, NOT CAST. `(bool)'false'` is TRUE in
+	 * PHP, so a cast would publish a contact whose flag says the opposite, and
+	 * a strict `=== true` alone would keep a genuinely ticked `1` inside. The
+	 * schema declares a boolean and OpenRegister answers one, but this value
+	 * arrives from two surfaces and a form is free to post what it likes, so
+	 * the four spellings that mean yes are named and everything else is an
+	 * unticked box.
+	 *
 	 * @param array<string, mixed> $payload The stored record.
 	 *
 	 * @return string `internal` or `public`.
@@ -143,7 +151,7 @@ class ContactMomentTimelineListener implements IEventListener {
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
 	private function visibility(array $payload): string {
-		if (($payload['visibleToApplicant'] ?? false) === true) {
+		if (in_array(($payload['visibleToApplicant'] ?? false), [true, 1, '1', 'true'], true) === true) {
 			return CaseTimeline::PUBLIC_ENTRY;
 		}
 

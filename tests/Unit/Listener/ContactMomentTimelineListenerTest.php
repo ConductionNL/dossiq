@@ -162,24 +162,32 @@ class ContactMomentTimelineListenerTest extends TestCase {
 	/**
 	 * A ticked box, and only a ticked box, makes the entry public.
 	 *
-	 * The falsy values are in the same test on purpose. OpenRegister stores a
-	 * boolean, but a form that posts `"false"` or `0` would otherwise flip the
-	 * default the whole change rests on, and the flip would be silent.
+	 * BOTH LISTS ARE IN THE SAME TEST ON PURPOSE. `(bool)'false'` is true in
+	 * PHP, so a cast would publish a contact whose flag says the opposite; a
+	 * strict `=== true` would keep a genuinely ticked `1` inside. Each mistake
+	 * is invisible without the other list beside it, and both flips are
+	 * silent.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
 	public function testOnlyATickedBoxMakesTheEntryPublic(): void {
-		$this->listener->handle($this->created([
-			'notificationChannel' => 'phone',
-			'case' => 'case-uuid-1',
-			'visibleToApplicant' => true,
-		]));
+		foreach ([true, 1, '1', 'true'] as $ticked) {
+			$this->listener->handle($this->created([
+				'notificationChannel' => 'phone',
+				'case' => 'case-uuid-1',
+				'visibleToApplicant' => $ticked,
+			]));
 
-		self::assertSame('public', $this->seen['visibility']);
+			self::assertSame(
+				'public',
+				$this->seen['visibility'],
+				'a contactmoment carrying ' . var_export($ticked, true) . ' is visible to the applicant'
+			);
+		}
 
-		foreach ([false, 0, '', 'false', null] as $falsy) {
+		foreach ([false, 0, '0', '', 'false', 'no', null] as $falsy) {
 			$this->listener->handle($this->created([
 				'notificationChannel' => 'phone',
 				'case' => 'case-uuid-1',
