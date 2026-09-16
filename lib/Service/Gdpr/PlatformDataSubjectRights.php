@@ -367,12 +367,20 @@ class PlatformDataSubjectRights {
 		try {
 			return $call();
 		} catch (Throwable $e) {
-			if (is_a($e, self::REFUSAL) === true) {
-				/** @var object{getRule: callable, getStatusCode: callable} $e */
+			if (is_a($e, self::REFUSAL) === true
+				&& is_callable([$e, 'getRule']) === true
+				&& is_callable([$e, 'getStatusCode']) === true
+			) {
+				// Called through `call_user_func` rather than `$e->getRule()`:
+				// the class is resolved by name, so nothing in this app
+				// type-hints it and the analysers see only a Throwable. A
+				// `@var` claiming otherwise is a claim about a class they
+				// cannot read, which is how a docblock starts disagreeing with
+				// the code under it.
 				throw new RefusedException(
-					rule: (string)$e->getRule(),
+					rule: (string)call_user_func([$e, 'getRule']),
 					sentence: $e->getMessage(),
-					status: (int)$e->getStatusCode(),
+					status: (int)call_user_func([$e, 'getStatusCode']),
 					previous: $e,
 				);
 			}

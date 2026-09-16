@@ -5140,6 +5140,8 @@
         "The platform is still assembling the file.": "The platform is still assembling the file.",
         "The platform reports the erasure complete.": "The platform reports the erasure complete.",
         "This export expired. Ask for it again.": "This export expired. Ask for it again.",
-        "To pseudonymise": "To pseudonymise"
+        "To pseudonymise": "To pseudonymise",
+        "Not a data subject request": "Not a data subject request",
+        "This case answers something else, so there is nothing to erase or export here.": "This case answers something else, so there is nothing to erase or export here."
     }
 }

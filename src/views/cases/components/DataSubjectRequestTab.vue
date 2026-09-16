@@ -28,7 +28,8 @@
 		<section v-if="isErasure" class="dsr-tab__section">
 			<h3>{{ t('dossiq', 'Erasure') }}</h3>
 
-			<NcEmptyContent v-if="!hasPreview"
+			<NcEmptyContent
+v-if="!hasPreview"
 				:name="t('dossiq', 'No preview yet')"
 				:description="t('dossiq', 'Ask the platform what erasing this person would touch.')" />
 
@@ -58,14 +59,20 @@
 				<NcButton :disabled="busy" @click="takePreview">
 					{{ t('dossiq', 'Take the preview') }}
 				</NcButton>
-				<NcButton v-if="hasPreview"
-					type="warning"
+				<NcButton
+v-if="hasPreview"
+					variant="warning"
 					:disabled="busy"
 					@click="takeRun">
 					{{ t('dossiq', 'Run the approved erasure') }}
 				</NcButton>
 			</div>
 		</section>
+
+		<NcEmptyContent
+v-else-if="!isRequest"
+			:name="t('dossiq', 'Not a data subject request')"
+			:description="t('dossiq', 'This case answers something else, so there is nothing to erase or export here.')" />
 
 		<section v-else class="dsr-tab__section">
 			<h3>{{ t('dossiq', 'Subject export') }}</h3>
@@ -82,7 +89,7 @@
 				<NcButton :disabled="busy" @click="askForExport">
 					{{ t('dossiq', 'Ask for the export') }}
 				</NcButton>
-				<NcButton v-if="exportState.downloadable" :href="downloadUrl" type="primary">
+				<NcButton v-if="exportState.downloadable" :href="downloadUrl" variant="primary">
 					{{ t('dossiq', 'Download the export') }}
 				</NcButton>
 			</div>
@@ -91,10 +98,10 @@
 </template>
 
 <script>
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import { translate as t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import {
 	fetchSubjectExportState,
 	previewErasure,
@@ -115,6 +122,7 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		/** The case itself, as the page already loaded it. */
 		object: {
 			type: Object,
@@ -134,6 +142,20 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether this case is a data subject request at all.
+		 *
+		 * The tab is declared once on the case page, so it is mounted on every
+		 * case. Asking the platform about a case that never named a subject
+		 * would be one request per case opened, answering nothing.
+		 *
+		 * @return {boolean} True when the case names one of the three rights.
+		 */
+		isRequest() {
+			return ['inzage', 'correctie', 'verwijdering']
+				.includes(this.object?.dataSubjectRequestType)
+		},
+
 		/**
 		 * Whether this case asks for an erasure rather than access.
 		 *
@@ -179,7 +201,7 @@ export default {
 	},
 
 	mounted() {
-		if (!this.isErasure) {
+		if (this.isRequest && !this.isErasure) {
 			this.loadExportState()
 		}
 	},
@@ -238,7 +260,7 @@ export default {
 		/**
 		 * Run one act, showing the server's own refusal when it refuses.
 		 *
-		 * @param {Function} work The act.
+		 * @param {() => Promise<void>} work The act.
 		 * @return {Promise<void>} When the act has finished or refused.
 		 */
 		async act(work) {

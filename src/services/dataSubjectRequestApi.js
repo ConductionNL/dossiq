@@ -98,7 +98,7 @@ export async function fetchSubjectExportState(caseId) {
  * Where the platform serves the export file itself.
  *
  * OpenRegister refuses the link past the export's seven day life, so the
- * caller asks {@see fetchSubjectExportState} first and offers this only while
+ * caller asks `fetchSubjectExportState` first and offers this only while
  * `downloadable` is true. Building the link off `expiresAt` alone would offer
  * one for a file that is still being assembled.
  *
