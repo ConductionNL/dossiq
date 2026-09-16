@@ -208,6 +208,8 @@ class ChaseSchedule {
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 *
 	 * @return int The count, never negative.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function sent(array $instance): int {
 		return max(0, (int)($instance['chasesSent'] ?? 0));

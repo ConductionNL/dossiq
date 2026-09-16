@@ -156,7 +156,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 * @param array<string, mixed>   $row The case row.
 	 * @param DateTimeImmutable|null $now The moment to count from, for the tests.
 	 *
-	 * @return array{on: string, since: string, days: int, chases: int} The facts, empty when none.
+	 * @return array{on: string, since: string, days: int, chases: int}|array{} The facts, empty when none.
 	 *
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */

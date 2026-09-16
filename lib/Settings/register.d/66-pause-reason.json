@@ -156,7 +156,9 @@
             "enum": [
               "chased",
               "chase-escalated"
-            ]
+            ],
+            "title": "Event Type",
+            "description": "Event kind. This fragment adds the two a chasing pause produces: `chased` for a reminder that went out, and `chase-escalated` for the silence after the last one. A fragment list is CONCATENATED onto the base list, so the values declared in 60-termijnbewaking.json all stand."
           }
         }
       },

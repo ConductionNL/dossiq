@@ -19,12 +19,20 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { waitingParty, waitingSentence } from '../../src/utils/personalQueueHelpers.js'
 import { pauseSentence, termRows } from '../../src/utils/caseTerms.js'
+import { waitingParty, waitingSentence } from '../../src/utils/personalQueueHelpers.js'
 
-/** A `t` that fills the placeholders, so the assertions read like the screen. */
-const t = (app, text, vars = {}) =>
-	text.replace(/\{(\w+)\}/g, (match, key) => (key in vars ? String(vars[key]) : match))
+/**
+ * A `t` that fills the placeholders, so the assertions read like the screen.
+ *
+ * @param {string} app  The app id, ignored here.
+ * @param {string} text The source string.
+ * @param {object} vars The placeholder values.
+ * @return {string} The filled string.
+ */
+function t(app, text, vars = {}) {
+	return text.replace(/\{(\w+)\}/g, (match, key) => (key in vars ? String(vars[key]) : match))
+}
 
 describe('the waiting sentence in the personal queue', () => {
 	it('names the party, the days and the reminders', () => {
