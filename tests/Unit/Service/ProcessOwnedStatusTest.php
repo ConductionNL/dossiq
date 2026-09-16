@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,10 +48,7 @@ class ProcessOwnedStatusTest extends TestCase {
 		$rules->method('processOwnsStatus')->willReturn($owned);
 		$rules->method('processOf')->willReturn($process);
 
-		$store = $this->createMock(originalClassName: CaseStatusStore::class);
-		$store->method('loadCase')->willReturn(['id' => 'case-1', 'caseType' => 'ct-1']);
-
-		return new ProcessOwnedStatusRule(rules: $rules, store: $store);
+		return new ProcessOwnedStatusRule(rules: $rules);
 	}//end rule()
 
 	/**

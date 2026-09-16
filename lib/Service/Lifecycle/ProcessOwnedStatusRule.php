@@ -42,7 +42,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 
 /**
  * Refuses a direct status write where the case type says the process owns it.
@@ -55,11 +54,9 @@ class ProcessOwnedStatusRule {
 	 * Constructor.
 	 *
 	 * @param LifecycleCaseTypeRules $rules Reads the case type's declaration.
-	 * @param CaseStatusStore $store Resolves a case to its type, for the caseId form.
 	 */
 	public function __construct(
 		private readonly LifecycleCaseTypeRules $rules,
-		private readonly CaseStatusStore $store,
 	) {
 	}//end __construct()
 
