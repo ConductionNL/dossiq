@@ -380,6 +380,18 @@
           "dsoNotes": {
             "matchType": "fulltext",
             "inputControl": "text"
+          },
+          "pauseWaitingOn": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "waitingSince": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "chasesSent": {
+            "matchType": "range",
+            "inputControl": "range"
           }
         }
       }
