@@ -115,7 +115,10 @@ describe('statusType carries a colour and a list visibility', () => {
 		// other. The merged schema carries both sets, so it has to move past
 		// either: an instance that already imported one lane's 1.3.0 would
 		// fast-skip the other's and every property in it would be inert.
-		expect(schema('statusType').version).toBe('1.4.0')
+		// 1.5.0 adds `fieldRules`, which an instance that stopped at 1.4.0
+		// would never import: the status form would offer the rules, the rows
+		// would carry them, and the publish would project nothing.
+		expect(schema('statusType').version).toBe('1.5.0')
 	})
 })
 

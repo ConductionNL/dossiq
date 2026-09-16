@@ -55,7 +55,9 @@ describe('emptyStatusTypeForm', () => {
 		expect(Object.keys(emptyStatusTypeForm(3)).sort()).toEqual([
 			'checklist',
 			'colour',
+			'derivedWhen',
 			'description',
+			'fieldRules',
 			'hiddenInLists',
 			'isFinal',
 			'maximumDwell',
@@ -211,6 +213,16 @@ describe('formToStatusType', () => {
 			waitingOn: 'applicant',
 			maximumDwell: 20,
 			checklist: [{ title: 'Check id', required: true }],
+			// Both of these are here because a property the mapping does not
+			// know is destroyed on the next save, in silence. `derivedWhen`
+			// shipped on the schema and off the mapping and was wiped by every
+			// save and every reorder until this list caught it.
+			fieldRules: [
+				{ rule: 'required', field: 'motivering', groups: [], message: '' },
+			],
+			derivedWhen: [
+				{ kind: 'fieldPresent', field: 'description', label: 'the summary' },
+			],
 		}
 
 		expect(formToStatusType(statusTypeToForm(stored))).toEqual(stored)
