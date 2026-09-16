@@ -180,7 +180,7 @@ class PlatformDataSubjectRights {
 		$previewService = $this->service(name: self::PREVIEW_SERVICE);
 		$store = $this->service(name: self::PREVIEW_STORE);
 
-		return $this->guarded(function () use ($previewService, $store, $subject, $type, $eraseMode, $requestId) {
+		return $this->guarded(call: function () use ($previewService, $store, $subject, $type, $eraseMode, $requestId) {
 			$preview = $previewService->preview(
 				subjectId: $subject,
 				type: $type,
@@ -207,7 +207,7 @@ class PlatformDataSubjectRights {
 	public function preview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
 
-		return $this->guarded(static fn (): array => $store->load(uuid: $previewId)->jsonSerialize());
+		return $this->guarded(call: static fn (): array => $store->load(uuid: $previewId)->jsonSerialize());
 	}//end preview()
 
 	/**
@@ -230,7 +230,7 @@ class PlatformDataSubjectRights {
 	public function approvePreview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
 
-		return $this->guarded(static fn (): array => $store->approve(uuid: $previewId)->jsonSerialize());
+		return $this->guarded(call: static fn (): array => $store->approve(uuid: $previewId)->jsonSerialize());
 	}//end approvePreview()
 
 	/**
@@ -251,7 +251,7 @@ class PlatformDataSubjectRights {
 		$store = $this->service(name: self::PREVIEW_STORE);
 		$runner = $this->service(name: self::RUNNER_SERVICE);
 
-		return $this->guarded(static function () use ($store, $runner, $previewId): array {
+		return $this->guarded(call: static function () use ($store, $runner, $previewId): array {
 			$record = $store->requireRunnable(uuid: $previewId);
 			$outcome = $runner->run(record: $record);
 			$store->consume(preview: $record, outcome: $outcome);
@@ -279,7 +279,7 @@ class PlatformDataSubjectRights {
 		$service = $this->service(name: self::EXPORT_SERVICE);
 
 		return $this->guarded(
-			static fn (): array => $service->request(
+			call: static fn (): array => $service->request(
 				subject: $subject,
 				type: $type,
 				requestId: $requestId,
@@ -306,7 +306,7 @@ class PlatformDataSubjectRights {
 	public function export(string $exportId): array {
 		$service = $this->service(name: self::EXPORT_SERVICE);
 
-		return $this->guarded(static function () use ($service, $exportId): array {
+		return $this->guarded(call: static function () use ($service, $exportId): array {
 			$export = $service->load(uuid: $exportId);
 			if ($export === null) {
 				return [];

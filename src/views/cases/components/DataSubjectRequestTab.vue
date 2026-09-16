@@ -150,6 +150,8 @@ export default {
 		 * would be one request per case opened, answering nothing.
 		 *
 		 * @return {boolean} True when the case names one of the three rights.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		isRequest() {
 			return ['inzage', 'correctie', 'verwijdering']
@@ -160,6 +162,8 @@ export default {
 		 * Whether this case asks for an erasure rather than access.
 		 *
 		 * @return {boolean} True for a verwijdering.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		isErasure() {
 			return this.object?.dataSubjectRequestType === 'verwijdering'
@@ -169,6 +173,8 @@ export default {
 		 * Whether a preview has been taken on this case.
 		 *
 		 * @return {boolean} True once the platform has answered.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		hasPreview() {
 			return Object.keys(this.counts ?? {}).length > 0
@@ -178,6 +184,8 @@ export default {
 		 * Where the platform serves the export.
 		 *
 		 * @return {string} The absolute url.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		downloadUrl() {
 			return subjectExportDownloadUrl(this.exportState.exportId)
@@ -187,6 +195,8 @@ export default {
 		 * What the run did, in one sentence.
 		 *
 		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		outcomeSentence() {
 			if (this.outcome?.complete === true) {
@@ -200,6 +210,13 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the export state, but only on a case that asked for one.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 */
 	mounted() {
 		if (this.isRequest && !this.isErasure) {
 			this.loadExportState()
@@ -213,6 +230,8 @@ export default {
 		 * Take the erasure preview and show what the platform reported.
 		 *
 		 * @return {Promise<void>} When the panel has been updated.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		async takePreview() {
 			await this.act(async () => {
@@ -227,6 +246,8 @@ export default {
 		 * Run the erasure this case has approved.
 		 *
 		 * @return {Promise<void>} When the outcome has been shown.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		async takeRun() {
 			await this.act(async () => {
@@ -238,6 +259,8 @@ export default {
 		 * Ask the platform for the subject's own export.
 		 *
 		 * @return {Promise<void>} When the export has been asked for.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		async askForExport() {
 			await this.act(async () => {
@@ -250,6 +273,8 @@ export default {
 		 * Ask the platform whether the export can still be taken.
 		 *
 		 * @return {Promise<void>} When the state has been read.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		async loadExportState() {
 			await this.act(async () => {
@@ -262,6 +287,8 @@ export default {
 		 *
 		 * @param {() => Promise<void>} work The act.
 		 * @return {Promise<void>} When the act has finished or refused.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		async act(work) {
 			this.busy = true
@@ -280,6 +307,8 @@ export default {
 		 *
 		 * @param {string} bucket `erasable`, `pseudonymised` or `protected`.
 		 * @return {number} The total.
+		 *
+		 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
 		 */
 		total(bucket) {
 			return Object.values(this.counts?.[bucket] ?? {})

@@ -65,19 +65,23 @@
               "properties": {
                 "name": {
                   "type": "string",
-                  "title": "What is protected"
+                  "title": "What is protected",
+                  "description": "What the platform could not erase, named the way a handler can look it up and read it back to the data subject."
                 },
                 "ground": {
                   "type": "string",
-                  "title": "Ground"
+                  "title": "Ground",
+                  "description": "Why it is protected, in the platform’s own words: a legal hold, a retention period, or a hold it could not resolve at all."
                 },
                 "basis": {
                   "type": "string",
-                  "title": "Legal basis"
+                  "title": "Legal basis",
+                  "description": "The rule behind the ground, so the answer to the data subject cites something rather than asserting it."
                 },
                 "action": {
                   "type": "string",
-                  "title": "What can be done"
+                  "title": "What can be done",
+                  "description": "What can still be done about it, which is the only part of a refusal a handler can act on."
                 }
               }
             }
