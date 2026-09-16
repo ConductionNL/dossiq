@@ -24,9 +24,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Queue\Source;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Service\Queue\QueueItem;
-use OCP\IL10N;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Status\StatusDeclaration;
+use OCP\IL10N;
+use Throwable;
 
 /**
  * Open cases assigned to the reader.
@@ -130,10 +133,75 @@ class AssignedCasesSource extends RegisterBackedSource {
 				priority: (string)($row['priority'] ?? ''),
 				dueAt: $this->dateOf(row: $row, key: 'deadline'),
 				coveredFor: null,
-				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]]
+				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
+				waiting: $this->waitingFactsOf(row: $row)
 			);
 		}
 
 		return $items;
 	}//end itemsFor()
+
+	/**
+	 * Who this case is waiting on, since when, and how often it has been chased.
+	 *
+	 * 🔴 THE DAYS ARE COUNTED HERE, not in the browser. Every other number the
+	 * queue renders was computed server-side against the organisation's
+	 * calendar, and a count computed two ways drifts the first time one of them
+	 * is fixed.
+	 *
+	 * A case nobody is waiting on answers an empty array rather than a row of
+	 * zeroes, because `waiting on us for 0 days, chased 0 times` is a sentence
+	 * that would sit under every case in the queue and say nothing.
+	 *
+	 * @param array<string, mixed>   $row The case row.
+	 * @param DateTimeImmutable|null $now The moment to count from, for the tests.
+	 *
+	 * @return array{on: string, since: string, days: int, chases: int} The facts, empty when none.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	public function waitingFactsOf(array $row, ?DateTimeImmutable $now = null): array {
+		$on = trim((string)($row['pauseWaitingOn'] ?? ''));
+		if ($on === '' || $on === StatusDeclaration::WAITING_ON_US) {
+			return [];
+		}
+
+		// `waitingSince` is written by the pause; `waitingOnApplicantSince` is
+		// what the aanvullingsverzoek wrote before pause reasons existed. The
+		// older one is the fallback so a case paused last week still reads a
+		// number rather than a zero.
+		$since = trim((string)($row['waitingSince'] ?? ''));
+		if ($since === '') {
+			$since = trim((string)($row['waitingOnApplicantSince'] ?? ''));
+		}
+
+		return [
+			'on' => $on,
+			'since' => $since,
+			'days' => $this->daysSince(since: $since, now: ($now ?? new DateTimeImmutable())),
+			'chases' => max(0, (int)($row['chasesSent'] ?? 0)),
+		];
+	}//end waitingFactsOf()
+
+	/**
+	 * How many days have passed since a stored moment.
+	 *
+	 * @param string            $since The stored moment.
+	 * @param DateTimeImmutable $now   The moment to count to.
+	 *
+	 * @return int The days, 0 when the moment cannot be read.
+	 */
+	private function daysSince(string $since, DateTimeImmutable $now): int {
+		if ($since === '') {
+			return 0;
+		}
+
+		try {
+			$from = new DateTimeImmutable($since);
+		} catch (Throwable) {
+			return 0;
+		}
+
+		return (int)$from->setTime(0, 0)->diff($now->setTime(0, 0))->days;
+	}//end daysSince()
 }//end class

@@ -97,6 +97,12 @@
 								<span v-if="!row.citizenVisible" class="case-terms-tab__hint">
 									{{ t('dossiq', 'Not shown to the applicant') }}
 								</span>
+								<span
+									v-if="row.pause"
+									class="case-terms-tab__hint"
+									:data-testid="`case-terms-pause-${row.kind}`">
+									{{ row.pause }}
+								</span>
 							</td>
 						</tr>
 					</tbody>
