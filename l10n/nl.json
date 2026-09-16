@@ -4664,6 +4664,16 @@
         "Answer by": "Reageren voor",
         "Asked by": "Gevraagd door",
         "Asked at": "Gevraagd op",
-        "Answered": "Beantwoord"
+        "Answered": "Beantwoord",
+        "the applicant": "de aanvrager",
+        "a third party": "een derde",
+        "us": "ons",
+        "Waiting on {party} for {days} days": "Wacht op {party}, {days} dagen",
+        "Waiting on {party} for {days} days, chased once": "Wacht op {party}, {days} dagen, eenmaal herinnerd",
+        "Waiting on {party} for {days} days, chased {chases} times": "Wacht op {party}, {days} dagen, {chases} keer herinnerd",
+        "Suspended, {chases} reminders sent": "Opgeschort, {chases} herinneringen verstuurd",
+        "Suspended: {reason}. No reminder sent yet.": "Opgeschort: {reason}. Nog geen herinnering verstuurd.",
+        "Suspended: {reason}. One reminder sent.": "Opgeschort: {reason}. Eén herinnering verstuurd.",
+        "Suspended: {reason}. {chases} reminders sent.": "Opgeschort: {reason}. {chases} herinneringen verstuurd."
     }
 }

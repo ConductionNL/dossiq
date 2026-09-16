@@ -4664,6 +4664,16 @@
         "Answer by": "Answer by",
         "Asked by": "Asked by",
         "Asked at": "Asked at",
-        "Answered": "Answered"
+        "Answered": "Answered",
+        "a third party": "a third party",
+        "Suspended, {chases} reminders sent": "Suspended, {chases} reminders sent",
+        "Suspended: {reason}. {chases} reminders sent.": "Suspended: {reason}. {chases} reminders sent.",
+        "Suspended: {reason}. No reminder sent yet.": "Suspended: {reason}. No reminder sent yet.",
+        "Suspended: {reason}. One reminder sent.": "Suspended: {reason}. One reminder sent.",
+        "the applicant": "the applicant",
+        "us": "us",
+        "Waiting on {party} for {days} days": "Waiting on {party} for {days} days",
+        "Waiting on {party} for {days} days, chased {chases} times": "Waiting on {party} for {days} days, chased {chases} times",
+        "Waiting on {party} for {days} days, chased once": "Waiting on {party} for {days} days, chased once"
     }
 }
