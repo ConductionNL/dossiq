@@ -1394,6 +1394,14 @@
 						}
 					},
 					{
+						"label": "Closed with no result",
+						"_note": "case-search-declares-its-fields REQ-CSD-04. The register's own example for the missing-value facet: \"twelve cases have no result type\" is a data quality report nobody has to write. `result_isnull=true` is openregister's declared null grammar (MagicSearchHandler::COMPARISON_OPERATORS), answered server-side, so this is one query and not a page of twenty-five filtered after the fact. A LENS AND NOT A FACET CHIP: a terms facet now carries facet.missing.results, and normalizeFacets() in nextcloud-vue rebuilds the facet from `buckets` alone and drops it, so the count never reaches a consumer (ConductionNL/nextcloud-vue#1176). Reading the raw facet payload beside the normalised one, per app, is the drift the shared normaliser exists to remove. This lens needs no facet payload at all. Deliberately NOT folded into Closed: a closed case with its result recorded is finished work, and burying the ones without it is what lets a year of them pile up unnoticed.",
+						"filter": {
+							"isFinalStatus": true,
+							"result_isnull": true
+						}
+					},
+					{
 						"label": "My drafts",
 						"_note": "lifecycle-acts-on-the-case REQ-LIFE-14. A draft binds no statutory term and belongs in no working list, so every other lens excludes it and this one is the only way back to it. Scoped to `@me` because a draft is its author's: the case is created assigned to them and dossiq's own case endpoints go through CaseAccessGuard, which grants a case to its assignee and denies everyone else. The per-object grant inside OpenRegister is NOT part of this change, so a reader who queries OpenRegister directly with a filter naming drafts can still see one. Named here rather than implied to be done.",
 						"filter": {
