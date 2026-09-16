@@ -114,6 +114,17 @@ const DRAFTS_LENS = 'My drafts'
 const CASE_LENSES = [
 	'All',
 	'Unread',
+	// Three lenses over a stored, facetable boolean on the case, each from a
+	// change that named the row it answers. `Waiting on the applicant`
+	// (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the APPLICANT
+	// still owes; `Needs attention` and `Assessed high risk`
+	// (markers-and-assessments-on-the-case rows 2.36 and 2.40, #2837) are the
+	// flag a named person raised and the risk this organisation assessed.
+	// They sit before Mine because all three are about the CASE, and Mine
+	// onwards are about who is holding it.
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
 	'Mine',
 	'Unclaimed',
 	'Handed on',
@@ -139,10 +150,18 @@ const CASE_LENSES = [
  * STATUS longer than that status allows, and a task has neither a status type
  * nor a maximum dwell.
  */
-const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS, 'Stuck']
+const CASES_ONLY = [
+	'Unread',
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
+	'Handed on',
+	DRAFTS_LENS,
+	'Stuck',
+]
 
 describe('Cases index lenses', () => {
-	it('declares the ten chips in order', () => {
+	it('declares the thirteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -539,6 +558,11 @@ describe('what this change does NOT move', () => {
 		// exactly where it should be visible.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
+			// `Your queue` and `Close out your day` are the sixth and seventh
+			// later additions (one-personal-queue, #2842): one page holding
+			// everything waiting on the reader across four stores, and the
+			// screen that closes the day against what they opened in it.
+			'Your queue',
 			'Queue',
 			'Assigned to me',
 			'My work',
@@ -548,6 +572,7 @@ describe('what this change does NOT move', () => {
 			'Deleted cases',
 			'Objects',
 			'Tasks',
+			'Close out your day',
 			'Workflow board',
 			'Reports',
 			'Processing time',

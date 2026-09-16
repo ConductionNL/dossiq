@@ -109,11 +109,12 @@ describe('CaseDetail — one history tab (task 1.1)', () => {
 	})
 })
 
-describe('CaseDetail — the timeline is not also a body tab (task 4.1)', () => {
-	it('declares no case-timeline widget and no Timeline tab', () => {
-		// The whole of row A05 is that the case keeps ONE history. A body
-		// panel over the same audit log beside a sidebar tab with filters is
-		// two views of one log again.
+describe('CaseDetail — the audit log is not also a body tab (task 4.1)', () => {
+	it('declares no case-timeline widget over the audit log', () => {
+		// The whole of row A05 is that the case keeps one CHANGE history. A
+		// body panel over the same audit log beside a sidebar tab with filters
+		// is two views of one log again, and that is still refused: no
+		// `case-timeline` widget, and the sidebar keeps its audit tab.
 		//
 		// ⚠️ THE NAME IS RESERVED, AND IT WAS NEARLY TAKEN. The page does carry
 		// a stage stepper titled Timeline, and it is declared as `case-stages`
@@ -126,6 +127,31 @@ describe('CaseDetail — the timeline is not also a body tab (task 4.1)', () => 
 		const panels = config.widgets.find((widget) => widget.id === 'case-panels')
 		const tabs = panels.content.tabs
 		expect(tabs.map((tab) => tab.widgetId)).not.toContain('case-timeline')
-		expect(tabs.map((tab) => tab.label)).not.toContain('Timeline')
+	})
+
+	it('gives the Timeline tab OpenRegister\'s timeline, not the audit log', () => {
+		// A Timeline tab arrived with `one-timeline-on-the-case` (#2846), whose
+		// own requirement REQ-TL-10 ends "The change history SHALL stay in the
+		// audit sidebar". So the label is taken now, and what A05 was actually
+		// protecting has to be asserted directly instead of through the label:
+		// the tab reads OpenRegister's TIMELINE of notes, calls and messages,
+		// and the audit log is still the sidebar's alone.
+		//
+		// A label check would pass on a tab that quietly went back to the audit
+		// trail under the same name, which is the failure A05 exists to catch.
+		const config = caseDetail().config
+		const panels = config.widgets.find((widget) => widget.id === 'case-panels')
+		const tab = panels.content.tabs.find((entry) => entry.label === 'Timeline')
+		expect(tab, 'the Timeline tab is gone').toBeTruthy()
+		expect(tab.widgetId).toBe('case-timeline-panel')
+
+		const pane = config.widgets.find(
+			(widget) => widget.id === 'case-timeline-panel',
+		)
+		expect(pane.type).toBe('case-timeline-pane')
+		expect(pane.type).not.toBe('audit-trail')
+		// And the renderer behind that type exists, so the tab is not an empty
+		// panel wearing the right name.
+		expect(registrySource).toContain("'case-timeline-pane': {")
 	})
 })
