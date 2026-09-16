@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -36,6 +37,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
  */
 class DeadlinePauseReasonTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * The store.
 	 *
@@ -104,7 +107,10 @@ class DeadlinePauseReasonTest extends TestCase {
 			timerService: $this->timerService,
 			declarations: null,
 			reasons: $this->reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator()),
+			schedule: new ChaseSchedule(
+				calendar: new WorkingDayCalculator(),
+				dates: $this->caseDates(),
+			),
 		);
 	}//end service()
 
@@ -224,7 +230,10 @@ class DeadlinePauseReasonTest extends TestCase {
 			timerService: $this->timerService,
 			declarations: null,
 			reasons: $this->reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator()),
+			schedule: new ChaseSchedule(
+				calendar: new WorkingDayCalculator(),
+				dates: $this->caseDates(),
+			),
 		);
 
 		$service->resumeAfterPauze(termInstanceId: 't1');

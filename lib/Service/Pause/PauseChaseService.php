@@ -59,6 +59,7 @@ namespace OCA\Dossiq\Service\Pause;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -236,12 +237,30 @@ class PauseChaseService {
 			return null;
 		}
 
-		$reason = $this->reasons->forInstance(instance: $fresh);
-		if ($reason === null) {
+		$key = trim((string)($fresh['pauseReason'] ?? ''));
+		$caseId = trim((string)($fresh['case'] ?? ''));
+		if ($key === '' || $caseId === '') {
 			return null;
 		}
 
-		return [$fresh, $reason];
+		// ONE READ of the case type answers both questions: which reasons it
+		// declares, and whether it sends this message at all. Reading it twice
+		// would let the two answers come from different rows.
+		$caseType = $this->reasons->caseTypeForCase(caseId: $caseId);
+		if ((new CaseTypeHandling())->sends(caseType: $caseType, message: self::TEMPLATE) === false) {
+			// The case type turned the reminder off. That is a switch an
+			// administrator set, so it is honoured here rather than overridden
+			// by a reason that happens to declare a schedule.
+			return null;
+		}
+
+		foreach ($this->reasons->reasonsIn(caseTypeRow: $caseType) as $reason) {
+			if ($reason['key'] === $key) {
+				return [$fresh, $reason];
+			}
+		}//end foreach
+
+		return null;
 	}//end contextFor()
 
 	/**
@@ -526,19 +545,15 @@ class PauseChaseService {
 			return [];
 		}
 
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['status' => 'paused', '_limit' => self::SWEEP_LIMIT]
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq pause: the suspended terms could not be read, so nothing was chased',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()]
-			);
-			return [];
-		}
+		// NO CATCH HERE, DELIBERATELY. "No case is suspended" and "we could not
+		// ask" are opposite answers, and the first one is a silent sweep that
+		// reports nothing wrong every night. A failure reaches `PauseChaseJob`,
+		// which logs it as an error and lets tomorrow's sweep try again.
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['status' => 'paused', '_limit' => self::SWEEP_LIMIT]
+		);
 	}//end pausedInstances()
 }//end class

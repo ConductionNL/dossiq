@@ -23,6 +23,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReason;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,6 +33,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Pause\PauseReason
  */
 class ChaseScheduleTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * The schedule under test.
 	 *
@@ -45,7 +48,10 @@ class ChaseScheduleTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->schedule = new ChaseSchedule(calendar: new WorkingDayCalculator());
+		$this->schedule = new ChaseSchedule(
+			calendar: new WorkingDayCalculator(),
+			dates: $this->caseDates(),
+		);
 	}//end setUp()
 
 	/**

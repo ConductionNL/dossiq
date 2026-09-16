@@ -47,8 +47,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Pause;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\WorkingDayCalculator;
-use Throwable;
 
 /**
  * The reminder schedule a pause reason declares (REQ-TERM-011).
@@ -66,9 +66,13 @@ class ChaseSchedule {
 	 *        answers a term END date through TermijnTimerService; a reminder is not a
 	 *        term end and no citizen is held to it, so the app calendar is enough and
 	 *        the schedule stays pure.
+	 * @param CaseDateNormaliser $dates The one rule for what a stored date means. A
+	 *        private parser here would be a second rule, and the moments read below
+	 *        are the ones a reminder is counted from.
 	 */
 	public function __construct(
 		private readonly WorkingDayCalculator $calendar,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -153,7 +157,7 @@ class ChaseSchedule {
 			return false;
 		}
 
-		$last = $this->moment(value: ($instance['lastChasedAt'] ?? null));
+		$last = $this->dates->tryParse(value: ($instance['lastChasedAt'] ?? null));
 		if ($last === null) {
 			return false;
 		}
@@ -223,31 +227,11 @@ class ChaseSchedule {
 	 * @return DateTimeImmutable|null The last reminder, else the pause start, else null.
 	 */
 	private function countFrom(array $instance): ?DateTimeImmutable {
-		$last = $this->moment(value: ($instance['lastChasedAt'] ?? null));
+		$last = $this->dates->tryParse(value: ($instance['lastChasedAt'] ?? null));
 		if ($last !== null) {
 			return $last;
 		}
 
-		return $this->moment(value: ($instance['pauzeStartDatum'] ?? null));
+		return $this->dates->tryParse(value: ($instance['pauzeStartDatum'] ?? null));
 	}//end countFrom()
-
-	/**
-	 * One stored moment, or null when it cannot be read.
-	 *
-	 * @param mixed $value The raw value.
-	 *
-	 * @return DateTimeImmutable|null The moment.
-	 */
-	private function moment(mixed $value): ?DateTimeImmutable {
-		$text = trim((string)($value ?? ''));
-		if ($text === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($text);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end moment()
 }//end class

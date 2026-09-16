@@ -42,7 +42,6 @@ namespace OCA\Dossiq\Service\Pause;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermDeclarationReader;
-use Throwable;
 
 /**
  * The reasons a case type allows a term to be suspended for (REQ-TERM-011).
@@ -79,7 +78,23 @@ class PauseReasonReader {
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): array {
-		$row = $this->caseTypeRow(caseTypeId: $caseTypeId);
+		return $this->reasonsIn(caseTypeRow: $this->caseTypeRow(caseTypeId: $caseTypeId));
+	}//end forCaseType()
+
+	/**
+	 * The reasons declared on one case type row, normalised and in order.
+	 *
+	 * Takes the ROW rather than the id, so a caller that already read the case
+	 * type for something else, such as its message switches, reads it once.
+	 *
+	 * @param array<string, mixed> $caseTypeRow The case type row.
+	 *
+	 * @return array<int, array<string, mixed>> The reasons, empty when none are declared.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	public function reasonsIn(array $caseTypeRow): array {
+		$row = $caseTypeRow;
 
 		$reasons = [];
 		foreach ((array)($row['pauseReasons'] ?? []) as $declared) {
@@ -99,7 +114,7 @@ class PauseReasonReader {
 		}//end foreach
 
 		return $reasons;
-	}//end forCaseType()
+	}//end reasonsIn()
 
 	/**
 	 * Every reason behind one case.
@@ -111,13 +126,30 @@ class PauseReasonReader {
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function forCase(string $caseId): array {
+		return $this->reasonsIn(caseTypeRow: $this->caseTypeForCase(caseId: $caseId));
+	}//end forCase()
+
+	/**
+	 * The case type row behind one case.
+	 *
+	 * Public because the chasing needs the SAME row for two questions: which
+	 * reasons this type declares, and whether it sends the reminder at all.
+	 * Two reads of one row is two chances for them to disagree.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> The row, empty when the case names no type.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	public function caseTypeForCase(string $caseId): array {
 		$context = $this->declarations->caseContext(caseId: $caseId);
 		if ($context['caseType'] === '') {
 			return [];
 		}
 
-		return $this->forCaseType(caseTypeId: $context['caseType']);
-	}//end forCase()
+		return $this->caseTypeRow(caseTypeId: $context['caseType']);
+	}//end caseTypeForCase()
 
 	/**
 	 * One reason of a case, by its key.
@@ -184,15 +216,17 @@ class PauseReasonReader {
 			return [];
 		}
 
-		try {
-			return ($this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseTypeId
-			) ?? []);
-		} catch (Throwable) {
-			return [];
-		}
+		// NO CATCH HERE, DELIBERATELY. `findObjectAsArray()` already answers null
+		// for a case type that is not there, which is the read miss. Anything
+		// else is the store failing, and "this case type declares no reasons" is
+		// the opposite answer to "we could not ask": the first registers a pause
+		// with no reason and chases nobody, quietly, forever. A failure reaches
+		// the pause act, which refuses, and the chase sweep, whose job logs it.
+		return ($this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $caseTypeId
+		) ?? []);
 	}//end caseTypeRow()
 }//end class

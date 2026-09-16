@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -42,6 +43,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Pause\PauseChaseService
  */
 class PauseChaseServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * The term store.
 	 *
@@ -120,7 +123,8 @@ class PauseChaseServiceTest extends TestCase {
 		);
 
 		$this->aanvullingen->method('openFor')->willReturn(['recipient' => 'aanvrager@example.org']);
-		$this->reasons->method('forInstance')->willReturn($this->reason());
+		$this->reasons->method('caseTypeForCase')->willReturn($this->caseType());
+		$this->reasons->method('reasonsIn')->willReturn([$this->reason()]);
 	}//end setUp()
 
 	/**
@@ -132,7 +136,10 @@ class PauseChaseServiceTest extends TestCase {
 		return new PauseChaseService(
 			termService: $this->termService,
 			reasons: $this->reasons,
-			schedule: new ChaseSchedule(calendar: new WorkingDayCalculator()),
+			schedule: new ChaseSchedule(
+				calendar: new WorkingDayCalculator(),
+				dates: $this->caseDates(),
+			),
 			notifications: $this->notifications,
 			timeline: $this->timeline,
 			settings: $this->createMock(SettingsService::class),
@@ -163,6 +170,15 @@ class PauseChaseServiceTest extends TestCase {
 	}//end reason()
 
 	/**
+	 * The case type row behind these cases: it sends every message.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function caseType(): array {
+		return ['handling' => ['automaticMessages' => [PauseChaseService::TEMPLATE]]];
+	}//end caseType()
+
+	/**
 	 * One suspended instance, as the store answers it.
 	 *
 	 * @param array<string, mixed> $overrides What this case needs different.
@@ -177,6 +193,7 @@ class PauseChaseServiceTest extends TestCase {
 				'status' => 'paused',
 				'pauzeStartDatum' => '2026-09-01',
 				'pauseDeadline' => '2026-09-15',
+				'pauseReason' => 'aanvulling-aanvrager',
 				'chasesSent' => 0,
 			],
 			$overrides
@@ -345,6 +362,29 @@ class PauseChaseServiceTest extends TestCase {
 	}//end testTheHandlerHearsAfterTheLastReminder()
 
 	/**
+	 * A case type that does not send the reminder is not chased, however the
+	 * reason is declared. The message switch is an administrator's decision.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeThatDoesNotSendTheReminderIsNotChased(): void {
+		$this->termService->method('getTermijnInstance')->willReturn($this->instance());
+		$this->reasons = $this->createMock(PauseReasonReader::class);
+		$this->reasons->method('caseTypeForCase')->willReturn(
+			['handling' => ['automaticMessages' => ['ontvangstbevestiging']]]
+		);
+		$this->reasons->method('reasonsIn')->willReturn([$this->reason()]);
+		$this->notifications->expects($this->never())->method('sendTermijnNotification');
+
+		$this->assertFalse(
+			$this->service()->chaseIfDue(
+				instance: $this->instance(),
+				now: new DateTimeImmutable('2026-09-06')
+			)
+		);
+	}//end testACaseTypeThatDoesNotSendTheReminderIsNotChased()
+
+	/**
 	 * A pause on a case type that declares no reason is left alone entirely.
 	 *
 	 * @return void
@@ -352,7 +392,8 @@ class PauseChaseServiceTest extends TestCase {
 	public function testAPauseWithNoDeclaredReasonIsLeftAlone(): void {
 		$this->termService->method('getTermijnInstance')->willReturn($this->instance());
 		$this->reasons = $this->createMock(PauseReasonReader::class);
-		$this->reasons->method('forInstance')->willReturn(null);
+		$this->reasons->method('caseTypeForCase')->willReturn($this->caseType());
+		$this->reasons->method('reasonsIn')->willReturn([]);
 		$this->notifications->expects($this->never())->method('sendTermijnNotification');
 
 		$this->assertFalse(
