@@ -161,6 +161,12 @@ export default {
 		}
 	},
 
+	/**
+	 * Load the three surfaces this tab owns: the access links, the partner
+	 * shares and the federated shares, plus what the dialogs need to offer.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 */
 	mounted() {
 		this.loadShares()
 		this.loadLinks()

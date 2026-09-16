@@ -98,7 +98,7 @@ class ConsultationControllerContractTest extends TestCase {
 	 *
 	 * @return ConsultationController
 	 */
-	private function controller(): ConsultationController {
+	private function controller(?ExternalConsultationLinkService $externalLinks = null): ConsultationController {
 		return new ConsultationController(
 			appName: 'dossiq',
 			request: $this->request,
@@ -109,9 +109,22 @@ class ConsultationControllerContractTest extends TestCase {
 				userSession: $this->userSession,
 				groupManager: $this->groupManager,
 			),
-			externalLinks: $this->createMock(ExternalConsultationLinkService::class),
+			externalLinks: ($externalLinks ?? $this->createMock(ExternalConsultationLinkService::class)),
 		);
 	}//end controller()
+
+	/**
+	 * Put a signed-in user on the session.
+	 *
+	 * @param string $uid The UID of the signed-in user.
+	 *
+	 * @return void
+	 */
+	private function signIn(string $uid = 'adviseur'): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn($uid);
+		$this->userSession->method('getUser')->willReturn($user);
+	}//end signIn()
 
 	/**
 	 * An unauthenticated caller gets 401 and no overdue list is assembled.
@@ -171,4 +184,175 @@ class ConsultationControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['results' => []], $response->getData());
 	}//end testOverdueReturnsAnEmptyResultsEnvelopeWhenNothingIsOverdue()
+
+	/**
+	 * `externalLink` refuses an anonymous caller with 401 and publishes
+	 * nothing. The case behind a consultation is what this endpoint hands to
+	 * somebody with no account, so the session is the whole guard.
+	 *
+	 * @return void
+	 */
+	public function testExternalLinkRefusesAnUnauthenticatedCallerBeforePublishingAnything(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->expects($this->never())->method('invite');
+
+		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testExternalLinkRefusesAnUnauthenticatedCallerBeforePublishingAnything()
+
+	/**
+	 * A caller who is neither the applicant, the assignee nor an admin is
+	 * refused 403, and nothing is minted on the way to the refusal.
+	 *
+	 * @return void
+	 */
+	public function testExternalLinkRefusesACallerWithNoClaimOnTheConsultation(): void {
+		$this->signIn(uid: 'mallory');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja', 'assignee' => 'bram']
+		);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->expects($this->never())->method('invite');
+
+		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testExternalLinkRefusesACallerWithNoClaimOnTheConsultation()
+
+	/**
+	 * An authorised invitation answers 201 with the address to send.
+	 *
+	 * @return void
+	 */
+	public function testExternalLinkAnswers201WithTheAddressToSend(): void {
+		$this->signIn(uid: 'anja');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja']
+		);
+		$this->request->method('getParam')->willReturn(null);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->expects($this->once())
+			->method('invite')
+			->willReturn(['url' => 'https://example.test/l/abc']);
+
+		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('https://example.test/l/abc', $response->getData()['url']);
+	}//end testExternalLinkAnswers201WithTheAddressToSend()
+
+	/**
+	 * A consultation that cannot carry a link answers 400 with the reason,
+	 * never a 500 and never a success with no link in it.
+	 *
+	 * @return void
+	 */
+	public function testExternalLinkReportsARefusalAs400(): void {
+		$this->signIn(uid: 'anja');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja']
+		);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->method('invite')
+			->willThrowException(new \RuntimeException('Name the advisory body before you invite it'));
+
+		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('Name the advisory body before you invite it', $response->getData()['error']);
+	}//end testExternalLinkReportsARefusalAs400()
+
+	/**
+	 * `collectAdvice` refuses an anonymous caller with 401 and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testCollectAdviceRefusesAnUnauthenticatedCallerBeforeReadingAnything(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->expects($this->never())->method('collect');
+
+		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testCollectAdviceRefusesAnUnauthenticatedCallerBeforeReadingAnything()
+
+	/**
+	 * Nothing new to collect is a 200 saying so, not a 404: the handler asked
+	 * a question and got an answer, and "the body has not replied yet" is an
+	 * answer.
+	 *
+	 * @return void
+	 */
+	public function testCollectAdviceAnswers200WhenThereIsNothingNew(): void {
+		$this->signIn(uid: 'anja');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja']
+		);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->method('collect')->willReturn(['collected' => false]);
+
+		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertFalse($response->getData()['collected']);
+	}//end testCollectAdviceAnswers200WhenThereIsNothingNew()
+
+	/**
+	 * A collected comment answers 200 naming the advisory body it came from.
+	 *
+	 * @return void
+	 */
+	public function testCollectAdviceNamesTheAdvisoryBodyItCameFrom(): void {
+		$this->signIn(uid: 'anja');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja']
+		);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->method('collect')->willReturn(
+			['collected' => true, 'advisoryBody' => 'Brandweer', 'noteId' => 31]
+		);
+
+		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Brandweer', $response->getData()['advisoryBody']);
+	}//end testCollectAdviceNamesTheAdvisoryBodyItCameFrom()
+
+	/**
+	 * An outcome the consultation does not recognise is a 400, never a
+	 * recorded answer.
+	 *
+	 * @return void
+	 */
+	public function testCollectAdviceReportsAnUnknownOutcomeAs400(): void {
+		$this->signIn(uid: 'anja');
+		$this->groupManager->method('isAdmin')->willReturn(false);
+		$this->consultationService->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'applicant' => 'anja']
+		);
+
+		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
+		$externalLinks->method('collect')
+			->willThrowException(new \RuntimeException('Invalid advice type: maybe'));
+
+		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('Invalid advice type: maybe', $response->getData()['error']);
+	}//end testCollectAdviceReportsAnUnknownOutcomeAs400()
 }//end class

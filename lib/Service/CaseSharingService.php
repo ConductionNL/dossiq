@@ -144,13 +144,18 @@ class CaseSharingService {
 		array $sharedDocuments = [],
 		array $extra = [],
 	): array {
+		$named = null;
+		if ($label !== '') {
+			$named = $label;
+		}
+
 		$link = $this->accessLinks->mintCaseLink(
 			caseId: $caseId,
 			userId: $createdBy,
 			capabilities: $capabilities,
 			expiresAt: $expiresAt,
 			password: $password,
-			label: ($label === '' ? null : $label)
+			label: $named
 		);
 
 		if (isset($link['error']) === true) {
@@ -165,7 +170,7 @@ class CaseSharingService {
 				userId: $createdBy,
 				expiresAt: ($link['expiresAt'] ?? $expiresAt),
 				password: $password,
-				label: ($label === '' ? null : $label)
+				label: $named
 			);
 
 			if (isset($fileLink['error']) === true) {
@@ -426,12 +431,19 @@ class CaseSharingService {
 
 		$capabilities = (array)($link['capabilities'] ?? []);
 
+		// The permission level is the zaak-domain word for the same grant, kept
+		// because the partner surface and the stored rows already speak it.
+		$permissionLevel = 'bekijken';
+		if (in_array('comment', $capabilities, true) === true) {
+			$permissionLevel = 'bekijken_reageren';
+		}
+
 		$shareData = array_merge(
 			$extra,
 			[
 				'caseId' => $caseId,
 				'shareType' => 'link',
-				'permissionLevel' => (in_array('comment', $capabilities, true) === true ? 'bekijken_reageren' : 'bekijken'),
+				'permissionLevel' => $permissionLevel,
 				'label' => $label,
 				'status' => 'active',
 				'createdBy' => $createdBy,

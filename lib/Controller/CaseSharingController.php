@@ -146,7 +146,7 @@ class CaseSharingController extends Controller {
 			createdBy: $user->getUID(),
 			expiresAt: $expiresAt,
 			capabilities: $this->asList(value: $capabilities, fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
-			password: ($password === null ? null : (string)$password),
+			password: $this->optionalText(value: $password),
 			sharedDocuments: $this->asList(value: $documents, fallback: []),
 		);
 
@@ -308,6 +308,28 @@ class CaseSharingController extends Controller {
 
 		return array_values(array_filter(array_map('trim', explode(',', $raw))));
 	}//end asList()
+
+	/**
+	 * A request parameter as trimmed text, or null when it carried nothing.
+	 *
+	 * @param mixed $value What the request carried
+	 *
+	 * @return string|null The text, or null
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function optionalText(mixed $value): ?string {
+		if ($value === null) {
+			return null;
+		}
+
+		$text = trim((string)$value);
+		if ($text === '') {
+			return null;
+		}
+
+		return $text;
+	}//end optionalText()
 
 	/**
 	 * Revoke a case share.

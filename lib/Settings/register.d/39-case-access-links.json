@@ -7,7 +7,9 @@
           "shareType": {
             "enum": [
               "link"
-            ]
+            ],
+            "title": "Share type",
+            "description": "How this case is shared: a public access link, a partner organisation handover, or the retired token. ADR-037 concatenates enum values, so `token` and `partner` keep their places."
           },
           "accessLinkId": {
             "type": "integer",

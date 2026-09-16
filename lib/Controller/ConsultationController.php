@@ -327,7 +327,7 @@ class ConsultationController extends Controller {
 			$share = $this->externalLinks->invite(
 				consultationId: $id,
 				userId: $this->accessGuard->currentUid(),
-				password: ($password === null ? null : (string)$password),
+				password: $this->optionalPassword(value: $password),
 			);
 			return new JSONResponse($share, Http::STATUS_CREATED);
 		} catch (\RuntimeException $e) {
@@ -363,4 +363,26 @@ class ConsultationController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end collectAdvice()
+
+	/**
+	 * The password on an invitation, or null when none was given.
+	 *
+	 * @param mixed $value What the request body carried
+	 *
+	 * @return string|null The password, or null
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function optionalPassword(mixed $value): ?string {
+		if ($value === null) {
+			return null;
+		}
+
+		$password = (string)$value;
+		if ($password === '') {
+			return null;
+		}
+
+		return $password;
+	}//end optionalPassword()
 }//end class
